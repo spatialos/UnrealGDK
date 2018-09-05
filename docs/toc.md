@@ -17,4 +17,5 @@
 - <h3>Contributing to the GDK</h3>
     - [Contribution policy]({{urlRoot}}/contributing)
     - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)
+- <h3>[Troubleshooting]({{urlRoot}}/content/troubleshooting)</h3>
 - <h3>[Known issues]({{urlRoot}}/known-issues)</h3>
