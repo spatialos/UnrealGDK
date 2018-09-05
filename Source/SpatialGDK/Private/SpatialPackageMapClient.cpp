@@ -130,6 +130,12 @@ bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UO
 	return true;
 }
 
+const improbable::unreal::UnrealObjectRef* USpatialPackageMapClient::GetUnrealObjectRefData(const improbable::unreal::UnrealObjectRef& ObjectRef) const
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	return SpatialGuidCache->GetUnrealObjectRefData(ObjectRef);
+}
+
 FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 	: FNetGUIDCache(InDriver)
 {
@@ -221,6 +227,7 @@ void FSpatialNetGUIDCache::RemoveNetGUID(const FNetworkGUID& NetGUID)
 	FHashableUnrealObjectRef* ObjectRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
 	UnrealObjectRefToNetGUID.Remove(*ObjectRef);
 	NetGUIDToUnrealObjectRef.Remove(NetGUID);
+	RegisteredUnrealObjectRefs.Remove(*ObjectRef);
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const improbable::unreal::UnrealObjectRef& ObjectRef)
@@ -251,6 +258,19 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(worker::EntityId Entit
 	improbable::unreal::UnrealObjectRef ObjRef{EntityId, 0, {}, {}};
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRef);
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
+}
+
+const improbable::unreal::UnrealObjectRef* FSpatialNetGUIDCache::GetUnrealObjectRefData(const improbable::unreal::UnrealObjectRef& ObjectRef) const
+{
+	const int32 index = RegisteredUnrealObjectRefs.Find(ObjectRef);
+	if (index == INDEX_NONE)
+	{
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref %d"), ObjectRef.entity());
+		check(index == INDEX_NONE);
+	}
+	check(index != INDEX_NONE);
+	const FHashableUnrealObjectRef* ObjRef = &RegisteredUnrealObjectRefs[index];
+	return (const improbable::unreal::UnrealObjectRef*)ObjRef;
 }
 
 FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPath(const FString& PathName, const FNetworkGUID& OuterGUID)
@@ -316,4 +336,5 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const improba
 	checkSlow(!UnrealObjectRefToNetGUID.Contains(ObjectRef) || (UnrealObjectRefToNetGUID.Contains(ObjectRef) && UnrealObjectRefToNetGUID.FindChecked(ObjectRef) == NetGUID));
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjectRef);
 	UnrealObjectRefToNetGUID.Emplace(ObjectRef, NetGUID);
+	RegisteredUnrealObjectRefs.Add(ObjectRef);
 }

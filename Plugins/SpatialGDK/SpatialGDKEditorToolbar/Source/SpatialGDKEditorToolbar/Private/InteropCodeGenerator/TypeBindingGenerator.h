@@ -24,6 +24,7 @@ void GeneratePropertyToUnrealConversion(
 	const FString& Update,
 	const UProperty* Property,
 	const FString& PropertyValue,
+	TSharedPtr<FUnrealProperty> ProperyInfo,
 	TFunction<void(const FString&)> ObjectResolveFailureGenerator,
 	bool bIsRPCProperty);
 

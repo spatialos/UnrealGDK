@@ -39,6 +39,9 @@ public:
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
+	//TODO: Daniel, Temporary hack until we have the object ref as an enigine modification
+	const improbable::unreal::UnrealObjectRef* GetUnrealObjectRefData(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
+
 private:
 
 };
@@ -59,6 +62,9 @@ public:
 	const improbable::unreal::UnrealObjectRef* GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(worker::EntityId EntityId) const;
 
+	//TODO: Daniel, Temporary hack until we have the object ref as an enigine modification
+	const improbable::unreal::UnrealObjectRef* GetUnrealObjectRefData(const improbable::unreal::UnrealObjectRef& ObjectRef) const;
+
 private:
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::unreal::UnrealObjectRef& ObjectRef);
@@ -68,5 +74,6 @@ private:
 
 	TMap<FNetworkGUID, FHashableUnrealObjectRef> NetGUIDToUnrealObjectRef;
 	TMap<FHashableUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
+	TArray<FHashableUnrealObjectRef> RegisteredUnrealObjectRefs;
 };
 
