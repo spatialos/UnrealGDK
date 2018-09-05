@@ -1413,15 +1413,23 @@ void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, UC
 	}
 	else
 	{
-		// Updating a subobject
-		TArray<UObject*> DefaultSubobjects;
-		OwnerClass->GetDefaultObjectSubobjects(DefaultSubobjects);
-		UObject** Subobject = DefaultSubobjects.FindByPredicate([Class](const UObject* Obj)
+		// Update a subobject
+		if (Class->IsChildOf(UActorComponent::StaticClass()))
 		{
-			return (Obj->GetClass() == Class);
-		});
-		check(Subobject);
-		SourceWriter.Printf("FPropertyChangeState %sChangeState = Channel->CreateSubobjectChangeState(Channel->Actor->GetDefaultSubobjectByName(\"%s\"));", *ClassName, *(*Subobject)->GetFName().ToString());
+			SourceWriter.Printf("FPropertyChangeState %sChangeState = Channel->CreateSubobjectChangeState(Channel->Actor->FindComponentByClass<%s>());", *ClassName, *GetFullCPPName(Class));
+		}
+		else
+		{
+			TArray<UObject*> DefaultSubobjects;
+			OwnerClass->GetDefaultObjectSubobjects(DefaultSubobjects);
+			UObject** Subobject = DefaultSubobjects.FindByPredicate([Class](const UObject* Obj)
+			{
+				return (Obj->GetClass() == Class);
+			});
+			check(Subobject);
+			SourceWriter.Printf("FPropertyChangeState %sChangeState = Channel->CreateSubobjectChangeState(Channel->Actor->GetDefaultSubobjectByName(\"%s\"));", *ClassName, *(*Subobject)->GetFName().ToString());
+		}
+		
 		SourceWriter.Printf("USpatialTypeBinding_%s* %sTypeBinding = Cast<USpatialTypeBinding_%s>(Interop->GetTypeBindingByClass(%s::StaticClass()));",
 			*ClassName, *ClassName, *ClassName, *GetFullCPPName(Class));
 		SourceWriter.Printf("%sTypeBinding->BuildSpatialComponentUpdate(%sChangeState, Channel, %s);", *ClassName, *ClassName, *FString::Join(BuildUpdateArgs, TEXT(", ")));
