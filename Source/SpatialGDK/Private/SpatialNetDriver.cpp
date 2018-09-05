@@ -176,8 +176,6 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	// The native UNetDriver would normally store destruction info here for "StartupActors" - replicated actors
 	// placed in the level, but we handle this flow differently in the GDK
 
-	checkf(!IsSeamlessTravel, TEXT("Seamless travel is not currently supported in the SpatialOS GDK"));
-
 	// Remove the actor from the property tracker map
 	RepChangedPropertyTrackerMap.Remove(ThisActor);
 
