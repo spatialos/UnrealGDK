@@ -125,59 +125,9 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM) != 0;
 }
 
-bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
-{
-	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
-	int PlaceholderCount = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST - SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
-	int PlaceholderCountAxis = static_cast<int>(sqrt(PlaceholderCount));
-	checkf(PlaceholderCountAxis * PlaceholderCountAxis == PlaceholderCount, TEXT("The number of placeholders must be a square number."));
-	checkf(PlaceholderCountAxis % 2 == 0, TEXT("The number of placeholders on each axis must be even."));
-	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
-	int PlaceholderEntityIdCounter = SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
-	for (int x = -PlaceholderCountAxis / 2; x < PlaceholderCountAxis / 2; x++)
-	{
-		for (int y = -PlaceholderCountAxis / 2; y < PlaceholderCountAxis / 2; y++)
-		{
-			const Coordinates PlaceholderPosition{ x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f };
-
-			Worker_Entity Placeholder;
-			Placeholder.entity_id = PlaceholderEntityIdCounter;
-
-			TArray<Worker_ComponentData> Components;
-
-			WriteAclMap ComponentWriteAcl;
-			ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(METADATA_COMPONENT_ID, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(PERSISTENCE_COMPONENT_ID, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(UNREAL_METADATA_COMPONENT_ID, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(ENTITY_ACL_COMPONENT_ID, UnrealWorkerPermission);
-
-			Components.Add(Position(PlaceholderPosition).CreatePositionData());
-			Components.Add(Metadata(TEXT("Placeholder")).CreateMetadataData());
-			Components.Add(Persistence().CreatePersistenceData());
-			Components.Add(UnrealMetadata().CreateUnrealMetadataData());
-			Components.Add(EntityAcl(UnrealWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
-
-			Placeholder.component_count = Components.Num();
-			Placeholder.components = Components.GetData();
-
-			if (Worker_SnapshotOutputStream_WriteEntity(OutputStream, &Placeholder) == 0)
-			{
-				return false;
-			}
-
-			PlaceholderEntityIdCounter++;
-		}
-	}
-	// Sanity check.
-	check(PlaceholderEntityIdCounter == SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1);
-
-	return true;
-}
-
 bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 {
-	Worker_EntityId CurrentEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
+	Worker_EntityId CurrentEntityId = SpatialConstants::GLOBAL_STATE_MANAGER + 1;
 
 	USpatialTypebindingManager* TypebindingManager = NewObject<USpatialTypebindingManager>();
 	TypebindingManager->Init();
@@ -360,12 +310,6 @@ bool SpatialGDKGenerateSnapshot(UWorld* World)
 	}
 
 	if (!CreateGlobalStateManager(OutputStream))
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		return false;
-	}
-
-	if (!CreatePlaceholders(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 		return false;
