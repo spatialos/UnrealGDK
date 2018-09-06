@@ -79,12 +79,8 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_NetMulticast], WorkersOnly);
 	}
 
-	FString StaticPath;
-
-	if (Actor->IsFullNameStableForNetworking())
-	{
-		StaticPath = Actor->GetPathName(Actor->GetWorld());
-	}
+	// Stably named actors should be in the snapshot
+	check(!Actor->IsFullNameStableForNetworking());
 
 	uint32 CurrentOffset = 1;
 	SubobjectToOffsetMap SubobjectNameToOffset;
@@ -103,7 +99,7 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	ComponentDatas.Add(Metadata(EntityType).CreateMetadataData());
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(Persistence().CreatePersistenceData());
-	ComponentDatas.Add(UnrealMetadata(StaticPath, ClientWorkerId, SubobjectNameToOffset).CreateUnrealMetadataData());
+	ComponentDatas.Add(UnrealMetadata({}, ClientWorkerId, SubobjectNameToOffset).CreateUnrealMetadataData());
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;

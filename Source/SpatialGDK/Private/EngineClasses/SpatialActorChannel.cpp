@@ -15,6 +15,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
+#include "RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 

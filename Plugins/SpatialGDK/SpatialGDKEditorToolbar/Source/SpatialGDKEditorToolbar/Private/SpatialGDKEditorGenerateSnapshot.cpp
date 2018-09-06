@@ -5,11 +5,16 @@
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
+#include "Utils/RepDataUtils.h"
+#include "Utils/RepLayoutUtils.h"
+#include "Utils/ComponentFactory.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
+#include "SpatialTypebindingManager.h"
 
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 #include "UObjectIterator.h"
+#include "EngineUtils.h"
 
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
@@ -170,6 +175,147 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 	return true;
 }
 
+bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
+{
+	Worker_EntityId CurrentEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
+
+	USpatialTypebindingManager* TypebindingManager = NewObject<USpatialTypebindingManager>();
+	TypebindingManager->Init();
+	WorkerAttributeSet OwningClientAttribute = { TEXT("workerId:") };  //YOLO - No owning client for now
+	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
+
+	for (TActorIterator<AActor> Iterator(World); Iterator; ++Iterator)
+	{
+		AActor* Actor = *Iterator;
+		if (Actor->IsEditorOnly())
+		{
+			continue;
+		}
+		UClass* ActorClass = Actor->GetClass();
+
+		if (ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings))
+		{
+			Worker_Entity ActorEntity;
+			ActorEntity.entity_id = CurrentEntityId++;
+
+			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+			check(Info);
+
+			WriteAclMap ComponentWriteAcl;
+			ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
+			ComponentWriteAcl.Add(Info->SingleClientComponent, UnrealWorkerPermission);
+			ComponentWriteAcl.Add(Info->MultiClientComponent, UnrealWorkerPermission);
+			ComponentWriteAcl.Add(Info->HandoverComponent, UnrealWorkerPermission);
+			ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
+			ComponentWriteAcl.Add(Info->RPCComponents[RPC_Server], UnrealWorkerPermission);
+			ComponentWriteAcl.Add(Info->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
+			ComponentWriteAcl.Add(Info->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
+
+			for (TSubclassOf<UActorComponent> ComponentClass : Info->ComponentClasses)
+			{
+				FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(ComponentClass);
+				check(ComponentInfo);
+
+				ComponentWriteAcl.Add(ComponentInfo->SingleClientComponent, UnrealWorkerPermission);
+				ComponentWriteAcl.Add(ComponentInfo->MultiClientComponent, UnrealWorkerPermission);
+				// Not adding handover since component's handover properties will be handled by the actor anyway
+				ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_Client], OwningClientOnly);
+				ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_Server], UnrealWorkerPermission);
+				ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
+				ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
+			}
+
+			FString StaticPath = Actor->GetPathName(nullptr);
+
+			uint32 CurrentOffset = 1;
+			SubobjectToOffsetMap SubobjectNameToOffset;
+			ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+			{
+				// Objects can only be allocated NetGUIDs if this is true.
+				if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+				{
+					SubobjectNameToOffset.Add(Object->GetName(), CurrentOffset);
+					CurrentOffset++;
+				}
+			});
+
+			TArray<Worker_ComponentData> Components;
+			Components.Add(Position(Coordinates::FromFVector(Actor->GetActorLocation())).CreatePositionData());	//YOLO - Check if actor location is the right location
+			Components.Add(Metadata(FSoftClassPath(ActorClass).ToString()).CreateMetadataData());
+			Components.Add(EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());			//YOLO - PlayerControllers are not placed in the level, and therefore do not have to have owning client only read ACLs
+			Components.Add(Persistence().CreatePersistenceData());
+			Components.Add(UnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());	//YOLO - Owning client is empty string, since it does not make sense in snapshot generation (should only affect player controllers anyway?)
+
+			FRepLayout RepLayout;
+			RepLayout.InitFromObjectClass(ActorClass);															// EXTREME YOLO, idk what this even does
+			TArray<uint16> InitialRepChanged = RepLayout_GetAllPropertyHandles(RepLayout);
+			TArray<uint16> InitialHandoverChanged;																// EXTREME YOLO, TODO, implement handover
+
+			FUnresolvedObjectsMap UnresolvedObjectsMap;
+			ComponentFactory DataFactory(UnresolvedObjectsMap, TypebindingManager);								//YOLO, no access to a net driver
+
+			TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor,
+				{
+					(uint8*)Actor,
+					InitialRepChanged,
+					RepLayout.Cmds,
+					RepLayout.BaseHandleToCmdIndex,
+					RepLayout.Parents,
+					InitialHandoverChanged
+				});																								// YOLO, taken from SpatialActorChannel::GetChangeState
+			Components.Append(DynamicComponentDatas);
+
+			// TODO: Handover, Taken from CreateActor in SpatialSender
+			Worker_ComponentData HandoverData = {};
+			HandoverData.component_id = Info->HandoverComponent;
+			HandoverData.schema_type = Schema_CreateComponentData(Info->HandoverComponent);
+			Components.Add(HandoverData);
+
+			for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
+			{
+				Worker_ComponentData RPCData = {};
+				RPCData.component_id = Info->RPCComponents[RPCType];
+				RPCData.schema_type = Schema_CreateComponentData(Info->RPCComponents[RPCType]);
+				Components.Add(RPCData);
+			}
+
+			for (TSubclassOf<UActorComponent> ComponentClass : Info->ComponentClasses)
+			{
+				FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(ComponentClass);
+				check(ComponentInfo);
+
+				TArray<UActorComponent*> ActorComponents = Actor->GetComponentsByClass(ComponentClass);
+				checkf(ActorComponents.Num() == 1, TEXT("Multiple replicated components of the same type are currently not supported by Unreal GDK"));
+				UActorComponent* ActorComponent = ActorComponents[0];
+
+				//YOLO - ignore change states
+				
+				//YOLO - ignore unresolved objects
+				
+				// Not adding handover since component's handover properties will be handled by the actor anyway
+
+				for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
+				{
+					Worker_ComponentData RPCData = {};
+					RPCData.component_id = ComponentInfo->RPCComponents[RPCType];
+					RPCData.schema_type = Schema_CreateComponentData(ComponentInfo->RPCComponents[RPCType]);
+					Components.Add(RPCData);
+				}
+			}
+
+			ActorEntity.component_count = Components.Num();
+			ActorEntity.components = Components.GetData();
+
+			if (Worker_SnapshotOutputStream_WriteEntity(OutputStream, &ActorEntity) == 0)
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 {
 	FString DirectoryPath = FPaths::GetPath(SavePath);
@@ -220,6 +366,12 @@ bool SpatialGDKGenerateSnapshot(UWorld* World)
 	}
 
 	if (!CreatePlaceholders(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		return false;
+	}
+
+	if (!CreateStartupActors(OutputStream, World))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 		return false;
