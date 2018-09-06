@@ -98,6 +98,31 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromUnrealObjectRef(const Unrea
 	return SpatialGuidCache->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
+// Rebase - Old code and needs merging with above.
+//FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef)
+//{
+//	UnrealObjectRef NetRemappedObjectRef = ObjectRef;
+//	NetworkRemapObjectRefPaths(NetRemappedObjectRef);
+//	return GetNetGUIDFromUnrealObjectRefInternal(NetRemappedObjectRef);
+//}
+
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const UnrealObjectRef& ObjectRef)
+{
+	FNetworkGUID* CachedGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
+	FNetworkGUID NetGUID = CachedGUID ? *CachedGUID : FNetworkGUID{};
+	if (!NetGUID.IsValid() && !ObjectRef.Path.empty())
+	{
+		FNetworkGUID OuterGUID;
+		if (!ObjectRef.Outer.empty())
+		{
+			OuterGUID = GetNetGUIDFromUnrealObjectRef(*ObjectRef.Outer.data());
+		}
+		NetGUID = RegisterNetGUIDFromPath(*ObjectRef.Path.data(), OuterGUID);
+		RegisterObjectRef(NetGUID, ObjectRef);
+	}
+	return NetGUID;
+}
+
 FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
@@ -219,7 +244,33 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObj
 	return NetGUID;
 }
 
-UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
+void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef) const
+	// If we have paths, network-sanitize all of them (e.g. removing PIE prefix).
+	if (!ObjectRef.Path.empty())
+	{
+		UnrealObjectRef* Iterator = &ObjectRef;
+		while (true) {
+			if (Iterator->Path.empty())
+			{
+				//UE_LOG(LogSpatialOSPackageMap, Warning, TEXT("%s: NetworkRemapObjectRefPaths found empty path"),
+				//	*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId());
+			} 
+			else
+			{
+				FString TempPath(*Iterator->Path);
+				GEngine->NetworkRemapPath(Driver, TempPath, true);
+				Iterator->Path = TempPath;
+			}
+			if (Iterator->Outer.empty())
+			{
+				break;
+			}
+			Iterator = Iterator->Outer.data();
+		}
+	}
+}
+
+improbable::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
 	const UnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
 	return ObjRef ? (UnrealObjectRef)*ObjRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
