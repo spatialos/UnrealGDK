@@ -348,7 +348,6 @@ void USpatialInteropPipelineBlock::AuthorityChangeImpl(const FComponentIdentifie
 void USpatialInteropPipelineBlock::CleanupDeletedEntity(const FEntityId& EntityId)
 {
 	EntityRegistry->RemoveFromRegistry(EntityId);
-	NetDriver->GetSpatialInterop()->RemoveActorChannel(EntityId.ToSpatialEntityId());
 	auto* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->RemoveEntityActor(EntityId);
 }

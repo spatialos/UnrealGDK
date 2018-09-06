@@ -126,6 +126,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 		SpatialNetDriver->GetEntityRegistry()->GetActorFromEntityId(ActorEntityId.ToSpatialEntityId()))
 	{
 		// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+		SpatialNetDriver->GetSpatialInterop()->RemoveActorChannel(ActorEntityId.ToSpatialEntityId());
 		DeleteEntityIfAuthoritative();
 	}
 #endif
@@ -135,6 +136,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 
 void USpatialActorChannel::Close()
 {
+	SpatialNetDriver->GetSpatialInterop()->RemoveActorChannel(ActorEntityId.ToSpatialEntityId());
 	DeleteEntityIfAuthoritative();
 	Super::Close();
 }
