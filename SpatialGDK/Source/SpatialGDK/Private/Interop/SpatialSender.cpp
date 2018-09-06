@@ -37,7 +37,20 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 
 	WorkerRequirementSet AnyUnrealWorkerOrClient = { WorkerAttribute, ClientAttribute };
 	WorkerRequirementSet AnyUnrealWorkerOrOwningClient = { WorkerAttribute, OwningClientAttribute };
-	WorkerRequirementSet ReadAcl = Actor->IsA<APlayerController>() ? AnyUnrealWorkerOrOwningClient : AnyUnrealWorkerOrClient;
+
+	WorkerRequirementSet ReadAcl;
+	if(Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+	{
+		ReadAcl = WorkersOnly;
+	}
+	else if(Actor->IsA<APlayerController>())
+	{
+		ReadAcl = AnyUnrealWorkerOrOwningClient;
+	}
+	else
+	{
+		ReadAcl = AnyUnrealWorkerOrClient;
+	}
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	check(Info);
