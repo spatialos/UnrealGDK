@@ -155,11 +155,9 @@ void CreateSchemaDatabase(TArray<UClass*> Classes)
 	});
 }
 
-bool SpatialGDKGenerateInteropCode()
+TArray<UClass*> GetAllSpatialTypeClasses()
 {
-	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-
-	TArray<UClass*> InteropGeneratedClasses;
+	TArray<UClass*> Classes;
 
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
@@ -169,14 +167,57 @@ bool SpatialGDKGenerateInteropCode()
 		}
 
 		// Ensure we don't process skeleton or reinitialized classes
-		if (	It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			||	It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
+		if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
+			|| It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
 		{
 			continue;
 		}
 
-		InteropGeneratedClasses.Add(*It);
+		Classes.Add(*It);
 	}
+
+	return Classes;
+}
+
+TArray<UClass*> GetAllSupportedClasses()
+{
+	TArray<UClass*> Classes;
+
+	for (TObjectIterator<UClass> It; It; ++It)
+	{
+		if (*It == AActor::StaticClass()) continue;
+
+		if (*It == UActorComponent::StaticClass()) continue;
+
+		// Any component which has child components
+		if (It->IsChildOf<USceneComponent>()) continue;
+
+		if (It->GetName().Contains("AbilitySystemComponent")) continue;
+		if (It->GetName().Contains("GameplayTasksComponent")) continue;
+
+		if (!(It->IsChildOf<AActor>() || It->IsChildOf<UActorComponent>())) continue;
+
+		// Doesn't let us save the schema database
+		if (It->IsChildOf<ALevelScriptActor>()) continue;
+
+		// Ensure we don't process skeleton or reinitialized classes
+		if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
+			|| It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
+		{
+			continue;
+		}
+
+		Classes.Add(*It);
+	}
+
+	return Classes;
+}
+
+bool SpatialGDKGenerateInteropCode()
+{
+	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+
+	TArray<UClass*> InteropGeneratedClasses = GetAllSpatialTypeClasses();
 
 	if (!CheckClassNameListValidity(InteropGeneratedClasses))
 	{
