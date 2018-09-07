@@ -118,8 +118,19 @@ void USpatialActorChannel::Close()
 	Super::Close();
 }
 
-TArray<uint16> USpatialActorChannel::GetAllPropertyHandles(FObjectReplicator& Replicator)
+bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 {
+	check(ObjectHasReplicator(Object));
+	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
+	TSharedPtr<FRepLayout>& RepLayout = Replicator.RepLayout;
+	check(Handle - 1 < RepLayout->BaseHandleToCmdIndex.Num());
+	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == REPCMD_DynamicArray;
+}
+
+FPropertyChangeState USpatialActorChannel::CreateInitialChangeState(UObject* Object)
+{
+	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
+
 	TArray<uint16> InitialRepChanged;
 
 	int32 DynamicArrayDepth = 0;
@@ -150,26 +161,7 @@ TArray<uint16> USpatialActorChannel::GetAllPropertyHandles(FObjectReplicator& Re
 		}
 	}
 
-	return InitialRepChanged;
-}
-
-bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
-{
-	TWeakObjectPtr<UObject> WeakObjectPtr(Object);
-	check(ObjectHasReplicator(WeakObjectPtr));
-	FObjectReplicator& Replicator = FindOrCreateReplicator(WeakObjectPtr).Get();
-	TSharedPtr<FRepLayout>& RepLayout = Replicator.RepLayout;
-	check(Handle - 1 < RepLayout->BaseHandleToCmdIndex.Num());
-	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == REPCMD_DynamicArray;
-}
-
-FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UObject* Subobject)
-{
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Subobject)).Get();
-
-	TArray<uint16> InitialRepChanged = GetAllPropertyHandles(Replicator);
-
-	return GetChangeStateForObject(Subobject, &Replicator, InitialRepChanged, TArray<uint16>());
+	return { InitialRepChanged, *Replicator.RepLayout };
 }
 
 bool USpatialActorChannel::ReplicateActor()
@@ -221,7 +213,6 @@ bool USpatialActorChannel::ReplicateActor()
 	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
 	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
 	RepFlags.bReplay = ActorWorld && (ActorWorld->DemoNetDriver == Connection->GetDriver());
-	RepFlags.bNetInitial = RepFlags.bNetInitial;
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
@@ -263,7 +254,6 @@ bool USpatialActorChannel::ReplicateActor()
 		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
 	}
 
-	const bool bCompareIndexSame = ActorReplicator->RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
 	// !!! DTB Here
@@ -289,24 +279,13 @@ bool USpatialActorChannel::ReplicateActor()
 	//	}
 	//}
 
-	// We can skip the core actor if there are no new changelists to send, and we are not creating a new entity.
-	bool bReplicateCoreActor = true;
-	if (!bCreatingNewEntity)// && HandoverChanged.Num() == 0)
-	{
-		if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
-		{
-			UpdateChangelistHistory(ActorReplicator->RepState);
-			bReplicateCoreActor = false;
-		}
-	}
-
 	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
-	if (bReplicateCoreActor && (RepFlags.bNetInitial || RepChanged.Num() > 0/* || HandoverChanged.Num() > 0*/))
+	if (bCreatingNewEntity || RepChanged.Num() > 0/* || HandoverChanged.Num() > 0*/)
 	{		
-		if (RepFlags.bNetInitial && bCreatingNewEntity)
+		if (bCreatingNewEntity)
 		{
 			// SAHIL: CHECK IF YOU PROPERLY FIX THIS
 			//check(!Actor->IsFullNameStableForNetworking() || Interop->CanSpawnReplicatedStablyNamedActors());
@@ -339,17 +318,14 @@ bool USpatialActorChannel::ReplicateActor()
 				UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
 			}
 
-			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
-			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
-			TArray<uint16> InitialRepChanged = GetAllPropertyHandles(*ActorReplicator);
-
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			Sender->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, HandoverChanged);
+			Sender->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId);
 		}
 		else
 		{
-			Sender->SendComponentUpdates(Actor, this, GetChangeStateForObject(Actor, ActorReplicator, RepChanged, HandoverChanged));
+			FPropertyChangeState PropertyChangeState = { RepChanged, GetObjectRepLayout(Actor) };
+			Sender->SendComponentUpdates(Actor, this, PropertyChangeState);
 		}
 
 		bWroteSomethingImportant = true;
@@ -357,8 +333,9 @@ bool USpatialActorChannel::ReplicateActor()
 		{
 			ActorReplicator->RepState->HistoryEnd++;
 		}
-		UpdateChangelistHistory(ActorReplicator->RepState);
 	}
+
+	UpdateChangelistHistory(ActorReplicator->RepState);
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 
@@ -374,13 +351,10 @@ bool USpatialActorChannel::ReplicateActor()
 
 		for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 		{
-			if (ActorComponent->GetIsReplicated()) // Only replicated subobjects with type bindings
+			if (ClassInfo->SubobjectClasses.Contains(ActorComponent->GetClass()))
 			{
-				if(ClassInfo->SubobjectClasses.Find(ActorComponent->GetClass()) != nullptr)
-				{
-					bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, RepFlags);
-					bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-				}
+				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, RepFlags);
+				bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 			}
 		}
 	}
@@ -412,14 +386,14 @@ bool USpatialActorChannel::ReplicateActor()
 	return bWroteSomethingImportant;
 }
 
-bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicationFlags &RepFlags)
+bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)
 {
 	if (!NetDriver->TypebindingManager->IsSupportedClass(Object->GetClass()))
 	{
 		return false;
 	}
 
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Object)).Get();
+	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
 	Replicator.ChangelistMgr->Update(Object, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
@@ -436,7 +410,6 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicatio
 		Replicator.RepLayout->MergeChangeList((uint8*)Object, HistoryItem.Changed, Temp, RepChanged);
 	}
 
-	const bool bCompareIndexSame = Replicator.RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	Replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
 	// TODO: Handover
@@ -444,7 +417,8 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicatio
 
 	if (RepChanged.Num() > 0)
 	{
-		Sender->SendComponentUpdates(Object, this, GetChangeStateForObject(Object, &Replicator, RepChanged, HandoverChanged));
+		FPropertyChangeState PropertyChangeState = { RepChanged, GetObjectRepLayout(Object) };
+		Sender->SendComponentUpdates(Object, this, PropertyChangeState);
 		Replicator.RepState->HistoryEnd++;
 	}
 
@@ -529,7 +503,7 @@ FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid());
 
 	TargetObject->PreNetReceive();
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(TargetObject)).Get();
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 
 	return Replicator;
@@ -540,8 +514,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
 	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
 
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(TargetObject)).Get();
-
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 	Replicator.RepNotifies = RepNotifies;
 	Replicator.CallRepNotifies(false);

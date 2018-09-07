@@ -823,13 +823,12 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		{
 			check(Property->IsA<UArrayProperty>());
 
-			// TODO: storedarray's data will be invalidated if this is the first resolved ref 
 			Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
 
 			FScriptArray* StoredArray = (FScriptArray*)(StoredData + AbsOffset);
 			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
-			int32 NewMaxOffset = FMath::Min(StoredArray->Num(), Array->Num()) * Property->ElementSize;
+			int32 NewMaxOffset = Array->Num() * Property->ElementSize;
 
 			bool bArrayHasUnresolved = false;
 			ResolveObjectReferences(RepLayout, ReplicatedObject, *ObjectReferences.Array, (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped, bArrayHasUnresolved);
@@ -877,10 +876,10 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				bOutSomeObjectsWereMapped = true;
 			}
 
-			//if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
-			//{
-			//	Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
-			//}
+			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+			{
+				Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
+			}
 
 			if (ObjectReferences.bSingleProp)
 			{

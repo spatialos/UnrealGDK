@@ -29,10 +29,10 @@ public:
 	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, const FPropertyChangeState& PropertyChangeState);
 
 private:
-	Worker_ComponentData CreateComponentData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup);
-	Worker_ComponentUpdate CreateComponentUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething);
+	Worker_ComponentData CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup);
+	Worker_ComponentUpdate CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething);
 
-	bool FillSchemaObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
+	bool FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 	void AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
 
 	USpatialNetDriver* NetDriver;

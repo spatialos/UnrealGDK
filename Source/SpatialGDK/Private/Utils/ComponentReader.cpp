@@ -65,7 +65,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	for (std::uint32_t FieldId : UpdateFields)
 	{
 		// FieldId is the same as rep handle
-		check((int)FieldId - 1 < BaseHandleToCmdIndex.Num());
+		check(FieldId > 0 && (int)FieldId - 1 < BaseHandleToCmdIndex.Num());
 		const FRepLayoutCmd& Cmd = Cmds[BaseHandleToCmdIndex[FieldId - 1].CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 

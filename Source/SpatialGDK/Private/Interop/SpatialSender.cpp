@@ -23,7 +23,7 @@ void USpatialSender::Init(USpatialNetDriver* NetDriver)
 	Receiver = NetDriver->Receiver;
 }
 
-Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, const FVector& Location, const FString& EntityType, const FPropertyChangeState& InitialChanges, USpatialActorChannel* Channel)
+Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, const FVector& Location, const FString& EntityType, USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
 
@@ -108,6 +108,8 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	ComponentFactory DataFactory(UnresolvedObjectsMap, NetDriver);
 
+	FPropertyChangeState InitialChanges = Channel->CreateInitialChangeState(Actor);
+
 	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, InitialChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
 
@@ -132,8 +134,8 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 
 	for (UClass* SubobjectClass : Info->SubobjectClasses)
 	{
-		FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
-		check(ComponentInfo);
+		FClassInfo* SubobjectInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
+		check(SubobjectInfo);
 
 		TArray<UObject*> DefaultSubobjects;
 		Actor->GetDefaultSubobjects(DefaultSubobjects);
@@ -144,7 +146,7 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 		check(FoundSubobject);
 		UObject* Subobject = *FoundSubobject;
 
-		FPropertyChangeState SubobjectChanges = Channel->CreateSubobjectChangeState(Subobject);
+		FPropertyChangeState SubobjectChanges = Channel->CreateInitialChangeState(Subobject);
 
 		// Reset unresolved objects so they can be filled again by DataFactory
 		UnresolvedObjectsMap.Empty();
@@ -162,8 +164,8 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 		for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
 		{
 			Worker_ComponentData RPCData = {};
-			RPCData.component_id = ComponentInfo->RPCComponents[RPCType];
-			RPCData.schema_type = Schema_CreateComponentData(ComponentInfo->RPCComponents[RPCType]);
+			RPCData.component_id = SubobjectInfo->RPCComponents[RPCType];
+			RPCData.schema_type = Schema_CreateComponentData(SubobjectInfo->RPCComponents[RPCType]);
 			ComponentDatas.Add(RPCData);
 		}
 	}
@@ -291,13 +293,13 @@ void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
-void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
+void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId)
 {
 	UE_LOG(LogTemp, Log, TEXT("Sending create entity request for %s"), *Channel->Actor->GetName());
 
 	FSoftClassPath ActorClassPath(Channel->Actor->GetClass());
 
-	Worker_RequestId RequestId = CreateEntity(PlayerWorkerId, Location, ActorClassPath.ToString(), Channel->GetChangeState(RepChanged, HandoverChanged), Channel);
+	Worker_RequestId RequestId = CreateEntity(PlayerWorkerId, Location, ActorClassPath.ToString(), Channel);
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
@@ -514,7 +516,8 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object)
 			// End with zero to indicate the end of the list of handles.
 			PropertyHandles.Add(0);
 
-			SendComponentUpdates(ReplicatingObject, DependentChannel, DependentChannel->GetChangeStateForObject(ReplicatingObject, nullptr, PropertyHandles, TArray<uint16>()));
+			FPropertyChangeState PropertyChangeState = { PropertyHandles, DependentChannel->GetObjectRepLayout(ReplicatingObject) };
+			SendComponentUpdates(ReplicatingObject, DependentChannel, PropertyChangeState);
 		}
 	}
 

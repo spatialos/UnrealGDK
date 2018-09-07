@@ -54,49 +54,16 @@ public:
 		return NetDriver->View->GetAuthority(EntityId, Info->RPCComponents[RPC_Client]) == WORKER_AUTHORITY_AUTHORITATIVE;
 	}
 
-	FORCEINLINE FPropertyChangeState GetChangeState(const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged) const
-	{
-		return {
-			(uint8*)Actor,
-			RepChanged,
-			ActorReplicator->RepLayout->Cmds,
-			ActorReplicator->RepLayout->BaseHandleToCmdIndex,
-			ActorReplicator->RepLayout->Parents,
-			HandoverChanged
-		};
-	}
-
-	FORCEINLINE FPropertyChangeState GetChangeStateForObject(UObject* Obj, FObjectReplicator* Replicator, const TArray<uint16>& RepChanged, const TArray<uint16>& HandoverChanged)
-	{
-		if (!Replicator)
-		{
-			auto WeakObjectPtr = TWeakObjectPtr<UObject>(Obj);
-			check(ObjectHasReplicator(WeakObjectPtr));
-			Replicator = &FindOrCreateReplicator(WeakObjectPtr).Get();
-		}
-
-		return {
-			(uint8*)Obj,
-			RepChanged,
-			Replicator->RepLayout->Cmds,
-			Replicator->RepLayout->BaseHandleToCmdIndex,
-			Replicator->RepLayout->Parents,
-			HandoverChanged
-		};
-	}
-
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
 	{
-		auto WeakObjectPtr = TWeakObjectPtr<UObject>(Object);
-		check(ObjectHasReplicator(WeakObjectPtr));
-		return *FindOrCreateReplicator(WeakObjectPtr)->RepLayout;
+		check(ObjectHasReplicator(Object));
+		return *FindOrCreateReplicator(Object)->RepLayout;
 	}
 
 	FORCEINLINE FRepStateStaticBuffer& GetObjectStaticBuffer(UObject* Object)
 	{
-		auto WeakObjectPtr = TWeakObjectPtr<UObject>(Object);
-		check(ObjectHasReplicator(WeakObjectPtr));
-		return FindOrCreateReplicator(WeakObjectPtr)->RepState->StaticBuffer;
+		check(ObjectHasReplicator(Object));
+		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
 	}
 
 	// UChannel interface
@@ -106,10 +73,9 @@ public:
 	virtual void SetChannelActor(AActor* InActor) override;
 
 	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
-	bool ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags);
-	virtual bool ReplicateSubobject(UObject *Obj, FOutBunch &Bunch, const FReplicationFlags &RepFlags) override;
-	FPropertyChangeState CreateSubobjectChangeState(UObject* Subobject);
-	TArray<uint16> GetAllPropertyHandles(FObjectReplicator& Replicator);
+	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
+	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
+	FPropertyChangeState CreateInitialChangeState(UObject* Object);
 
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
