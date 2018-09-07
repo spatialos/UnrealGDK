@@ -174,6 +174,16 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	UnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
 	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
 	UnrealObjectRefToNetGUID.Remove(*ActorRef);
+
+	UnrealObjectRef SubobjectRef(ActorRef->Entity, ActorRef->Offset + 1);
+	while(UnrealObjectRefToNetGUID.Contains(SubobjectRef))
+	{
+		FNetworkGUID SubobjectNetGUID = UnrealObjectRefToNetGUID[SubobjectRef];
+		NetGUIDToUnrealObjectRef.Remove(SubobjectNetGUID);
+		UnrealObjectRefToNetGUID.Remove(SubobjectRef);
+
+		SubobjectRef.Offset++;
+	}
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef)
