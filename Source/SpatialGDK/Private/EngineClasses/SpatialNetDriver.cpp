@@ -34,6 +34,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
+	bConnectAsClient = bInitAsClient;
+
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
@@ -41,11 +43,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	TypebindingManager = NewObject<USpatialTypebindingManager>();
 	TypebindingManager->Init();
-
-	//SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(SpatialOSInstance, TEXT("Unreal"));
-
-	WorkerConfig.WorkerType = bInitAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
-	WorkerConfig.WorkerId = WorkerConfig.WorkerType + FGuid::NewGuid().ToString();
 
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)
@@ -114,7 +111,7 @@ void USpatialNetDriver::Connect()
 	Connection = NewObject<USpatialWorkerConnection>();
 	Connection->OnConnected.BindUFunction(this, FName("OnConnected"));
 
-	Connection->Connect(WorkerConfig);
+	Connection->Connect(bConnectAsClient);
 }
 
 void USpatialNetDriver::OnConnected()

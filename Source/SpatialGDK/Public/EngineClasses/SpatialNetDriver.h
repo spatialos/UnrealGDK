@@ -103,9 +103,10 @@ public:
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
-private:
-	ReceptionistConfig WorkerConfig;
+	// TODO: Remove for something better
+	bool bConnectAsClient;
 
+private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	UPROPERTY()

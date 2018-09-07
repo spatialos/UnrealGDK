@@ -54,11 +54,12 @@ struct LocatorConfig : public ConnectionConfig
 	{
 		const TCHAR* commandLine = FCommandLine::Get();
 
+		FParse::Value(commandLine, *FString("projectName"), LoginToken);
 		FParse::Value(commandLine, *FString("loginToken"), LoginToken);
 		FParse::Value(commandLine, *FString("locatorHost"), LocatorHost);
 	}
 
+	FString ProjectName;
 	FString LocatorHost;
 	FString LoginToken;
-	Worker_LocatorParameters LocatorParameters;
 };
