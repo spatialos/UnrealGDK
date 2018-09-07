@@ -84,28 +84,17 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	UE_LOG(LogTemp, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
 	// If we have authority and aren't trying to delete a critical entity, delete it
-	if (bHasAuthority && !IsCriticalEntity())
+	if (bHasAuthority && !IsSingletonEntity())
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 		Receiver->CleanupDeletedEntity(EntityId);
 	}
 }
 
-bool USpatialActorChannel::IsCriticalEntity()
+bool USpatialActorChannel::IsSingletonEntity()
 {
-	// Don't delete if the actor is the spawner
-	if (EntityId == SpatialConstants::EntityIds::SPAWNER_ENTITY_ID)
-	{
-		return true;
-	}
-
 	// Don't delete if singleton entity
-	if (NetDriver->GlobalStateManager->IsSingletonEntity(EntityId))
-	{
-		return true;
-	}
-
-	return false;
+	return NetDriver->GlobalStateManager->IsSingletonEntity(EntityId);
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)

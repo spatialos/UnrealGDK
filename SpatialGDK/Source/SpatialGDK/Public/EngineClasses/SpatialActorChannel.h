@@ -125,7 +125,7 @@ protected:
 
 private:
 	void DeleteEntityIfAuthoritative();
-	bool IsCriticalEntity();
+	bool IsSingletonEntity();
 
 	void UpdateSpatialPosition();
 
