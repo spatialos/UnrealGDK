@@ -18,10 +18,7 @@ class USpatialWorkerConnection : public UObject
 public:
 	virtual void FinishDestroy() override;
 
-	void Init();
-
-	void Connect(ReceptionistConfig Config);
-	void Connect(LocatorConfig Config);
+	void Connect(bool bConnectAsClient);
 
 	bool IsConnected();
 
@@ -38,11 +35,19 @@ public:
 	OnConnectedDelegate OnConnected;
 
 private:
+	void ConnectToReceptionist(bool bConnectAsClient);
+	void ConnectToLocator();
+
 	Worker_ConnectionParameters CreateConnectionParameters(ConnectionConfig& Config);
+	bool ShouldConnectWithLocator();
 
 private:
 	Worker_Connection* WorkerConnection;
-	Worker_Locator* Locator;
+	Worker_Locator* WorkerLocator;
+
+	// TODO: Better names?
+	ReceptionistConfig ConfigReceptionist;
+	LocatorConfig ConfigLocator;
 
 	bool bIsConnected;
 };
