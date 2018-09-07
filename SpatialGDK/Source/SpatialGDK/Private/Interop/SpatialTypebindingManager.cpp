@@ -13,62 +13,29 @@
 
 void USpatialTypebindingManager::Init()
 {
+	TSoftObjectPtr<USchemaDatabase> SchemaDatabasePtr(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")));
+	SchemaDatabasePtr.LoadSynchronous();
+	SchemaDatabase = SchemaDatabasePtr.Get();
+
+	if(SchemaDatabase == nullptr)
+	{
+		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication")));
+		return;
+	}
+
 	FindSupportedClasses();
 	CreateTypebindings();
 }
 
 void USpatialTypebindingManager::FindSupportedClasses()
 {
-	// Load the asset registry module
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
-	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
-
-	// Before running, ensure all blueprint classes that have been tagged with 'spatial' are loaded
-	TArray<FAssetData> AssetData;
-	uint32 SpatialClassFlags = 0;
-	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetFName(), AssetData, true);
-	for (FAssetData& It : AssetData)
-	{
-		if (It.GetTagValue("SpatialClassFlags", SpatialClassFlags))
-		{
-			if (SpatialClassFlags & SPATIALCLASS_GenerateTypeBindings)
-			{
-				FString ObjectPath = It.ObjectPath.ToString() + TEXT("_C");
-				UClass* LoadedClass = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
-				UE_LOG(LogTemp, Log, TEXT("Found spatial blueprint class `%s`."), *ObjectPath);
-			}
-		}
-	}
-
-	for (TObjectIterator<UClass> It; It; ++It)
-	{
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings) == false)
-		{
-			continue;
-		}
-
-		// Ensure we don't process skeleton or reinitialized classes
-		if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			|| It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
-		{
-			continue;
-		}
-
-		SupportedClasses.Add(*It);
-	}
+	SchemaDatabase->ClassToSchema.GetKeys(SupportedClasses);
 }
 
 void USpatialTypebindingManager::CreateTypebindings()
 {
-	int ComponentId = 100010;
 	for (UClass* Class : SupportedClasses)
 	{
-		auto AddComponentId = [Class, &ComponentId, this]()
-		{
-			ComponentToClassMap.Add(ComponentId, Class);
-			return ComponentId++;
-		};
-
 		FClassInfo Info;
 
 		for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
@@ -112,13 +79,27 @@ void USpatialTypebindingManager::CreateTypebindings()
 			}
 		}
 
-		Info.SingleClientComponent = AddComponentId();
-		Info.MultiClientComponent = AddComponentId();
-		Info.HandoverComponent = AddComponentId();
-		for (int RPCType = RPC_Client; RPCType < RPC_Count; RPCType++)
-		{
-			Info.RPCComponents[RPCType] = AddComponentId();
-		}
+		// TODO: Probably clean up duplication?
+		Info.SingleClientComponent = SchemaDatabase->ClassToSchema[Class].SingleClientRepData;
+		ComponentToClassMap.Add(Info.SingleClientComponent, Class);
+
+		Info.MultiClientComponent = SchemaDatabase->ClassToSchema[Class].MultiClientRepData;
+		ComponentToClassMap.Add(Info.MultiClientComponent, Class);
+
+		Info.HandoverComponent = SchemaDatabase->ClassToSchema[Class].HandoverData;
+		ComponentToClassMap.Add(Info.HandoverComponent, Class);
+
+		Info.RPCComponents[RPC_Client] = SchemaDatabase->ClassToSchema[Class].ClientRPCs;
+		ComponentToClassMap.Add(Info.RPCComponents[RPC_Client], Class);
+
+		Info.RPCComponents[RPC_Server] = SchemaDatabase->ClassToSchema[Class].ServerRPCs;
+		ComponentToClassMap.Add(Info.RPCComponents[RPC_Server], Class);
+
+		Info.RPCComponents[RPC_NetMulticast] = SchemaDatabase->ClassToSchema[Class].NetMulticastRPCs;
+		ComponentToClassMap.Add(Info.RPCComponents[RPC_NetMulticast], Class);
+
+		Info.RPCComponents[RPC_CrossServer] = SchemaDatabase->ClassToSchema[Class].CrossServerRPCs;
+		ComponentToClassMap.Add(Info.RPCComponents[RPC_CrossServer], Class);
 
 		if (Class->IsChildOf<AActor>())
 		{

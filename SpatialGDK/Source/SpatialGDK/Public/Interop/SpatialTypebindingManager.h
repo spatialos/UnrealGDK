@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Utils/SchemaDatabase.h"
 
 #include <improbable/c_worker.h>
 
@@ -71,7 +72,10 @@ private:
 	void FindSupportedClasses();
 	void CreateTypebindings();
 
+private:
+	USchemaDatabase* SchemaDatabase;
 	TArray<UClass*> SupportedClasses;
 	TMap<UClass*, FClassInfo> ClassInfoMap;
 	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
+
 };
