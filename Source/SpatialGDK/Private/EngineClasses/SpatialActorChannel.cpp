@@ -163,13 +163,13 @@ bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == REPCMD_DynamicArray;
 }
 
-FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UActorComponent* Component)
+FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UObject* Subobject)
 {
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Component)).Get();
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Subobject)).Get();
 
 	TArray<uint16> InitialRepChanged = GetAllPropertyHandles(Replicator);
 
-	return GetChangeStateForObject(Component, &Replicator, InitialRepChanged, TArray<uint16>());
+	return GetChangeStateForObject(Subobject, &Replicator, InitialRepChanged, TArray<uint16>());
 }
 
 bool USpatialActorChannel::ReplicateActor()
@@ -368,14 +368,14 @@ bool USpatialActorChannel::ReplicateActor()
 	}
 	else
 	{
+		FOutBunch DummyOutBunch;
+
 		for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 		{
 			if (ActorComponent->GetIsReplicated()) // Only replicated subobjects with type bindings
 			{
-				if (NetDriver->TypebindingManager->IsSupportedClass(ActorComponent->GetClass()))
-				{
-					bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, RepFlags);
-				}
+				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, RepFlags);
+				bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 			}
 		}
 	}
@@ -409,6 +409,11 @@ bool USpatialActorChannel::ReplicateActor()
 
 bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicationFlags &RepFlags)
 {
+	if (!NetDriver->TypebindingManager->IsSupportedClass(Object->GetClass()))
+	{
+		return false;
+	}
+
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Object)).Get();
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
 	Replicator.ChangelistMgr->Update(Object, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
@@ -442,6 +447,12 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicatio
 	Replicator.RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 
 	return RepChanged.Num() > 0;
+}
+
+bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, FOutBunch &Bunch, const FReplicationFlags &RepFlags)
+{
+	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
+	return ReplicateSubobject(Obj, RepFlags);
 }
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)

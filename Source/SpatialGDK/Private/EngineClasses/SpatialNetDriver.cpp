@@ -1101,12 +1101,5 @@ void USpatialNetDriver::AddActorChannel(const Worker_EntityId& EntityId, USpatia
 
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(const Worker_EntityId& EntityId) const
 {
-	USpatialActorChannel* ActorChannel = EntityToActorChannel.FindRef(EntityId);
-	if (ActorChannel == nullptr)
-	{
-		// Can't find actor channel for this entity, give up.
-		return nullptr;
-	}
-
-	return ActorChannel;
+	return EntityToActorChannel.FindRef(EntityId);
 }

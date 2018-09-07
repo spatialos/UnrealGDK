@@ -111,7 +111,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				{
 					if (IsSupportedClass(Component->GetClass()))
 					{
-						Info.ComponentClasses.Add(Component->GetClass());
+						Info.SubobjectClasses.Add(Component->GetClass());
 					}
 				}
 
@@ -129,9 +129,20 @@ void USpatialTypebindingManager::CreateTypebindings()
 
 							if (IsSupportedClass(Node->ComponentTemplate->GetClass()))
 							{
-								Info.ComponentClasses.Add(Node->ComponentTemplate->GetClass());
+								Info.SubobjectClasses.Add(Node->ComponentTemplate->GetClass());
 							}
 						}
+					}
+				}
+
+				// Iterate over all subobjects and add any non ActorComponents
+				TArray<UObject*> DefaultSubobjects;
+				ContainerCDO->GetDefaultSubobjects(DefaultSubobjects);
+				for (auto Subobject : DefaultSubobjects)
+				{
+					if (Cast<UActorComponent>(Subobject) == nullptr)
+					{
+						Info.SubobjectClasses.Add(Subobject->GetClass());
 					}
 				}
 			}
