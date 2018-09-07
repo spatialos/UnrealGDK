@@ -5,12 +5,12 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-#include "SpatialConnection.generated.h"
+#include "SpatialWorkerConnection.generated.h"
 
 DECLARE_DELEGATE(OnConnectedDelegate)
 
 UCLASS()
-class USpatialConnection : public UObject
+class USpatialWorkerConnection : public UObject
 {
 
 	GENERATED_BODY()

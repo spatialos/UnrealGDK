@@ -2,9 +2,9 @@
 
 #include "SpatialOutputDevice.h"
 
-#include "SpatialConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 
-FSpatialOutputDevice::FSpatialOutputDevice(USpatialConnection* InConnection, FString LoggerName)
+FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FString LoggerName)
 {
 	Connection = InConnection;
 	Name = LoggerName;

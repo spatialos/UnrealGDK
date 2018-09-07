@@ -18,7 +18,7 @@ class USpatialActorChannel;
 class USpatialNetConnection;
 class USpatialPackageMapClient;
 
-class USpatialConnection;
+class USpatialWorkerConnection;
 class USpatialView;
 class USpatialSender;
 class USpatialReceiver;
@@ -85,7 +85,7 @@ public:
 	USpatialActorChannel* GetActorChannelByEntityId(const Worker_EntityId& EntityId) const;
 
 	UPROPERTY()
-	USpatialConnection* Connection;
+	USpatialWorkerConnection* Connection;
 	UPROPERTY()
 	USpatialView* View;
 	UPROPERTY()

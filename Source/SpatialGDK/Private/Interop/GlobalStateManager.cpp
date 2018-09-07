@@ -6,7 +6,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/Connection/SpatialConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"

@@ -7,12 +7,12 @@
 
 #include <improbable/c_worker.h>
 
-class USpatialConnection;
+class USpatialWorkerConnection;
 
 class SPATIALGDK_API FSpatialOutputDevice : public FOutputDevice
 {
 public:
-	FSpatialOutputDevice(USpatialConnection* InConnection, FString LoggerName);
+	FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FString LoggerName);
 	~FSpatialOutputDevice();
 
 	void AddRedirectCategory(const FName& Category);
@@ -25,6 +25,6 @@ public:
 protected:
 	ELogVerbosity::Type FilterLevel;
 	TSet<FName> CategoriesToRedirect;
-	USpatialConnection* Connection;
+	USpatialWorkerConnection* Connection;
 	FString Name;
 };

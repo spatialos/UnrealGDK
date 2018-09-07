@@ -7,7 +7,7 @@
 
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
-#include "Interop/Connection/SpatialConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
