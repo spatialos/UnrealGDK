@@ -46,7 +46,7 @@ public:
 	void Init(USpatialNetDriver* NetDriver);
 
 	// Actor Updates
-	void SendComponentUpdates(UObject* Object, USpatialActorChannel* Channel, const FPropertyChangeState& Changes);
+	void SendComponentUpdates(UObject* Object, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
@@ -55,7 +55,7 @@ public:
 	void SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
 
-	void ResolveOutgoingOperations(UObject* Object);
+	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
 	void ResolveOutgoingRPCs(UObject* Object);
 
 private:
@@ -63,8 +63,8 @@ private:
 	Worker_RequestId CreateEntity(const FString& ClientWorkerId, const FVector& Position, const FString& Metadata, USpatialActorChannel* Channel);
 
 	// Queuing
-	void ResetOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle);
-	void QueueOutgoingRepUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects);
+	void ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover);
+	void QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects, bool bIsHandover);
 	void QueueOutgoingRPC(const UObject* UnresolvedObject, UObject* TargetObject, UFunction* Function, void* Parameters);
 
 	// RPC Construction
@@ -78,8 +78,12 @@ private:
 	USpatialPackageMapClient* PackageMap;
 	USpatialTypebindingManager* TypebindingManager;
 
-	FChannelToHandleToUnresolved PropertyToUnresolved;
-	FOutgoingRepUpdates ObjectToUnresolved;
+	FChannelToHandleToUnresolved RepPropertyToUnresolved;
+	FOutgoingRepUpdates RepObjectToUnresolved;
+
+	FChannelToHandleToUnresolved HandoverPropertyToUnresolved;
+	FOutgoingRepUpdates HandoverObjectToUnresolved;
+
 	FOutgoingRPCMap OutgoingRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;

@@ -75,7 +75,9 @@ public:
 	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
 	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
-	FPropertyChangeState CreateInitialChangeState(UObject* Object);
+
+	FRepChangeState CreateInitialRepChangeState(UObject* Object);
+	FHandoverChangeState CreateInitialHandoverChangeState(FClassInfo* ClassInfo);
 
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
@@ -98,6 +100,9 @@ private:
 
 	FVector GetActorSpatialPosition(AActor* Actor);
 
+	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
+	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
+
 public:
 	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.
 	//In the future we may not use an actor channel for non-core actors.
@@ -118,7 +123,10 @@ private:
 
 	FVector LastSpatialPosition;
 
-	TArray<uint8> HandoverPropertyShadowData;
+	// Shadow data for Handover properties.
+	// Here we do the same as what is done natively for replicators.
+	TArray<uint8>* ActorHandoverShadowData;
+	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>> HandoverShadowDataMap;
 
 	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
 	UPROPERTY(Transient)

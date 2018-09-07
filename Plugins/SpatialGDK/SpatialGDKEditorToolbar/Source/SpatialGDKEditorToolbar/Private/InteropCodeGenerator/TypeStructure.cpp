@@ -474,7 +474,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			PropertyInfo->HandoverData->Handle = HandoverDataHandle++;
 		}
 		return true;
-	}, true);
+	}, false);
 
 	return TypeNode;
 }
@@ -524,7 +524,7 @@ FCmdHandlePropertyMap GetFlatHandoverData(TSharedPtr<FUnrealType> TypeInfo)
 			HandoverData.Add(PropertyInfo->HandoverData->Handle, PropertyInfo);
 		}
 		return true;
-	}, true);
+	}, false);
 
 	// Sort by property handle.
 	HandoverData.KeySort([](uint16 A, uint16 B)
