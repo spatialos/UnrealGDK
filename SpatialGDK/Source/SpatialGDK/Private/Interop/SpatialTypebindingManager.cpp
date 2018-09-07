@@ -141,7 +141,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				ContainerCDO->GetDefaultSubobjects(DefaultSubobjects);
 				for (auto Subobject : DefaultSubobjects)
 				{
-					if (Cast<UActorComponent>(Subobject) == nullptr)
+					if (!Subobject->IsA<UActorComponent>())
 					{
 						Info.SubobjectClasses.Add(Subobject->GetClass());
 					}
