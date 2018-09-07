@@ -16,6 +16,8 @@
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
+#include "Utils/SchemaDatabase.h"
+#include "Engine/LevelScriptActor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
@@ -121,10 +123,44 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
+void CreateSchemaDatabase(TArray<UClass*> Classes)
+{
+	AsyncTask(ENamedThreads::GameThread, [Classes]{
+		FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+
+		UPackage *Package = CreatePackage(nullptr, *PackagePath);
+
+		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), *FString(TEXT("SchemaDatabase")), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+
+		int ComponentId = 100010;
+		for(UClass* Class : Classes)
+		{
+			FSchemaData SchemaData;
+			SchemaData.SingleClientRepData = ComponentId++;
+			SchemaData.MultiClientRepData = ComponentId++;
+			SchemaData.HandoverData = ComponentId++;
+			SchemaData.ClientRPCs = ComponentId++;
+			SchemaData.ServerRPCs = ComponentId++;
+			SchemaData.NetMulticastRPCs = ComponentId++;
+			SchemaData.CrossServerRPCs = ComponentId++;
+
+			SchemaDatabase->ClassToSchema.Add(Class, SchemaData);
+		}
+
+		FAssetRegistryModule::AssetCreated(SchemaDatabase);
+		SchemaDatabase->MarkPackageDirty();
+
+		FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
+		bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
+	});
+}
+
 bool SpatialGDKGenerateInteropCode()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+
 	TArray<UClass*> InteropGeneratedClasses;
+
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
 		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings) == false)
@@ -132,7 +168,7 @@ bool SpatialGDKGenerateInteropCode()
 			continue;
 		}
 
-		// Ensure we don't process skeleton or reinitialised classes
+		// Ensure we don't process skeleton or reinitialized classes
 		if (	It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
 			||	It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
 		{
@@ -186,13 +222,7 @@ bool SpatialGDKGenerateInteropCode()
 		return false;
 	}
 
-	//// Run Codegen
-	//const FString CodegenPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/Codegen.bat")));
-	//if (!RunProcess(CodegenPath, TEXT("")))
-	//{
-	//	UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Spatial C++ Worker Codegen failed. Path: '%s'."), *CodegenPath);
-	//	return false;
-	//}
+	CreateSchemaDatabase(InteropGeneratedClasses);
 
 	return true;
 }
