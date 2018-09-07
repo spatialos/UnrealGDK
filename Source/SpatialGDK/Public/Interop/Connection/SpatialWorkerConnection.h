@@ -38,16 +38,15 @@ private:
 	void ConnectToReceptionist(bool bConnectAsClient);
 	void ConnectToLocator();
 
-	Worker_ConnectionParameters CreateConnectionParameters(ConnectionConfig& Config);
+	Worker_ConnectionParameters CreateConnectionParameters(FConnectionConfig& Config);
 	bool ShouldConnectWithLocator();
 
 private:
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLocator;
 
-	// TODO: Better names?
-	ReceptionistConfig ConfigReceptionist;
-	LocatorConfig ConfigLocator;
+	FReceptionistConfig ReceptionistConfig;
+	FLocatorConfig LocatorConfig;
 
 	bool bIsConnected;
 };

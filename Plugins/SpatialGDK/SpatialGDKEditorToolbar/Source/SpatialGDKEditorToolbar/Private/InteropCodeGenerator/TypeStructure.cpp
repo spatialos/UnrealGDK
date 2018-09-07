@@ -409,7 +409,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			// Make sure we have the correct property via the checksums.
 			for (auto& PropertyPair : TypeNode->Properties)
 			{
-				if(PropertyPair.Value->CompatibleChecksum == Cmd.CompatibleChecksum)
+				if (PropertyPair.Value->CompatibleChecksum == Cmd.CompatibleChecksum)
 				{
 					PropertyNode = PropertyPair.Value;
 				}

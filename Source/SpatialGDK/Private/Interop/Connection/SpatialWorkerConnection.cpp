@@ -12,7 +12,7 @@ void USpatialWorkerConnection::FinishDestroy()
 		WorkerConnection = nullptr;
 	}
 
-	if(WorkerLocator)
+	if (WorkerLocator)
 	{
 		Worker_Locator_Destroy(WorkerLocator);
 	}
@@ -22,7 +22,7 @@ void USpatialWorkerConnection::FinishDestroy()
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
 {
-	if(ShouldConnectWithLocator())
+	if (ShouldConnectWithLocator())
 	{
 		ConnectToLocator();
 	}
@@ -35,33 +35,33 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 
 void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 {
-	if(ConfigReceptionist.WorkerType.IsEmpty())
+	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
-		ConfigReceptionist.WorkerType = bConnectAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
+		ReceptionistConfig.WorkerType = bConnectAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
 	}
 
-	if(ConfigReceptionist.WorkerId.IsEmpty())
+	if (ReceptionistConfig.WorkerId.IsEmpty())
 	{
-		ConfigReceptionist.WorkerId = ConfigReceptionist.WorkerType + FGuid::NewGuid().ToString();
+		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
 	}
 
 	// TODO: Move creation of connection parameters into a function somehow
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
-	FTCHARToUTF8 WorkerTypeCStr(*ConfigReceptionist.WorkerType);
+	FTCHARToUTF8 WorkerTypeCStr(*ReceptionistConfig.WorkerType);
 	ConnectionParams.worker_type = WorkerTypeCStr.Get();
-	ConnectionParams.enable_protocol_logging_at_startup = ConfigReceptionist.EnableProtocolLoggingAtStartup;
+	ConnectionParams.enable_protocol_logging_at_startup = ReceptionistConfig.EnableProtocolLoggingAtStartup;
 
 	Worker_ComponentVtable DefaultVtable = {};
 	ConnectionParams.component_vtable_count = 0;
 	ConnectionParams.default_component_vtable = &DefaultVtable;
 
-	ConnectionParams.network.connection_type = ConfigReceptionist.LinkProtocol;
-	ConnectionParams.network.use_external_ip = ConfigReceptionist.UseExternalIp;
+	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
+	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
-			TCHAR_TO_UTF8(*ConfigReceptionist.ReceptionistHost), ConfigReceptionist.ReceptionistPort,
-			TCHAR_TO_UTF8(*ConfigReceptionist.WorkerId), &ConnectionParams);
+		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,
+		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, this]
 	{
@@ -79,21 +79,23 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 		else
 		{
 			Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
-			for(int i = 0; i < (int)OpList->op_count; i++)
+			for (int i = 0; i < (int)OpList->op_count; i++)
 			{
-				if(OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
+				if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
 				{
 					UE_LOG(LogTemp, Error, TEXT("Couldn't connect to SpatialOS: %s"), UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
 				}
 			}
+
+			// TODO: try to reconnect
 		}
 	});
 }
 
 void USpatialWorkerConnection::ConnectToLocator()
 {
-	FTCHARToUTF8 ProjectNameCStr(*ConfigLocator.ProjectName);
-	FTCHARToUTF8 LoginTokenCStr(*ConfigLocator.LoginToken);
+	FTCHARToUTF8 ProjectNameCStr(*LocatorConfig.ProjectName);
+	FTCHARToUTF8 LoginTokenCStr(*LocatorConfig.LoginToken);
 
 	Worker_LoginTokenCredentials Credentials;
 	Credentials.token = LoginTokenCStr.Get();
@@ -103,7 +105,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	LocatorParams.project_name = ProjectNameCStr.Get();
 	LocatorParams.login_token = Credentials;
 
-	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*ConfigLocator.LocatorHost), &LocatorParams);
+	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), &LocatorParams);
 
 	Worker_DeploymentListFuture* DeploymentListFuture = Worker_Locator_GetDeploymentListAsync(WorkerLocator);
 	Worker_DeploymentListFuture_Get(DeploymentListFuture, nullptr, this,
@@ -123,16 +125,16 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 		// TODO: Move creation of connection parameters into a function somehow
 		Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
-		FTCHARToUTF8 WorkerTypeCStr(*SpatialConnection->ConfigLocator.WorkerType);
+		FTCHARToUTF8 WorkerTypeCStr(*SpatialConnection->LocatorConfig.WorkerType);
 		ConnectionParams.worker_type = WorkerTypeCStr.Get();
-		ConnectionParams.enable_protocol_logging_at_startup = SpatialConnection->ConfigLocator.EnableProtocolLoggingAtStartup;
+		ConnectionParams.enable_protocol_logging_at_startup = SpatialConnection->LocatorConfig.EnableProtocolLoggingAtStartup;
 
 		Worker_ComponentVtable DefaultVtable = {};
 		ConnectionParams.component_vtable_count = 0;
 		ConnectionParams.default_component_vtable = &DefaultVtable;
 
-		ConnectionParams.network.connection_type = SpatialConnection->ConfigLocator.LinkProtocol;
-		ConnectionParams.network.use_external_ip = SpatialConnection->ConfigLocator.UseExternalIp;
+		ConnectionParams.network.connection_type = SpatialConnection->LocatorConfig.LinkProtocol;
+		ConnectionParams.network.use_external_ip = SpatialConnection->LocatorConfig.UseExternalIp;
 		// end TODO
 
 		Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(SpatialConnection->WorkerLocator, DeploymentList->deployments[0].deployment_name,
@@ -155,9 +157,9 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 bool USpatialWorkerConnection::ShouldConnectWithLocator()
 {
-	const TCHAR* commandLine = FCommandLine::Get();
-	FString str;
-	return FParse::Value(commandLine, *FString("loginToken"), str);
+	const TCHAR* CommandLine = FCommandLine::Get();
+	FString TempStr;
+	return FParse::Value(CommandLine, *FString("loginToken"), TempStr);
 }
 
 bool USpatialWorkerConnection::IsConnected()
