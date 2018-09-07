@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/DataAsset.h"
 #include "SchemaDatabase.generated.h"
 
 USTRUCT(BlueprintType)
