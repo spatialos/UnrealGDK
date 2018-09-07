@@ -59,7 +59,7 @@ void GenerateFunction_Init(FCodeWriter& SourceWriter, UClass* Class, const FUnre
 void GenerateFunction_BindToView(FCodeWriter& SourceWriter, UClass* Class, const FUnrealRPCsByType& RPCsByType);
 void GenerateFunction_UnbindFromView(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_CreateActorEntity(FCodeWriter& SourceWriter, UClass* Class, const TArray<UClass*>& Components);
-void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, TArray<FString>& SpatialComponents);
+void GenerateBody_SpatialComponents(FCodeWriter& SourceWriter, UClass* Class, UClass* OwnerClass, TArray<FString>& SpatialComponents);
 void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, const TArray<UClass*>& Components);
