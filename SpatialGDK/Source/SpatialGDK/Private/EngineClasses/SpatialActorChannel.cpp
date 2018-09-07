@@ -536,6 +536,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(TargetObject)).Get();
+
 	TargetObject->PostNetReceive();
 	Replicator.RepNotifies = RepNotifies;
 	Replicator.CallRepNotifies(false);
