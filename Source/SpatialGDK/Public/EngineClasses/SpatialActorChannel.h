@@ -107,7 +107,8 @@ public:
 
 	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
 	bool ReplicateSubobject(UObject *Obj, const FReplicationFlags &RepFlags);
-	FPropertyChangeState CreateSubobjectChangeState(UActorComponent* Component);
+	virtual bool ReplicateSubobject(UObject *Obj, FOutBunch &Bunch, const FReplicationFlags &RepFlags) override;
+	FPropertyChangeState CreateSubobjectChangeState(UObject* Subobject);
 	TArray<uint16> GetAllPropertyHandles(FObjectReplicator& Replicator);
 
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
