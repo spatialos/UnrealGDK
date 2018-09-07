@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialConnection.h"
+#include "SpatialWorkerConnection.h"
 
 #include "Async/Async.h"
 
-void USpatialConnection::FinishDestroy()
+void USpatialWorkerConnection::FinishDestroy()
 {
 	if (WorkerConnection)
 	{
@@ -15,7 +15,7 @@ void USpatialConnection::FinishDestroy()
 	Super::FinishDestroy();
 }
 
-void USpatialConnection::Connect(ReceptionistConfig Config)
+void USpatialWorkerConnection::Connect(ReceptionistConfig Config)
 {
 	// TODO: Move this back to the helper function below
 	Worker_ComponentVtable DefaultVtable = {};
@@ -53,7 +53,7 @@ void USpatialConnection::Connect(ReceptionistConfig Config)
 	});
 }
 
-void USpatialConnection::Connect(LocatorConfig Config)
+void USpatialWorkerConnection::Connect(LocatorConfig Config)
 {
 	Worker_ConnectionParameters ConnectionParams = CreateConnectionParameters(Config);
 
@@ -87,12 +87,12 @@ void USpatialConnection::Connect(LocatorConfig Config)
 	});*/
 }
 
-bool USpatialConnection::IsConnected()
+bool USpatialWorkerConnection::IsConnected()
 {
 	return bIsConnected;
 }
 
-Worker_ConnectionParameters USpatialConnection::CreateConnectionParameters(ConnectionConfig& Config)
+Worker_ConnectionParameters USpatialWorkerConnection::CreateConnectionParameters(ConnectionConfig& Config)
 {
 	Worker_NetworkParameters NetworkParams;
 	NetworkParams.connection_type = Config.LinkProtocol;
@@ -109,43 +109,43 @@ Worker_ConnectionParameters USpatialConnection::CreateConnectionParameters(Conne
 	return ConnectionParams;
 }
 
-Worker_OpList* USpatialConnection::GetOpList()
+Worker_OpList* USpatialWorkerConnection::GetOpList()
 {
 	return Worker_Connection_GetOpList(WorkerConnection, 0);
 }
 
-Worker_RequestId USpatialConnection::SendReserveEntityIdRequest()
+Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdRequest()
 {
 	return Worker_Connection_SendReserveEntityIdRequest(WorkerConnection, nullptr);
 }
 
-Worker_RequestId USpatialConnection::SendCreateEntityRequest(uint32_t ComponentCount, const Worker_ComponentData* Components, const Worker_EntityId* EntityId)
+Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(uint32_t ComponentCount, const Worker_ComponentData* Components, const Worker_EntityId* EntityId)
 {
 	return Worker_Connection_SendCreateEntityRequest(WorkerConnection, ComponentCount, Components, EntityId, nullptr);
 }
 
-Worker_RequestId USpatialConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
+Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
 	return Worker_Connection_SendDeleteEntityRequest(WorkerConnection, EntityId, nullptr);
 }
 
-void USpatialConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
+void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
 {
 	Worker_Connection_SendComponentUpdate(WorkerConnection, EntityId, ComponentUpdate);
 }
 
-Worker_RequestId USpatialConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
+Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
 {
 	Worker_CommandParameters CommandParams{};
 	return Worker_Connection_SendCommandRequest(WorkerConnection, EntityId, Request, CommandId, nullptr, &CommandParams);
 }
 
-void USpatialConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
+void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
 {
 	return Worker_Connection_SendCommandResponse(WorkerConnection, RequestId, Response);
 }
 
-void USpatialConnection::SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message)
+void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message)
 {
 	Worker_LogMessage LogMessage{};
 	LogMessage.level = Level;

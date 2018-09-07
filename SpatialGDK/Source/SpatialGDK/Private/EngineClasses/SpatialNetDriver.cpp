@@ -11,7 +11,7 @@
 #include "Net/RepLayout.h"
 #include "SocketSubsystem.h"
 
-#include "Interop/Connection/SpatialConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
@@ -111,7 +111,7 @@ void USpatialNetDriver::Connect()
 		return;
 	}
 
-	Connection = NewObject<USpatialConnection>();
+	Connection = NewObject<USpatialWorkerConnection>();
 	Connection->OnConnected.BindUFunction(this, FName("OnConnected"));
 
 	Connection->Connect(WorkerConfig);

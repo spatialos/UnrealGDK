@@ -12,7 +12,7 @@
 #include "SpatialSender.generated.h"
 
 class USpatialNetDriver;
-class USpatialConnection;
+class USpatialWorkerConnection;
 class USpatialActorChannel;
 class USpatialPackageMapClient;
 class USpatialTypebindingManager;
@@ -73,7 +73,7 @@ private:
 
 private:
 	USpatialNetDriver* NetDriver;
-	USpatialConnection* Connection;
+	USpatialWorkerConnection* Connection;
 	USpatialReceiver* Receiver;
 	USpatialPackageMapClient* PackageMap;
 	USpatialTypebindingManager* TypebindingManager;

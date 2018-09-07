@@ -6,7 +6,7 @@
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/Connection/SpatialConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
