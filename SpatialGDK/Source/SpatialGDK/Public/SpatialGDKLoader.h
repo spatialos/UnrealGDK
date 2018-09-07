@@ -6,7 +6,7 @@
 #include "PlatformProcess.h"
 
 /**
- * This class ensures that the CoreSdkDll is loaded before it is needed by code.
+ * This class ensures that the C API worker library is loaded before it is needed by code.
  */
 class FSpatialGDKLoader
 {
@@ -24,19 +24,19 @@ public:
 #else
 		Path = Path / TEXT("Win32");
 #endif
-		Path = Path / TEXT("CoreSdkDll.dll");
-		CoreSdkHandle = FPlatformProcess::GetDllHandle(*Path);
+		Path = Path / TEXT("worker.dll");
+		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(*Path);
 #elif PLATFORM_PS4
-		CoreSdkHandle = FPlatformProcess::GetDllHandle(TEXT("libCoreSdkDll.prx"));
+		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(TEXT("libworker.prx"));
 #endif
 	}
 
 	~FSpatialGDKLoader()
 	{
-		if (CoreSdkHandle != nullptr)
+		if (WorkerLibraryHandle != nullptr)
 		{
-			FPlatformProcess::FreeDllHandle(CoreSdkHandle);
-			CoreSdkHandle = nullptr;
+			FPlatformProcess::FreeDllHandle(WorkerLibraryHandle);
+			WorkerLibraryHandle = nullptr;
 		}
 	}
 
@@ -44,5 +44,5 @@ public:
 	FSpatialGDKLoader& operator=(const FSpatialGDKLoader& rhs) = delete;
 
 private:
-	void* CoreSdkHandle = nullptr;
+	void* WorkerLibraryHandle = nullptr;
 };

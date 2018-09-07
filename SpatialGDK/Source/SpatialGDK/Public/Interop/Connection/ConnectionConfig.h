@@ -6,22 +6,22 @@
 
 #include <improbable/c_worker.h>
 
-struct ConnectionConfig
+struct FConnectionConfig
 {
-	ConnectionConfig()
+	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
 		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_RAKNET)
 	{
-		const TCHAR* commandLine = FCommandLine::Get();
+		const TCHAR* CommandLine = FCommandLine::Get();
 
-		FParse::Value(commandLine, *FString("workerType"), WorkerType);
-		FParse::Value(commandLine, *FString("workerId"), WorkerId);
-		FParse::Bool(commandLine, *FString("useExternalIpForBridge"), UseExternalIp);
+		FParse::Value(CommandLine, *FString("workerType"), WorkerType);
+		FParse::Value(CommandLine, *FString("workerId"), WorkerId);
+		FParse::Bool(CommandLine, *FString("useExternalIpForBridge"), UseExternalIp);
 
-		auto LinkProtocolString = FString("");
-		FParse::Value(commandLine, *FString("linkProtocol"), LinkProtocolString);
-		LinkProtocol = LinkProtocolString == "Tcp" ? WORKER_NETWORK_CONNECTION_TYPE_TCP : WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
+		FString LinkProtocolString;
+		FParse::Value(CommandLine, *FString("linkProtocol"), LinkProtocolString);
+		LinkProtocol = LinkProtocolString == TEXT("Tcp") ? WORKER_NETWORK_CONNECTION_TYPE_TCP : WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
 	}
 
 	FString WorkerId;
@@ -31,32 +31,32 @@ struct ConnectionConfig
 	Worker_NetworkConnectionType LinkProtocol;
 };
 
-struct ReceptionistConfig : public ConnectionConfig
+struct FReceptionistConfig : public FConnectionConfig
 {
-	ReceptionistConfig()
+	FReceptionistConfig()
 		: ReceptionistHost(TEXT("127.0.0.1"))
 		, ReceptionistPort(7777)
 	{
-		const TCHAR* commandLine = FCommandLine::Get();
+		const TCHAR* CommandLine = FCommandLine::Get();
 
-		FParse::Value(commandLine, *FString("receptionistHost"), ReceptionistHost);
-		FParse::Value(commandLine, *FString("receptionistPort"), ReceptionistPort);
+		FParse::Value(CommandLine, *FString("receptionistHost"), ReceptionistHost);
+		FParse::Value(CommandLine, *FString("receptionistPort"), ReceptionistPort);
 	}
 
 	FString ReceptionistHost;
 	uint16 ReceptionistPort;
 };
 
-struct LocatorConfig : public ConnectionConfig
+struct FLocatorConfig : public FConnectionConfig
 {
-	LocatorConfig()
+	FLocatorConfig()
 		: LocatorHost(TEXT("locator.improbable.io"))
 	{
-		const TCHAR* commandLine = FCommandLine::Get();
+		const TCHAR* CommandLine = FCommandLine::Get();
 
-		FParse::Value(commandLine, *FString("projectName"), LoginToken);
-		FParse::Value(commandLine, *FString("loginToken"), LoginToken);
-		FParse::Value(commandLine, *FString("locatorHost"), LocatorHost);
+		FParse::Value(CommandLine, *FString("projectName"), ProjectName);
+		FParse::Value(CommandLine, *FString("loginToken"), LoginToken);
+		FParse::Value(CommandLine, *FString("locatorHost"), LocatorHost);
 	}
 
 	FString ProjectName;

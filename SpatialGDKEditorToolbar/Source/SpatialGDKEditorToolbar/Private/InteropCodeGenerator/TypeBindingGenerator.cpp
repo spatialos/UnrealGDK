@@ -251,7 +251,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 		if (Property->ArrayDim > 1) // Static arrays in RPC arguments are replicated as lists.
 		{
 			Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(Property, false));
-			Writer.Printf("for(int i = 0; i < sizeof(%s) / sizeof(%s[0]); i++)", *PropertyValue, *PropertyValue);
+			Writer.Printf("for (int i = 0; i < sizeof(%s) / sizeof(%s[0]); i++)", *PropertyValue, *PropertyValue);
 			Writer.BeginScope();
 			GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", Property, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, false, bUnresolvedObjectsHandledOutside);
 			Writer.End();
@@ -384,7 +384,7 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 
 		Writer.Printf("::worker::List<%s> List;", *PropertyToWorkerSDKType(ArrayProperty->Inner, bIsRPCProperty));
 
-		Writer.Printf("for(int i = 0; i < %s.Num(); i++)", *PropertyValue);
+		Writer.Printf("for (int i = 0; i < %s.Num(); i++)", *PropertyValue);
 		Writer.BeginScope();
 
 		GenerateUnrealToSchemaConversion(Writer, "List.emplace_back", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, bIsRPCProperty, bUnresolvedObjectsHandledOutside);
@@ -414,7 +414,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 		if (Property->ArrayDim > 1) // Static arrays in RPC arguments are replicated as lists.
 		{
 			Writer.Printf("auto& List = %s;", *Update);
-			Writer.Print("for(int i = 0; i < List.size(); i++)");
+			Writer.Print("for (int i = 0; i < List.size(); i++)");
 			Writer.BeginScope();
 			GeneratePropertyToUnrealConversion(Writer, "List[i]", Property, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, false);
 			Writer.End();
@@ -540,7 +540,7 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 
 		Writer.Printf("auto& List = %s;", *Update);
 		Writer.Printf("%s.SetNum(List.size());", *PropertyValue);
-		Writer.Print("for(int i = 0; i < List.size(); i++)");
+		Writer.Print("for (int i = 0; i < List.size(); i++)");
 		Writer.BeginScope();
 		GeneratePropertyToUnrealConversion(Writer, "List[i]", ArrayProperty->Inner, FString::Printf(TEXT("%s[i]"), *PropertyValue), ObjectResolveFailureGenerator, bIsRPCProperty);
 		Writer.End();
