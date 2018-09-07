@@ -27,15 +27,8 @@ struct UnrealMetadata : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		if (Schema_GetBytesCount(ComponentObject, 1) > 0)
-		{
-			StaticPath = Schema_GetString(ComponentObject, 1);
-		}
-
-		if (Schema_GetBytesCount(ComponentObject, 2) > 0)
-		{
-			OwnerWorkerId = Schema_GetString(ComponentObject, 2);
-		}
+		StaticPath = Schema_GetString(ComponentObject, 1);
+		OwnerWorkerId = Schema_GetString(ComponentObject, 2);
 
 		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 3);
 		for (uint32 i = 0; i < KVPairCount; i++)
@@ -55,14 +48,8 @@ struct UnrealMetadata : Component
 		Data.schema_type = Schema_CreateComponentData(UNREAL_METADATA_COMPONENT_ID);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		if (!StaticPath.IsEmpty())
-		{
-			Schema_AddString(ComponentObject, 1, StaticPath);
-		}
-		if (!OwnerWorkerId.IsEmpty())
-		{
-			Schema_AddString(ComponentObject, 2, OwnerWorkerId);
-		}
+		Schema_AddString(ComponentObject, 1, StaticPath);
+		Schema_AddString(ComponentObject, 2, OwnerWorkerId);
 
 		for (const auto& KVPair : SubobjectNameToOffset)
 		{

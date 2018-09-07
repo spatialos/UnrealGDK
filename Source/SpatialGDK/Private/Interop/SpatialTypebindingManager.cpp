@@ -17,7 +17,7 @@ void USpatialTypebindingManager::Init()
 	SchemaDatabasePtr.LoadSynchronous();
 	SchemaDatabase = SchemaDatabasePtr.Get();
 
-	if(SchemaDatabase == nullptr)
+	if (SchemaDatabase == nullptr)
 	{
 		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication")));
 		return;

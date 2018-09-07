@@ -130,10 +130,10 @@ void CreateSchemaDatabase(TArray<UClass*> Classes)
 
 		UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
-		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), *FString(TEXT("SchemaDatabase")), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 
 		int ComponentId = 100010;
-		for(UClass* Class : Classes)
+		for (UClass* Class : Classes)
 		{
 			FSchemaData SchemaData;
 			SchemaData.SingleClientRepData = ComponentId++;

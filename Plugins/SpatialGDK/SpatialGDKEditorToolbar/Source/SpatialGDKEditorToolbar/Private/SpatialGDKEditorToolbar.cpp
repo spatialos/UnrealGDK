@@ -242,7 +242,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 	const bool bSuccess = SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World());
 
-	if(bSuccess)
+	if (bSuccess)
 	{
 		ShowSuccessNotification("Snapshot successfully generated!");
 	}
