@@ -30,7 +30,7 @@ struct FPendingRPCParams
 
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted
 // care for actor getting deleted before actor channel
-using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
+using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FOutgoingRPCMap = TMap<const UObject*, TArray<FPendingRPCParams>>;
 using FUnresolvedEntry = TSharedPtr<TSet<const UObject*>>;
 using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;

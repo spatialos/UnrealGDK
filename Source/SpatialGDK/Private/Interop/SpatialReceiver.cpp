@@ -364,12 +364,12 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	// 2. The Actor was deleted on another server
 	// In neither situation do we want to delete associated entities, so prevent them from being issued.
 	// TODO: fix this with working sets (UNR-411)
-	//NetDriver->GetSpatialInterop()->StartIgnoringAuthoritativeDestruction();
+	NetDriver->StartIgnoringAuthoritativeDestruction();
 	if (!World->DestroyActor(Actor, true))
 	{
 		UE_LOG(LogTemp, Error, TEXT("World->DestroyActor failed on RemoveActor %s %lld"), *Actor->GetName(), EntityId);
 	}
-	//NetDriver->GetSpatialInterop()->StopIgnoringAuthoritativeDestruction();
+	NetDriver->StopIgnoringAuthoritativeDestruction();
 
 	CleanupDeletedEntity(EntityId);
 }
@@ -413,7 +413,7 @@ AActor* USpatialReceiver::SpawnNewEntity(Position* PositionComponent, UClass* Ac
 
 void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel)
 {
-	UClass* Class= TypebindingManager->FindClassByComponentId(Data.component_id);
+	UClass* Class = TypebindingManager->FindClassByComponentId(Data.component_id);
 	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
 
 	UObject* TargetObject = GetTargetObjectFromChannelAndClass(Channel, Class);
@@ -488,7 +488,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	check(Info);
 
 	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
-	if (ActorChannel == nullptr)
+	if (ActorChannel == nullptr || !IsValid(ActorChannel->Actor))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No actor channel for Entity %d"), Op.entity_id);
 		return;
@@ -777,14 +777,19 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const UnrealOb
 	for (FChannelObjectPair& ChannelObjectPair : *TargetObjectSet)
 	{
 		FObjectReferencesMap* UnresolvedRefs = UnresolvedRefsMap.Find(ChannelObjectPair);
-
 		if (!UnresolvedRefs)
 		{
 			continue;
 		}
 
-		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key;
-		UObject* ReplicatingObject = ChannelObjectPair.Value;
+		if (!ChannelObjectPair.Key.IsValid() || !ChannelObjectPair.Value.IsValid())
+		{
+			UnresolvedRefsMap.Remove(ChannelObjectPair);
+			continue;
+		}
+
+		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key.Get();
+		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
 
 		bool bStillHasUnresolved = false;
 		bool bSomeObjectsWereMapped = false;

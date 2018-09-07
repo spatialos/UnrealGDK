@@ -514,8 +514,13 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 	for (auto& ChannelProperties : *ChannelToUnresolved)
 	{
 		FChannelObjectPair& ChannelObjectPair = ChannelProperties.Key;
-		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key;
-		UObject* ReplicatingObject = ChannelObjectPair.Value;
+		if (!ChannelObjectPair.Key.IsValid() || !ChannelObjectPair.Value.IsValid())
+		{
+			continue;
+		}
+
+		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key.Get();
+		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
 		FHandleToUnresolved& HandleToUnresolved = ChannelProperties.Value;
 
 		TArray<uint16> PropertyHandles;

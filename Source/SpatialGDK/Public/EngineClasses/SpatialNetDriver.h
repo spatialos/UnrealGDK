@@ -106,6 +106,10 @@ public:
 	// TODO: Remove for something better
 	bool bConnectAsClient;
 
+	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
+	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
+	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -116,6 +120,8 @@ private:
 
 	// Timer manager.
 	FTimerManager* TimerManager;
+
+	bool bAuthoritativeDestruction;
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
