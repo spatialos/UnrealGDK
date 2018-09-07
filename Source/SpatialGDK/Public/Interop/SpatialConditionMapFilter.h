@@ -28,7 +28,6 @@ public:
 			RepFlags.bNetOwner,
 			RepFlags.bNetSimulated,
 			RepFlags.bRepPhysics);
-			//*Cast<USpatialNetDriver>(ActorChannel->Connection->Driver)->GetSpatialOS()->GetWorkerId());
 #endif
 
 		// Build a ConditionMap. This code is taken directly from FRepLayout::RebuildConditionalProperties

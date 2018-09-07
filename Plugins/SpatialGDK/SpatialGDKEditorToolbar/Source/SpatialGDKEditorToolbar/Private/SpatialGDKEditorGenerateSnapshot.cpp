@@ -124,7 +124,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 {
 	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
 	int PlaceholderCount = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST - SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
-	int PlaceholderCountAxis = (int)sqrt(PlaceholderCount);
+	int PlaceholderCountAxis = static_cast<int>(sqrt(PlaceholderCount));
 	checkf(PlaceholderCountAxis * PlaceholderCountAxis == PlaceholderCount, TEXT("The number of placeholders must be a square number."));
 	checkf(PlaceholderCountAxis % 2 == 0, TEXT("The number of placeholders on each axis must be even."));
 	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
