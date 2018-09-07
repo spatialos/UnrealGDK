@@ -649,18 +649,20 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 		check(Channel->Actor->IsA(Class));
 		TargetObject = Channel->Actor;
 	}
-	else if (Class->IsChildOf<UActorComponent>())
+	else
 	{
 		FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Channel->Actor->GetClass());
 		check(ActorInfo);
-		check(ActorInfo->ComponentClasses.Find(Class));
-		TArray<UActorComponent*> Components = Channel->Actor->GetComponentsByClass(Class);
-		checkf(Components.Num() == 1, TEXT("Multiple replicated components of the same type are currently not supported by Unreal GDK"));
-		TargetObject = Components[0];
-	}
-	else
-	{
-		checkNoEntry();
+		check(ActorInfo->SubobjectClasses.Find(Class));
+
+		TArray<UObject*> DefaultSubobjects;
+		Channel->Actor->GetDefaultSubobjects(DefaultSubobjects);
+		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([Class](const UObject* Obj)
+		{
+			return (Obj->GetClass() == Class);
+		});
+		check(FoundSubobject);
+		TargetObject = *FoundSubobject;
 	}
 
 	check(TargetObject);

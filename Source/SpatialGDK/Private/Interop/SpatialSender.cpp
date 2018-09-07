@@ -65,18 +65,18 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	ComponentWriteAcl.Add(Info->RPCComponents[RPC_CrossServer], WorkersOnly);
 	ComponentWriteAcl.Add(Info->RPCComponents[RPC_NetMulticast], WorkersOnly);
 
-	for (TSubclassOf<UActorComponent> ComponentClass : Info->ComponentClasses)
+	for (UClass* SubobjectClass : Info->SubobjectClasses)
 	{
-		FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(ComponentClass);
-		check(ComponentInfo);
+		FClassInfo* ClassInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
+		check(ClassInfo);
 
-		ComponentWriteAcl.Add(ComponentInfo->SingleClientComponent, WorkersOnly);
-		ComponentWriteAcl.Add(ComponentInfo->MultiClientComponent, WorkersOnly);
+		ComponentWriteAcl.Add(ClassInfo->SingleClientComponent, WorkersOnly);
+		ComponentWriteAcl.Add(ClassInfo->MultiClientComponent, WorkersOnly);
 		// Not adding handover since component's handover properties will be handled by the actor anyway
-		ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_Client], OwningClientOnly);
-		ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_Server], WorkersOnly);
-		ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_CrossServer], WorkersOnly);
-		ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_NetMulticast], WorkersOnly);
+		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Client], OwningClientOnly);
+		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Server], WorkersOnly);
+		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_CrossServer], WorkersOnly);
+		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_NetMulticast], WorkersOnly);
 	}
 
 	FString StaticPath;
@@ -130,26 +130,31 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 		ComponentDatas.Add(RPCData);
 	}
 
-	for (TSubclassOf<UActorComponent> ComponentClass : Info->ComponentClasses)
+	for (UClass* SubobjectClass : Info->SubobjectClasses)
 	{
-		FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(ComponentClass);
+		FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
 		check(ComponentInfo);
 
-		TArray<UActorComponent*> Components = Actor->GetComponentsByClass(ComponentClass);
-		checkf(Components.Num() == 1, TEXT("Multiple replicated components of the same type are currently not supported by Unreal GDK"));
-		UActorComponent* Component = Components[0];
+		TArray<UObject*> DefaultSubobjects;
+		Actor->GetDefaultSubobjects(DefaultSubobjects);
+		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
+		{
+			return (Obj->GetClass() == SubobjectClass);
+		});
+		check(FoundSubobject);
+		UObject* Subobject = *FoundSubobject;
 
-		FPropertyChangeState ComponentChanges = Channel->CreateSubobjectChangeState(Component);
+		FPropertyChangeState SubobjectChanges = Channel->CreateSubobjectChangeState(Subobject);
 
 		// Reset unresolved objects so they can be filled again by DataFactory
 		UnresolvedObjectsMap.Empty();
 
-		TArray<Worker_ComponentData> ActorComponentDatas = DataFactory.CreateComponentDatas(Component, ComponentChanges);
-		ComponentDatas.Append(ActorComponentDatas);
+		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectChanges);
+		ComponentDatas.Append(ActorSubobjectDatas);
 
 		for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
 		{
-			QueueOutgoingRepUpdate(Channel, Component, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value);
+			QueueOutgoingRepUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value);
 		}
 
 		// Not adding handover since component's handover properties will be handled by the actor anyway

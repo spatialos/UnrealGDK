@@ -52,7 +52,7 @@ struct FClassInfo
 	Worker_ComponentId HandoverComponent;
 	Worker_ComponentId RPCComponents[RPC_Count];
 
-	TSet<TSubclassOf<UActorComponent>> ComponentClasses;
+	TSet<UClass*> SubobjectClasses;
 };
 
 UCLASS()
