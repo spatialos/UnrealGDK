@@ -409,7 +409,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicationFlags &RepFlags)
 {
-	if (NetDriver->TypebindingManager->IsSupportedClass(Object->GetClass()) == false)
+	if (!NetDriver->TypebindingManager->IsSupportedClass(Object->GetClass()))
 	{
 		return false;
 	}
