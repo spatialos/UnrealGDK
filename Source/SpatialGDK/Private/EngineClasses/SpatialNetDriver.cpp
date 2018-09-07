@@ -144,18 +144,18 @@ void USpatialNetDriver::OnConnected()
 	}
 	else
 	{
-		USpatialNetConnection* Connection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
-		check(Connection);
+		USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
+		check(NetConnection);
 
 		ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
 		TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
 
-		Connection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
-		Notify->NotifyAcceptedConnection(Connection);
-		Connection->bReliableSpatialConnection = true;
-		AddClientConnection(Connection);
+		NetConnection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
+		Notify->NotifyAcceptedConnection(NetConnection);
+		NetConnection->bReliableSpatialConnection = true;
+		AddClientConnection(NetConnection);
 		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
-		Connection->SetClientLoginState(EClientLoginState::Welcomed);
+		NetConnection->SetClientLoginState(EClientLoginState::Welcomed);
 	}
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
@@ -767,14 +767,14 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
-	if (!Connection->IsConnected())
+	if (Connection == nullptr || !Connection->IsConnected())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
 		return;
 	}
 
-	USpatialNetConnection* Connection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
-	if (!Connection)
+	USpatialNetConnection* NetConnection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
+	if (NetConnection == nullptr)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
 		return;
@@ -1101,12 +1101,12 @@ void USpatialNetDriver::AddActorChannel(const Worker_EntityId& EntityId, USpatia
 
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(const Worker_EntityId& EntityId) const
 {
-	USpatialActorChannel* const* ActorChannel = EntityToActorChannel.Find(EntityId);
+	USpatialActorChannel* ActorChannel = EntityToActorChannel.FindRef(EntityId);
 	if (ActorChannel == nullptr)
 	{
 		// Can't find actor channel for this entity, give up.
 		return nullptr;
 	}
 
-	return *ActorChannel;
+	return ActorChannel;
 }

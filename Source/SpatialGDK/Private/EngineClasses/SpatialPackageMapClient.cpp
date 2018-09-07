@@ -110,11 +110,13 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 
 FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset)
 {
-	Worker_EntityId EntityId = Cast<USpatialNetDriver>(Driver)->GetEntityRegistry()->GetEntityIdFromActor(Actor);
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
+
+	Worker_EntityId EntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor);
 	check(EntityId > 0);
 
 	// Get interop.
-	USpatialReceiver* Receiver = Cast<USpatialNetDriver>(Driver)->Receiver;
+	USpatialReceiver* Receiver = SpatialNetDriver->Receiver;
 
 	// Set up the NetGUID and ObjectRef for this actor.
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
