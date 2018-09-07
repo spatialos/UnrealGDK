@@ -42,8 +42,11 @@ struct FRPCInfo
 	uint32 Index;
 };
 
+USTRUCT()
 struct FClassInfo
 {
+	GENERATED_BODY()
+
 	TMap<ERPCType, TArray<UFunction*>> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
 
@@ -73,9 +76,14 @@ private:
 	void CreateTypebindings();
 
 private:
+	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
-	TArray<UClass*> SupportedClasses;
-	TMap<UClass*, FClassInfo> ClassInfoMap;
-	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
 
+	UPROPERTY()
+	TArray<UClass*> SupportedClasses;
+
+	UPROPERTY()
+	TMap<UClass*, FClassInfo> ClassInfoMap;
+
+	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
 };
