@@ -141,8 +141,8 @@ void CreateSchemaDatabase(TArray<UClass*> Classes)
 			SchemaData.HandoverData = ComponentId++;
 			SchemaData.ClientRPCs = ComponentId++;
 			SchemaData.ServerRPCs = ComponentId++;
-			SchemaData.NetMulticastRPCs = ComponentId++;
 			SchemaData.CrossServerRPCs = ComponentId++;
+			SchemaData.NetMulticastRPCs = ComponentId++;
 
 			SchemaDatabase->ClassToSchema.Add(Class, SchemaData);
 		}
