@@ -111,11 +111,14 @@ EBrowseReturnVal::Type USpatialEditorEngine::Browse(FWorldContext& WorldContext,
 		WorldContext.PendingNetGame->Initialize(URL);
 
 		bool bIsSpatial = false;
+		UNetDriver* TempNetDriver = nullptr;
 		if (GEngine->CreateNamedNetDriver(WorldContext.PendingNetGame, NAME_PendingNetDriver, NAME_GameNetDriver))
 		{
-			UNetDriver* TestNetDriver = GEngine->FindNamedNetDriver(WorldContext.PendingNetGame, NAME_PendingNetDriver);
-			WorldContext.PendingNetGame->NetDriver = TestNetDriver;
-			bIsSpatial = TestNetDriver->IsA(USpatialNetDriver::StaticClass());
+			TempNetDriver = GEngine->FindNamedNetDriver(WorldContext.PendingNetGame, NAME_PendingNetDriver);
+			// Setting the PendingNetGame's NetDriver is necessary here because the call to CreateNamedNetDriver above will interfere
+			// with the internals of InitNetDriver and cause the NetDriver not to be initialized, and fail a check().
+			WorldContext.PendingNetGame->NetDriver = TempNetDriver;
+			bIsSpatial = TempNetDriver->IsA(USpatialNetDriver::StaticClass());
 		}
 
 		// Create the proper PendingNetGame depending on what NetDriver we have loaded.
@@ -124,6 +127,8 @@ EBrowseReturnVal::Type USpatialEditorEngine::Browse(FWorldContext& WorldContext,
 		{
 			WorldContext.PendingNetGame = NewObject<USpatialPendingNetGame>();
 			WorldContext.PendingNetGame->Initialize(URL);
+			// See above comment about setting NetDriver manually here.
+			WorldContext.PendingNetGame->NetDriver = TempNetDriver;
 		}
 		// IMPROBABLE-END
 
