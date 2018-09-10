@@ -63,6 +63,7 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_
 void USpatialPackageMapClient::RemoveEntityActor(const Worker_EntityId& EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+
 	if (SpatialGuidCache->GetNetGUIDFromEntityId(EntityId).IsValid())
 	{
 		SpatialGuidCache->RemoveEntityNetGUID(EntityId);
@@ -174,6 +175,17 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	UnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
 	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
 	UnrealObjectRefToNetGUID.Remove(*ActorRef);
+
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
+	SubobjectToOffsetMap SubobjectNameToOffset = SpatialNetDriver->View->GetUnrealMetadata(EntityId)->SubobjectNameToOffset;
+
+	for(const auto& Pair : SubobjectNameToOffset)
+	{
+		UnrealObjectRef SubobjectRef(EntityId, Pair.Value);
+		FNetworkGUID SubobjectNetGUID = UnrealObjectRefToNetGUID[SubobjectRef];
+		NetGUIDToUnrealObjectRef.Remove(SubobjectNetGUID);
+		UnrealObjectRefToNetGUID.Remove(SubobjectRef);
+	}
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef)
