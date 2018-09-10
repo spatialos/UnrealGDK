@@ -96,12 +96,14 @@ void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
 
 void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 {
-	UE_LOG(LogTemp, Log, TEXT("SpatialReceiver: AddComponent component ID: %u entity ID: %lld"),
+	UE_LOG(LogTemp, Log, TEXT("SpatialReceiver: AddComponent component ID: %u entity ID: %lld"), 
 		Op.data.component_id, Op.entity_id);
 
-	if(!bInCriticalSection)
+	if (!bInCriticalSection)
 	{
-		return; // Received an update for a dynamic component which aren't supported.
+		UE_LOG(LogTemp, Warning, TEXT("Unsupported dynamic add component op received - component ID: %u entity ID: %lld"),
+			Op.data.component_id, Op.entity_id);
+		return;
 	}
 
 	TSharedPtr<Component> Data;
@@ -415,6 +417,10 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
 
 	UObject* TargetObject = GetTargetObjectFromChannelAndClass(Channel, Class);
+	if (!TargetObject)
+	{
+		return;
+	}
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
@@ -484,8 +490,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 
 	if (Op.update.component_id == Info->SingleClientComponent || Op.update.component_id == Info->MultiClientComponent)
 	{
-		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
-		if(TargetObject != nullptr)
+		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
 		{
 			ApplyComponentUpdate(Op.update, TargetObject, ActorChannel);
 		}
@@ -656,7 +661,9 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 		check(ActorInfo);
 		if(ActorInfo->SubobjectClasses.Find(Class) == nullptr)
 		{
-			return nullptr; // Unsupported Subobject due to being a dynamic component
+			UE_LOG(LogTemp, Warning, TEXT("No target object for Class %s on Actor %s probably caused by dynamic component"),
+				*Class->GetName(), *Channel->Actor->GetName());
+			return nullptr;
 		}
 
 		TArray<UObject*> DefaultSubobjects;
