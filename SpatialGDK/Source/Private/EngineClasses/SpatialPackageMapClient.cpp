@@ -99,12 +99,12 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromUnrealObjectRef(const Unrea
 }
 
 // Rebase - Old code and needs merging with above.
-//FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef)
-//{
-//	UnrealObjectRef NetRemappedObjectRef = ObjectRef;
-//	NetworkRemapObjectRefPaths(NetRemappedObjectRef);
-//	return GetNetGUIDFromUnrealObjectRefInternal(NetRemappedObjectRef);
-//}
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef)
+{
+	UnrealObjectRef NetRemappedObjectRef = ObjectRef;
+	NetworkRemapObjectRefPaths(NetRemappedObjectRef);
+	return GetNetGUIDFromUnrealObjectRefInternal(NetRemappedObjectRef);
+}
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const UnrealObjectRef& ObjectRef)
 {
