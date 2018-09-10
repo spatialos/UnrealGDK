@@ -99,7 +99,12 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	UE_LOG(LogTemp, Log, TEXT("SpatialReceiver: AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
 
-	check(bInCriticalSection);
+	if (!bInCriticalSection)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Unsupported dynamic add component op received - component ID: %u entity ID: %lld"),
+			Op.data.component_id, Op.entity_id);
+		return;
+	}
 
 	TSharedPtr<Component> Data;
 
@@ -412,6 +417,10 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
 
 	UObject* TargetObject = GetTargetObjectFromChannelAndClass(Channel, Class);
+	if (!TargetObject)
+	{
+		return;
+	}
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
@@ -479,15 +488,12 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	if (Op.update.component_id == Info->SingleClientComponent)
+	if (Op.update.component_id == Info->SingleClientComponent || Op.update.component_id == Info->MultiClientComponent)
 	{
-		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
-		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel);
-	}
-	else if (Op.update.component_id == Info->MultiClientComponent)
-	{
-		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
-		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel);
+		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
+		{
+			ApplyComponentUpdate(Op.update, TargetObject, ActorChannel);
+		}
 	}
 	else if (Op.update.component_id == Info->HandoverComponent)
 	{
@@ -653,7 +659,12 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 	{
 		FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Channel->Actor->GetClass());
 		check(ActorInfo);
-		check(ActorInfo->SubobjectClasses.Find(Class));
+		if (!ActorInfo->SubobjectClasses.Contains(Class))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No target object for Class %s on Actor %s probably caused by dynamic component"),
+				*Class->GetName(), *Channel->Actor->GetName());
+			return nullptr;
+		}
 
 		TArray<UObject*> DefaultSubobjects;
 		Channel->Actor->GetDefaultSubobjects(DefaultSubobjects);
@@ -665,7 +676,6 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 		TargetObject = *FoundSubobject;
 	}
 
-	check(TargetObject);
 	return TargetObject;
 }
 
