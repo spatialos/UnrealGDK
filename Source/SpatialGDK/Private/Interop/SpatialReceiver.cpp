@@ -508,8 +508,10 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			UE_LOG(LogTemp, Verbose, TEXT("Skipping Handover component because we're a client."));
 			return;
 		}
-		UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class);
-		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ true);
+		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
+		{
+			ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ true);
+		}
 	}
 	else if (Op.update.component_id == Info->RPCComponents[RPC_NetMulticast])
 	{
