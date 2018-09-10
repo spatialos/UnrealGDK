@@ -96,7 +96,7 @@ void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
 
 void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 {
-	UE_LOG(LogTemp, Log, TEXT("SpatialReceiver: AddComponent component ID: %u entity ID: %lld"), 
+	UE_LOG(LogTemp, Log, TEXT("SpatialReceiver: AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
 
 	if (!bInCriticalSection)
@@ -659,7 +659,7 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 	{
 		FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Channel->Actor->GetClass());
 		check(ActorInfo);
-		if(ActorInfo->SubobjectClasses.Find(Class) == nullptr)
+		if (!ActorInfo->SubobjectClasses.Contains(Class))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("No target object for Class %s on Actor %s probably caused by dynamic component"),
 				*Class->GetName(), *Channel->Actor->GetName());
