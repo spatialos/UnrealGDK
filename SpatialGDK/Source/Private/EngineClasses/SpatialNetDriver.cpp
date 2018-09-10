@@ -93,6 +93,14 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	//checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
 
+	// Rebase - Moved this earlier to allow modding the receptionist config based on the loaded world.
+	if (Connection != nullptr)
+	{
+		return;
+	}
+	Connection = NewObject<USpatialWorkerConnection>();
+	// Rebase - End
+
 	// TODO: factor this into helper method
 	// Check for command-line overrides.
 	{
@@ -100,7 +108,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		if (FParse::Value(FCommandLine::Get(), TEXT("receptionistIp"), ReceptionistHostOverride))
 		{
 			Connection->ReceptionistConfig.ReceptionistHost = ReceptionistHostOverride;
-			//WorkerConfig.Networking.ReceptionistHost = ReceptionistHostOverride;
+
 		}
 	}
 
@@ -134,12 +142,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 void USpatialNetDriver::Connect()
 {
-	if (Connection != nullptr)
-	{
-		return;
-	}
-
-	Connection = NewObject<USpatialWorkerConnection>();
 	Connection->OnConnected.BindUFunction(this, FName("OnConnected"));
 
 	Connection->Connect(bConnectAsClient);
