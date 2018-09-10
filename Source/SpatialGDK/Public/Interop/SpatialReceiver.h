@@ -72,6 +72,20 @@ struct FObjectReferences
 	UProperty*							Property;
 };
 
+struct FPendingIncomingRPC
+{
+	FPendingIncomingRPC(const TSet<UnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const TArray<uint8>& InPayloadData, int64 InCountBits)
+		: UnresolvedRefs(InUnresolvedRefs), TargetObject(InTargetObject), Function(InFunction), PayloadData(InPayloadData), CountBits(InCountBits) {}
+
+	TSet<UnrealObjectRef> UnresolvedRefs;
+	TWeakObjectPtr<UObject> TargetObject;
+	UFunction* Function;
+	TArray<uint8> PayloadData;
+	int64 CountBits;
+};
+
+using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
+
 UCLASS()
 class USpatialReceiver : public UObject
 {
@@ -99,7 +113,6 @@ public:
 
 	void ProcessQueuedResolvedObjects();
 	void ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
-	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs);
 
 private:
 	void EnterCriticalSection();
@@ -112,11 +125,17 @@ private:
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel);
-	void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId EntityId, UFunction* Function, UObject*& OutTargetObject, void* Data);
-	void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, Worker_EntityId EntityId, const TArray<UFunction*>& RPCArray);
+
+	void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, UObject* TargetObject, UFunction* Function);
+	void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, const TArray<UFunction*>& RPCArray);
+	void ApplyRPC(UObject* TargetObject, UFunction* Function, TArray<uint8>& PayloadData, int64 CountBits);
+
+	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs);
+	void QueueIncomingRPC(const TSet<UnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits);
 
 	void ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
+	void ResolveIncomingRPCs(UObject* Object, const UnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
 
 	UObject* GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class);
@@ -139,6 +158,8 @@ private:
 	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, UnrealObjectRef>> ResolvedObjectQueue;
+
+	TMap<UnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;
