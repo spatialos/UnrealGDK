@@ -97,7 +97,7 @@ call :MarkEndOfBlock "%~0"
 popd
 
 echo UnrealGDK build completed successfully^!
-if not defined TEAMCITY_CAPTURE_ENV pause
+rem if not defined TEAMCITY_CAPTURE_ENV pause
 exit /b %ERRORLEVEL%
 
 :MarkStartOfBlock

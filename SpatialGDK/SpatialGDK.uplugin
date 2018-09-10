@@ -31,5 +31,14 @@
         "Name": "PhysXVehicles",
         "Enabled": true
         }
-    ]
+    ],
+    "PreBuildSteps":
+    {
+        "Win64": [
+            "cmd /c \"$(ProjectDir)/Plugins/SpatialGDK/Extras/BuildGDK.bat\"",
+        ],
+        "Linux": [
+            "cmd /c Extras/BuildGDK.bat"
+        ]
+    }
 }
