@@ -403,7 +403,6 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		return CommandRequest;
 	}
 
-	Schema_AddUint32(RequestObject, 1, TargetObjectRef.Offset);
 	OutEntityId = TargetObjectRef.Entity;
 
 	TSet<const UObject*> UnresolvedObjects;
@@ -420,7 +419,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		return CommandRequest;
 	}
 
-	Schema_AddPayload(RequestObject, 2, PayloadWriter);
+	Schema_AddPayload(RequestObject, 1, PayloadWriter);
 
 	return CommandRequest;
 }
@@ -442,7 +441,6 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 		return ComponentUpdate;
 	}
 
-	Schema_AddUint32(EventData, 1, TargetObjectRef.Offset);
 	OutEntityId = TargetObjectRef.Entity;
 
 	TSet<const UObject*> UnresolvedObjects;
@@ -459,7 +457,7 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 		return ComponentUpdate;
 	}
 
-	Schema_AddPayload(EventData, 2, PayloadWriter);
+	Schema_AddPayload(EventData, 1, PayloadWriter);
 
 	return ComponentUpdate;
 }
@@ -472,7 +470,10 @@ void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_Com
 void USpatialSender::ResolveOutgoingOperations(UObject* Object)
 {
 	FChannelToHandleToUnresolved* ChannelToUnresolved = ObjectToUnresolved.Find(Object);
-	if (!ChannelToUnresolved) return;
+	if (!ChannelToUnresolved)
+	{
+		return;
+	}
 
 	for (auto& ChannelProperties : *ChannelToUnresolved)
 	{
