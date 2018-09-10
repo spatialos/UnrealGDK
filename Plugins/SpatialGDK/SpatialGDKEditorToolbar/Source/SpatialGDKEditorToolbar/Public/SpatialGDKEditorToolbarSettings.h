@@ -47,10 +47,6 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
 	FString SpatialOSSnapshotFile;
 
-	/** Interop codegen output path */
-	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the interop codegeneration"))
-	FDirectoryPath InteropCodegenOutputFolder;
-
 	/** Generated schema output path */
 	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
 	FDirectoryPath GeneratedSchemaOutputFolder;
@@ -63,14 +59,6 @@ public:
 		return ProjectRootFolder.Path.IsEmpty()
 			? FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")))
 			: FPaths::ConvertRelativePathToFull(ProjectRootFolder.Path);
-	}
-
-	UFUNCTION()
-	FORCEINLINE FString GetInteropCodegenOutputFolder() const
-	{
-		return InteropCodegenOutputFolder.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::GameSourceDir(), FString::Printf(TEXT("%s/Generated/"), FApp::GetProjectName())))
-			: FPaths::ConvertRelativePathToFull(InteropCodegenOutputFolder.Path);
 	}
 
 	UFUNCTION()

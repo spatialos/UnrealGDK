@@ -3,7 +3,6 @@
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
 #include "SchemaGenerator.h"
-#include "TypeBindingGenerator.h"
 #include "TypeStructure.h"
 #include "SpatialGDKEditorToolbarSettings.h"
 
@@ -29,14 +28,11 @@ void OnStatusOutput(FString Message)
 	UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *Message);
 }
 
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, const FString& ForwardingCodePath, int ComponentId, UClass* Class)
+int GenerateCompleteSchemaFromClass(const FString& SchemaPath, int ComponentId, UClass* Class)
 {
 	FCodeWriter OutputSchema;
-	FCodeWriter OutputHeader;
-	FCodeWriter OutputSource;
 
 	FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *UnrealNameToSchemaTypeName(Class->GetName()));
-	FString TypeBindingFilename = FString::Printf(TEXT("SpatialTypeBinding_%s"), *Class->GetName());
 
 	// Parent and static array index start at 0 for checksum calculations.
 	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, 0, 0, false);
@@ -83,13 +79,13 @@ bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 }
 }// ::
 
-void GenerateInteropFromClasses(const TArray<UClass*>& Classes, const FString& CombinedSchemaPath, const FString& CombinedForwardingCodePath)
+void GenerateInteropFromClasses(const TArray<UClass*>& Classes, const FString& CombinedSchemaPath)
 {
 	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
 	int ComponentId = 100010;
 	for (const auto& Class : Classes)
 	{
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, CombinedForwardingCodePath, ComponentId, Class);
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, ComponentId, Class);
 	}
 }
 
@@ -224,10 +220,9 @@ bool SpatialGDKGenerateInteropCode()
 		return false;
 	}
 
-	FString InteropOutputPath = SpatialGDKToolbarSettings->GetInteropCodegenOutputFolder();
 	FString SchemaOutputPath = SpatialGDKToolbarSettings->GetGeneratedSchemaOutputFolder();
 
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s - Forwarding code path %s"), *SchemaOutputPath, *InteropOutputPath);
+	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
 
 	// Check schema path is valid.
 	if (!FPaths::CollapseRelativeDirectories(SchemaOutputPath))
@@ -236,27 +231,12 @@ bool SpatialGDKGenerateInteropCode()
 		return false;
 	}
 
-	if (!FPaths::CollapseRelativeDirectories(InteropOutputPath))
-	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Invalid path: '%s'. schema not generated."), *InteropOutputPath);
-		return false;
-	}
-
 	const FString SchemaIntermediatePath = GenerateIntermediateDirectory();
-	const FString InteropIntermediatePath = GenerateIntermediateDirectory();
-	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath, InteropIntermediatePath);
+	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath);
 
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
-	// Copy Interop files.
-	FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *InteropIntermediatePath, *InteropOutputPath);
-	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
-	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated interop files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);
-		return false;
-	}
-
 	// Copy schema files
-	DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *SchemaIntermediatePath, *SchemaOutputPath);
+	FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *SchemaIntermediatePath, *SchemaOutputPath);
 	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
 	{
 		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Could not move generated schema files during the diff-copy stage. Path: '%s', arguments: '%s'."), *DiffCopyPath, *DiffCopyArguments);

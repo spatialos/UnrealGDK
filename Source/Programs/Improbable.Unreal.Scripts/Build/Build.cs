@@ -30,7 +30,6 @@ exit /b !ERRORLEVEL!
 
         public static void Main(string[] args)
         {
-            var runCodegen = args.Count(arg => arg.ToLowerInvariant() == "--skip-codegen") == 0;
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
 
             var exitCode = 0;
@@ -43,9 +42,7 @@ exit /b !ERRORLEVEL!
 
             if (help)
             {
-                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [flags]");
-                Console.WriteLine("Flags:");
-                Console.WriteLine("\t--skip-codegen  : Don't run the code generator.");
+                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject>");
 
                 Environment.Exit(exitCode);
             }
@@ -54,16 +51,6 @@ exit /b !ERRORLEVEL!
             var platform = args[1];
             var configuration = args[2];
             var projectFile = Path.GetFullPath(args[3]);
-
-            if (runCodegen)
-            {
-                Common.WriteHeading("Generating code...");
-                Codegen.Main(args);
-            }
-            else
-            {
-                Common.WriteHeading("Skipping code generation.");
-            }
 
             var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
             var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));

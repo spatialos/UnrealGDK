@@ -9,7 +9,6 @@ USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObject
 {
 	ProjectRootFolder.Path = TEXT("");
 	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotPath();
-	InteropCodegenOutputFolder.Path = TEXT("");
 	GeneratedSchemaOutputFolder.Path = TEXT("");
 }
 
@@ -21,12 +20,10 @@ FString USpatialGDKEditorToolbarSettings::ToString()
 	Args.Add(bStopSpatialOnExit);
 	Args.Add(SpatialOSSnapshotPath.Path);
 	Args.Add(SpatialOSSnapshotFile);
-	Args.Add(InteropCodegenOutputFolder.Path);
 	Args.Add(GeneratedSchemaOutputFolder.Path);
 
 	return FString::Format(TEXT("ProjectRootFolder={0}, SpatialOSLaunchArgument={1}, "
 								"bStopSpatialOnExit={2}, SpatialOSSnapshotPath={3}, "
-								"SpatialOSSnapshotFile={4}, InteropCodegenOutputFolder={5}"
-								"GeneratedSchemaOutputFolder={6}"),
+								"SpatialOSSnapshotFile={4}, GeneratedSchemaOutputFolder={5}"),
 						   Args);
 }
