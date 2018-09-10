@@ -191,8 +191,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 				Connection->SentTemporaries.Remove(ThisActor);
 			}
 
-			UActorChannel* Channel = Connection->ActorChannels.FindRef(ThisActor);
-			if (Channel)
+			if (UActorChannel* Channel = Connection->ActorChannels.FindRef(ThisActor))
 			{
 				check(Channel->OpenedLocally);
 				Channel->bClearRecentActorRefs = false;
