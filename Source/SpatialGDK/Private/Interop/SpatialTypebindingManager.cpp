@@ -212,28 +212,34 @@ bool USpatialTypebindingManager::IsSupportedClass(UClass* Class)
 	return false;
 }
 
-TArray<UActorComponent*> USpatialTypebindingManager::GetHandoverComponents(AActor* Actor)
+TArray<UObject*> USpatialTypebindingManager::GetHandoverSubobjects(AActor* Actor)
 {
 	FClassInfo* Info = FindClassInfoByClass(Actor->GetClass());
 	check(Info);
 
-	TArray<UActorComponent*> FoundComponents;
+	TArray<UObject*> DefaultSubobjects;
+	Actor->GetDefaultSubobjects(DefaultSubobjects);
 
-	for (UClass* ComponentClass : Info->ComponentClasses)
+	TArray<UObject*> FoundSubobjects;
+
+	for (UClass* SubobjectClass : Info->SubobjectClasses)
 	{
-		FClassInfo* ComponentInfo = FindClassInfoByClass(ComponentClass);
-		check(ComponentInfo);
+		FClassInfo* SubobjectInfo = FindClassInfoByClass(SubobjectClass);
+		check(SubobjectInfo);
 
-		if (ComponentInfo->HandoverProperties.Num() == 0)
+		if (SubobjectInfo->HandoverProperties.Num() == 0)
 		{
 			// Not interested in this component if it has no handover properties
 			continue;
 		}
 
-		TArray<UActorComponent*> Components = Actor->GetComponentsByClass(ComponentClass);
-		checkf(Components.Num() == 1, TEXT("Multiple replicated components of the same type are currently not supported by Unreal GDK"));
-		FoundComponents.Add(Components[0]);
+		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
+		{
+			return Obj->IsA(SubobjectClass);
+		});
+		check(FoundSubobject);
+		FoundSubobjects.Add(*FoundSubobject);
 	}
 
-	return FoundComponents;
+	return FoundSubobjects;
 }

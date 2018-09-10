@@ -677,7 +677,7 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 		Channel->Actor->GetDefaultSubobjects(DefaultSubobjects);
 		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([Class](const UObject* Obj)
 		{
-			return (Obj->IsA(Class));
+			return Obj->IsA(Class);
 		});
 		check(FoundSubobject);
 		TargetObject = *FoundSubobject;

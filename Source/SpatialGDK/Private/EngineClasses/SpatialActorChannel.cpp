@@ -349,15 +349,15 @@ bool USpatialActorChannel::ReplicateActor()
 			}
 		}
 
-		for (UActorComponent* ActorComponent : NetDriver->TypebindingManager->GetHandoverComponents(Actor))
+		for (UObject* Subobject : NetDriver->TypebindingManager->GetHandoverSubobjects(Actor))
 		{
 			// Handover shadow data should already exist for this object. If it doesn't, it must have
 			// started replicating after SetChannelActor was called on the owning actor.
-			TArray<uint8>& SubobjectHandoverShadowData = HandoverShadowDataMap.FindChecked(ActorComponent).Get();
-			FHandoverChangeState HandoverChanged = GetHandoverChangeList(SubobjectHandoverShadowData, ActorComponent);
+			TArray<uint8>& SubobjectHandoverShadowData = HandoverShadowDataMap.FindChecked(Subobject).Get();
+			FHandoverChangeState HandoverChanged = GetHandoverChangeList(SubobjectHandoverShadowData, Subobject);
 			if (HandoverChanged.Num() > 0)
 			{
-				Sender->SendComponentUpdates(ActorComponent, this, nullptr, &HandoverChanged);
+				Sender->SendComponentUpdates(Subobject, this, nullptr, &HandoverChanged);
 			}
 		}
 	}
@@ -505,10 +505,10 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
 
 	// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
-	for (UActorComponent* ActorComponent : NetDriver->TypebindingManager->GetHandoverComponents(InActor))
+	for (UObject* Subobject : NetDriver->TypebindingManager->GetHandoverSubobjects(InActor))
 	{
-		check(!HandoverShadowDataMap.Contains(ActorComponent));
-		InitializeHandoverShadowData(HandoverShadowDataMap.Add(ActorComponent, MakeShared<TArray<uint8>>()).Get(), ActorComponent);
+		check(!HandoverShadowDataMap.Contains(Subobject));
+		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
 
 	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).

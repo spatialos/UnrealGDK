@@ -81,7 +81,7 @@ public:
 	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
 	UClass* FindClassByComponentId(Worker_ComponentId ComponentId);
 
-	TArray<UActorComponent*> GetHandoverComponents(AActor* Actor);
+	TArray<UObject*> GetHandoverSubobjects(AActor* Actor);
 
 private:
 	void FindSupportedClasses();

@@ -133,16 +133,17 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 		ComponentDatas.Add(RPCData);
 	}
 
+	TArray<UObject*> DefaultSubobjects;
+	Actor->GetDefaultSubobjects(DefaultSubobjects);
+
 	for (UClass* SubobjectClass : Info->SubobjectClasses)
 	{
 		FClassInfo* SubobjectInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
 		check(SubobjectInfo);
 
-		TArray<UObject*> DefaultSubobjects;
-		Actor->GetDefaultSubobjects(DefaultSubobjects);
 		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
 		{
-			return (Obj->GetClass() == SubobjectClass);
+			return Obj->IsA(SubobjectClass);
 		});
 		check(FoundSubobject);
 		UObject* Subobject = *FoundSubobject;
