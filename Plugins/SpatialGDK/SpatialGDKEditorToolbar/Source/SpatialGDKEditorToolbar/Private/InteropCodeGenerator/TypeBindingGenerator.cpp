@@ -415,14 +415,14 @@ void GenerateUnrealToSchemaConversion(FCodeWriter& Writer, const FString& Update
 			})""", *Update);
 		if (!bIsRPCProperty)
 		{
-			Writer.Printf(GenerateObjectRefAssignmentString(ProperyInfo, TEXT("ObjectRef")));
+			//Writer.Printf(GenerateObjectRefAssignmentString(ProperyInfo, TEXT("ObjectRef")));
 		}
 		Writer.End();
 		Writer.Printf(R"""(
 			else
 			{
 				%s(SpatialConstants::NULL_OBJECT_REF);
-				%s
+				//%s
 			})""", *Update, !bIsRPCProperty ? *GenerateObjectRefAssignmentString(ProperyInfo, TEXT("&SpatialConstants::NULL_OBJECT_REF")) : TEXT(""));
 	}
 	else if (Property->IsA(UNameProperty::StaticClass()))
@@ -563,14 +563,14 @@ void GeneratePropertyToUnrealConversion(FCodeWriter& Writer, const FString& Upda
 			check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
 			if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
 			{
-				%s
+				//%s
 				%s = nullptr;
 			})""", *Update, !bIsRPCProperty ? *GenerateObjectRefAssignmentString(ProperyInfo, TEXT("&SpatialConstants::NULL_OBJECT_REF")) : TEXT(""), *PropertyValue);
 		Writer.Print("else");
 		Writer.BeginScope();
 		Writer.Printf(R"""(
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
-			%s
+			//%s
 			if (NetGUID.IsValid())
 			{
 				UObject* Object_Raw = PackageMap->GetObjectFromNetGUID(NetGUID, true);
@@ -1851,7 +1851,7 @@ void GenerateFunction_ServerSendUpdate_HandoverData(FCodeWriter& SourceWriter, U
 
 			if (Property->IsA<UObjectPropertyBase>())
 			{
-				GenerateObjectRefAssignmentString(HandoverProp.Value, TEXT("ObjectRef"));
+				//GenerateObjectRefAssignmentString(HandoverProp.Value, TEXT("ObjectRef"));
 			}
 
 			SourceWriter.PrintNewLine();
