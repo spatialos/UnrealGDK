@@ -1,4 +1,4 @@
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../../README.md#recommended-use).
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # Unreal GDK Troubleshooting/FAQ
 
@@ -6,14 +6,14 @@
 
 **Q:** I’m getting the error `"Could not find definition for module 'SpatialGDK' (referenced via Target -> <ProjectName>.Build.cs)"` when building my project.
 
-**A:** You need to setup symlinks to the GDK as per [step 3 here](../setup-and-installing.md#building).
+**A:** You need to setup symlinks to the GDK as per [step 3 here]({{urlRoot}}/setup-and-installing#building).
 
 ------
 
 **Q:** I've set up my Actor for replication according to Unreal Engine’s [documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), but my Actor does not replicate.
 
 **A:** There could be a few different reasons for this. The list below provides some of the most common ones, ordered by likelihood:
-1. It's easy to forget to generate the [type bindings](./interop.md) for your replicated Actor. Make sure you run the Interop Code Generator and rebuild your project with these type bindings setup.
+1. It's easy to forget to generate the [type bindings]({{urlRoot}}/content/interop) for your replicated Actor. Make sure you run the Interop Code Generator and rebuild your project with these type bindings setup.
 1. As per Unreal Engine’s [replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), your Actor needs to be created on the server-worker before it can replicate to the client-workers.
 1. Ensure that your call to `SpawnActor` is happening on your server-worker.
 Validate that the SpatialOS entity that represents your Actor appears in the Inspector. If it doesn't, then it's likely that it's not marked up for replication correctly.
@@ -37,13 +37,13 @@ Validate that the SpatialOS entity that represents your Actor appears in the Ins
 
 **Q:** I’m getting the following compilation error when building the GDK: `Error C2248: FRepLayout::Cmds': cannot access private member declared in class 'FRepLayout`.
 
-**A:** You're building against an unsupported version of Unreal Engine. Make sure you're targeting the fork of Unreal Engine that the GDK requires. See the [setup guide](../setup-and-installing.md#building) for more details.
+**A:** You're building against an unsupported version of Unreal Engine. Make sure you're targeting the fork of Unreal Engine that the GDK requires. See the [setup guide]({{urlRoot}}/setup-and-installing#building) for more details.
 
 ------
 
 **Q:** When running the Interop Code Generator, I’m getting the following error: `Error: Could not move generated interop files during the diff-copy stage`.
 
-**A:** Due to the [known issue](../known-issues.md) with piped input from child processes, it is not possible to get the exact error message. However, the most likely cause of the error, especially when working with Perforce, is that some of the files in the output folder (see the second argument in the error message) are marked as read-only. If that is the cause, you can resolve the error by changing all files to be writable.
+**A:** Due to the [known issue]({{urlRoot}}/known-issues) with piped input from child processes, it is not possible to get the exact error message. However, the most likely cause of the error, especially when working with Perforce, is that some of the files in the output folder (see the second argument in the error message) are marked as read-only. If that is the cause, you can resolve the error by changing all files to be writable.
 
 Note that you may see similar errors if the same issue applies to the schema generation or the legacy SDK codegen output within the interop code generation step.
 
@@ -51,7 +51,7 @@ Note that you may see similar errors if the same issue applies to the schema gen
 
 **Q:** My game uses reliable multicast RPCs - why does the SpatialOS Unreal GDK not support these?
 
-**A:** The underlying implementation of multicast RPCs uses SpatialOS [events](https://docs.improbable.io/reference/13.1/shared/glossary#event) (SpatialOS documentation). SpatialOS events can only be sent unreliably. Additionally, the cost of a multicast RPC scales with the number of client-workers present in a deployment, which means they can get very expensive. A better approach would be to send RPCs to only the workers that are close to the broadcasting worker.
+**A:** The underlying implementation of multicast RPCs uses SpatialOS [events](https://docs.improbable.io/reference/latest/shared/glossary#event) (SpatialOS documentation). SpatialOS events can only be sent unreliably. Additionally, the cost of a multicast RPC scales with the number of client-workers present in a deployment, which means they can get very expensive. A better approach would be to send RPCs to only the workers that are close to the broadcasting worker.
 
 ------
 
@@ -77,12 +77,6 @@ check(!Value->IsFullNameStableForNetworking())
 
 ------
 
-**Q:** My character is stuck in a T-pose on connecting.
+**Q:** When I build my project, I get the following error: `Unknown class specifier 'SpatialType'`.
 
-**A:** This is a known issue due to a bug in SpatialOS where a server-worker will sometimes not get authority over an entity (in this case the Global State Manager). The workaround at the moment is to try reconnecting to the deployment until it works. The fix for this bug is currently being worked on.
-
-------
-
-**Q:** My replicated properties in my game state aren't updating in the Inspector or on my client-worker.
-
-**A:** This is a known issue due to a bug in SpatialOS where a server-worker will sometimes not get authority over an entity (in this case the GameState). The workaround at the moment is to try reconnecting to the deployment until it works. The fix for this bug is currently being worked on.
+**A:** `SpatialType` is a new class specifier for tagging of classes to replicate to SpatialOS. To stop the error message, rebuild the `Unreal Header Tool` using the `Development` configuration.

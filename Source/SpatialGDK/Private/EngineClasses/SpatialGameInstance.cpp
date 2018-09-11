@@ -64,8 +64,9 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 		GetEngine()->ShutdownWorldNetDriver(GetWorldContext()->World());
 	}
 
-	FURL BaseURL = WorldContext->LastURL;
-	FURL URL(&BaseURL, TEXT("127.0.0.1"), ETravelType::TRAVEL_Absolute);
+	// This will use the URL / Map that was setup by the server worker (which is loaded first).
+	// By not specifying a hostname the connection defaults to local.
+	FURL URL = WorldContext->LastURL;
 
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);

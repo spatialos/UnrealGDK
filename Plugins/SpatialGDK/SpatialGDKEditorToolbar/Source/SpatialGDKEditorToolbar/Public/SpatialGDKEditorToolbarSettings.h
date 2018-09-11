@@ -58,7 +58,7 @@ public:
 	{
 		return ProjectRootFolder.Path.IsEmpty()
 			? FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")))
-			: FPaths::ConvertRelativePathToFull(ProjectRootFolder.Path);
+			: ProjectRootFolder.Path;
 	}
 
 	UFUNCTION()
@@ -66,7 +66,7 @@ public:
 	{
 		return GeneratedSchemaOutputFolder.Path.IsEmpty()
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetProjectRoot(), FString(TEXT("schema/improbable/unreal/generated/"))))
-			: FPaths::ConvertRelativePathToFull(GeneratedSchemaOutputFolder.Path);
+			: GeneratedSchemaOutputFolder.Path;
 	}
 
 	UFUNCTION()
@@ -74,7 +74,7 @@ public:
 	{
 		return SpatialOSSnapshotPath.Path.IsEmpty()
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetProjectRoot(), FString(TEXT("../spatial/snapshots/"))))
-			: FPaths::ConvertRelativePathToFull(SpatialOSSnapshotPath.Path);
+			: SpatialOSSnapshotPath.Path;
 	}
 
 	UFUNCTION()

@@ -1,22 +1,14 @@
-
-> This [pre-alpha](https://docs.improbable.io/reference/13.1/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use](../../README.md#recommended-use).
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # Porting a native Unreal project to the Unreal GDK
 
-## Contents
-
-* [Prerequisites](#prerequisites)
-* [Setting up the project structure](#setting-up-the-project-structure)
-* [Adding the SpatialGDK module to your project](#adding-the-spatialgdk-module-to-your-project)
-* [Modifying Unreal classes for GDK compatibility](#modifying-unreal-classes-for-gdk-compatibility)
-* [Adding Unreal GDK configurations](#adding-unreal-gdk-configurations)
-* [Generating code for SpatialOS C++ workers and building your project](#generating-code-for-spatialos-c++-workers-and-building-your-project)
-* [Running the Interop Code Generator and setting up the UE4 Editor](#running-the-interop-code-generator-and-setting-up-the-UE4-editor)
-* [Running your game](#running-your-game)
-
 > This workflow is very subject to change. We're aware that it's not optimized, and one of our priorities is to improve iteration times.
+
 ## Prerequisites
-Follow the [setup guide](../setup-and-installing.md) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
+
+<%(TOC)%>
+
+Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
 > To speed up build times, install IncrediBuild, FastBuild, or another build distributor.
 
 ## Setting up the project structure
@@ -201,7 +193,7 @@ This initializes the project. It should succeed quickly and silently.
     1. Open the solution in Visual Studio, and compile and run the project in the Development Editor configuration.
 
 ## Running the Interop Code Generator and setting up the UE4 Editor
-1. In the Unreal Editor, on the SpatialOS Unreal GDK toolbar, click **Codegen** to run the [Interop Code Generator](./interop.md).
+1. In the Unreal Editor, on the SpatialOS Unreal GDK toolbar, click **Codegen** to run the [Interop Code Generator]({{urlRoot}}/content/interop).
 1. On the same toolbar, click **Snapshot**.
 1. Go to **Edit** > **Project Settings** > **Maps & Modes** and change the Game Default Map to match what's set for the Editor Startup Map. (This is a temporary requirement.)
 1. Close the Unreal Editor.
