@@ -17,15 +17,13 @@ public class SpatialGDK : ModuleRules
         PublicIncludePaths.AddRange(
             new string[]
             {
-                "SpatialGDK/Public",
-                "SpatialGDK/Public/WorkerSdk",
-                "SpatialGDK/Generated/Cpp",
-                "SpatialGDK/Generated/UClasses",
-                "SpatialGDK/Legacy",
-                "SpatialGDK/Legacy/Deprecated"
+                "Public",
+                "Public/WorkerSdk",
+                "Generated/Cpp",
+                "Generated/UClasses",
             });
 
-        PrivateIncludePaths.Add("SpatialGDK/Private");
+        PrivateIncludePaths.Add("Private");
 
         PublicDependencyModuleNames.AddRange(
             new string[]

@@ -11,30 +11,29 @@ public class SpatialGDKEditorToolbar : ModuleRules
 
         PublicIncludePaths.AddRange(
             new string[] {
-                "SpatialGDKEditorToolbar/Public",
-                "SpatialGDK/Public"
+                "Public"
             }
         );
-				
-		
+
+
         PrivateIncludePaths.AddRange(
-            new string[] 
+            new string[]
             {
-                "SpatialGDKEditorToolbar/Private",
+                "Private",
             }
         );
-			
-		
+
+
         PublicDependencyModuleNames.AddRange(
-            new string[] 
+            new string[]
             {
                 "Core",
                 "Json",
                 "JsonUtilities"
             }
         );
-			
-		
+
+
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
