@@ -18,7 +18,7 @@
 class USpatialSender;
 class UGlobalStateManager;
 
-using FChannelObjectPair = TPair<USpatialActorChannel*, UObject*>;
+using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
 struct FObjectReferences;
 using FObjectReferencesMap = TMap<int32, FObjectReferences>;
@@ -124,7 +124,7 @@ private:
 	UClass* GetNativeEntityClass(Metadata* MetadataComponent);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
-	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel);
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
 	void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, UObject* TargetObject, UFunction* Function);
 	void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, const TArray<UFunction*>& RPCArray);

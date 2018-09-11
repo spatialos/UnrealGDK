@@ -364,12 +364,12 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	// 2. The Actor was deleted on another server
 	// In neither situation do we want to delete associated entities, so prevent them from being issued.
 	// TODO: fix this with working sets (UNR-411)
-	//NetDriver->GetSpatialInterop()->StartIgnoringAuthoritativeDestruction();
+	NetDriver->StartIgnoringAuthoritativeDestruction();
 	if (!World->DestroyActor(Actor, true))
 	{
 		UE_LOG(LogTemp, Error, TEXT("World->DestroyActor failed on RemoveActor %s %lld"), *Actor->GetName(), EntityId);
 	}
-	//NetDriver->GetSpatialInterop()->StopIgnoringAuthoritativeDestruction();
+	NetDriver->StopIgnoringAuthoritativeDestruction();
 
 	CleanupDeletedEntity(EntityId);
 }
@@ -434,13 +434,19 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 		TSet<UnrealObjectRef> UnresolvedRefs;
 
 		ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
-		Reader.ApplyComponentData(Data, TargetObject, Channel);
+		Reader.ApplyComponentData(Data, TargetObject, Channel, /* bIsHandover */ false);
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
 	else if (Data.component_id == Info->HandoverComponent)
 	{
-		// TODO: Handover
+		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
+		TSet<UnrealObjectRef> UnresolvedRefs;
+
+		ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
+		Reader.ApplyComponentData(Data, TargetObject, Channel, /* bIsHandover */ true);
+
+		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
 	else
 	{
@@ -492,7 +498,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	{
 		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
 		{
-			ApplyComponentUpdate(Op.update, TargetObject, ActorChannel);
+			ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ false);
 		}
 	}
 	else if (Op.update.component_id == Info->HandoverComponent)
@@ -502,7 +508,10 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			UE_LOG(LogTemp, Verbose, TEXT("Skipping Handover component because we're a client."));
 			return;
 		}
-		// TODO: Handover
+		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
+		{
+			ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ true);
+		}
 	}
 	else if (Op.update.component_id == Info->RPCComponents[RPC_NetMulticast])
 	{
@@ -583,14 +592,14 @@ void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 	// TODO: Resend reliable RPCs on timeout
 }
 
-void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel)
+void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover)
 {
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
 	FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 	TSet<UnrealObjectRef> UnresolvedRefs;
 	ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
-	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel);
+	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel, bIsHandover);
 
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
@@ -668,7 +677,7 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 		Channel->Actor->GetDefaultSubobjects(DefaultSubobjects);
 		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([Class](const UObject* Obj)
 		{
-			return (Obj->IsA(Class));
+			return Obj->IsA(Class);
 		});
 		check(FoundSubobject);
 		TargetObject = *FoundSubobject;
@@ -760,7 +769,8 @@ void USpatialReceiver::QueueIncomingRPC(const TSet<UnrealObjectRef>& UnresolvedR
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
-	Sender->ResolveOutgoingOperations(Object);
+	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
+	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
 	Sender->ResolveOutgoingRPCs(Object);
 }
@@ -781,14 +791,19 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const UnrealOb
 	for (FChannelObjectPair& ChannelObjectPair : *TargetObjectSet)
 	{
 		FObjectReferencesMap* UnresolvedRefs = UnresolvedRefsMap.Find(ChannelObjectPair);
-
 		if (!UnresolvedRefs)
 		{
 			continue;
 		}
 
-		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key;
-		UObject* ReplicatingObject = ChannelObjectPair.Value;
+		if (!ChannelObjectPair.Key.IsValid() || !ChannelObjectPair.Value.IsValid())
+		{
+			UnresolvedRefsMap.Remove(ChannelObjectPair);
+			continue;
+		}
+
+		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key.Get();
+		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
 
 		bool bStillHasUnresolved = false;
 		bool bSomeObjectsWereMapped = false;
@@ -857,19 +872,19 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		FObjectReferences& ObjectReferences = It.Value();
 		UProperty* Property = ObjectReferences.Property;
-		FRepParentCmd& Parent = RepLayout.Parents[ObjectReferences.ParentIndex];
+		// ParentIndex is -1 for handover properties
+		FRepParentCmd* Parent = ObjectReferences.ParentIndex >= 0 ? &RepLayout.Parents[ObjectReferences.ParentIndex] : nullptr;
 
 		if (ObjectReferences.Array)
 		{
 			check(Property->IsA<UArrayProperty>());
 
-			// TODO: storedarray's data will be invalidated if this is the first resolved ref 
 			Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
 
 			FScriptArray* StoredArray = (FScriptArray*)(StoredData + AbsOffset);
 			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
-			int32 NewMaxOffset = FMath::Min(StoredArray->Num(), Array->Num()) * Property->ElementSize;
+			int32 NewMaxOffset = Array->Num() * Property->ElementSize;
 
 			bool bArrayHasUnresolved = false;
 			ResolveObjectReferences(RepLayout, ReplicatedObject, *ObjectReferences.Array, (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped, bArrayHasUnresolved);
@@ -917,10 +932,10 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				bOutSomeObjectsWereMapped = true;
 			}
 
-			//if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
-			//{
-			//	Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
-			//}
+			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
+			{
+				Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
+			}
 
 			if (ObjectReferences.bSingleProp)
 			{
@@ -937,11 +952,11 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				ReadStructProperty(BitReader, Cast<UStructProperty>(Property), NetDriver, Data + AbsOffset, bOutStillHasUnresolved);
 			}
 
-			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + AbsOffset, Data + AbsOffset))
+				if (Parent->RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + AbsOffset, Data + AbsOffset))
 				{
-					RepNotifies.AddUnique(Parent.Property);
+					RepNotifies.AddUnique(Parent->Property);
 				}
 			}
 		}

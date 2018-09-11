@@ -42,6 +42,14 @@ struct FRPCInfo
 	uint32 Index;
 };
 
+struct FHandoverPropertyInfo
+{
+	uint16 Handle;
+	int32 Offset;
+	int32 ArrayIdx;
+	UProperty* Property;
+};
+
 USTRUCT()
 struct FClassInfo
 {
@@ -49,6 +57,8 @@ struct FClassInfo
 
 	TMap<ERPCType, TArray<UFunction*>> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
+
+	TArray<FHandoverPropertyInfo> HandoverProperties;
 
 	Worker_ComponentId SingleClientComponent;
 	Worker_ComponentId MultiClientComponent;
@@ -70,6 +80,8 @@ public:
 	FClassInfo* FindClassInfoByClass(UClass* Class);
 	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
 	UClass* FindClassByComponentId(Worker_ComponentId ComponentId);
+
+	TArray<UObject*> GetHandoverSubobjects(AActor* Actor);
 
 private:
 	void FindSupportedClasses();

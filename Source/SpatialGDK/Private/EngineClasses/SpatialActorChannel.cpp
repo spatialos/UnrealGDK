@@ -79,7 +79,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		return;
 	}
 
-	bool bHasAuthority = NetDriver->View->GetAuthority(EntityId, Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->View->GetAuthority(EntityId, Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 
 	UE_LOG(LogTemp, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
@@ -118,8 +118,19 @@ void USpatialActorChannel::Close()
 	Super::Close();
 }
 
-TArray<uint16> USpatialActorChannel::GetAllPropertyHandles(FObjectReplicator& Replicator)
+bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 {
+	check(ObjectHasReplicator(Object));
+	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
+	TSharedPtr<FRepLayout>& RepLayout = Replicator.RepLayout;
+	check(Handle - 1 < RepLayout->BaseHandleToCmdIndex.Num());
+	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == REPCMD_DynamicArray;
+}
+
+FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(UObject* Object)
+{
+	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
+
 	TArray<uint16> InitialRepChanged;
 
 	int32 DynamicArrayDepth = 0;
@@ -150,26 +161,18 @@ TArray<uint16> USpatialActorChannel::GetAllPropertyHandles(FObjectReplicator& Re
 		}
 	}
 
-	return InitialRepChanged;
+	return { InitialRepChanged, *Replicator.RepLayout };
 }
 
-bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
+FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(FClassInfo* ClassInfo)
 {
-	TWeakObjectPtr<UObject> WeakObjectPtr(Object);
-	check(ObjectHasReplicator(WeakObjectPtr));
-	FObjectReplicator& Replicator = FindOrCreateReplicator(WeakObjectPtr).Get();
-	TSharedPtr<FRepLayout>& RepLayout = Replicator.RepLayout;
-	check(Handle - 1 < RepLayout->BaseHandleToCmdIndex.Num());
-	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == REPCMD_DynamicArray;
-}
+	FHandoverChangeState HandoverChanged;
+	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo->HandoverProperties)
+	{
+		HandoverChanged.Add(PropertyInfo.Handle);
+	}
 
-FPropertyChangeState USpatialActorChannel::CreateSubobjectChangeState(UObject* Subobject)
-{
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Subobject)).Get();
-
-	TArray<uint16> InitialRepChanged = GetAllPropertyHandles(Replicator);
-
-	return GetChangeStateForObject(Subobject, &Replicator, InitialRepChanged, TArray<uint16>());
+	return HandoverChanged;
 }
 
 bool USpatialActorChannel::ReplicateActor()
@@ -221,7 +224,6 @@ bool USpatialActorChannel::ReplicateActor()
 	RepFlags.bNetSimulated = (Actor->GetRemoteRole() == ROLE_SimulatedProxy);
 	RepFlags.bRepPhysics = Actor->ReplicatedMovement.bRepPhysics;
 	RepFlags.bReplay = ActorWorld && (ActorWorld->DemoNetDriver == Connection->GetDriver());
-	RepFlags.bNetInitial = RepFlags.bNetInitial;
 
 	UE_LOG(LogNetTraffic, Log, TEXT("Replicate %s, bNetInitial: %d, bNetOwner: %d"), *Actor->GetName(), RepFlags.bNetInitial, RepFlags.bNetOwner);
 
@@ -263,50 +265,18 @@ bool USpatialActorChannel::ReplicateActor()
 		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
 	}
 
-	const bool bCompareIndexSame = ActorReplicator->RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
-	// !!! DTB Here
 	// Update the handover property change list.
-	//USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
-	TArray<uint16> HandoverChanged;
-	//if (Binding)
-	//{
-	//	uint32 ShadowDataOffset = 0;
-	//	for (auto& PropertyInfo : Binding->GetHandoverHandlePropertyMap())
-	//	{
-	//		ShadowDataOffset = Align(ShadowDataOffset, PropertyInfo.Value.Property->GetMinAlignment());
-
-	//		const uint8* Data = PropertyInfo.Value.GetPropertyData((uint8*)Actor);
-
-	//		// Compare and assign.
-	//		if (RepFlags.bNetInitial || !PropertyInfo.Value.Property->Identical(HandoverPropertyShadowData.GetData() + ShadowDataOffset, Data))
-	//		{
-	//			HandoverChanged.Add(PropertyInfo.Key);
-	//			PropertyInfo.Value.Property->CopyCompleteValue(HandoverPropertyShadowData.GetData() + ShadowDataOffset, Data);
-	//		}
-	//		ShadowDataOffset += PropertyInfo.Value.Property->GetSize();
-	//	}
-	//}
-
-	// We can skip the core actor if there are no new changelists to send, and we are not creating a new entity.
-	bool bReplicateCoreActor = true;
-	if (!bCreatingNewEntity)// && HandoverChanged.Num() == 0)
-	{
-		if (bCompareIndexSame || ActorReplicator->RepState->LastChangelistIndex == ChangelistState->HistoryEnd)
-		{
-			UpdateChangelistHistory(ActorReplicator->RepState);
-			bReplicateCoreActor = false;
-		}
-	}
+	FHandoverChangeState HandoverChanged = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
 
 	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
-	if (bReplicateCoreActor && (RepFlags.bNetInitial || RepChanged.Num() > 0/* || HandoverChanged.Num() > 0*/))
+	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChanged.Num() > 0)
 	{		
-		if (RepFlags.bNetInitial && bCreatingNewEntity)
+		if (bCreatingNewEntity)
 		{
 			// SAHIL: CHECK IF YOU PROPERLY FIX THIS
 			//check(!Actor->IsFullNameStableForNetworking() || Interop->CanSpawnReplicatedStablyNamedActors());
@@ -339,17 +309,14 @@ bool USpatialActorChannel::ReplicateActor()
 				UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
 			}
 
-			// Ensure that the initial changelist contains _every_ property. This ensures that the default properties are written to the entity template.
-			// Otherwise, there will be a mismatch between the rep state shadow data used by CompareProperties and the entity in SpatialOS.
-			TArray<uint16> InitialRepChanged = GetAllPropertyHandles(*ActorReplicator);
-
 			// Calculate initial spatial position (but don't send component update) and create the entity.
 			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			Sender->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId, InitialRepChanged, HandoverChanged);
+			Sender->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId);
 		}
 		else
 		{
-			Sender->SendComponentUpdates(Actor, this, GetChangeStateForObject(Actor, ActorReplicator, RepChanged, HandoverChanged));
+			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
+			Sender->SendComponentUpdates(Actor, this, &RepChangeState, &HandoverChanged);
 		}
 
 		bWroteSomethingImportant = true;
@@ -357,8 +324,9 @@ bool USpatialActorChannel::ReplicateActor()
 		{
 			ActorReplicator->RepState->HistoryEnd++;
 		}
-		UpdateChangelistHistory(ActorReplicator->RepState);
 	}
+
+	UpdateChangelistHistory(ActorReplicator->RepState);
 
 	ActorReplicator->RepState->LastChangelistIndex = ChangelistState->HistoryEnd;
 
@@ -374,13 +342,22 @@ bool USpatialActorChannel::ReplicateActor()
 
 		for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 		{
-			if (ActorComponent->GetIsReplicated()) // Only replicated subobjects with type bindings
+			if (ClassInfo->SubobjectClasses.Contains(ActorComponent->GetClass()))
 			{
-				if(ClassInfo->SubobjectClasses.Find(ActorComponent->GetClass()) != nullptr)
-				{
-					bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, RepFlags);
-					bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-				}
+				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, RepFlags);
+				bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
+			}
+		}
+
+		for (UObject* Subobject : NetDriver->TypebindingManager->GetHandoverSubobjects(Actor))
+		{
+			// Handover shadow data should already exist for this object. If it doesn't, it must have
+			// started replicating after SetChannelActor was called on the owning actor.
+			TArray<uint8>& SubobjectHandoverShadowData = HandoverShadowDataMap.FindChecked(Subobject).Get();
+			FHandoverChangeState HandoverChanged = GetHandoverChangeList(SubobjectHandoverShadowData, Subobject);
+			if (HandoverChanged.Num() > 0)
+			{
+				Sender->SendComponentUpdates(Subobject, this, nullptr, &HandoverChanged);
 			}
 		}
 	}
@@ -412,14 +389,14 @@ bool USpatialActorChannel::ReplicateActor()
 	return bWroteSomethingImportant;
 }
 
-bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicationFlags &RepFlags)
+bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)
 {
 	if (!NetDriver->TypebindingManager->IsSupportedClass(Object->GetClass()))
 	{
 		return false;
 	}
 
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(Object)).Get();
+	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
 	Replicator.ChangelistMgr->Update(Object, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
@@ -436,15 +413,12 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicatio
 		Replicator.RepLayout->MergeChangeList((uint8*)Object, HistoryItem.Changed, Temp, RepChanged);
 	}
 
-	const bool bCompareIndexSame = Replicator.RepState->LastCompareIndex == ChangelistState->CompareIndex;
 	Replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
-
-	// TODO: Handover
-	TArray<uint16> HandoverChanged;
 
 	if (RepChanged.Num() > 0)
 	{
-		Sender->SendComponentUpdates(Object, this, GetChangeStateForObject(Object, &Replicator, RepChanged, HandoverChanged));
+		FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Object) };
+		Sender->SendComponentUpdates(Object, this, &RepChangeState, nullptr);
 		Replicator.RepState->HistoryEnd++;
 	}
 
@@ -454,10 +428,64 @@ bool USpatialActorChannel::ReplicateSubobject(UObject *Object, const FReplicatio
 	return RepChanged.Num() > 0;
 }
 
-bool USpatialActorChannel::ReplicateSubobject(UObject *Obj, FOutBunch &Bunch, const FReplicationFlags &RepFlags)
+bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags)
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
 	return ReplicateSubobject(Obj, RepFlags);
+}
+
+void USpatialActorChannel::InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object)
+{
+	FClassInfo* ClassInfo = NetDriver->TypebindingManager->FindClassInfoByClass(Object->GetClass());
+	check(ClassInfo);
+
+	uint32 Size = 0;
+	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo->HandoverProperties)
+	{
+		if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
+		{
+			// Make sure we conform to Unreal's alignment requirements; this is matched below and in ReplicateActor()
+			Size = Align(Size, PropertyInfo.Property->GetMinAlignment());
+			Size += PropertyInfo.Property->GetSize();
+		}
+	}
+	ShadowData.AddZeroed(Size);
+	uint32 Offset = 0;
+	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo->HandoverProperties)
+	{
+		if (PropertyInfo.ArrayIdx == 0)
+		{
+			Offset = Align(Offset, PropertyInfo.Property->GetMinAlignment());
+			PropertyInfo.Property->InitializeValue(ShadowData.GetData() + Offset);
+			Offset += PropertyInfo.Property->GetSize();
+		}
+	}
+}
+
+FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object)
+{
+	FHandoverChangeState HandoverChanged;
+
+	FClassInfo* ClassInfo = NetDriver->TypebindingManager->FindClassInfoByClass(Object->GetClass());
+	check(ClassInfo);
+
+	uint32 ShadowDataOffset = 0;
+	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo->HandoverProperties)
+	{
+		ShadowDataOffset = Align(ShadowDataOffset, PropertyInfo.Property->GetMinAlignment());
+
+		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
+		uint8* StoredData = ShadowData.GetData() + ShadowDataOffset;
+		// Compare and assign.
+		if (bCreatingNewEntity || !PropertyInfo.Property->Identical(StoredData, Data))
+		{
+			HandoverChanged.Add(PropertyInfo.Handle);
+			PropertyInfo.Property->CopySingleValue(StoredData, Data);
+		}
+		ShadowDataOffset += PropertyInfo.Property->ElementSize;
+	}
+
+	return HandoverChanged;
 }
 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
@@ -470,30 +498,18 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 
 	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
-	//USpatialInterop* Interop = SpatialNetDriver->GetSpatialInterop();
-	//check(Interop);
-	//// !!! DTB Here
-	//USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(InActor->GetClass());
-	//if (Binding)
-	//{
-	//	const FHandoverHandlePropertyMap& HandoverProperties = Binding->GetHandoverHandlePropertyMap();
-	//	uint32 Size = 0;
-	//	for (auto& Property : HandoverProperties)
-	//	{
-	//		// Make sure we conform to Unreal's alignment requirements; this is matched below and in ReplicateActor()
-	//		Size = Align(Size, Property.Value.Property->GetMinAlignment());
-	//		Size += Property.Value.Property->GetSize();
-	//	}
-	//	HandoverPropertyShadowData.Empty();
-	//	HandoverPropertyShadowData.AddZeroed(Size);
-	//	uint32 Offset = 0;
-	//	for (auto& Property : HandoverProperties)
-	//	{
-	//		Offset = Align(Offset, Property.Value.Property->GetMinAlignment());
-	//		Property.Value.Property->InitializeValue(HandoverPropertyShadowData.GetData() + Offset);
-	//		Offset += Property.Value.Property->GetSize();
-	//	}
-	//}
+	check(!HandoverShadowDataMap.Contains(InActor));
+
+	// Create the shadow map, and store a quick access pointer to it
+	ActorHandoverShadowData = &HandoverShadowDataMap.Add(InActor, MakeShared<TArray<uint8>>()).Get();
+	InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
+
+	// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
+	for (UObject* Subobject : NetDriver->TypebindingManager->GetHandoverSubobjects(InActor))
+	{
+		check(!HandoverShadowDataMap.Contains(Subobject));
+		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
+	}
 
 	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
 	check(NetDriver->GetEntityRegistry());
@@ -529,7 +545,7 @@ FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid());
 
 	TargetObject->PreNetReceive();
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(TargetObject)).Get();
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 
 	return Replicator;
@@ -540,8 +556,7 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
 	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
 
-	FObjectReplicator& Replicator = FindOrCreateReplicator(TWeakObjectPtr<UObject>(TargetObject)).Get();
-
+	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
 	Replicator.RepNotifies = RepNotifies;
 	Replicator.CallRepNotifies(false);

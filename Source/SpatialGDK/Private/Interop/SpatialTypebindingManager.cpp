@@ -78,6 +78,25 @@ void USpatialTypebindingManager::CreateTypebindings()
 			}
 		}
 
+		for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
+		{
+			UProperty* Property = *PropertyIt;
+
+			if (Property->PropertyFlags & CPF_Handover)
+			{
+				for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
+				{
+					FHandoverPropertyInfo HandoverInfo;
+					HandoverInfo.Handle = Info.HandoverProperties.Num() + 1; // 1-based index
+					HandoverInfo.Offset = Property->GetOffset_ForGC() + Property->ElementSize * ArrayIdx;
+					HandoverInfo.ArrayIdx = ArrayIdx;
+					HandoverInfo.Property = Property;
+
+					Info.HandoverProperties.Add(HandoverInfo);
+				}
+			}
+		}
+		
 		// TODO: Probably clean up duplication?
 		Info.SingleClientComponent = SchemaDatabase->ClassToSchema[Class].SingleClientRepData;
 		ComponentToClassMap.Add(Info.SingleClientComponent, Class);
@@ -191,4 +210,36 @@ bool USpatialTypebindingManager::IsSupportedClass(UClass* Class)
 	}
 
 	return false;
+}
+
+TArray<UObject*> USpatialTypebindingManager::GetHandoverSubobjects(AActor* Actor)
+{
+	FClassInfo* Info = FindClassInfoByClass(Actor->GetClass());
+	check(Info);
+
+	TArray<UObject*> DefaultSubobjects;
+	Actor->GetDefaultSubobjects(DefaultSubobjects);
+
+	TArray<UObject*> FoundSubobjects;
+
+	for (UClass* SubobjectClass : Info->SubobjectClasses)
+	{
+		FClassInfo* SubobjectInfo = FindClassInfoByClass(SubobjectClass);
+		check(SubobjectInfo);
+
+		if (SubobjectInfo->HandoverProperties.Num() == 0)
+		{
+			// Not interested in this component if it has no handover properties
+			continue;
+		}
+
+		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
+		{
+			return Obj->IsA(SubobjectClass);
+		});
+		check(FoundSubobject);
+		FoundSubobjects.Add(*FoundSubobject);
+	}
+
+	return FoundSubobjects;
 }

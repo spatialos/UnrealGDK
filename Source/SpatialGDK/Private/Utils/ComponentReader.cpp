@@ -14,19 +14,27 @@
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<UnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
+	, TypebindingManager(InNetDriver->TypebindingManager)
 	, ObjectReferencesMap(InObjectReferencesMap)
 	, UnresolvedRefs(InUnresolvedRefs)
 {
 }
 
-void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject* Object, USpatialActorChannel* Channel)
+void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject* Object, USpatialActorChannel* Channel, bool bIsHandover)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	ApplySchemaObject(ComponentObject, Object, Channel, true);
+	if (bIsHandover)
+	{
+		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true);
+	}
+	else
+	{
+		ApplySchemaObject(ComponentObject, Object, Channel, true);
+	}
 }
 
-void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* Object, USpatialActorChannel* Channel)
+void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* Object, USpatialActorChannel* Channel, bool bIsHandover)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
@@ -34,7 +42,14 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 	ClearedIds.SetNum(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
 	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIds.GetData());
 
-	ApplySchemaObject(ComponentObject, Object, Channel, false, &ClearedIds);
+	if (bIsHandover)
+	{
+		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, &ClearedIds);
+	}
+	else
+	{
+		ApplySchemaObject(ComponentObject, Object, Channel, false, &ClearedIds);
+	}
 }
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
@@ -65,7 +80,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	for (std::uint32_t FieldId : UpdateFields)
 	{
 		// FieldId is the same as rep handle
-		check((int)FieldId - 1 < BaseHandleToCmdIndex.Num());
+		check(FieldId > 0 && (int)FieldId - 1 < BaseHandleToCmdIndex.Num());
 		const FRepLayoutCmd& Cmd = Cmds[BaseHandleToCmdIndex[FieldId - 1].CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
@@ -113,7 +128,47 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	Channel->PostReceiveSpatialUpdate(Object, RepNotifies);
 }
 
-void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index, UProperty* Property, uint8* Data, int32 Offset, uint16 ParentIndex)
+void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
+{
+	TArray<std::uint32_t> UpdateFields;
+	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
+
+	if (UpdateFields.Num() == 0)
+	{
+		return;
+	}
+
+	FClassInfo* ClassInfo = TypebindingManager->FindClassInfoByClass(Object->GetClass());
+	check(ClassInfo);
+
+	Channel->PreReceiveSpatialUpdate(Object);
+
+	for (std::uint32_t FieldId : UpdateFields)
+	{
+		// FieldId is the same as handover handle
+		check(FieldId > 0 && (int)FieldId - 1 < ClassInfo->HandoverProperties.Num());
+		const FHandoverPropertyInfo& PropertyInfo = ClassInfo->HandoverProperties[FieldId - 1];
+
+		uint8* Data = (uint8*)Object + PropertyInfo.Offset;
+
+		if (bIsInitialData || GetPropertyCount(ComponentObject, FieldId, PropertyInfo.Property) > 0 || ClearedIds->Find(FieldId) != INDEX_NONE)
+		{
+			if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
+			{
+				ApplyArray(ComponentObject, FieldId, ArrayProperty, Data, PropertyInfo.Offset, -1);
+			}
+			else
+			{
+				ApplyProperty(ComponentObject, FieldId, 0, PropertyInfo.Property, Data, PropertyInfo.Offset, -1);
+			}
+		}
+	}
+
+	Channel->PostReceiveSpatialUpdate(Object, TArray<UProperty*>());
+}
+
+void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index, UProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
@@ -242,7 +297,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, st
 	}
 }
 
-void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId Id, UArrayProperty* Property, uint8* Data, int32 Offset, uint16 ParentIndex)
+void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId Id, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex)
 {
 	FObjectReferencesMap* ArrayObjectReferences;
 	bool bNewArrayMap = false;

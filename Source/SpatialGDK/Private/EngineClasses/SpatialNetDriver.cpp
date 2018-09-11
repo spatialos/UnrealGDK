@@ -36,6 +36,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	bConnectAsClient = bInitAsClient;
 
+	bAuthoritativeDestruction = true;
+
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel

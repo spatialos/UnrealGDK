@@ -9,14 +9,15 @@
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"
 
-ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& UnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
+ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, TypebindingManager(InNetDriver->TypebindingManager)
-	, PendingUnresolvedObjectsMap(UnresolvedObjectsMap)
+	, PendingRepUnresolvedObjectsMap(RepUnresolvedObjectsMap)
+	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
 { }
 
-bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, const FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
+bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
 	bool bWroteSomething = false;
 
@@ -24,15 +25,15 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, const FP
 	if (Changes.RepChanged.Num() > 0)
 	{
 		FChangelistIterator ChangelistIterator(Changes.RepChanged, 0);
-		FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepCmds, Changes.RepBaseHandleToCmdIndex, 0, 1, 0, Changes.RepCmds.Num() - 1);
+		FRepHandleIterator HandleIterator(ChangelistIterator, Changes.RepLayout.Cmds, Changes.RepLayout.BaseHandleToCmdIndex, 0, 1, 0, Changes.RepLayout.Cmds.Num() - 1);
 		while (HandleIterator.NextHandle())
 		{
-			const FRepLayoutCmd& Cmd = Changes.RepCmds[HandleIterator.CmdIndex];
-			const FRepParentCmd& Parent = Changes.Parents[Cmd.ParentIndex];
+			const FRepLayoutCmd& Cmd = Changes.RepLayout.Cmds[HandleIterator.CmdIndex];
+			const FRepParentCmd& Parent = Changes.RepLayout.Parents[Cmd.ParentIndex];
 
 			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)
 			{
-				const uint8* Data = Changes.SourceData + HandleIterator.ArrayOffset + Cmd.Offset;
+				const uint8* Data = (uint8*)Object + Cmd.Offset;
 				TSet<const UObject*> UnresolvedObjects;
 
 				AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
@@ -45,11 +46,12 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, const FP
 				{
 					if (!bIsInitialData)
 					{
-						// We have to write something if it's initial data. ...I think. ?????????????????????
+						// Don't send updates for fields with unresolved objects, unless it's the initial data,
+						// in which case all fields should be populated.
 						Schema_ClearField(ComponentObject, HandleIterator.Handle);
 					}
 
-					PendingUnresolvedObjectsMap.Add(HandleIterator.Handle, UnresolvedObjects);
+					PendingRepUnresolvedObjectsMap.Add(HandleIterator.Handle, UnresolvedObjects);
 				}
 			}
 
@@ -63,11 +65,42 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, const FP
 		}
 	}
 
-	// TODO: Handover
-	// Populate the handover data component update from the handover property changelist.
-	//for (uint16 ChangedHandle : Changes.HandoverChanged)
-	//{
-	//}
+	return bWroteSomething;
+}
+
+bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
+{
+	bool bWroteSomething = false;
+
+	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
+	check(Info);
+
+	for (uint16 ChangedHandle : Changes)
+	{
+		check(ChangedHandle > 0 && ChangedHandle - 1 < Info->HandoverProperties.Num());
+		const FHandoverPropertyInfo& PropertyInfo = Info->HandoverProperties[ChangedHandle - 1];
+
+		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
+		TSet<const UObject*> UnresolvedObjects;
+
+		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, UnresolvedObjects, ClearedIds);
+
+		if (UnresolvedObjects.Num() == 0)
+		{
+			bWroteSomething = true;
+		}
+		else
+		{
+			if (!bIsInitialData)
+			{
+				// Don't send updates for fields with unresolved objects, unless it's the initial data,
+				// in which case all fields should be populated.
+				Schema_ClearField(ComponentObject, ChangedHandle);
+			}
+
+			PendingHandoverUnresolvedObjectsMap.Add(ChangedHandle, UnresolvedObjects);
+		}
+	}
 
 	return bWroteSomething;
 }
@@ -214,55 +247,81 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 	}
 }
 
-TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FPropertyChangeState& PropertyChangeState)
+TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState)
 {
-	TArray<Worker_ComponentData> ComponentData;
+	TArray<Worker_ComponentData> ComponentDatas;
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
 	check(Info);
 
-	ComponentData.Add(CreateComponentData(Info->SingleClientComponent, PropertyChangeState, GROUP_SingleClient));
-	ComponentData.Add(CreateComponentData(Info->MultiClientComponent, PropertyChangeState, GROUP_MultiClient));
+	ComponentDatas.Add(CreateComponentData(Info->SingleClientComponent, Object, RepChangeState, GROUP_SingleClient));
+	ComponentDatas.Add(CreateComponentData(Info->MultiClientComponent, Object, RepChangeState, GROUP_MultiClient));
+	ComponentDatas.Add(CreateHandoverComponentData(Info->HandoverComponent, Object, HandoverChangeState));
 
-	return ComponentData;
+	return ComponentDatas;
 }
 
-Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup)
+Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
 	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	FillSchemaObject(ComponentObject, Changes, PropertyGroup, true);
+	FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true);
 
 	return ComponentData;
 }
 
-TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FPropertyChangeState& PropertyChangeState)
+Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FHandoverChangeState& Changes)
+{
+	Worker_ComponentData ComponentData = {};
+	ComponentData.component_id = ComponentId;
+	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
+
+	FillHandoverSchemaObject(ComponentObject, Object, Changes, true);
+
+	return ComponentData;
+}
+
+TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState)
 {
 	TArray<Worker_ComponentUpdate> ComponentUpdates;
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
 	check(Info);
 
-	bool bWroteSomething = false;
-	Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info->SingleClientComponent, PropertyChangeState, GROUP_SingleClient, bWroteSomething);
-	if (bWroteSomething)
+	if (RepChangeState)
 	{
-		ComponentUpdates.Add(SingleClientUpdate);
+		bool bWroteSomething = false;
+		Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info->SingleClientComponent, Object, *RepChangeState, GROUP_SingleClient, bWroteSomething);
+		if (bWroteSomething)
+		{
+			ComponentUpdates.Add(SingleClientUpdate);
+		}
+		bWroteSomething = false;
+		Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info->MultiClientComponent, Object, *RepChangeState, GROUP_MultiClient, bWroteSomething);
+		if (bWroteSomething)
+		{
+			ComponentUpdates.Add(MultiClientUpdate);
+		}
 	}
-	bWroteSomething = false;
-	Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info->MultiClientComponent, PropertyChangeState, GROUP_MultiClient, bWroteSomething);
-	if (bWroteSomething)
+
+	if (HandoverChangeState)
 	{
-		ComponentUpdates.Add(MultiClientUpdate);
+		bool bWroteSomething = false;
+		Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info->HandoverComponent, Object, *HandoverChangeState, bWroteSomething);
+		if (bWroteSomething)
+		{
+			ComponentUpdates.Add(HandoverUpdate);
+		}
 	}
 
 	return ComponentUpdates;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, const struct FPropertyChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -272,7 +331,32 @@ Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = FillSchemaObject(ComponentObject, Changes, PropertyGroup, false, &ClearedIds);
+	bWroteSomething = FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, false, &ClearedIds);
+
+	for (Schema_FieldId Id : ClearedIds)
+	{
+		Schema_AddComponentUpdateClearedField(ComponentUpdate.schema_type, Id);
+	}
+
+	if (!bWroteSomething)
+	{
+		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
+	}
+
+	return ComponentUpdate;
+}
+
+Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FHandoverChangeState& Changes, bool& bWroteSomething)
+{
+	Worker_ComponentUpdate ComponentUpdate = {};
+
+	ComponentUpdate.component_id = ComponentId;
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+	TArray<Schema_FieldId> ClearedIds;
+
+	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Changes, false, &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
