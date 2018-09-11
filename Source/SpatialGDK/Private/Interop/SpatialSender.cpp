@@ -123,10 +123,7 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 
 	for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
 	{
-		Worker_ComponentData RPCData = {};
-		RPCData.component_id = Info->RPCComponents[RPCType];
-		RPCData.schema_type = Schema_CreateComponentData(Info->RPCComponents[RPCType]);
-		ComponentDatas.Add(RPCData);
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Info->RPCComponents[RPCType]));
 	}
 
 	TArray<UObject*> DefaultSubobjects;
@@ -166,10 +163,14 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 
 		for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
 		{
+<<<<<<< HEAD
 			Worker_ComponentData RPCData = {};
 			RPCData.component_id = SubobjectInfo->RPCComponents[RPCType];
 			RPCData.schema_type = Schema_CreateComponentData(SubobjectInfo->RPCComponents[RPCType]);
 			ComponentDatas.Add(RPCData);
+=======
+			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->RPCComponents[RPCType]));
+>>>>>>> Fill snapshot entities with default data
 		}
 	}
 

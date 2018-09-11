@@ -28,6 +28,8 @@ public:
 	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState);
 	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState);
 
+	static Worker_ComponentData CreateEmptyComponentData(Worker_ComponentId ComponentId);
+
 private:
 	Worker_ComponentData CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup);
 	Worker_ComponentUpdate CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething);

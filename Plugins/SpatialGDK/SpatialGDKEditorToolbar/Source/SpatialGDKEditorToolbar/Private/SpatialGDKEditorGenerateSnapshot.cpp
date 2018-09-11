@@ -131,7 +131,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 
 	USpatialTypebindingManager* TypebindingManager = NewObject<USpatialTypebindingManager>();
 	TypebindingManager->Init();
-	WorkerAttributeSet OwningClientAttribute = { TEXT("workerId:") };  //YOLO - No owning client for now
+	WorkerAttributeSet OwningClientAttribute = { TEXT("workerId:") };  //No owning client since we are creating a snapshot
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
 	for (TActorIterator<AActor> Iterator(World); Iterator; ++Iterator)
@@ -141,6 +141,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 		{
 			continue;
 		}
+		check(!Actor->IsA(APlayerController::StaticClass()));
 		UClass* ActorClass = Actor->GetClass();
 
 		if (ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings))
@@ -161,18 +162,18 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 			ComponentWriteAcl.Add(Info->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
 			ComponentWriteAcl.Add(Info->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
 
-			for (TSubclassOf<UActorComponent> ComponentClass : Info->ComponentClasses)
+			for (UClass* SubobjectClass : Info->SubobjectClasses)
 			{
-				FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(ComponentClass);
-				check(ComponentInfo);
+				FClassInfo* ClassInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
+				check(ClassInfo);
 
-				ComponentWriteAcl.Add(ComponentInfo->SingleClientComponent, UnrealWorkerPermission);
-				ComponentWriteAcl.Add(ComponentInfo->MultiClientComponent, UnrealWorkerPermission);
+				ComponentWriteAcl.Add(ClassInfo->SingleClientComponent, UnrealWorkerPermission);
+				ComponentWriteAcl.Add(ClassInfo->MultiClientComponent, UnrealWorkerPermission);
 				// Not adding handover since component's handover properties will be handled by the actor anyway
-				ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_Client], OwningClientOnly);
-				ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_Server], UnrealWorkerPermission);
-				ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
-				ComponentWriteAcl.Add(ComponentInfo->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
+				ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Client], OwningClientOnly);
+				ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Server], UnrealWorkerPermission);
+				ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
+				ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
 			}
 
 			FString StaticPath = Actor->GetPathName(nullptr);
@@ -192,64 +193,41 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 			TArray<Worker_ComponentData> Components;
 			Components.Add(Position(Coordinates::FromFVector(Actor->GetActorLocation())).CreatePositionData());	//YOLO - Check if actor location is the right location
 			Components.Add(Metadata(FSoftClassPath(ActorClass).ToString()).CreateMetadataData());
-			Components.Add(EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());			//YOLO - PlayerControllers are not placed in the level, and therefore do not have to have owning client only read ACLs
+			Components.Add(EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 			Components.Add(Persistence().CreatePersistenceData());
-			Components.Add(UnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());	//YOLO - Owning client is empty string, since it does not make sense in snapshot generation (should only affect player controllers anyway?)
+			Components.Add(UnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());	//Owning client is empty string, since it does not make sense in snapshot generation (should only affect player controllers anyway?)
 
-			FRepLayout RepLayout;
-			RepLayout.InitFromObjectClass(ActorClass);															// EXTREME YOLO, idk what this even does
-			TArray<uint16> InitialRepChanged = RepLayout_GetAllPropertyHandles(RepLayout);
-			TArray<uint16> InitialHandoverChanged;																// EXTREME YOLO, TODO, implement handover
-
-			FUnresolvedObjectsMap UnresolvedObjectsMap;
-			ComponentFactory DataFactory(UnresolvedObjectsMap, TypebindingManager);								//YOLO, no access to a net driver
-
-			TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor,
-				{
-					(uint8*)Actor,
-					InitialRepChanged,
-					RepLayout.Cmds,
-					RepLayout.BaseHandleToCmdIndex,
-					RepLayout.Parents,
-					InitialHandoverChanged
-				});																								// YOLO, taken from SpatialActorChannel::GetChangeState
-			Components.Append(DynamicComponentDatas);
-
-			// TODO: Handover, Taken from CreateActor in SpatialSender
-			Worker_ComponentData HandoverData = {};
-			HandoverData.component_id = Info->HandoverComponent;
-			HandoverData.schema_type = Schema_CreateComponentData(Info->HandoverComponent);
-			Components.Add(HandoverData);
+			Components.Add(ComponentFactory::CreateEmptyComponentData(Info->SingleClientComponent));
+			Components.Add(ComponentFactory::CreateEmptyComponentData(Info->MultiClientComponent));
+			Components.Add(ComponentFactory::CreateEmptyComponentData(Info->HandoverComponent));
 
 			for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
 			{
-				Worker_ComponentData RPCData = {};
-				RPCData.component_id = Info->RPCComponents[RPCType];
-				RPCData.schema_type = Schema_CreateComponentData(Info->RPCComponents[RPCType]);
-				Components.Add(RPCData);
+				Components.Add(ComponentFactory::CreateEmptyComponentData(Info->RPCComponents[RPCType]));
 			}
 
-			for (TSubclassOf<UActorComponent> ComponentClass : Info->ComponentClasses)
+			for (UClass* SubobjectClass : Info->SubobjectClasses)
 			{
-				FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(ComponentClass);
+				FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
 				check(ComponentInfo);
 
-				TArray<UActorComponent*> ActorComponents = Actor->GetComponentsByClass(ComponentClass);
-				checkf(ActorComponents.Num() == 1, TEXT("Multiple replicated components of the same type are currently not supported by Unreal GDK"));
-				UActorComponent* ActorComponent = ActorComponents[0];
+				TArray<UObject*> DefaultSubobjects;
+				Actor->GetDefaultSubobjects(DefaultSubobjects);
+				UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
+				{
+					return (Obj->GetClass() == SubobjectClass);
+				});
+				check(FoundSubobject);
+				UObject* Subobject = *FoundSubobject;
 
-				//YOLO - ignore change states
-				
-				//YOLO - ignore unresolved objects
-				
+				Components.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->SingleClientComponent));
+				Components.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->MultiClientComponent));
+
 				// Not adding handover since component's handover properties will be handled by the actor anyway
 
 				for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
 				{
-					Worker_ComponentData RPCData = {};
-					RPCData.component_id = ComponentInfo->RPCComponents[RPCType];
-					RPCData.schema_type = Schema_CreateComponentData(ComponentInfo->RPCComponents[RPCType]);
-					Components.Add(RPCData);
+					Components.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->RPCComponents[RPCType]));
 				}
 			}
 
