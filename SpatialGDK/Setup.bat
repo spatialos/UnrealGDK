@@ -43,7 +43,7 @@ call :MarkStartOfBlock "Setup variables"
     set BUILD_DIR=%~dp0\Build\build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
     set PACKAGE_TARGET_DIR=%~dp0\Build\packages
-    set WORKER_SDK_DIR=%~dp0\Source\SpatialGDK\Public\WorkerSdk
+    set WORKER_SDK_DIR=%~dp0\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0\Binaries\ThirdParty\Improbable
 call :MarkEndOfBlock "Setup variables"
 
