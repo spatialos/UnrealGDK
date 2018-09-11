@@ -39,7 +39,6 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Scripts\Codegen.cs" />
     <Compile Include="Scripts\Common.cs" />
     <Compile Include="Scripts\Build.cs" />
   </ItemGroup>
