@@ -13,6 +13,7 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/UnrealMetadata.h"
+#include "Schema/SnapshotEntity.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/EntityRegistry.h"
@@ -170,7 +171,17 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 
 	Position* PositionComponent = GetComponentData<Position>(*this, EntityId);
 	Metadata* MetadataComponent = GetComponentData<Metadata>(*this, EntityId);
+	SnapshotEntity* SnapshotEntityComponent = GetComponentData<SnapshotEntity>(*this, EntityId);
 	check(PositionComponent && MetadataComponent);
+
+	// Entity comes from a snapshot, does not have initialised values and is just a placeholder for the real entity
+	if (SnapshotEntityComponent)
+	{
+		PendingAddComponents.RemoveAll([EntityId](PendingAddComponentWrapper& PendingAddComponent)
+		{
+			return PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic;
+		});
+	}
 
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogTemp, Log, TEXT("!!! Checked out entity with entity ID %lld"), EntityId);

@@ -1,6 +1,6 @@
 package improbable.unreal;
 
-component UnrealLevelPlaceholder
+component UnrealSnapshotEntity
 {
     id = 100006;
 }

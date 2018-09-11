@@ -10,6 +10,7 @@
 #include "Utils/ComponentFactory.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
+#include "Schema/SnapshotEntity.h"
 #include "SpatialTypebindingManager.h"
 
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
@@ -191,11 +192,12 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 			});
 
 			TArray<Worker_ComponentData> Components;
-			Components.Add(Position(Coordinates::FromFVector(Actor->GetActorLocation())).CreatePositionData());	//YOLO - Check if actor location is the right location
+			Components.Add(Position(Coordinates::FromFVector(Actor->GetActorLocation())).CreatePositionData());			// YOLO - Check if actor location is the right location
 			Components.Add(Metadata(FSoftClassPath(ActorClass).ToString()).CreateMetadataData());
 			Components.Add(EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 			Components.Add(Persistence().CreatePersistenceData());
-			Components.Add(UnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());	//Owning client is empty string, since it does not make sense in snapshot generation (should only affect player controllers anyway?)
+			Components.Add(UnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());			// Owning client is empty string, since it does not make sense in snapshot generation (should only affect player controllers anyway?)
+			Components.Add(SnapshotEntity().CreateSnapshotEntityData());												// Mark the entity as a snapshot entity
 
 			Components.Add(ComponentFactory::CreateEmptyComponentData(Info->SingleClientComponent));
 			Components.Add(ComponentFactory::CreateEmptyComponentData(Info->MultiClientComponent));

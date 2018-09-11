@@ -520,13 +520,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (EntityId == 0)
 	{
-		// If the actor is stably named, we only want to start the creation process on one server (the one that is authoritative
-		// over the Global State Manager) to avoid having multiple copies of replicated stably named actors in SpatialOS
-		if (InActor->IsFullNameStableForNetworking())
-		{
-			//SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActorChannel(this);
-		}
-		else
+		// If the actor is stably named, it should be in the snapshot
+		if (!InActor->IsFullNameStableForNetworking())
 		{
 			bCreatingNewEntity = true;
 			Sender->SendReserveEntityIdRequest(this);
@@ -536,7 +531,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), EntityId);
 
-		// Inform USpatialInterop of this new actor channel/entity pairing
+		// Inform USpatialNetDriver of this new actor channel/entity pairing
 		NetDriver->AddActorChannel(EntityId, this);
 	}
 }
