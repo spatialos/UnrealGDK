@@ -488,7 +488,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	check(Info);
 
 	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
-	if (ActorChannel == nullptr || !IsValid(ActorChannel->Actor))
+	if (ActorChannel == nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No actor channel for Entity %d"), Op.entity_id);
 		return;
