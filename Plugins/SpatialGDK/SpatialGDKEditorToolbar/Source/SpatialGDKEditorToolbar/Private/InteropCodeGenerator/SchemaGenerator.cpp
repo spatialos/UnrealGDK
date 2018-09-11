@@ -253,7 +253,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 			AllReliableMulticasts += FunctionName + TEXT("\n");					
 		}
 
-		FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts)));
+		UE_LOG(LogTemp, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
 	}
 
 	return IdGenerator.GetNumUsedIds();

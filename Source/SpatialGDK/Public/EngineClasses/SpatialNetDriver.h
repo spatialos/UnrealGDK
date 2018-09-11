@@ -63,6 +63,7 @@ public:
 	virtual void ProcessRemoteFunction(class AActor* Actor, class UFunction* Function, void* Parameters, struct FOutParmRec* OutParms, struct FFrame* NotStack, class UObject* SubObject = NULL ) override;
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
+	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
 	// End UNetDriver interface.
 
 #if !UE_BUILD_SHIPPING

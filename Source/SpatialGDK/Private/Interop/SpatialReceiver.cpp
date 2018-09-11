@@ -515,8 +515,11 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 	else if (Op.update.component_id == Info->RPCComponents[RPC_NetMulticast])
 	{
-		const TArray<UFunction*>& RPCArray = Info->RPCs.FindChecked(RPC_NetMulticast);
-		ReceiveMulticastUpdate(Op.update, Op.entity_id, RPCArray);
+		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
+		{
+			const TArray<UFunction*>& RPCArray = Info->RPCs.FindChecked(RPC_NetMulticast);
+			ReceiveMulticastUpdate(Op.update, TargetObject, RPCArray);
+		}
 	}
 	else
 	{
@@ -540,43 +543,39 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	Response.component_id = Op.request.component_id;
 	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
 
+	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
+	if (ActorChannel == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No actor channel for Entity %d"), Op.entity_id);
+		Sender->SendCommandResponse(Op.request_id, Response);
+		return;
+	}
+
 	if (UClass* Class = TypebindingManager->FindClassByComponentId(Op.request.component_id))
 	{
 		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
 		check(Info);
 
-		ERPCType RPCType = RPC_Count;
-		for (int i = RPC_Client; i <= RPC_CrossServer; i++)
+		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
 		{
-			if (Info->RPCComponents[i] == Op.request.component_id)
+			ERPCType RPCType = RPC_Count;
+			for (int i = RPC_Client; i <= RPC_CrossServer; i++)
 			{
-				RPCType = (ERPCType)i;
-				break;
+				if (Info->RPCComponents[i] == Op.request.component_id)
+				{
+					RPCType = (ERPCType)i;
+					break;
+				}
 			}
-		}
-		check(RPCType <= RPC_CrossServer);
+			check(RPCType <= RPC_CrossServer);
 
-		const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);
-		check(RPCArray);
-		check((int)CommandIndex - 1 < RPCArray->Num());
+			const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);
+			check(RPCArray);
+			check((int)CommandIndex - 1 < RPCArray->Num());
 
-		UFunction* Function = (*RPCArray)[CommandIndex - 1];
+			UFunction* Function = (*RPCArray)[CommandIndex - 1];
 
-		uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
-		FMemory::Memzero(Parms, Function->ParmsSize);
-
-		UObject* TargetObject = nullptr;
-		ReceiveRPCCommandRequest(Op.request, Op.entity_id, Function, TargetObject, Parms);
-
-		if (TargetObject)
-		{
-			TargetObject->ProcessEvent(Function, Parms);
-		}
-
-		// Destroy the parameters.
-		for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
-		{
-			It->DestroyValue_InContainer(Parms);
+			ReceiveRPCCommandRequest(Op.request, TargetObject, Function);
 		}
 	}
 
@@ -589,6 +588,8 @@ void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponse(Op);
 	}
+
+	// TODO: Resend reliable RPCs on timeout
 }
 
 void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover)
@@ -603,7 +604,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-void USpatialReceiver::ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, Worker_EntityId EntityId, const TArray<UFunction*>& RPCArray)
+void USpatialReceiver::ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, const TArray<UFunction*>& RPCArray)
 {
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 
@@ -612,46 +613,43 @@ void USpatialReceiver::ReceiveMulticastUpdate(const Worker_ComponentUpdate& Comp
 		UFunction* Function = RPCArray[EventIndex - 1];
 		for (uint32 i = 0; i < Schema_GetObjectCount(EventsObject, EventIndex); i++)
 		{
-			uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
-			FMemory::Memzero(Parms, Function->ParmsSize);
-
 			Schema_Object* EventData = Schema_IndexObject(EventsObject, EventIndex, i);
 
-			UnrealObjectRef TargetObjectRef;
-			TargetObjectRef.Entity = EntityId;
-			TargetObjectRef.Offset = Schema_GetUint32(EventData, 1);
-
-			FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
-			if (!TargetNetGUID.IsValid())
-			{
-				// TODO: Handle RPC to unresolved object
-				checkNoEntry();
-			}
-
-			UObject* TargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
-			checkf(TargetObject, TEXT("Object Ref %s (NetGUID %s) does not correspond to a UObject."), *TargetObjectRef.ToString(), *TargetNetGUID.ToString());
-
-			TSet<UnrealObjectRef> UnresolvedRefs;
-
-			TArray<uint8> PayloadData = Schema_GetPayload(EventData, 2);
+			TArray<uint8> PayloadData = Schema_GetPayload(EventData, 1);
 			// A bit hacky, we should probably include the number of bits with the data instead.
 			int64 CountBits = PayloadData.Num() * 8;
-			FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
 
-			TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
-			RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
-
-			// TODO: Check for unresolved objects in the payload
-
-			TargetObject->ProcessEvent(Function, Parms);
-
-			// Destroy the parameters.
-			// warning: highly dependent on UObject::ProcessEvent freeing of parms!
-			for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
-			{
-				It->DestroyValue_InContainer(Parms);
-			}
+			ApplyRPC(TargetObject, Function, PayloadData, CountBits);
 		}
+	}
+}
+
+void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArray<uint8>& PayloadData, int64 CountBits)
+{
+	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
+	FMemory::Memzero(Parms, Function->ParmsSize);
+
+	TSet<UnrealObjectRef> UnresolvedRefs;
+
+	FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
+
+	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
+
+	if (UnresolvedRefs.Num() == 0)
+	{
+		TargetObject->ProcessEvent(Function, Parms);
+	}
+	else
+	{
+		QueueIncomingRPC(UnresolvedRefs, TargetObject, Function, PayloadData, CountBits);
+	}
+
+	// Destroy the parameters.
+	// warning: highly dependent on UObject::ProcessEvent freeing of parms!
+	for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+	{
+		It->DestroyValue_InContainer(Parms);
 	}
 }
 
@@ -757,6 +755,17 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
+void USpatialReceiver::QueueIncomingRPC(const TSet<UnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits)
+{
+	TSharedPtr<FPendingIncomingRPC> IncomingRPC = MakeShared<FPendingIncomingRPC>(UnresolvedRefs, TargetObject, Function, PayloadData, CountBits);
+
+	for (const UnrealObjectRef& UnresolvedRef : UnresolvedRefs)
+	{
+		FIncomingRPCArray& IncomingRPCArray = IncomingRPCMap.FindOrAdd(UnresolvedRef);
+		IncomingRPCArray.Add(IncomingRPC);
+	}
+}
+
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
@@ -772,9 +781,12 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const UnrealOb
 	// and then resolve all of them at the end of process ops
 
 	TSet<FChannelObjectPair>* TargetObjectSet = IncomingRefsMap.Find(ObjectRef);
-	if (!TargetObjectSet) return;
+	if (!TargetObjectSet)
+	{
+		return;
+	}
 
-	UE_LOG(LogTemp, Log, TEXT("!!! Resolving incoming operations depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+	UE_LOG(LogTemp, Log, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
 
 	for (FChannelObjectPair& ChannelObjectPair : *TargetObjectSet)
 	{
@@ -815,6 +827,34 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const UnrealOb
 	}
 
 	IncomingRefsMap.Remove(ObjectRef);
+}
+
+void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const UnrealObjectRef& ObjectRef)
+{
+	FIncomingRPCArray* IncomingRPCArray = IncomingRPCMap.Find(ObjectRef);
+	if (!IncomingRPCArray)
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Resolving incoming RPCs depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+
+	for (const TSharedPtr<FPendingIncomingRPC>& IncomingRPC : *IncomingRPCArray)
+	{
+		if (!IncomingRPC->TargetObject.IsValid())
+		{
+			// The target object has been destroyed before this RPC was resolved
+			continue;
+		}
+
+		IncomingRPC->UnresolvedRefs.Remove(ObjectRef);
+		if (IncomingRPC->UnresolvedRefs.Num() == 0)
+		{
+			ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->PayloadData, IncomingRPC->CountBits);
+		}
+	}
+
+	IncomingRPCMap.Remove(ObjectRef);
 }
 
 void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved)
@@ -932,33 +972,13 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 	}
 }
 
-void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, Worker_EntityId EntityId, UFunction* Function, UObject*& OutTargetObject, void* Data)
+void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, UObject* TargetObject, UFunction* Function)
 {
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
-	UnrealObjectRef TargetObjectRef;
-	TargetObjectRef.Entity = EntityId;
-	TargetObjectRef.Offset = Schema_GetUint32(RequestObject, 1);
-
-	FNetworkGUID TargetNetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(TargetObjectRef);
-	if (!TargetNetGUID.IsValid())
-	{
-		// TODO: Handle RPC to unresolved object
-		checkNoEntry();
-	}
-
-	OutTargetObject = PackageMap->GetObjectFromNetGUID(TargetNetGUID, false);
-	checkf(OutTargetObject, TEXT("Object Ref %s (NetGUID %s) does not correspond to a UObject."), *TargetObjectRef.ToString(), *TargetNetGUID.ToString());
-
-	TSet<UnrealObjectRef> UnresolvedRefs;
-
-	TArray<uint8> PayloadData = Schema_GetPayload(RequestObject, 2);
+	TArray<uint8> PayloadData = Schema_GetPayload(RequestObject, 1);
 	// A bit hacky, we should probably include the number of bits with the data instead.
 	int64 CountBits = PayloadData.Num() * 8;
-	FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
 
-	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
-	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Data);
-
-	// TODO: Check for unresolved objects in the payload
+	ApplyRPC(TargetObject, Function, PayloadData, CountBits);
 }
