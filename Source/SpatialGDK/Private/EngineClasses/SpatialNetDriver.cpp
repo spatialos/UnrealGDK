@@ -1145,7 +1145,7 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId)
 {
 	if (!EntityToActorChannel.Contains(EntityId))
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Failed to find entity/channel mapping for entity %lld."), EntityId);
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("RemoveActorChannel: Failed to find entity/channel mapping for entity %lld."), EntityId);
 		return;
 	}
 
