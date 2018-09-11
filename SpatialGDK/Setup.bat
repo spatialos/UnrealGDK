@@ -1,4 +1,4 @@
-@if not defined TEAMCITY_CAPTURE_ENV ( echo off ) else ( echo on )
+@if not defined CI_CAPTURE_ENV ( echo off ) else ( echo on )
 
 setlocal
 
@@ -7,31 +7,31 @@ pushd "%~dp0"
 call :MarkStartOfBlock "%~0"
 
 call :MarkStartOfBlock "Check dependencies"
-    set /p UNREAL_VERSION=<unreal-engine.version
-    if defined TEAMCITY_CAPTURE_ENV (
+    set /p UNREAL_VERSION=<./Extras/unreal-engine.version
+    if defined CI_CAPTURE_ENV (
         set UNREAL_HOME=C:\Unreal\UnrealEngine-%UNREAL_VERSION%
     )
 
     if not defined UNREAL_HOME (
         echo Error: Please set UNREAL_HOME environment variable to point to the Unreal Engine folder.
-        if not defined TEAMCITY_CAPTURE_ENV pause
+        if not defined CI_CAPTURE_ENV pause
         exit /b 1
     )
 
     rem Use Unreal Engine's script to get the path to MSBuild. This turns off echo so turn it back on for TeamCity.
     call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
-    if defined TEAMCITY_CAPTURE_ENV echo on
+    if defined CI_CAPTURE_ENV echo on
 
     if not defined MSBUILD_EXE (
         echo Error: Could not find the MSBuild executable. Please make sure you have Microsoft Visual Studio or Microsoft Build Tools installed.
-        if not defined TEAMCITY_CAPTURE_ENV pause
+        if not defined CI_CAPTURE_ENV pause
         exit /b 1
     )
 
     where spatial >nul
     if ERRORLEVEL 1 (
         echo Error: Could not find spatial. Please make sure you have it installed and the containing directory added to PATH environment variable.
-        if not defined TEAMCITY_CAPTURE_ENV pause
+        if not defined CI_CAPTURE_ENV pause
         exit /b 1
     )
 call :MarkEndOfBlock "Check dependencies"
@@ -97,11 +97,11 @@ call :MarkEndOfBlock "%~0"
 popd
 
 echo UnrealGDK build completed successfully^!
-if not defined TEAMCITY_CAPTURE_ENV pause
+if not defined CI_CAPTURE_ENV pause
 exit /b %ERRORLEVEL%
 
 :MarkStartOfBlock
-if defined TEAMCITY_CAPTURE_ENV (
+if defined CI_CAPTURE_ENV (
     echo ##teamcity[blockOpened name='%~1']
 ) else (
     echo Starting: %~1
@@ -109,7 +109,7 @@ if defined TEAMCITY_CAPTURE_ENV (
 exit /b 0
 
 :MarkEndOfBlock
-if defined TEAMCITY_CAPTURE_ENV (
+if defined CI_CAPTURE_ENV (
     echo ##teamcity[blockClosed name='%~1']
 ) else (
     echo Finished: %~1
