@@ -182,7 +182,6 @@ bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const 
 	return true;
 }
 
-
 void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessTravel /*= false*/)
 {
 	// Intentionally does not call Super::NotifyActorDestroyed, but most of the functionality is copied here 
