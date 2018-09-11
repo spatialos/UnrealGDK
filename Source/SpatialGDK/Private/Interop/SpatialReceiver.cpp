@@ -377,6 +377,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 {
 	NetDriver->GetEntityRegistry()->RemoveFromRegistry(EntityId);
+	NetDriver->RemoveActorChannel(EntityId);
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 }
 

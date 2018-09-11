@@ -87,8 +87,9 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	if (bHasAuthority && !IsSingletonEntity())
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
-		Receiver->CleanupDeletedEntity(EntityId);
 	}
+
+	Receiver->CleanupDeletedEntity(EntityId);
 }
 
 bool USpatialActorChannel::IsSingletonEntity()

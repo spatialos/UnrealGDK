@@ -1136,12 +1136,23 @@ void USpatialPendingNetGame::SendJoin()
 	bSentJoinRequest = true;
 }
 
-void USpatialNetDriver::AddActorChannel(const Worker_EntityId& EntityId, USpatialActorChannel* Channel)
+void USpatialNetDriver::AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel)
 {
 	EntityToActorChannel.Add(EntityId, Channel);
 }
 
-USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(const Worker_EntityId& EntityId) const
+void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId)
+{
+	if (!EntityToActorChannel.Contains(EntityId))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("RemoveActorChannel: Failed to find entity/channel mapping for entity %lld."), EntityId);
+		return;
+	}
+
+	EntityToActorChannel.FindAndRemoveChecked(EntityId);
+}
+
+USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
 }

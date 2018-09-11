@@ -82,8 +82,10 @@ public:
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
-	void AddActorChannel(const Worker_EntityId& EntityId, USpatialActorChannel* Channel);
-	USpatialActorChannel* GetActorChannelByEntityId(const Worker_EntityId& EntityId) const;
+	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
+	void RemoveActorChannel(Worker_EntityId EntityId);
+
+	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
