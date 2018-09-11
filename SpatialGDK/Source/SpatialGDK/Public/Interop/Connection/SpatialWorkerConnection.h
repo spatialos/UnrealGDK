@@ -1,5 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#pragma once
+
 #include "Interop/Connection/ConnectionConfig.h"
 
 #include <improbable/c_schema.h>

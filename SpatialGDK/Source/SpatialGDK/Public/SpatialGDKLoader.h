@@ -16,7 +16,7 @@ public:
 #if PLATFORM_WINDOWS
 		// Disable FPaths::GameDir deprecation warning until <= 4.17 is unsupported.
 		PRAGMA_DISABLE_DEPRECATION_WARNINGS
-		FString Path = FPaths::GameDir() / TEXT("Binaries/ThirdParty/Improbable");
+		FString Path = FPaths::GameDir() / TEXT("Plugins/SpatialGDK/Binaries/ThirdParty/Improbable");
 		PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
 #if PLATFORM_64BITS

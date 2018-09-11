@@ -37,14 +37,14 @@ call :MarkStartOfBlock "Check dependencies"
 call :MarkEndOfBlock "Check dependencies"
 
 call :MarkStartOfBlock "Setup variables"
-    set /p PINNED_CORE_SDK_VERSION=<core-sdk.version
-    set /p PINNED_CODE_GENERATOR_VERSION=<code-generator.version
+    set /p PINNED_CORE_SDK_VERSION=<.\Extras\core-sdk.version
+    set /p PINNED_CODE_GENERATOR_VERSION=<.\Extras\code-generator.version
 
-    set BUILD_DIR=%~dp0\..\Build\build
+    set BUILD_DIR=%~dp0\Build\build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
-    set PACKAGE_TARGET_DIR=%~dp0\..\Build\packages
-    set WORKER_SDK_DIR=%~dp0\..\Source\SpatialGDK\Public\WorkerSdk
-    set BINARIES_DIR=%~dp0\..\Binaries\ThirdParty\Improbable
+    set PACKAGE_TARGET_DIR=%~dp0\Build\packages
+    set WORKER_SDK_DIR=%~dp0\Source\SpatialGDK\Public\WorkerSdk
+    set BINARIES_DIR=%~dp0\Binaries\ThirdParty\Improbable
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
@@ -89,7 +89,7 @@ call :MarkStartOfBlock "Unpack dependencies"
 call :MarkEndOfBlock "Unpack dependencies"
 
 call :MarkStartOfBlock "Build C# utilities"
-    %MSBUILD_EXE% /nologo /verbosity:minimal ..\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
+    %MSBUILD_EXE% /nologo /verbosity:minimal .\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
@@ -97,7 +97,7 @@ call :MarkEndOfBlock "%~0"
 popd
 
 echo UnrealGDK build completed successfully^!
-rem if not defined TEAMCITY_CAPTURE_ENV pause
+if not defined TEAMCITY_CAPTURE_ENV pause
 exit /b %ERRORLEVEL%
 
 :MarkStartOfBlock
