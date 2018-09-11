@@ -5,6 +5,8 @@
 #include "Paths.h"
 #include "PlatformProcess.h"
 
+#include "IPluginManager.h"
+
 /**
  * This class ensures that the C API worker library is loaded before it is needed by code.
  */
@@ -14,10 +16,7 @@ public:
 	FSpatialGDKLoader()
 	{
 #if PLATFORM_WINDOWS
-		// Disable FPaths::GameDir deprecation warning until <= 4.17 is unsupported.
-		PRAGMA_DISABLE_DEPRECATION_WARNINGS
-		FString Path = FPaths::GameDir() / TEXT("Plugins/SpatialGDK/Binaries/ThirdParty/Improbable");
-		PRAGMA_ENABLE_DEPRECATION_WARNINGS
+		FString Path = IPluginManager::Get().FindPlugin(TEXT("SpatialGDK"))->GetBaseDir() / TEXT("Binaries/ThirdParty/Improbable");
 
 #if PLATFORM_64BITS
 		Path = Path / TEXT("Win64");
