@@ -46,7 +46,8 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				{
 					if (!bIsInitialData)
 					{
-						// We have to write something if it's initial data.
+						// Don't send updates for fields with unresolved objects, unless it's the initial data,
+						// in which case all fields should be populated.
 						Schema_ClearField(ComponentObject, HandleIterator.Handle);
 					}
 
@@ -92,7 +93,8 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		{
 			if (!bIsInitialData)
 			{
-				// We have to write something if it's initial data.
+				// Don't send updates for fields with unresolved objects, unless it's the initial data,
+				// in which case all fields should be populated.
 				Schema_ClearField(ComponentObject, ChangedHandle);
 			}
 

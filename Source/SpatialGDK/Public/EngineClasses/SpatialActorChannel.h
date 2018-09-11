@@ -124,7 +124,9 @@ private:
 	FVector LastSpatialPosition;
 
 	// Shadow data for Handover properties.
-	// Here we do the same as what is done natively for replicators.
+	// For each object with handover properties, we store a blob of memory which contains
+	// the state of those properties at the last time we sent them, and is used to detect
+	// when those properties change.
 	TArray<uint8>* ActorHandoverShadowData;
 	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>> HandoverShadowDataMap;
 
