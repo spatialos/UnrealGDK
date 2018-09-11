@@ -179,10 +179,10 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 	SubobjectToOffsetMap SubobjectNameToOffset = SpatialNetDriver->View->GetUnrealMetadata(EntityId)->SubobjectNameToOffset;
 
-	for(const auto& Pair : SubobjectNameToOffset)
+	for (const auto& Pair : SubobjectNameToOffset)
 	{
 		UnrealObjectRef SubobjectRef(EntityId, Pair.Value);
-		if(FNetworkGUID* SubobjectNetGUID = UnrealObjectRefToNetGUID.Find(SubobjectRef))
+		if (FNetworkGUID* SubobjectNetGUID = UnrealObjectRefToNetGUID.Find(SubobjectRef))
 		{
 			NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
 			UnrealObjectRefToNetGUID.Remove(SubobjectRef);
