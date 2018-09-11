@@ -45,6 +45,7 @@ call :MarkStartOfBlock "Setup variables"
     set PACKAGE_TARGET_DIR=%~dp0\Build\packages
     set WORKER_SDK_DIR=%~dp0\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0\Binaries\ThirdParty\Improbable
+    set SCHEMA_COPY_DIR=%~dp0..\..\..\..\spatial\schema
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
@@ -87,6 +88,15 @@ call :MarkStartOfBlock "Unpack dependencies"
     xcopy /s /i /q "%CORE_SDK_DIR%\cpp-src\include" "%WORKER_SDK_DIR%"
     xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
+
+call :MarkStartOfBlock "Copy schema"
+
+if exist %SCHEMA_COPY_DIR% (
+    echo Copying schemas to "%SCHEMA_COPY_DIR%".
+	xcopy /s /i /q "%~dp0\Extras\schema" "%SCHEMA_COPY_DIR%"
+)
+
+call :MarkEndOfBlock "Copy schema"
 
 call :MarkStartOfBlock "Build C# utilities"
     %MSBUILD_EXE% /nologo /verbosity:minimal .\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
