@@ -97,8 +97,10 @@ protected:
 private:
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
+	bool IsStablyNamedEntity();
 
 	void UpdateSpatialPosition();
+	void UpdateSpatialRotation();
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);

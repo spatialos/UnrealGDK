@@ -8,9 +8,9 @@
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/ComponentFactory.h"
+#include "Schema/Rotation.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
-#include "Schema/SnapshotEntity.h"
 #include "SpatialTypebindingManager.h"
 #include "SpatialActorChannel.h"
 #include "SpatialNetDriver.h"
@@ -173,6 +173,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 
 		WriteAclMap ComponentWriteAcl;
 		ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
+		ComponentWriteAcl.Add(ROTATION_COMPONENT_ID, UnrealWorkerPermission);
 		ComponentWriteAcl.Add(Info->SingleClientComponent, UnrealWorkerPermission);
 		ComponentWriteAcl.Add(Info->MultiClientComponent, UnrealWorkerPermission);
 		ComponentWriteAcl.Add(Info->HandoverComponent, UnrealWorkerPermission);
@@ -216,6 +217,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 		Components.Add(Metadata(FSoftClassPath(ActorClass).ToString()).CreateMetadataData());
 		Components.Add(EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 		Components.Add(Persistence().CreatePersistenceData());
+		Components.Add(Rotation(Actor->GetActorRotation()).CreateRotationData());
 		Components.Add(UnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());			// Owning client is empty string, since it does not make sense in snapshot generation (should only affect player controllers anyway?)
 
 		FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);

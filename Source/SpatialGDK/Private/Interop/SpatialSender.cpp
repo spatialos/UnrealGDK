@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
+#include "Schema/Rotation.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -23,7 +24,7 @@ void USpatialSender::Init(USpatialNetDriver* NetDriver)
 	Receiver = NetDriver->Receiver;
 }
 
-Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, const FVector& Location, const FString& EntityType, USpatialActorChannel* Channel)
+Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, const FString& EntityType, USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
 
@@ -57,6 +58,7 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(POSITION_COMPONENT_ID, WorkersOnly);
+	ComponentWriteAcl.Add(ROTATION_COMPONENT_ID, WorkersOnly);
 	ComponentWriteAcl.Add(Info->SingleClientComponent, WorkersOnly);
 	ComponentWriteAcl.Add(Info->MultiClientComponent, WorkersOnly);
 	ComponentWriteAcl.Add(Info->HandoverComponent, WorkersOnly);
@@ -95,10 +97,11 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	});
 
 	TArray<Worker_ComponentData> ComponentDatas;
-	ComponentDatas.Add(Position(Coordinates::FromFVector(Location)).CreatePositionData());
+	ComponentDatas.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(Metadata(EntityType).CreateMetadataData());
 	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(Persistence().CreatePersistenceData());
+	ComponentDatas.Add(Rotation(Actor->GetActorRotation()).CreateRotationData());
 	ComponentDatas.Add(UnrealMetadata({}, ClientWorkerId, SubobjectNameToOffset).CreateUnrealMetadataData());
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
@@ -227,6 +230,12 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
+void USpatialSender::SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rot)
+{
+	Worker_ComponentUpdate Update = Rotation(Rot).CreateRotationUpdate();
+	Connection->SendComponentUpdate(EntityId, &Update);
+}
+
 void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters)
 {
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(TargetObject->GetClass());
@@ -307,13 +316,13 @@ void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
-void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, const FVector& Location, const FString& PlayerWorkerId)
+void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, const FString& PlayerWorkerId)
 {
 	UE_LOG(LogTemp, Log, TEXT("Sending create entity request for %s"), *Channel->Actor->GetName());
 
 	FSoftClassPath ActorClassPath(Channel->Actor->GetClass());
 
-	Worker_RequestId RequestId = CreateEntity(PlayerWorkerId, Location, ActorClassPath.ToString(), Channel);
+	Worker_RequestId RequestId = CreateEntity(PlayerWorkerId, ActorClassPath.ToString(), Channel);
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 

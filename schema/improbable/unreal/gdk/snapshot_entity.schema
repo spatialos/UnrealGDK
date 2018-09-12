@@ -1,6 +1,0 @@
-package improbable.unreal;
-
-component UnrealSnapshotEntity
-{
-    id = 100006;
-}
