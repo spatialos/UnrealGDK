@@ -256,7 +256,7 @@ bool USpatialActorChannel::ReplicateActor()
 	if (!PlayerController && !Cast<APlayerState>(Actor))
 	{
 		UpdateSpatialPosition();
-		//UpdateSpatialRotation();
+		UpdateSpatialRotation();
 	}
 	
 	// Update the replicated property change list.

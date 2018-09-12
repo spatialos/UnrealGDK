@@ -305,8 +305,6 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 			}
 		}
 
-		EntityActor->SetActorRotation(EntityActor->ReplicatedMovement.Rotation);
-
 		// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
 		//NetDriver->GetSpatialInterop()->SendComponentInterests(Channel, EntityId.ToSpatialEntityId());
 
