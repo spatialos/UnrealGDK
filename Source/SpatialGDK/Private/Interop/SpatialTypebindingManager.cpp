@@ -201,15 +201,7 @@ UClass* USpatialTypebindingManager::FindClassByComponentId(Worker_ComponentId Co
 
 bool USpatialTypebindingManager::IsSupportedClass(UClass* Class)
 {
-	for (UClass* SupportedClass : SupportedClasses)
-	{
-		if (Class->IsChildOf(SupportedClass))
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return SupportedClasses.Contains(Class);
 }
 
 TArray<UObject*> USpatialTypebindingManager::GetHandoverSubobjects(AActor* Actor)
