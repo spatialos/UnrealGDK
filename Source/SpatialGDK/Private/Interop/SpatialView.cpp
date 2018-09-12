@@ -136,7 +136,7 @@ void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
 
 void USpatialView::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
-	if(Op.component_id == UnrealMetadata::ComponentId)
+	if (Op.component_id == UnrealMetadata::ComponentId)
 	{
 		EntityUnrealMetadataMap.Remove(Op.entity_id);
 	}

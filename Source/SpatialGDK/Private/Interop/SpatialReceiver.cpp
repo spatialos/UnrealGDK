@@ -139,7 +139,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialReceiver::OnRemoveComponent(Worker_RemoveComponentOp& Op)
 {
-	if(Op.component_id == UnrealMetadata::ComponentId)
+	if (Op.component_id == UnrealMetadata::ComponentId)
 	{
 		PackageMap->RemoveEntitySubobjects(Op.entity_id);
 	}
