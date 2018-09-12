@@ -101,12 +101,15 @@ bool USpatialActorChannel::IsSingletonEntity()
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 #if WITH_EDITOR
-	if (NetDriver->IsServer() &&
-		NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-		NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
+	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
 	{
-		// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-		DeleteEntityIfAuthoritative();
+		if (NetDriver->IsServer() &&
+			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
+			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
+		{
+			// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+			DeleteEntityIfAuthoritative();
+		}
 	}
 #endif
 
