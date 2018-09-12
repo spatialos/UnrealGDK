@@ -81,7 +81,10 @@ void USpatialNetDriver::PostInitProperties()
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
-	if (LoadedWorld->GetNetDriver() != this)
+	auto WorldNetDriver = LoadedWorld->GetNetDriver();
+
+	// Josh - This will cause issues with destroying the current NetDriver when attempting to do OnMapLoaded.
+	if (WorldNetDriver != this)
 	{
 		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
 		// As the delegate is a global variable, it triggers all 3 USpatialNetDriver::OnMapLoaded callbacks. As a result, we should
@@ -89,10 +92,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
-
-	//checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
-
+	// Josh - This needs changing to allow the SpatialConnection to be reformed.
 	// Rebase - Moved this earlier to allow modding the receptionist config based on the loaded world.
 	if (Connection != nullptr)
 	{
@@ -100,6 +100,16 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 	Connection = NewObject<USpatialWorkerConnection>();
 	// Rebase - End
+
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
+
+	//checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
+
+	// Set the timer manager.
+	TimerManager = &LoadedWorld->GetTimerManager();
+
+	// Set up manager objects.
+	EntityRegistry = NewObject<UEntityRegistry>(this);
 
 	// TODO: factor this into helper method
 	// Check for command-line overrides.
@@ -130,14 +140,19 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		Connection->ReceptionistConfig.UseExternalIp = true;
 	}
 
-	// Set the timer manager.
-	TimerManager = &LoadedWorld->GetTimerManager();
-
-	// Connect to SpatialOS.
 	Connect();
+}
 
-	// Set up manager objects.
-	EntityRegistry = NewObject<UEntityRegistry>(this);
+void USpatialNetDriver::ConnectToSpatialOSInstance()
+{
+	// Load the pre-loaded map.
+}
+
+void USpatialNetDriver::PreLoadSpatialOSInstanceMap()
+{
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Loading SpatialOSInstanceMap..."));
+
+	// Call the GSM.
 }
 
 void USpatialNetDriver::Connect()
@@ -174,6 +189,7 @@ void USpatialNetDriver::OnConnected()
 	{
 		// Send the player spawn commands with retries
 		PlayerSpawner->SendPlayerSpawnRequest();
+		PreLoadSpatialOSInstanceMap();
 	}
 	else
 	{

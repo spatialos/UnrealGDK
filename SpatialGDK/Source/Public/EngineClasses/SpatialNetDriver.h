@@ -130,6 +130,12 @@ private:
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
+	UFUNCTION(BlueprintCallable)
+	void ConnectToSpatialOSInstance();
+
+	UFUNCTION(BlueprintCallable)
+	void PreLoadSpatialOSInstanceMap();
+
 	void Connect();
 
 	UFUNCTION()
