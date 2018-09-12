@@ -185,8 +185,8 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		UnrealMetadata* UnrealMetadataComponent = GetComponentData<UnrealMetadata>(*this, EntityId);
 		check(UnrealMetadataComponent);
 
-		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
-		check(PackageMap);
+		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
+		check(SpatialPackageMap);
 
 		SubobjectToOffsetMap SubobjectNameToOffset;
 		for (auto& Pair : UnrealMetadataComponent->SubobjectNameToOffset)
@@ -194,7 +194,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 			SubobjectNameToOffset.Add(Pair.Key, Pair.Value);
 		}
 
-		FNetworkGUID NetGUID = PackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
+		FNetworkGUID NetGUID = SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
 		UE_LOG(LogTemp, Log, TEXT("Received create entity response op for %lld"), EntityId);
 	}
 	else
@@ -264,7 +264,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
 		// Set up actor channel.
-		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
+		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
 		check(Channel);
 
@@ -281,7 +281,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 			SubobjectNameToOffset.Add(Pair.Key, Pair.Value);
 		}
 
-		PackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
+		SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
 		Channel->SetChannelActor(EntityActor);
 
 		// Apply initial replicated properties.

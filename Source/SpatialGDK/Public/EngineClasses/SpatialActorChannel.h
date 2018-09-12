@@ -29,9 +29,9 @@ public:
 		return EntityId;
 	}
 
-	FORCEINLINE void SetEntityId(Worker_EntityId EntityId)
+	FORCEINLINE void SetEntityId(Worker_EntityId InEntityId)
 	{
-		this->EntityId = EntityId;
+		this->EntityId = InEntityId;
 	}
 
 	FORCEINLINE bool IsReadyForReplication() const

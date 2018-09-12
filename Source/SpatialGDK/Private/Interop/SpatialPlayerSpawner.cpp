@@ -18,10 +18,10 @@ using namespace worker;
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKPlayerSpawner);
 
-void USpatialPlayerSpawner::Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager)
+void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
-	this->NetDriver = NetDriver;
-	this->TimerManager = TimerManager;
+	this->NetDriver = InNetDriver;
+	this->TimerManager = InTimerManager;
 
 	NumberOfAttempts = 0;
 }

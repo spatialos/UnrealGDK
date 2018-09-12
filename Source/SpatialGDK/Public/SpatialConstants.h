@@ -6,7 +6,7 @@
 
 #include <improbable/c_worker.h>
 
-typedef int64 Worker_EntityId_Key;
+using Worker_EntityId_Key = int64;
 
 namespace SpatialConstants
 {

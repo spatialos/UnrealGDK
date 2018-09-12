@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "Schema/UnrealMetadata.h"
+#include "SpatialConstants.h"
 
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
@@ -33,6 +34,6 @@ private:
 
 	USpatialReceiver* Receiver;
 
-	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
-	TMap<Worker_EntityId, TSharedPtr<UnrealMetadata>> EntityUnrealMetadataMap;
+	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
+	TMap<Worker_EntityId_Key, TSharedPtr<UnrealMetadata>> EntityUnrealMetadataMap;
 };
