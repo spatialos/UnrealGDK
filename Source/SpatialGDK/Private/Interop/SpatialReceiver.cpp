@@ -174,15 +174,6 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 	SnapshotEntity* SnapshotEntityComponent = GetComponentData<SnapshotEntity>(*this, EntityId);
 	check(PositionComponent && MetadataComponent);
 
-	// Entity comes from a snapshot, does not have initialised values and is just a placeholder for the real entity
-	if (SnapshotEntityComponent)
-	{
-		PendingAddComponents.RemoveAll([EntityId](PendingAddComponentWrapper& PendingAddComponent)
-		{
-			return PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic;
-		});
-	}
-
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogTemp, Log, TEXT("!!! Checked out entity with entity ID %lld"), EntityId);
 
@@ -242,23 +233,23 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		else
 		{
 			// Either spawn the actor or get it from the level if it has a persistent name.
-			if (UnrealMetadataComponent->StaticPath.IsEmpty())
-			{
+			//if (UnrealMetadataComponent->StaticPath.IsEmpty())
+			//{
 				UE_LOG(LogTemp, Log, TEXT("!!! Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
 				EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
 				bDoingDeferredSpawn = true;
-			}
-			else
-			{
-				FString FullPath = UnrealMetadataComponent->StaticPath;
-				UE_LOG(LogTemp, Log, TEXT("!!! Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
-				
-				// Need to fix the path for PIE, because map names get mangled
-				FSoftObjectPath SoftPath(FullPath);
-				SoftPath.FixupForPIE();
+			//}
+			//else
+			//{
+			//	FString FullPath = UnrealMetadataComponent->StaticPath;
+			//	UE_LOG(LogTemp, Log, TEXT("!!! Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
+			//	
+			//	// Need to fix the path for PIE, because map names get mangled
+			//	FSoftObjectPath SoftPath(FullPath);
+			//	SoftPath.FixupForPIE();
 
-				EntityActor = FindObject<AActor>(nullptr, *SoftPath.ToString());
-			}
+			//	EntityActor = FindObject<AActor>(nullptr, *SoftPath.ToString());
+			//}
 			check(EntityActor);
 
 			// Get the net connection for this actor.

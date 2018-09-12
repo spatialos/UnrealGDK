@@ -12,6 +12,9 @@
 #include "Schema/UnrealMetadata.h"
 #include "Schema/SnapshotEntity.h"
 #include "SpatialTypebindingManager.h"
+#include "SpatialActorChannel.h"
+#include "SpatialNetDriver.h"
+#include "SpatialNetConnection.h"
 
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 #include "UObjectIterator.h"
@@ -135,9 +138,16 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	WorkerAttributeSet OwningClientAttribute = { TEXT("workerId:") };  //No owning client since we are creating a snapshot
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	for (TActorIterator<AActor> Iterator(World); Iterator; ++Iterator)
+	USpatialNetDriver* NetDriver = NewObject<USpatialNetDriver>();
+	NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
+	NetDriver->TypebindingManager = TypebindingManager;
+	USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>();
+	NetConnection->Driver = NetDriver;
+	NetConnection->State = USOCK_Closed;
+
+	for (TActorIterator<AActor> It(World); It; ++It)
 	{
-		AActor* Actor = *Iterator;
+		AActor* Actor = *It;
 		if (Actor->IsEditorOnly())
 		{
 			continue;
@@ -145,101 +155,117 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 		check(!Actor->IsA(APlayerController::StaticClass()));
 		UClass* ActorClass = Actor->GetClass();
 
-		if (ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings))
+		if (!(TypebindingManager->IsSupportedClass(ActorClass) && Actor->GetIsReplicated()))
 		{
-			Worker_Entity ActorEntity;
-			ActorEntity.entity_id = CurrentEntityId++;
+			continue;
+		}
 
-			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-			check(Info);
+		if (Actor->GetClass()->IsChildOf<AWorldSettings>() || Actor->GetClass()->IsChildOf<ALevelScriptActor>())
+		{
+			continue;
+		}
 
-			WriteAclMap ComponentWriteAcl;
-			ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(Info->SingleClientComponent, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(Info->MultiClientComponent, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(Info->HandoverComponent, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
-			ComponentWriteAcl.Add(Info->RPCComponents[RPC_Server], UnrealWorkerPermission);
-			ComponentWriteAcl.Add(Info->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
-			ComponentWriteAcl.Add(Info->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
+		Worker_Entity ActorEntity;
+		ActorEntity.entity_id = CurrentEntityId++;
 
-			for (UClass* SubobjectClass : Info->SubobjectClasses)
+		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+		check(Info);
+
+		WriteAclMap ComponentWriteAcl;
+		ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
+		ComponentWriteAcl.Add(Info->SingleClientComponent, UnrealWorkerPermission);
+		ComponentWriteAcl.Add(Info->MultiClientComponent, UnrealWorkerPermission);
+		ComponentWriteAcl.Add(Info->HandoverComponent, UnrealWorkerPermission);
+		ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
+		ComponentWriteAcl.Add(Info->RPCComponents[RPC_Server], UnrealWorkerPermission);
+		ComponentWriteAcl.Add(Info->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
+		ComponentWriteAcl.Add(Info->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
+
+		for (UClass* SubobjectClass : Info->SubobjectClasses)
+		{
+			FClassInfo* ClassInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
+			check(ClassInfo);
+
+			ComponentWriteAcl.Add(ClassInfo->SingleClientComponent, UnrealWorkerPermission);
+			ComponentWriteAcl.Add(ClassInfo->MultiClientComponent, UnrealWorkerPermission);
+			ComponentWriteAcl.Add(ClassInfo->HandoverComponent, UnrealWorkerPermission);
+			ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Client], OwningClientOnly);
+			ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Server], UnrealWorkerPermission);
+			ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
+			ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
+		}
+
+		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(NetConnection->CreateChannel(CHTYPE_Actor, 1));
+
+		FString StaticPath = Actor->GetPathName(nullptr);
+
+		uint32 CurrentOffset = 1;
+		SubobjectToOffsetMap SubobjectNameToOffset;
+		ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+		{
+			// Objects can only be allocated NetGUIDs if this is true.
+			if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
 			{
-				FClassInfo* ClassInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
-				check(ClassInfo);
-
-				ComponentWriteAcl.Add(ClassInfo->SingleClientComponent, UnrealWorkerPermission);
-				ComponentWriteAcl.Add(ClassInfo->MultiClientComponent, UnrealWorkerPermission);
-				// Not adding handover since component's handover properties will be handled by the actor anyway
-				ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Client], OwningClientOnly);
-				ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Server], UnrealWorkerPermission);
-				ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
-				ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
+				SubobjectNameToOffset.Add(Object->GetName(), CurrentOffset);
+				CurrentOffset++;
 			}
+		});
 
-			FString StaticPath = Actor->GetPathName(nullptr);
+		TArray<Worker_ComponentData> Components;
+		Components.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
+		Components.Add(Metadata(FSoftClassPath(ActorClass).ToString()).CreateMetadataData());
+		Components.Add(EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+		Components.Add(Persistence().CreatePersistenceData());
+		Components.Add(UnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());			// Owning client is empty string, since it does not make sense in snapshot generation (should only affect player controllers anyway?)
 
-			uint32 CurrentOffset = 1;
-			SubobjectToOffsetMap SubobjectNameToOffset;
-			ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+		FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
+		FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
+
+		FUnresolvedObjectsMap UnresolvedObjectsMap;
+		FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
+		ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
+
+		TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, InitialRepChanges, InitialHandoverChanges);
+
+		Components.Append(DynamicComponentDatas);
+
+		for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
+		{
+			Components.Add(ComponentFactory::CreateEmptyComponentData(Info->RPCComponents[RPCType]));
+		}
+
+		for (UClass* SubobjectClass : Info->SubobjectClasses)
+		{
+			FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
+			check(ComponentInfo);
+
+			TArray<UObject*> DefaultSubobjects;
+			Actor->GetDefaultSubobjects(DefaultSubobjects);
+			UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
 			{
-				// Objects can only be allocated NetGUIDs if this is true.
-				if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
-				{
-					SubobjectNameToOffset.Add(Object->GetName(), CurrentOffset);
-					CurrentOffset++;
-				}
+				return (Obj->GetClass() == SubobjectClass);
 			});
+			check(FoundSubobject);
+			UObject* Subobject = *FoundSubobject;
 
-			TArray<Worker_ComponentData> Components;
-			Components.Add(Position(Coordinates::FromFVector(Actor->GetActorLocation())).CreatePositionData());			// YOLO - Check if actor location is the right location
-			Components.Add(Metadata(FSoftClassPath(ActorClass).ToString()).CreateMetadataData());
-			Components.Add(EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
-			Components.Add(Persistence().CreatePersistenceData());
-			Components.Add(UnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());			// Owning client is empty string, since it does not make sense in snapshot generation (should only affect player controllers anyway?)
-			Components.Add(SnapshotEntity().CreateSnapshotEntityData());												// Mark the entity as a snapshot entity
+			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
+			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(ComponentInfo);
 
-			Components.Add(ComponentFactory::CreateEmptyComponentData(Info->SingleClientComponent));
-			Components.Add(ComponentFactory::CreateEmptyComponentData(Info->MultiClientComponent));
-			Components.Add(ComponentFactory::CreateEmptyComponentData(Info->HandoverComponent));
+			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectRepChanges, SubobjectHandoverChanges);
+			Components.Append(ActorSubobjectDatas);
 
 			for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
 			{
-				Components.Add(ComponentFactory::CreateEmptyComponentData(Info->RPCComponents[RPCType]));
+				Components.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->RPCComponents[RPCType]));
 			}
+		}
 
-			for (UClass* SubobjectClass : Info->SubobjectClasses)
-			{
-				FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
-				check(ComponentInfo);
+		ActorEntity.component_count = Components.Num();
+		ActorEntity.components = Components.GetData();
 
-				TArray<UObject*> DefaultSubobjects;
-				Actor->GetDefaultSubobjects(DefaultSubobjects);
-				UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
-				{
-					return (Obj->GetClass() == SubobjectClass);
-				});
-				check(FoundSubobject);
-				UObject* Subobject = *FoundSubobject;
-
-				Components.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->SingleClientComponent));
-				Components.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->MultiClientComponent));
-
-				// Not adding handover since component's handover properties will be handled by the actor anyway
-
-				for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
-				{
-					Components.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->RPCComponents[RPCType]));
-				}
-			}
-
-			ActorEntity.component_count = Components.Num();
-			ActorEntity.components = Components.GetData();
-
-			if (Worker_SnapshotOutputStream_WriteEntity(OutputStream, &ActorEntity) == 0)
-			{
-				return false;
-			}
+		if (Worker_SnapshotOutputStream_WriteEntity(OutputStream, &ActorEntity) == 0)
+		{
+			return false;
 		}
 	}
 
