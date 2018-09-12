@@ -52,6 +52,6 @@ private:
 
 	void RemoveFromRegistryImpl(const AActor* Actor, const Worker_EntityId& EntityId);
 
-	TMap<SpatialConstants::Worker_EntityId_Key, AActor*> EntityIdToActor;
+	TMap<Worker_EntityId_Key, AActor*> EntityIdToActor;
 	TMap<AActor*, Worker_EntityId> ActorToEntityId;
 };
