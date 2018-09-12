@@ -234,7 +234,7 @@ bool SpatialGDKGenerateInteropCode()
 	const FString SchemaIntermediatePath = GenerateIntermediateDirectory();
 	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath);
 
-	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
+	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Plugins/UnrealGDK/SpatialGDK/Build/Scripts/DiffCopy.bat")));
 	// Copy schema files
 	FString DiffCopyArguments = FString::Printf(TEXT("\"%s\" \"%s\" --verbose --remove-input"), *SchemaIntermediatePath, *SchemaOutputPath);
 	if (!RunProcess(DiffCopyPath, DiffCopyArguments))
