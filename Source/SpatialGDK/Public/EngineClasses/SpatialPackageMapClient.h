@@ -20,9 +20,9 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 	GENERATED_BODY()		
 public:
 	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
-	void RemoveEntityActor(const Worker_EntityId& EntityId);
+	void RemoveEntityActor(const Worker_EntityId EntityId);
+	void RemoveEntitySubobjects(const Worker_EntityId EntityId);
 
-	void RemoveEntitySubobjects(const Worker_EntityId& EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	FNetworkGUID ResolveStablyNamedObject(const UObject* Object);
 	
 	UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
@@ -39,7 +39,7 @@ public:
 		
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);
-	void RemoveEntitySubobjectsNetGUIDs(Worker_EntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
+	void RemoveEntitySubobjectsNetGUIDs(Worker_EntityId EntityId);
 	void RemoveNetGUID(const FNetworkGUID& NetGUID);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(const UObject* Object);

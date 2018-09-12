@@ -30,7 +30,6 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
 			Receiver->OnRemoveEntity(Op->remove_entity);
-			OnRemoveEntity(Op->remove_entity);
 			break;
 
 		// Components
@@ -39,6 +38,8 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 			Receiver->OnAddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
+			Receiver->OnRemoveComponent(Op->remove_component);
+			OnRemoveComponent(Op->remove_component);
 			break;
 
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
@@ -133,7 +134,10 @@ void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
 	}
 }
 
-void USpatialView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
+void USpatialView::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
-	EntityUnrealMetadataMap.Remove(Op.entity_id);
+	if(Op.component_id == UnrealMetadata::ComponentId)
+	{
+		EntityUnrealMetadataMap.Remove(Op.entity_id);
+	}
 }
