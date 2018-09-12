@@ -31,4 +31,6 @@ namespace SpatialConstants
 		uint32 WaitTimeExponentialFactor = 1u << (NumAttempts - 1);
 		return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
 	}
+
+	typedef int64 Worker_EntityId_Key;
 }

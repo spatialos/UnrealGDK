@@ -9,6 +9,7 @@
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
+#include "SpatialConstants.h"
 
 #include <improbable/c_worker.h>
 
@@ -119,7 +120,7 @@ private:
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
 
-	TMap<Worker_EntityId, USpatialActorChannel*> EntityToActorChannel;
+	TMap<SpatialConstants::Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 
 	// Timer manager.
 	FTimerManager* TimerManager;

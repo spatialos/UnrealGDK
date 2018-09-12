@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SpatialConstants.h"
 
 #include <improbable/c_worker.h>
 
@@ -51,6 +52,6 @@ private:
 
 	void RemoveFromRegistryImpl(const AActor* Actor, const Worker_EntityId& EntityId);
 
-	TMap<Worker_EntityId, AActor*> EntityIdToActor;
+	TMap<SpatialConstants::Worker_EntityId_Key, AActor*> EntityIdToActor;
 	TMap<AActor*, Worker_EntityId> ActorToEntityId;
 };
