@@ -46,13 +46,16 @@ call :MarkStartOfBlock "Setup variables"
     set WORKER_SDK_DIR=%~dp0\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0\Binaries\ThirdParty\Improbable
     set SCHEMA_COPY_DIR=%~dp0..\..\..\..\spatial\schema
+    set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\..\spatial\build\dependencies\schema\standard_library
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
-    rd /s /q "%BUILD_DIR%"          2>nul
-    rd /s /q "%PACKAGE_TARGET_DIR%" 2>nul
-    rd /s /q "%WORKER_SDK_DIR%"     2>nul
-    rd /s /q "%BINARIES_DIR%"       2>nul
+    rd /s /q "%BUILD_DIR%"              2>nul
+    rd /s /q "%PACKAGE_TARGET_DIR%"     2>nul
+    rd /s /q "%WORKER_SDK_DIR%"         2>nul
+    rd /s /q "%BINARIES_DIR%"           2>nul
+    rd /s /q "%SCHEMA_COPY_DIR%"        2>nul
+    rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
 call :MarkEndOfBlock "Clean folders"
 
 call :MarkStartOfBlock "Create folders"
@@ -62,6 +65,8 @@ call :MarkStartOfBlock "Create folders"
     md "%CORE_SDK_DIR%\tools"        >nul 2>nul
     md "%CORE_SDK_DIR%\worker_sdk"   >nul 2>nul
     md "%BINARIES_DIR%"              >nul 2>nul
+    md "%SCHEMA_COPY_DIR%"           >nul 2>nul
+    md "%SCHEMA_STD_COPY_DIR%"       >nul 2>nul
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
@@ -92,6 +97,9 @@ call :MarkStartOfBlock "Copy schema"
 if exist %SCHEMA_COPY_DIR% (
     echo Copying schemas to "%SCHEMA_COPY_DIR%".
 	xcopy /s /i /q "%~dp0\Extras\schema" "%SCHEMA_COPY_DIR%"
+
+    echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
+    xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
 )
 
 call :MarkEndOfBlock "Copy schema"
