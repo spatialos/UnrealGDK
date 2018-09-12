@@ -85,7 +85,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	UE_LOG(LogTemp, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
 	// If we have authority and aren't trying to delete a critical entity, delete it
-	if (bHasAuthority && !IsSingletonEntity())
+	if (bHasAuthority && !IsSingletonEntity() && IsStablyNamedEntity())
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}
@@ -99,15 +99,24 @@ bool USpatialActorChannel::IsSingletonEntity()
 	return NetDriver->GlobalStateManager->IsSingletonEntity(EntityId);
 }
 
+bool USpatialActorChannel::IsStablyNamedEntity()
+{
+	// Don't delete if stable named entity
+	return NetDriver->View->GetUnrealMetadata(EntityId)->StaticPath.IsEmpty();
+}
+
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 #if WITH_EDITOR
-	if (NetDriver->IsServer() &&
-		NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-		NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
+	if(NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
 	{
-		// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-		DeleteEntityIfAuthoritative();
+		if (NetDriver->IsServer() &&
+			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
+			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
+		{
+			// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+			DeleteEntityIfAuthoritative();
+		}
 	}
 #endif
 
@@ -247,6 +256,7 @@ bool USpatialActorChannel::ReplicateActor()
 	if (!PlayerController && !Cast<APlayerState>(Actor))
 	{
 		UpdateSpatialPosition();
+		UpdateSpatialRotation();
 	}
 	
 	// Update the replicated property change list.
@@ -312,8 +322,7 @@ bool USpatialActorChannel::ReplicateActor()
 			}
 
 			// Calculate initial spatial position (but don't send component update) and create the entity.
-			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			Sender->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId);
+			Sender->SendCreateEntityRequest(this, PlayerWorkerId);
 		}
 		else
 		{
@@ -640,7 +649,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 
 	LastSpatialPosition = ActorSpatialPosition;
-	Sender->SendPositionUpdate(GetEntityId(), LastSpatialPosition);
+	Sender->SendPositionUpdate(EntityId, LastSpatialPosition);
 
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	if (APawn* Pawn = Cast<APawn>(Actor))
@@ -659,6 +668,11 @@ void USpatialActorChannel::UpdateSpatialPosition()
 			}
 		}
 	}
+}
+
+void USpatialActorChannel::UpdateSpatialRotation()
+{
+	Sender->SendRotationUpdate(EntityId, Actor->GetActorRotation());
 }
 
 FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)

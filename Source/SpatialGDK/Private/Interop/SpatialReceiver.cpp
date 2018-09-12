@@ -13,7 +13,6 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/UnrealMetadata.h"
-#include "Schema/SnapshotEntity.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/EntityRegistry.h"
@@ -123,6 +122,9 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case PERSISTENCE_COMPONENT_ID:
 		Data = MakeShared<Persistence>(Op.data);
 		break;
+	case ROTATION_COMPONENT_ID:
+		Data = MakeShared<Rotation>(Op.data);
+		break;
 	case UNREAL_METADATA_COMPONENT_ID:
 		Data = MakeShared<UnrealMetadata>(Op.data);
 		break;
@@ -171,17 +173,9 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 
 	Position* PositionComponent = GetComponentData<Position>(*this, EntityId);
 	Metadata* MetadataComponent = GetComponentData<Metadata>(*this, EntityId);
-	SnapshotEntity* SnapshotEntityComponent = GetComponentData<SnapshotEntity>(*this, EntityId);
-	check(PositionComponent && MetadataComponent);
+	Rotation* RotationComponent = GetComponentData<Rotation>(*this, EntityId);
 
-	// Entity comes from a snapshot, does not have initialised values and is just a placeholder for the real entity
-	if (SnapshotEntityComponent)
-	{
-		PendingAddComponents.RemoveAll([EntityId](PendingAddComponentWrapper& PendingAddComponent)
-		{
-			return PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic;
-		});
-	}
+	check(PositionComponent && MetadataComponent);
 
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogTemp, Log, TEXT("!!! Checked out entity with entity ID %lld"), EntityId);
@@ -242,23 +236,23 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		else
 		{
 			// Either spawn the actor or get it from the level if it has a persistent name.
-			if (UnrealMetadataComponent->StaticPath.IsEmpty())
-			{
+			//if (UnrealMetadataComponent->StaticPath.IsEmpty())
+			//{
 				UE_LOG(LogTemp, Log, TEXT("!!! Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
-				EntityActor = SpawnNewEntity(PositionComponent, ActorClass, true);
+				EntityActor = SpawnNewEntity(PositionComponent, RotationComponent, ActorClass, true);
 				bDoingDeferredSpawn = true;
-			}
-			else
-			{
-				FString FullPath = UnrealMetadataComponent->StaticPath;
-				UE_LOG(LogTemp, Log, TEXT("!!! Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
-				
-				// Need to fix the path for PIE, because map names get mangled
-				FSoftObjectPath SoftPath(FullPath);
-				SoftPath.FixupForPIE();
+			//}
+			//else
+			//{
+			//	FString FullPath = UnrealMetadataComponent->StaticPath;
+			//	UE_LOG(LogTemp, Log, TEXT("!!! Searching for a native static actor %s of class %s in the persistent level whilst checking out an entity."), *FullPath, *ActorClass->GetName());
+			//	
+			//	// Need to fix the path for PIE, because map names get mangled
+			//	FSoftObjectPath SoftPath(FullPath);
+			//	SoftPath.FixupForPIE();
 
-				EntityActor = FindObject<AActor>(nullptr, *SoftPath.ToString());
-			}
+			//	EntityActor = FindObject<AActor>(nullptr, *SoftPath.ToString());
+			//}
 			check(EntityActor);
 
 			// Get the net connection for this actor.
@@ -288,7 +282,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		{
 			FVector InitialLocation = Coordinates::ToFVector(PositionComponent->Coords);
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
-			EntityActor->FinishSpawning(FTransform(FRotator::ZeroRotator, SpawnLocation));
+			EntityActor->FinishSpawning(FTransform(RotationComponent->ToFRotator(), SpawnLocation));
 		}
 
 		SubobjectToOffsetMap SubobjectNameToOffset;
@@ -405,9 +399,10 @@ UClass* USpatialReceiver::GetNativeEntityClass(Metadata* MetadataComponent)
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialReceiver::SpawnNewEntity(Position* PositionComponent, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::SpawnNewEntity(Position* PositionComponent, Rotation* RotationComponent, UClass* ActorClass, bool bDeferred)
 {
 	FVector InitialLocation = Coordinates::ToFVector(PositionComponent->Coords);
+	FRotator InitialRotation = RotationComponent->ToFRotator();
 	AActor* NewActor = nullptr;
 	if (ActorClass)
 	{
@@ -421,7 +416,7 @@ AActor* USpatialReceiver::SpawnNewEntity(Position* PositionComponent, UClass* Ac
 
 		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 
-		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(FRotator::ZeroRotator, SpawnLocation), SpawnInfo);
+		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(InitialRotation, SpawnLocation), SpawnInfo);
 		check(NewActor);
 	}
 
