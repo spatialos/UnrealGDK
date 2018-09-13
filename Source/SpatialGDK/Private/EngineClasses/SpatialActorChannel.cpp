@@ -15,6 +15,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
+#include "RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
@@ -94,8 +95,12 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 
 bool USpatialActorChannel::IsSingletonEntity()
 {
-	// Don't delete if singleton entity
 	return NetDriver->GlobalStateManager->IsSingletonEntity(EntityId);
+}
+
+bool USpatialActorChannel::IsStablyNamedEntity()
+{
+	return !NetDriver->View->GetUnrealMetadata(EntityId)->StaticPath.IsEmpty();
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
@@ -107,8 +112,11 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
 			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
 		{
-			// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-			DeleteEntityIfAuthoritative();
+			if(!IsStablyNamedEntity())
+			{
+				// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+				DeleteEntityIfAuthoritative();
+			}
 		}
 	}
 #endif
@@ -249,6 +257,7 @@ bool USpatialActorChannel::ReplicateActor()
 	if (!PlayerController && !Cast<APlayerState>(Actor))
 	{
 		UpdateSpatialPosition();
+		UpdateSpatialRotation();
 	}
 	
 	// Update the replicated property change list.
@@ -313,9 +322,7 @@ bool USpatialActorChannel::ReplicateActor()
 				UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
 			}
 
-			// Calculate initial spatial position (but don't send component update) and create the entity.
-			LastSpatialPosition = GetActorSpatialPosition(Actor);
-			Sender->SendCreateEntityRequest(this, LastSpatialPosition, PlayerWorkerId);
+			Sender->SendCreateEntityRequest(this, PlayerWorkerId);
 		}
 		else
 		{
@@ -522,23 +529,14 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (EntityId == 0)
 	{
-		// If the actor is stably named, we only want to start the creation process on one server (the one that is authoritative
-		// over the Global State Manager) to avoid having multiple copies of replicated stably named actors in SpatialOS
-		if (InActor->IsFullNameStableForNetworking())
-		{
-			//SpatialNetDriver->GetSpatialInterop()->ReserveReplicatedStablyNamedActorChannel(this);
-		}
-		else
-		{
-			bCreatingNewEntity = true;
-			Sender->SendReserveEntityIdRequest(this);
-		}
+		bCreatingNewEntity = true;
+		Sender->SendReserveEntityIdRequest(this);
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), EntityId);
 
-		// Inform USpatialInterop of this new actor channel/entity pairing
+		// Inform USpatialNetDriver of this new actor channel/entity pairing
 		NetDriver->AddActorChannel(EntityId, this);
 	}
 }
@@ -647,7 +645,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 
 	LastSpatialPosition = ActorSpatialPosition;
-	Sender->SendPositionUpdate(GetEntityId(), LastSpatialPosition);
+	Sender->SendPositionUpdate(EntityId, LastSpatialPosition);
 
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	if (APawn* Pawn = Cast<APawn>(Actor))
@@ -666,6 +664,11 @@ void USpatialActorChannel::UpdateSpatialPosition()
 			}
 		}
 	}
+}
+
+void USpatialActorChannel::UpdateSpatialRotation()
+{
+	Sender->SendRotationUpdate(EntityId, Actor->GetActorRotation());
 }
 
 FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)

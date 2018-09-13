@@ -1,6 +1,0 @@
-package improbable.unreal;
-
-component UnrealLevelPlaceholder
-{
-    id = 100006;
-}

@@ -88,6 +88,8 @@ public:
 	void OnReserveEntityIdResponse(const struct Worker_ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityResponse(const struct Worker_CreateEntityResponseOp& Op);
 
+	FVector GetActorSpatialPosition(AActor* Actor);
+
 protected:
 	// UChannel Interface
 	virtual bool CleanUp(const bool bForDestroy) override;
@@ -95,10 +97,10 @@ protected:
 private:
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
+	bool IsStablyNamedEntity();
 
 	void UpdateSpatialPosition();
-
-	FVector GetActorSpatialPosition(AActor* Actor);
+	void UpdateSpatialRotation();
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
