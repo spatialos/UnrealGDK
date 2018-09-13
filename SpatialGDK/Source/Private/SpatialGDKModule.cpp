@@ -7,8 +7,6 @@
 #include "PlatformProcess.h"
 #include "UObjectBase.h"
 
-#include "SpatialGDKSettings.h"
-
 #define LOCTEXT_NAMESPACE "FSpatialGDKModule"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKModule);
