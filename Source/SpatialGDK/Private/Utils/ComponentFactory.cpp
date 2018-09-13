@@ -273,11 +273,18 @@ Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 	return ComponentData;
 }
 
-Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FHandoverChangeState& Changes)
+Worker_ComponentData ComponentFactory::CreateEmptyComponentData(Worker_ComponentId ComponentId)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
 	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
+
+	return ComponentData;
+}
+
+Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FHandoverChangeState& Changes)
+{
+	Worker_ComponentData ComponentData = CreateEmptyComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
 	FillHandoverSchemaObject(ComponentObject, Object, Changes, true);

@@ -20,13 +20,15 @@ enum EReplicatedPropertyGroup : uint32;
 
 using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
 
-class ComponentFactory 
+class SPATIALGDK_API ComponentFactory 
 {
 public:
 	ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver);
 
 	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState);
 	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState);
+
+	static Worker_ComponentData CreateEmptyComponentData(Worker_ComponentId ComponentId);
 
 private:
 	Worker_ComponentData CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup);

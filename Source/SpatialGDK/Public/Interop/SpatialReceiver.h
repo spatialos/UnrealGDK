@@ -120,7 +120,7 @@ private:
 
 	void CreateActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
-	AActor* SpawnNewEntity(Position* PositionComponent, UClass* ActorClass, bool bDeferred);
+	AActor* SpawnNewEntity(Position* PositionComponent, struct Rotation* RotationComponent, UClass* ActorClass, bool bDeferred);
 	UClass* GetNativeEntityClass(Metadata* MetadataComponent);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
