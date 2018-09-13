@@ -85,7 +85,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	UE_LOG(LogTemp, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
 	// If we have authority and aren't trying to delete a critical entity, delete it
-	if (bHasAuthority && !IsSingletonEntity() && !IsStablyNamedEntity())
+	if (bHasAuthority && !IsSingletonEntity())
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}
@@ -95,13 +95,11 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 
 bool USpatialActorChannel::IsSingletonEntity()
 {
-	// Don't delete if singleton entity
 	return NetDriver->GlobalStateManager->IsSingletonEntity(EntityId);
 }
 
 bool USpatialActorChannel::IsStablyNamedEntity()
 {
-	// Don't delete if stable named entity
 	return !NetDriver->View->GetUnrealMetadata(EntityId)->StaticPath.IsEmpty();
 }
 
@@ -114,8 +112,11 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
 			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
 		{
-			// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-			DeleteEntityIfAuthoritative();
+			if(!IsStablyNamedEntity())
+			{
+				// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+				DeleteEntityIfAuthoritative();
+			}
 		}
 	}
 #endif
@@ -321,7 +322,6 @@ bool USpatialActorChannel::ReplicateActor()
 				UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
 			}
 
-			// Calculate initial spatial position (but don't send component update) and create the entity.
 			Sender->SendCreateEntityRequest(this, PlayerWorkerId);
 		}
 		else

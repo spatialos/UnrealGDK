@@ -165,21 +165,22 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
 	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
 
-	// Create initial state of Actor (which is the state the Actor is in before running the level)
+	// Create component data from initial state of Actor (which is the state the Actor is in before running the level)
 	TArray<Worker_ComponentData> ComponentData = DataFactory.CreateComponentDatas(Actor, InitialRepChanges, InitialHandoverChanges);
 
-	// Actor RPCs
+	// Add Actor RPCs to entity
 	for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
 	{
 		ComponentData.Add(ComponentFactory::CreateEmptyComponentData(Info->RPCComponents[RPCType]));
 	}
 
-	// Process Subobjects
+	// Visit each supported subobject and create component data for initial state of each subobject
 	for (UClass* SubobjectClass : Info->SubobjectClasses)
 	{
 		FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
 		check(ComponentInfo);
 
+		// Find subobject corresponding to supported class
 		TArray<UObject*> DefaultSubobjects;
 		Actor->GetDefaultSubobjects(DefaultSubobjects);
 		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
@@ -192,10 +193,10 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 		FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(ComponentInfo);
 
-		// Initial state of subobject
+		// Create component data for initial state of subobject
 		ComponentData.Append(DataFactory.CreateComponentDatas(Subobject, SubobjectRepChanges, SubobjectHandoverChanges));
 
-		// Subobject RPCs
+		// Add subobject RPCs to entity
 		for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
 		{
 			ComponentData.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->RPCComponents[RPCType]));
