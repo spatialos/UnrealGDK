@@ -85,7 +85,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	UE_LOG(LogTemp, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
 	// If we have authority and aren't trying to delete a critical entity, delete it
-	if (bHasAuthority && !IsSingletonEntity() && IsStablyNamedEntity())
+	if (bHasAuthority && !IsSingletonEntity() && !IsStablyNamedEntity())
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}
@@ -102,7 +102,7 @@ bool USpatialActorChannel::IsSingletonEntity()
 bool USpatialActorChannel::IsStablyNamedEntity()
 {
 	// Don't delete if stable named entity
-	return NetDriver->View->GetUnrealMetadata(EntityId)->StaticPath.IsEmpty();
+	return !NetDriver->View->GetUnrealMetadata(EntityId)->StaticPath.IsEmpty();
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
