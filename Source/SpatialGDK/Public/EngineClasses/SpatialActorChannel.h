@@ -31,7 +31,7 @@ public:
 
 	FORCEINLINE void SetEntityId(Worker_EntityId InEntityId)
 	{
-		this->EntityId = InEntityId;
+		EntityId = InEntityId;
 	}
 
 	FORCEINLINE bool IsReadyForReplication() const
