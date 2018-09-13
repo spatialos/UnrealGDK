@@ -29,6 +29,7 @@ struct FConnectionConfig
 	bool UseExternalIp;
 	bool EnableProtocolLoggingAtStartup;
 	Worker_NetworkConnectionType LinkProtocol;
+	Worker_ConnectionParameters ConnectionParams;
 };
 
 struct FReceptionistConfig : public FConnectionConfig
@@ -53,13 +54,6 @@ struct FLocatorConfig : public FConnectionConfig
 		: LocatorHost(TEXT("locator.improbable.io"))
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
-
-		// Since we are using the locator when connecting using the launcher we need to 
-		// Check the clientType command line aregument.
-		if (WorkerType.IsEmpty())
-		{
-			FParse::Value(CommandLine, *FString(TEXT("clientType")), WorkerType);
-		}
 
 		FParse::Value(CommandLine, *FString("projectName"), ProjectName);
 		FParse::Value(CommandLine, *FString("loginToken"), LoginToken);

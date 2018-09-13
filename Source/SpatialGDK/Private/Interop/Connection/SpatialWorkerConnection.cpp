@@ -94,6 +94,11 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 void USpatialWorkerConnection::ConnectToLocator()
 {
+	if (LocatorConfig.WorkerType.IsEmpty())
+	{
+		LocatorConfig.WorkerType = TEXT("UnrealClient");
+	}
+
 	if (LocatorConfig.WorkerId.IsEmpty())
 	{
 		LocatorConfig.WorkerId = LocatorConfig.WorkerType + FGuid::NewGuid().ToString();
