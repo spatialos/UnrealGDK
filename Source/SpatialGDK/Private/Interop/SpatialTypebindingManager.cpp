@@ -19,7 +19,7 @@ void USpatialTypebindingManager::Init()
 
 	if (SchemaDatabase == nullptr)
 	{
-		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication")));
+		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication.")));
 		return;
 	}
 
@@ -176,15 +176,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 {
-	for (UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
-	{
-		FClassInfo* Info = ClassInfoMap.Find(CurrentClass);
-		if (Info)
-		{
-			return Info;
-		}
-	}
-	return nullptr;
+	return ClassInfoMap.Find(Class);
 }
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByComponentId(Worker_ComponentId ComponentId)
