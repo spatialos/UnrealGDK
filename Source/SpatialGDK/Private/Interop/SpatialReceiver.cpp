@@ -12,6 +12,7 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
+#include "Schema/Rotation.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
