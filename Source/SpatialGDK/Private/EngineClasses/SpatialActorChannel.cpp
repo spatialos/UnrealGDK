@@ -108,7 +108,8 @@ bool USpatialActorChannel::IsStablyNamedEntity()
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 #if WITH_EDITOR
-	if(NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
+
+	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
 	{
 		if (NetDriver->IsServer() &&
 			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
