@@ -143,7 +143,7 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 
 		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
 		{
-			return Obj->IsA(SubobjectClass);
+			return Obj->GetClass() == SubobjectClass;
 		});
 		check(FoundSubobject);
 		UObject* Subobject = *FoundSubobject;
