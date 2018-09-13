@@ -20,8 +20,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKPlayerSpawner);
 
 void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
-	this->NetDriver = InNetDriver;
-	this->TimerManager = InTimerManager;
+	NetDriver = InNetDriver;
+	TimerManager = InTimerManager;
 
 	NumberOfAttempts = 0;
 }

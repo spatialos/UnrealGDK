@@ -15,12 +15,12 @@ struct FConnectionConfig
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
-		FParse::Value(CommandLine, *FString(TEXT("workerType")), WorkerType);
-		FParse::Value(CommandLine, *FString(TEXT("workerId")), WorkerId);
-		FParse::Bool(CommandLine, *FString(TEXT("useExternalIpForBridge")), UseExternalIp);
+		FParse::Value(CommandLine, TEXT("workerType"), WorkerType);
+		FParse::Value(CommandLine, TEXT("workerId"), WorkerId);
+		FParse::Bool(CommandLine, TEXT("useExternalIpForBridge"), UseExternalIp);
 
 		FString LinkProtocolString;
-		FParse::Value(CommandLine, *FString(TEXT("linkProtocol")), LinkProtocolString);
+		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		LinkProtocol = LinkProtocolString == TEXT("Tcp") ? WORKER_NETWORK_CONNECTION_TYPE_TCP : WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
 	}
 
@@ -40,8 +40,8 @@ struct FReceptionistConfig : public FConnectionConfig
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
-		FParse::Value(CommandLine, *FString("receptionistHost"), ReceptionistHost);
-		FParse::Value(CommandLine, *FString("receptionistPort"), ReceptionistPort);
+		FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost);
+		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
 	}
 
 	FString ReceptionistHost;
@@ -55,9 +55,9 @@ struct FLocatorConfig : public FConnectionConfig
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
-		FParse::Value(CommandLine, *FString("projectName"), ProjectName);
-		FParse::Value(CommandLine, *FString("loginToken"), LoginToken);
-		FParse::Value(CommandLine, *FString("locatorHost"), LocatorHost);
+		FParse::Value(CommandLine, TEXT("projectName"), ProjectName);
+		FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
+		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 	}
 
 	FString ProjectName;
