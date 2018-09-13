@@ -85,6 +85,15 @@ call :MarkStartOfBlock "Unpack dependencies"
     xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 
+call :MarkStartOfBlock "Copy schema"
+ if exist %SCHEMA_COPY_DIR% (
+    echo Copying schemas to "%SCHEMA_COPY_DIR%".
+	xcopy /s /i /q "%~dp0\Extras\schema" "%SCHEMA_COPY_DIR%"
+     echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
+    xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
+)
+call :MarkEndOfBlock "Copy schema"
+
 call :MarkStartOfBlock "Build C# utilities"
     %MSBUILD_EXE% /nologo /verbosity:minimal Source\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
 call :MarkEndOfBlock "Build C# utilities"

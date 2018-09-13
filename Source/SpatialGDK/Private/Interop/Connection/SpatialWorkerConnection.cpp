@@ -94,6 +94,11 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 void USpatialWorkerConnection::ConnectToLocator()
 {
+	if (LocatorConfig.WorkerId.IsEmpty())
+	{
+		LocatorConfig.WorkerId = LocatorConfig.WorkerType + FGuid::NewGuid().ToString();
+	}
+
 	FTCHARToUTF8 ProjectNameCStr(*LocatorConfig.ProjectName);
 	FTCHARToUTF8 LoginTokenCStr(*LocatorConfig.LoginToken);
 

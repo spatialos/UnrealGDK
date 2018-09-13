@@ -15,12 +15,12 @@ struct FConnectionConfig
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
-		FParse::Value(CommandLine, *FString("workerType"), WorkerType);
-		FParse::Value(CommandLine, *FString("workerId"), WorkerId);
-		FParse::Bool(CommandLine, *FString("useExternalIpForBridge"), UseExternalIp);
+		FParse::Value(CommandLine, *FString(TEXT("workerType")), WorkerType);
+		FParse::Value(CommandLine, *FString(TEXT("workerId")), WorkerId);
+		FParse::Bool(CommandLine, *FString(TEXT("useExternalIpForBridge")), UseExternalIp);
 
 		FString LinkProtocolString;
-		FParse::Value(CommandLine, *FString("linkProtocol"), LinkProtocolString);
+		FParse::Value(CommandLine, *FString(TEXT("linkProtocol")), LinkProtocolString);
 		LinkProtocol = LinkProtocolString == TEXT("Tcp") ? WORKER_NETWORK_CONNECTION_TYPE_TCP : WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
 	}
 
@@ -53,6 +53,13 @@ struct FLocatorConfig : public FConnectionConfig
 		: LocatorHost(TEXT("locator.improbable.io"))
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
+
+		// Since we are using the locator when connecting using the launcher we need to 
+		// Check the clientType command line aregument.
+		if (WorkerType.IsEmpty())
+		{
+			FParse::Value(CommandLine, *FString(TEXT("clientType")), WorkerType);
+		}
 
 		FParse::Value(CommandLine, *FString("projectName"), ProjectName);
 		FParse::Value(CommandLine, *FString("loginToken"), LoginToken);
