@@ -60,7 +60,7 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_
 	return NetGUID;
 }
 
-void USpatialPackageMapClient::RemoveEntityActor(const Worker_EntityId EntityId)
+void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 
@@ -70,7 +70,7 @@ void USpatialPackageMapClient::RemoveEntityActor(const Worker_EntityId EntityId)
 	}
 }
 
-void USpatialPackageMapClient::RemoveEntitySubobjects(const Worker_EntityId EntityId)
+void USpatialPackageMapClient::RemoveEntitySubobjects(Worker_EntityId EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	if (SpatialGuidCache->GetNetGUIDFromEntityId(EntityId).IsValid())
