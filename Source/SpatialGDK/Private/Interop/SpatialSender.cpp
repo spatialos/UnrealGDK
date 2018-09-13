@@ -81,9 +81,6 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_NetMulticast], WorkersOnly);
 	}
 
-	// Stably named actors should be in the snapshot
-	check(!Actor->IsFullNameStableForNetworking());
-
 	uint32 CurrentOffset = 1;
 	SubobjectToOffsetMap SubobjectNameToOffset;
 	ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)

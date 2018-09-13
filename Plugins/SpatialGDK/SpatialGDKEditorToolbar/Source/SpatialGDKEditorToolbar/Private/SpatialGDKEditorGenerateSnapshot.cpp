@@ -4,21 +4,21 @@
 
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "SpatialConstants.h"
-#include "Utils/SchemaUtils.h"
+#include "Utils/ComponentFactory.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/ComponentFactory.h"
+#include "Utils/SchemaUtils.h"
 #include "Schema/Rotation.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
-#include "SpatialTypebindingManager.h"
 #include "SpatialActorChannel.h"
-#include "SpatialNetDriver.h"
 #include "SpatialNetConnection.h"
+#include "SpatialNetDriver.h"
+#include "SpatialTypebindingManager.h"
 
+#include "EngineUtils.h"
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 #include "UObjectIterator.h"
-#include "EngineUtils.h"
 
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>

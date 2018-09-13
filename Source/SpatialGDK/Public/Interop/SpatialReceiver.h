@@ -9,7 +9,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialTypebindingManager.h"
 #include "Schema/StandardLibrary.h"
-#include "Schema/Rotation.h"
 
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
@@ -121,7 +120,7 @@ private:
 
 	void CreateActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
-	AActor* SpawnNewEntity(Position* PositionComponent, Rotation* RotationComponent, UClass* ActorClass, bool bDeferred);
+	AActor* SpawnNewEntity(Position* PositionComponent, struct Rotation* RotationComponent, UClass* ActorClass, bool bDeferred);
 	UClass* GetNativeEntityClass(Metadata* MetadataComponent);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);

@@ -529,12 +529,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (EntityId == 0)
 	{
-		// If the actor is stably named, it should be in the snapshot
-		if (!InActor->IsFullNameStableForNetworking())
-		{
-			bCreatingNewEntity = true;
-			Sender->SendReserveEntityIdRequest(this);
-		}
+		bCreatingNewEntity = true;
+		Sender->SendReserveEntityIdRequest(this);
 	}
 	else
 	{
