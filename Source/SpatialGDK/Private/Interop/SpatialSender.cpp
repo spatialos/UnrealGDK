@@ -16,7 +16,7 @@
 
 void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 {
-	this->NetDriver = InNetDriver;
+	NetDriver = InNetDriver;
 	Connection = InNetDriver->Connection;
 	PackageMap = InNetDriver->PackageMap;
 	TypebindingManager = InNetDriver->TypebindingManager;
