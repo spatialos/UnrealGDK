@@ -27,8 +27,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorToolbarModule"
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
-: SpatialOSStackProcessID(0),
-bStopSpatialOnExit(false)
+: bStopSpatialOnExit(false),
+SpatialOSStackProcessID(0)
 {
 }
 
@@ -157,35 +157,35 @@ bool FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen()
 	return !bInteropCodeGenRunning;
 }
 
-void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> PluginCommands)
+void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> InPluginCommands)
 {
-	PluginCommands->MapAction(
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
 		FCanExecuteAction());
 
-	PluginCommands->MapAction(
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen));
 
-	PluginCommands->MapAction(
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute));
 
-	PluginCommands->MapAction(
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSButtonClicked),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute));
 
-	PluginCommands->MapAction(
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked),
 		FCanExecuteAction());
 }
 
-void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> PluginCommands)
+void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
 {
 	FLevelEditorModule& LevelEditorModule =
 		FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
@@ -193,7 +193,7 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 	{
 		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
 		MenuExtender->AddMenuExtension(
-			"General", EExtensionHook::After, PluginCommands,
+			"General", EExtensionHook::After, InPluginCommands,
 			FMenuExtensionDelegate::CreateRaw(this, &FSpatialGDKEditorToolbarModule::AddMenuExtension));
 
 		LevelEditorModule.GetMenuExtensibilityManager()->AddExtender(MenuExtender);
@@ -202,7 +202,7 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 	{
 		TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
 		ToolbarExtender->AddToolBarExtension(
-			"Game", EExtensionHook::After, PluginCommands,
+			"Game", EExtensionHook::After, InPluginCommands,
 			FToolBarExtensionDelegate::CreateRaw(this,
 				&FSpatialGDKEditorToolbarModule::AddToolbarExtension));
 
@@ -367,11 +367,11 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	if (!SpatialOSStackProcHandle.IsValid())
 	{
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-		const FString LogPath =
+		const FString SpatialLogPath =
 			SpatialGDKToolbarSettings->GetProjectRoot() + FString(TEXT("/logs/spatial.log"));
 		UE_LOG(LogSpatialGDKEditor, Error,
 				TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."),
-				*LogPath);
+				*SpatialLogPath);
 	}
 	else
 	{

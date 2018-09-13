@@ -272,13 +272,13 @@ bool USpatialActorChannel::ReplicateActor()
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
 	// Update the handover property change list.
-	FHandoverChangeState HandoverChanged = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
+	FHandoverChangeState HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
 
 	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
 	// see ActorReplicator->ReplicateCustomDeltaProperties().
 
 	// If any properties have changed, send a component update.
-	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChanged.Num() > 0)
+	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
 	{		
 		if (bCreatingNewEntity)
 		{
@@ -320,7 +320,7 @@ bool USpatialActorChannel::ReplicateActor()
 		else
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
-			Sender->SendComponentUpdates(Actor, this, &RepChangeState, &HandoverChanged);
+			Sender->SendComponentUpdates(Actor, this, &RepChangeState, &HandoverChangeState);
 		}
 
 		bWroteSomethingImportant = true;
@@ -358,10 +358,10 @@ bool USpatialActorChannel::ReplicateActor()
 			// Handover shadow data should already exist for this object. If it doesn't, it must have
 			// started replicating after SetChannelActor was called on the owning actor.
 			TArray<uint8>& SubobjectHandoverShadowData = HandoverShadowDataMap.FindChecked(Subobject).Get();
-			FHandoverChangeState HandoverChanged = GetHandoverChangeList(SubobjectHandoverShadowData, Subobject);
-			if (HandoverChanged.Num() > 0)
+			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData, Subobject);
+			if (SubobjectHandoverChangeState.Num() > 0)
 			{
-				Sender->SendComponentUpdates(Subobject, this, nullptr, &HandoverChanged);
+				Sender->SendComponentUpdates(Subobject, this, nullptr, &SubobjectHandoverChangeState);
 			}
 		}
 	}

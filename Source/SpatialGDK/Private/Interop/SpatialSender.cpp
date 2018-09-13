@@ -14,13 +14,13 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/RepLayoutUtils.h"
 
-void USpatialSender::Init(USpatialNetDriver* NetDriver)
+void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 {
-	this->NetDriver = NetDriver;
-	Connection = NetDriver->Connection;
-	PackageMap = NetDriver->PackageMap;
-	TypebindingManager = NetDriver->TypebindingManager;
-	Receiver = NetDriver->Receiver;
+	NetDriver = InNetDriver;
+	Connection = InNetDriver->Connection;
+	PackageMap = InNetDriver->PackageMap;
+	TypebindingManager = InNetDriver->TypebindingManager;
+	Receiver = InNetDriver->Receiver;
 }
 
 Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, const FVector& Location, const FString& EntityType, USpatialActorChannel* Channel)
