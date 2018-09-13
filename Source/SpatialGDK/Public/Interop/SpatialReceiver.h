@@ -98,6 +98,7 @@ public:
 	void OnCriticalSection(bool InCriticalSection);
 	void OnAddEntity(Worker_AddEntityOp& Op);
 	void OnAddComponent(Worker_AddComponentOp& Op);
+	void OnRemoveComponent(Worker_RemoveComponentOp& Op);
 	void OnRemoveEntity(Worker_RemoveEntityOp& Op);
 	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 

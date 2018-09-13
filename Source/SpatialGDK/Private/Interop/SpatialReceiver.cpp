@@ -137,6 +137,14 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, Data);
 }
 
+void USpatialReceiver::OnRemoveComponent(Worker_RemoveComponentOp& Op)
+{
+	if (Op.component_id == UnrealMetadata::ComponentId)
+	{
+		PackageMap->RemoveEntitySubobjects(Op.entity_id);
+	}
+}
+
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 {
 	UE_LOG(LogTemp, Log, TEXT("CAPIPipelineBlock: RemoveEntity: %lld"), Op.entity_id);

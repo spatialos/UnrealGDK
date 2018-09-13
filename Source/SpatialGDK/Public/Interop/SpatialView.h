@@ -28,8 +28,8 @@ public:
 	UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 
 private:
-	void OnAddComponent(const Worker_AddComponentOp& add_component);
-	void OnRemoveEntity(const Worker_RemoveEntityOp& remove_entity);
+	void OnAddComponent(const Worker_AddComponentOp& Op);
+	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
 	USpatialReceiver* Receiver;
