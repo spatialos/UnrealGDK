@@ -219,7 +219,7 @@ TArray<UObject*> USpatialTypebindingManager::GetHandoverSubobjects(AActor* Actor
 
 		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
 		{
-			return Obj->IsA(SubobjectClass);
+			return Obj->GetClass() == SubobjectClass;
 		});
 		check(FoundSubobject);
 		FoundSubobjects.Add(*FoundSubobject);
