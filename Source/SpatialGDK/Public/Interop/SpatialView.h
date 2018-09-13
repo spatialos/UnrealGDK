@@ -27,7 +27,7 @@ public:
 	UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 
 private:
-	void OnAddComponent(const Worker_AddComponentOp& add_component);
+	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
