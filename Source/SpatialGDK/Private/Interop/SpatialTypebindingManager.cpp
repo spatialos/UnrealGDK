@@ -19,7 +19,7 @@ void USpatialTypebindingManager::Init()
 
 	if (SchemaDatabase == nullptr)
 	{
-		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication")));
+		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication.")));
 		return;
 	}
 
@@ -177,15 +177,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 {
-	for (UClass* CurrentClass = Class; CurrentClass; CurrentClass = CurrentClass->GetSuperClass())
-	{
-		FClassInfo* Info = ClassInfoMap.Find(CurrentClass);
-		if (Info)
-		{
-			return Info;
-		}
-	}
-	return nullptr;
+	return ClassInfoMap.Find(Class);
 }
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByComponentId(Worker_ComponentId ComponentId)
@@ -202,15 +194,7 @@ UClass* USpatialTypebindingManager::FindClassByComponentId(Worker_ComponentId Co
 
 bool USpatialTypebindingManager::IsSupportedClass(UClass* Class)
 {
-	for (UClass* SupportedClass : SupportedClasses)
-	{
-		if (Class->IsChildOf(SupportedClass))
-		{
-			return true;
-		}
-	}
-
-	return false;
+	return SupportedClasses.Contains(Class);
 }
 
 TArray<UObject*> USpatialTypebindingManager::GetHandoverSubobjects(AActor* Actor)
@@ -236,7 +220,7 @@ TArray<UObject*> USpatialTypebindingManager::GetHandoverSubobjects(AActor* Actor
 
 		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
 		{
-			return Obj->IsA(SubobjectClass);
+			return Obj->GetClass() == SubobjectClass;
 		});
 		check(FoundSubobject);
 		FoundSubobjects.Add(*FoundSubobject);
