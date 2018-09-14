@@ -11,14 +11,12 @@ public:
 	~TSchemaOption() = default;
 
 	TSchemaOption(const T& InValue)
-	{
-		Value = MakeUnique<T>(InValue);
-	}
+		: Value(MakeUnique<T>(InValue))
+	{}
 
 	TSchemaOption(T&& InValue)
-	{
-		Value = MakeUnique<T>(MoveTemp(InValue));
-	}
+		: Value(MakeUnique<T>(MoveTemp(InValue)))
+	{}
 
 	TSchemaOption(const TSchemaOption& InValue)
 	{
@@ -58,13 +56,13 @@ public:
 
 	const T& GetValue() const
 	{
-		checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TSchemaOptional. Please check IsSet()."));
+		checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TSchemaOption. Please check IsSet()."));
 		return *Value;
 	}
 
 	T& GetValue()
 	{
-		checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TSchemaOptional. Please check IsSet()."));
+		checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TSchemaOption. Please check IsSet()."));
 		return *Value;
 	}
 
