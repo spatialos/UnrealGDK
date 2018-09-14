@@ -2,21 +2,21 @@
 
 #include "SpatialGDKEditorInteropCodeGenerator.h"
 
-#include "SchemaGenerator.h"
-#include "TypeStructure.h"
-#include "SpatialGDKEditorToolbarSettings.h"
-
 #include "AssetRegistryModule.h"
+#include "Engine/LevelScriptActor.h"
 #include "GenericPlatform/GenericPlatformFile.h"
 #include "GenericPlatform/GenericPlatformProcess.h"
-#include "Misc/MonitoredProcess.h"
 #include "Misc/FileHelper.h"
+#include "Misc/MonitoredProcess.h"
+#include "SchemaGenerator.h"
 #include "SharedPointer.h"
+#include "TypeStructure.h"
+#include "SpatialConstants.h"
+#include "SpatialGDKEditorToolbarSettings.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
-#include "Engine/LevelScriptActor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
 
@@ -79,10 +79,10 @@ bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 }
 }// ::
 
-void GenerateInteropFromClasses(const TArray<UClass*>& Classes, const FString& CombinedSchemaPath)
+void GenerateSchemaFromClasses(const TArray<UClass*>& Classes, const FString& CombinedSchemaPath)
 {
-	// Component IDs 100000 to 100009 reserved for other SpatialGDK components.
-	int ComponentId = 100010;
+	Worker_ComponentId ComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+
 	for (const auto& Class : Classes)
 	{
 		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, ComponentId, Class);
@@ -128,7 +128,8 @@ void CreateSchemaDatabase(TArray<UClass*> Classes)
 
 		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 
-		int ComponentId = 100010;
+		Worker_ComponentId ComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+
 		for (UClass* Class : Classes)
 		{
 			FSchemaData SchemaData;
@@ -148,6 +149,11 @@ void CreateSchemaDatabase(TArray<UClass*> Classes)
 
 		FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
 		bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
+
+		if(!bSuccess)
+		{
+			FMessageDialog::Debugf(FText::FromString(TEXT("Unable to save Schema Database!")));
+		}
 	});
 }
 
@@ -232,7 +238,7 @@ bool SpatialGDKGenerateInteropCode()
 	}
 
 	const FString SchemaIntermediatePath = GenerateIntermediateDirectory();
-	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaIntermediatePath);
+	GenerateSchemaFromClasses(InteropGeneratedClasses, SchemaIntermediatePath);
 
 	const FString DiffCopyPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*FPaths::GetPath(FPaths::GetProjectFilePath()), TEXT("Scripts/DiffCopy.bat")));
 	// Copy schema files
