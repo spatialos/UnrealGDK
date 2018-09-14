@@ -107,27 +107,27 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		return;
 	}
 
-	TSharedPtr<Component> Data;
+	TSharedPtr<SpatialComponent> Data;
 
 	switch (Op.data.component_id)
 	{
 	case ENTITY_ACL_COMPONENT_ID:
-		Data = MakeShared<EntityAcl>(Op.data);
+		Data = MakeShared<SpatialEntityAcl>(Op.data);
 		break;
 	case METADATA_COMPONENT_ID:
-		Data = MakeShared<Metadata>(Op.data);
+		Data = MakeShared<SpatialMetadata>(Op.data);
 		break;
 	case POSITION_COMPONENT_ID:
-		Data = MakeShared<Position>(Op.data);
+		Data = MakeShared<SpatialPosition>(Op.data);
 		break;
 	case PERSISTENCE_COMPONENT_ID:
-		Data = MakeShared<Persistence>(Op.data);
+		Data = MakeShared<SpatialPersistence>(Op.data);
 		break;
 	case ROTATION_COMPONENT_ID:
-		Data = MakeShared<Rotation>(Op.data);
+		Data = MakeShared<SpatialRotation>(Op.data);
 		break;
 	case UNREAL_METADATA_COMPONENT_ID:
-		Data = MakeShared<UnrealMetadata>(Op.data);
+		Data = MakeShared<SpatialUnrealMetadata>(Op.data);
 		break;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyData(Op.data);
@@ -143,7 +143,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialReceiver::OnRemoveComponent(Worker_RemoveComponentOp& Op)
 {
-	if (Op.component_id == UnrealMetadata::ComponentId)
+	if (Op.component_id == SpatialUnrealMetadata::ComponentId)
 	{
 		PackageMap->RemoveEntitySubobjects(Op.entity_id);
 	}
@@ -180,9 +180,9 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(EntityRegistry);
 
-	Position* PositionComponent = GetComponentData<Position>(*this, EntityId);
-	Metadata* MetadataComponent = GetComponentData<Metadata>(*this, EntityId);
-	Rotation* RotationComponent = GetComponentData<Rotation>(*this, EntityId);
+	SpatialPosition* PositionComponent = GetComponentData<SpatialPosition>(*this, EntityId);
+	SpatialMetadata* MetadataComponent = GetComponentData<SpatialMetadata>(*this, EntityId);
+	SpatialRotation* RotationComponent = GetComponentData<SpatialRotation>(*this, EntityId);
 
 	check(PositionComponent && MetadataComponent);
 
@@ -196,7 +196,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		// Option 1
 		UE_LOG(LogTemp, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 
-		UnrealMetadata* UnrealMetadataComponent = GetComponentData<UnrealMetadata>(*this, EntityId);
+		SpatialUnrealMetadata* UnrealMetadataComponent = GetComponentData<SpatialUnrealMetadata>(*this, EntityId);
 		check(UnrealMetadataComponent);
 
 		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
@@ -227,7 +227,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		//}
 
 		UNetConnection* Connection = nullptr;
-		UnrealMetadata* UnrealMetadataComponent = GetComponentData<UnrealMetadata>(*this, EntityId);
+		SpatialUnrealMetadata* UnrealMetadataComponent = GetComponentData<SpatialUnrealMetadata>(*this, EntityId);
 		check(UnrealMetadataComponent);
 		bool bDoingDeferredSpawn = false;
 
@@ -386,7 +386,7 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 }
 
-UClass* USpatialReceiver::GetNativeEntityClass(Metadata* MetadataComponent)
+UClass* USpatialReceiver::GetNativeEntityClass(SpatialMetadata* MetadataComponent)
 {
 	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *MetadataComponent->EntityType);
 	return Class->IsChildOf<AActor>() ? Class : nullptr;
@@ -394,7 +394,7 @@ UClass* USpatialReceiver::GetNativeEntityClass(Metadata* MetadataComponent)
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialReceiver::SpawnNewEntity(Position* PositionComponent, Rotation* RotationComponent, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::SpawnNewEntity(SpatialPosition* PositionComponent, SpatialRotation* RotationComponent, UClass* ActorClass, bool bDeferred)
 {
 	FVector InitialLocation = Coordinates::ToFVector(PositionComponent->Coords);
 	FRotator InitialRotation = RotationComponent->ToFRotator();

@@ -53,12 +53,12 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(ENTITY_ACL_COMPONENT_ID, UnrealWorkerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, UnrealWorkerPermission);
 
-	Components.Add(Position(Origin).CreatePositionData());
-	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
-	Components.Add(Persistence().CreatePersistenceData());
-	Components.Add(UnrealMetadata().CreateUnrealMetadataData());
+	Components.Add(SpatialPosition(Origin).CreatePositionData());
+	Components.Add(SpatialMetadata(TEXT("SpatialSpawner")).CreateMetadataData());
+	Components.Add(SpatialPersistence().CreatePersistenceData());
+	Components.Add(SpatialUnrealMetadata().CreateUnrealMetadataData());
 	Components.Add(PlayerSpawnerData);
-	Components.Add(EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(SpatialEntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	SpawnerEntity.component_count = Components.Num();
 	SpawnerEntity.components = Components.GetData();
@@ -116,12 +116,12 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(ENTITY_ACL_COMPONENT_ID, UnrealWorkerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID, UnrealWorkerPermission);
 
-	Components.Add(Position(Origin).CreatePositionData());
-	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
-	Components.Add(Persistence().CreatePersistenceData());
-	Components.Add(UnrealMetadata().CreateUnrealMetadataData());
+	Components.Add(SpatialPosition(Origin).CreatePositionData());
+	Components.Add(SpatialMetadata(TEXT("GlobalStateManager")).CreateMetadataData());
+	Components.Add(SpatialPersistence().CreatePersistenceData());
+	Components.Add(SpatialUnrealMetadata().CreateUnrealMetadataData());
 	Components.Add(CreateGlobalStateManagerData());
-	Components.Add(EntityAcl(UnrealWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(SpatialEntityAcl(UnrealWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();
@@ -156,11 +156,11 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 			ComponentWriteAcl.Add(UNREAL_METADATA_COMPONENT_ID, UnrealWorkerPermission);
 			ComponentWriteAcl.Add(ENTITY_ACL_COMPONENT_ID, UnrealWorkerPermission);
 
-			Components.Add(Position(PlaceholderPosition).CreatePositionData());
-			Components.Add(Metadata(TEXT("Placeholder")).CreateMetadataData());
-			Components.Add(Persistence().CreatePersistenceData());
-			Components.Add(UnrealMetadata().CreateUnrealMetadataData());
-			Components.Add(EntityAcl(UnrealWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+			Components.Add(SpatialPosition(PlaceholderPosition).CreatePositionData());
+			Components.Add(SpatialMetadata(TEXT("Placeholder")).CreateMetadataData());
+			Components.Add(SpatialPersistence().CreatePersistenceData());
+			Components.Add(SpatialUnrealMetadata().CreateUnrealMetadataData());
+			Components.Add(SpatialEntityAcl(UnrealWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 			Placeholder.component_count = Components.Num();
 			Placeholder.components = Components.GetData();
@@ -308,12 +308,12 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	FString StaticPath = Actor->GetPathName(nullptr);
 
 	TArray<Worker_ComponentData> Components;
-	Components.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
-	Components.Add(Metadata(FSoftClassPath(ActorClass).ToString()).CreateMetadataData());
-	Components.Add(EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(Persistence().CreatePersistenceData());
-	Components.Add(Rotation(Actor->GetActorRotation()).CreateRotationData());
-	Components.Add(UnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());
+	Components.Add(SpatialPosition(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
+	Components.Add(SpatialMetadata(FSoftClassPath(ActorClass).ToString()).CreateMetadataData());
+	Components.Add(SpatialEntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(SpatialPersistence().CreatePersistenceData());
+	Components.Add(SpatialRotation(Actor->GetActorRotation()).CreateRotationData());
+	Components.Add(SpatialUnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
 

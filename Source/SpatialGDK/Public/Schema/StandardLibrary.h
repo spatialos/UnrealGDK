@@ -39,16 +39,16 @@ struct Coordinates
 
 const Worker_ComponentId POSITION_COMPONENT_ID = 54;
 
-struct Position : Component
+struct SpatialPosition : SpatialComponent
 {
 	static const Worker_ComponentId ComponentId = POSITION_COMPONENT_ID;
 
-	Position() = default;
+	SpatialPosition() = default;
 
-	Position(const Coordinates& InCoords)
+	SpatialPosition(const Coordinates& InCoords)
 		: Coords(InCoords) {}
 
-	Position(const Worker_ComponentData& Data)
+	SpatialPosition(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
@@ -98,16 +98,16 @@ using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 
 const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
 
-struct EntityAcl : Component
+struct SpatialEntityAcl : SpatialComponent
 {
 	static const Worker_ComponentId ComponentId = ENTITY_ACL_COMPONENT_ID;
 
-	EntityAcl() = default;
+	SpatialEntityAcl() = default;
 
-	EntityAcl(const WorkerRequirementSet& InReadAcl, const WriteAclMap& InComponentWriteAcl)
+	SpatialEntityAcl(const WorkerRequirementSet& InReadAcl, const WriteAclMap& InComponentWriteAcl)
 		: ReadAcl(InReadAcl), ComponentWriteAcl(InComponentWriteAcl) {}
 
-	EntityAcl(const Worker_ComponentData& Data)
+	SpatialEntityAcl(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
@@ -149,16 +149,16 @@ struct EntityAcl : Component
 
 const Worker_ComponentId METADATA_COMPONENT_ID = 53;
 
-struct Metadata : Component
+struct SpatialMetadata : SpatialComponent
 {
 	static const Worker_ComponentId ComponentId = METADATA_COMPONENT_ID;
 
-	Metadata() = default;
+	SpatialMetadata() = default;
 
-	Metadata(const FString& InEntityType)
+	SpatialMetadata(const FString& InEntityType)
 		: EntityType(InEntityType) {}
 
-	Metadata(const Worker_ComponentData& Data)
+	SpatialMetadata(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
@@ -182,12 +182,12 @@ struct Metadata : Component
 
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
 
-struct Persistence : Component
+struct SpatialPersistence : SpatialComponent
 {
 	static const Worker_ComponentId ComponentId = PERSISTENCE_COMPONENT_ID;
 
-	Persistence() = default;
-	Persistence(const Worker_ComponentData& Data)
+	SpatialPersistence() = default;
+	SpatialPersistence(const Worker_ComponentData& Data)
 	{
 	}
 

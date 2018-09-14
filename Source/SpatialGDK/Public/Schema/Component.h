@@ -2,9 +2,9 @@
 
 #pragma once
 
-struct Component
+struct SpatialComponent
 {
-	virtual ~Component() {}
+	virtual ~SpatialComponent() {}
 
 	bool bIsDynamic = false;
 };

@@ -75,7 +75,7 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 		Channel->SetChannelActor(SingletonActor);
 
 
-		UnrealMetadata* Metadata = View->GetUnrealMetadata(SingletonEntityId);
+		SpatialUnrealMetadata* Metadata = View->GetUnrealMetadata(SingletonEntityId);
 		if (Metadata == nullptr)
 		{
 			// Don't have entity checked out

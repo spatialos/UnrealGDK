@@ -111,9 +111,9 @@ Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_Com
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
-UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
+SpatialUnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
 {
-	if (TSharedPtr<UnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
+	if (TSharedPtr<SpatialUnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
 	{
 		return UnrealMetadataPtr->Get();
 	}
@@ -128,15 +128,15 @@ void USpatialView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 
 void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
-	if (Op.data.component_id == UnrealMetadata::ComponentId)
+	if (Op.data.component_id == SpatialUnrealMetadata::ComponentId)
 	{
-		EntityUnrealMetadataMap.Add(Op.entity_id, MakeShared<UnrealMetadata>(Op.data));
+		EntityUnrealMetadataMap.Add(Op.entity_id, MakeShared<SpatialUnrealMetadata>(Op.data));
 	}
 }
 
 void USpatialView::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
-	if (Op.component_id == UnrealMetadata::ComponentId)
+	if (Op.component_id == SpatialUnrealMetadata::ComponentId)
 	{
 		EntityUnrealMetadataMap.Remove(Op.entity_id);
 	}
