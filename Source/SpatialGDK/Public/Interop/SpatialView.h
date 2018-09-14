@@ -29,7 +29,7 @@ public:
 
 private:
 	void OnAddComponent(const Worker_AddComponentOp& Op);
-	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
+	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
 	USpatialReceiver* Receiver;

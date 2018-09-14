@@ -105,7 +105,7 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 	return bWroteSomething;
 }
 
-void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds)
+void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
@@ -131,51 +131,51 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 			RepLayout_SerializePropertiesForStruct(*RepLayout, ValueDataWriter, PackageMap, const_cast<uint8*>(Data), bHasUnmapped);
 		}
 
-		Schema_AddPayload(Object, Id, ValueDataWriter);
+		Schema_AddPayload(Object, FieldId, ValueDataWriter);
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{
-		Schema_AddBool(Object, Id, (uint8)BoolProperty->GetPropertyValue(Data));
+		Schema_AddBool(Object, FieldId, (uint8)BoolProperty->GetPropertyValue(Data));
 	}
 	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
 	{
-		Schema_AddFloat(Object, Id, FloatProperty->GetPropertyValue(Data));
+		Schema_AddFloat(Object, FieldId, FloatProperty->GetPropertyValue(Data));
 	}
 	else if (UDoubleProperty* DoubleProperty = Cast<UDoubleProperty>(Property))
 	{
-		Schema_AddDouble(Object, Id, DoubleProperty->GetPropertyValue(Data));
+		Schema_AddDouble(Object, FieldId, DoubleProperty->GetPropertyValue(Data));
 	}
 	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
 	{
-		Schema_AddInt32(Object, Id, (int32)Int8Property->GetPropertyValue(Data));
+		Schema_AddInt32(Object, FieldId, (int32)Int8Property->GetPropertyValue(Data));
 	}
 	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
 	{
-		Schema_AddInt32(Object, Id, (int32)Int16Property->GetPropertyValue(Data));
+		Schema_AddInt32(Object, FieldId, (int32)Int16Property->GetPropertyValue(Data));
 	}
 	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
 	{
-		Schema_AddInt32(Object, Id, IntProperty->GetPropertyValue(Data));
+		Schema_AddInt32(Object, FieldId, IntProperty->GetPropertyValue(Data));
 	}
 	else if (UInt64Property* Int64Property = Cast<UInt64Property>(Property))
 	{
-		Schema_AddInt64(Object, Id, Int64Property->GetPropertyValue(Data));
+		Schema_AddInt64(Object, FieldId, Int64Property->GetPropertyValue(Data));
 	}
 	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
 	{
-		Schema_AddUint32(Object, Id, (uint32)ByteProperty->GetPropertyValue(Data));
+		Schema_AddUint32(Object, FieldId, (uint32)ByteProperty->GetPropertyValue(Data));
 	}
 	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
 	{
-		Schema_AddUint32(Object, Id, (uint32)UInt16Property->GetPropertyValue(Data));
+		Schema_AddUint32(Object, FieldId, (uint32)UInt16Property->GetPropertyValue(Data));
 	}
 	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
 	{
-		Schema_AddUint32(Object, Id, UInt32Property->GetPropertyValue(Data));
+		Schema_AddUint32(Object, FieldId, UInt32Property->GetPropertyValue(Data));
 	}
 	else if (UUInt64Property* UInt64Property = Cast<UUInt64Property>(Property))
 	{
-		Schema_AddUint64(Object, Id, UInt64Property->GetPropertyValue(Data));
+		Schema_AddUint64(Object, FieldId, UInt64Property->GetPropertyValue(Data));
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
@@ -202,48 +202,47 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 			}
 		}
 
-		Schema_AddObjectRef(Object, Id, ObjectRef);
+		Schema_AddObjectRef(Object, FieldId, ObjectRef);
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
 	{
-		Schema_AddString(Object, Id, NameProperty->GetPropertyValue(Data).ToString());
+		Schema_AddString(Object, FieldId, NameProperty->GetPropertyValue(Data).ToString());
 	}
 	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
 	{
-		Schema_AddString(Object, Id, StrProperty->GetPropertyValue(Data));
+		Schema_AddString(Object, FieldId, StrProperty->GetPropertyValue(Data));
 	}
 	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
 	{
-		Schema_AddString(Object, Id, TextProperty->GetPropertyValue(Data).ToString());
+		Schema_AddString(Object, FieldId, TextProperty->GetPropertyValue(Data).ToString());
 	}
 	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
 	{
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
 		{
-			AddProperty(Object, Id, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), UnresolvedObjects, ClearedIds);
+			AddProperty(Object, FieldId, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), UnresolvedObjects, ClearedIds);
 		}
 
 		if (ArrayHelper.Num() == 0 && ClearedIds)
 		{
-			ClearedIds->Add(Id);
+			ClearedIds->Add(FieldId);
 		}
 	}
 	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
 		if (EnumProperty->ElementSize < 4)
 		{
-			Schema_AddUint32(Object, Id, (uint32)EnumProperty->GetUnderlyingProperty()->GetUnsignedIntPropertyValue(Data));
+			Schema_AddUint32(Object, FieldId, (uint32)EnumProperty->GetUnderlyingProperty()->GetUnsignedIntPropertyValue(Data));
 		}
 		else
 		{
-			AddProperty(Object, Id, EnumProperty->GetUnderlyingProperty(), Data, UnresolvedObjects, ClearedIds);
+			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, UnresolvedObjects, ClearedIds);
 		}
 	}
 	else
 	{
-		checkNoEntry();
-		Schema_AddString(Object, Id, TEXT("Unknown Field"));
+		checkf(false, TEXT("Tried to add unknown property in field %d"), FieldId);
 	}
 }
 

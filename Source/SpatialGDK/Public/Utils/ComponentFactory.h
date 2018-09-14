@@ -41,7 +41,7 @@ private:
 
 	bool FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	void AddProperty(Schema_Object* Object, Schema_FieldId Id, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
+	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
 
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;

@@ -141,26 +141,12 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, Data);
 }
 
-void USpatialReceiver::OnRemoveComponent(Worker_RemoveComponentOp& Op)
-{
-	if (Op.component_id == SpatialUnrealMetadata::ComponentId)
-	{
-		PackageMap->RemoveEntitySubobjects(Op.entity_id);
-	}
-}
-
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 {
-	UE_LOG(LogTemp, Log, TEXT("CAPIPipelineBlock: RemoveEntity: %lld"), Op.entity_id);
+	UE_LOG(LogTemp, Log, TEXT("RemoveEntity: %lld"), Op.entity_id);
 
-	if (bInCriticalSection)
-	{
-		PendingRemoveEntities.Emplace(Op.entity_id);
-	}
-	else
-	{
-		RemoveActor(Op.entity_id);
-	}
+	PackageMap->RemoveEntitySubobjects(Op.entity_id);
+	RemoveActor(Op.entity_id);
 }
 
 void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
@@ -524,8 +510,11 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	{
 		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
 		{
-			const TArray<UFunction*>& RPCArray = Info->RPCs.FindChecked(RPC_NetMulticast);
-			ReceiveMulticastUpdate(Op.update, TargetObject, RPCArray);
+			TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPC_NetMulticast);
+			if(RPCArray != nullptr)
+			{
+				ReceiveMulticastUpdate(Op.update, TargetObject, *RPCArray);
+			}
 		}
 	}
 	else
