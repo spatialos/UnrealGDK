@@ -30,6 +30,7 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
 			Receiver->OnRemoveEntity(Op->remove_entity);
+			OnRemoveEntity(Op->remove_entity);
 			break;
 
 		// Components
@@ -38,13 +39,11 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 			Receiver->OnAddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			Receiver->OnRemoveComponent(Op->remove_component);
-			OnRemoveComponent(Op->remove_component);
 			break;
-
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			QueuedComponentUpdateOps.Add(Op);
 			break;
+
 		// Commands
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
 			Receiver->OnCommandRequest(Op->command_request);
@@ -73,7 +72,6 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
 			break;
 
-
 		case WORKER_OP_TYPE_FLAG_UPDATE:
 			break;
 		case WORKER_OP_TYPE_LOG_MESSAGE:
@@ -82,7 +80,7 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 		case WORKER_OP_TYPE_METRICS:
 			break;
 		case WORKER_OP_TYPE_DISCONNECT:
-			UE_LOG(LogTemp, Warning, TEXT("Disconnecting from SpatialOS"), UTF8_TO_TCHAR(Op->disconnect.reason));
+			UE_LOG(LogTemp, Warning, TEXT("Disconnecting from SpatialOS: %s"), UTF8_TO_TCHAR(Op->disconnect.reason));
 			break;
 
 		default:
@@ -121,11 +119,6 @@ SpatialUnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
 	return nullptr;
 }
 
-void USpatialView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
-{
-	EntityComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
-}
-
 void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
 	if (Op.data.component_id == SpatialUnrealMetadata::ComponentId)
@@ -134,10 +127,12 @@ void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
 	}
 }
 
-void USpatialView::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
+void USpatialView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
-	if (Op.component_id == SpatialUnrealMetadata::ComponentId)
-	{
-		EntityUnrealMetadataMap.Remove(Op.entity_id);
-	}
+	EntityUnrealMetadataMap.Remove(Op.entity_id);
+}
+
+void USpatialView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
+{
+	EntityComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
 }

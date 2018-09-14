@@ -168,7 +168,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 	Channel->PostReceiveSpatialUpdate(Object, TArray<UProperty*>());
 }
 
-void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex)
+void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
@@ -345,85 +345,85 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, 
 	}
 }
 
-uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_FieldId Id, UProperty* Property)
+uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
-		return Schema_GetBytesCount(Object, Id);
+		return Schema_GetBytesCount(Object, FieldId);
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{
-		return Schema_GetBoolCount(Object, Id);
+		return Schema_GetBoolCount(Object, FieldId);
 	}
 	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
 	{
-		return Schema_GetFloatCount(Object, Id);
+		return Schema_GetFloatCount(Object, FieldId);
 	}
 	else if (UDoubleProperty* DoubleProperty = Cast<UDoubleProperty>(Property))
 	{
-		return Schema_GetDoubleCount(Object, Id);
+		return Schema_GetDoubleCount(Object, FieldId);
 	}
 	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
 	{
-		return Schema_GetInt32Count(Object, Id);
+		return Schema_GetInt32Count(Object, FieldId);
 	}
 	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
 	{
-		return Schema_GetInt32Count(Object, Id);
+		return Schema_GetInt32Count(Object, FieldId);
 	}
 	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
 	{
-		return Schema_GetInt32Count(Object, Id);
+		return Schema_GetInt32Count(Object, FieldId);
 	}
 	else if (UInt64Property* Int64Property = Cast<UInt64Property>(Property))
 	{
-		return Schema_GetInt64Count(Object, Id);
+		return Schema_GetInt64Count(Object, FieldId);
 	}
 	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
 	{
-		return Schema_GetUint32Count(Object, Id);
+		return Schema_GetUint32Count(Object, FieldId);
 	}
 	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
 	{
-		return Schema_GetUint32Count(Object, Id);
+		return Schema_GetUint32Count(Object, FieldId);
 	}
 	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
 	{
-		return Schema_GetUint32Count(Object, Id);
+		return Schema_GetUint32Count(Object, FieldId);
 	}
 	else if (UUInt64Property* UInt64Property = Cast<UUInt64Property>(Property))
 	{
-		return Schema_GetUint64Count(Object, Id);
+		return Schema_GetUint64Count(Object, FieldId);
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		return Schema_GetObjectCount(Object, Id);
+		return Schema_GetObjectCount(Object, FieldId);
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
 	{
-		return Schema_GetBytesCount(Object, Id);
+		return Schema_GetBytesCount(Object, FieldId);
 	}
 	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
 	{
-		return Schema_GetBytesCount(Object, Id);
+		return Schema_GetBytesCount(Object, FieldId);
 	}
 	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
 	{
-		return Schema_GetBytesCount(Object, Id);
+		return Schema_GetBytesCount(Object, FieldId);
 	}
 	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
 	{
-		return GetPropertyCount(Object, Id, ArrayProperty->Inner);
+		return GetPropertyCount(Object, FieldId, ArrayProperty->Inner);
 	}
 	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
 		if (EnumProperty->ElementSize < 4)
 		{
-			return Schema_GetUint32Count(Object, Id);
+			return Schema_GetUint32Count(Object, FieldId);
 		}
 		else
 		{
-			return GetPropertyCount(Object, Id, EnumProperty->GetUnderlyingProperty());
+			return GetPropertyCount(Object, FieldId, EnumProperty->GetUnderlyingProperty());
 		}
 	}
 	else
