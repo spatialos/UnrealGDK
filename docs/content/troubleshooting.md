@@ -2,7 +2,7 @@
 
 # Unreal GDK Troubleshooting/FAQ
 
-------
+
 
 **Q:** I’m getting the error `"Could not find definition for module 'SpatialGDK' (referenced via Target -> <ProjectName>.Build.cs)"` when building my project.
 
