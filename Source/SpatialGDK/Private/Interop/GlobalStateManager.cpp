@@ -138,7 +138,7 @@ void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*
 	OutActor = nullptr;
 	OutChannel = nullptr;
 
-	UClass* SingletonActorClass = FindObject<UClass>(ANY_PACKAGE, *ClassName);
+	UClass* SingletonActorClass = LoadObject<UClass>(nullptr, *ClassName);
 
 	if (SingletonActorClass == nullptr)
 	{
