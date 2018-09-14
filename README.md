@@ -55,7 +55,7 @@ In order to get access to this fork, you need to link your GitHub account to a v
 
 ## SpatialOS Documentation
 * For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/latest/shared/concepts/spatialos). <br/>
-* For information on the SpatialOS GDK for Unreal, we recommend you use the [GDK documentation on the SpatialOS website](https://docs.improbable.io/unreal/pre-alpha/index), however, you can look at the [documentation on GitHub](https://github.com/spatialos/UnrealGDK/tree/master/docs).
+* For information on the SpatialOS GDK for Unreal, we recommend you use the [GDK documentation on the SpatialOS website](https://docs.improbable.io/unreal/pre-alpha/index) because the documentation is designed for the website, however, you can look at the [documentation on GitHub](https://github.com/spatialos/UnrealGDK/tree/master/docs).
 
 ## Installation and setup
 For prerequisites, installation and setup, see the [Installation and setup]({{urlRoot}}/setup-and-installing.md) documentation.
@@ -81,10 +81,5 @@ In order to transform Unreal from a single server engine to a distributed model,
 
 ## Email updates
 You can [sign up for SpatialOS GDK for Unreal updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
-
-
-
-
-
 
 (c) 2018 Improbable
