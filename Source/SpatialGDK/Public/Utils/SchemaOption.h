@@ -101,6 +101,12 @@ public:
 		return Value.Get();
 	}
 
+	template <typename T>
+	FORCEINLINE friend uint32 GetTypeHash(TSchemaOption<T>& SchemaOption)
+	{
+		return SchemaOption ? 1327u * (GetTypeHash(*Value) + 977u) : 977u;
+	}
+
 private:
 	TUniquePtr<T> Value;
 };
