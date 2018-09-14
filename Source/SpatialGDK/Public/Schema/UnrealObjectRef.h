@@ -67,8 +67,8 @@ inline uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
 	uint32 Result = 1327u;
 	Result = (Result * 977u) + GetTypeHash(static_cast<int64>(ObjectRef.Entity));
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Offset);
-	Result = (Result * 977u) + GetTypeHash(ObjectRef.Path);
-	Result = (Result * 977u) + GetTypeHash(ObjectRef.Outer);
+	Result = (Result * 977u) + (ObjectRef.Path ? 1327u * (GetTypeHash(*ObjectRef.Path) + 977u) : 977u);
+	Result = (Result * 977u) + (ObjectRef.Outer ? 1327u * (GetTypeHash(*ObjectRef.Outer) + 977u) : 977u);
 	return Result;
 }
 

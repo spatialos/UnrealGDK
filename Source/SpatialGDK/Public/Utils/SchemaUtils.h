@@ -11,13 +11,13 @@
 inline void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
 {
 	FTCHARToUTF8 CStrConvertion(*Value);
-	std::uint32_t StringLength = CStrConvertion.Length();
-	std::uint8_t* StringBuffer = Schema_AllocateBuffer(Object, sizeof(char) * StringLength);
+	uint32 StringLength = CStrConvertion.Length();
+	uint8* StringBuffer = Schema_AllocateBuffer(Object, sizeof(char) * StringLength);
 	FMemory::Memcpy(StringBuffer, CStrConvertion.Get(), sizeof(char) * StringLength);
 	Schema_AddBytes(Object, Id, StringBuffer, sizeof(char) * StringLength);
 }
 
-inline FString Schema_IndexString(const Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
+inline FString Schema_IndexString(const Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
 	int32 StringLength = (int32)Schema_IndexBytesLength(Object, Id, Index);
 	return FString(StringLength, UTF8_TO_TCHAR(Schema_IndexBytes(Object, Id, Index)));
@@ -30,13 +30,13 @@ inline FString Schema_GetString(const Schema_Object* Object, Schema_FieldId Id)
 
 inline void Schema_AddPayload(Schema_Object* Object, Schema_FieldId Id, FSpatialNetBitWriter& Writer)
 {
-	std::uint32_t PayloadSize = Writer.GetNumBytes();
-	std::uint8_t* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(char) * PayloadSize);
+	uint32 PayloadSize = Writer.GetNumBytes();
+	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(char) * PayloadSize);
 	FMemory::Memcpy(PayloadBuffer, Writer.GetData(), sizeof(char) * PayloadSize);
 	Schema_AddBytes(Object, Id, PayloadBuffer, sizeof(char) * PayloadSize);
 }
 
-inline TArray<uint8> Schema_IndexPayload(const Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
+inline TArray<uint8> Schema_IndexPayload(const Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
 	int32 PayloadSize = (int32)Schema_IndexBytesLength(Object, Id, Index);
 	return TArray<uint8>((const uint8*)Schema_IndexBytes(Object, Id, Index), PayloadSize);
@@ -109,7 +109,7 @@ inline void Schema_AddObjectRef(Schema_Object* Object, Schema_FieldId Id, const 
 
 UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id);
 
-inline UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index)
+inline UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
 	UnrealObjectRef ObjectRef;
 
