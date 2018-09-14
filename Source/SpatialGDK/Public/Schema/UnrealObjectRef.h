@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include <improbable/c_worker.h>
-#include <improbable/collections.h>
+#include "SchemaOption.h"
 
 struct UnrealObjectRef
 {
@@ -59,9 +58,8 @@ struct UnrealObjectRef
 
 	Worker_EntityId Entity;
 	uint32 Offset;
-	// TODO: Write our own Option class
-	worker::Option<FString> Path;
-	worker::Option<UnrealObjectRef> Outer;
+	TSchemaOption<FString> Path;
+	TSchemaOption<UnrealObjectRef> Outer;
 };
 
 inline uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
