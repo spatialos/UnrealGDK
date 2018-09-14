@@ -18,14 +18,14 @@ void FSpatialNetBitWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 	*this << ObjectRef.Entity;
 	*this << ObjectRef.Offset;
 
-	uint8 HasPath = !ObjectRef.Path.IsSet();
+	uint8 HasPath = ObjectRef.Path.IsSet();
 	SerializeBits(&HasPath, 1);
 	if (HasPath)
 	{
 		*this << ObjectRef.Path.GetValue();
 	}
 
-	uint8 HasOuter = !ObjectRef.Outer.IsSet();
+	uint8 HasOuter = ObjectRef.Outer.IsSet();
 	SerializeBits(&HasOuter, 1);
 	if (HasOuter)
 	{
