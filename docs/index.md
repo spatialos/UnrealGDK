@@ -81,7 +81,3 @@ In order to transform Unreal from a single server engine to a distributed model,
 
 ## Email updates
 You can [sign up for SpatialOS Unreal GDK updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
-
-
-
-
