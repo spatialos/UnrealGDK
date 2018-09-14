@@ -71,7 +71,6 @@ call :MarkStartOfBlock "Retrieve dependencies"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 call :MarkStartOfBlock "Unpack dependencies"
-    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\cpp-static-x86_64-msvc_mtd-win32.zip\"                   -DestinationPath \"%CORE_SDK_DIR%\cpp-src\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\"          -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip\"    -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^

@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Platform.h"
+#include <improbable/c_worker.h>
+#include "UniquePtr.h"
 
 template <typename T>
-class TSchemaOption {
+class TSchemaOption
+{
 public:
-
 	TSchemaOption() = default;
 	~TSchemaOption() = default;
 
@@ -24,6 +25,8 @@ public:
 		*this = InValue;
 	}
 
+	TSchemaOption(TSchemaOption&&) = default;
+
 	TSchemaOption& operator=(const TSchemaOption& InValue)
 	{
 		if (this != &InValue)
@@ -41,7 +44,6 @@ public:
 		return *this;
 	}
 
-	TSchemaOption(TSchemaOption&&) = default;
 	TSchemaOption& operator=(TSchemaOption&&) = default;
 
 	FORCEINLINE bool IsSet() const
@@ -56,13 +58,13 @@ public:
 
 	const T& GetValue() const
 	{
-		checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TOptional. Please either check IsSet() or use Get(DefaultValue) instead."));
+		checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TSchemaOptional. Please check IsSet()."));
 		return *Value;
 	}
 
 	T& GetValue()
 	{
-		checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TOptional. Please either check IsSet() or use Get(DefaultValue) instead."));
+		checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TSchemaOptional. Please check IsSet()."));
 		return *Value;
 	}
 
