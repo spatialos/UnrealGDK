@@ -94,12 +94,12 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	});
 
 	TArray<Worker_ComponentData> ComponentDatas;
-	ComponentDatas.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
-	ComponentDatas.Add(Metadata(EntityType).CreateMetadataData());
-	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
-	ComponentDatas.Add(Persistence().CreatePersistenceData());
-	ComponentDatas.Add(Rotation(Actor->GetActorRotation()).CreateRotationData());
-	ComponentDatas.Add(UnrealMetadata({}, ClientWorkerId, SubobjectNameToOffset).CreateUnrealMetadataData());
+	ComponentDatas.Add(SpatialPosition(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
+	ComponentDatas.Add(SpatialMetadata(EntityType).CreateMetadataData());
+	ComponentDatas.Add(SpatialEntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
+	ComponentDatas.Add(SpatialPersistence().CreatePersistenceData());
+	ComponentDatas.Add(SpatialRotation(Actor->GetActorRotation()).CreateRotationData());
+	ComponentDatas.Add(SpatialUnrealMetadata({}, ClientWorkerId, SubobjectNameToOffset).CreateUnrealMetadataData());
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
@@ -223,13 +223,13 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
-	Worker_ComponentUpdate Update = Position::CreatePositionUpdate(Coordinates::FromFVector(Location));
+	Worker_ComponentUpdate Update = SpatialPosition::CreatePositionUpdate(Coordinates::FromFVector(Location));
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rot)
+void USpatialSender::SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rotation)
 {
-	Worker_ComponentUpdate Update = Rotation(Rot).CreateRotationUpdate();
+	Worker_ComponentUpdate Update = SpatialRotation(Rotation).CreateRotationUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 

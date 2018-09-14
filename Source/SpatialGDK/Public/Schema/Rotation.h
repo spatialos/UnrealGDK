@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "Platform.h"
-
 #include "Schema/Component.h"
 #include "Utils/SchemaUtils.h"
 
@@ -12,19 +10,19 @@
 
 const Worker_ComponentId ROTATION_COMPONENT_ID = 100001;
 
-struct Rotation : Component
+struct SpatialRotation : SpatialComponent
 {
 	static const Worker_ComponentId ComponentId = ROTATION_COMPONENT_ID;
 
-	Rotation() = default;
+	SpatialRotation() = default;
 
-	Rotation(float InPitch, float InYaw, float InRoll)
+	SpatialRotation(float InPitch, float InYaw, float InRoll)
 		: Pitch(InPitch), Yaw(InYaw), Roll(InRoll) {}
 
-	Rotation(const FRotator& Rotator)
+	SpatialRotation(const FRotator& Rotator)
 		: Pitch(Rotator.Pitch), Yaw(Rotator.Yaw), Roll(Rotator.Roll) {}
 
-	Rotation(const Worker_ComponentData& Data)
+	SpatialRotation(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 

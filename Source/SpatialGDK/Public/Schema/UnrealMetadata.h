@@ -14,16 +14,16 @@ using SubobjectToOffsetMap = TMap<FString, uint32>;
 
 const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID = 100004;
 
-struct UnrealMetadata : Component
+struct SpatialUnrealMetadata : SpatialComponent
 {
 	static const Worker_ComponentId ComponentId = UNREAL_METADATA_COMPONENT_ID;
 
-	UnrealMetadata() = default;
+	SpatialUnrealMetadata() = default;
 
-	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId, const SubobjectToOffsetMap& InSubobjectNameToOffset)
+	SpatialUnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId, const SubobjectToOffsetMap& InSubobjectNameToOffset)
 		: StaticPath(InStaticPath), OwnerWorkerId(InOwnerWorkerId), SubobjectNameToOffset(InSubobjectNameToOffset) {}
 
-	UnrealMetadata(const Worker_ComponentData& Data)
+	SpatialUnrealMetadata(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 

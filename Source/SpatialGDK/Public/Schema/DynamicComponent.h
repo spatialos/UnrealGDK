@@ -11,7 +11,7 @@
 #include <improbable/c_worker.h>
 
 // Represents any Unreal rep component
-struct DynamicComponent : Component
+struct DynamicComponent : SpatialComponent
 {
 	DynamicComponent()
 	{
