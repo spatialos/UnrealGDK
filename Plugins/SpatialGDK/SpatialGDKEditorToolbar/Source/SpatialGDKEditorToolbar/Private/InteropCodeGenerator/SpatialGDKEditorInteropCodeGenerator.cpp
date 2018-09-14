@@ -152,7 +152,7 @@ void CreateSchemaDatabase(TArray<UClass*> Classes)
 
 		if(!bSuccess)
 		{
-			FMessageDialog::Debugf(FText::FromString(TEXT("Unable to save Schema Database!")));
+			FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to %s!"), *PackagePath)));
 		}
 	});
 }

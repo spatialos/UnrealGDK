@@ -242,8 +242,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 	else
 	{
-		checkNoEntry();
-		Schema_AddString(Object, FieldId, TEXT("Unknown Field"));
+		checkf(false, TEXT("Tried to add unknown property in field %d"), FieldId);
 	}
 }
 

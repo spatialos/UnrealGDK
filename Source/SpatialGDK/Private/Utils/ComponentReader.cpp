@@ -172,7 +172,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, ui
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
-		TArray<uint8> ValueData = Schema_IndexPayload(Object, Id, Index);
+		TArray<uint8> ValueData = Schema_IndexPayload(Object, FieldId, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
 		int64 CountBits = ValueData.Num() * 8;
 		TSet<UnrealObjectRef> NewUnresolvedRefs;
@@ -193,51 +193,51 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, ui
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{
-		BoolProperty->SetPropertyValue(Data, Schema_IndexBool(Object, Id, Index) != 0);
+		BoolProperty->SetPropertyValue(Data, Schema_IndexBool(Object, FieldId, Index) != 0);
 	}
 	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
 	{
-		FloatProperty->SetPropertyValue(Data, Schema_IndexFloat(Object, Id, Index));
+		FloatProperty->SetPropertyValue(Data, Schema_IndexFloat(Object, FieldId, Index));
 	}
 	else if (UDoubleProperty* DoubleProperty = Cast<UDoubleProperty>(Property))
 	{
-		DoubleProperty->SetPropertyValue(Data, Schema_IndexDouble(Object, Id, Index));
+		DoubleProperty->SetPropertyValue(Data, Schema_IndexDouble(Object, FieldId, Index));
 	}
 	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
 	{
-		Int8Property->SetPropertyValue(Data, (int8)Schema_IndexInt32(Object, Id, Index));
+		Int8Property->SetPropertyValue(Data, (int8)Schema_IndexInt32(Object, FieldId, Index));
 	}
 	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
 	{
-		Int16Property->SetPropertyValue(Data, (int16)Schema_IndexInt32(Object, Id, Index));
+		Int16Property->SetPropertyValue(Data, (int16)Schema_IndexInt32(Object, FieldId, Index));
 	}
 	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
 	{
-		IntProperty->SetPropertyValue(Data, Schema_IndexInt32(Object, Id, Index));
+		IntProperty->SetPropertyValue(Data, Schema_IndexInt32(Object, FieldId, Index));
 	}
 	else if (UInt64Property* Int64Property = Cast<UInt64Property>(Property))
 	{
-		Int64Property->SetPropertyValue(Data, Schema_IndexInt64(Object, Id, Index));
+		Int64Property->SetPropertyValue(Data, Schema_IndexInt64(Object, FieldId, Index));
 	}
 	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
 	{
-		ByteProperty->SetPropertyValue(Data, (uint8)Schema_IndexUint32(Object, Id, Index));
+		ByteProperty->SetPropertyValue(Data, (uint8)Schema_IndexUint32(Object, FieldId, Index));
 	}
 	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
 	{
-		UInt16Property->SetPropertyValue(Data, (uint16)Schema_IndexUint32(Object, Id, Index));
+		UInt16Property->SetPropertyValue(Data, (uint16)Schema_IndexUint32(Object, FieldId, Index));
 	}
 	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
 	{
-		UInt32Property->SetPropertyValue(Data, Schema_IndexUint32(Object, Id, Index));
+		UInt32Property->SetPropertyValue(Data, Schema_IndexUint32(Object, FieldId, Index));
 	}
 	else if (UUInt64Property* UInt64Property = Cast<UUInt64Property>(Property))
 	{
-		UInt64Property->SetPropertyValue(Data, Schema_IndexUint64(Object, Id, Index));
+		UInt64Property->SetPropertyValue(Data, Schema_IndexUint64(Object, FieldId, Index));
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		UnrealObjectRef ObjectRef = Schema_IndexObjectRef(Object, Id, Index);
+		UnrealObjectRef ObjectRef = Schema_IndexObjectRef(Object, FieldId, Index);
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
@@ -270,34 +270,34 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, ui
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
 	{
-		NameProperty->SetPropertyValue(Data, FName(*Schema_IndexString(Object, Id, Index)));
+		NameProperty->SetPropertyValue(Data, FName(*Schema_IndexString(Object, FieldId, Index)));
 	}
 	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
 	{
-		StrProperty->SetPropertyValue(Data, Schema_IndexString(Object, Id, Index));
+		StrProperty->SetPropertyValue(Data, Schema_IndexString(Object, FieldId, Index));
 	}
 	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
 	{
-		TextProperty->SetPropertyValue(Data, FText::FromString(Schema_IndexString(Object, Id, Index)));
+		TextProperty->SetPropertyValue(Data, FText::FromString(Schema_IndexString(Object, FieldId, Index)));
 	}
 	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{
 		if (EnumProperty->ElementSize < 4)
 		{
-			EnumProperty->GetUnderlyingProperty()->SetIntPropertyValue(Data, (uint64)Schema_IndexUint32(Object, Id, Index));
+			EnumProperty->GetUnderlyingProperty()->SetIntPropertyValue(Data, (uint64)Schema_IndexUint32(Object, FieldId, Index));
 		}
 		else
 		{
-			ApplyProperty(Object, Id, Index, EnumProperty->GetUnderlyingProperty(), Data, Offset, ParentIndex);
+			ApplyProperty(Object, FieldId, Index, EnumProperty->GetUnderlyingProperty(), Data, Offset, ParentIndex);
 		}
 	}
 	else
 	{
-		checkf(false, TEXT("What is this"));
+		checkf(false, TEXT("Tried to read unknown property in field %d"), FieldId);
 	}
 }
 
-void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId Id, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex)
+void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex)
 {
 	FObjectReferencesMap* ArrayObjectReferences;
 	bool bNewArrayMap = false;
@@ -315,13 +315,13 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId Id, UArra
 
 	FScriptArrayHelper ArrayHelper(Property, Data);
 
-	int Count = GetPropertyCount(Object, Id, Property->Inner);
+	int Count = GetPropertyCount(Object, FieldId, Property->Inner);
 	ArrayHelper.Resize(Count);
 
 	for (int i = 0; i < Count; i++)
 	{
 		int32 ElementOffset = i * Property->Inner->ElementSize;
-		ApplyProperty(Object, Id, i, Property->Inner, ArrayHelper.GetRawPtr(i), ElementOffset, ParentIndex);
+		ApplyProperty(Object, FieldId, i, Property->Inner, ArrayHelper.GetRawPtr(i), ElementOffset, ParentIndex);
 	}
 
 	if (ArrayObjectReferences->Num() > 0)
@@ -428,7 +428,7 @@ uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_Fie
 	}
 	else
 	{
-		checkf(false, TEXT("What is this"));
+		checkf(false, TEXT("Tried to get count of unknown property in field %d"), FieldId);
 		return 0;
 	}
 }
