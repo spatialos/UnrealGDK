@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "Platform.h"
-
 #include "Schema/Component.h"
 #include "Utils/SchemaUtils.h"
 

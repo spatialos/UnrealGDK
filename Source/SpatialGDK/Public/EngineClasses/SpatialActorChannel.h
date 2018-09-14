@@ -74,7 +74,7 @@ public:
 
 	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
 	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
-	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags);
+	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 
 	FRepChangeState CreateInitialRepChangeState(UObject* Object);
 	FHandoverChangeState CreateInitialHandoverChangeState(FClassInfo* ClassInfo);
