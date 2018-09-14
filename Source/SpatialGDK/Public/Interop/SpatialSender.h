@@ -48,7 +48,7 @@ public:
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
-	void SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rot);
+	void SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rotation);
 	void SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 

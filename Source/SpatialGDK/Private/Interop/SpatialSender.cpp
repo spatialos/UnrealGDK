@@ -227,9 +227,9 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rot)
+void USpatialSender::SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rotation)
 {
-	Worker_ComponentUpdate Update = SpatialRotation(Rot).CreateRotationUpdate();
+	Worker_ComponentUpdate Update = SpatialRotation(Rotation).CreateRotationUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 

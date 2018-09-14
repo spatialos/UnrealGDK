@@ -386,18 +386,18 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 }
 
-UClass* USpatialReceiver::GetNativeEntityClass(SpatialMetadata* MetadataComponent)
+UClass* USpatialReceiver::GetNativeEntityClass(SpatialMetadata* Metadata)
 {
-	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *MetadataComponent->EntityType);
+	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *Metadata->EntityType);
 	return Class->IsChildOf<AActor>() ? Class : nullptr;
 }
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialReceiver::SpawnNewEntity(SpatialPosition* PositionComponent, SpatialRotation* RotationComponent, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::SpawnNewEntity(SpatialPosition* Position, SpatialRotation* Rotation, UClass* ActorClass, bool bDeferred)
 {
-	FVector InitialLocation = Coordinates::ToFVector(PositionComponent->Coords);
-	FRotator InitialRotation = RotationComponent->ToFRotator();
+	FVector InitialLocation = Coordinates::ToFVector(Position->Coords);
+	FRotator InitialRotation = Rotation->ToFRotator();
 	AActor* NewActor = nullptr;
 	if (ActorClass)
 	{

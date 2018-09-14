@@ -121,8 +121,8 @@ private:
 
 	void CreateActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
-	AActor* SpawnNewEntity(SpatialPosition* PositionComponent, struct SpatialRotation* RotationComponent, UClass* ActorClass, bool bDeferred);
-	UClass* GetNativeEntityClass(SpatialMetadata* MetadataComponent);
+	AActor* SpawnNewEntity(SpatialPosition* Position, struct SpatialRotation* Rotation, UClass* ActorClass, bool bDeferred);
+	UClass* GetNativeEntityClass(SpatialMetadata* Metadata);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
