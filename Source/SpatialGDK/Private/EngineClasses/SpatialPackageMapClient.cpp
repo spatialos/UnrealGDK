@@ -206,14 +206,14 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObj
 {
 	FNetworkGUID* CachedGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
 	FNetworkGUID NetGUID = CachedGUID ? *CachedGUID : FNetworkGUID{};
-	if (!NetGUID.IsValid() && !ObjectRef.Path.empty())
+	if (!NetGUID.IsValid() && ObjectRef.Path.IsSet())
 	{
 		FNetworkGUID OuterGUID;
-		if (!ObjectRef.Outer.empty())
+		if (ObjectRef.Outer.IsSet())
 		{
-			OuterGUID = GetNetGUIDFromUnrealObjectRef(*ObjectRef.Outer.data());
+			OuterGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef.Outer.GetValue());
 		}
-		NetGUID = RegisterNetGUIDFromPath(*ObjectRef.Path.data(), OuterGUID);
+		NetGUID = RegisterNetGUIDFromPath(ObjectRef.Path.GetValue(), OuterGUID);
 		RegisterObjectRef(NetGUID, ObjectRef);
 	}
 	return NetGUID;

@@ -56,7 +56,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 {
 	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
 
-	TArray<std::uint32_t> UpdateFields;
+	TArray<uint32> UpdateFields;
 	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
 	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
 
@@ -77,7 +77,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 	TArray<UProperty*> RepNotifies;
 
-	for (std::uint32_t FieldId : UpdateFields)
+	for (uint32 FieldId : UpdateFields)
 	{
 		// FieldId is the same as rep handle
 		check(FieldId > 0 && (int)FieldId - 1 < BaseHandleToCmdIndex.Num());
@@ -130,7 +130,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
 {
-	TArray<std::uint32_t> UpdateFields;
+	TArray<uint32> UpdateFields;
 	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
 	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
 
@@ -144,7 +144,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 
 	Channel->PreReceiveSpatialUpdate(Object);
 
-	for (std::uint32_t FieldId : UpdateFields)
+	for (uint32 FieldId : UpdateFields)
 	{
 		// FieldId is the same as handover handle
 		check(FieldId > 0 && (int)FieldId - 1 < ClassInfo->HandoverProperties.Num());
@@ -168,7 +168,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 	Channel->PostReceiveSpatialUpdate(Object, TArray<UProperty*>());
 }
 
-void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, std::uint32_t Index, UProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex)
+void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId Id, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
@@ -345,7 +345,7 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId Id, UArra
 	}
 }
 
-std::uint32_t ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_FieldId Id, UProperty* Property)
+uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_FieldId Id, UProperty* Property)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{

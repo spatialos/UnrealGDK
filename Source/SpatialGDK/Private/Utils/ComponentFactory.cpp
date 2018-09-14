@@ -135,7 +135,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{
-		Schema_AddBool(Object, Id, (std::uint8_t)BoolProperty->GetPropertyValue(Data));
+		Schema_AddBool(Object, Id, (uint8)BoolProperty->GetPropertyValue(Data));
 	}
 	else if (UFloatProperty* FloatProperty = Cast<UFloatProperty>(Property))
 	{
@@ -147,11 +147,11 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 	}
 	else if (UInt8Property* Int8Property = Cast<UInt8Property>(Property))
 	{
-		Schema_AddInt32(Object, Id, (std::int32_t)Int8Property->GetPropertyValue(Data));
+		Schema_AddInt32(Object, Id, (int32)Int8Property->GetPropertyValue(Data));
 	}
 	else if (UInt16Property* Int16Property = Cast<UInt16Property>(Property))
 	{
-		Schema_AddInt32(Object, Id, (std::int32_t)Int16Property->GetPropertyValue(Data));
+		Schema_AddInt32(Object, Id, (int32)Int16Property->GetPropertyValue(Data));
 	}
 	else if (UIntProperty* IntProperty = Cast<UIntProperty>(Property))
 	{
@@ -163,11 +163,11 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 	}
 	else if (UByteProperty* ByteProperty = Cast<UByteProperty>(Property))
 	{
-		Schema_AddUint32(Object, Id, (std::uint32_t)ByteProperty->GetPropertyValue(Data));
+		Schema_AddUint32(Object, Id, (uint32)ByteProperty->GetPropertyValue(Data));
 	}
 	else if (UUInt16Property* UInt16Property = Cast<UUInt16Property>(Property))
 	{
-		Schema_AddUint32(Object, Id, (std::uint32_t)UInt16Property->GetPropertyValue(Data));
+		Schema_AddUint32(Object, Id, (uint32)UInt16Property->GetPropertyValue(Data));
 	}
 	else if (UUInt32Property* UInt32Property = Cast<UUInt32Property>(Property))
 	{
@@ -233,7 +233,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId Id, UPr
 	{
 		if (EnumProperty->ElementSize < 4)
 		{
-			Schema_AddUint32(Object, Id, (std::uint32_t)EnumProperty->GetUnderlyingProperty()->GetUnsignedIntPropertyValue(Data));
+			Schema_AddUint32(Object, Id, (uint32)EnumProperty->GetUnderlyingProperty()->GetUnsignedIntPropertyValue(Data));
 		}
 		else
 		{

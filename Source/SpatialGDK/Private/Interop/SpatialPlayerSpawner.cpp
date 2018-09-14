@@ -14,8 +14,6 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-using namespace worker;
-
 DEFINE_LOG_CATEGORY(LogSpatialGDKPlayerSpawner);
 
 void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
