@@ -180,30 +180,30 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(EntityRegistry);
 
-	SpatialPosition* PositionComponent = GetComponentData<SpatialPosition>(*this, EntityId);
-	SpatialMetadata* MetadataComponent = GetComponentData<SpatialMetadata>(*this, EntityId);
-	SpatialRotation* RotationComponent = GetComponentData<SpatialRotation>(*this, EntityId);
+	SpatialPosition* Position = GetComponentData<SpatialPosition>(*this, EntityId);
+	SpatialMetadata* Metadata = GetComponentData<SpatialMetadata>(*this, EntityId);
+	SpatialRotation* Rotation = GetComponentData<SpatialRotation>(*this, EntityId);
 
-	check(PositionComponent && MetadataComponent);
+	check(Position && Metadata);
 
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
 	UE_LOG(LogTemp, Log, TEXT("!!! Checked out entity with entity ID %lld"), EntityId);
 
 	if (EntityActor)
 	{
-		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
+		UClass* ActorClass = GetNativeEntityClass(Metadata);
 
 		// Option 1
 		UE_LOG(LogTemp, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 
-		SpatialUnrealMetadata* UnrealMetadataComponent = GetComponentData<SpatialUnrealMetadata>(*this, EntityId);
-		check(UnrealMetadataComponent);
+		SpatialUnrealMetadata* UnrealMetadata = GetComponentData<SpatialUnrealMetadata>(*this, EntityId);
+		check(UnrealMetadata);
 
 		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 		check(SpatialPackageMap);
 
 		SubobjectToOffsetMap SubobjectNameToOffset;
-		for (auto& Pair : UnrealMetadataComponent->SubobjectNameToOffset)
+		for (auto& Pair : UnrealMetadata->SubobjectNameToOffset)
 		{
 			SubobjectNameToOffset.Add(Pair.Key, Pair.Value);
 		}
@@ -213,7 +213,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 	}
 	else
 	{
-		UClass* ActorClass = GetNativeEntityClass(MetadataComponent);
+		UClass* ActorClass = GetNativeEntityClass(Metadata);
 
 		if (ActorClass == nullptr)
 		{
@@ -245,7 +245,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		else
 		{
 			UE_LOG(LogTemp, Log, TEXT("!!! Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
-			EntityActor = SpawnNewEntity(PositionComponent, RotationComponent, ActorClass, true);
+			EntityActor = SpawnNewEntity(Position, Rotation, ActorClass, true);
 			bDoingDeferredSpawn = true;
 
 			check(EntityActor);
@@ -275,9 +275,9 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 
 		if (bDoingDeferredSpawn)
 		{
-			FVector InitialLocation = Coordinates::ToFVector(PositionComponent->Coords);
+			FVector InitialLocation = Coordinates::ToFVector(Position->Coords);
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
-			EntityActor->FinishSpawning(FTransform(RotationComponent->ToFRotator(), SpawnLocation));
+			EntityActor->FinishSpawning(FTransform(Rotation->ToFRotator(), SpawnLocation));
 		}
 
 		SubobjectToOffsetMap SubobjectNameToOffset;
