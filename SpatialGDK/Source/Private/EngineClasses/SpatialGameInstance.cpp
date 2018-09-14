@@ -117,6 +117,11 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 
 	if (PlayNetMode != PIE_Client)
 	{
+		UEditorEngine* ThisEngine = Cast<UEditorEngine>(GetEngine());
+		FURL MyURL = WorldContext->LastURL;
+		FString ServerMap;
+		GConfig->GetString(TEXT("/Script/EngineSettings.GameMapsSettings"), TEXT("ServerDefaultMap"), ServerMap, GEngineIni);
+		ThisEngine->UserEditedPlayWorldURL = ServerMap;
 		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 	}
 

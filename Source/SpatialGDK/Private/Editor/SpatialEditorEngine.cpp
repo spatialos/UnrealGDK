@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "EngineClasses/SpatialEditorEngine.h"
+#include "Editor/SpatialEditorEngine.h"
 
 #include "GameMapsSettings.h"
 #include "SpatialNetDriver.h"
@@ -88,11 +88,12 @@ EBrowseReturnVal::Type USpatialEditorEngine::Browse(FWorldContext& WorldContext,
 		BroadcastTravelFailure(WorldContext.World(), ETravelFailure::CheatCommands, Error);
 		return EBrowseReturnVal::Failure;
 	}
-	if (URL.IsLocalInternal())
-	{
-		// Local map file.
-		return LoadMap(WorldContext, URL, NULL, Error) ? EBrowseReturnVal::Success : EBrowseReturnVal::Failure;
-	} else if (URL.IsInternal() && GIsClient)
+// 	if (URL.IsLocalInternal())
+// 	{
+// 		// Local map file.
+// 		return LoadMap(WorldContext, URL, NULL, Error) ? EBrowseReturnVal::Success : EBrowseReturnVal::Failure;
+// 	} else
+	if (URL.IsInternal() && GIsClient)
 	{
 		// Network URL.
 		if (WorldContext.PendingNetGame)

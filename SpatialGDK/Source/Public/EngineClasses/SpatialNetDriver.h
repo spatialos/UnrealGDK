@@ -114,6 +114,9 @@ public:
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
+	bool bIsFirstTimeConnecting = true;
+	bool bHasConnected = false; 
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 

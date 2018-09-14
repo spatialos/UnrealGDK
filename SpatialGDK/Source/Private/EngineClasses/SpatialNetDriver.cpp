@@ -84,6 +84,12 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	auto WorldNetDriver = LoadedWorld->GetNetDriver();
 
 	// Josh - This will cause issues with destroying the current NetDriver when attempting to do OnMapLoaded.
+	// TODO - Make it so we can have two PIE clients and also reload the map.
+	// We need some way of figuring out whether this NetDriver is reloading or not.
+	// Let's make a copy of some information in the old net driver.
+	// UNetDriver TestDriver;
+	// TestDriver->NamePrivate
+
 	if (WorldNetDriver != this)
 	{
 		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
@@ -92,14 +98,25 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
+
 	// Josh - This needs changing to allow the SpatialConnection to be reformed.
-	// Rebase - Moved this earlier to allow modding the receptionist config based on the loaded world.
-	if (Connection != nullptr)
+	if (bHasConnected)
 	{
+		// We are reforging this connection, must be the second time we're loading.
+		//Connection = NewObject<USpatialWorkerConnection>();
+		PlayerSpawner->SendPlayerSpawnRequest();
 		return;
 	}
-	Connection = NewObject<USpatialWorkerConnection>();
-	// Rebase - End
+	else if (bIsFirstTimeConnecting)
+	{
+
+		Connection = NewObject<USpatialWorkerConnection>();
+	}
+	else
+	{
+		// Ops.
+		return;
+	}
 
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
 
@@ -213,6 +230,9 @@ void USpatialNetDriver::OnConnected()
 	Sender->Init(this);
 	Receiver->Init(this);
 	GlobalStateManager->Init(this);
+
+	bHasConnected = true;
+	bIsFirstTimeConnecting = false;
 }
 
 void USpatialNetDriver::OnSpatialOSDisconnected(const FString& Reason)

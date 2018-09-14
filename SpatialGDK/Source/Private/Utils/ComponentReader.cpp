@@ -251,8 +251,8 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			if (NetGUID.IsValid())
 			{
 				UObject* ObjectValue = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-				checkf(ObjectValue, TEXT("An object ref %s should map to a valid object."), *ObjectRef.ToString());
-				checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
+				//checkf(ObjectValue, TEXT("An object ref %s should map to a valid object."), *ObjectRef.ToString());
+				//checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
 				ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
 			}
 			else
