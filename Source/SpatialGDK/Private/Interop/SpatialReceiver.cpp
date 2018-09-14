@@ -510,8 +510,11 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	{
 		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
 		{
-			const TArray<UFunction*>& RPCArray = Info->RPCs.FindChecked(RPC_NetMulticast);
-			ReceiveMulticastUpdate(Op.update, TargetObject, RPCArray);
+			TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPC_NetMulticast);
+			if(RPCArray != nullptr)
+			{
+				ReceiveMulticastUpdate(Op.update, TargetObject, *RPCArray);
+			}
 		}
 	}
 	else
