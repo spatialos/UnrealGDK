@@ -3,7 +3,7 @@ Your access to and use of the Unreal Engine is governed by the [Unreal Engine En
 agreed to those terms before you access or use the Unreal Engine.
 
 
-# SpatialOS Unreal GDK
+# SpatialOS GDK for Unreal
 Copyright 2018 Improbable Worlds Limited (“Improbable”)
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 documentation files (the "Software"), to deal in the Software without restriction, including without limitation

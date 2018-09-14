@@ -1,6 +1,6 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
-# Unreal GDK known issues
+# GDK for Unreal known issues
 
 Known issue = any major user-facing bug or lack of user-facing feature that:
 1. diverges from vanilla Unreal design or implementation (e.g. ordering of reliable RPCs), **OR**
@@ -19,6 +19,6 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 | Compilation error for RPCs that take structs with private members. | 2018-07-16 | [UNR-144](https://improbableio.atlassian.net/browse/UNR-144) | Add the type binding as a friend class. |
 |Interop codegen fails when the destination file is locked. The workflow is less than ideal as you can't run it again until you restart the Unreal Editor. | 2018-07-16 | [UNR-350](https://improbableio.atlassian.net/browse/UNR-350) | Ensure destination files/folders are unlocked. |
 | Deleting entities directly from the Inspector causes undefined behavior. | 2018-07-17 | [UNR-425](https://improbableio.atlassian.net/projects/UNR/issues/UNR-425) | None |
-| Having generated files in the symlinked folder `Source/SpatialGDK` means you can’t work in two projects at the same time using the same clone of the SpatialOS Unreal GDK. | 2018-07-23 | [UNR-458](https://improbableio.atlassian.net/browse/UNR-458) | Clone the Unreal GDK separately for each project. |
+| Having generated files in the symlinked folder `Source/SpatialGDK` means you can’t work in two projects at the same time using the same clone of the SpatialOS GDK for Unreal. | 2018-07-23 | [UNR-458](https://improbableio.atlassian.net/browse/UNR-458) | Clone the GDK for Unreal separately for each project. |
 | We don't support listen servers. | 2018-07-30 | | Use dedicated servers instead. |
 | Stably-named replicated actors cannot be referred to by their path after transitioning between servers | 2018-08-10 | [UNR-473](https://improbableio.atlassian.net/projects/UNR/issues/UNR-473) | None |

@@ -1,6 +1,6 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
-# Unreal GDK Troubleshooting/FAQ
+# GDK for Unreal Troubleshooting/FAQ
 
 
 
@@ -22,16 +22,16 @@ Validate that the SpatialOS entity that represents your Actor appears in the Ins
 
 ------
 
-**Q:** I've moved my game over to the SpatialOS Unreal GDK and am getting a crash in `UEngine::TickWorldTravel` when launching a PIE instance of my game.
+**Q:** I've moved my game over to the SpatialOS GDK for Unreal and am getting a crash in `UEngine::TickWorldTravel` when launching a PIE instance of my game.
 
 **A:** Ensure that you have set up your Game Instance Class in your project settings (**Edit** > **Project Settings** > **Project** > **Maps & Modes** > **Game Instance Class**) to point to either `SpatialGameInstance` or a game instance that inherits from `USpatialGameInstance`.
 
 ------
 
-**Q:** Can I change between Unreal Engine’s networking stack and the SpatialOS Unreal GDK networking stack?
+**Q:** Can I change between Unreal Engine’s networking stack and the SpatialOS GDK for Unreal networking stack?
 
 **A:** Yes you can! In Visual Studio open the Properties window for you game project (right-click on your project and select **Properties**). Select the **Debugging** tab and, in the **Command Arguments** field, add the following to the to the end of the existing command line arguments:
-`-NetDriverOverrides=/Script/OnlineSubsystemUtils.IpNetDriver`. When you launch your project, it'll use the default Unreal networking stack. Just remove the line if you want to go back to the SpatialOS Unreal GDK networking stack.
+`-NetDriverOverrides=/Script/OnlineSubsystemUtils.IpNetDriver`. When you launch your project, it'll use the default Unreal networking stack. Just remove the line if you want to go back to the SpatialOS GDK for Unreal networking stack.
 
 ------
 
@@ -49,7 +49,7 @@ Note that you may see similar errors if the same issue applies to the schema gen
 
 ------
 
-**Q:** My game uses reliable multicast RPCs - why does the SpatialOS Unreal GDK not support these?
+**Q:** My game uses reliable multicast RPCs - why does the SpatialOS GDK for Unreal not support these?
 
 **A:** The underlying implementation of multicast RPCs uses SpatialOS [events](https://docs.improbable.io/reference/latest/shared/glossary#event) (SpatialOS documentation). SpatialOS events can only be sent unreliably. Additionally, the cost of a multicast RPC scales with the number of client-workers present in a deployment, which means they can get very expensive. A better approach would be to send RPCs to only the workers that are close to the broadcasting worker.
 

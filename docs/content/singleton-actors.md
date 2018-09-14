@@ -1,4 +1,4 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # Singleton Actors
 
@@ -9,7 +9,7 @@ There are two kinds of Singleton Actors:
 * **Public Singleton Actors** - Singleton Actors which are replicated to server-workers and client-workers. `GameState` is a Public Singleton Actor.
 * **Private Singletons** - Singleton Actors which are replicated to server-workers, but not accessible to client-workers. `GameMode` is a Private Singleton Actor.
 
-You can define any class as a Singleton Actor. At the moment the Unreal GDK only supports Public Singleton Actors.
+You can define any class as a Singleton Actor. At the moment the GDK for Unreal only supports Public Singleton Actors.
 
 Each server-worker should instantiate their own local version of each Singleton Actor. For `GameMode` and `GameState`, Unreal Engine does this automatically.
 
@@ -59,5 +59,5 @@ In the `bridge` field of the worker configuration file, there should be a sectio
 
 This creates two streaming queries, one for the `GlobalStateManager` and one for the `ExampleGameGameState` component. For each Singleton Actor you register, you need to add another streaming query for that Singleton Actor’s `MultiClientRepData` component. We understand this workflow is a little clumsy and will be improved in the future.
 
-And that's it! You have successfully specified a Singleton Actor. Make sure you generate a new snapshot and [type bindings]({{urlRoot}}/content/interop) using the [SpatialOS Unreal GDK toolbar]({{urlRoot}}/content/toolbar).
+And that's it! You have successfully specified a Singleton Actor. Make sure you generate a new snapshot and [type bindings]({{urlRoot}}/content/interop) using the [SpatialOS GDK for Unreal toolbar]({{urlRoot}}/content/toolbar).
 

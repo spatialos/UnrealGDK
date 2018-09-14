@@ -1,10 +1,10 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
-# How to...generate a snapshot
+# How to generate a snapshot
 
 If you're not familiar with snapshots in the context of SpatialOS, please look at the [full snapshot documentation](https://docs.improbable.io/reference/latest/shared/operate/snapshots) (SpatialOS documentation).
 
-The SpatialOS Unreal GDK snapshots contain two kinds of entities: critical entities and placeholders.
+The SpatialOS GDK for Unreal snapshots contain two kinds of entities: critical entities and placeholders.
 
 ### Critical entities
 
@@ -21,7 +21,7 @@ These entities exists only to set up server-worker boundaries in a way that is e
 
 ## Generating a snapshot
 
-To generate a snapshot, use the **Snapshot** button on the SpatialOS Unreal GDK toolbar in the Unreal Editor:
+To generate a snapshot, use the **Snapshot** button on the SpatialOS GDK for Unreal toolbar in the Unreal Editor:
 
  ![Snapshot]({{assetRoot}}assets/screen-grabs/snapshot.png)
 
