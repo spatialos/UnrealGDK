@@ -1,19 +1,19 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # Glossary
 
 ## SpatialOS terms
 See the [SpatialOS glossary](https://docs.improbable.io/reference/latest/shared/glossary) for terms specific to SpatialOS.
 
-## Unreal GDK repositories
-* The SpatialOS Unreal GDK: https://github.com/spatialos/UnrealGDK
+## GDK for Unreal repositories
+* The SpatialOS GDK for Unreal: https://github.com/spatialos/UnrealGDK
 * Starter Project: https://github.com/spatialos/UnrealGDKStarterProject
-* SpatialOS Unreal GDK fork of Unreal Engine: https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK<br>
+* SpatialOS GDK for Unreal fork of Unreal Engine: https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK<br>
 You may get a 404 error from this link. To get access, see [these instructions]({{urlRoot}}/setup-and-installing#unreal-engine-eula).
 * Third-Person Shooter: https://github.com/spatialos/UnrealGDKThirdPersonShooter
 * Test Suite: https://github.com/spatialos/UnrealGDKTestSuite
 
-## Unreal GDK terms
+## GDK for Unreal terms
 
 ### Actor handover
  Handover is a new `UPROPERTY` tag. It allows games built in Unreal which uses single-server architecture to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor and entity property handover between server-workers]({{urlRoot}}/content/handover-between-server-workers.md).
