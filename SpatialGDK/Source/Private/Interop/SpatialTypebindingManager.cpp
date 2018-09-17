@@ -162,7 +162,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				{
 					if (!Subobject->IsA<UActorComponent>())
 					{
-						if(IsSupportedClass(Subobject->GetClass()))
+						if (IsSupportedClass(Subobject->GetClass()))
 						{
 							Info.SubobjectClasses.Add(Subobject->GetClass());
 						}
