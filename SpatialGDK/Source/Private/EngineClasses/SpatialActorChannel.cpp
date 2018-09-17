@@ -100,7 +100,8 @@ bool USpatialActorChannel::IsSingletonEntity()
 
 bool USpatialActorChannel::IsStablyNamedEntity()
 {
-	return !NetDriver->View->GetUnrealMetadata(EntityId)->StaticPath.IsEmpty();
+	SpatialUnrealMetadata* UnrealMetadata = NetDriver->View->GetUnrealMetadata(EntityId);
+	return UnrealMetadata ? !UnrealMetadata->StaticPath.IsEmpty() : false;
 }
 
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
