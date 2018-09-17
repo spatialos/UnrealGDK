@@ -421,10 +421,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			TArray<TSharedPtr<FUnrealProperty>> RootProperties;
 			TypeNode->Properties.MultiFind(Parent.Property, RootProperties);
 
-			for (int i = 0; i < RootProperties.Num(); i++)
+			for (TSharedPtr<FUnrealProperty>& RootProperty : RootProperties)
 			{
-				TSharedPtr<FUnrealProperty> RootProperty = RootProperties[i];
-
 				checkf(RootProperty->Type.IsValid(), TEXT("Properties in the AST which are parent properties in the rep layout must have child properties"));
 				VisitAllProperties(RootProperty->Type, [&PropertyNode, &Cmd](TSharedPtr<FUnrealProperty> Property)
 				{
