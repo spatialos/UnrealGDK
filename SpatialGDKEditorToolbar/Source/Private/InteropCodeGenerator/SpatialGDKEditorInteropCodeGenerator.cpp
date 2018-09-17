@@ -150,7 +150,7 @@ void CreateSchemaDatabase(TArray<UClass*> Classes)
 		FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
 		bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
 
-		if(!bSuccess)
+		if (!bSuccess)
 		{
 			FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to %s!"), *PackagePath)));
 		}

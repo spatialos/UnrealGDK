@@ -421,7 +421,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			TArray<TSharedPtr<FUnrealProperty>> RootProperties;
 			TypeNode->Properties.MultiFind(Parent.Property, RootProperties);
 
-			for(int i = 0; i < RootProperties.Num(); i++)
+			for (int i = 0; i < RootProperties.Num(); i++)
 			{
 				TSharedPtr<FUnrealProperty> RootProperty = RootProperties[i];
 

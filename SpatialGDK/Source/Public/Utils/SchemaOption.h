@@ -104,3 +104,9 @@ public:
 private:
 	TUniquePtr<T> Value;
 };
+
+template <typename T>
+inline uint32 GetTypeHash(const TSchemaOption<T>& Option)
+{
+	return Option.IsSet() ? 1327u * (GetTypeHash(*Option) + 977u) : 977u;
+}
