@@ -58,8 +58,7 @@ Build/*/**
 !Build/**/*.ico
 
 # Build artifacts
-SpatialGDK/Build/build/
-SpatialGDK/Build/packages/
+SpatialGDK/Build/core_sdk/
 
 # Built data for maps
 #*_BuiltData.uasset

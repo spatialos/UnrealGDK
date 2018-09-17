@@ -40,9 +40,8 @@ call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
     set /p PINNED_CODE_GENERATOR_VERSION=<.\SpatialGDK\Extras\code-generator.version
 
-    set BUILD_DIR=%~dp0\SpatialGDK\Build\build
+    set BUILD_DIR=%~dp0\SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
-    set PACKAGE_TARGET_DIR=%~dp0\SpatialGDK\Build\packages
     set WORKER_SDK_DIR=%~dp0\SpatialGDK\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0\SpatialGDK\Binaries\ThirdParty\Improbable
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema
@@ -50,8 +49,7 @@ call :MarkStartOfBlock "Setup variables"
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
-    rd /s /q "%BUILD_DIR%"              2>nul
-    rd /s /q "%PACKAGE_TARGET_DIR%"     2>nul
+    rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
     rd /s /q "%BINARIES_DIR%"           2>nul
     rd /s /q "%SCHEMA_COPY_DIR%"        2>nul
@@ -59,7 +57,6 @@ call :MarkStartOfBlock "Clean folders"
 call :MarkEndOfBlock "Clean folders"
 
 call :MarkStartOfBlock "Create folders"
-    md "%PACKAGE_TARGET_DIR%"        >nul 2>nul
     md "%WORKER_SDK_DIR%"            >nul 2>nul
     md "%CORE_SDK_DIR%\schema"       >nul 2>nul
     md "%CORE_SDK_DIR%\tools"        >nul 2>nul
