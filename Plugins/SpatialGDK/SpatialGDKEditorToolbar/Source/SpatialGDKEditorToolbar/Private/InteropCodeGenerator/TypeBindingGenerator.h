@@ -64,6 +64,7 @@ void GenerateFunction_SendComponentUpdates(FCodeWriter& SourceWriter, UClass* Cl
 void GenerateFunction_SendRPCCommand(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Class, const TArray<UClass*>& Components);
 void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter, UClass* Class);
+void GenerateFunction_UpdateEntityACL(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_BuildSpatialComponentUpdate(FCodeWriter& SourceWriter, UClass* Class);
 void GenerateFunction_ServerSendUpdate_RepData(FCodeWriter& SourceWriter, UClass* Class, const FUnrealFlatRepData& RepData, EReplicatedPropertyGroup Group);
 void GenerateBody_SendUpdate_RepDataProperty(FCodeWriter& SourceWriter, uint16 Handle, TSharedPtr<FUnrealProperty> PropertyInfo);

@@ -55,6 +55,8 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	: Super(ObjectInitializer)
 	, ActorEntityId(0)
 	, SpatialNetDriver(nullptr)
+	, bIsNetOwned(false)
+	, bFirstReplication(true)
 {
 	bCoreActor = true;
 	bCreatingNewEntity = false;
@@ -241,6 +243,21 @@ bool USpatialActorChannel::ReplicateActor()
 
 	FMemMark MemMark(FMemStack::Get());	// The calls to ReplicateProperties will allocate memory on FMemStack::Get(), and use it in ::PostSendBunch. we free it below
 
+	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
+	if (Binding)
+	{
+		bool bOldIsOwned = bIsNetOwned;
+		bIsNetOwned = Actor->GetNetConnection() != nullptr;
+
+		if (bIsNetOwned != bOldIsOwned || bFirstReplication)
+		{
+			if (Binding->UpdateEntityACL(this, bIsNetOwned))
+			{
+				bFirstReplication = false;
+			}
+		}
+	}
+
 	// ----------------------------------------------------------
 	// Replicate Actor and Component properties and RPCs
 	// ----------------------------------------------------------
@@ -281,7 +298,6 @@ bool USpatialActorChannel::ReplicateActor()
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
 	// Update the handover property change list.
-	USpatialTypeBinding* Binding = Interop->GetTypeBindingByClass(Actor->GetClass());
 	TArray<uint16> HandoverChanged;
 	if (Binding)
 	{
@@ -327,24 +343,13 @@ bool USpatialActorChannel::ReplicateActor()
 			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
 			// player controller, get the player state.
 			FString PlayerWorkerId;
-			APlayerState* PlayerState = Cast<APlayerState>(Actor);
-			if (!PlayerState)
+
+			// Native unreal version: OwningConnection == Connection || (OwningConnection != NULL && OwningConnection->IsA(UChildConnection::StaticClass()) && ((UChildConnection*)OwningConnection)->Parent == Connection)
+			// But since we do not have multiple connections, this should be equal to the above flow
+			bIsNetOwned = Actor->GetNetConnection() != nullptr;
+			if (bIsNetOwned)
 			{
-				if (APawn* Pawn = Cast<APawn>(Actor))
-				{
-					PlayerState = Pawn->PlayerState;
-				}
-			}
-			if (!PlayerState)
-			{
-				if (PlayerController)
-				{
-					PlayerState = PlayerController->PlayerState;
-				}
-			}
-			if (PlayerState)
-			{
-				PlayerWorkerId = PlayerState->UniqueId.ToString();
+				PlayerWorkerId = Connection->PlayerController->PlayerState->UniqueId.ToString();
 			}
 			else
 			{
@@ -541,6 +546,40 @@ void USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
 
 void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies)
 {
+	const USpatialTypeBinding* Binding = SpatialNetDriver->GetSpatialInterop()->GetTypeBindingByClass(Actor->GetClass());
+	if (Binding)
+	{
+		worker::Map<worker::ComponentId, worker::InterestOverride> OldInterestOverrideMap = InterestOverrideMap;
+		InterestOverrideMap = Binding->GetInterestOverrideMap(SpatialNetDriver->GetNetMode() == NM_Client, Actor->GetNetConnection() != nullptr);
+
+		FEntityId ActorEntityId = GetEntityId();
+
+		// Check whether the InterestOverrideMap has changed since the last spatial update
+		// Done by comparing the old map to the new one, element by element
+		bool bMapsMatch = true;
+		if (OldInterestOverrideMap.size() != InterestOverrideMap.size())
+		{
+			bMapsMatch = false;
+		}
+		else
+		{
+			for (const auto& Pair : OldInterestOverrideMap)
+			{
+				if (!InterestOverrideMap.count(Pair.first) ||
+					Pair.second.IsInterested != InterestOverrideMap[Pair.first].IsInterested)
+				{
+					bMapsMatch = false;
+					break;
+				}
+			}
+		}
+
+		if (!bMapsMatch && ActorEntityId != FEntityId{})
+		{
+			SpatialNetDriver->GetSpatialOS()->GetConnection().Pin()->SendComponentInterest(ActorEntityId.ToSpatialEntityId(), InterestOverrideMap);
+		}
+	}
+
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
 	if (!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
 	{

@@ -128,6 +128,9 @@ private:
 	UPROPERTY(transient)
 	USpatialNetDriver* SpatialNetDriver;
 
+	worker::Map<worker::ComponentId, worker::InterestOverride> InterestOverrideMap;
+	bool bIsNetOwned;
+	bool bFirstReplication;
 	FVector LastSpatialPosition;
 	TArray<uint8> HandoverPropertyShadowData;
 

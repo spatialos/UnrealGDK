@@ -747,7 +747,8 @@ void GenerateTypeBindingHeader(FCodeWriter& HeaderWriter, FString SchemaFilename
 		void SendRPCCommand(UObject* TargetObject, const UFunction* const Function, void* Parameters) override;
 
 		void ReceiveAddComponent(USpatialActorChannel* Channel, UAddComponentOpWrapperBase* AddComponentOp) const override;
-		worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const override;)""");
+		worker::Map<worker::ComponentId, worker::InterestOverride> GetInterestOverrideMap(bool bIsClient, bool bNetOwned) const override;
+		bool UpdateEntityACL(USpatialActorChannel* Channel, bool bNetOwned) const override;)""");
 
 	HeaderWriter.PrintNewLine();
 
@@ -939,6 +940,9 @@ void GenerateTypeBindingSource(FCodeWriter& SourceWriter, FString SchemaFilename
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_GetInterestOverrideMap(SourceWriter, Class);
+
+	SourceWriter.PrintNewLine();
+	GenerateFunction_UpdateEntityACL(SourceWriter, Class);
 
 	SourceWriter.PrintNewLine();
 	GenerateFunction_BuildSpatialComponentUpdate(SourceWriter, Class);
@@ -1561,21 +1565,59 @@ void GenerateFunction_ReceiveAddComponent(FCodeWriter& SourceWriter, UClass* Cla
 void GenerateFunction_GetInterestOverrideMap(FCodeWriter& SourceWriter, UClass* Class)
 {
 	SourceWriter.BeginFunction(
-		{"worker::Map<worker::ComponentId, worker::InterestOverride>", "GetInterestOverrideMap(bool bIsClient, bool bAutonomousProxy) const"},
+		{"worker::Map<worker::ComponentId, worker::InterestOverride>", "GetInterestOverrideMap(bool bIsClient, bool bNetOwned) const"},
 		TypeBindingName(Class));
 	SourceWriter.Printf(R"""(
 		worker::Map<worker::ComponentId, worker::InterestOverride> Interest;
 		if (bIsClient)
 		{
-			if (!bAutonomousProxy)
-			{
-				Interest.emplace(%s::ComponentId, worker::InterestOverride{false});
-			}
+			Interest.emplace(%s::ComponentId, worker::InterestOverride{bNetOwned});
 			Interest.emplace(%s::ComponentId, worker::InterestOverride{false});
 		}
 		return Interest;)""",
 		*SchemaReplicatedDataName(REP_SingleClient, Class, true),
 		*SchemaHandoverDataName(Class, true));
+	SourceWriter.End();
+}
+
+void GenerateFunction_UpdateEntityACL(FCodeWriter& SourceWriter, UClass* Class)
+{
+	SourceWriter.BeginFunction(
+	{ "bool", "UpdateEntityACL(USpatialActorChannel* Channel, bool bNetOwned) const" },
+		TypeBindingName(Class));
+	SourceWriter.Printf(R"""(
+		TSharedPtr<worker::Connection> PinnedConnection = Interop->GetSpatialOS()->GetConnection().Pin();
+		TSharedPtr<worker::View> PinnedView = Interop->GetSpatialOS()->GetView().Pin();
+		worker::EntityId Id = Channel->GetEntityId().ToSpatialEntityId();
+
+		if (PinnedConnection.IsValid() && PinnedView.IsValid())
+		{
+			worker::Option<improbable::EntityAcl::Data &> Data = PinnedView->Entities[Id].Get<improbable::EntityAcl>();
+			if (Data.empty())
+			{
+				return false;
+			}
+			worker::Map<uint32_t, improbable::WorkerRequirementSet> WriteACL = Data->component_write_acl();
+
+			std::string PlayerWorkerId;
+			if (bNetOwned)
+			{
+				PlayerWorkerId = TCHAR_TO_UTF8(*Channel->Connection->PlayerController->PlayerState->UniqueId.ToString());
+			}
+
+			improbable::WorkerAttributeSet OwningClientAttribute{ { "workerId:" + PlayerWorkerId } };
+			improbable::WorkerRequirementSet OwningClientOnly{ { OwningClientAttribute } };
+
+			WriteACL[%s::ComponentId] = OwningClientOnly;
+
+			improbable::EntityAcl::Update Update;
+			Update.set_component_write_acl(WriteACL);
+			PinnedConnection->SendComponentUpdate<improbable::EntityAcl>(Id, Update);
+			return true;
+		}
+
+		return false;)""",
+		*SchemaRPCComponentName(ERPCType::RPC_Client, Class, true));
 	SourceWriter.End();
 }
 
