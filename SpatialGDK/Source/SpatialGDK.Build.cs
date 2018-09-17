@@ -32,7 +32,6 @@ public class SpatialGDK : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Projects",
-                "OnlineSubsystemUtils",
                 "InputCore",
                 "Sockets",
             });
