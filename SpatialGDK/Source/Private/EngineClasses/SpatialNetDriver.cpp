@@ -83,6 +83,12 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
 	auto WorldNetDriver = LoadedWorld->GetNetDriver();
 
+	WorldURL = LoadedWorld->URL.Map;
+
+	WorldURL.RemoveAt(WorldURL.Find(TEXT("UEDPIE")), 9);
+
+	//GEngine->NetworkRemapPath(this, WorldURL, true);
+
 	// Josh - This will cause issues with destroying the current NetDriver when attempting to do OnMapLoaded.
 	// TODO - Make it so we can have two PIE clients and also reload the map.
 	// We need some way of figuring out whether this NetDriver is reloading or not.
@@ -104,7 +110,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	{
 		// We are reforging this connection, must be the second time we're loading.
 		//Connection = NewObject<USpatialWorkerConnection>();
-		PlayerSpawner->SendPlayerSpawnRequest();
+		//PlayerSpawner->SendPlayerSpawnRequest(WorldURL);
 		return;
 	}
 	else if (bIsFirstTimeConnecting)
@@ -197,6 +203,7 @@ void USpatialNetDriver::OnConnected()
 	// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
 	// So for now we just give the connection a dummy url, might change in the future.
 	FURL DummyURL;
+	DummyURL.Map = WorldURL;
 
 	// If we're the client, we can now ask the server to spawn our controller.
 
@@ -205,7 +212,7 @@ void USpatialNetDriver::OnConnected()
 	if (ServerConnection)
 	{
 		// Send the player spawn commands with retries
-		PlayerSpawner->SendPlayerSpawnRequest();
+		PlayerSpawner->SendPlayerSpawnRequest(WorldURL);
 		PreLoadSpatialOSInstanceMap();
 	}
 	else

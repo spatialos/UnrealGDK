@@ -129,6 +129,8 @@ private:
 	FTimerManager* TimerManager;
 
 	bool bAuthoritativeDestruction;
+	
+	FString WorldURL;
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);

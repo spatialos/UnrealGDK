@@ -26,7 +26,7 @@ public:
 	void ReceivePlayerSpawnRequest(FString URLString, const char* CallerWorkerId, Worker_RequestId RequestId);
 
 	// Client
-	void SendPlayerSpawnRequest();
+	void SendPlayerSpawnRequest(FString URLString);
 	void ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op);
 
 private:
