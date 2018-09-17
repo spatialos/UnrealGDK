@@ -346,8 +346,9 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 
 	const FString ExecuteAbsolutePath = SpatialGDKToolbarSettings->GetProjectRoot();
 	const FString CmdExecutable = TEXT("cmd.exe");
+
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c spatial.exe local launch %s"), *SpatialGDKToolbarSettings->SpatialOSLaunchConfig);
+		TEXT("/c spatial.exe worker build build-config & spatial.exe local launch %s"), *SpatialGDKToolbarSettings->SpatialOSLaunchConfig);
 
 	UE_LOG(LogSpatialGDKEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
