@@ -244,7 +244,7 @@ bool SpatialGDKGenerateInteropCode()
 		PlatformFile.CreateDirectory(*SchemaOutputPath);
 	}
 
-	GenerateInteropFromClasses(InteropGeneratedClasses, SchemaOutputPath);
+	GenerateSchemaFromClasses(InteropGeneratedClasses, SchemaOutputPath);
 
 	CreateSchemaDatabase(InteropGeneratedClasses);
 
