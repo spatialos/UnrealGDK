@@ -93,8 +93,8 @@ Follow the steps below to:
 1. Clone the [Unreal GDK Starter Project](https://github.com/spatialos/UnrealGDKStarterProject/) repository by running either:
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDKStarterProject.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDKStarterProject.git`
-2. Navigate into `<StarterProjectRepoRoot>/Game/Plugins`. You may need to create the Plugins folder if you don't have any plugins installed yet.
-3.  In a Git Bash terminal window, clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository by running either:
+1. Navigate into `<StarterProjectRepoRoot>/Game/Plugins`. You may need to create the Plugins folder if you don't have any plugins installed yet.
+1.  In a Git Bash terminal window, clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository by running either:
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`
 
@@ -135,12 +135,12 @@ To run a cloud deployment, you need to prepare your server-worker and client-wor
     1. In File Explorer, navigate to the root directory of the Unreal GDK Starter Project repository, then to **`\spatial`**, and open the `spatialos.json` file in an editor of your choice.
     1. Change the `name` field to the name of your project. You can find this in the [Console](https://console.improbable.io). It’ll be something like `beta_someword_anotherword_000`.
 1. In a terminal window, navigate to the root directory of the Unreal GDK Starter Project repository.
-2. Build a server-worker assembly: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat StarterProjectServer Linux Development StarterProject.uproject`
-3. Build a client-worker assembly: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat StarterProject Win64 Development StarterProject.uproject`
-4. Navigate to `StarterProject/spatial`.
-5. Upload the assemblies to the cloud, specifying an assembly name (this covers both assemblies): `spatial cloud upload <assembly_name>`
-6. Launch a deployment, specifying a deployment name: `spatial cloud launch <assembly_name> one_worker_test.json <deployment_name> --snapshot=snapshots\default.snapshot`
-7. Follow the steps [here](https://docs.improbable.io/reference/latest/shared/get-started/tour#start-a-game-client) (SpatialOS documentation) to launch the game.
+1. Build a server-worker assembly: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat StarterProjectServer Linux Development StarterProject.uproject`
+1. Build a client-worker assembly: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat StarterProject Win64 Development StarterProject.uproject`
+1. Navigate to `StarterProject/spatial`.
+1. Upload the assemblies to the cloud, specifying an assembly name (this covers both assemblies): `spatial cloud upload <assembly_name>`
+1. Launch a deployment, specifying a deployment name: `spatial cloud launch <assembly_name> one_worker_test.json <deployment_name> --snapshot=snapshots\default.snapshot`
+1. Follow the steps [here](https://docs.improbable.io/reference/latest/shared/get-started/tour#start-a-game-client) (SpatialOS documentation) to launch the game.
 
 ## Next steps
 
