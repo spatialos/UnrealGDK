@@ -10,7 +10,7 @@
 	"DocsURL": "https://docs.improbable.io/unreal/",
 	"MarketplaceURL": "",
 	"SupportURL": "https://forums.improbable.io/",
-    "EnabledByDefault" : true,
+	"EnabledByDefault" : true,
 	"CanContainContent": true,
 	"IsBetaVersion": false,
 	"Installed": true,
@@ -25,10 +25,6 @@
 	"Plugins": [
 		{
 			"Name": "OnlineSubsystemUtils",
-			"Enabled": true
-		},
-		{
-			"Name": "PhysXVehicles",
 			"Enabled": true
 		}
 	]
