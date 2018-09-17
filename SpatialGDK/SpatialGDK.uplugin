@@ -21,5 +21,11 @@
 			"LoadingPhase": "Default",
 			"WhitelistPlatforms": [ "Win64", "Linux", "XboxOne", "PS4" ]
 		},
+	],
+	"Plugins": [
+		{
+			"Name": "OnlineSubsystemUtils",
+			"Enabled": true
+		}
 	]
 }
