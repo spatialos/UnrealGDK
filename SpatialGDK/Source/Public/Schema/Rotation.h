@@ -10,61 +10,64 @@
 
 const Worker_ComponentId ROTATION_COMPONENT_ID = 100001;
 
-struct SpatialRotation : SpatialComponent
+namespace improbable
 {
-	static const Worker_ComponentId ComponentId = ROTATION_COMPONENT_ID;
-
-	SpatialRotation() = default;
-
-	SpatialRotation(float InPitch, float InYaw, float InRoll)
-		: Pitch(InPitch), Yaw(InYaw), Roll(InRoll) {}
-
-	SpatialRotation(const FRotator& Rotator)
-		: Pitch(Rotator.Pitch), Yaw(Rotator.Yaw), Roll(Rotator.Roll) {}
-
-	SpatialRotation(const Worker_ComponentData& Data)
+	struct Rotation : improbable::Component
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		static const Worker_ComponentId ComponentId = ROTATION_COMPONENT_ID;
 
-		Pitch = Schema_GetFloat(ComponentObject, 1);
-		Yaw = Schema_GetFloat(ComponentObject, 2);
-		Roll = Schema_GetFloat(ComponentObject, 3);
-	}
+		Rotation() = default;
 
-	FRotator ToFRotator()
-	{
-		return {Pitch, Yaw, Roll};
-	}
+		Rotation(float InPitch, float InYaw, float InRoll)
+			: Pitch(InPitch), Yaw(InYaw), Roll(InRoll) {}
 
-	Worker_ComponentData CreateRotationData()
-	{
-		Worker_ComponentData Data = {};
-		Data.component_id = ComponentId;
-		Data.schema_type = Schema_CreateComponentData(ComponentId);
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Rotation(const FRotator& Rotator)
+			: Pitch(Rotator.Pitch), Yaw(Rotator.Yaw), Roll(Rotator.Roll) {}
 
-		Schema_AddFloat(ComponentObject, 1, Pitch);
-		Schema_AddFloat(ComponentObject, 2, Yaw);
-		Schema_AddFloat(ComponentObject, 3, Roll);
+		Rotation(const Worker_ComponentData& Data)
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		return Data;
-	}
+			Pitch = Schema_GetFloat(ComponentObject, 1);
+			Yaw = Schema_GetFloat(ComponentObject, 2);
+			Roll = Schema_GetFloat(ComponentObject, 3);
+		}
 
-	Worker_ComponentUpdate CreateRotationUpdate()
-	{
-		Worker_ComponentUpdate ComponentUpdate = {};
-		ComponentUpdate.component_id = ComponentId;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
-		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+		FRotator ToFRotator()
+		{
+			return{ Pitch, Yaw, Roll };
+		}
 
-		Schema_AddFloat(ComponentObject, 1, Pitch);
-		Schema_AddFloat(ComponentObject, 2, Yaw);
-		Schema_AddFloat(ComponentObject, 3, Roll);
+		Worker_ComponentData CreateRotationData()
+		{
+			Worker_ComponentData Data = {};
+			Data.component_id = ComponentId;
+			Data.schema_type = Schema_CreateComponentData(ComponentId);
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		return ComponentUpdate;
-	}
+			Schema_AddFloat(ComponentObject, 1, Pitch);
+			Schema_AddFloat(ComponentObject, 2, Yaw);
+			Schema_AddFloat(ComponentObject, 3, Roll);
 
-	float Pitch;
-	float Yaw;
-	float Roll;
-};
+			return Data;
+		}
+
+		Worker_ComponentUpdate CreateRotationUpdate()
+		{
+			Worker_ComponentUpdate ComponentUpdate = {};
+			ComponentUpdate.component_id = ComponentId;
+			ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+			Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+			Schema_AddFloat(ComponentObject, 1, Pitch);
+			Schema_AddFloat(ComponentObject, 2, Yaw);
+			Schema_AddFloat(ComponentObject, 3, Roll);
+
+			return ComponentUpdate;
+		}
+
+		float Pitch;
+		float Yaw;
+		float Roll;
+	};
+}

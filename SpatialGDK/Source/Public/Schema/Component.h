@@ -2,9 +2,14 @@
 
 #pragma once
 
-struct SpatialComponent
-{
-	virtual ~SpatialComponent() {}
 
-	bool bIsDynamic = false;
-};
+namespace improbable
+{
+	struct Component
+	{
+		virtual ~Component() {}
+
+		bool bIsDynamic = false;
+	};
+}
+

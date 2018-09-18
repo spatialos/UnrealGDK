@@ -19,6 +19,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
 
+using namespace improbable;
+
 namespace
 {
 //This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
@@ -80,7 +82,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		return;
 	}
 
-	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->View->GetAuthority(EntityId, SpatialPosition::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->View->GetAuthority(EntityId, Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 
 	UE_LOG(LogTemp, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
@@ -100,7 +102,7 @@ bool USpatialActorChannel::IsSingletonEntity()
 
 bool USpatialActorChannel::IsStablyNamedEntity()
 {
-	SpatialUnrealMetadata* UnrealMetadata = NetDriver->View->GetUnrealMetadata(EntityId);
+	UnrealMetadata* UnrealMetadata = NetDriver->View->GetUnrealMetadata(EntityId);
 	return UnrealMetadata ? !UnrealMetadata->StaticPath.IsEmpty() : false;
 }
 

@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialTypebindingManager.h"
 #include "Schema/StandardLibrary.h"
+#include "Schema/Rotation.h"
 
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
@@ -26,12 +27,12 @@ using FObjectReferencesMap = TMap<int32, FObjectReferences>;
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
-	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const TSharedPtr<SpatialComponent>& InData)
+	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const TSharedPtr<improbable::Component>& InData)
 		: EntityId(InEntityId), ComponentId(InComponentId), Data(InData) {}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
-	TSharedPtr<SpatialComponent> Data;
+	TSharedPtr<improbable::Component> Data;
 };
 
 struct FObjectReferences
@@ -121,8 +122,8 @@ private:
 
 	void CreateActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
-	AActor* SpawnNewEntity(SpatialPosition* Position, struct SpatialRotation* Rotation, UClass* ActorClass, bool bDeferred);
-	UClass* GetNativeEntityClass(SpatialMetadata* Metadata);
+	AActor* SpawnNewEntity(improbable::Position* Position, struct improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred);
+	UClass* GetNativeEntityClass(improbable::Metadata* Metadata);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);

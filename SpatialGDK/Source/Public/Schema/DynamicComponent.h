@@ -10,25 +10,28 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-// Represents any Unreal rep component
-struct DynamicComponent : SpatialComponent
+namespace improbable
 {
-	DynamicComponent()
+	// Represents any Unreal rep component
+	struct DynamicComponent : improbable::Component
 	{
-		bIsDynamic = true;
-	}
-	
-	DynamicComponent(const Worker_ComponentData& InData)
-		: Data(Worker_AcquireComponentData(&InData))
-	{
-		bIsDynamic = true;
-	}
+		DynamicComponent()
+		{
+			bIsDynamic = true;
+		}
 
-	~DynamicComponent()
-	{
-		Worker_ReleaseComponentData(Data);
-	}
+		DynamicComponent(const Worker_ComponentData& InData)
+			: Data(Worker_AcquireComponentData(&InData))
+		{
+			bIsDynamic = true;
+		}
 
-	Worker_ComponentData* Data;
-};
+		~DynamicComponent()
+		{
+			Worker_ReleaseComponentData(Data);
+		}
 
+		Worker_ComponentData* Data;
+	};
+
+}

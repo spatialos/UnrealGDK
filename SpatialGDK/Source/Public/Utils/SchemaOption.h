@@ -3,110 +3,113 @@
 #include <improbable/c_worker.h>
 #include "UniquePtr.h"
 
-template <typename T>
-class TSchemaOption
+namespace improbable
 {
-public:
-	TSchemaOption() = default;
-	~TSchemaOption() = default;
-
-	TSchemaOption(const T& InValue)
-		: Value(MakeUnique<T>(InValue))
-	{}
-
-	TSchemaOption(T&& InValue)
-		: Value(MakeUnique<T>(MoveTemp(InValue)))
-	{}
-
-	TSchemaOption(const TSchemaOption& InValue)
+	template <typename T>
+	class TSchemaOption
 	{
-		*this = InValue;
-	}
+	public:
+		TSchemaOption() = default;
+		~TSchemaOption() = default;
 
-	TSchemaOption(TSchemaOption&&) = default;
+		TSchemaOption(const T& InValue)
+			: Value(MakeUnique<T>(InValue))
+		{}
 
-	TSchemaOption& operator=(const TSchemaOption& InValue)
-	{
-		if (this != &InValue)
+		TSchemaOption(T&& InValue)
+			: Value(MakeUnique<T>(MoveTemp(InValue)))
+		{}
+
+		TSchemaOption(const TSchemaOption& InValue)
 		{
-			if (InValue)
+			*this = InValue;
+		}
+
+		TSchemaOption(TSchemaOption&&) = default;
+
+		TSchemaOption& operator=(const TSchemaOption& InValue)
+		{
+			if (this != &InValue)
 			{
-				Value = MakeUnique<T>(*InValue);
+				if (InValue)
+				{
+					Value = MakeUnique<T>(*InValue);
+				}
+				else
+				{
+					Value.Reset();
+				}
 			}
-			else
+
+			return *this;
+		}
+
+		TSchemaOption& operator=(TSchemaOption&&) = default;
+
+		FORCEINLINE bool IsSet() const
+		{
+			return Value.IsValid();
+		}
+
+		FORCEINLINE explicit operator bool() const
+		{
+			return IsSet();
+		}
+
+		const T& GetValue() const
+		{
+			checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TSchemaOption. Please check IsSet()."));
+			return *Value;
+		}
+
+		T& GetValue()
+		{
+			checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TSchemaOption. Please check IsSet()."));
+			return *Value;
+		}
+
+		bool operator==(const TSchemaOption& InValue) const
+		{
+			if (IsSet() != InValue.IsSet())
 			{
-				Value.Reset();
+				return false;
 			}
+
+			if (!IsSet())
+			{
+				return true;
+			}
+
+			return GetValue() == InValue.GetValue();
 		}
 
-		return *this;
-	}
-
-	TSchemaOption& operator=(TSchemaOption&&) = default;
-
-	FORCEINLINE bool IsSet() const
-	{
-		return Value.IsValid();
-	}
-
-	FORCEINLINE explicit operator bool() const
-	{
-		return IsSet();
-	}
-
-	const T& GetValue() const
-	{
-		checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TSchemaOption. Please check IsSet()."));
-		return *Value;
-	}
-
-	T& GetValue()
-	{
-		checkf(IsSet(), TEXT("It is an error to call GetValue() on an unset TSchemaOption. Please check IsSet()."));
-		return *Value;
-	}
-
-	bool operator==(const TSchemaOption& InValue) const
-	{
-		if (IsSet() != InValue.IsSet())
+		bool operator!=(const TSchemaOption& InValue) const
 		{
-			return false;
+			return !operator==(InValue);
 		}
 
-		if (!IsSet())
+		T& operator*() const
 		{
-			return true;
+			return *Value;
 		}
 
-		return GetValue() == InValue.GetValue();
-	}
+		const T* operator->() const
+		{
+			return Value.Get();
+		}
 
-	bool operator!=(const TSchemaOption& InValue) const
-	{
-		return !operator==(InValue);
-	}
+		T* operator->()
+		{
+			return Value.Get();
+		}
 
-	T& operator*() const
-	{
-		return *Value;
-	}
-
-	const T* operator->() const
-	{
-		return Value.Get();
-	}
-
-	T* operator->()
-	{
-		return Value.Get();
-	}
-
-private:
-	TUniquePtr<T> Value;
-};
+	private:
+		TUniquePtr<T> Value;
+	};
+}
 
 template <typename T>
-inline uint32 GetTypeHash(const TSchemaOption<T>& Option)
+inline uint32 GetTypeHash(const improbable::TSchemaOption<T>& Option)
 {
 	return Option.IsSet() ? 1327u * (GetTypeHash(*Option) + 977u) : 977u;
 }

@@ -19,6 +19,8 @@
 #include "Utils/EntityRegistry.h"
 #include "Utils/RepLayoutUtils.h"
 
+using namespace improbable;
+
 template <typename T>
 T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
 {
@@ -107,27 +109,27 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		return;
 	}
 
-	TSharedPtr<SpatialComponent> Data;
+	TSharedPtr<improbable::Component> Data;
 
 	switch (Op.data.component_id)
 	{
 	case ENTITY_ACL_COMPONENT_ID:
-		Data = MakeShared<SpatialEntityAcl>(Op.data);
+		Data = MakeShared<EntityAcl>(Op.data);
 		break;
 	case METADATA_COMPONENT_ID:
-		Data = MakeShared<SpatialMetadata>(Op.data);
+		Data = MakeShared<Metadata>(Op.data);
 		break;
 	case POSITION_COMPONENT_ID:
-		Data = MakeShared<SpatialPosition>(Op.data);
+		Data = MakeShared<Position>(Op.data);
 		break;
 	case PERSISTENCE_COMPONENT_ID:
-		Data = MakeShared<SpatialPersistence>(Op.data);
+		Data = MakeShared<Persistence>(Op.data);
 		break;
 	case ROTATION_COMPONENT_ID:
-		Data = MakeShared<SpatialRotation>(Op.data);
+		Data = MakeShared<Rotation>(Op.data);
 		break;
 	case UNREAL_METADATA_COMPONENT_ID:
-		Data = MakeShared<SpatialUnrealMetadata>(Op.data);
+		Data = MakeShared<UnrealMetadata>(Op.data);
 		break;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyData(Op.data);
@@ -166,9 +168,9 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(EntityRegistry);
 
-	SpatialPosition* Position = GetComponentData<SpatialPosition>(*this, EntityId);
-	SpatialMetadata* Metadata = GetComponentData<SpatialMetadata>(*this, EntityId);
-	SpatialRotation* Rotation = GetComponentData<SpatialRotation>(*this, EntityId);
+	Position* Position = GetComponentData<improbable::Position>(*this, EntityId);
+	Metadata* Metadata = GetComponentData<improbable::Metadata>(*this, EntityId);
+	Rotation* Rotation = GetComponentData<improbable::Rotation>(*this, EntityId);
 
 	check(Position && Metadata);
 
@@ -182,7 +184,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		// Option 1
 		UE_LOG(LogTemp, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 
-		SpatialUnrealMetadata* UnrealMetadata = GetComponentData<SpatialUnrealMetadata>(*this, EntityId);
+		improbable::UnrealMetadata* UnrealMetadata = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
 		check(UnrealMetadata);
 
 		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
@@ -213,7 +215,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		//}
 
 		UNetConnection* Connection = nullptr;
-		SpatialUnrealMetadata* UnrealMetadataComponent = GetComponentData<SpatialUnrealMetadata>(*this, EntityId);
+		improbable::UnrealMetadata* UnrealMetadataComponent = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
 		check(UnrealMetadataComponent);
 		bool bDoingDeferredSpawn = false;
 
@@ -372,7 +374,7 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 }
 
-UClass* USpatialReceiver::GetNativeEntityClass(SpatialMetadata* Metadata)
+UClass* USpatialReceiver::GetNativeEntityClass(Metadata* Metadata)
 {
 	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *Metadata->EntityType);
 	return Class->IsChildOf<AActor>() ? Class : nullptr;
@@ -380,7 +382,7 @@ UClass* USpatialReceiver::GetNativeEntityClass(SpatialMetadata* Metadata)
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialReceiver::SpawnNewEntity(SpatialPosition* Position, SpatialRotation* Rotation, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::SpawnNewEntity(Position* Position, Rotation* Rotation, UClass* ActorClass, bool bDeferred)
 {
 	FVector InitialLocation = Coordinates::ToFVector(Position->Coords);
 	FRotator InitialRotation = Rotation->ToFRotator();

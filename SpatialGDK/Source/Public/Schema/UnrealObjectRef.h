@@ -58,8 +58,8 @@ struct UnrealObjectRef
 
 	Worker_EntityId Entity;
 	uint32 Offset;
-	TSchemaOption<FString> Path;
-	TSchemaOption<UnrealObjectRef> Outer;
+	improbable::TSchemaOption<FString> Path;
+	improbable::TSchemaOption<UnrealObjectRef> Outer;
 };
 
 inline uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
