@@ -19,8 +19,6 @@
 #include "Utils/EntityRegistry.h"
 #include "Utils/RepLayoutUtils.h"
 
-using namespace improbable;
-
 template <typename T>
 T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
 {
@@ -114,29 +112,29 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	switch (Op.data.component_id)
 	{
 	case ENTITY_ACL_COMPONENT_ID:
-		Data = MakeShared<EntityAcl>(Op.data);
+		Data = MakeShared<improbable::EntityAcl>(Op.data);
 		break;
 	case METADATA_COMPONENT_ID:
-		Data = MakeShared<Metadata>(Op.data);
+		Data = MakeShared<improbable::Metadata>(Op.data);
 		break;
 	case POSITION_COMPONENT_ID:
-		Data = MakeShared<Position>(Op.data);
+		Data = MakeShared<improbable::Position>(Op.data);
 		break;
 	case PERSISTENCE_COMPONENT_ID:
-		Data = MakeShared<Persistence>(Op.data);
+		Data = MakeShared<improbable::Persistence>(Op.data);
 		break;
 	case ROTATION_COMPONENT_ID:
-		Data = MakeShared<Rotation>(Op.data);
+		Data = MakeShared<improbable::Rotation>(Op.data);
 		break;
 	case UNREAL_METADATA_COMPONENT_ID:
-		Data = MakeShared<UnrealMetadata>(Op.data);
+		Data = MakeShared<improbable::UnrealMetadata>(Op.data);
 		break;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyData(Op.data);
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
 	default:
-		Data = MakeShared<DynamicComponent>(Op.data);
+		Data = MakeShared<improbable::DynamicComponent>(Op.data);
 		break;
 	}
 
@@ -168,9 +166,9 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(EntityRegistry);
 
-	Position* Position = GetComponentData<improbable::Position>(*this, EntityId);
-	Metadata* Metadata = GetComponentData<improbable::Metadata>(*this, EntityId);
-	Rotation* Rotation = GetComponentData<improbable::Rotation>(*this, EntityId);
+	improbable::Position* Position = GetComponentData<improbable::Position>(*this, EntityId);
+	improbable::Metadata* Metadata = GetComponentData<improbable::Metadata>(*this, EntityId);
+	improbable::Rotation* Rotation = GetComponentData<improbable::Rotation>(*this, EntityId);
 
 	check(Position && Metadata);
 
@@ -263,7 +261,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 
 		if (bDoingDeferredSpawn)
 		{
-			FVector InitialLocation = Coordinates::ToFVector(Position->Coords);
+			FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 			EntityActor->FinishSpawning(FTransform(Rotation->ToFRotator(), SpawnLocation));
 		}
@@ -284,7 +282,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		{
 			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic)
 			{
-				ApplyComponentData(EntityId, *static_cast<DynamicComponent*>(PendingAddComponent.Data.Get())->Data, Channel);
+				ApplyComponentData(EntityId, *static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data, Channel);
 			}
 		}
 
@@ -374,7 +372,7 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 }
 
-UClass* USpatialReceiver::GetNativeEntityClass(Metadata* Metadata)
+UClass* USpatialReceiver::GetNativeEntityClass(improbable::Metadata* Metadata)
 {
 	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *Metadata->EntityType);
 	return Class->IsChildOf<AActor>() ? Class : nullptr;
@@ -382,9 +380,9 @@ UClass* USpatialReceiver::GetNativeEntityClass(Metadata* Metadata)
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialReceiver::SpawnNewEntity(Position* Position, Rotation* Rotation, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::SpawnNewEntity(improbable::Position* Position, improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred)
 {
-	FVector InitialLocation = Coordinates::ToFVector(Position->Coords);
+	FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
 	FRotator InitialRotation = Rotation->ToFRotator();
 	AActor* NewActor = nullptr;
 	if (ActorClass)

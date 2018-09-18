@@ -94,12 +94,12 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	});
 
 	TArray<Worker_ComponentData> ComponentDatas;
-	ComponentDatas.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
-	ComponentDatas.Add(Metadata(EntityType).CreateMetadataData());
-	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
-	ComponentDatas.Add(Persistence().CreatePersistenceData());
-	ComponentDatas.Add(Rotation(Actor->GetActorRotation()).CreateRotationData());
-	ComponentDatas.Add(UnrealMetadata({}, ClientWorkerId, SubobjectNameToOffset).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
+	ComponentDatas.Add(improbable::Metadata(EntityType).CreateMetadataData());
+	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
+	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
+	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
+	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerId, SubobjectNameToOffset).CreateUnrealMetadataData());
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
@@ -223,7 +223,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
-	Worker_ComponentUpdate Update = improbable::Position::CreatePositionUpdate(Coordinates::FromFVector(Location));
+	Worker_ComponentUpdate Update = improbable::Position::CreatePositionUpdate(improbable::Coordinates::FromFVector(Location));
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
