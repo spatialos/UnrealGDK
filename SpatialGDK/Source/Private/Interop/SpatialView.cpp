@@ -5,8 +5,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialReceiver.h"
 
-using namespace improbable;
-
 void USpatialView::Init(USpatialNetDriver* NetDriver)
 {
 	Receiver = NetDriver->Receiver;
@@ -111,9 +109,9 @@ Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_Com
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
-UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
+improbable::UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
 {
-	if (TSharedPtr<UnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
+	if (TSharedPtr<improbable::UnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
 	{
 		return UnrealMetadataPtr->Get();
 	}
@@ -123,9 +121,9 @@ UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
 
 void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
-	if (Op.data.component_id == UnrealMetadata::ComponentId)
+	if (Op.data.component_id == improbable::UnrealMetadata::ComponentId)
 	{
-		EntityUnrealMetadataMap.Add(Op.entity_id, MakeShared<UnrealMetadata>(Op.data));
+		EntityUnrealMetadataMap.Add(Op.entity_id, MakeShared<improbable::UnrealMetadata>(Op.data));
 	}
 }
 
