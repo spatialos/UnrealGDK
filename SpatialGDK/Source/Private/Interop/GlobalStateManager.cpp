@@ -12,8 +12,6 @@
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
 
-using namespace improbable;
-
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
@@ -77,7 +75,7 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 		Channel->SetChannelActor(SingletonActor);
 
 
-		UnrealMetadata* UnrealMetadata = View->GetUnrealMetadata(SingletonEntityId);
+		improbable::UnrealMetadata* UnrealMetadata = View->GetUnrealMetadata(SingletonEntityId);
 		if (UnrealMetadata == nullptr)
 		{
 			// Don't have entity checked out
