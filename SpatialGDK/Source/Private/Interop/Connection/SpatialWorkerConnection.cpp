@@ -70,7 +70,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 		if (Worker_Connection_IsConnected(WorkerConnection))
 		{
-			AsyncTask(ENamedThreads::GameThread, [this] 
+			AsyncTask(ENamedThreads::GameThread, [this]
 			{
 				this->bIsConnected = true;
 				this->OnConnected.ExecuteIfBound();
@@ -131,7 +131,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 			UE_LOG(LogTemp, Error, TEXT("Received empty list of deployments. Failed to connect."));
 		}
 
-		USpatialWorkerConnection* SpatialConnection = static_cast<USpatialWorkerConnection*>(UserData); 
+		USpatialWorkerConnection* SpatialConnection = static_cast<USpatialWorkerConnection*>(UserData);
 
 		// TODO: Move creation of connection parameters into a function somehow
 		Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
@@ -156,8 +156,8 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 			Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-			AsyncTask(ENamedThreads::GameThread, [SpatialConnection] 
-			{ 
+			AsyncTask(ENamedThreads::GameThread, [SpatialConnection]
+			{
 				SpatialConnection->bIsConnected = true;
 				SpatialConnection->OnConnected.ExecuteIfBound();
 			});
@@ -221,4 +221,9 @@ void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const char* L
 	LogMessage.message = Message;
 
 	Worker_Connection_SendLogMessage(WorkerConnection, &LogMessage);
+}
+
+FString USpatialWorkerConnection::GetWorkerId() const
+{
+	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
