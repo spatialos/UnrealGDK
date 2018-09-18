@@ -11,7 +11,7 @@
 DECLARE_DELEGATE(OnConnectedDelegate)
 
 UCLASS()
-class USpatialWorkerConnection : public UObject
+class SPATIALGDK_API USpatialWorkerConnection : public UObject
 {
 
 	GENERATED_BODY()
@@ -32,6 +32,7 @@ public:
 	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 	void SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message);
+	FString GetWorkerId() const;
 
 	OnConnectedDelegate OnConnected;
 
