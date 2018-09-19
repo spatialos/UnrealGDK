@@ -77,10 +77,10 @@ struct THasGetTypeHash<improbable::UnrealObjectRef>
 inline uint32 GetTypeHash(const improbable::UnrealObjectRef& ObjectRef)
 {
 	uint32 Result = 1327u;
-	Result = (Result * 977u) + ::GetTypeHash(static_cast<int64>(ObjectRef.Entity));
-	Result = (Result * 977u) + ::GetTypeHash(ObjectRef.Offset);
-	Result = (Result * 977u) + ::GetTypeHash(ObjectRef.Path);
-	Result = (Result * 977u) + ::GetTypeHash(ObjectRef.Outer);
+	Result = (Result * 977u) + GetTypeHash(static_cast<int64>(ObjectRef.Entity));
+	Result = (Result * 977u) + GetTypeHash(ObjectRef.Offset);
+	Result = (Result * 977u) + GetTypeHash(ObjectRef.Path);
+	Result = (Result * 977u) + GetTypeHash(ObjectRef.Outer);
 	return Result;
 }
 
