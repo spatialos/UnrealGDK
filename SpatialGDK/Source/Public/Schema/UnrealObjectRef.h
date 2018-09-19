@@ -65,6 +65,10 @@ struct UnrealObjectRef
 
 }
 
+// This template specialization informs THasGetTypeHash
+// that there exists a valid GetTypeHash function for improbable::UnrealObjectRef.
+// This is required as THasGetTypeHash fails to resolve GetTypeHash functions referencing 
+// classes inside namespaces.
 template <>
 struct THasGetTypeHash<improbable::UnrealObjectRef>
 {
