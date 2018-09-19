@@ -17,7 +17,7 @@ const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID = 100004;
 namespace improbable
 {
 
-struct UnrealMetadata : improbable::Component
+struct UnrealMetadata : Component
 {
 	static const Worker_ComponentId ComponentId = UNREAL_METADATA_COMPONENT_ID;
 

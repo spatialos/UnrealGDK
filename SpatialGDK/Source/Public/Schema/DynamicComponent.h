@@ -14,7 +14,7 @@ namespace improbable
 {
 
 // Represents any Unreal rep component
-struct DynamicComponent : improbable::Component
+struct DynamicComponent : Component
 {
 	DynamicComponent()
 	{

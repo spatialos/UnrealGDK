@@ -47,7 +47,7 @@ struct Coordinates
 	}
 };
 
-struct EntityAcl : improbable::Component
+struct EntityAcl : Component
 {
 	static const Worker_ComponentId ComponentId = ENTITY_ACL_COMPONENT_ID;
 
@@ -96,7 +96,7 @@ struct EntityAcl : improbable::Component
 	WriteAclMap ComponentWriteAcl;
 };
 
-struct Metadata : improbable::Component
+struct Metadata : Component
 {
 	static const Worker_ComponentId ComponentId = METADATA_COMPONENT_ID;
 
@@ -127,7 +127,7 @@ struct Metadata : improbable::Component
 	FString EntityType;
 };
 
-struct Position : improbable::Component
+struct Position : Component
 {
 	static const Worker_ComponentId ComponentId = POSITION_COMPONENT_ID;
 
@@ -182,7 +182,7 @@ struct Position : improbable::Component
 	Coordinates Coords;
 };
 
-struct Persistence : improbable::Component
+struct Persistence : Component
 {
 	static const Worker_ComponentId ComponentId = PERSISTENCE_COMPONENT_ID;
 
