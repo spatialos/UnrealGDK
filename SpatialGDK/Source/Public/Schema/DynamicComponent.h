@@ -12,26 +12,27 @@
 
 namespace improbable
 {
-	// Represents any Unreal rep component
-	struct DynamicComponent : improbable::Component
+
+// Represents any Unreal rep component
+struct DynamicComponent : improbable::Component
+{
+	DynamicComponent()
 	{
-		DynamicComponent()
-		{
-			bIsDynamic = true;
-		}
+		bIsDynamic = true;
+	}
 
-		DynamicComponent(const Worker_ComponentData& InData)
-			: Data(Worker_AcquireComponentData(&InData))
-		{
-			bIsDynamic = true;
-		}
+	DynamicComponent(const Worker_ComponentData& InData)
+		: Data(Worker_AcquireComponentData(&InData))
+	{
+		bIsDynamic = true;
+	}
 
-		~DynamicComponent()
-		{
-			Worker_ReleaseComponentData(Data);
-		}
+	~DynamicComponent()
+	{
+		Worker_ReleaseComponentData(Data);
+	}
 
-		Worker_ComponentData* Data;
-	};
+	Worker_ComponentData* Data;
+};
 
 }
