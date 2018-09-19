@@ -1,8 +1,8 @@
 @echo off
 
-pushd "%~dp0..\..\"
+pushd "%~dp0..\..\..\..\..\..\spatial"
 
-call "Build\Scripts\BuildWorkerConfig.bat"
+spatial worker build build-config
 
 popd
 
