@@ -42,4 +42,4 @@
         }
 
 * Wrap native C++ classes/structs in the improbable namespace
-    For any class that is not an Unreal struct or class(e.g a UClass prefixed with U or a UStruct prefixed with F), we should use the namespace `improbable` to avoid name collision. The classes that are wrapped in namespaces should not use the U,F or A prefixes to make it easy to distiguish these from the Unreal classes.
+    For any object that is not tagged with USTRUCT or UCLASS, we should use the namespace `improbable` to avoid name collision. The classes that are wrapped in namespaces should not use the U,F or A prefixes to make it easy to distiguish these from the Unreal classes.
