@@ -40,6 +40,13 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 		}
 	}
 
+	if (GEngine->IsUsingSpatialNetDriver() && !bHasSpatialNetDriver)
+	{
+		UE_LOG(LogSpatialGDK, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
+										  "Please make sure you set up the net driver definitions as specified in the porting "
+										  "guide and that you don't override the main net driver."));
+	}
+
 	return bHasSpatialNetDriver;
 }
 
