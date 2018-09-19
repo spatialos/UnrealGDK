@@ -46,8 +46,8 @@ public class SpatialGDK : ModuleRules
             PublicDependencyModuleNames.Add("UnrealEd");
 
             // Add editor-specific code.
-            PublicIncludePaths.Add("SpatialGDK/Public/Editor");
-            PrivateIncludePaths.Add("SpatialGDK/Private/EngineClasses");
+            PublicIncludePaths.Add("Public/Editor");
+            PrivateIncludePaths.Add("Private/Editor");
         }
 
    		var CoreSdkLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));

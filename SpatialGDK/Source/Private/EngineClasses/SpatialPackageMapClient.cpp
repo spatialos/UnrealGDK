@@ -245,6 +245,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObj
 }
 
 void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef) const
+{
 	// If we have paths, network-sanitize all of them (e.g. removing PIE prefix).
 	if (ObjectRef.Path.IsSet())
 	{
@@ -270,7 +271,7 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef
 	}
 }
 
-improbable::UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
+UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
 	const UnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
 	return ObjRef ? (UnrealObjectRef)*ObjRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
