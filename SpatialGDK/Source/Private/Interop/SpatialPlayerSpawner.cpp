@@ -35,6 +35,8 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(FString URLString, const c
 
 	NetDriver->AcceptNewPlayer(URL, false);
 
+	UE_LOG(LogSpatialGDKPlayerSpawner, Warning, TEXT("Josh - Recieved player spawn request. %s"), *URLString);
+
 	Worker_CommandResponse CommandResponse = {};
 	CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
@@ -49,6 +51,8 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest(FString URLString)
 	FURL DummyURL;
 	DummyURL.Map = URLString;
 
+	UE_LOG(LogSpatialGDKPlayerSpawner, Warning, TEXT("Josh - Sending player spawn request. %s"), *URLString);
+
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
@@ -62,7 +66,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest(FString URLString)
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Got a response"));
+	UE_LOG(LogTemp, Warning, TEXT("ReceivePlayerSpawnResponse"));
 
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{

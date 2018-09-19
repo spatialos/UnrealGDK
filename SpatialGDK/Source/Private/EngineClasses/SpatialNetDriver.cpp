@@ -49,6 +49,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)
 	{
+		// Josh - The world context that is gathered from this is not the correct one. It seems to be defaulting to null.
+		// Actually it seems that the WorldContext that is setup here is one that depends on the pending net driver.
 		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
 		check(WorldContext);
 
@@ -85,7 +87,13 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	WorldURL = LoadedWorld->URL.Map;
 
-	WorldURL.RemoveAt(WorldURL.Find(TEXT("UEDPIE")), 9);
+	// Josh - The worldURL some reason an index = -1
+	// We need to check against finding that UEDPIE instead of assuming we have it.
+	int32 IndexToRemove = WorldURL.Find(TEXT("UEDPIE"));
+	if(IndexToRemove >= 0)
+	{
+		WorldURL.RemoveAt(IndexToRemove, 9);
+	}
 
 	//GEngine->NetworkRemapPath(this, WorldURL, true);
 
@@ -173,7 +181,7 @@ void USpatialNetDriver::ConnectToSpatialOSInstance()
 
 void USpatialNetDriver::PreLoadSpatialOSInstanceMap()
 {
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Loading SpatialOSInstanceMap..."));
+	//UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Loading SpatialOSInstanceMap..."));
 
 	// Call the GSM.
 }
@@ -187,8 +195,6 @@ void USpatialNetDriver::Connect()
 
 void USpatialNetDriver::OnConnected()
 {
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS."));
-
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 
 	View = NewObject<USpatialView>();
@@ -211,12 +217,36 @@ void USpatialNetDriver::OnConnected()
 	// There may be more than one of these connections in the future for different replication conditions.
 	if (ServerConnection)
 	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Client Connected to SpatialOS - Sending spawn request - %s"), *WorldURL);
 		// Send the player spawn commands with retries
 		PlayerSpawner->SendPlayerSpawnRequest(WorldURL);
-		PreLoadSpatialOSInstanceMap();
+
+		// 0 - Client has connected to SpatialOS. Default map or editor map has been loaded.
+
+		// 1 - Let the client spawn itself into it's own lobby.
+
+		// 2 - Find out the map from the GSM.
+
+		//bool bMapIsTheSame = false;
+
+		//// 3 - If the map is the same as the GSM map then fuck it. Load normally.
+		//if (bMapIsTheSame)
+		//{
+		//	PlayerSpawner->SendPlayerSpawnRequest(WorldURL);
+		//}
+		//else
+		//{
+		//	// 4 - If the map is different. Let the client create a player controller and set up client travel variables.
+		//	//this->AcceptNewPlayer(DummyURL, false);
+		//	FString Error;
+		//	USpatialNetConnection* SpatialConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
+		//	GetWorld()->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, DummyURL, 0, Error);
+		//}
+			
 	}
 	else
 	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Server Connected to SpatialOS. - WorldURL - %s"), *WorldURL);
 		USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 		check(NetConnection);
 
@@ -963,6 +993,8 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 {
 	bool bOk = true;
 
+	UE_LOG(LogNet, Error, TEXT("AcceptNewPlayer: %s"), *InUrl.Map);
+
 	USpatialNetConnection* SpatialConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(SpatialConnection);
 
@@ -1001,7 +1033,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 	if (!ErrorMsg.IsEmpty())
 	{
-		UE_LOG(LogNet, Log, TEXT("PreLogin failure: %s"), *ErrorMsg);
+		UE_LOG(LogNet, Error, TEXT("PreLogin failure: %s"), *ErrorMsg);
 		bOk = false;
 	}
 
@@ -1020,10 +1052,13 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 		if (!bExistingPlayer)
 		{
+			UE_LOG(LogNet, Error, TEXT("Not ExistingPlayer"));
+			// Josh - The world is wrong. 
 			SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, WorkerId, ErrorMsg);
 		}
 		else
 		{
+			UE_LOG(LogNet, Error, TEXT("ExistingPlayer"));
 			// Most of this is taken from "World->SpawnPlayActor", excluding the logic to spawn a pawn which happens during
 			// GameMode->PostLogin(...).
 			APlayerController* NewPlayerController = GameMode->SpawnPlayerController(ROLE_AutonomousProxy, FVector::ZeroVector, FRotator::ZeroRotator);
@@ -1047,18 +1082,20 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 		if (SpatialConnection->PlayerController == NULL)
 		{
 			// Failed to connect.
-			UE_LOG(LogNet, Log, TEXT("Join failure: %s"), *ErrorMsg);
+			UE_LOG(LogNet, Error, TEXT("Join failure: %s"), *ErrorMsg);
 			SpatialConnection->FlushNet(true);
 			bOk = false;
 		}
 		else
 		{
+			UE_LOG(LogNet, Error, TEXT("PlayerController exists"));
 			//todo-giray: Client travel needs to be handled here.
 		}
 	}
 
 	if (!bOk)
 	{
+		UE_LOG(LogNet, Error, TEXT("Not ok"));
 		// TODO(David): Destroy connection.
 	}
 

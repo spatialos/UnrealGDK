@@ -110,14 +110,14 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const U
 {
 	FNetworkGUID* CachedGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
 	FNetworkGUID NetGUID = CachedGUID ? *CachedGUID : FNetworkGUID{};
-	if (!NetGUID.IsValid() && !ObjectRef.Path.empty())
+	if (!NetGUID.IsValid() && ObjectRef.Path.IsSet())
 	{
 		FNetworkGUID OuterGUID;
-		if (!ObjectRef.Outer.empty())
+		if (ObjectRef.Outer.IsSet())
 		{
-			OuterGUID = GetNetGUIDFromUnrealObjectRef(*ObjectRef.Outer.data());
+			OuterGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef.Outer.GetValue());
 		}
-		NetGUID = RegisterNetGUIDFromPath(*ObjectRef.Path.data(), OuterGUID);
+		NetGUID = RegisterNetGUIDFromPath(ObjectRef.Path.GetValue(), OuterGUID);
 		RegisterObjectRef(NetGUID, ObjectRef);
 	}
 	return NetGUID;
@@ -246,11 +246,11 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObj
 
 void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef) const
 	// If we have paths, network-sanitize all of them (e.g. removing PIE prefix).
-	if (!ObjectRef.Path.empty())
+	if (ObjectRef.Path.IsSet())
 	{
 		UnrealObjectRef* Iterator = &ObjectRef;
 		while (true) {
-			if (Iterator->Path.empty())
+			if (!Iterator->Path.IsSet())
 			{
 				//UE_LOG(LogSpatialOSPackageMap, Warning, TEXT("%s: NetworkRemapObjectRefPaths found empty path"),
 				//	*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId());
@@ -261,11 +261,11 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef
 				GEngine->NetworkRemapPath(Driver, TempPath, true);
 				Iterator->Path = TempPath;
 			}
-			if (Iterator->Outer.empty())
+			if (!Iterator->Outer.IsSet())
 			{
 				break;
 			}
-			Iterator = Iterator->Outer.data();
+			Iterator = &Iterator->Outer.GetValue();
 		}
 	}
 }

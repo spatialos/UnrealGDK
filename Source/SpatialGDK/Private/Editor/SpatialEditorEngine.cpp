@@ -88,11 +88,12 @@ EBrowseReturnVal::Type USpatialEditorEngine::Browse(FWorldContext& WorldContext,
 		BroadcastTravelFailure(WorldContext.World(), ETravelFailure::CheatCommands, Error);
 		return EBrowseReturnVal::Failure;
 	}
-// 	if (URL.IsLocalInternal())
-// 	{
-// 		// Local map file.
-// 		return LoadMap(WorldContext, URL, NULL, Error) ? EBrowseReturnVal::Success : EBrowseReturnVal::Failure;
-// 	} else
+ 	if (URL.IsLocalInternal())
+ 	{
+ 		// Local map file.
+		UE_LOG(LogNet, Error, TEXT("BAD ENGINE BROWSE: %s"), *URL.Map);
+ 		return LoadMap(WorldContext, URL, NULL, Error) ? EBrowseReturnVal::Success : EBrowseReturnVal::Failure;
+ 	} else
 	if (URL.IsInternal() && GIsClient)
 	{
 		// Network URL.
@@ -108,6 +109,7 @@ EBrowseReturnVal::Type USpatialEditorEngine::Browse(FWorldContext& WorldContext,
 		}
 
 		// IMPROBABLE-BEGIN
+		UE_LOG(LogNet, Error, TEXT("SPATIAL ENGINE BROWSE: %s"), *URL.Map);
 		WorldContext.PendingNetGame = NewObject<UPendingNetGame>();
 		WorldContext.PendingNetGame->Initialize(URL);
 

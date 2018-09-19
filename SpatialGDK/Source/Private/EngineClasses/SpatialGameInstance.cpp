@@ -75,6 +75,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 	// This will use the URL / Map that was setup by the server worker (which is loaded first).
 	// By not specifying a hostname the connection defaults to local.
 	FURL URL = WorldContext->LastURL;
+	URL.Host = "127.0.0.1";
 
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);
@@ -121,7 +122,10 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 		FURL MyURL = WorldContext->LastURL;
 		FString ServerMap;
 		GConfig->GetString(TEXT("/Script/EngineSettings.GameMapsSettings"), TEXT("ServerDefaultMap"), ServerMap, GEngineIni);
-		ThisEngine->UserEditedPlayWorldURL = ServerMap;
+		//ThisEngine->UserEditedPlayWorldURL = ServerMap;
+		//MyURL.Host = "127.0.0.1"; Probs not needed for server travel.
+		//GetWorld()->ServerTravel(ServerMap, true, false);
+
 		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 	}
 
@@ -141,6 +145,8 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 
 void USpatialGameInstance::StartGameInstance()
 {
+	UE_LOG(LogSpatialGDK, Error, TEXT("Spatial Game Instance starting"));
+
 	if (!GIsClient || !HasSpatialNetDriver())
 	{
 		Super::StartGameInstance();
