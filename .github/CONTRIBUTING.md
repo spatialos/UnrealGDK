@@ -7,11 +7,11 @@ later releases and we’ll keep you posted on this). However, we are taking issu
 [feedback](../README.md#give-us-feedback).
 
 ## Coding standards
-See the [Unreal GDK C++ coding standards guide](../docs/contributions/unreal-gdk-coding-standards.md).
+See the [GDK for Unreal C++ coding standards guide](../docs/contributions/unreal-gdk-coding-standards.md).
 
 ## Getting started
-See [About the SpatialOS Unreal GDK](../docs/README.md) for
- details on how to get started using the Unreal GDK.
+See [About the SpatialOS GDK for Unreal](../docs/README.md) for
+ details on how to get started using the GDK for Unreal.
 
 ## Warning
 This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release is for evaluation purposes only, with limited documentation -
