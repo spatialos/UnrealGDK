@@ -1,8 +1,8 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 -------
 
-# Unreal GDK C++ coding standards
+# GDK for Unreal C++ coding standards
 
 > In general, we follow the [Coding Standard](https://docs.unrealengine.com/en-us/Programming/Development/CodingStandard) (Unreal documentation) set out by Epic. This page highlights some additions to Epic's guidelines.
 
