@@ -3,6 +3,7 @@
 #include "SpatialGameInstance.h"
 
 #include "Engine/NetConnection.h"
+#include "GeneralProjectSettings.h"
 #if WITH_EDITOR
 #include "Editor/EditorEngine.h"
 #include "Settings/LevelEditorPlaySettings.h"
@@ -40,7 +41,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 		}
 	}
 
-	if (GEngine->IsUsingSpatialNetDriver() && !bHasSpatialNetDriver)
+	if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking && !bHasSpatialNetDriver)
 	{
 		UE_LOG(LogSpatialGDK, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
 										  "Please make sure you set up the net driver definitions as specified in the porting "
