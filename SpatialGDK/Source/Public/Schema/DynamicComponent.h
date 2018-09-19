@@ -10,14 +10,17 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
+namespace improbable
+{
+
 // Represents any Unreal rep component
-struct DynamicComponent : SpatialComponent
+struct DynamicComponent : Component
 {
 	DynamicComponent()
 	{
 		bIsDynamic = true;
 	}
-	
+
 	DynamicComponent(const Worker_ComponentData& InData)
 		: Data(Worker_AcquireComponentData(&InData))
 	{
@@ -32,3 +35,4 @@ struct DynamicComponent : SpatialComponent
 	Worker_ComponentData* Data;
 };
 
+}

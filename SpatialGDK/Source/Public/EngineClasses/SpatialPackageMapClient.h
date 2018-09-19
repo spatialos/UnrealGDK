@@ -25,8 +25,8 @@ public:
 
 	FNetworkGUID ResolveStablyNamedObject(const UObject* Object);
 	
-	UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
-	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef) const;
+	improbable::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::UnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const;
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
@@ -44,18 +44,18 @@ public:
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(const UObject* Object);
 	
-	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef);
-	UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const improbable::UnrealObjectRef& ObjectRef);
+	improbable::UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(Worker_EntityId EntityId) const;
 
 private:
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
-	void RegisterObjectRef(FNetworkGUID NetGUID, const UnrealObjectRef& ObjectRef);
+	void RegisterObjectRef(FNetworkGUID NetGUID, const improbable::UnrealObjectRef& ObjectRef);
 	
 	FNetworkGUID RegisterNetGUIDFromPath(const FString& PathName, const FNetworkGUID& OuterGUID);
 	FNetworkGUID GenerateNewNetGUID(const int32 IsStatic);
 
-	TMap<FNetworkGUID, UnrealObjectRef> NetGUIDToUnrealObjectRef;
-	TMap<UnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
+	TMap<FNetworkGUID, improbable::UnrealObjectRef> NetGUIDToUnrealObjectRef;
+	TMap<improbable::UnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
 };
 

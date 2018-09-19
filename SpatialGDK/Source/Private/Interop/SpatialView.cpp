@@ -109,9 +109,9 @@ Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_Com
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
-SpatialUnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
+improbable::UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
 {
-	if (TSharedPtr<SpatialUnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
+	if (TSharedPtr<improbable::UnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
 	{
 		return UnrealMetadataPtr->Get();
 	}
@@ -121,9 +121,9 @@ SpatialUnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
 
 void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
-	if (Op.data.component_id == SpatialUnrealMetadata::ComponentId)
+	if (Op.data.component_id == improbable::UnrealMetadata::ComponentId)
 	{
-		EntityUnrealMetadataMap.Add(Op.entity_id, MakeShared<SpatialUnrealMetadata>(Op.data));
+		EntityUnrealMetadataMap.Add(Op.entity_id, MakeShared<improbable::UnrealMetadata>(Op.data));
 	}
 }
 

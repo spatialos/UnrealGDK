@@ -2,6 +2,10 @@
 
 #include <improbable/c_worker.h>
 #include "UniquePtr.h"
+#include "Schema/UnrealObjectRef.h"
+
+namespace improbable
+{
 
 template <typename T>
 class TSchemaOption
@@ -105,8 +109,10 @@ private:
 	TUniquePtr<T> Value;
 };
 
+}
+
 template <typename T>
-inline uint32 GetTypeHash(const TSchemaOption<T>& Option)
+inline uint32 GetTypeHash(const improbable::TSchemaOption<T>& Option)
 {
 	return Option.IsSet() ? 1327u * (GetTypeHash(*Option) + 977u) : 977u;
 }

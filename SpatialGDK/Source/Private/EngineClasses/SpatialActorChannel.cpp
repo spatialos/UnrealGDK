@@ -80,7 +80,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		return;
 	}
 
-	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->View->GetAuthority(EntityId, SpatialPosition::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->View->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 
 	UE_LOG(LogTemp, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
@@ -100,7 +100,7 @@ bool USpatialActorChannel::IsSingletonEntity()
 
 bool USpatialActorChannel::IsStablyNamedEntity()
 {
-	SpatialUnrealMetadata* UnrealMetadata = NetDriver->View->GetUnrealMetadata(EntityId);
+	improbable::UnrealMetadata* UnrealMetadata = NetDriver->View->GetUnrealMetadata(EntityId);
 	return UnrealMetadata ? !UnrealMetadata->StaticPath.IsEmpty() : false;
 }
 

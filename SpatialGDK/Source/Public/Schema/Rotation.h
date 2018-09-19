@@ -10,19 +10,22 @@
 
 const Worker_ComponentId ROTATION_COMPONENT_ID = 100001;
 
-struct SpatialRotation : SpatialComponent
+namespace improbable
+{
+
+struct Rotation : improbable::Component
 {
 	static const Worker_ComponentId ComponentId = ROTATION_COMPONENT_ID;
 
-	SpatialRotation() = default;
+	Rotation() = default;
 
-	SpatialRotation(float InPitch, float InYaw, float InRoll)
+	Rotation(float InPitch, float InYaw, float InRoll)
 		: Pitch(InPitch), Yaw(InYaw), Roll(InRoll) {}
 
-	SpatialRotation(const FRotator& Rotator)
+	Rotation(const FRotator& Rotator)
 		: Pitch(Rotator.Pitch), Yaw(Rotator.Yaw), Roll(Rotator.Roll) {}
 
-	SpatialRotation(const Worker_ComponentData& Data)
+	Rotation(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
@@ -33,7 +36,7 @@ struct SpatialRotation : SpatialComponent
 
 	FRotator ToFRotator()
 	{
-		return {Pitch, Yaw, Roll};
+		return{ Pitch, Yaw, Roll };
 	}
 
 	Worker_ComponentData CreateRotationData()
@@ -68,3 +71,5 @@ struct SpatialRotation : SpatialComponent
 	float Yaw;
 	float Roll;
 };
+
+}

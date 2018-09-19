@@ -10,6 +10,16 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
+using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
+
+const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
+const Worker_ComponentId METADATA_COMPONENT_ID = 53;
+const Worker_ComponentId POSITION_COMPONENT_ID = 54;
+const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
+
+namespace improbable
+{
+
 struct Coordinates
 {
 	double X;
@@ -37,18 +47,96 @@ struct Coordinates
 	}
 };
 
-const Worker_ComponentId POSITION_COMPONENT_ID = 54;
+struct EntityAcl : Component
+{
+	static const Worker_ComponentId ComponentId = ENTITY_ACL_COMPONENT_ID;
 
-struct SpatialPosition : SpatialComponent
+	EntityAcl() = default;
+
+	EntityAcl(const WorkerRequirementSet& InReadAcl, const WriteAclMap& InComponentWriteAcl)
+		: ReadAcl(InReadAcl), ComponentWriteAcl(InComponentWriteAcl) {}
+
+	EntityAcl(const Worker_ComponentData& Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		ReadAcl = Schema_GetWorkerRequirementSet(ComponentObject, 1);
+
+		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 2);
+		for (uint32 i = 0; i < KVPairCount; i++)
+		{
+			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 2, i);
+			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
+			WorkerRequirementSet Value = Schema_GetWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+
+			ComponentWriteAcl.Add(Key, Value);
+		}
+	}
+
+	Worker_ComponentData CreateEntityAclData()
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ENTITY_ACL_COMPONENT_ID;
+		Data.schema_type = Schema_CreateComponentData(ENTITY_ACL_COMPONENT_ID);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		Schema_AddWorkerRequirementSet(ComponentObject, 1, ReadAcl);
+
+		for (const auto& KVPair : ComponentWriteAcl)
+		{
+			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 2);
+			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
+			Schema_AddWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
+		}
+
+		return Data;
+	}
+
+	WorkerRequirementSet ReadAcl;
+	WriteAclMap ComponentWriteAcl;
+};
+
+struct Metadata : Component
+{
+	static const Worker_ComponentId ComponentId = METADATA_COMPONENT_ID;
+
+	Metadata() = default;
+
+	Metadata(const FString& InEntityType)
+		: EntityType(InEntityType) {}
+
+	Metadata(const Worker_ComponentData& Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		EntityType = Schema_GetString(ComponentObject, 1);
+	}
+
+	Worker_ComponentData CreateMetadataData()
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = METADATA_COMPONENT_ID;
+		Data.schema_type = Schema_CreateComponentData(METADATA_COMPONENT_ID);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		Schema_AddString(ComponentObject, 1, EntityType);
+
+		return Data;
+	}
+
+	FString EntityType;
+};
+
+struct Position : Component
 {
 	static const Worker_ComponentId ComponentId = POSITION_COMPONENT_ID;
 
-	SpatialPosition() = default;
+	Position() = default;
 
-	SpatialPosition(const Coordinates& InCoords)
+	Position(const Coordinates& InCoords)
 		: Coords(InCoords) {}
 
-	SpatialPosition(const Worker_ComponentData& Data)
+	Position(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
@@ -94,100 +182,12 @@ struct SpatialPosition : SpatialComponent
 	Coordinates Coords;
 };
 
-using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
-
-const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
-
-struct SpatialEntityAcl : SpatialComponent
-{
-	static const Worker_ComponentId ComponentId = ENTITY_ACL_COMPONENT_ID;
-
-	SpatialEntityAcl() = default;
-
-	SpatialEntityAcl(const WorkerRequirementSet& InReadAcl, const WriteAclMap& InComponentWriteAcl)
-		: ReadAcl(InReadAcl), ComponentWriteAcl(InComponentWriteAcl) {}
-
-	SpatialEntityAcl(const Worker_ComponentData& Data)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-		ReadAcl = Schema_GetWorkerRequirementSet(ComponentObject, 1);
-
-		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 2);
-		for (uint32 i = 0; i < KVPairCount; i++)
-		{
-			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 2, i);
-			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			WorkerRequirementSet Value = Schema_GetWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
-
-			ComponentWriteAcl.Add(Key, Value);
-		}
-	}
-
-	Worker_ComponentData CreateEntityAclData()
-	{
-		Worker_ComponentData Data = {};
-		Data.component_id = ENTITY_ACL_COMPONENT_ID;
-		Data.schema_type = Schema_CreateComponentData(ENTITY_ACL_COMPONENT_ID);
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-		Schema_AddWorkerRequirementSet(ComponentObject, 1, ReadAcl);
-
-		for (const auto& KVPair : ComponentWriteAcl)
-		{
-			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 2);
-			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
-			Schema_AddWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
-		}
-
-		return Data;
-	}
-
-	WorkerRequirementSet ReadAcl;
-	WriteAclMap ComponentWriteAcl;
-};
-
-const Worker_ComponentId METADATA_COMPONENT_ID = 53;
-
-struct SpatialMetadata : SpatialComponent
-{
-	static const Worker_ComponentId ComponentId = METADATA_COMPONENT_ID;
-
-	SpatialMetadata() = default;
-
-	SpatialMetadata(const FString& InEntityType)
-		: EntityType(InEntityType) {}
-
-	SpatialMetadata(const Worker_ComponentData& Data)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-		EntityType = Schema_GetString(ComponentObject, 1);
-	}
-
-	Worker_ComponentData CreateMetadataData()
-	{
-		Worker_ComponentData Data = {};
-		Data.component_id = METADATA_COMPONENT_ID;
-		Data.schema_type = Schema_CreateComponentData(METADATA_COMPONENT_ID);
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
-		Schema_AddString(ComponentObject, 1, EntityType);
-
-		return Data;
-	}
-
-	FString EntityType;
-};
-
-const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
-
-struct SpatialPersistence : SpatialComponent
+struct Persistence : Component
 {
 	static const Worker_ComponentId ComponentId = PERSISTENCE_COMPONENT_ID;
 
-	SpatialPersistence() = default;
-	SpatialPersistence(const Worker_ComponentData& Data)
+	Persistence() = default;
+	Persistence(const Worker_ComponentData& Data)
 	{
 	}
 
@@ -200,3 +200,5 @@ struct SpatialPersistence : SpatialComponent
 		return Data;
 	}
 };
+
+}

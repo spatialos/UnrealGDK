@@ -25,7 +25,7 @@ public:
 	void ProcessOps(Worker_OpList* OpList);
 
 	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	SpatialUnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
+	improbable::UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 
 private:
 	void OnAddComponent(const Worker_AddComponentOp& Op);
@@ -35,5 +35,5 @@ private:
 	USpatialReceiver* Receiver;
 
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
-	TMap<Worker_EntityId_Key, TSharedPtr<SpatialUnrealMetadata>> EntityUnrealMetadataMap;
+	TMap<Worker_EntityId_Key, TSharedPtr<improbable::UnrealMetadata>> EntityUnrealMetadataMap;
 };

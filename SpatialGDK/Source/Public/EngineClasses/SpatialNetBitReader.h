@@ -12,7 +12,7 @@ class USpatialPackageMapClient;
 class SPATIALGDK_API FSpatialNetBitReader : public FNetBitReader
 {
 public:
-	FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<UnrealObjectRef>& InUnresolvedRefs);
+	FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<improbable::UnrealObjectRef>& InUnresolvedRefs);
 
 	using FArchive::operator<<; // For visibility of the overloads we don't override
 
@@ -21,7 +21,7 @@ public:
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
 protected:
-	void DeserializeObjectRef(struct UnrealObjectRef& ObjectRef);
+	void DeserializeObjectRef(improbable::UnrealObjectRef& ObjectRef);
 
-	TSet<UnrealObjectRef>& UnresolvedRefs;
+	TSet<improbable::UnrealObjectRef>& UnresolvedRefs;
 };

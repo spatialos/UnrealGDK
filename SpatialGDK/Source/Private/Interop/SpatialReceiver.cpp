@@ -107,34 +107,34 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		return;
 	}
 
-	TSharedPtr<SpatialComponent> Data;
+	TSharedPtr<improbable::Component> Data;
 
 	switch (Op.data.component_id)
 	{
 	case ENTITY_ACL_COMPONENT_ID:
-		Data = MakeShared<SpatialEntityAcl>(Op.data);
+		Data = MakeShared<improbable::EntityAcl>(Op.data);
 		break;
 	case METADATA_COMPONENT_ID:
-		Data = MakeShared<SpatialMetadata>(Op.data);
+		Data = MakeShared<improbable::Metadata>(Op.data);
 		break;
 	case POSITION_COMPONENT_ID:
-		Data = MakeShared<SpatialPosition>(Op.data);
+		Data = MakeShared<improbable::Position>(Op.data);
 		break;
 	case PERSISTENCE_COMPONENT_ID:
-		Data = MakeShared<SpatialPersistence>(Op.data);
+		Data = MakeShared<improbable::Persistence>(Op.data);
 		break;
 	case ROTATION_COMPONENT_ID:
-		Data = MakeShared<SpatialRotation>(Op.data);
+		Data = MakeShared<improbable::Rotation>(Op.data);
 		break;
 	case UNREAL_METADATA_COMPONENT_ID:
-		Data = MakeShared<SpatialUnrealMetadata>(Op.data);
+		Data = MakeShared<improbable::UnrealMetadata>(Op.data);
 		break;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyData(Op.data);
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
 	default:
-		Data = MakeShared<DynamicComponent>(Op.data);
+		Data = MakeShared<improbable::DynamicComponent>(Op.data);
 		break;
 	}
 
@@ -166,9 +166,9 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(EntityRegistry);
 
-	SpatialPosition* Position = GetComponentData<SpatialPosition>(*this, EntityId);
-	SpatialMetadata* Metadata = GetComponentData<SpatialMetadata>(*this, EntityId);
-	SpatialRotation* Rotation = GetComponentData<SpatialRotation>(*this, EntityId);
+	improbable::Position* Position = GetComponentData<improbable::Position>(*this, EntityId);
+	improbable::Metadata* Metadata = GetComponentData<improbable::Metadata>(*this, EntityId);
+	improbable::Rotation* Rotation = GetComponentData<improbable::Rotation>(*this, EntityId);
 
 	check(Position && Metadata);
 
@@ -182,7 +182,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		// Option 1
 		UE_LOG(LogTemp, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 
-		SpatialUnrealMetadata* UnrealMetadata = GetComponentData<SpatialUnrealMetadata>(*this, EntityId);
+		improbable::UnrealMetadata* UnrealMetadata = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
 		check(UnrealMetadata);
 
 		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
@@ -213,7 +213,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		//}
 
 		UNetConnection* Connection = nullptr;
-		SpatialUnrealMetadata* UnrealMetadataComponent = GetComponentData<SpatialUnrealMetadata>(*this, EntityId);
+		improbable::UnrealMetadata* UnrealMetadataComponent = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
 		check(UnrealMetadataComponent);
 		bool bDoingDeferredSpawn = false;
 
@@ -261,7 +261,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 
 		if (bDoingDeferredSpawn)
 		{
-			FVector InitialLocation = Coordinates::ToFVector(Position->Coords);
+			FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 			EntityActor->FinishSpawning(FTransform(Rotation->ToFRotator(), SpawnLocation));
 		}
@@ -282,7 +282,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		{
 			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic)
 			{
-				ApplyComponentData(EntityId, *static_cast<DynamicComponent*>(PendingAddComponent.Data.Get())->Data, Channel);
+				ApplyComponentData(EntityId, *static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data, Channel);
 			}
 		}
 
@@ -372,7 +372,7 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 }
 
-UClass* USpatialReceiver::GetNativeEntityClass(SpatialMetadata* Metadata)
+UClass* USpatialReceiver::GetNativeEntityClass(improbable::Metadata* Metadata)
 {
 	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *Metadata->EntityType);
 	return Class->IsChildOf<AActor>() ? Class : nullptr;
@@ -380,9 +380,9 @@ UClass* USpatialReceiver::GetNativeEntityClass(SpatialMetadata* Metadata)
 
 // Note that in SpatialGDK, this function will not be called on the spawning worker.
 // It's only for client, and in the future, other workers.
-AActor* USpatialReceiver::SpawnNewEntity(SpatialPosition* Position, SpatialRotation* Rotation, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::SpawnNewEntity(improbable::Position* Position, improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred)
 {
-	FVector InitialLocation = Coordinates::ToFVector(Position->Coords);
+	FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
 	FRotator InitialRotation = Rotation->ToFRotator();
 	AActor* NewActor = nullptr;
 	if (ActorClass)
@@ -424,7 +424,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	if (Data.component_id == Info->SingleClientComponent || Data.component_id == Info->MultiClientComponent)
 	{
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
-		TSet<UnrealObjectRef> UnresolvedRefs;
+		TSet<improbable::UnrealObjectRef> UnresolvedRefs;
 
 		ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
 		Reader.ApplyComponentData(Data, TargetObject, Channel, /* bIsHandover */ false);
@@ -434,7 +434,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	else if (Data.component_id == Info->HandoverComponent)
 	{
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
-		TSet<UnrealObjectRef> UnresolvedRefs;
+		TSet<improbable::UnrealObjectRef> UnresolvedRefs;
 
 		ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
 		Reader.ApplyComponentData(Data, TargetObject, Channel, /* bIsHandover */ true);
@@ -592,7 +592,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
 	FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
-	TSet<UnrealObjectRef> UnresolvedRefs;
+	TSet<improbable::UnrealObjectRef> UnresolvedRefs;
 	ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
 	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel, bIsHandover);
 
@@ -624,7 +624,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
 
-	TSet<UnrealObjectRef> UnresolvedRefs;
+	TSet<improbable::UnrealObjectRef> UnresolvedRefs;
 
 	FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
 
@@ -717,18 +717,18 @@ USpatialActorChannel* USpatialReceiver::PopPendingActorRequest(Worker_RequestId 
 
 void USpatialReceiver::ProcessQueuedResolvedObjects()
 {
-	for (TPair<UObject*, UnrealObjectRef>& It : ResolvedObjectQueue)
+	for (TPair<UObject*, improbable::UnrealObjectRef>& It : ResolvedObjectQueue)
 	{
 		ResolvePendingOperations_Internal(It.Key, It.Value);
 	}
 	ResolvedObjectQueue.Empty();
 }
 
-void USpatialReceiver::ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
+void USpatialReceiver::ResolvePendingOperations(UObject* Object, const improbable::UnrealObjectRef& ObjectRef)
 {
 	if (bInCriticalSection)
 	{
-		ResolvedObjectQueue.Add(TPair<UObject*, UnrealObjectRef>{ Object, ObjectRef });
+		ResolvedObjectQueue.Add(TPair<UObject*, improbable::UnrealObjectRef>{ Object, ObjectRef });
 	}
 	else
 	{
@@ -736,9 +736,9 @@ void USpatialReceiver::ResolvePendingOperations(UObject* Object, const UnrealObj
 	}
 }
 
-void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs)
+void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<improbable::UnrealObjectRef>& UnresolvedRefs)
 {
-	for (const UnrealObjectRef& UnresolvedRef : UnresolvedRefs)
+	for (const improbable::UnrealObjectRef& UnresolvedRef : UnresolvedRefs)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Added pending incoming property for object ref: %s, target object: %s"), *UnresolvedRef.ToString(), *ChannelObjectPair.Value->GetName());
 		IncomingRefsMap.FindOrAdd(UnresolvedRef).Add(ChannelObjectPair);
@@ -750,18 +750,18 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
-void USpatialReceiver::QueueIncomingRPC(const TSet<UnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits)
+void USpatialReceiver::QueueIncomingRPC(const TSet<improbable::UnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits)
 {
 	TSharedPtr<FPendingIncomingRPC> IncomingRPC = MakeShared<FPendingIncomingRPC>(UnresolvedRefs, TargetObject, Function, PayloadData, CountBits);
 
-	for (const UnrealObjectRef& UnresolvedRef : UnresolvedRefs)
+	for (const improbable::UnrealObjectRef& UnresolvedRef : UnresolvedRefs)
 	{
 		FIncomingRPCArray& IncomingRPCArray = IncomingRPCMap.FindOrAdd(UnresolvedRef);
 		IncomingRPCArray.Add(IncomingRPC);
 	}
 }
 
-void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef)
+void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const improbable::UnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogTemp, Log, TEXT("!!! Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
@@ -770,7 +770,7 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	Sender->ResolveOutgoingRPCs(Object);
 }
 
-void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
+void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const improbable::UnrealObjectRef& ObjectRef)
 {
 	// TODO: queue up resolved objects since they were resolved during process ops
 	// and then resolve all of them at the end of process ops
@@ -824,7 +824,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const UnrealOb
 	IncomingRefsMap.Remove(ObjectRef);
 }
 
-void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const UnrealObjectRef& ObjectRef)
+void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const improbable::UnrealObjectRef& ObjectRef)
 {
 	FIncomingRPCArray* IncomingRPCArray = IncomingRPCMap.Find(ObjectRef);
 	if (!IncomingRPCArray)
@@ -899,7 +899,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		for (auto UnresolvedIt = ObjectReferences.UnresolvedRefs.CreateIterator(); UnresolvedIt; ++UnresolvedIt)
 		{
-			UnrealObjectRef& ObjectRef = *UnresolvedIt;
+			improbable::UnrealObjectRef& ObjectRef = *UnresolvedIt;
 
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 			if (NetGUID.IsValid())
@@ -941,7 +941,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			}
 			else
 			{
-				TSet<UnrealObjectRef> NewUnresolvedRefs;
+				TSet<improbable::UnrealObjectRef> NewUnresolvedRefs;
 				FSpatialNetBitReader BitReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits, NewUnresolvedRefs);
 				check(Property->IsA<UStructProperty>());
 				ReadStructProperty(BitReader, Cast<UStructProperty>(Property), NetDriver, Data + AbsOffset, bOutStillHasUnresolved);
