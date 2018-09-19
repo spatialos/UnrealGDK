@@ -2,6 +2,7 @@
 
 #include <improbable/c_worker.h>
 #include "UniquePtr.h"
+#include "Schema/UnrealObjectRef.h"
 
 namespace improbable
 {

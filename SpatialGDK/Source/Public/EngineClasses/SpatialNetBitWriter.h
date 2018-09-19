@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/CoreNet.h"
+#include "UnrealObjectRef.h"
 
 class USpatialPackageMapClient;
 
@@ -19,7 +20,7 @@ public:
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
 protected:
-	void SerializeObjectRef(struct UnrealObjectRef& ObjectRef);
+	void SerializeObjectRef(improbable::UnrealObjectRef& ObjectRef);
 
 	TSet<const UObject*>& UnresolvedObjects;
 };
