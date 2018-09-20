@@ -571,6 +571,12 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityIdResponseOp& Op)
 {
+	if(Actor == nullptr)
+	{
+		UE_LOG(LogSpatialGDKActorChannel, Warning, TEXT("Actor is null after trying to reserve entity id"));
+		return;
+	}
+
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.message));
@@ -579,12 +585,19 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 	}
 	UE_LOG(LogSpatialGDKActorChannel, Verbose, TEXT("Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 	EntityId = Op.entity_id;
+
 	RegisterEntityId(EntityId);
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
 {
 	check(NetDriver->GetNetMode() < NM_Client);
+
+	if(Actor == nullptr)
+	{
+		UE_LOG(LogSpatialGDKActorChannel, Warning, TEXT("Actor is null after trying to create entity"));
+		return;
+	}
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
