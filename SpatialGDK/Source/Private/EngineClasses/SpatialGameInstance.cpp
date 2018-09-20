@@ -51,9 +51,34 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	return bHasSpatialNetDriver;
 }
 
+void MySpatialBrowse(FWorldContext& WorldContext, FURL URL)
+{
+	bool bIsSpatial = false;
+	UNetDriver* TempNetDriver = nullptr;
+	if (GEngine->CreateNamedNetDriver(WorldContext.PendingNetGame, NAME_PendingNetDriver, NAME_GameNetDriver))
+	{
+		TempNetDriver = GEngine->FindNamedNetDriver(WorldContext.PendingNetGame, NAME_PendingNetDriver);
+		// Setting the PendingNetGame's NetDriver is necessary here because the call to CreateNamedNetDriver above will interfere
+		// with the internals of InitNetDriver and cause the NetDriver not to be initialized, and fail a check().
+		WorldContext.PendingNetGame->NetDriver = TempNetDriver;
+		bIsSpatial = TempNetDriver->IsA(USpatialNetDriver::StaticClass());
+	}
+
+	// Create the proper PendingNetGame depending on what NetDriver we have loaded.
+	// This is required so that we don't break vanilla Unreal networking with SpatialOS switched off.
+	if (bIsSpatial)
+	{
+		WorldContext.PendingNetGame = NewObject<USpatialPendingNetGame>();
+		WorldContext.PendingNetGame->Initialize(URL);
+		// See above comment about setting NetDriver manually here.
+		WorldContext.PendingNetGame->NetDriver = TempNetDriver;
+	}
+}
 
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 {
+	GetEngine()->SpatialBrowseDelegate = &MySpatialBrowse;
+
 	if (WorldContext->PendingNetGame)
 	{
 		if (WorldContext->PendingNetGame->NetDriver && WorldContext->PendingNetGame->NetDriver->ServerConnection)
@@ -72,8 +97,6 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 		GetEngine()->ShutdownWorldNetDriver(GetWorldContext()->World());
 	}
 
-	// This will use the URL / Map that was setup by the server worker (which is loaded first).
-	// By not specifying a hostname the connection defaults to local.
 	FURL URL = WorldContext->LastURL;
 	URL.Host = "127.0.0.1";
 
@@ -118,14 +141,6 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 
 	if (PlayNetMode != PIE_Client)
 	{
-		UEditorEngine* ThisEngine = Cast<UEditorEngine>(GetEngine());
-		FURL MyURL = WorldContext->LastURL;
-		FString ServerMap;
-		GConfig->GetString(TEXT("/Script/EngineSettings.GameMapsSettings"), TEXT("ServerDefaultMap"), ServerMap, GEngineIni);
-		//ThisEngine->UserEditedPlayWorldURL = ServerMap;
-		//MyURL.Host = "127.0.0.1"; Probs not needed for server travel.
-		//GetWorld()->ServerTravel(ServerMap, true, false);
-
 		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 	}
 
