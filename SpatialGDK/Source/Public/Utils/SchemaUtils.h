@@ -8,6 +8,14 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
+using WorkerAttributeSet = TArray<FString>;
+using WorkerRequirementSet = TArray<WorkerAttributeSet>;
+
+using StringToEntityMap = TMap<FString, Worker_EntityId>;
+
+namespace improbable
+{
+
 inline void AddStringToSchema(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
 {
 	FTCHARToUTF8 CStrConvertion(*Value);
@@ -46,9 +54,6 @@ inline TArray<uint8> GetPayloadFromSchema(const Schema_Object* Object, Schema_Fi
 {
 	return IndexPayloadFromSchema(Object, Id, 0);
 }
-
-using WorkerAttributeSet = TArray<FString>;
-using WorkerRequirementSet = TArray<WorkerAttributeSet>;
 
 inline void AddWorkerRequirementSetToSchema(Schema_Object* Object, Schema_FieldId Id, const WorkerRequirementSet& Value)
 {
@@ -134,8 +139,6 @@ inline improbable::UnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object,
 	return IndexObjectRefFromSchema(Object, Id, 0);
 }
 
-using StringToEntityMap = TMap<FString, Worker_EntityId>;
-
 inline void AddStringToEntityMapToSchema(Schema_Object* Object, Schema_FieldId Id, StringToEntityMap& Map)
 {
 	for (auto& Pair : Map)
@@ -162,4 +165,6 @@ inline StringToEntityMap GetStringToEntityMapFromSchema(Schema_Object* Object, S
 	}
 
 	return Map;
+}
+
 }

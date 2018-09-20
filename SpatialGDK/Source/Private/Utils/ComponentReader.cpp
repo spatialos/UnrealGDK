@@ -11,6 +11,9 @@
 #include "Utils/SchemaUtils.h"
 #include "Utils/RepLayoutUtils.h"
 
+namespace improbable
+{
+
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<improbable::UnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
@@ -436,4 +439,6 @@ uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_Fie
 		checkf(false, TEXT("Tried to get count of unknown property in field %d"), FieldId);
 		return 0;
 	}
+}
+
 }

@@ -14,6 +14,8 @@
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
+using namespace improbable;
+
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;

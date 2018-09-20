@@ -21,6 +21,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
+using namespace improbable;
+
 template <typename T>
 T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
 {
@@ -442,7 +444,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Skipping because RPC components don't have actual data."));
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because RPC components don't have actual data."), EntityId, Data.component_id);
 	}
 }
 

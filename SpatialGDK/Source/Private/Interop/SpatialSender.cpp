@@ -17,6 +17,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
 
+using namespace improbable;
+
 void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;

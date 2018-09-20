@@ -23,6 +23,8 @@
 #include <improbable/c_worker.h>
 #include <improbable/c_schema.h>
 
+using namespace improbable;
+
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
 const WorkerAttributeSet UnrealWorkerAttributeSet{ TArray<FString>{TEXT("UnrealWorker")} };

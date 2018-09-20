@@ -10,12 +10,12 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
-
 const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
 const Worker_ComponentId METADATA_COMPONENT_ID = 53;
 const Worker_ComponentId POSITION_COMPONENT_ID = 54;
 const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
+
+using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 
 namespace improbable
 {

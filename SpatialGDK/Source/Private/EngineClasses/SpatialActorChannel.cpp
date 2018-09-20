@@ -573,11 +573,11 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 {
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.message));
 		Sender->SendReserveEntityIdRequest(this);
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Verbose, TEXT("Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
+	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 	EntityId = Op.entity_id;
 	RegisterEntityId(EntityId);
 }
@@ -588,11 +588,11 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
 		Sender->SendCreateEntityRequest(this, GetPlayerWorkerId());
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), EntityId, *Actor->GetName());
+	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), EntityId, *Actor->GetName());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()

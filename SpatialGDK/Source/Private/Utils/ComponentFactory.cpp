@@ -9,6 +9,9 @@
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"
 
+namespace improbable
+{
+
 ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
@@ -375,4 +378,6 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	}
 
 	return ComponentUpdate;
+}
+
 }

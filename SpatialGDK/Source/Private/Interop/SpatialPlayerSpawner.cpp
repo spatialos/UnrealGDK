@@ -16,6 +16,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialPlayerSpawner);
 
+using namespace improbable;
+
 void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
