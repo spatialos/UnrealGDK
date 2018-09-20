@@ -33,7 +33,6 @@ public class SpatialGDK : ModuleRules
                 "Engine",
                 "EngineSettings",
                 "Projects",
-                "EngineSettings",
                 "OnlineSubsystemUtils",
                 "InputCore",
                 "Sockets",
@@ -44,10 +43,6 @@ public class SpatialGDK : ModuleRules
         {
             // Required by USpatialGameInstance::StartPlayInEditorGameInstance.
             PublicDependencyModuleNames.Add("UnrealEd");
-
-            // Add editor-specific code.
-            PublicIncludePaths.Add("Public/Editor");
-            PrivateIncludePaths.Add("Private/Editor");
         }
 
    		var CoreSdkLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
