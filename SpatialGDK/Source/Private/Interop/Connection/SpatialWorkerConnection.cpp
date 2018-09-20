@@ -4,6 +4,8 @@
 
 #include "Async/Async.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
+
 void USpatialWorkerConnection::FinishDestroy()
 {
 	if (WorkerConnection)
@@ -15,6 +17,7 @@ void USpatialWorkerConnection::FinishDestroy()
 	if (WorkerLocator)
 	{
 		Worker_Locator_Destroy(WorkerLocator);
+		WorkerLocator = nullptr;
 	}
 
 	Super::FinishDestroy();
@@ -83,7 +86,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 			{
 				if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
 				{
-					UE_LOG(LogTemp, Error, TEXT("Couldn't connect to SpatialOS: %s"), UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
+					UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Couldn't connect to SpatialOS: %s"), UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
 				}
 			}
 
@@ -123,12 +126,12 @@ void USpatialWorkerConnection::ConnectToLocator()
 	{
 		if (DeploymentList->error != nullptr)
 		{
-			UE_LOG(LogTemp, Error, TEXT("%s"), DeploymentList->error);
+			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Error fetching deployment list: %s"), DeploymentList->error);
 		}
 
 		if (DeploymentList->deployment_count == 0)
 		{
-			UE_LOG(LogTemp, Error, TEXT("Received empty list of deployments. Failed to connect."));
+			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Received empty list of deployments. Failed to connect."));
 		}
 
 		USpatialWorkerConnection* SpatialConnection = static_cast<USpatialWorkerConnection*>(UserData);

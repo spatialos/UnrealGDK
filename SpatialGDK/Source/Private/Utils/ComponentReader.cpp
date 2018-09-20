@@ -65,6 +65,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		return;
 	}
 
+	if(Object->IsPendingKill())
+	{
+		return;
+	}
+
 	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
 
 	FRepState* RepState = Replicator.RepState;
@@ -172,7 +177,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
-		TArray<uint8> ValueData = Schema_IndexPayload(Object, FieldId, Index);
+		TArray<uint8> ValueData = IndexPayloadFromSchema(Object, FieldId, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
 		int64 CountBits = ValueData.Num() * 8;
 		TSet<improbable::UnrealObjectRef> NewUnresolvedRefs;
@@ -237,7 +242,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		improbable::UnrealObjectRef ObjectRef = Schema_IndexObjectRef(Object, FieldId, Index);
+		improbable::UnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
@@ -270,15 +275,15 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
 	{
-		NameProperty->SetPropertyValue(Data, FName(*Schema_IndexString(Object, FieldId, Index)));
+		NameProperty->SetPropertyValue(Data, FName(*IndexStringFromSchema(Object, FieldId, Index)));
 	}
 	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
 	{
-		StrProperty->SetPropertyValue(Data, Schema_IndexString(Object, FieldId, Index));
+		StrProperty->SetPropertyValue(Data, IndexStringFromSchema(Object, FieldId, Index));
 	}
 	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
 	{
-		TextProperty->SetPropertyValue(Data, FText::FromString(Schema_IndexString(Object, FieldId, Index)));
+		TextProperty->SetPropertyValue(Data, FText::FromString(IndexStringFromSchema(Object, FieldId, Index)));
 	}
 	else if (UEnumProperty* EnumProperty = Cast<UEnumProperty>(Property))
 	{

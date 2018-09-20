@@ -259,11 +259,11 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* 
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
 	if (Object != nullptr)
 	{
-		//UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: GetOrAssignNetGUID for object %s returned %s. IsDynamicObject: %d"),
-		//	*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
-		//	*Object->GetName(),
-		//	*NetGUID.ToString(),
-		//	(int)IsDynamicObject(Object));
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: GetOrAssignNetGUID for object %s returned %s. IsDynamicObject: %d"),
+			*Cast<USpatialNetDriver>(Driver)->Connection->GetWorkerId(),
+			*Object->GetName(),
+			*NetGUID.ToString(),
+			(int)IsDynamicObject(Object));
 	}
 
 	// One major difference between how Unreal does NetGUIDs vs us is, we don't attempt to make them consistent across workers and client.
@@ -279,10 +279,10 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* 
 		CacheObject.OuterGUID = GetOrAssignNetGUID_SpatialGDK(Object->GetOuter());
 		RegisterNetGUID_Internal(NetGUID, CacheObject);
 
-		//UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: NetGUID for object %s was not found in the cache. Generated new NetGUID %s."),
-		//	*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId(),
-		//	*Object->GetName(),
-		//	*NetGUID.ToString());
+		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: NetGUID for object %s was not found in the cache. Generated new NetGUID %s."),
+			*Cast<USpatialNetDriver>(Driver)->Connection->GetWorkerId(),
+			*Object->GetName(),
+			*NetGUID.ToString());
 	}
 
 	check((NetGUID.IsValid() && !NetGUID.IsDefault()) || Object == nullptr);

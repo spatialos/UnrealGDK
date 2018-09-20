@@ -19,6 +19,8 @@
 #include "Utils/EntityRegistry.h"
 #include "Utils/RepLayoutUtils.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialReceiver);
+
 template <typename T>
 T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
 {
@@ -58,14 +60,14 @@ void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
 
 void USpatialReceiver::EnterCriticalSection()
 {
-	UE_LOG(LogTemp, Log, TEXT("SpatialReceiver: Entering critical section."));
+	UE_LOG(LogSpatialReceiver, Log, TEXT("SpatialReceiver: Entering critical section."));
 	check(!bInCriticalSection);
 	bInCriticalSection = true;
 }
 
 void USpatialReceiver::LeaveCriticalSection()
 {
-	UE_LOG(LogTemp, Log, TEXT("SpatialReceiver: Leaving critical section."));
+	UE_LOG(LogSpatialReceiver, Log, TEXT("SpatialReceiver: Leaving critical section."));
 	check(bInCriticalSection);
 
 	// Add entities.
@@ -89,7 +91,7 @@ void USpatialReceiver::LeaveCriticalSection()
 
 void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
 {
-	UE_LOG(LogTemp, Log, TEXT("PipelineBlock: AddEntity: %lld"), Op.entity_id);
+	UE_LOG(LogSpatialReceiver, Log, TEXT("PipelineBlock: AddEntity: %lld"), Op.entity_id);
 	check(bInCriticalSection);
 
 	PendingAddEntities.Emplace(Op.entity_id);
@@ -97,12 +99,12 @@ void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
 
 void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 {
-	UE_LOG(LogTemp, Log, TEXT("SpatialReceiver: AddComponent component ID: %u entity ID: %lld"),
+	UE_LOG(LogSpatialReceiver, Log, TEXT("SpatialReceiver: AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
 
 	if (!bInCriticalSection)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Unsupported dynamic add component op received - component ID: %u entity ID: %lld"),
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Unsupported dynamic add component op received - component ID: %u entity ID: %lld"),
 			Op.data.component_id, Op.entity_id);
 		return;
 	}
@@ -143,7 +145,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 {
-	UE_LOG(LogTemp, Log, TEXT("RemoveEntity: %lld"), Op.entity_id);
+	UE_LOG(LogSpatialReceiver, Log, TEXT("RemoveEntity: %lld"), Op.entity_id);
 
 	PackageMap->RemoveEntitySubobjects(Op.entity_id);
 	RemoveActor(Op.entity_id);
@@ -173,14 +175,12 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 	check(Position && Metadata);
 
 	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
-	UE_LOG(LogTemp, Log, TEXT("!!! Checked out entity with entity ID %lld"), EntityId);
 
 	if (EntityActor)
 	{
 		UClass* ActorClass = GetNativeEntityClass(Metadata);
 
-		// Option 1
-		UE_LOG(LogTemp, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for core actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 
 		improbable::UnrealMetadata* UnrealMetadata = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
 		check(UnrealMetadata);
@@ -195,7 +195,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		}
 
 		FNetworkGUID NetGUID = SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
-		UE_LOG(LogTemp, Log, TEXT("Received create entity response op for %lld"), EntityId);
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Received create entity response op for %lld"), EntityId);
 	}
 	else
 	{
@@ -206,11 +206,11 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 			return;
 		}
 
-		// Initial Singleton Actor replication is handled with USpatialInterop::LinkExistingSingletonActors
-		//if (NetDriver->IsServer() && Interop->IsSingletonClass(ActorClass))
-		//{
-		//	return;
-		//}
+		// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
+		if (NetDriver->IsServer() && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+		{
+			return;
+		}
 
 		UNetConnection* Connection = nullptr;
 		improbable::UnrealMetadata* UnrealMetadataComponent = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
@@ -230,7 +230,7 @@ void USpatialReceiver::CreateActor(Worker_EntityId EntityId)
 		}
 		else
 		{
-			UE_LOG(LogTemp, Log, TEXT("!!! Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
+			UE_LOG(LogSpatialReceiver, Log, TEXT("!!! Spawning a native dynamic %s whilst checking out an entity."), *ActorClass->GetFullName());
 			EntityActor = SpawnNewEntity(Position, Rotation, ActorClass, true);
 			bDoingDeferredSpawn = true;
 
@@ -316,7 +316,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
 	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
 
-	UE_LOG(LogTemp, Log, TEXT("Remove Actor: %s %lld"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+	UE_LOG(LogSpatialReceiver, Log, TEXT("Remove Actor: %s %lld"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (!Actor || Actor->IsPendingKill())
@@ -358,7 +358,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	NetDriver->StartIgnoringAuthoritativeDestruction();
 	if (!World->DestroyActor(Actor, true))
 	{
-		UE_LOG(LogTemp, Error, TEXT("World->DestroyActor failed on RemoveActor %s %lld"), *Actor->GetName(), EntityId);
+		UE_LOG(LogSpatialReceiver, Error, TEXT("World->DestroyActor failed on RemoveActor %s %lld"), *Actor->GetName(), EntityId);
 	}
 	NetDriver->StopIgnoringAuthoritativeDestruction();
 
@@ -443,7 +443,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	}
 	else
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("Skipping because RPC components don't have actual data."));
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Skipping because RPC components don't have actual data."));
 	}
 }
 
@@ -451,7 +451,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 {
 	if (View->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("Skipping because we sent this update"));
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Skipping because we sent this update"));
 		return;
 	}
 
@@ -463,7 +463,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case PERSISTENCE_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case UNREAL_METADATA_COMPONENT_ID:
-		UE_LOG(LogTemp, Verbose, TEXT("Skipping because this is hand-written Spatial component"));
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Skipping because this is hand-written Spatial component"));
 		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyUpdate(Op.update);
@@ -483,7 +483,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 	if (ActorChannel == nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No actor channel for Entity %d"), Op.entity_id);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("No actor channel for Entity %d"), Op.entity_id);
 		return;
 	}
 
@@ -498,7 +498,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	{
 		if (!NetDriver->IsServer())
 		{
-			UE_LOG(LogTemp, Verbose, TEXT("Skipping Handover component because we're a client."));
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Skipping Handover component because we're a client."));
 			return;
 		}
 		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
@@ -518,19 +518,19 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("Skipping because it's an empty component update from an RPC component. (most likely as a result of gaining authority)"));
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Skipping because it's an empty component update from an RPC component. (most likely as a result of gaining authority)"));
 	}
 }
 
 void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 {
 	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
-	UE_LOG(LogTemp, Verbose, TEXT("Received command request (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.request.component_id, CommandIndex);
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.request.component_id, CommandIndex);
 
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
 	{
 		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Schema_GetString(Payload, 1), Op.caller_worker_id, Op.request_id);
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(GetStringFromSchema(Payload, 1), Op.caller_worker_id, Op.request_id);
 		return;
 	}
 
@@ -541,7 +541,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 	if (ActorChannel == nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No actor channel for Entity %d"), Op.entity_id);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("No actor channel for Entity %d"), Op.entity_id);
 		Sender->SendCommandResponse(Op.request_id, Response);
 		return;
 	}
@@ -610,7 +610,7 @@ void USpatialReceiver::ReceiveMulticastUpdate(const Worker_ComponentUpdate& Comp
 		{
 			Schema_Object* EventData = Schema_IndexObject(EventsObject, EventIndex, i);
 
-			TArray<uint8> PayloadData = Schema_GetPayload(EventData, 1);
+			TArray<uint8> PayloadData = GetPayloadFromSchema(EventData, 1);
 			// A bit hacky, we should probably include the number of bits with the data instead.
 			int64 CountBits = PayloadData.Num() * 8;
 
@@ -663,7 +663,7 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 		check(ActorInfo);
 		if (!ActorInfo->SubobjectClasses.Contains(Class))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("No target object for Class %s on Actor %s probably caused by dynamic component"),
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object for Class %s on Actor %s probably caused by dynamic component"),
 				*Class->GetName(), *Channel->Actor->GetName());
 			return nullptr;
 		}
@@ -683,7 +683,7 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 
 void USpatialReceiver::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op)
 {
-	UE_LOG(LogTemp, Log, TEXT("Received reserve entity Id: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
+	UE_LOG(LogSpatialReceiver, Log, TEXT("Received reserve entity Id: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
 	{
 		Channel->OnReserveEntityIdResponse(Op);
@@ -740,7 +740,7 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 {
 	for (const improbable::UnrealObjectRef& UnresolvedRef : UnresolvedRefs)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Added pending incoming property for object ref: %s, target object: %s"), *UnresolvedRef.ToString(), *ChannelObjectPair.Value->GetName());
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Added pending incoming property for object ref: %s, target object: %s"), *UnresolvedRef.ToString(), *ChannelObjectPair.Value->GetName());
 		IncomingRefsMap.FindOrAdd(UnresolvedRef).Add(ChannelObjectPair);
 	}
 
@@ -763,7 +763,7 @@ void USpatialReceiver::QueueIncomingRPC(const TSet<improbable::UnrealObjectRef>&
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const improbable::UnrealObjectRef& ObjectRef)
 {
-	UE_LOG(LogTemp, Log, TEXT("!!! Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
+	UE_LOG(LogSpatialReceiver, Log, TEXT("!!! Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
@@ -781,7 +781,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const improbab
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+	UE_LOG(LogSpatialReceiver, Log, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
 
 	for (FChannelObjectPair& ChannelObjectPair : *TargetObjectSet)
 	{
@@ -811,7 +811,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const improbab
 
 		if (bSomeObjectsWereMapped)
 		{
-			UE_LOG(LogTemp, Log, TEXT("!!! Resolved for target object %s"), *ReplicatingObject->GetName());
+			UE_LOG(LogSpatialReceiver, Log, TEXT("!!! Resolved for target object %s"), *ReplicatingObject->GetName());
 			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies);
 		}
 
@@ -832,7 +832,7 @@ void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const improbable::Un
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Resolving incoming RPCs depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+	UE_LOG(LogSpatialReceiver, Log, TEXT("Resolving incoming RPCs depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
 
 	for (const TSharedPtr<FPendingIncomingRPC>& IncomingRPC : *IncomingRPCArray)
 	{
@@ -860,7 +860,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		if (AbsOffset >= MaxAbsOffset)
 		{
-			UE_LOG(LogTemp, Log, TEXT("!!! ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"), AbsOffset);
+			UE_LOG(LogSpatialReceiver, Log, TEXT("!!! ResolveObjectReferences: Removed unresolved reference: AbsOffset >= MaxAbsOffset: %d"), AbsOffset);
 			It.RemoveCurrent();
 			continue;
 		}
@@ -907,7 +907,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
 				check(Object);
 
-				UE_LOG(LogTemp, Log, TEXT("!!! ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
+				UE_LOG(LogSpatialReceiver, Log, TEXT("!!! ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
 
 				UnresolvedIt.RemoveCurrent();
 				bResolvedSomeRefs = true;
@@ -971,7 +971,7 @@ void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& Com
 {
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
-	TArray<uint8> PayloadData = Schema_GetPayload(RequestObject, 1);
+	TArray<uint8> PayloadData = GetPayloadFromSchema(RequestObject, 1);
 	// A bit hacky, we should probably include the number of bits with the data instead.
 	int64 CountBits = PayloadData.Num() * 8;
 

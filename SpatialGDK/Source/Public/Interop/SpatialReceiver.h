@@ -17,6 +17,8 @@
 
 #include "SpatialReceiver.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
+
 class USpatialSender;
 class UGlobalStateManager;
 

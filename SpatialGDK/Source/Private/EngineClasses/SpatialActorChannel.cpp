@@ -17,7 +17,7 @@
 #include "Utils/EntityRegistry.h"
 #include "RepLayoutUtils.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialGDKActorChannel);
+DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
 namespace
 {
@@ -82,7 +82,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 
 	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->View->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 
-	UE_LOG(LogTemp, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
+	UE_LOG(LogSpatialActorChannel, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
 	// If we have authority and aren't trying to delete a critical entity, delete it
 	if (bHasAuthority && !IsSingletonEntity())
@@ -320,7 +320,7 @@ bool USpatialActorChannel::ReplicateActor()
 			}
 			else
 			{
-				UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
+				UE_LOG(LogSpatialActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
 			}
 
 			Sender->SendCreateEntityRequest(this, PlayerWorkerId);
@@ -535,7 +535,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), EntityId);
+		UE_LOG(LogSpatialActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), EntityId);
 
 		// Inform USpatialNetDriver of this new actor channel/entity pairing
 		NetDriver->AddActorChannel(EntityId, this);
@@ -547,8 +547,8 @@ FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	FNetworkGUID ObjectNetGUID = Connection->Driver->GuidCache->GetOrAssignNetGUID(TargetObject);
 	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid());
 
-	TargetObject->PreNetReceive();
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
+	TargetObject->PreNetReceive();
 	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 
 	return Replicator;
@@ -602,11 +602,11 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 {
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.message));
 		// TODO: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
+	UE_LOG(LogSpatialActorChannel, Log, TEXT("Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 	EntityId = Op.entity_id;
 	RegisterEntityId(EntityId);
 }
@@ -617,11 +617,11 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("!!! Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("!!! Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
 		// TODO: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("!!! Created entity (%lld) for: %s."), EntityId, *Actor->GetName());
+	UE_LOG(LogSpatialActorChannel, Log, TEXT("!!! Created entity (%lld) for: %s."), EntityId, *Actor->GetName());
 
 	// If a replicated stably named actor was created, update the GSM with the proper path and entity id
 	// This ensures each stably named actor is only created once

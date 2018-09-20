@@ -60,14 +60,14 @@ struct EntityAcl : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		ReadAcl = Schema_GetWorkerRequirementSet(ComponentObject, 1);
+		ReadAcl = GetWorkerRequirementSetFromSchema(ComponentObject, 1);
 
 		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 2);
 		for (uint32 i = 0; i < KVPairCount; i++)
 		{
 			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 2, i);
 			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			WorkerRequirementSet Value = Schema_GetWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+			WorkerRequirementSet Value = GetWorkerRequirementSetFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 			ComponentWriteAcl.Add(Key, Value);
 		}
@@ -80,13 +80,13 @@ struct EntityAcl : Component
 		Data.schema_type = Schema_CreateComponentData(ENTITY_ACL_COMPONENT_ID);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		Schema_AddWorkerRequirementSet(ComponentObject, 1, ReadAcl);
+		AddWorkerRequirementSetToSchema(ComponentObject, 1, ReadAcl);
 
 		for (const auto& KVPair : ComponentWriteAcl)
 		{
 			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 2);
 			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
-			Schema_AddWorkerRequirementSet(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
+			AddWorkerRequirementSetToSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
 		}
 
 		return Data;
@@ -109,7 +109,7 @@ struct Metadata : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		EntityType = Schema_GetString(ComponentObject, 1);
+		EntityType = GetStringFromSchema(ComponentObject, 1);
 	}
 
 	Worker_ComponentData CreateMetadataData()
@@ -119,7 +119,7 @@ struct Metadata : Component
 		Data.schema_type = Schema_CreateComponentData(METADATA_COMPONENT_ID);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		Schema_AddString(ComponentObject, 1, EntityType);
+		AddStringToSchema(ComponentObject, 1, EntityType);
 
 		return Data;
 	}

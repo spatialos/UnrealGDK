@@ -9,7 +9,7 @@
 
 #include "SpatialPlayerSpawner.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKPlayerSpawner, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPlayerSpawner, Log, All);
 
 class USpatialNetDriver;
 

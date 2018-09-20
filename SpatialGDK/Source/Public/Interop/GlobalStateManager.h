@@ -17,6 +17,8 @@ class USpatialActorChannel;
 class USpatialView;
 class USpatialSender;
 
+DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
+
 UCLASS()
 class SPATIALGDK_API UGlobalStateManager : public UObject
 {
@@ -44,6 +46,4 @@ private:
 	USpatialSender* Sender;
 
 	StringToEntityMap SingletonNameToEntityId;
-	StringToEntityMap StablyNamedPathToEntityId;
-
 };

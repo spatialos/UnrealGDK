@@ -12,6 +12,8 @@
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
 
+DEFINE_LOG_CATEGORY(LogGlobalStateManager);
+
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
@@ -22,8 +24,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-	SingletonNameToEntityId = Schema_GetStringToEntityMap(ComponentObject, 1);
-	StablyNamedPathToEntityId = Schema_GetStringToEntityMap(ComponentObject, 2);
+	SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, 1);
 }
 
 void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
@@ -32,12 +33,7 @@ void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
 
 	if (Schema_GetObjectCount(ComponentObject, 1) == 1)
 	{
-		SingletonNameToEntityId = Schema_GetStringToEntityMap(ComponentObject, 1);
-	}
-
-	if (Schema_GetObjectCount(ComponentObject, 2) == 1)
-	{
-		StablyNamedPathToEntityId = Schema_GetStringToEntityMap(ComponentObject, 2);
+		SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, 1);
 	}
 }
 
@@ -84,7 +80,7 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 
 		// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
 		NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, UnrealMetadata->SubobjectNameToOffset);
-		UE_LOG(LogTemp, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
+		UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
 	}
 }
 
@@ -115,7 +111,7 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 		// If the id is not 0, it will start replicating to that entity.
 		Channel->SetChannelActor(SingletonActor);
 
-		UE_LOG(LogTemp, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActor->GetClass()->GetName());
+		UE_LOG(LogGlobalStateManager, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActor->GetClass()->GetName());
 	}
 }
 
@@ -128,7 +124,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID);
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	Schema_AddStringToEntityMap(UpdateObject, 1, SingletonNameToEntityId);
+	AddStringToEntityMapToSchema(UpdateObject, 1, SingletonNameToEntityId);
 
 	NetDriver->Connection->SendComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER, &Update);
 }
@@ -142,7 +138,7 @@ void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*
 
 	if (SingletonActorClass == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to find Singleton Actor Class."));
+		UE_LOG(LogGlobalStateManager, Error, TEXT("Failed to find Singleton Actor Class."));
 		return;
 	}
 
@@ -158,9 +154,15 @@ void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*
 	TArray<AActor*> SingletonActorList;
 	UGameplayStatics::GetAllActorsOfClass(NetDriver->GetWorld(), SingletonActorClass, SingletonActorList);
 
+	if (SingletonActorList.Num() == 0)
+	{
+		UE_LOG(LogGlobalStateManager, Error, TEXT("No Singletons of type %s exist!"), *ClassName);
+		return;
+	}
+
 	if (SingletonActorList.Num() > 1)
 	{
-		UE_LOG(LogTemp, Error, TEXT("More than one Singleton Actor exists of type %s"), *ClassName);
+		UE_LOG(LogGlobalStateManager, Error, TEXT("More than one Singleton Actor exists of type %s"), *ClassName);
 		return;
 	}
 

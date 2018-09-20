@@ -95,8 +95,8 @@ Worker_ComponentData CreateGlobalStateManagerData()
 	Data.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-	Schema_AddStringToEntityMap(ComponentObject, 1, SingletonNameToEntityId);
-	Schema_AddStringToEntityMap(ComponentObject, 2, StablyNamedPathToEntityId);
+	AddStringToEntityMapToSchema(ComponentObject, 1, SingletonNameToEntityId);
+	AddStringToEntityMapToSchema(ComponentObject, 2, StablyNamedPathToEntityId);
 
 	return Data;
 }

@@ -14,7 +14,7 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-DEFINE_LOG_CATEGORY(LogSpatialGDKPlayerSpawner);
+DEFINE_LOG_CATEGORY(LogSpatialPlayerSpawner);
 
 void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
@@ -47,7 +47,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-	Schema_AddString(RequestObject, 1, DummyURL.ToString(true));
+	AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
 
 	NetDriver->Connection->SendCommandRequest(SpatialConstants::SPAWNER_ENTITY_ID, &CommandRequest, 1);
 
@@ -56,15 +56,15 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Got a response"));
+	UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Got a response"));
 
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialGDKPlayerSpawner, Display, TEXT("Player spawned sucessfully"));
+		UE_LOG(LogSpatialPlayerSpawner, Display, TEXT("Player spawned sucessfully"));
 	}
 	else if (NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	{
-		UE_LOG(LogSpatialGDKPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
+		UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
 			UTF8_TO_TCHAR(Op.message));
 
 		FTimerHandle RetryTimer;
@@ -75,7 +75,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp&
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKPlayerSpawner, Fatal, TEXT("Player spawn request failed too many times. (%u attempts)"),
+		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Player spawn request failed too many times. (%u attempts)"),
 			SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	}
 }
