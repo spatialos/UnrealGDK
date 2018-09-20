@@ -77,7 +77,7 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 		case WORKER_OP_TYPE_FLAG_UPDATE:
 			break;
 		case WORKER_OP_TYPE_LOG_MESSAGE:
-			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
+			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
 			break;
 		case WORKER_OP_TYPE_METRICS:
 			break;

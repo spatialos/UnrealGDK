@@ -409,7 +409,7 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 		AnotherHandleToUnresolved.Add(Handle, Unresolved);
 
 		// Following up on the previous log: listing the unresolved objects
-		UE_LOG(LogSpatialSender, Log, TEXT("%s"), *UnresolvedObject->GetName());
+		UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
 	}
 }
 
@@ -579,7 +579,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 		{
 			// We can guarantee that SendRPC won't populate OutgoingRPCs[Object] whilst we're iterating through it,
 			// because Object has been resolved when we call ResolveOutgoingRPCs.
-			UE_LOG(LogSpatialSender, Log, TEXT("!!! Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams.TargetObject->GetName(), *RPCParams.Function->GetName());
+			UE_LOG(LogSpatialSender, Log, TEXT("Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams.TargetObject->GetName(), *RPCParams.Function->GetName());
 			SendRPC(RPCParams.TargetObject, RPCParams.Function, RPCParams.Parameters, true);
 		}
 		OutgoingRPCs.Remove(Object);

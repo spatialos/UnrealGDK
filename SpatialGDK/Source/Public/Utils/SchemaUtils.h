@@ -138,11 +138,6 @@ using StringToEntityMap = TMap<FString, Worker_EntityId>;
 
 inline void AddStringToEntityMapToSchema(Schema_Object* Object, Schema_FieldId Id, StringToEntityMap& Map)
 {
-	if (Map.Num() == 0)
-	{
-		return;
-	}
-
 	for (auto& Pair : Map)
 	{
 		Schema_Object* PairObject = Schema_AddObject(Object, 1);

@@ -56,8 +56,6 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op)
 {
-	UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Got a response"));
-
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Display, TEXT("Player spawned sucessfully"));
