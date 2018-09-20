@@ -1,0 +1,11 @@
+{
+    "configurationVersion": "0.1",
+    "projectName": "UnrealGDK",
+    "schemaDescriptor": "./schema/bin/schema.descriptor",
+    "clientWorkers": [
+        "./workers/UnrealClient.json"
+    ],
+    "serverWorkers": [
+        "./workers/UnrealServer.json"
+    ]
+  }

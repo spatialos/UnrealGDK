@@ -1,0 +1,12 @@
+{
+    "dimensionsInWorldUnits": {
+      "x": 5000,
+      "z": 5000
+    },
+    "loadBalancing": {
+        
+    },
+    "snapshot": {
+      "startDeploymentFromSnapshotFile": "./snapshot/default.snapshot"
+    }
+  }
