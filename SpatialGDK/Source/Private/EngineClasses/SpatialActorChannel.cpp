@@ -59,7 +59,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, EntityId(0)
 	, NetDriver(nullptr)
 {
-	bCoreActor = true;
 	bCreatingNewEntity = false;
 }
 
@@ -292,38 +291,10 @@ bool USpatialActorChannel::ReplicateActor()
 	{		
 		if (bCreatingNewEntity)
 		{
-			// SAHIL: CHECK IF YOU PROPERLY FIX THIS
-			//check(!Actor->IsFullNameStableForNetworking() || Interop->CanSpawnReplicatedStablyNamedActors());
+			// TODO: This check potentially isn't needed any more due to deleting startup actors but need to check
+			//check(!Actor->IsFullNameStableForNetworking());
 
-			// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
-			// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
-			// player controller, get the player state.
-			FString PlayerWorkerId;
-			APlayerState* PlayerState = Cast<APlayerState>(Actor);
-			if (!PlayerState)
-			{
-				if (APawn* Pawn = Cast<APawn>(Actor))
-				{
-					PlayerState = Pawn->PlayerState;
-				}
-			}
-			if (!PlayerState)
-			{
-				if (PlayerController)
-				{
-					PlayerState = PlayerController->PlayerState;
-				}
-			}
-			if (PlayerState)
-			{
-				PlayerWorkerId = PlayerState->UniqueId.ToString();
-			}
-			else
-			{
-				UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
-			}
-
-			Sender->SendCreateEntityRequest(this, PlayerWorkerId);
+			Sender->SendCreateEntityRequest(this, GetPlayerWorkerId());
 		}
 		else
 		{
@@ -504,7 +475,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
 	Super::SetChannelActor(InActor);
 
-	if (!bCoreActor)
+	if (NetDriver->TypebindingManager->FindClassInfoByClass(InActor->GetClass()) == nullptr)
 	{
 		return;
 	}
@@ -569,7 +540,7 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 {
 	NetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
 
-	// Inform USpatialInterop of this new actor channel/entity pairing
+	// Inform USpatialNetDriver of this new actor channel/entity pairing
 	NetDriver->AddActorChannel(ActorEntityId, this);
 
 	// If a Singleton was created, update the GSM with the proper Id.
@@ -603,10 +574,10 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.message));
-		// TODO: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
+		Sender->SendReserveEntityIdRequest(this);
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
+	UE_LOG(LogSpatialGDKActorChannel, Verbose, TEXT("Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 	EntityId = Op.entity_id;
 	RegisterEntityId(EntityId);
 }
@@ -617,18 +588,12 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("!!! Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
-		// TODO: From now on, this actor channel will be useless. We need better error handling, or a retry mechanism here.
+		UE_LOG(LogSpatialGDKActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+		Sender->SendCreateEntityRequest(this, GetPlayerWorkerId());
 		return;
 	}
-	UE_LOG(LogSpatialGDKActorChannel, Log, TEXT("!!! Created entity (%lld) for: %s."), EntityId, *Actor->GetName());
 
-	// If a replicated stably named actor was created, update the GSM with the proper path and entity id
-	// This ensures each stably named actor is only created once
-	if (Actor->IsFullNameStableForNetworking())
-	{
-		//SpatialNetDriver->GetSpatialInterop()->AddReplicatedStablyNamedActorToGSM(FEntityId(ActorEntityId), Actor);
-	}
+	UE_LOG(LogSpatialGDKActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), EntityId, *Actor->GetName());
 }
 
 void USpatialActorChannel::UpdateSpatialPosition()
@@ -692,4 +657,36 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
 	{
 		return FVector::ZeroVector;
 	}
+}
+
+FString USpatialActorChannel::GetPlayerWorkerId()
+{
+	// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
+	// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called. If this actor channel is managing a pawn or a 
+	// player controller, get the player state.
+	FString PlayerWorkerId;
+	APlayerState* PlayerState = Cast<APlayerState>(Actor);
+
+	if (PlayerState == nullptr)
+	{
+		if (APawn* Pawn = Cast<APawn>(Actor))
+		{
+			PlayerState = Pawn->PlayerState;
+		}
+	}
+
+	if (PlayerState == nullptr)
+	{
+		if(APlayerController* PlayerController = Cast<APlayerController>(Actor))
+		{
+			PlayerState = PlayerController->PlayerState;
+		}
+	}
+
+	if (PlayerState != nullptr)
+	{
+		PlayerWorkerId = PlayerState->UniqueId.ToString();
+	}
+	
+	return PlayerWorkerId;
 }
