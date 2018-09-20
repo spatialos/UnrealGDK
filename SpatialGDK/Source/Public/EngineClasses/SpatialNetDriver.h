@@ -114,9 +114,6 @@ public:
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
-	bool bIsFirstTimeConnecting = true;
-	bool bHasConnected = false; 
-
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -129,17 +126,9 @@ private:
 	FTimerManager* TimerManager;
 
 	bool bAuthoritativeDestruction;
-	
-	FString WorldURL;
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
-
-	UFUNCTION(BlueprintCallable)
-	void ConnectToSpatialOSInstance();
-
-	UFUNCTION(BlueprintCallable)
-	void PreLoadSpatialOSInstanceMap();
 
 	void Connect();
 

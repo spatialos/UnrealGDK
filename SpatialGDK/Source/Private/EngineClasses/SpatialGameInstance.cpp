@@ -160,8 +160,6 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 
 void USpatialGameInstance::StartGameInstance()
 {
-	UE_LOG(LogSpatialGDK, Error, TEXT("Spatial Game Instance starting"));
-
 	if (!GIsClient || !HasSpatialNetDriver())
 	{
 		Super::StartGameInstance();

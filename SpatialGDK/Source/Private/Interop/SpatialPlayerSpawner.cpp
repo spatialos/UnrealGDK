@@ -26,16 +26,9 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* 
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(FString URLString, const char* CallerWorkerId, Worker_RequestId RequestId )
 {
-	// URL string has Map appended to it.
-
-	//URL.Map = URLString;
 	URLString.Append(TEXT("?workerId=")).Append(UTF8_TO_TCHAR(CallerWorkerId));
 
-	FURL URL = FURL(nullptr, *URLString, TRAVEL_Absolute);
-
-	NetDriver->AcceptNewPlayer(URL, false);
-
-	UE_LOG(LogSpatialGDKPlayerSpawner, Warning, TEXT("Josh - Recieved player spawn request. %s"), *URLString);
+	NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
 
 	Worker_CommandResponse CommandResponse = {};
 	CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
@@ -46,12 +39,9 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(FString URLString, const c
 	NetDriver->Connection->SendCommandResponse(RequestId, &CommandResponse);
 }
 
-void USpatialPlayerSpawner::SendPlayerSpawnRequest(FString URLString)
+void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 {
 	FURL DummyURL;
-	DummyURL.Map = URLString;
-
-	UE_LOG(LogSpatialGDKPlayerSpawner, Warning, TEXT("Josh - Sending player spawn request. %s"), *URLString);
 
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
@@ -80,7 +70,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp&
 		FTimerHandle RetryTimer;
 		TimerManager->SetTimer(RetryTimer, [this]()
 		{
-			//SendPlayerSpawnRequest(); // TODO. Add the URL here.
+			SendPlayerSpawnRequest();
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
 	}
 	else
