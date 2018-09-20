@@ -89,8 +89,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
-
 	//checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
 
 	// Set the timer manager.
@@ -99,36 +97,41 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// Set up manager objects.
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 
-	// Rebase - Moved this earlier.
+	// Handle connection configurations.
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
+
+	if (Connection != nullptr)
+	{
+		return;
+	}
+
 	Connection = NewObject<USpatialWorkerConnection>();
 
-	// TODO: factor this into helper method
-	// Check for command-line overrides.
-	{
-		FString ReceptionistHostOverride;
-		if (FParse::Value(FCommandLine::Get(), TEXT("receptionistIp"), ReceptionistHostOverride))
-		{
-			Connection->ReceptionistConfig.ReceptionistHost = ReceptionistHostOverride;
+	bool bUseLocator = LoadedWorld->URL.HasOption(TEXT("spatialLocator"));
 
-		}
-	}
-
-	// Check for overrides in the travel URL.
-	if (!LoadedWorld->URL.Host.IsEmpty())
+	if (bUseLocator)
 	{
-		Connection->ReceptionistConfig.ReceptionistHost = LoadedWorld->URL.Host;
-		Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
-	}
-
-	// Check if we need to use external IPs (if not connecting to localhost).
-	// TODO: make this override-able as well
-	if (Connection->ReceptionistConfig.ReceptionistHost.Compare(TEXT("127.0.0.1")) == 0)
-	{
-		Connection->ReceptionistConfig.UseExternalIp = false;
+		Connection->LocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project"), TEXT(""));
+		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token"), TEXT(""));
 	}
 	else
 	{
-		Connection->ReceptionistConfig.UseExternalIp = true;
+		// Check for overrides in the travel URL.
+		if (!LoadedWorld->URL.Host.IsEmpty())
+		{
+			Connection->ReceptionistConfig.ReceptionistHost = LoadedWorld->URL.Host;
+			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
+		}
+		// Check if we need to use external IPs (if not connecting to localhost).
+		// TODO: make this override-able as well
+		if (Connection->ReceptionistConfig.ReceptionistHost.Compare(TEXT("127.0.0.1")) == 0)
+		{
+			Connection->ReceptionistConfig.UseExternalIp = false;
+		}
+		else
+		{
+			Connection->ReceptionistConfig.UseExternalIp = true;
+		}
 	}
 
 	Connect();
