@@ -11,7 +11,7 @@
 #include "Utils/SchemaUtils.h"
 #include "Utils/RepLayoutUtils.h"
 
-ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<improbable::UnrealObjectRef>& InUnresolvedRefs)
+ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<UnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
 	, TypebindingManager(InNetDriver->TypebindingManager)
@@ -175,7 +175,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		TArray<uint8> ValueData = Schema_IndexPayload(Object, FieldId, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
 		int64 CountBits = ValueData.Num() * 8;
-		TSet<improbable::UnrealObjectRef> NewUnresolvedRefs;
+		TSet<UnrealObjectRef> NewUnresolvedRefs;
 		FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
 		bool bHasUnmapped = false;
 
@@ -237,7 +237,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		improbable::UnrealObjectRef ObjectRef = Schema_IndexObjectRef(Object, FieldId, Index);
+		UnrealObjectRef ObjectRef = Schema_IndexObjectRef(Object, FieldId, Index);
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 

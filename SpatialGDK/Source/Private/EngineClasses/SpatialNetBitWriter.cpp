@@ -13,7 +13,7 @@ FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMa
 	, UnresolvedObjects(InUnresolvedObjects)
 {}
 
-void FSpatialNetBitWriter::SerializeObjectRef(improbable::UnrealObjectRef& ObjectRef)
+void FSpatialNetBitWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 {
 	*this << ObjectRef.Entity;
 	*this << ObjectRef.Offset;
@@ -35,7 +35,7 @@ void FSpatialNetBitWriter::SerializeObjectRef(improbable::UnrealObjectRef& Objec
 
 FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 {
-	improbable::UnrealObjectRef ObjectRef;
+	UnrealObjectRef ObjectRef;
 	if (Value != nullptr)
 	{
 		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
@@ -47,7 +47,7 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 				NetGUID = PackageMapClient->ResolveStablyNamedObject(Value);
 			}
 		}
-		ObjectRef = improbable::UnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));
+		ObjectRef = UnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));
 		if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UnresolvedObjects.Add(Value);
