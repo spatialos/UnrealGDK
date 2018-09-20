@@ -105,11 +105,7 @@ private:
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
 
-public:
-	// Distinguishes between channels created for actors that went through the "old" pipeline vs actors that are triggered through SpawnActor() calls.
-	//In the future we may not use an actor channel for non-core actors.
-	UPROPERTY(transient)
-	bool bCoreActor;
+	FString GetPlayerWorkerId();
 
 private:
 	Worker_EntityId EntityId;
@@ -133,7 +129,6 @@ private:
 	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>> HandoverShadowDataMap;
 
 	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
-	UPROPERTY(Transient)
 	bool bCreatingNewEntity;
 
 };
