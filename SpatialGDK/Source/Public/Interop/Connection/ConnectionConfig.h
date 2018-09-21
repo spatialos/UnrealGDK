@@ -36,7 +36,7 @@ struct FConnectionConfig
 struct FReceptionistConfig : public FConnectionConfig
 {
 	FReceptionistConfig()
-		: ReceptionistHost(LocalHost)
+		: ReceptionistHost(SpatialConstants::LOCAL_HOST)
 		, ReceptionistPort(7777)
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();

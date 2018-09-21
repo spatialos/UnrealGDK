@@ -98,7 +98,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 	}
 
 	FURL URL = WorldContext->LastURL;
-	URL.Host = LocalHost;
+	URL.Host = SpatialConstants::LOCAL_HOST;
 
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);

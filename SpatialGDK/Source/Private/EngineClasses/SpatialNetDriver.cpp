@@ -123,7 +123,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
 		}
 
-		if (Connection->ReceptionistConfig.ReceptionistHost.Compare(LocalHost) == 0)
+		if (Connection->ReceptionistConfig.ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) == 0)
 		{
 			Connection->ReceptionistConfig.UseExternalIp = false;
 		}
@@ -952,7 +952,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 	if (!ErrorMsg.IsEmpty())
 	{
-		UE_LOG(LogSpatialNetDriver, Error, TEXT("PreLogin failure: %s"), *ErrorMsg);
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("PreLogin failure: %s"), *ErrorMsg);
 		bOk = false;
 	}
 

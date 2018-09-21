@@ -37,5 +37,5 @@ namespace SpatialConstants
 		return FIRST_COMMAND_RETRY_WAIT_SECONDS * WaitTimeExponentialFactor;
 	}
 
-	FString LocalHost = TEXT("127.0.0.1");
+	const FString LOCAL_HOST = TEXT("127.0.0.1");
 }
