@@ -584,8 +584,8 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 		return;
 	}
 	UE_LOG(LogSpatialGDKActorChannel, Verbose, TEXT("Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
-	EntityId = Op.entity_id;
 
+	EntityId = Op.entity_id;
 	RegisterEntityId(EntityId);
 }
 
