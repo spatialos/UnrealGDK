@@ -5,6 +5,9 @@
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/SpatialReceiver.h"
 
+namespace improbable
+{
+
 class ComponentReader
 {
 public:
@@ -29,3 +32,5 @@ private:
 	FObjectReferencesMap& ObjectReferencesMap;
 	TSet<UnrealObjectRef>& UnresolvedRefs;
 };
+
+}

@@ -126,12 +126,6 @@ inline void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitRead
 			{
 				return;
 			}
-
-			if (bHasUnmapped)
-			{
-				//UE_LOG(LogTemp, Log, TEXT("Unable to resolve RPC parameter. Object[%d] %s. Function %s. Parameter %s."),
-				//	Channel->ChIndex, *Object->GetName(), *Function->GetName(), *Parents[i].Property->GetName());
-			}
 		}
 	}
 }

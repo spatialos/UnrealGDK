@@ -7,11 +7,8 @@
 
 #include "SpatialGameInstance.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDK, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
-/**
-*
-*/
 UCLASS()
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 {

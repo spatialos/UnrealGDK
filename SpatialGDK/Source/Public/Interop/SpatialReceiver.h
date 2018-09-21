@@ -17,6 +17,8 @@
 
 #include "SpatialReceiver.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
+
 class USpatialSender;
 class UGlobalStateManager;
 
@@ -121,9 +123,9 @@ private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
-	void CreateActor(Worker_EntityId EntityId);
+	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
-	AActor* SpawnNewEntity(improbable::Position* Position, struct improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred);
+	AActor* CreateActor(improbable::Position* Position, struct improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred);
 	UClass* GetNativeEntityClass(improbable::Metadata* Metadata);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);

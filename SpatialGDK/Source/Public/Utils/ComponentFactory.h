@@ -20,7 +20,10 @@ enum EReplicatedPropertyGroup : uint32;
 
 using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
 
-class SPATIALGDK_API ComponentFactory 
+namespace improbable
+{
+
+class SPATIALGDK_API ComponentFactory
 {
 public:
 	ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver);
@@ -50,3 +53,5 @@ private:
 	FUnresolvedObjectsMap& PendingRepUnresolvedObjectsMap;
 	FUnresolvedObjectsMap& PendingHandoverUnresolvedObjectsMap;
 };
+
+}

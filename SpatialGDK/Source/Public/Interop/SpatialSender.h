@@ -11,6 +11,8 @@
 
 #include "SpatialSender.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
+
 class USpatialNetDriver;
 class USpatialWorkerConnection;
 class USpatialActorChannel;

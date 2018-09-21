@@ -13,7 +13,7 @@
 
 #include "SpatialActorChannel.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKActorChannel, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialActorChannel, Log, All);
 
 UCLASS(Transient)
 class SPATIALGDK_API USpatialActorChannel : public UActorChannel

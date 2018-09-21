@@ -15,6 +15,10 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/RepLayoutUtils.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialSender);
+
+using namespace improbable;
+
 void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
@@ -178,7 +182,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 {
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
-	UE_LOG(LogTemp, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
+	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
@@ -308,14 +312,14 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 {
-	UE_LOG(LogTemp, Log, TEXT("Sending reserve entity Id request for %s"), *Channel->Actor->GetName());
+	UE_LOG(LogSpatialSender, Log, TEXT("Sending reserve entity Id request for %s"), *Channel->Actor->GetName());
 	Worker_RequestId RequestId = Connection->SendReserveEntityIdRequest();
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, const FString& PlayerWorkerId)
 {
-	UE_LOG(LogTemp, Log, TEXT("Sending create entity request for %s"), *Channel->Actor->GetName());
+	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s"), *Channel->Actor->GetName());
 
 	FSoftClassPath ActorClassPath(Channel->Actor->GetClass());
 
@@ -354,7 +358,7 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 
 	check(Unresolved.IsValid());
 
-	UE_LOG(LogTemp, Log, TEXT("Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
+	UE_LOG(LogSpatialSender, Log, TEXT("Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
 	for (const UObject* UnresolvedObject : *Unresolved)
@@ -386,7 +390,7 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	check(ReplicatedObject);
 	FChannelObjectPair ChannelObjectPair(DependentChannel, ReplicatedObject);
 
-	UE_LOG(LogTemp, Log, TEXT("Added pending outgoing property: channel: %s, object: %s, handle: %d. Depending on objects:"),
+	UE_LOG(LogSpatialSender, Log, TEXT("Added pending outgoing property: channel: %s, object: %s, handle: %d. Depending on objects:"),
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
 	// Choose the correct container based on whether it's handover or not
@@ -407,14 +411,14 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 		AnotherHandleToUnresolved.Add(Handle, Unresolved);
 
 		// Following up on the previous log: listing the unresolved objects
-		UE_LOG(LogTemp, Log, TEXT("%s"), *UnresolvedObject->GetName());
+		UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
 	}
 }
 
 void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, UObject* TargetObject, UFunction* Function, void* Parameters)
 {
 	check(UnresolvedObject);
-	UE_LOG(LogTemp, Log, TEXT("Added pending outgoing RPC depending on object: %s, target: %s, function: %s"), *UnresolvedObject->GetName(), *TargetObject->GetName(), *Function->GetName());
+	UE_LOG(LogSpatialSender, Log, TEXT("Added pending outgoing RPC depending on object: %s, target: %s, function: %s"), *UnresolvedObject->GetName(), *TargetObject->GetName(), *Function->GetName());
 	OutgoingRPCs.FindOrAdd(UnresolvedObject).Add(FPendingRPCParams(TargetObject, Function, Parameters));
 }
 
@@ -449,7 +453,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		return CommandRequest;
 	}
 
-	Schema_AddPayload(RequestObject, 1, PayloadWriter);
+	AddPayloadToSchema(RequestObject, 1, PayloadWriter);
 
 	return CommandRequest;
 }
@@ -487,7 +491,7 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 		return ComponentUpdate;
 	}
 
-	Schema_AddPayload(EventData, 1, PayloadWriter);
+	AddPayloadToSchema(EventData, 1, PayloadWriter);
 
 	return ComponentUpdate;
 }
@@ -577,7 +581,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 		{
 			// We can guarantee that SendRPC won't populate OutgoingRPCs[Object] whilst we're iterating through it,
 			// because Object has been resolved when we call ResolveOutgoingRPCs.
-			UE_LOG(LogTemp, Log, TEXT("!!! Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams.TargetObject->GetName(), *RPCParams.Function->GetName());
+			UE_LOG(LogSpatialSender, Log, TEXT("Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams.TargetObject->GetName(), *RPCParams.Function->GetName());
 			SendRPC(RPCParams.TargetObject, RPCParams.Function, RPCParams.Parameters, true);
 		}
 		OutgoingRPCs.Remove(Object);

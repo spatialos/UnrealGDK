@@ -9,6 +9,9 @@
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"
 
+namespace improbable
+{
+
 ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
@@ -131,7 +134,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			RepLayout_SerializePropertiesForStruct(*RepLayout, ValueDataWriter, PackageMap, const_cast<uint8*>(Data), bHasUnmapped);
 		}
 
-		Schema_AddPayload(Object, FieldId, ValueDataWriter);
+		AddPayloadToSchema(Object, FieldId, ValueDataWriter);
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{
@@ -202,19 +205,19 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			}
 		}
 
-		Schema_AddObjectRef(Object, FieldId, ObjectRef);
+		AddObjectRefToSchema(Object, FieldId, ObjectRef);
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
 	{
-		Schema_AddString(Object, FieldId, NameProperty->GetPropertyValue(Data).ToString());
+		AddStringToSchema(Object, FieldId, NameProperty->GetPropertyValue(Data).ToString());
 	}
 	else if (UStrProperty* StrProperty = Cast<UStrProperty>(Property))
 	{
-		Schema_AddString(Object, FieldId, StrProperty->GetPropertyValue(Data));
+		AddStringToSchema(Object, FieldId, StrProperty->GetPropertyValue(Data));
 	}
 	else if (UTextProperty* TextProperty = Cast<UTextProperty>(Property))
 	{
-		Schema_AddString(Object, FieldId, TextProperty->GetPropertyValue(Data).ToString());
+		AddStringToSchema(Object, FieldId, TextProperty->GetPropertyValue(Data).ToString());
 	}
 	else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Property))
 	{
@@ -375,4 +378,6 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	}
 
 	return ComponentUpdate;
+}
+
 }

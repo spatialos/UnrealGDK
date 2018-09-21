@@ -12,7 +12,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialGDK);
+DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
 bool USpatialGameInstance::HasSpatialNetDriver() const
 {
@@ -43,7 +43,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 
 	if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking && !bHasSpatialNetDriver)
 	{
-		UE_LOG(LogSpatialGDK, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
+		UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not find SpatialNetDriver even though Spatial networking is switched on! "
 										  "Please make sure you set up the net driver definitions as specified in the porting "
 										  "guide and that you don't override the main net driver."));
 	}
@@ -146,7 +146,7 @@ void USpatialGameInstance::StartGameInstance()
 
 		if (!StartGameInstance_SpatialGDKClient(Error))
 		{
-			UE_LOG(LogSpatialGDK, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
+			UE_LOG(LogSpatialGameInstance, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
 			FPlatformMisc::RequestExit(false);
 		}
 	}
