@@ -96,7 +96,7 @@ inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Obj
 	return RequirementSet;
 }
 
-inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const improbable::UnrealObjectRef& ObjectRef)
+inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const UnrealObjectRef& ObjectRef)
 {
 	Schema_Object* ObjectRefObject = Schema_AddObject(Object, Id);
 
@@ -112,11 +112,11 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 	}
 }
 
-improbable::UnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);
+UnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);
 
-inline improbable::UnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline UnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	improbable::UnrealObjectRef ObjectRef;
+	UnrealObjectRef ObjectRef;
 
 	Schema_Object* ObjectRefObject = Schema_IndexObject(Object, Id, Index);
 
@@ -128,13 +128,13 @@ inline improbable::UnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Objec
 	}
 	if (Schema_GetObjectCount(ObjectRefObject, 4) > 0)
 	{
-		ObjectRef.Outer = improbable::UnrealObjectRef(GetObjectRefFromSchema(ObjectRefObject, 4));
+		ObjectRef.Outer = UnrealObjectRef(GetObjectRefFromSchema(ObjectRefObject, 4));
 	}
 
 	return ObjectRef;
 }
 
-inline improbable::UnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id)
+inline UnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
 	return IndexObjectRefFromSchema(Object, Id, 0);
 }

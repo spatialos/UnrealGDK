@@ -7,11 +7,11 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialConstants.h"
 
-FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<improbable::UnrealObjectRef>& InUnresolvedRefs)
+FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<UnrealObjectRef>& InUnresolvedRefs)
 	: FNetBitReader(InPackageMap, Source, CountBits)
 	, UnresolvedRefs(InUnresolvedRefs) {}
 
-void FSpatialNetBitReader::DeserializeObjectRef(improbable::UnrealObjectRef& ObjectRef)
+void FSpatialNetBitReader::DeserializeObjectRef(UnrealObjectRef& ObjectRef)
 {
 	*this << ObjectRef.Entity;
 	*this << ObjectRef.Offset;
@@ -30,14 +30,14 @@ void FSpatialNetBitReader::DeserializeObjectRef(improbable::UnrealObjectRef& Obj
 	SerializeBits(&HasOuter, 1);
 	if (HasOuter)
 	{
-		ObjectRef.Outer = improbable::UnrealObjectRef();
+		ObjectRef.Outer = UnrealObjectRef();
 		DeserializeObjectRef(*ObjectRef.Outer);
 	}
 }
 
 FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
 {
-	improbable::UnrealObjectRef ObjectRef;
+	UnrealObjectRef ObjectRef;
 
 	DeserializeObjectRef(ObjectRef);
 

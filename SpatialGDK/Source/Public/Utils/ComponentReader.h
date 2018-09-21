@@ -11,7 +11,7 @@ namespace improbable
 class ComponentReader
 {
 public:
-	ComponentReader(class USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<improbable::UnrealObjectRef>& InUnresolvedRefs);
+	ComponentReader(class USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<UnrealObjectRef>& InUnresolvedRefs);
 
 	void ApplyComponentData(const Worker_ComponentData& ComponentData, UObject* Object, USpatialActorChannel* Channel, bool bIsHandover);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* Object, USpatialActorChannel* Channel, bool bIsHandover);
@@ -30,7 +30,7 @@ private:
 	class USpatialNetDriver* NetDriver;
 	class USpatialTypebindingManager* TypebindingManager;
 	FObjectReferencesMap& ObjectReferencesMap;
-	TSet<improbable::UnrealObjectRef>& UnresolvedRefs;
+	TSet<UnrealObjectRef>& UnresolvedRefs;
 };
 
 }
