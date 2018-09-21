@@ -573,7 +573,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 {
 	if(Actor == nullptr || Actor->IsPendingKill())
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Warning, TEXT("Actor is invalid after trying to reserve entity id"));
+		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to reserve entity id"));
 		return;
 	}
 
@@ -596,7 +596,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	if(Actor == nullptr || Actor->IsPendingKill())
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Warning, TEXT("Actor is invalid after trying to create entity"));
+		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to create entity"));
 		return;
 	}
 
