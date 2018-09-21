@@ -1,7 +1,7 @@
 <%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
 # GDK for Unreal directory structure
-The table below lists the contents of the Unreal GDK repository directory after running `Setup.bat`.
+The table below lists the contents of the Unreal GDK repository after running `Setup.bat`.
 
 | Directory | Purpose
 |-----------|---------
