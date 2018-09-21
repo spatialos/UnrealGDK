@@ -51,7 +51,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	return bHasSpatialNetDriver;
 }
 
-void MySpatialBrowse(FWorldContext& WorldContext, FURL URL)
+void SpatialBrowse(FWorldContext& WorldContext, FURL URL)
 {
 	bool bIsSpatial = false;
 	UNetDriver* TempNetDriver = nullptr;
@@ -77,7 +77,7 @@ void MySpatialBrowse(FWorldContext& WorldContext, FURL URL)
 
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 {
-	GetEngine()->SpatialBrowseDelegate = &MySpatialBrowse;
+	GetEngine()->SpatialBrowseDelegate = &SpatialBrowse;
 
 	if (WorldContext->PendingNetGame)
 	{
