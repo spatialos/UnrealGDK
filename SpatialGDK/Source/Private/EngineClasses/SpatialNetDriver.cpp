@@ -97,7 +97,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// Set up manager objects.
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 
-	// Handle connection configurations.
+	// Handle Spatial connection configurations.
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
 
 	if (Connection != nullptr)
@@ -145,6 +145,8 @@ void USpatialNetDriver::Connect()
 
 void USpatialNetDriver::OnConnected()
 {
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS."));
+
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 
 	View = NewObject<USpatialView>();
