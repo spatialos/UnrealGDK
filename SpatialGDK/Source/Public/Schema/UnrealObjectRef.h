@@ -60,19 +60,6 @@ struct UnrealObjectRef
 	improbable::TSchemaOption<UnrealObjectRef> Outer;
 };
 
-// This template specialization informs THasGetTypeHash
-// that there exists a valid GetTypeHash function for UnrealObjectRef.
-// This is required as THasGetTypeHash fails to resolve GetTypeHash functions referencing 
-// classes inside namespaces.
-template <>
-struct THasGetTypeHash<UnrealObjectRef>
-{
-	enum
-	{
-		Value = true
-	};
-};
-
 inline uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
 {
 	uint32 Result = 1327u;
