@@ -8,7 +8,15 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-inline void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
+using WorkerAttributeSet = TArray<FString>;
+using WorkerRequirementSet = TArray<WorkerAttributeSet>;
+
+using StringToEntityMap = TMap<FString, Worker_EntityId>;
+
+namespace improbable
+{
+
+inline void AddStringToSchema(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
 {
 	FTCHARToUTF8 CStrConvertion(*Value);
 	uint32 StringLength = CStrConvertion.Length();
@@ -17,18 +25,18 @@ inline void Schema_AddString(Schema_Object* Object, Schema_FieldId Id, const FSt
 	Schema_AddBytes(Object, Id, StringBuffer, sizeof(char) * StringLength);
 }
 
-inline FString Schema_IndexString(const Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline FString IndexStringFromSchema(const Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
 	int32 StringLength = (int32)Schema_IndexBytesLength(Object, Id, Index);
 	return FString(StringLength, UTF8_TO_TCHAR(Schema_IndexBytes(Object, Id, Index)));
 }
 
-inline FString Schema_GetString(const Schema_Object* Object, Schema_FieldId Id)
+inline FString GetStringFromSchema(const Schema_Object* Object, Schema_FieldId Id)
 {
-	return Schema_IndexString(Object, Id, 0);
+	return IndexStringFromSchema(Object, Id, 0);
 }
 
-inline void Schema_AddPayload(Schema_Object* Object, Schema_FieldId Id, FSpatialNetBitWriter& Writer)
+inline void AddPayloadToSchema(Schema_Object* Object, Schema_FieldId Id, FSpatialNetBitWriter& Writer)
 {
 	uint32 PayloadSize = Writer.GetNumBytes();
 	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(char) * PayloadSize);
@@ -36,21 +44,18 @@ inline void Schema_AddPayload(Schema_Object* Object, Schema_FieldId Id, FSpatial
 	Schema_AddBytes(Object, Id, PayloadBuffer, sizeof(char) * PayloadSize);
 }
 
-inline TArray<uint8> Schema_IndexPayload(const Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline TArray<uint8> IndexPayloadFromSchema(const Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
 	int32 PayloadSize = (int32)Schema_IndexBytesLength(Object, Id, Index);
 	return TArray<uint8>((const uint8*)Schema_IndexBytes(Object, Id, Index), PayloadSize);
 }
 
-inline TArray<uint8> Schema_GetPayload(const Schema_Object* Object, Schema_FieldId Id)
+inline TArray<uint8> GetPayloadFromSchema(const Schema_Object* Object, Schema_FieldId Id)
 {
-	return Schema_IndexPayload(Object, Id, 0);
+	return IndexPayloadFromSchema(Object, Id, 0);
 }
 
-using WorkerAttributeSet = TArray<FString>;
-using WorkerRequirementSet = TArray<WorkerAttributeSet>;
-
-inline void Schema_AddWorkerRequirementSet(Schema_Object* Object, Schema_FieldId Id, const WorkerRequirementSet& Value)
+inline void AddWorkerRequirementSetToSchema(Schema_Object* Object, Schema_FieldId Id, const WorkerRequirementSet& Value)
 {
 	Schema_Object* RequirementSetObject = Schema_AddObject(Object, Id);
 	for (const WorkerAttributeSet& AttributeSet : Value)
@@ -59,12 +64,12 @@ inline void Schema_AddWorkerRequirementSet(Schema_Object* Object, Schema_FieldId
 
 		for (const FString& Attribute : AttributeSet)
 		{
-			Schema_AddString(AttributeSetObject, 1, Attribute);
+			AddStringToSchema(AttributeSetObject, 1, Attribute);
 		}
 	}
 }
 
-inline WorkerRequirementSet Schema_GetWorkerRequirementSet(Schema_Object* Object, Schema_FieldId Id)
+inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
 	Schema_Object* RequirementSetObject = Schema_GetObject(Object, Id);
 
@@ -82,7 +87,7 @@ inline WorkerRequirementSet Schema_GetWorkerRequirementSet(Schema_Object* Object
 
 		for (int32 j = 0; j < AttributeCount; j++)
 		{
-			AttributeSet.Add(Schema_IndexString(AttributeSetObject, 1, j));
+			AttributeSet.Add(IndexStringFromSchema(AttributeSetObject, 1, j));
 		}
 
 		RequirementSet.Add(AttributeSet);
@@ -91,7 +96,7 @@ inline WorkerRequirementSet Schema_GetWorkerRequirementSet(Schema_Object* Object
 	return RequirementSet;
 }
 
-inline void Schema_AddObjectRef(Schema_Object* Object, Schema_FieldId Id, const improbable::UnrealObjectRef& ObjectRef)
+inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const UnrealObjectRef& ObjectRef)
 {
 	Schema_Object* ObjectRefObject = Schema_AddObject(Object, Id);
 
@@ -99,19 +104,19 @@ inline void Schema_AddObjectRef(Schema_Object* Object, Schema_FieldId Id, const 
 	Schema_AddUint32(ObjectRefObject, 2, ObjectRef.Offset);
 	if (ObjectRef.Path)
 	{
-		Schema_AddString(ObjectRefObject, 3, *ObjectRef.Path);
+		AddStringToSchema(ObjectRefObject, 3, *ObjectRef.Path);
 	}
 	if (ObjectRef.Outer)
 	{
-		Schema_AddObjectRef(ObjectRefObject, 4, *ObjectRef.Outer);
+		AddObjectRefToSchema(ObjectRefObject, 4, *ObjectRef.Outer);
 	}
 }
 
-improbable::UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id);
+UnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);
 
-inline improbable::UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline UnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	improbable::UnrealObjectRef ObjectRef;
+	UnrealObjectRef ObjectRef;
 
 	Schema_Object* ObjectRefObject = Schema_IndexObject(Object, Id, Index);
 
@@ -119,24 +124,32 @@ inline improbable::UnrealObjectRef Schema_IndexObjectRef(Schema_Object* Object, 
 	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, 2);
 	if (Schema_GetBytesCount(ObjectRefObject, 3) > 0)
 	{
-		ObjectRef.Path = Schema_GetString(ObjectRefObject, 3);
+		ObjectRef.Path = GetStringFromSchema(ObjectRefObject, 3);
 	}
 	if (Schema_GetObjectCount(ObjectRefObject, 4) > 0)
 	{
-		ObjectRef.Outer = improbable::UnrealObjectRef(Schema_GetObjectRef(ObjectRefObject, 4));
+		ObjectRef.Outer = UnrealObjectRef(GetObjectRefFromSchema(ObjectRefObject, 4));
 	}
 
 	return ObjectRef;
 }
 
-inline improbable::UnrealObjectRef Schema_GetObjectRef(Schema_Object* Object, Schema_FieldId Id)
+inline UnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
-	return Schema_IndexObjectRef(Object, Id, 0);
+	return IndexObjectRefFromSchema(Object, Id, 0);
 }
 
-using StringToEntityMap = TMap<FString, Worker_EntityId>;
+inline void AddStringToEntityMapToSchema(Schema_Object* Object, Schema_FieldId Id, StringToEntityMap& Map)
+{
+	for (auto& Pair : Map)
+	{
+		Schema_Object* PairObject = Schema_AddObject(Object, 1);
+		AddStringToSchema(PairObject, SCHEMA_MAP_KEY_FIELD_ID, Pair.Key);
+		Schema_AddEntityId(PairObject, SCHEMA_MAP_VALUE_FIELD_ID, Pair.Value);
+	}
+}
 
-inline StringToEntityMap Schema_GetStringToEntityMap(Schema_Object* Object, Schema_FieldId Id)
+inline StringToEntityMap GetStringToEntityMapFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
 	StringToEntityMap Map;
 
@@ -145,7 +158,7 @@ inline StringToEntityMap Schema_GetStringToEntityMap(Schema_Object* Object, Sche
 	{
 		Schema_Object* PairObject = Schema_IndexObject(Object, Id, i);
 
-		FString String = Schema_GetString(PairObject, SCHEMA_MAP_KEY_FIELD_ID);
+		FString String = GetStringFromSchema(PairObject, SCHEMA_MAP_KEY_FIELD_ID);
 		Worker_EntityId Entity = Schema_GetEntityId(PairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 		Map.Add(String, Entity);
@@ -154,17 +167,4 @@ inline StringToEntityMap Schema_GetStringToEntityMap(Schema_Object* Object, Sche
 	return Map;
 }
 
-inline void Schema_AddStringToEntityMap(Schema_Object* Object, Schema_FieldId Id, StringToEntityMap& Map)
-{
-	if (Map.Num() == 0)
-	{
-		return;
-	}
-
-	for (auto& Pair : Map)
-	{
-		Schema_Object* PairObject = Schema_AddObject(Object, 1);
-		Schema_AddString(PairObject, SCHEMA_MAP_KEY_FIELD_ID, Pair.Key);
-		Schema_AddEntityId(PairObject, SCHEMA_MAP_VALUE_FIELD_ID, Pair.Value);
-	}
 }

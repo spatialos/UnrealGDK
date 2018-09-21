@@ -12,6 +12,8 @@
 
 #include "SpatialView.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
+
 class USpatialNetDriver;
 class USpatialReceiver;
 

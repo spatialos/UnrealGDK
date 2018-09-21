@@ -17,6 +17,8 @@
 
 #include "SpatialReceiver.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
+
 class USpatialSender;
 class UGlobalStateManager;
 
@@ -49,21 +51,21 @@ struct FObjectReferences
 		, Property(Other.Property) {}
 
 	// Single property constructor
-	FObjectReferences(const improbable::UnrealObjectRef& InUnresolvedRef, int32 InParentIndex, UProperty* InProperty)
+	FObjectReferences(const UnrealObjectRef& InUnresolvedRef, int32 InParentIndex, UProperty* InProperty)
 		: bSingleProp(true), ParentIndex(InParentIndex), Property(InProperty)
 	{
 		UnresolvedRefs.Add(InUnresolvedRef);
 	}
 
 	// Struct (memory stream) constructor
-	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, const TSet<improbable::UnrealObjectRef>& InUnresolvedRefs, int32 InParentIndex, UProperty* InProperty)
+	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, const TSet<UnrealObjectRef>& InUnresolvedRefs, int32 InParentIndex, UProperty* InProperty)
 		: UnresolvedRefs(InUnresolvedRefs), bSingleProp(false), Buffer(InBuffer), NumBufferBits(InNumBufferBits), ParentIndex(InParentIndex), Property(InProperty) {}
 
 	// Array constructor
 	FObjectReferences(FObjectReferencesMap* InArray, int32 InParentIndex, UProperty* InProperty)
 		: bSingleProp(false), Array(InArray), ParentIndex(InParentIndex), Property(InProperty) {}
 
-	TSet<improbable::UnrealObjectRef>				UnresolvedRefs;
+	TSet<UnrealObjectRef>				UnresolvedRefs;
 
 	bool								bSingleProp;
 	TArray<uint8>						Buffer;
@@ -76,10 +78,10 @@ struct FObjectReferences
 
 struct FPendingIncomingRPC
 {
-	FPendingIncomingRPC(const TSet<improbable::UnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const TArray<uint8>& InPayloadData, int64 InCountBits)
+	FPendingIncomingRPC(const TSet<UnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const TArray<uint8>& InPayloadData, int64 InCountBits)
 		: UnresolvedRefs(InUnresolvedRefs), TargetObject(InTargetObject), Function(InFunction), PayloadData(InPayloadData), CountBits(InCountBits) {}
 
-	TSet<improbable::UnrealObjectRef> UnresolvedRefs;
+	TSet<UnrealObjectRef> UnresolvedRefs;
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
 	TArray<uint8> PayloadData;
@@ -115,15 +117,15 @@ public:
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
 	void ProcessQueuedResolvedObjects();
-	void ResolvePendingOperations(UObject* Object, const improbable::UnrealObjectRef& ObjectRef);
+	void ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
 
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
-	void CreateActor(Worker_EntityId EntityId);
+	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
-	AActor* SpawnNewEntity(improbable::Position* Position, struct improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred);
+	AActor* CreateActor(improbable::Position* Position, struct improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred);
 	UClass* GetNativeEntityClass(improbable::Metadata* Metadata);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
@@ -133,12 +135,12 @@ private:
 	void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, const TArray<UFunction*>& RPCArray);
 	void ApplyRPC(UObject* TargetObject, UFunction* Function, TArray<uint8>& PayloadData, int64 CountBits);
 
-	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<improbable::UnrealObjectRef>& UnresolvedRefs);
-	void QueueIncomingRPC(const TSet<improbable::UnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits);
+	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs);
+	void QueueIncomingRPC(const TSet<UnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits);
 
-	void ResolvePendingOperations_Internal(UObject* Object, const improbable::UnrealObjectRef& ObjectRef);
-	void ResolveIncomingOperations(UObject* Object, const improbable::UnrealObjectRef& ObjectRef);
-	void ResolveIncomingRPCs(UObject* Object, const improbable::UnrealObjectRef& ObjectRef);
+	void ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef);
+	void ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
+	void ResolveIncomingRPCs(UObject* Object, const UnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
 
 	UObject* GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class);
@@ -158,11 +160,11 @@ private:
 	UGlobalStateManager* GlobalStateManager;
 
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted
-	TMap<improbable::UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
+	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
-	TArray<TPair<UObject*, improbable::UnrealObjectRef>> ResolvedObjectQueue;
+	TArray<TPair<UObject*, UnrealObjectRef>> ResolvedObjectQueue;
 
-	TMap<improbable::UnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
+	TMap<UnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;

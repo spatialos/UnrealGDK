@@ -4,9 +4,6 @@
 
 #include "SchemaOption.h"
 
-namespace improbable
-{
-
 struct UnrealObjectRef
 {
 	UnrealObjectRef() = default;
@@ -63,22 +60,7 @@ struct UnrealObjectRef
 	improbable::TSchemaOption<UnrealObjectRef> Outer;
 };
 
-}
-
-// This template specialization informs THasGetTypeHash
-// that there exists a valid GetTypeHash function for improbable::UnrealObjectRef.
-// This is required as THasGetTypeHash fails to resolve GetTypeHash functions referencing 
-// classes inside namespaces.
-template <>
-struct THasGetTypeHash<improbable::UnrealObjectRef>
-{
-	enum
-	{
-		Value = true
-	};
-};
-
-inline uint32 GetTypeHash(const improbable::UnrealObjectRef& ObjectRef)
+inline uint32 GetTypeHash(const UnrealObjectRef& ObjectRef)
 {
 	uint32 Result = 1327u;
 	Result = (Result * 977u) + GetTypeHash(static_cast<int64>(ObjectRef.Entity));

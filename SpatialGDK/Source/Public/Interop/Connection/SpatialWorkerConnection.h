@@ -8,6 +8,8 @@
 
 #include "SpatialWorkerConnection.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
+
 DECLARE_DELEGATE(OnConnectedDelegate)
 
 UCLASS()

@@ -20,7 +20,7 @@ public:
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
 protected:
-	void SerializeObjectRef(improbable::UnrealObjectRef& ObjectRef);
+	void SerializeObjectRef(UnrealObjectRef& ObjectRef);
 
 	TSet<const UObject*>& UnresolvedObjects;
 };
