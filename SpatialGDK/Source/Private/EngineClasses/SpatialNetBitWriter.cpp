@@ -5,7 +5,7 @@
 #include "UObject/WeakObjectPtr.h"
 
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Schema/UnrealObjectRef.h"
+#include "UnrealObjectRefStub.h"
 #include "SpatialConstants.h"
 
 FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<const UObject*>& InUnresolvedObjects)
@@ -13,7 +13,7 @@ FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMa
 	, UnresolvedObjects(InUnresolvedObjects)
 {}
 
-void FSpatialNetBitWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
+void FSpatialNetBitWriter::SerializeObjectRef(FUnrealObjectRef& ObjectRef)
 {
 	*this << ObjectRef.Entity;
 	*this << ObjectRef.Offset;
@@ -35,7 +35,7 @@ void FSpatialNetBitWriter::SerializeObjectRef(UnrealObjectRef& ObjectRef)
 
 FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 {
-	UnrealObjectRef ObjectRef;
+	FUnrealObjectRef ObjectRef;
 	if (Value != nullptr)
 	{
 		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
@@ -47,7 +47,7 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 				NetGUID = PackageMapClient->ResolveStablyNamedObject(Value);
 			}
 		}
-		ObjectRef = UnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));
+		ObjectRef = FUnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));
 		if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			UnresolvedObjects.Add(Value);

@@ -190,7 +190,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			return;
 		}
 
-		UnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+		FUnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
 		if (ObjectValue != nullptr)
@@ -203,7 +203,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 				}
 			}
-			ObjectRef = UnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
+			ObjectRef = FUnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				// A legal static object reference should never be unresolved.

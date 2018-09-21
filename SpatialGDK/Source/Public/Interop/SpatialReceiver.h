@@ -10,7 +10,7 @@
 #include "Interop/SpatialTypebindingManager.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Rotation.h"
-#include "Schema/UnrealObjectRef.h"
+#include "UnrealObjectRefStub.h"
 
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
@@ -52,21 +52,21 @@ struct FObjectReferences
 		, Property(Other.Property) {}
 
 	// Single property constructor
-	FObjectReferences(const UnrealObjectRef& InUnresolvedRef, int32 InParentIndex, UProperty* InProperty)
+	FObjectReferences(const FUnrealObjectRef& InUnresolvedRef, int32 InParentIndex, UProperty* InProperty)
 		: bSingleProp(true), ParentIndex(InParentIndex), Property(InProperty)
 	{
 		UnresolvedRefs.Add(InUnresolvedRef);
 	}
 
 	// Struct (memory stream) constructor
-	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, const TSet<UnrealObjectRef>& InUnresolvedRefs, int32 InParentIndex, UProperty* InProperty)
+	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, const TSet<FUnrealObjectRef>& InUnresolvedRefs, int32 InParentIndex, UProperty* InProperty)
 		: UnresolvedRefs(InUnresolvedRefs), bSingleProp(false), Buffer(InBuffer), NumBufferBits(InNumBufferBits), ParentIndex(InParentIndex), Property(InProperty) {}
 
 	// Array constructor
 	FObjectReferences(FObjectReferencesMap* InArray, int32 InParentIndex, UProperty* InProperty)
 		: bSingleProp(false), Array(InArray), ParentIndex(InParentIndex), Property(InProperty) {}
 
-	TSet<UnrealObjectRef>				UnresolvedRefs;
+	TSet<FUnrealObjectRef>				UnresolvedRefs;
 
 	bool								bSingleProp;
 	TArray<uint8>						Buffer;
@@ -79,10 +79,10 @@ struct FObjectReferences
 
 struct FPendingIncomingRPC
 {
-	FPendingIncomingRPC(const TSet<UnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const TArray<uint8>& InPayloadData, int64 InCountBits)
+	FPendingIncomingRPC(const TSet<FUnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const TArray<uint8>& InPayloadData, int64 InCountBits)
 		: UnresolvedRefs(InUnresolvedRefs), TargetObject(InTargetObject), Function(InFunction), PayloadData(InPayloadData), CountBits(InCountBits) {}
 
-	TSet<UnrealObjectRef> UnresolvedRefs;
+	TSet<FUnrealObjectRef> UnresolvedRefs;
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
 	TArray<uint8> PayloadData;
@@ -119,7 +119,7 @@ public:
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
 	void ProcessQueuedResolvedObjects();
-	void ResolvePendingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
+	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
 private:
 	void EnterCriticalSection();
@@ -139,12 +139,12 @@ private:
 
 	void ReceiveCommandResponse(Worker_CommandResponseOp& Op);
 
-	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs);
-	void QueueIncomingRPC(const TSet<UnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits);
+	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs);
+	void QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits);
 
-	void ResolvePendingOperations_Internal(UObject* Object, const UnrealObjectRef& ObjectRef);
-	void ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef);
-	void ResolveIncomingRPCs(UObject* Object, const UnrealObjectRef& ObjectRef);
+	void ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef);
+	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
+	void ResolveIncomingRPCs(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
 
 	UObject* GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class);
@@ -176,14 +176,19 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
+<<<<<<< HEAD
 	FTimerManager* TimerManager;
 
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
 	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
+=======
+	// TODO: Figure out how to remove entries when Channel/Actor gets deleted
+	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
+>>>>>>> Moved over to the engine unreal object ref stubs
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
-	TArray<TPair<UObject*, UnrealObjectRef>> ResolvedObjectQueue;
+	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
-	TMap<UnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
+	TMap<FUnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;

@@ -6,7 +6,7 @@
 #include "Engine/PackageMapClient.h"
 
 #include "Schema/UnrealMetadata.h"
-#include "Schema/UnrealObjectRef.h"
+#include "UnrealObjectRefStub.h"
 
 #include <improbable/c_worker.h>
 
@@ -24,8 +24,8 @@ public:
 
 	FNetworkGUID ResolveStablyNamedObject(const UObject* Object);
 	
-	UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
-	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef) const;
+	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const;
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
@@ -42,8 +42,8 @@ public:
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(const UObject* Object);
 	
-	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef);
-	UnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
+	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
+	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(Worker_EntityId EntityId) const;
 
 private:
@@ -51,12 +51,12 @@ private:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRefInternal(const UnrealObjectRef& ObjectRef);
 
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
-	void RegisterObjectRef(FNetworkGUID NetGUID, const UnrealObjectRef& ObjectRef);
+	void RegisterObjectRef(FNetworkGUID NetGUID, const FUnrealObjectRef& ObjectRef);
 	
 	FNetworkGUID RegisterNetGUIDFromPath(const FString& PathName, const FNetworkGUID& OuterGUID);
 	FNetworkGUID GenerateNewNetGUID(const int32 IsStatic);
 
-	TMap<FNetworkGUID, UnrealObjectRef> NetGUIDToUnrealObjectRef;
-	TMap<UnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
+	TMap<FNetworkGUID, FUnrealObjectRef> NetGUIDToUnrealObjectRef;
+	TMap<FUnrealObjectRef, FNetworkGUID> UnrealObjectRefToNetGUID;
 };
 

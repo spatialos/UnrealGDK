@@ -14,7 +14,7 @@
 namespace improbable
 {
 
-ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<UnrealObjectRef>& InUnresolvedRefs)
+ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
 	, TypebindingManager(InNetDriver->TypebindingManager)
@@ -183,7 +183,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		TArray<uint8> ValueData = IndexPayloadFromSchema(Object, FieldId, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
 		int64 CountBits = ValueData.Num() * 8;
-		TSet<UnrealObjectRef> NewUnresolvedRefs;
+		TSet<FUnrealObjectRef> NewUnresolvedRefs;
 		FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
 		bool bHasUnmapped = false;
 
@@ -245,7 +245,11 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
+<<<<<<< HEAD
 		UnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
+=======
+		FUnrealObjectRef ObjectRef = Schema_IndexObjectRef(Object, FieldId, Index);
+>>>>>>> Moved over to the engine unreal object ref stubs
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
