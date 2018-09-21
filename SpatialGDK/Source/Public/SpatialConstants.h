@@ -27,8 +27,8 @@ namespace SpatialConstants
 	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;
 	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
-	const improbable::UnrealObjectRef NULL_OBJECT_REF(0, 0);
-	const improbable::UnrealObjectRef UNRESOLVED_OBJECT_REF(0, 1);
+	const UnrealObjectRef NULL_OBJECT_REF(0, 0);
+	const UnrealObjectRef UNRESOLVED_OBJECT_REF(0, 1);
 
 	inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	{
