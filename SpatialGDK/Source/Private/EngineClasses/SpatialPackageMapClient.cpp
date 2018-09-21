@@ -98,31 +98,6 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromUnrealObjectRef(const Unrea
 	return SpatialGuidCache->GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
-// Rebase - Old code and needs merging with above.
-FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef)
-{
-	UnrealObjectRef NetRemappedObjectRef = ObjectRef;
-	NetworkRemapObjectRefPaths(NetRemappedObjectRef);
-	return GetNetGUIDFromUnrealObjectRefInternal(NetRemappedObjectRef);
-}
-
-FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const UnrealObjectRef& ObjectRef)
-{
-	FNetworkGUID* CachedGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
-	FNetworkGUID NetGUID = CachedGUID ? *CachedGUID : FNetworkGUID{};
-	if (!NetGUID.IsValid() && ObjectRef.Path.IsSet())
-	{
-		FNetworkGUID OuterGUID;
-		if (ObjectRef.Outer.IsSet())
-		{
-			OuterGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef.Outer.GetValue());
-		}
-		NetGUID = RegisterNetGUIDFromPath(ObjectRef.Path.GetValue(), OuterGUID);
-		RegisterObjectRef(NetGUID, ObjectRef);
-	}
-	return NetGUID;
-}
-
 FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
@@ -228,6 +203,13 @@ void FSpatialNetGUIDCache::RemoveEntitySubobjectsNetGUIDs(Worker_EntityId Entity
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef)
+{
+	UnrealObjectRef NetRemappedObjectRef = ObjectRef;
+	NetworkRemapObjectRefPaths(NetRemappedObjectRef);
+	return GetNetGUIDFromUnrealObjectRefInternal(NetRemappedObjectRef);
+}
+
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const UnrealObjectRef& ObjectRef)
 {
 	FNetworkGUID* CachedGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
 	FNetworkGUID NetGUID = CachedGUID ? *CachedGUID : FNetworkGUID{};
