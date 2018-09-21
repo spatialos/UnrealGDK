@@ -571,13 +571,21 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityIdResponseOp& Op)
 {
+	if(Actor == nullptr || Actor->IsPendingKill())
+	{
+		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to reserve entity id"));
+		return;
+	}
+
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to reserve entity id. Reason: %s"), UTF8_TO_TCHAR(Op.message));
 		Sender->SendReserveEntityIdRequest(this);
 		return;
 	}
+
 	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Received entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
+  
 	EntityId = Op.entity_id;
 	RegisterEntityId(EntityId);
 }
@@ -585,6 +593,12 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
 {
 	check(NetDriver->GetNetMode() < NM_Client);
+
+	if(Actor == nullptr || Actor->IsPendingKill())
+	{
+		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to create entity"));
+		return;
+	}
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
