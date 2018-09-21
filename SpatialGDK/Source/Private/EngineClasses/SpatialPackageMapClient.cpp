@@ -251,12 +251,7 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef
 	{
 		UnrealObjectRef* Iterator = &ObjectRef;
 		while (true) {
-			if (!Iterator->Path.IsSet())
-			{
-				//UE_LOG(LogSpatialOSPackageMap, Warning, TEXT("%s: NetworkRemapObjectRefPaths found empty path"),
-				//	*Cast<USpatialNetDriver>(Driver)->GetSpatialOS()->GetWorkerId());
-			} 
-			else
+			if (Iterator->Path.IsSet())
 			{
 				FString TempPath(*Iterator->Path);
 				GEngine->NetworkRemapPath(Driver, TempPath, true);
