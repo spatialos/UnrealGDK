@@ -10,7 +10,7 @@
 #include "Interop/SpatialTypebindingManager.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Rotation.h"
-#include "UnrealObjectRefStub.h"
+#include "UnrealObjectRef.h"
 
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>

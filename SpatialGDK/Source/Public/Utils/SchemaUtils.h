@@ -3,7 +3,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialNetBitWriter.h"
-#include "UnrealObjectRefStub.h"
+#include "UnrealObjectRef.h"
 
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>

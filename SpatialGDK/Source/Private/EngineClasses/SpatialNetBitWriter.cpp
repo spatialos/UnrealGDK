@@ -5,7 +5,7 @@
 #include "UObject/WeakObjectPtr.h"
 
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "UnrealObjectRefStub.h"
+#include "UnrealObjectRef.h"
 #include "SpatialConstants.h"
 
 FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<const UObject*>& InUnresolvedObjects)
