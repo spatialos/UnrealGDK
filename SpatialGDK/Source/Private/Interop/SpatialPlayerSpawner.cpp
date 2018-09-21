@@ -56,8 +56,6 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ReceivePlayerSpawnResponse"));
-
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{
 		UE_LOG(LogSpatialGDKPlayerSpawner, Display, TEXT("Player spawned sucessfully"));

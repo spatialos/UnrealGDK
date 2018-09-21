@@ -61,7 +61,7 @@ void SpatialBrowse(FWorldContext& WorldContext, FURL URL)
 		// Setting the PendingNetGame's NetDriver is necessary here because the call to CreateNamedNetDriver above will interfere
 		// with the internals of InitNetDriver and cause the NetDriver not to be initialized, and fail a check().
 		WorldContext.PendingNetGame->NetDriver = TempNetDriver;
-		bIsSpatial = TempNetDriver->IsA(USpatialNetDriver::StaticClass());
+		bIsSpatial = GetDefault<UGeneralProjectSettings>()->bSpatialNetworking;
 	}
 
 	// Create the proper PendingNetGame depending on what NetDriver we have loaded.
@@ -98,7 +98,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 	}
 
 	FURL URL = WorldContext->LastURL;
-	URL.Host = "127.0.0.1";
+	URL.Host = LocalHost;
 
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);
