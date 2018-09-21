@@ -56,11 +56,13 @@ struct FLocatorConfig : public FConnectionConfig
 		const TCHAR* CommandLine = FCommandLine::Get();
 
 		FParse::Value(CommandLine, TEXT("projectName"), ProjectName);
+		FParse::Value(CommandLine, TEXT("deploymentName"), DeploymentName);
 		FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
 		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 	}
 
 	FString ProjectName;
+	FString DeploymentName;
 	FString LocatorHost;
 	FString LoginToken;
 };

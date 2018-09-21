@@ -107,14 +107,14 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	Connection = NewObject<USpatialWorkerConnection>();
 
-	bool bUseLocator = LoadedWorld->URL.HasOption(TEXT("spatialLocator"));
-
-	if (bUseLocator)
+	if (LoadedWorld->URL.HasOption(TEXT("spatialLocator")))
 	{
-		Connection->LocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project"), TEXT(""));
-		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token"), TEXT(""));
+		Connection->LocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
+		Connection->LocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
+		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
+		Connection->LocatorConfig.UseExternalIp = true;
 	}
-	else
+	else if (LoadedWorld->URL.HasOption(TEXT("spatialReceptionist")))
 	{
 		// Check for overrides in the travel URL.
 		if (!LoadedWorld->URL.Host.IsEmpty())
@@ -123,7 +123,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
 		}
 		// Check if we need to use external IPs (if not connecting to localhost).
-		// TODO: make this override-able as well
 		if (Connection->ReceptionistConfig.ReceptionistHost.Compare(TEXT("127.0.0.1")) == 0)
 		{
 			Connection->ReceptionistConfig.UseExternalIp = false;
