@@ -1000,7 +1000,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 		if (SpatialConnection->PlayerController == NULL)
 		{
 			// Failed to connect.
-			UE_LOG(LogNet, Error, TEXT("Join failure: %s"), *ErrorMsg);
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Join failure: %s"), *ErrorMsg);
 			SpatialConnection->FlushNet(true);
 			bOk = false;
 		}
