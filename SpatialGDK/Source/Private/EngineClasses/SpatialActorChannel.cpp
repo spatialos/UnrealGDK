@@ -571,9 +571,9 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityIdResponseOp& Op)
 {
-	if(Actor == nullptr)
+	if(Actor == nullptr || Actor->IsPendingKill())
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Warning, TEXT("Actor is null after trying to reserve entity id"));
+		UE_LOG(LogSpatialGDKActorChannel, Warning, TEXT("Actor is invalid after trying to reserve entity id"));
 		return;
 	}
 
@@ -593,9 +593,9 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 {
 	check(NetDriver->GetNetMode() < NM_Client);
 
-	if(Actor == nullptr)
+	if(Actor == nullptr || Actor->IsPendingKill())
 	{
-		UE_LOG(LogSpatialGDKActorChannel, Warning, TEXT("Actor is null after trying to create entity"));
+		UE_LOG(LogSpatialGDKActorChannel, Warning, TEXT("Actor is invalid after trying to create entity"));
 		return;
 	}
 
