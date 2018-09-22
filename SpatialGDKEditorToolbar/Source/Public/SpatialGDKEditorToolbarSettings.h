@@ -38,6 +38,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Stop on Exit"))
 	bool bStopSpatialOnExit;
 
+	/** Generate schema for all classes supported by the GDK */
+	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Generate Schema for all Supported Classes"))
+	bool bGenerateSchemaForAllSupportedClasses;
+
 private:
 	/** Path to your SpatialOS snapshot. */
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
