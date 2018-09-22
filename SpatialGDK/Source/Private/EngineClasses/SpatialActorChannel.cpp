@@ -658,13 +658,13 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
 	// If the actor has a well defined location then use that
 	// Otherwise if it has a parent use its location
 	// Otherwise use the origin
-	if (Actor->GetRootComponent()) 
-	{
-		return Actor->GetRootComponent()->GetComponentLocation();
-	}
-	else if (Actor->GetOwner())
+	if (Actor->GetOwner())
 	{
 		return GetActorSpatialPosition(Actor->GetOwner());
+	}
+	else if (Actor->GetRootComponent()) 
+	{
+		return Actor->GetRootComponent()->GetComponentLocation();
 	}
 	else
 	{
