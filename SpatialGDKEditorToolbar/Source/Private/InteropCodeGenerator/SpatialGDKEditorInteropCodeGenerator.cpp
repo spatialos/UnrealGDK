@@ -187,6 +187,9 @@ TArray<UClass*> GetAllSupportedClasses()
 
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
+		// Only support Actors and ActorComponents for now
+		if (!(It->IsChildOf<AActor>() || It->IsChildOf<UActorComponent>())) continue;
+
 		// Any component which has child components
 		if (It->IsChildOf<USceneComponent>()) continue;
 
