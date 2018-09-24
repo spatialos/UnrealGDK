@@ -213,7 +213,6 @@ bool SpatialGDKGenerateInteropCode()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-
 	TArray<UClass*> InteropGeneratedClasses;
 	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)
 	{

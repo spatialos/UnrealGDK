@@ -26,7 +26,7 @@ FString USpatialGDKEditorToolbarSettings::ToString()
 
 	return FString::Format(TEXT("ProjectRootFolder={0}, SpatialOSLaunchArgument={1}, "
 								"bStopSpatialOnExit={2}, SpatialOSSnapshotPath={3}, "
-								"SpatialOSSnapshotFile={4}, GeneratedSchemaOutputFolder={5} "
+								"SpatialOSSnapshotFile={4}, GeneratedSchemaOutputFolder={5}, "
 								"bGenerateSchemaForAllSupportedClasses={6}"),
 						   Args);
 }
