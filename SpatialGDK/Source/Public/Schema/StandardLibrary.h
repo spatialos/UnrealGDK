@@ -115,8 +115,8 @@ struct EntityAcl : Component
 	Worker_ComponentUpdate CreateEntityAclUpdate()
 	{
 		Worker_ComponentUpdate ComponentUpdate = {};
-		ComponentUpdate.component_id = ENTITY_ACL_COMPONENT_ID;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ENTITY_ACL_COMPONENT_ID);
+		ComponentUpdate.component_id = ComponentId;
+		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		AddWorkerRequirementSetToSchema(ComponentObject, 1, ReadAcl);
