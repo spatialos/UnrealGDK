@@ -3,7 +3,6 @@
 #include "SpatialWorkerConnection.h"
 
 #include "Async/Async.h"
-#include <string>
 
 void USpatialWorkerConnection::FinishDestroy()
 {

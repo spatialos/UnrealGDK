@@ -229,23 +229,27 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const U
 void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef) const
 {
 	// If we have paths, network-sanitize all of them (e.g. removing PIE prefix).
-	if (ObjectRef.Path.IsSet())
+	if (!ObjectRef.Path.IsSet())
 	{
-		UnrealObjectRef* Iterator = &ObjectRef;
-		while (true) {
-			if (Iterator->Path.IsSet())
-			{
-				FString TempPath(*Iterator->Path);
-				GEngine->NetworkRemapPath(Driver, TempPath, true);
-				Iterator->Path = TempPath;
-			}
-			if (!Iterator->Outer.IsSet())
-			{
-				break;
-			}
-			Iterator = &Iterator->Outer.GetValue();
-		}
+		return;
 	}
+#
+	UnrealObjectRef* Iterator = &ObjectRef;
+	while (true)
+	{
+		if (Iterator->Path.IsSet())
+		{
+			FString TempPath(*Iterator->Path);
+			GEngine->NetworkRemapPath(Driver, TempPath, true);
+			Iterator->Path = TempPath;
+		}
+		if (!Iterator->Outer.IsSet())
+		{
+			break;
+		}
+		Iterator = &Iterator->Outer.GetValue();
+	}
+
 }
 
 UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const

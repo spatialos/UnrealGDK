@@ -107,14 +107,14 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	Connection = NewObject<USpatialWorkerConnection>();
 
-	if (LoadedWorld->URL.HasOption(TEXT("spatialLocator")))
+	if (LoadedWorld->URL.HasOption(TEXT("locator")))
 	{
 		Connection->LocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
 		Connection->LocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
 		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
 	}
-	else if (LoadedWorld->URL.HasOption(TEXT("spatialReceptionist")))
+	else if (LoadedWorld->URL.HasOption(TEXT("receptionist")))
 	{
 		// Check for overrides in the travel URL.
 		if (!LoadedWorld->URL.Host.IsEmpty())
