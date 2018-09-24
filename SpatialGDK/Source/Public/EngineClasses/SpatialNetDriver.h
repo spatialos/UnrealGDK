@@ -27,6 +27,7 @@ class USpatialTypebindingManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
+class USnapshotManager;
 
 class UEntityRegistry;
 
@@ -90,6 +91,10 @@ public:
 
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
+	DECLARE_DELEGATE(ServerTravelDelegate);
+
+	void WipeWorld(const USpatialNetDriver::ServerTravelDelegate& LoadSnapshotAfterWorldWipe);
+
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()
@@ -110,10 +115,13 @@ public:
 	USpatialStaticComponentView* StaticComponentView;
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
+	UPROPERTY()
+	USnapshotManager* SnapshotManager;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 	bool bConnectAsClient;
+	FString SnapshotToLoad;
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
@@ -139,6 +147,8 @@ private:
 
 	UFUNCTION()
 	void OnConnectFailed(const FString& Reason);
+
+	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 		
 #if WITH_SERVER_CODE
 	//SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.

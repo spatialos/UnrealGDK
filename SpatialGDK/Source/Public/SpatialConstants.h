@@ -4,6 +4,7 @@
 
 #include "UObject/improbable/UnrealObjectRef.h"
 
+#include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
 // IMPORTANT: This is required for Linux builds to succeed - don't remove!
@@ -39,8 +40,8 @@ namespace SpatialConstants
 	enum EntityIds
 	{
 		INVALID_ENTITY_ID = 0,
-		SPAWNER_ENTITY_ID = 1,
-		GLOBAL_STATE_MANAGER = 2,
+		INITIAL_SPAWNER_ENTITY_ID = 1,
+		INTIAL_GLOBAL_STATE_MANAGER = 2,
 		PLACEHOLDER_ENTITY_ID_FIRST = 3,
 		PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
 	};
@@ -57,7 +58,10 @@ namespace SpatialConstants
 	const Worker_ComponentId SINGLETON_COMPONENT_ID				= 100003;
 	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID		= 100004;
 	const Worker_ComponentId GLOBAL_STATE_MANAGER_COMPONENT_ID	= 100005;
+	const Worker_ComponentId GLOBAL_STATE_MANAGER_MAP_URL		= 100008;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID	= 100010;
+
+	const Schema_FieldId GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID = 2;
 
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;

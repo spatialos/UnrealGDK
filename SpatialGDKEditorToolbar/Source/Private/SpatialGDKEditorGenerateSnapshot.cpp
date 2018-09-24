@@ -41,7 +41,7 @@ const improbable::Coordinates Origin{ 0, 0, 0 };
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity SpawnerEntity;
-	SpawnerEntity.entity_id = SpatialConstants::SPAWNER_ENTITY_ID;
+	SpawnerEntity.entity_id = SpatialConstants::INITIAL_SPAWNER_ENTITY_ID;
 
 	Worker_ComponentData PlayerSpawnerData = {};
 	PlayerSpawnerData.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
@@ -62,6 +62,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::UnrealMetadata().CreateUnrealMetadataData());
 	Components.Add(PlayerSpawnerData);
+
 	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	SpawnerEntity.component_count = Components.Num();
@@ -108,7 +109,7 @@ Worker_ComponentData CreateGlobalStateManagerData()
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity GSM;
-	GSM.entity_id = SpatialConstants::GLOBAL_STATE_MANAGER;
+	GSM.entity_id = SpatialConstants::INTIAL_GLOBAL_STATE_MANAGER;
 
 	TArray<Worker_ComponentData> Components;
 
@@ -119,12 +120,24 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL, UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::UnrealMetadata().CreateUnrealMetadataData());
 	Components.Add(CreateGlobalStateManagerData());
+
+	// Add the accepting players state of the GSM.
+	Worker_ComponentData MapData;
+	MapData.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
+	MapData.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
+	Schema_Object* MapDataObject = Schema_GetComponentDataFields(MapData.schema_type);
+	Schema_Object* MapURLObject = Schema_AddObject(MapDataObject, 1);
+	AddStringToSchema(MapURLObject, 1, TEXT("default"));
+	Schema_AddBool(MapDataObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(false));
+	Components.Add(MapData);
+
 	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();

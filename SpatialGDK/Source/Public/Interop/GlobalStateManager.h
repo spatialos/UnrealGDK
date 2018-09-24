@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "TimerManager.h"
 #include "UObject/NoExportTypes.h"
 
 #include "Utils/SchemaUtils.h"
@@ -16,8 +17,12 @@ class USpatialNetDriver;
 class USpatialActorChannel;
 class USpatialStaticComponentView;
 class USpatialSender;
+class USpatialReceiver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
+
+DECLARE_DELEGATE_OneParam(AcceptingPlayersDelegate, bool);
+DECLARE_DELEGATE_OneParam(AuthorityChangedDelegate, bool);
 
 UCLASS()
 class SPATIALGDK_API UGlobalStateManager : public UObject
@@ -26,16 +31,32 @@ class SPATIALGDK_API UGlobalStateManager : public UObject
 
 public:
 
-	void Init(USpatialNetDriver* InNetDriver);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
 
 	void ApplyData(const Worker_ComponentData& Data);
+	void ApplyMapData(const Worker_ComponentData& Data);
 	void ApplyUpdate(const Worker_ComponentUpdate& Update);
-
+	void ApplyMapUpdate(const Worker_ComponentUpdate& Update);
 	void LinkExistingSingletonActors();
 	void ExecuteInitialSingletonActorReplication();
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
 
 	bool IsSingletonEntity(Worker_EntityId EntityId);
+
+	void QueryGSM(bool bWithRetry);
+	void SetDeploymentMapURL(const FString& MapURL);
+
+	void ToggleAcceptingPlayers(bool bAcceptingPlayers);
+	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
+
+	FString DeploymentMapURL;
+	bool bAcceptingPlayers = false;
+	bool bHasLiveMapAuthority = false;
+
+	AcceptingPlayersDelegate AcceptingPlayersChanged;
+	AuthorityChangedDelegate OnAuthorityChanged;
+
+	Worker_EntityId GlobalStateManagerEntityId;
 
 private:
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
@@ -50,5 +71,10 @@ private:
 	UPROPERTY()
 	USpatialSender* Sender;
 
+	UPROPERTY()
+	USpatialReceiver* Receiver;
+
 	StringToEntityMap SingletonNameToEntityId;
+
+	FTimerManager* TimerManager;
 };

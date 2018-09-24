@@ -229,6 +229,12 @@ Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdRequest()
 	return Worker_Connection_SendReserveEntityIdRequest(WorkerConnection, nullptr);
 }
 
+// Bulk reserve IDs
+Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
+{
+	return Worker_Connection_SendReserveEntityIdsRequest(WorkerConnection, NumOfEntities, nullptr);
+}
+
 Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(uint32_t ComponentCount, const Worker_ComponentData* Components, const Worker_EntityId* EntityId)
 {
 	return Worker_Connection_SendCreateEntityRequest(WorkerConnection, ComponentCount, Components, EntityId, nullptr);
@@ -273,4 +279,9 @@ void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, c
 FString USpatialWorkerConnection::GetWorkerId() const
 {
 	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
+}
+
+Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntiyQuery)
+{
+	return Worker_Connection_SendEntityQueryRequest(WorkerConnection, EntiyQuery, 0);
 }

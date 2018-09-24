@@ -137,6 +137,9 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		GlobalStateManager->ApplyData(Op.data);
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
+	case SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL:
+ 		GlobalStateManager->ApplyMapData(Op.data);
+		return;
 	default:
 		Data = MakeShared<improbable::DynamicComponent>(Op.data);
 		break;
@@ -218,6 +221,11 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
 		}
+	}
+
+	if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		GlobalStateManager->AuthorityChanged(true, Op.entity_id);
 	}
 }
 
@@ -561,6 +569,9 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		GlobalStateManager->ApplyUpdate(Op.update);
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
+	case SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL:
+		NetDriver->GlobalStateManager->ApplyMapUpdate(Op.update);
+		return;
 	}
 
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
@@ -688,7 +699,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 {
-	if (Op.entity_id == SpatialConstants::SPAWNER_ENTITY_ID && Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
+	if (Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponse(Op);
 	}
@@ -801,17 +812,69 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 void USpatialReceiver::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op)
 {
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Received reserve entity Id: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
+
 	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
 	{
 		Channel->OnReserveEntityIdResponse(Op);
 	}
 }
 
-void USpatialReceiver::OnCreateEntityIdResponse(Worker_CreateEntityResponseOp& Op)
+void USpatialReceiver::OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op)
 {
+	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+	{
+		auto RequestDelegate = ReserveEntityIDsDelegates.Find(Op.request_id);
+		if (RequestDelegate)
+		{
+			UE_LOG(LogSpatialReceiver, Log, TEXT("Executing ReserveEntityIdsResponse with delegate, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
+			RequestDelegate->ExecuteIfBound(Op);
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved ReserveEntityIdsResponse but with no delegate set, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Failed ReserveEntityIds: request id: %d, message: %s"), Op.request_id, UTF8_TO_TCHAR(Op.message));
+	}
+}
+
+void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
+{
+	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Create entity request failed: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request succeeded: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+	}
+
 	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
 	{
 		Channel->OnCreateEntityResponse(Op);
+	}
+}
+
+void USpatialReceiver::OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op)
+{
+	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+	{
+		auto RequestDelegate = EntityQueryDelegates.Find(Op.request_id);
+		if (RequestDelegate)
+		{
+			UE_LOG(LogSpatialReceiver, Log, TEXT("Executing EntityQueryResponse with delegate, request id: %d, number of entities: %lld, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
+			RequestDelegate->ExecuteIfBound(Op);
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved EntityQueryResponse but with no delegate set, request id: %d, number of entities: %lld, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("EntityQuery failed: request id: %d, message: %s"), Op.request_id, UTF8_TO_TCHAR(Op.message));
 	}
 }
 
@@ -823,6 +886,16 @@ void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId, USpati
 void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<FPendingRPCParams> Params)
 {
 	PendingReliableRPCs.Add(RequestId, Params);
+}
+
+void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
+{
+	EntityQueryDelegates.Add(RequestId, Delegate);
+}
+
+void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
+{
+	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
 }
 
 USpatialActorChannel* USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
