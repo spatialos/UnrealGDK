@@ -116,10 +116,14 @@ public:
 	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
 	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FPendingRPCParams> Params);
 
+	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
+
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
 	void ProcessQueuedResolvedObjects();
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
+
+	TArray<EntityQueryFunction> EntityQueryFunctions;
 
 private:
 	void EnterCriticalSection();

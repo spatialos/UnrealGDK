@@ -61,6 +61,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::UnrealMetadata().CreateUnrealMetadataData());
 	Components.Add(PlayerSpawnerData);
+
 	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	SpawnerEntity.component_count = Components.Num();
@@ -118,12 +119,23 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL, UnrealWorkerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::UnrealMetadata().CreateUnrealMetadataData());
 	Components.Add(CreateGlobalStateManagerData());
+
+	// Add the map name. TODO: Refactor.
+	Worker_ComponentData Data;
+	Data.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
+	Data.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	Schema_Object* MapObject = Schema_AddObject(ComponentObject, 1);
+	AddStringToSchema(MapObject, 1, TEXT("BestMap"));
+	Components.Add(Data);
+
 	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();

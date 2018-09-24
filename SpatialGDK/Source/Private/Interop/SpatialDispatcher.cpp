@@ -77,6 +77,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			break;
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
+			Receiver->OnEntityQueryResponse(Op->entity_query_response);
 			break;
 
 		case WORKER_OP_TYPE_FLAG_UPDATE:
@@ -110,4 +111,88 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			Channel->SpatialViewTick();
 		}
 	}
+}
+
+Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
+	{
+		if (Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
+		{
+			return *Authority;
+		}
+	}
+
+	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
+}
+
+// TODO UNR-640 - Need to fix for authority loss imminent
+bool USpatialView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
+	{
+		if (Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
+		{
+			return *Authority == WORKER_AUTHORITY_AUTHORITATIVE;
+		}
+	}
+
+	return false;
+}
+
+improbable::UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
+{
+	if (TSharedPtr<improbable::UnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
+	{
+		return UnrealMetadataPtr->Get();
+	}
+
+	return nullptr;
+}
+
+improbable::EntityAcl* USpatialView::GetEntityACL(Worker_EntityId EntityId)
+{
+	if (TSharedPtr<improbable::EntityAcl>* EntityAclPtr = EntityACLMap.Find(EntityId))
+	{
+		return EntityAclPtr->Get();
+	}
+
+	return nullptr;
+}
+
+void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
+{
+	if (Op.data.component_id == improbable::UnrealMetadata::ComponentId)
+	{
+		EntityUnrealMetadataMap.Add(Op.entity_id, MakeShared<improbable::UnrealMetadata>(Op.data));
+	}
+
+	if (Op.data.component_id == improbable::EntityAcl::ComponentId)
+	{
+		EntityACLMap.Add(Op.entity_id, MakeShared<improbable::EntityAcl>(Op.data));
+	}
+}
+
+void USpatialView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
+{
+	EntityUnrealMetadataMap.Remove(Op.entity_id);
+	EntityACLMap.Remove(Op.entity_id);
+}
+
+void USpatialView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
+{
+	if (Op.update.component_id == improbable::EntityAcl::ComponentId)
+	{
+		EntityACLMap[Op.entity_id]->ApplyComponentUpdate(Op.update);
+	}
+}
+
+void USpatialView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
+{
+	EntityComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
+}
+
+void USpatialView::AddEntityQueryResponse(EntityQueryFunction Func)
+{
+	Receiver->EntityQueryFunctions.Add(Func);
 }

@@ -819,6 +819,14 @@ void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TShared
 	PendingReliableRPCs.Add(RequestId, Params);
 }
 
+void USpatialReceiver::OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op)
+{
+	for (EntityQueryFunction Func : EntityQueryFunctions)
+	{
+		Func(Op);
+	}
+}
+
 USpatialActorChannel* USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
 {
 	USpatialActorChannel** ChannelPtr = PendingActorRequests.Find(RequestId);

@@ -36,6 +36,10 @@ public:
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
 
 	bool IsSingletonEntity(Worker_EntityId EntityId);
+	void FindDeploymentMapURL();
+	void SetDeploymentMapURL(FString MapURL);
+
+	FString DeploymentMapURL;
 
 private:
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);

@@ -21,6 +21,8 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
+
+	FindDeploymentMapURL(); // TODO: This is in the wrong place.
 }
 
 void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
@@ -191,4 +193,67 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId)
 		}
 	}
 	return false;
+}
+
+void UGlobalStateManager::FindDeploymentMapURL()
+{
+	Worker_EntityIdConstraint GSMConstraintEID{ Worker_EntityId{ SpatialConstants::GLOBAL_STATE_MANAGER } };
+
+	Worker_Constraint GSMConstraint;
+	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
+	GSMConstraint.entity_id_constraint = GSMConstraintEID;
+
+	Worker_EntityQuery MapQuery{};
+	MapQuery.constraint = GSMConstraint;
+	MapQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
+
+	Worker_RequestId RequestID;
+	RequestID = NetDriver->Connection->SendEntityQueryRequest(&MapQuery);
+
+	EntityQueryFunction MapQueryFunction = [this, RequestID](const Worker_EntityQueryResponseOp& Op)
+	{
+		if (Op.request_id != RequestID)
+		{
+			return;
+		}
+
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+		{
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Could not find GSM via entity query: %s"), Op.message);
+		}
+
+		if (Op.result_count == 0)
+		{
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Found no GSM"));
+		}
+
+		if (Op.result_count == 1)
+		{
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Found GSM!!"));
+
+			// Extract the map
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Found %u components"), Op.results->component_count);
+			for (uint32_t i = 0; i < Op.results->component_count; i++)
+			{
+				Worker_ComponentData Data = Op.results[0].components[i];
+				if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL)
+				{
+					Schema_Object* SchemaObject = Schema_GetComponentDataFields(Data.schema_type);
+					FString MapURL = GetStringFromSchema(SchemaObject, 1);
+					this->SetDeploymentMapURL(MapURL);
+				}
+			}
+
+		}
+	};
+
+	View->AddEntityQueryResponse(MapQueryFunction);
+}
+
+void UGlobalStateManager::SetDeploymentMapURL(FString MapURL)
+{
+	UE_LOG(LogGlobalStateManager, Error, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
+	DeploymentMapURL = MapURL;
+
+	// TODO - Callbacks on map change.
 }

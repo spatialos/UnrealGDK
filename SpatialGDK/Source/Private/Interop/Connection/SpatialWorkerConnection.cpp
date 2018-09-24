@@ -274,3 +274,8 @@ FString USpatialWorkerConnection::GetWorkerId() const
 {
 	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
+
+Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntiyQuery)
+{
+	return Worker_Connection_SendEntityQueryRequest(WorkerConnection, EntiyQuery, 0);
+}
