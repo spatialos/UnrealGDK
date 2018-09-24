@@ -4,6 +4,18 @@ set -e -u -x -o pipefail
 
 cd "$(dirname "$0")/../"
 
+source ci/pinned-tools
+
+if ! isTeamCity ; then
+  echo "This script should only be run on the CI agents."
+  exit 0
+fi
+
+if ! isWindows ; then
+  echo "TestSuite can only be built on Windows."
+  exit 0
+fi
+
 source ci/profiling.sh
 
 markStartOfBlock "$0"
