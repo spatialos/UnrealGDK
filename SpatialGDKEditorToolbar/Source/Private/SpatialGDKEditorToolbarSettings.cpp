@@ -2,10 +2,11 @@
 #include "SpatialGDKEditorToolbarSettings.h"
 
 USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer),
-	SpatialOSLaunchConfig(TEXT("default_launch.json")),
-	bStopSpatialOnExit(false),
-	SpatialOSSnapshotFile(GetSpatialOSSnapshotFile())
+	: Super(ObjectInitializer)
+	, SpatialOSLaunchConfig(TEXT("default_launch.json"))
+	, bStopSpatialOnExit(false)
+	, SpatialOSSnapshotFile(GetSpatialOSSnapshotFile())
+	, bGenerateSchemaForAllSupportedClasses(false)
 {
 	ProjectRootFolder.Path = TEXT("");
 	SpatialOSSnapshotPath.Path = TEXT("");
@@ -21,9 +22,11 @@ FString USpatialGDKEditorToolbarSettings::ToString()
 	Args.Add(SpatialOSSnapshotPath.Path);
 	Args.Add(SpatialOSSnapshotFile);
 	Args.Add(GeneratedSchemaOutputFolder.Path);
+	Args.Add(bGenerateSchemaForAllSupportedClasses);
 
 	return FString::Format(TEXT("ProjectRootFolder={0}, SpatialOSLaunchArgument={1}, "
 								"bStopSpatialOnExit={2}, SpatialOSSnapshotPath={3}, "
-								"SpatialOSSnapshotFile={4}, GeneratedSchemaOutputFolder={5}"),
+								"SpatialOSSnapshotFile={4}, GeneratedSchemaOutputFolder={5}, "
+								"bGenerateSchemaForAllSupportedClasses={6}"),
 						   Args);
 }

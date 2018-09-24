@@ -187,17 +187,11 @@ TArray<UClass*> GetAllSupportedClasses()
 
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		if (*It == AActor::StaticClass()) continue;
-
-		if (*It == UActorComponent::StaticClass()) continue;
+		// Only support Actors and ActorComponents for now
+		if (!(It->IsChildOf<AActor>() || It->IsChildOf<UActorComponent>())) continue;
 
 		// Any component which has child components
 		if (It->IsChildOf<USceneComponent>()) continue;
-
-		if (It->GetName().Contains("AbilitySystemComponent")) continue;
-		if (It->GetName().Contains("GameplayTasksComponent")) continue;
-
-		if (!(It->IsChildOf<AActor>() || It->IsChildOf<UActorComponent>())) continue;
 
 		// Doesn't let us save the schema database
 		if (It->IsChildOf<ALevelScriptActor>()) continue;
@@ -219,7 +213,15 @@ bool SpatialGDKGenerateInteropCode()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	TArray<UClass*> InteropGeneratedClasses = GetAllSpatialTypeClasses();
+	TArray<UClass*> InteropGeneratedClasses;
+	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)
+	{
+		InteropGeneratedClasses = GetAllSupportedClasses();	
+	}
+	else
+	{
+		InteropGeneratedClasses = GetAllSpatialTypeClasses();
+	}
 
 	if (!CheckClassNameListValidity(InteropGeneratedClasses))
 	{
