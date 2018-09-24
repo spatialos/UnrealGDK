@@ -86,6 +86,7 @@ public:
 private:
 	void FindSupportedClasses();
 	void CreateTypebindings();
+	void AddSubobjectClass(FClassInfo& ClassInfo, UClass* Class);
 
 private:
 	UPROPERTY()

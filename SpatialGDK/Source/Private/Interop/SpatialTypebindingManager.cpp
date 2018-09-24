@@ -124,15 +124,12 @@ void USpatialTypebindingManager::CreateTypebindings()
 		{
 			if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
 			{
-				TInlineComponentArray<UActorComponent*> NativeComponents;
-				ContainerCDO->GetComponents(NativeComponents);
-
-				for (UActorComponent* Component : NativeComponents)
+				// Iterate over all subobjects and add them.
+				TArray<UObject*> DefaultSubobjects;
+				ContainerCDO->GetDefaultSubobjects(DefaultSubobjects);
+				for (auto Subobject : DefaultSubobjects)
 				{
-					if (IsSupportedClass(Component->GetClass()))
-					{
-						Info.SubobjectClasses.Add(Component->GetClass());
-					}
+					AddSubobjectClass(Info, Subobject->GetClass());
 				}
 
 				// Components that are added in a blueprint won't appear in the CDO.
@@ -147,24 +144,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 								continue;
 							}
 
-							if (IsSupportedClass(Node->ComponentTemplate->GetClass()))
-							{
-								Info.SubobjectClasses.Add(Node->ComponentTemplate->GetClass());
-							}
-						}
-					}
-				}
-
-				// Iterate over all subobjects and add any non ActorComponents
-				TArray<UObject*> DefaultSubobjects;
-				ContainerCDO->GetDefaultSubobjects(DefaultSubobjects);
-				for (auto Subobject : DefaultSubobjects)
-				{
-					if (!Subobject->IsA<UActorComponent>())
-					{
-						if (IsSupportedClass(Subobject->GetClass()))
-						{
-							Info.SubobjectClasses.Add(Subobject->GetClass());
+							AddSubobjectClass(Info, Node->ComponentTemplate->GetClass());
 						}
 					}
 				}
@@ -227,4 +207,13 @@ TArray<UObject*> USpatialTypebindingManager::GetHandoverSubobjects(AActor* Actor
 	}
 
 	return FoundSubobjects;
+}
+
+void USpatialTypebindingManager::AddSubobjectClass(FClassInfo& ClassInfo, UClass* Class)
+{
+	if (IsSupportedClass(Class))
+	{
+		checkf(ClassInfo.SubobjectClasses.Find(Class) == nullptr, TEXT("Invalid class layout, duplicate subobject type found - %s"), *Class->GetName());
+		ClassInfo.SubobjectClasses.Add(Class);
+	}
 }
