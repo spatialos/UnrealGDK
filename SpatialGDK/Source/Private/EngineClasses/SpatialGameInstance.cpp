@@ -51,22 +51,10 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	return bHasSpatialNetDriver;
 }
 
-// Delegate used in Engine.h/UnrealEngine.cpp to allow client travel in a Spatial context.
-// Will initialize the PendingNetGame and the NetDriver to Spatial variants.
-void SpatialBrowse(FWorldContext& WorldContext, const FURL& URL)
-{
-	// Create the proper PendingNetGame depending on what NetDriver we have loaded.
-	// This is required so that we don't break vanilla Unreal networking with SpatialOS switched off.
-	if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
-	{
-		WorldContext.PendingNetGame = NewObject<USpatialPendingNetGame>();
-		WorldContext.PendingNetGame->Initialize(URL);
-	}
-}
-
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 {
-	GetEngine()->SpatialBrowse.BindStatic(&SpatialBrowse);
+	// Set the PendingNetGameClass in the Engine so that the correct SpatialPendingNetGame is used for UEngine::Browse (client travel).
+	GetEngine()->PendingNetGameClass = USpatialPendingNetGame::StaticClass();
 
 	if (WorldContext->PendingNetGame)
 	{
