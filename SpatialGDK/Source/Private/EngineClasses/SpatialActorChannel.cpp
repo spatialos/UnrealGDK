@@ -653,19 +653,16 @@ void USpatialActorChannel::UpdateSpatialRotation()
 
 FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
 {
-	// Preferentially uses the owner location over the origin
-	// This is to enable actors like PlayerState to follow their corresponding character
-
-	// If the actor has a well defined location then use that
-	// Otherwise if it has a parent use its location
+	// If the Actor has an Owner, use its position.
+	// Otherwise if the Actor has a well defined location then use that
 	// Otherwise use the origin
-	if (Actor->GetRootComponent()) 
-	{
-		return Actor->GetRootComponent()->GetComponentLocation();
-	}
-	else if (Actor->GetOwner())
+	if (Actor->GetOwner())
 	{
 		return GetActorSpatialPosition(Actor->GetOwner());
+	}
+	else if (Actor->GetRootComponent()) 
+	{
+		return Actor->GetRootComponent()->GetComponentLocation();
 	}
 	else
 	{
