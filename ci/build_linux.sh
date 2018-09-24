@@ -10,7 +10,7 @@ markStartOfBlock "$0"
 
 markStartOfBlock "Setup dependencies"
 
-    ./Setup.bat
+   # ./Setup.bat
 
 markEndOfBlock "Setup dependencies"
 
