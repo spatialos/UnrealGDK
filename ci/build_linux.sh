@@ -6,6 +6,8 @@ cd "$(dirname "$0")/../"
 
 source ci/profiling.sh
 
+echo "hellooooooooooooo"
+
 markStartOfBlock "$0"
 
 markStartOfBlock "Setup dependencies"
