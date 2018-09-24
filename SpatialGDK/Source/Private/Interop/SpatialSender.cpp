@@ -2,6 +2,8 @@
 
 #include "SpatialSender.h"
 
+#include "TimerManager.h"
+
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -19,13 +21,35 @@ DEFINE_LOG_CATEGORY(LogSpatialSender);
 
 using namespace improbable;
 
-void USpatialSender::Init(USpatialNetDriver* InNetDriver)
+FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters)
+	: TargetObject(InTargetObject)
+	, Function(InFunction)
+	, Attempts(1)
+{
+	Parameters.SetNumZeroed(Function->ParmsSize);
+
+	for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+	{
+		It->CopyCompleteValue_InContainer(Parameters.GetData(), InParameters);
+	}
+}
+
+FPendingRPCParams::~FPendingRPCParams()
+{
+	for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+	{
+		It->DestroyValue_InContainer(Parameters.GetData());
+	}
+}
+
+void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
 	Connection = InNetDriver->Connection;
 	PackageMap = InNetDriver->PackageMap;
 	TypebindingManager = InNetDriver->TypebindingManager;
 	Receiver = InNetDriver->Receiver;
+	TimerManager = InTimerManager;
 }
 
 Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, const FString& EntityType, USpatialActorChannel* Channel)
@@ -237,15 +261,21 @@ void USpatialSender::SendRotationUpdate(Worker_EntityId EntityId, const FRotator
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* Parameters, bool bOwnParameters)
+void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 {
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(TargetObject->GetClass());
+	if (!Params->TargetObject.IsValid())
+	{
+		// Target object was destroyed before the RPC could be (re)sent
+		return;
+	}
+
+	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Params->TargetObject->GetClass());
 	if (Info == nullptr)
 	{
 		return;
 	}
 
-	FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Function);
+	FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Params->Function);
 	check(RPCInfo);
 
 	Worker_EntityId EntityId = 0;
@@ -257,18 +287,23 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 	case RPC_Server:
 	case RPC_CrossServer:
 	{
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Function, Parameters, Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(Params->TargetObject.Get(), Params->Function, Params->Parameters.GetData(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
 			check(EntityId > 0);
-			Connection->SendCommandRequest(EntityId, &CommandRequest, RPCInfo->Index + 1); 
+			Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, RPCInfo->Index + 1);
+
+			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
+			{
+				OutgoingReliableRPCs.Add(RequestId, Params);
+			}
 		}
 		break;
 	}
 	case RPC_NetMulticast:
 	{
-		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Function, Parameters, Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(Params->TargetObject.Get(), Params->Function, Params->Parameters.GetData(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -284,29 +319,49 @@ void USpatialSender::SendRPC(UObject* TargetObject, UFunction* Function, void* P
 
 	if (UnresolvedObject)
 	{
-		void* NewParameters = Parameters;
-		if (!bOwnParameters)
-		{
-			// Copy parameters
-			NewParameters = new uint8[Function->ParmsSize];
-			FMemory::Memzero(NewParameters, Function->ParmsSize); // Not sure if needed considering we're copying everything from Parameters
-
-			for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
-			{
-				It->CopyCompleteValue_InContainer(NewParameters, Parameters);
-			}
-		}
-
-		QueueOutgoingRPC(UnresolvedObject, TargetObject, Function, NewParameters);
+		QueueOutgoingRPC(UnresolvedObject, Params);
 	}
-	else if (bOwnParameters)
+}
+
+void USpatialSender::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
+{
+	TSharedRef<FPendingRPCParams>* ReliableRPCPtr = OutgoingReliableRPCs.Find(Op.request_id);
+	if (ReliableRPCPtr == nullptr)
 	{
-		// Destroy parameters
-		for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+		// We received a response for an unreliable RPC, ignore.
+		return;
+	}
+
+	TSharedRef<FPendingRPCParams> ReliableRPC = *ReliableRPCPtr;
+	OutgoingReliableRPCs.Remove(Op.request_id);
+	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+	{
+		if (ReliableRPC->Attempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 		{
-			It->DestroyValue_InContainer(Parameters);
+			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(ReliableRPC->Attempts);
+			UE_LOG(LogSpatialSender, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"),
+				*ReliableRPC->Function->GetName(), WaitTime, (int)Op.status_code, UTF8_TO_TCHAR(Op.message));
+
+			if (!ReliableRPC->TargetObject.IsValid())
+			{
+				UE_LOG(LogSpatialSender, Warning, TEXT("%s: target object was destroyed before we could deliver the RPC."),
+					*ReliableRPC->Function->GetName());
+				return;
+			}
+
+			// Queue retry
+			FTimerHandle RetryTimer;
+			TimerManager->SetTimer(RetryTimer, [this, ReliableRPC]()
+			{
+				ReliableRPC->Attempts++;
+				SendRPC(ReliableRPC);
+			}, WaitTime, false);
 		}
-		delete[] (uint8*)Parameters;
+		else
+		{
+			UE_LOG(LogSpatialSender, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"),
+				*ReliableRPC->Function->GetName(), SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.status_code, UTF8_TO_TCHAR(Op.message));
+		}
 	}
 }
 
@@ -415,11 +470,11 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	}
 }
 
-void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, UObject* TargetObject, UFunction* Function, void* Parameters)
+void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, TSharedRef<FPendingRPCParams> Params)
 {
 	check(UnresolvedObject);
-	UE_LOG(LogSpatialSender, Log, TEXT("Added pending outgoing RPC depending on object: %s, target: %s, function: %s"), *UnresolvedObject->GetName(), *TargetObject->GetName(), *Function->GetName());
-	OutgoingRPCs.FindOrAdd(UnresolvedObject).Add(FPendingRPCParams(TargetObject, Function, Parameters));
+	UE_LOG(LogSpatialSender, Log, TEXT("Added pending outgoing RPC depending on object: %s, target: %s, function: %s"), *UnresolvedObject->GetName(), *Params->TargetObject->GetName(), *Params->Function->GetName());
+	OutgoingRPCs.FindOrAdd(UnresolvedObject).Add(Params);
 }
 
 Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject)
@@ -574,15 +629,21 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 
 void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 {
-	TArray<FPendingRPCParams>* RPCList = OutgoingRPCs.Find(Object);
+	TArray<TSharedRef<FPendingRPCParams>>* RPCList = OutgoingRPCs.Find(Object);
 	if (RPCList)
 	{
-		for (FPendingRPCParams& RPCParams : *RPCList)
+		for (TSharedRef<FPendingRPCParams>& RPCParams : *RPCList)
 		{
+			if (!RPCParams->TargetObject.IsValid())
+			{
+				// The target object was destroyed before we could send the RPC.
+				continue;
+			}
+
 			// We can guarantee that SendRPC won't populate OutgoingRPCs[Object] whilst we're iterating through it,
 			// because Object has been resolved when we call ResolveOutgoingRPCs.
-			UE_LOG(LogSpatialSender, Log, TEXT("Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams.TargetObject->GetName(), *RPCParams.Function->GetName());
-			SendRPC(RPCParams.TargetObject, RPCParams.Function, RPCParams.Parameters, true);
+			UE_LOG(LogSpatialSender, Log, TEXT("Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams->TargetObject->GetName(), *RPCParams->Function->GetName());
+			SendRPC(RPCParams);
 		}
 		OutgoingRPCs.Remove(Object);
 	}
