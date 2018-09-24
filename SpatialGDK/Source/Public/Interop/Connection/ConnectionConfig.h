@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Containers/UnrealString.h"
+#include "SpatialConstants.h"
 
 #include <improbable/c_worker.h>
 
@@ -35,8 +36,8 @@ struct FConnectionConfig
 struct FReceptionistConfig : public FConnectionConfig
 {
 	FReceptionistConfig()
-		: ReceptionistHost(TEXT("127.0.0.1"))
-		, ReceptionistPort(7777)
+		: ReceptionistHost(SpatialConstants::LOCAL_HOST)
+		, ReceptionistPort(SpatialConstants::DEFAULT_PORT)
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
@@ -56,11 +57,13 @@ struct FLocatorConfig : public FConnectionConfig
 		const TCHAR* CommandLine = FCommandLine::Get();
 
 		FParse::Value(CommandLine, TEXT("projectName"), ProjectName);
+		FParse::Value(CommandLine, TEXT("deploymentName"), DeploymentName);
 		FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
 		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 	}
 
 	FString ProjectName;
+	FString DeploymentName;
 	FString LocatorHost;
 	FString LoginToken;
 };

@@ -89,28 +89,55 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
-
 	//checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
 
 	// Set the timer manager.
 	TimerManager = &LoadedWorld->GetTimerManager();
 
-	// Connect to SpatialOS.
-	Connect();
-
 	// Set up manager objects.
 	EntityRegistry = NewObject<UEntityRegistry>(this);
-}
 
-void USpatialNetDriver::Connect()
-{
+	// Handle Spatial connection configurations.
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
+
 	if (Connection != nullptr)
 	{
 		return;
 	}
 
 	Connection = NewObject<USpatialWorkerConnection>();
+
+	if (LoadedWorld->URL.HasOption(TEXT("locator")))
+	{
+		Connection->LocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
+		Connection->LocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
+		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
+		Connection->LocatorConfig.UseExternalIp = true;
+	}
+	else if (LoadedWorld->URL.HasOption(TEXT("receptionist")))
+	{
+		// Check for overrides in the travel URL.
+		if (!LoadedWorld->URL.Host.IsEmpty())
+		{
+			Connection->ReceptionistConfig.ReceptionistHost = LoadedWorld->URL.Host;
+			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
+		}
+
+		if (Connection->ReceptionistConfig.ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) == 0)
+		{
+			Connection->ReceptionistConfig.UseExternalIp = false;
+		}
+		else
+		{
+			Connection->ReceptionistConfig.UseExternalIp = true;
+		}
+	}
+
+	Connect();
+}
+
+void USpatialNetDriver::Connect()
+{
 	Connection->OnConnected.BindUFunction(this, FName("OnConnected"));
 
 	Connection->Connect(bConnectAsClient);
@@ -927,7 +954,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 	if (!ErrorMsg.IsEmpty())
 	{
-		UE_LOG(LogNet, Log, TEXT("PreLogin failure: %s"), *ErrorMsg);
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("PreLogin failure: %s"), *ErrorMsg);
 		bOk = false;
 	}
 
@@ -973,7 +1000,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 		if (SpatialConnection->PlayerController == NULL)
 		{
 			// Failed to connect.
-			UE_LOG(LogNet, Log, TEXT("Join failure: %s"), *ErrorMsg);
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Join failure: %s"), *ErrorMsg);
 			SpatialConnection->FlushNet(true);
 			bOk = false;
 		}

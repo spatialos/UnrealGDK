@@ -204,6 +204,13 @@ void FSpatialNetGUIDCache::RemoveEntitySubobjectsNetGUIDs(Worker_EntityId Entity
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef)
 {
+	UnrealObjectRef NetRemappedObjectRef = ObjectRef;
+	NetworkRemapObjectRefPaths(NetRemappedObjectRef);
+	return GetNetGUIDFromUnrealObjectRefInternal(NetRemappedObjectRef);
+}
+
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const UnrealObjectRef& ObjectRef)
+{
 	FNetworkGUID* CachedGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
 	FNetworkGUID NetGUID = CachedGUID ? *CachedGUID : FNetworkGUID{};
 	if (!NetGUID.IsValid() && ObjectRef.Path.IsSet())
@@ -217,6 +224,32 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObj
 		RegisterObjectRef(NetGUID, ObjectRef);
 	}
 	return NetGUID;
+}
+
+void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef) const
+{
+	// If we have paths, network-sanitize all of them (e.g. removing PIE prefix).
+	if (!ObjectRef.Path.IsSet())
+	{
+		return;
+	}
+
+	UnrealObjectRef* Iterator = &ObjectRef;
+	while (true)
+	{
+		if (Iterator->Path.IsSet())
+		{
+			FString TempPath(*Iterator->Path);
+			GEngine->NetworkRemapPath(Driver, TempPath, true);
+			Iterator->Path = TempPath;
+		}
+		if (!Iterator->Outer.IsSet())
+		{
+			break;
+		}
+		Iterator = &Iterator->Outer.GetValue();
+	}
+
 }
 
 UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const

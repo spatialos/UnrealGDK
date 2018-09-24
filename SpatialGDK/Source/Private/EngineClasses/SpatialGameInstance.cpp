@@ -51,9 +51,11 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	return bHasSpatialNetDriver;
 }
 
-
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 {
+	// Set the PendingNetGameClass in the Engine so that the correct SpatialPendingNetGame is used for UEngine::Browse (client travel).
+	GetEngine()->PendingNetGameClass = USpatialPendingNetGame::StaticClass();
+
 	if (WorldContext->PendingNetGame)
 	{
 		if (WorldContext->PendingNetGame->NetDriver && WorldContext->PendingNetGame->NetDriver->ServerConnection)
@@ -72,9 +74,8 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 		GetEngine()->ShutdownWorldNetDriver(GetWorldContext()->World());
 	}
 
-	// This will use the URL / Map that was setup by the server worker (which is loaded first).
-	// By not specifying a hostname the connection defaults to local.
 	FURL URL = WorldContext->LastURL;
+	URL.Host = SpatialConstants::LOCAL_HOST;
 
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);

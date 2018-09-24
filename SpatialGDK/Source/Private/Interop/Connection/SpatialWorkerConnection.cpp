@@ -150,8 +150,21 @@ void USpatialWorkerConnection::ConnectToLocator()
 		ConnectionParams.network.use_external_ip = SpatialConnection->LocatorConfig.UseExternalIp;
 		// end TODO
 
-		Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(SpatialConnection->WorkerLocator, DeploymentList->deployments[0].deployment_name,
-			&ConnectionParams, nullptr, nullptr);
+		int DeploymentIndex = 0;
+		if (!SpatialConnection->LocatorConfig.DeploymentName.IsEmpty())
+		{
+			for (uint32_t i = 0; i < DeploymentList->deployment_count; ++i)
+			{
+				if (SpatialConnection->LocatorConfig.DeploymentName.Equals(UTF8_TO_TCHAR(DeploymentList->deployments[i].deployment_name)))
+				{
+					DeploymentIndex = i;
+					break;
+				}
+			}
+		}
+
+		Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(SpatialConnection->WorkerLocator, DeploymentList->deployments[DeploymentIndex].deployment_name,
+				&ConnectionParams, nullptr, nullptr);
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, SpatialConnection]
 		{
@@ -170,9 +183,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 bool USpatialWorkerConnection::ShouldConnectWithLocator()
 {
-	const TCHAR* CommandLine = FCommandLine::Get();
-	FString TempStr;
-	return FParse::Value(CommandLine, *FString("loginToken"), TempStr);
+	return !LocatorConfig.LoginToken.IsEmpty();
 }
 
 bool USpatialWorkerConnection::IsConnected()

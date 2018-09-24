@@ -39,6 +39,9 @@ public:
 
 	OnConnectedDelegate OnConnected;
 
+	FReceptionistConfig ReceptionistConfig;
+	FLocatorConfig LocatorConfig;
+
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);
 	void ConnectToLocator();
@@ -49,9 +52,6 @@ private:
 private:
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLocator;
-
-	FReceptionistConfig ReceptionistConfig;
-	FLocatorConfig LocatorConfig;
 
 	bool bIsConnected;
 };
