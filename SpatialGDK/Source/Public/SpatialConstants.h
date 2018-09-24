@@ -38,4 +38,5 @@ namespace SpatialConstants
 	}
 
 	const FString LOCAL_HOST = TEXT("127.0.0.1");
+	const uint16 DEFAULT_PORT = 7777;
 }
