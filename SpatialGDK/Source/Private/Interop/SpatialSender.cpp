@@ -6,10 +6,12 @@
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialView.h"
 #include "Schema/Rotation.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
@@ -45,10 +47,11 @@ FPendingRPCParams::~FPendingRPCParams()
 void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
+	View = InNetDriver->View;
 	Connection = InNetDriver->Connection;
+	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
 	TypebindingManager = InNetDriver->TypebindingManager;
-	Receiver = InNetDriver->Receiver;
 	TimerManager = InTimerManager;
 }
 
@@ -247,6 +250,42 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 	{
 		Connection->SendComponentUpdate(EntityId, &Update);
 	}
+}
+
+
+void FillComponentInterests(FClassInfo* Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
+{
+	Worker_InterestOverride SingleClientInterest = { Info->SingleClientComponent, bNetOwned };
+	ComponentInterest.Add(SingleClientInterest);
+
+	Worker_InterestOverride HandoverInterest = { Info->HandoverComponent, false };
+	ComponentInterest.Add(HandoverInterest);
+}
+
+TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* Actor)
+{
+	TArray<Worker_InterestOverride> ComponentInterest;
+
+	// This effectively checks whether the actor is owned by our PlayerController
+	bool bNetOwned = Actor->GetNetConnection() != nullptr;
+
+	FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	FillComponentInterests(ActorInfo, bNetOwned, ComponentInterest);
+
+	for (UClass* SubobjectClass : ActorInfo->SubobjectClasses)
+	{
+		FClassInfo* SubobjectInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
+		FillComponentInterests(SubobjectInfo, bNetOwned, ComponentInterest);
+	}
+
+	return ComponentInterest;
+}
+
+void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId EntityId)
+{
+	check(!NetDriver->IsServer());
+
+	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor));
 }
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
@@ -647,4 +686,40 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 		}
 		OutgoingRPCs.Remove(Object);
 	}
+}
+
+bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
+{
+	improbable::EntityAcl* EntityACL = View->GetEntityACL(EntityId);
+
+	if (EntityACL == nullptr)
+	{
+		return false;
+	}
+
+	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	check(Info);
+
+	FString PlayerWorkerId;
+	if (Actor->GetNetConnection() != nullptr)
+	{
+		PlayerWorkerId = Actor->GetNetConnection()->PlayerController->PlayerState->UniqueId.ToString();
+	}
+
+	WorkerAttributeSet OwningClientAttribute = { TEXT("workerId:") + PlayerWorkerId };
+	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
+
+	if (EntityACL->ComponentWriteAcl.Contains(Info->RPCComponents[RPC_Client]))
+	{
+		EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]] = OwningClientOnly;
+	}
+	else
+	{
+		EntityACL->ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
+	}
+
+	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
+
+	Connection->SendComponentUpdate(EntityId, &Update);
+	return true;
 }

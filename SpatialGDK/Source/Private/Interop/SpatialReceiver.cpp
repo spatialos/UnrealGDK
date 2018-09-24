@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
@@ -288,13 +289,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			}
 		}
 
-		// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-		//NetDriver->GetSpatialInterop()->SendComponentInterests(Channel, EntityId.ToSpatialEntityId());
-
-		// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
-		// a player index. For now we don't support split screen, so the number is always 0.
-		if (NetDriver->ServerConnection)
+		if (!NetDriver->IsServer())
 		{
+			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
+			Sender->SendComponentInterest(EntityActor, EntityId);
+
+			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
+			// a player index. For now we don't support split screen, so the number is always 0.
 			if (EntityActor->IsA(APlayerController::StaticClass()))
 			{
 				uint8 PlayerIndex = 0;
