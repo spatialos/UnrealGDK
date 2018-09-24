@@ -554,19 +554,7 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 	{
 		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 
-		uint32 CurrentOffset = 1;
-		SubobjectToOffsetMap SubobjectNameToOffset;
-		ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
-		{
-			// Objects can only be allocated NetGUIDs if this is true.
-			if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
-			{
-				SubobjectNameToOffset.Add(*Object->GetName(), CurrentOffset);
-				CurrentOffset++;
-			}
-		});
-
-		PackageMap->ResolveEntityActor(Actor, ActorEntityId, SubobjectNameToOffset);
+		PackageMap->ResolveEntityActor(Actor, ActorEntityId, improbable::CreateOffsetMapFromActor(Actor));
 	}
 }
 

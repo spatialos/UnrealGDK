@@ -84,11 +84,22 @@ private:
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor);
 
 private:
+	UPROPERTY()
 	USpatialNetDriver* NetDriver;
+
+	UPROPERTY()
 	USpatialView* View;
+
+	UPROPERTY()
 	USpatialWorkerConnection* Connection;
+
+	UPROPERTY()
 	USpatialReceiver* Receiver;
+
+	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
+
+	UPROPERTY()
 	USpatialTypebindingManager* TypebindingManager;
 	FTimerManager* TimerManager;
 

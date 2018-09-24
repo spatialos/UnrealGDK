@@ -10,11 +10,6 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-const Worker_ComponentId ENTITY_ACL_COMPONENT_ID = 50;
-const Worker_ComponentId METADATA_COMPONENT_ID = 53;
-const Worker_ComponentId POSITION_COMPONENT_ID = 54;
-const Worker_ComponentId PERSISTENCE_COMPONENT_ID = 55;
-
 using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 
 namespace improbable
@@ -49,7 +44,7 @@ struct Coordinates
 
 struct EntityAcl : Component
 {
-	static const Worker_ComponentId ComponentId = ENTITY_ACL_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::ENTITY_ACL_COMPONENT_ID;
 
 	EntityAcl() = default;
 
@@ -101,8 +96,8 @@ struct EntityAcl : Component
 	Worker_ComponentData CreateEntityAclData()
 	{
 		Worker_ComponentData Data = {};
-		Data.component_id = ENTITY_ACL_COMPONENT_ID;
-		Data.schema_type = Schema_CreateComponentData(ENTITY_ACL_COMPONENT_ID);
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddWorkerRequirementSetToSchema(ComponentObject, 1, ReadAcl);
@@ -142,7 +137,7 @@ struct EntityAcl : Component
 
 struct Metadata : Component
 {
-	static const Worker_ComponentId ComponentId = METADATA_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::METADATA_COMPONENT_ID;
 
 	Metadata() = default;
 
@@ -159,8 +154,8 @@ struct Metadata : Component
 	Worker_ComponentData CreateMetadataData()
 	{
 		Worker_ComponentData Data = {};
-		Data.component_id = METADATA_COMPONENT_ID;
-		Data.schema_type = Schema_CreateComponentData(METADATA_COMPONENT_ID);
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddStringToSchema(ComponentObject, 1, EntityType);
@@ -173,7 +168,7 @@ struct Metadata : Component
 
 struct Position : Component
 {
-	static const Worker_ComponentId ComponentId = POSITION_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::POSITION_COMPONENT_ID;
 
 	Position() = default;
 
@@ -194,8 +189,8 @@ struct Position : Component
 	Worker_ComponentData CreatePositionData()
 	{
 		Worker_ComponentData Data = {};
-		Data.component_id = POSITION_COMPONENT_ID;
-		Data.schema_type = Schema_CreateComponentData(POSITION_COMPONENT_ID);
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		Schema_Object* CoordsObject = Schema_AddObject(ComponentObject, 1);
@@ -210,8 +205,8 @@ struct Position : Component
 	static Worker_ComponentUpdate CreatePositionUpdate(const Coordinates& Coords)
 	{
 		Worker_ComponentUpdate ComponentUpdate = {};
-		ComponentUpdate.component_id = POSITION_COMPONENT_ID;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(POSITION_COMPONENT_ID);
+		ComponentUpdate.component_id = ComponentId;
+		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		Schema_Object* CoordsObject = Schema_AddObject(ComponentObject, 1);
@@ -228,7 +223,7 @@ struct Position : Component
 
 struct Persistence : Component
 {
-	static const Worker_ComponentId ComponentId = PERSISTENCE_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::PERSISTENCE_COMPONENT_ID;
 
 	Persistence() = default;
 	Persistence(const Worker_ComponentData& Data)
@@ -238,8 +233,8 @@ struct Persistence : Component
 	FORCEINLINE Worker_ComponentData CreatePersistenceData()
 	{
 		Worker_ComponentData Data = {};
-		Data.component_id = PERSISTENCE_COMPONENT_ID;
-		Data.schema_type = Schema_CreateComponentData(PERSISTENCE_COMPONENT_ID);
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData(ComponentId);
 
 		return Data;
 	}

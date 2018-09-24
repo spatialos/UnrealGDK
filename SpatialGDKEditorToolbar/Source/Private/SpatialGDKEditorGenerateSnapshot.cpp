@@ -27,12 +27,12 @@ using namespace improbable;
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
-const WorkerAttributeSet UnrealWorkerAttributeSet{ TArray<FString>{TEXT("UnrealWorker")} };
-const WorkerAttributeSet UnrealClientAttributeSet{ TArray<FString>{TEXT("UnrealClient")} };
+const WorkerAttributeSet UnrealServerAttributeSet{ TArray<FString>{SpatialConstants::ServerWorkerType} };
+const WorkerAttributeSet UnrealClientAttributeSet{ TArray<FString>{SpatialConstants::ClientWorkerType} };
 
-const WorkerRequirementSet UnrealWorkerPermission{ {UnrealWorkerAttributeSet} };
+const WorkerRequirementSet UnrealServerPermission{ { UnrealServerAttributeSet } };
 const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
-const WorkerRequirementSet AnyWorkerPermission{ {UnrealClientAttributeSet, UnrealWorkerAttributeSet} };
+const WorkerRequirementSet AnyWorkerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet } };
 
 const improbable::Coordinates Origin{ 0, 0, 0 };
 
@@ -48,12 +48,12 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	TArray<Worker_ComponentData> Components;
 
 	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(METADATA_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(PERSISTENCE_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(UNREAL_METADATA_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(ENTITY_ACL_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
@@ -111,19 +111,19 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	TArray<Worker_ComponentData> Components;
 
 	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(METADATA_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(PERSISTENCE_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(UNREAL_METADATA_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(ENTITY_ACL_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID, UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::UnrealMetadata().CreateUnrealMetadataData());
 	Components.Add(CreateGlobalStateManagerData());
-	Components.Add(improbable::EntityAcl(UnrealWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();
@@ -152,17 +152,17 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 			TArray<Worker_ComponentData> Components;
 
 			WriteAclMap ComponentWriteAcl;
-			ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(METADATA_COMPONENT_ID, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(PERSISTENCE_COMPONENT_ID, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(UNREAL_METADATA_COMPONENT_ID, UnrealWorkerPermission);
-			ComponentWriteAcl.Add(ENTITY_ACL_COMPONENT_ID, UnrealWorkerPermission);
+			ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
+			ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, UnrealServerPermission);
+			ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, UnrealServerPermission);
+			ComponentWriteAcl.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, UnrealServerPermission);
+			ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 
 			Components.Add(improbable::Position(PlaceholderPosition).CreatePositionData());
 			Components.Add(improbable::Metadata(TEXT("Placeholder")).CreateMetadataData());
 			Components.Add(improbable::Persistence().CreatePersistenceData());
 			Components.Add(improbable::UnrealMetadata().CreateUnrealMetadataData());
-			Components.Add(improbable::EntityAcl(UnrealWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+			Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 			Placeholder.component_count = Components.Num();
 			Placeholder.components = Components.GetData();
@@ -269,43 +269,31 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	check(ActorInfo);
 
 	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(POSITION_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(ROTATION_COMPONENT_ID, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(ActorInfo->SingleClientComponent, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(ActorInfo->MultiClientComponent, UnrealWorkerPermission);
-	ComponentWriteAcl.Add(ActorInfo->HandoverComponent, UnrealWorkerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(ActorInfo->SingleClientComponent, UnrealServerPermission);
+	ComponentWriteAcl.Add(ActorInfo->MultiClientComponent, UnrealServerPermission);
+	ComponentWriteAcl.Add(ActorInfo->HandoverComponent, UnrealServerPermission);
 	// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
-	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_Server], UnrealWorkerPermission);
-	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
-	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
+	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_Server], UnrealServerPermission);
+	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_CrossServer], UnrealServerPermission);
+	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_NetMulticast], UnrealServerPermission);
 
 	for (UClass* SubobjectClass : ActorInfo->SubobjectClasses)
 	{
 		FClassInfo* SubobjectInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
 		check(SubobjectInfo);
 
-		ComponentWriteAcl.Add(SubobjectInfo->SingleClientComponent, UnrealWorkerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->MultiClientComponent, UnrealWorkerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->HandoverComponent, UnrealWorkerPermission);
+		ComponentWriteAcl.Add(SubobjectInfo->SingleClientComponent, UnrealServerPermission);
+		ComponentWriteAcl.Add(SubobjectInfo->MultiClientComponent, UnrealServerPermission);
+		ComponentWriteAcl.Add(SubobjectInfo->HandoverComponent, UnrealServerPermission);
 		// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
-		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_Server], UnrealWorkerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_CrossServer], UnrealWorkerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_NetMulticast], UnrealWorkerPermission);
+		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_Server], UnrealServerPermission);
+		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_CrossServer], UnrealServerPermission);
+		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_NetMulticast], UnrealServerPermission);
 	}
 
 	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(NetConnection->CreateChannel(CHTYPE_Actor, 1));
-
-	uint32 CurrentOffset = 1;
-	SubobjectToOffsetMap SubobjectNameToOffset;
-	ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
-	{
-		// Objects can only be allocated NetGUIDs if this is true.
-		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
-		{
-			SubobjectNameToOffset.Add(Object->GetName(), CurrentOffset);
-			CurrentOffset++;
-		}
-	});
 
 	FString StaticPath = Actor->GetPathName(nullptr);
 
@@ -315,7 +303,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	Components.Add(improbable::UnrealMetadata(StaticPath, {}, SubobjectNameToOffset).CreateUnrealMetadataData());
+	Components.Add(improbable::UnrealMetadata(StaticPath, {}, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
 

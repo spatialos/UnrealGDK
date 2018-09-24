@@ -41,8 +41,13 @@ private:
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
 
 private:
+	UPROPERTY()
 	USpatialNetDriver* NetDriver;
+
+	UPROPERTY()
 	USpatialView* View;
+
+	UPROPERTY()
 	USpatialSender* Sender;
 
 	StringToEntityMap SingletonNameToEntityId;

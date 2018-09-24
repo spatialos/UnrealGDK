@@ -21,7 +21,6 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 public:
 	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityActor(Worker_EntityId EntityId);
-	void RemoveEntitySubobjects(Worker_EntityId EntityId);
 
 	FNetworkGUID ResolveStablyNamedObject(const UObject* Object);
 	
@@ -39,7 +38,6 @@ public:
 		
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);
-	void RemoveEntitySubobjectsNetGUIDs(Worker_EntityId EntityId);
 	void RemoveNetGUID(const FNetworkGUID& NetGUID);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(const UObject* Object);

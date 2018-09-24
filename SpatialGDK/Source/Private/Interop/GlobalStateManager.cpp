@@ -72,7 +72,6 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 
 		Channel->SetChannelActor(SingletonActor);
 
-
 		improbable::UnrealMetadata* UnrealMetadata = View->GetUnrealMetadata(SingletonEntityId);
 		if (UnrealMetadata == nullptr)
 		{
@@ -88,9 +87,9 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 
 void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 {
-	for (const auto& pair : SingletonNameToEntityId)
+	for (const auto& Pair : SingletonNameToEntityId)
 	{
-		Worker_EntityId SingletonEntityId = pair.Value;
+		Worker_EntityId SingletonEntityId = Pair.Value;
 
 		// Entity has already been created on another server
 		if (SingletonEntityId != SpatialConstants::INVALID_ENTITY_ID)
@@ -100,7 +99,7 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 
 		AActor* SingletonActor = nullptr;
 		USpatialActorChannel* Channel = nullptr;
-		GetSingletonActorAndChannel(pair.Key, SingletonActor, Channel);
+		GetSingletonActorAndChannel(Pair.Key, SingletonActor, Channel);
 
 		// Class couldn't be found
 		if (Channel == nullptr)

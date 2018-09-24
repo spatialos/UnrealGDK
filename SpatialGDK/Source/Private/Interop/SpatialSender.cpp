@@ -59,70 +59,58 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 {
 	AActor* Actor = Channel->Actor;
 
-	WorkerAttributeSet WorkerAttribute = { TEXT("UnrealWorker") };
-	WorkerAttributeSet ClientAttribute = { TEXT("UnrealClient") };
+	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
+	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
 	WorkerAttributeSet OwningClientAttribute = { TEXT("workerId:") + ClientWorkerId };
 
-	WorkerRequirementSet WorkersOnly = { WorkerAttribute };
+	WorkerRequirementSet ServersOnly = { ServerAttribute };
 	WorkerRequirementSet ClientsOnly = { ClientAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	WorkerRequirementSet AnyUnrealWorkerOrClient = { WorkerAttribute, ClientAttribute };
-	WorkerRequirementSet AnyUnrealWorkerOrOwningClient = { WorkerAttribute, OwningClientAttribute };
+	WorkerRequirementSet AnyUnrealServerOrClient = { ServerAttribute, ClientAttribute };
+	WorkerRequirementSet AnyUnrealServerOrOwningClient = { ServerAttribute, OwningClientAttribute };
 
 	WorkerRequirementSet ReadAcl;
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
-		ReadAcl = WorkersOnly;
+		ReadAcl = ServersOnly;
 	}
 	else if (Actor->IsA<APlayerController>())
 	{
-		ReadAcl = AnyUnrealWorkerOrOwningClient;
+		ReadAcl = AnyUnrealServerOrOwningClient;
 	}
 	else
 	{
-		ReadAcl = AnyUnrealWorkerOrClient;
+		ReadAcl = AnyUnrealServerOrClient;
 	}
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	check(Info);
 
 	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(POSITION_COMPONENT_ID, WorkersOnly);
-	ComponentWriteAcl.Add(ROTATION_COMPONENT_ID, WorkersOnly);
-	ComponentWriteAcl.Add(Info->SingleClientComponent, WorkersOnly);
-	ComponentWriteAcl.Add(Info->MultiClientComponent, WorkersOnly);
-	ComponentWriteAcl.Add(Info->HandoverComponent, WorkersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, ServersOnly);
+	ComponentWriteAcl.Add(Info->SingleClientComponent, ServersOnly);
+	ComponentWriteAcl.Add(Info->MultiClientComponent, ServersOnly);
+	ComponentWriteAcl.Add(Info->HandoverComponent, ServersOnly);
 	ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
-	ComponentWriteAcl.Add(Info->RPCComponents[RPC_Server], WorkersOnly);
-	ComponentWriteAcl.Add(Info->RPCComponents[RPC_CrossServer], WorkersOnly);
-	ComponentWriteAcl.Add(Info->RPCComponents[RPC_NetMulticast], WorkersOnly);
+	ComponentWriteAcl.Add(Info->RPCComponents[RPC_Server], ServersOnly);
+	ComponentWriteAcl.Add(Info->RPCComponents[RPC_CrossServer], ServersOnly);
+	ComponentWriteAcl.Add(Info->RPCComponents[RPC_NetMulticast], ServersOnly);
 
 	for (UClass* SubobjectClass : Info->SubobjectClasses)
 	{
 		FClassInfo* ClassInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
 		check(ClassInfo);
 
-		ComponentWriteAcl.Add(ClassInfo->SingleClientComponent, WorkersOnly);
-		ComponentWriteAcl.Add(ClassInfo->MultiClientComponent, WorkersOnly);
-		ComponentWriteAcl.Add(ClassInfo->HandoverComponent, WorkersOnly);
+		ComponentWriteAcl.Add(ClassInfo->SingleClientComponent, ServersOnly);
+		ComponentWriteAcl.Add(ClassInfo->MultiClientComponent, ServersOnly);
+		ComponentWriteAcl.Add(ClassInfo->HandoverComponent, ServersOnly);
 		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Client], OwningClientOnly);
-		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Server], WorkersOnly);
-		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_CrossServer], WorkersOnly);
-		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_NetMulticast], WorkersOnly);
+		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Server], ServersOnly);
+		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_CrossServer], ServersOnly);
+		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_NetMulticast], ServersOnly);
 	}
-
-	uint32 CurrentOffset = 1;
-	SubobjectToOffsetMap SubobjectNameToOffset;
-	ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
-	{
-		// Objects can only be allocated NetGUIDs if this is true.
-		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
-		{
-			SubobjectNameToOffset.Add(Object->GetName(), CurrentOffset);
-			CurrentOffset++;
-		}
-	});
 
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
@@ -130,7 +118,7 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerId, SubobjectNameToOffset).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerId, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
