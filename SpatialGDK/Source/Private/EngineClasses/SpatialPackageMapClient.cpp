@@ -233,7 +233,7 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef
 	{
 		return;
 	}
-#
+
 	UnrealObjectRef* Iterator = &ObjectRef;
 	while (true)
 	{
