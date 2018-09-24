@@ -278,7 +278,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Params->Function);
 	check(RPCInfo);
 
-	Worker_EntityId EntityId = 0;
+	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	const UObject* UnresolvedObject = nullptr;
 
 	switch (RPCInfo->Type)
