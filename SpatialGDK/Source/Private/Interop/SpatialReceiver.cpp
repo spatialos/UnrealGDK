@@ -585,7 +585,7 @@ void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponse(Op);
 	}
 
-	// TODO: Resend reliable RPCs on timeout
+	Sender->ReceiveCommandResponse(Op);
 }
 
 void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover)
