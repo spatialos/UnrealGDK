@@ -226,6 +226,11 @@ void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const char* L
 	Worker_Connection_SendLogMessage(WorkerConnection, &LogMessage);
 }
 
+void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, const TArray<Worker_InterestOverride>& ComponentInterest)
+{
+	Worker_Connection_SendComponentInterest(WorkerConnection, EntityId, ComponentInterest.GetData(), ComponentInterest.Num());
+}
+
 FString USpatialWorkerConnection::GetWorkerId() const
 {
 	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));

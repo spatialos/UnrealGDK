@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "SpatialTypebindingManager.h"
 #include "Utils/RepDataUtils.h"
 
 #include <improbable/c_schema.h>
@@ -14,6 +15,7 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
 class USpatialNetDriver;
+class USpatialView;
 class USpatialWorkerConnection;
 class USpatialActorChannel;
 class USpatialPackageMapClient;
@@ -51,6 +53,7 @@ public:
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
+	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rotation);
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
@@ -64,6 +67,7 @@ public:
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
 	void ResolveOutgoingRPCs(UObject* Object);
 
+	bool UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId);
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(const FString& ClientWorkerId, const FString& Metadata, USpatialActorChannel* Channel);
@@ -77,8 +81,11 @@ private:
 	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 	Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 
+	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor);
+
 private:
 	USpatialNetDriver* NetDriver;
+	USpatialView* View;
 	USpatialWorkerConnection* Connection;
 	USpatialReceiver* Receiver;
 	USpatialPackageMapClient* PackageMap;
