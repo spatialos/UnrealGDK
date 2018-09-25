@@ -107,7 +107,6 @@ public:
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
-	// TODO: Remove for something better
 	bool bConnectAsClient;
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }

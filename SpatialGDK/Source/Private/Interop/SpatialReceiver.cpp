@@ -233,10 +233,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			// Get the net connection for this actor.
 			if (NetDriver->IsServer())
 			{
-				// TODO(David): Currently, we just create an actor channel on the "catch-all" connection, then create a new actor channel once we check out the player controller
+				// Currently, we just create an actor channel on the "catch-all" connection, then create a new actor channel once we check out the player controller
 				// and create a new connection. This is fine due to lazy actor channel creation in USpatialNetDriver::ServerReplicateActors. However, the "right" thing to do
 				// would be to make sure to create anything which depends on the PlayerController _after_ the PlayerController's connection is set up so we can use the right
-				// one here.
+				// one here. We should revisit this after implementing working sets - UNR:411
 				Connection = NetDriver->GetSpatialOSNetConnection();
 			}
 			else
@@ -755,12 +755,13 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
 	Sender->ResolveOutgoingRPCs(Object);
+	ResolveIncomingRPCs(Object, ObjectRef);
 }
 
 void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
 {
 	// TODO: queue up resolved objects since they were resolved during process ops
-	// and then resolve all of them at the end of process ops
+	// and then resolve all of them at the end of process ops - UNR:582
 
 	TSet<FChannelObjectPair>* TargetObjectSet = IncomingRefsMap.Find(ObjectRef);
 	if (!TargetObjectSet)

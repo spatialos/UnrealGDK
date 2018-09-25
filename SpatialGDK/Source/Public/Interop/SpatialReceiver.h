@@ -172,7 +172,7 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
-	// TODO: Figure out how to remove entries when Channel/Actor gets deleted
+	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
 	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, UnrealObjectRef>> ResolvedObjectQueue;

@@ -98,7 +98,6 @@ void USpatialTypebindingManager::CreateTypebindings()
 			}
 		}
 		
-		// TODO: Probably clean up duplication?
 		Info.SingleClientComponent = SchemaDatabase->ClassToSchema[Class].SingleClientRepData;
 		ComponentToClassMap.Add(Info.SingleClientComponent, Class);
 

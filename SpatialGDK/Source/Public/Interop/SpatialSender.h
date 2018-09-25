@@ -33,7 +33,7 @@ struct FPendingRPCParams
 	int Attempts; // For reliable RPCs
 };
 
-// TODO: Clear TMap entries when USpatialActorChannel gets deleted
+// TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FOutgoingRPCMap = TMap<const UObject*, TArray<TSharedRef<FPendingRPCParams>>>;
