@@ -53,9 +53,6 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 {
-	// Set the PendingNetGameClass in the Engine so that the correct SpatialPendingNetGame is used for UEngine::Browse (client travel).
-	GetEngine()->PendingNetGameClass = USpatialPendingNetGame::StaticClass();
-
 	if (WorldContext->PendingNetGame)
 	{
 		if (WorldContext->PendingNetGame->NetDriver && WorldContext->PendingNetGame->NetDriver->ServerConnection)
