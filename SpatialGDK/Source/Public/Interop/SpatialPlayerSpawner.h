@@ -30,6 +30,7 @@ public:
 	void ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op);
 
 private:
+	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 	
 	FTimerManager* TimerManager;

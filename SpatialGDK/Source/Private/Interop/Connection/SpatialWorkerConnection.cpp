@@ -40,7 +40,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 {
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
-		ReceptionistConfig.WorkerType = bConnectAsClient ? TEXT("UnrealClient") : TEXT("UnrealWorker");
+		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::ClientWorkerType : SpatialConstants::ServerWorkerType;
 	}
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
@@ -48,7 +48,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
 	}
 
-	// TODO: Move creation of connection parameters into a function somehow
+	// TODO: Move creation of connection parameters into a function somehow - UNR:579
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
 	FTCHARToUTF8 WorkerTypeCStr(*ReceptionistConfig.WorkerType);
 	ConnectionParams.worker_type = WorkerTypeCStr.Get();
@@ -90,7 +90,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 				}
 			}
 
-			// TODO: try to reconnect
+			// TODO: Try to reconnect - UNR-576
 		}
 	});
 }
@@ -99,7 +99,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 {
 	if (LocatorConfig.WorkerType.IsEmpty())
 	{
-		LocatorConfig.WorkerType = TEXT("UnrealClient");
+		LocatorConfig.WorkerType = SpatialConstants::ClientWorkerType;
 	}
 
 	if (LocatorConfig.WorkerId.IsEmpty())
@@ -184,11 +184,6 @@ void USpatialWorkerConnection::ConnectToLocator()
 bool USpatialWorkerConnection::ShouldConnectWithLocator()
 {
 	return !LocatorConfig.LoginToken.IsEmpty();
-}
-
-bool USpatialWorkerConnection::IsConnected()
-{
-	return bIsConnected;
 }
 
 Worker_OpList* USpatialWorkerConnection::GetOpList()

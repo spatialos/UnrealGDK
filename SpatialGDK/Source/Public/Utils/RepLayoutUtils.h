@@ -63,10 +63,9 @@ inline void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, U
 
 inline void RepLayout_SerializePropertiesForStruct(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, void* Data, bool& bHasUnmapped)
 {
-	TArray<FRepParentCmd>& Parents = RepLayout.Parents;
-	for (int32 i = 0; i < Parents.Num(); i++)
+	for (auto& Parent : RepLayout.Parents)
 	{
-		RepLayout_SerializeProperties(RepLayout, Ar, Map, Parents[i].CmdStart, Parents[i].CmdEnd, Data, bHasUnmapped);
+		RepLayout_SerializeProperties(RepLayout, Ar, Map, Parent.CmdStart, Parent.CmdEnd, Data, bHasUnmapped);
 
 		if (Ar.IsError())
 		{
@@ -77,50 +76,46 @@ inline void RepLayout_SerializePropertiesForStruct(FRepLayout& RepLayout, FArchi
 
 inline void RepLayout_SendPropertiesForRPC(FRepLayout& RepLayout, FNetBitWriter& Writer, void* Data)
 {
-	TArray<FRepParentCmd>& Parents = RepLayout.Parents;
-
-	for (int32 i = 0; i < Parents.Num(); i++)
+	for (auto& Parent : RepLayout.Parents)
 	{
-		bool Send = true;
+		bool bSend = true;
 
-		if (!Cast<UBoolProperty>(Parents[i].Property))
+		if (!Cast<UBoolProperty>(Parent.Property))
 		{
 			// check for a complete match, including arrays
 			// (we're comparing against zero data here, since 
 			// that's the default.)
-			Send = !Parents[i].Property->Identical_InContainer(Data, NULL, Parents[i].ArrayIndex);
+			bSend = !Parent.Property->Identical_InContainer(Data, NULL, Parent.ArrayIndex);
 
-			Writer.WriteBit(Send ? 1 : 0);
+			Writer.WriteBit(bSend ? 1 : 0);
 		}
 
-		if (Send)
+		if (bSend)
 		{
 			bool bHasUnmapped = false;
-			RepLayout_SerializeProperties(RepLayout, Writer, Writer.PackageMap, Parents[i].CmdStart, Parents[i].CmdEnd, Data, bHasUnmapped);
+			RepLayout_SerializeProperties(RepLayout, Writer, Writer.PackageMap, Parent.CmdStart, Parent.CmdEnd, Data, bHasUnmapped);
 		}
 	}
 }
 
 inline void RepLayout_ReceivePropertiesForRPC(FRepLayout& RepLayout, FNetBitReader& Reader, void* Data)
 {
-	TArray<FRepParentCmd>& Parents = RepLayout.Parents;
-
-	for (int32 i = 0; i < Parents.Num(); i++)
+	for (auto& Parent : RepLayout.Parents)
 	{
-		if (Parents[i].ArrayIndex == 0 && (Parents[i].Property->PropertyFlags & CPF_ZeroConstructor) == 0)
+		if (Parent.ArrayIndex == 0 && (Parent.Property->PropertyFlags & CPF_ZeroConstructor) == 0)
 		{
 			// If this property needs to be constructed, make sure we do that
-			Parents[i].Property->InitializeValue((uint8*)Data + Parents[i].Property->GetOffset_ForUFunction());
+			Parent.Property->InitializeValue((uint8*)Data + Parent.Property->GetOffset_ForUFunction());
 		}
 	}
 
-	for (int32 i = 0; i < Parents.Num(); i++)
+	for (auto& Parent : RepLayout.Parents)
 	{
-		if (Cast<UBoolProperty>(Parents[i].Property) || Reader.ReadBit())
+		if (Cast<UBoolProperty>(Parent.Property) || Reader.ReadBit())
 		{
 			bool bHasUnmapped = false;
 
-			RepLayout_SerializeProperties(RepLayout, Reader, Reader.PackageMap, Parents[i].CmdStart, Parents[i].CmdEnd, Data, bHasUnmapped);
+			RepLayout_SerializeProperties(RepLayout, Reader, Reader.PackageMap, Parent.CmdStart, Parent.CmdEnd, Data, bHasUnmapped);
 
 			if (Reader.IsError())
 			{

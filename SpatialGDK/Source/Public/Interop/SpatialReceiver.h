@@ -151,15 +151,28 @@ private:
 	template <typename T>
 	friend T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId);
 
+	UPROPERTY()
 	USpatialNetDriver* NetDriver;
+
+	UPROPERTY()
 	USpatialView* View;
+
+	UPROPERTY()
 	USpatialSender* Sender;
+
+	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
+
+	UPROPERTY()
 	UWorld* World;
+
+	UPROPERTY()
 	USpatialTypebindingManager* TypebindingManager;
+
+	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
-	// TODO: Figure out how to remove entries when Channel/Actor gets deleted
+	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
 	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, UnrealObjectRef>> ResolvedObjectQueue;
@@ -170,7 +183,6 @@ private:
 	TArray<Worker_EntityId> PendingAddEntities;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_EntityId> PendingRemoveEntities;
-
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 };

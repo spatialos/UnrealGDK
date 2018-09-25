@@ -632,7 +632,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 }
 #endif
 
-//SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
+// SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
 // In our implementation, connections on the server do not represent clients. They represent direct connections to SpatialOS.
 // For this reason, things like ready checks, acks, throttling based on number of updated connections, interest management are irrelevant at this level.
 int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
@@ -688,7 +688,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		// if this client shouldn't be ticked this frame
 		if (i >= NumClientsToTick)
 		{
-			//SpatialGDK: This should not really happen in our case because we only replicate to SpatialOS and not to individual clients. Leaving the code here just in case.
+			// SpatialGDK: This should not really happen in our case because we only replicate to SpatialOS and not to individual clients. Leaving the code here just in case.
 
 			//UE_LOG(LogNet, Log, TEXT("skipping update to %s"),*Connection->GetName());
 			// then mark each considered actor as bPendingNetUpdate so that they will be considered again the next frame when the connection is actually ticked
@@ -991,8 +991,8 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 			NewPlayerController->SetAutonomousProxy(true);
 			NewPlayerController->SetPlayer(SpatialConnection);
 			// We explicitly don't call GameMode->PostLogin(NewPlayerController) here, to avoid the engine restarting the player.
-			// TODO: Should we call AGameSession::PostLogin?
-			// TODO: Should we trigger to blueprints that a player has "joined" via GameMode->K2_PostLogin(Connection)?
+			// TODO: Should we call AGameSession::PostLogin? - UNR:583
+			// TODO: Should we trigger to blueprints that a player has "joined" via GameMode->K2_PostLogin(Connection)? - UNR:583
 
 			SpatialConnection->PlayerController = NewPlayerController;
 		}
@@ -1012,7 +1012,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 	if (!bOk)
 	{
-		// TODO(David): Destroy connection.
+		// TODO: Destroy connection. UNR:584
 	}
 
 	return bOk ? SpatialConnection : nullptr;

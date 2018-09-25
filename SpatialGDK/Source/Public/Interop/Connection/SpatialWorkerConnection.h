@@ -23,7 +23,7 @@ public:
 
 	void Connect(bool bConnectAsClient);
 
-	bool IsConnected();
+	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
 	// Worker Connection Interface
 	Worker_OpList* GetOpList();

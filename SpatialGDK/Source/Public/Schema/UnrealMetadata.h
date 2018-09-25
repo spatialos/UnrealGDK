@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Platform.h"
+#include "UObjectHash.h"
 
 #include "Schema/Component.h"
 #include "Utils/SchemaUtils.h"
@@ -12,14 +13,12 @@
 
 using SubobjectToOffsetMap = TMap<FString, uint32>;
 
-const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID = 100004;
-
 namespace improbable
 {
 
 struct UnrealMetadata : Component
 {
-	static const Worker_ComponentId ComponentId = UNREAL_METADATA_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::UNREAL_METADATA_COMPONENT_ID;
 
 	UnrealMetadata() = default;
 
@@ -47,8 +46,8 @@ struct UnrealMetadata : Component
 	Worker_ComponentData CreateUnrealMetadataData()
 	{
 		Worker_ComponentData Data = {};
-		Data.component_id = UNREAL_METADATA_COMPONENT_ID;
-		Data.schema_type = Schema_CreateComponentData(UNREAL_METADATA_COMPONENT_ID);
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddStringToSchema(ComponentObject, 1, StaticPath);
@@ -68,5 +67,21 @@ struct UnrealMetadata : Component
 	FString OwnerWorkerId;
 	SubobjectToOffsetMap SubobjectNameToOffset;
 };
+
+FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor)
+{
+	SubobjectToOffsetMap SubobjectNameToOffset;
+	uint32 CurrentOffset = 1;
+	ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+	{
+		// Objects can only be allocated NetGUIDs if this is true.
+		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+		{
+			SubobjectNameToOffset.Add(*Object->GetName(), CurrentOffset);
+			CurrentOffset++;
+		}
+	});
+	return SubobjectNameToOffset;
+}
 
 }

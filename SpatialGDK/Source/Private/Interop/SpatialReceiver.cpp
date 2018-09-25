@@ -116,22 +116,22 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 	switch (Op.data.component_id)
 	{
-	case ENTITY_ACL_COMPONENT_ID:
+	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 		Data = MakeShared<improbable::EntityAcl>(Op.data);
 		break;
-	case METADATA_COMPONENT_ID:
+	case SpatialConstants::METADATA_COMPONENT_ID:
 		Data = MakeShared<improbable::Metadata>(Op.data);
 		break;
-	case POSITION_COMPONENT_ID:
+	case SpatialConstants::POSITION_COMPONENT_ID:
 		Data = MakeShared<improbable::Position>(Op.data);
 		break;
-	case PERSISTENCE_COMPONENT_ID:
+	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 		Data = MakeShared<improbable::Persistence>(Op.data);
 		break;
-	case ROTATION_COMPONENT_ID:
+	case SpatialConstants::ROTATION_COMPONENT_ID:
 		Data = MakeShared<improbable::Rotation>(Op.data);
 		break;
-	case UNREAL_METADATA_COMPONENT_ID:
+	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		Data = MakeShared<improbable::UnrealMetadata>(Op.data);
 		break;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
@@ -150,7 +150,6 @@ void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 {
 	UE_LOG(LogSpatialReceiver, Log, TEXT("RemoveEntity: %lld"), Op.entity_id);
 
-	PackageMap->RemoveEntitySubobjects(Op.entity_id);
 	RemoveActor(Op.entity_id);
 }
 
@@ -177,9 +176,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	check(Position && Metadata);
 
-	AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId);
-
-	if (EntityActor)
+	if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId))
 	{
 		UClass* ActorClass = GetNativeEntityClass(Metadata);
 
@@ -191,13 +188,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
 		check(SpatialPackageMap);
 
-		SubobjectToOffsetMap SubobjectNameToOffset;
-		for (auto& Pair : UnrealMetadata->SubobjectNameToOffset)
-		{
-			SubobjectNameToOffset.Add(Pair.Key, Pair.Value);
-		}
-
-		FNetworkGUID NetGUID = SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
+		FNetworkGUID NetGUID = SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadata->SubobjectNameToOffset);
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Received create entity response op for %lld"), EntityId);
 	}
 	else
@@ -242,10 +233,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			// Get the net connection for this actor.
 			if (NetDriver->IsServer())
 			{
-				// TODO(David): Currently, we just create an actor channel on the "catch-all" connection, then create a new actor channel once we check out the player controller
+				// Currently, we just create an actor channel on the "catch-all" connection, then create a new actor channel once we check out the player controller
 				// and create a new connection. This is fine due to lazy actor channel creation in USpatialNetDriver::ServerReplicateActors. However, the "right" thing to do
 				// would be to make sure to create anything which depends on the PlayerController _after_ the PlayerController's connection is set up so we can use the right
-				// one here.
+				// one here. We should revisit this after implementing working sets - UNR:411
 				Connection = NetDriver->GetSpatialOSNetConnection();
 			}
 			else
@@ -269,13 +260,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			EntityActor->FinishSpawning(FTransform(Rotation->ToFRotator(), SpawnLocation));
 		}
 
-		SubobjectToOffsetMap SubobjectNameToOffset;
-		for (auto& Pair : UnrealMetadataComponent->SubobjectNameToOffset)
-		{
-			SubobjectNameToOffset.Add(Pair.Key, Pair.Value);
-		}
-
-		SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, SubobjectNameToOffset);
+		SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->SubobjectNameToOffset);
 		Channel->SetChannelActor(EntityActor);
 
 		// Apply initial replicated properties.
@@ -459,12 +444,12 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 
 	switch (Op.update.component_id)
 	{
-	case ENTITY_ACL_COMPONENT_ID:
-	case METADATA_COMPONENT_ID:
-	case POSITION_COMPONENT_ID:
-	case PERSISTENCE_COMPONENT_ID:
+	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+	case SpatialConstants::METADATA_COMPONENT_ID:
+	case SpatialConstants::POSITION_COMPONENT_ID:
+	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
-	case UNREAL_METADATA_COMPONENT_ID:
+	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
@@ -770,12 +755,13 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
 	Sender->ResolveOutgoingRPCs(Object);
+	ResolveIncomingRPCs(Object, ObjectRef);
 }
 
 void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const UnrealObjectRef& ObjectRef)
 {
 	// TODO: queue up resolved objects since they were resolved during process ops
-	// and then resolve all of them at the end of process ops
+	// and then resolve all of them at the end of process ops - UNR:582
 
 	TSet<FChannelObjectPair>* TargetObjectSet = IncomingRefsMap.Find(ObjectRef);
 	if (!TargetObjectSet)

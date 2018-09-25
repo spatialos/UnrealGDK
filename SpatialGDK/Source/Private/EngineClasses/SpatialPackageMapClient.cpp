@@ -70,15 +70,6 @@ void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 	}
 }
 
-void USpatialPackageMapClient::RemoveEntitySubobjects(Worker_EntityId EntityId)
-{
-	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
-	if (SpatialGuidCache->GetNetGUIDFromEntityId(EntityId).IsValid())
-	{
-		SpatialGuidCache->RemoveEntitySubobjectsNetGUIDs(EntityId);
-	}
-}
-
 FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(const UObject* Object)
 {
 	check(Object->IsFullNameStableForNetworking());
@@ -180,16 +171,9 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(const UObje
 
 void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 {
-	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
-	UnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
-	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
-	UnrealObjectRefToNetGUID.Remove(*ActorRef);
-}
-
-void FSpatialNetGUIDCache::RemoveEntitySubobjectsNetGUIDs(Worker_EntityId EntityId)
-{
+	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
-	SubobjectToOffsetMap SubobjectNameToOffset = SpatialNetDriver->View->GetUnrealMetadata(EntityId)->SubobjectNameToOffset;
+	const SubobjectToOffsetMap& SubobjectNameToOffset = SpatialNetDriver->View->GetUnrealMetadata(EntityId)->SubobjectNameToOffset;
 
 	for (const auto& Pair : SubobjectNameToOffset)
 	{
@@ -200,6 +184,12 @@ void FSpatialNetGUIDCache::RemoveEntitySubobjectsNetGUIDs(Worker_EntityId Entity
 			UnrealObjectRefToNetGUID.Remove(SubobjectRef);
 		}
 	}
+
+	// Remove actor.
+	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
+	UnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
+	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
+	UnrealObjectRefToNetGUID.Remove(*ActorRef);
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const UnrealObjectRef& ObjectRef)

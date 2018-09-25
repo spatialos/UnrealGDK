@@ -3,19 +3,18 @@
 #pragma once
 
 #include "Schema/Component.h"
+#include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-const Worker_ComponentId ROTATION_COMPONENT_ID = 100001;
-
 namespace improbable
 {
 
-struct Rotation : improbable::Component
+struct Rotation : Component
 {
-	static const Worker_ComponentId ComponentId = ROTATION_COMPONENT_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::ROTATION_COMPONENT_ID;
 
 	Rotation() = default;
 

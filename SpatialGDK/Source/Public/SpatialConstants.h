@@ -19,9 +19,16 @@ namespace SpatialConstants
 		PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
 	};
 
-	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID = 100002;
-	const Worker_ComponentId GLOBAL_STATE_MANAGER_COMPONENT_ID = 100007;
-	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID = 100010;
+	const Worker_ComponentId ENTITY_ACL_COMPONENT_ID			= 50;
+	const Worker_ComponentId METADATA_COMPONENT_ID				= 53;
+	const Worker_ComponentId POSITION_COMPONENT_ID				= 54;
+	const Worker_ComponentId PERSISTENCE_COMPONENT_ID			= 55;
+
+	const Worker_ComponentId ROTATION_COMPONENT_ID				= 100001;
+	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID		= 100002;
+	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID		= 100004;
+	const Worker_ComponentId GLOBAL_STATE_MANAGER_COMPONENT_ID	= 100007;
+	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID	= 100010;
 
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;
@@ -29,6 +36,9 @@ namespace SpatialConstants
 
 	const UnrealObjectRef NULL_OBJECT_REF(0, 0);
 	const UnrealObjectRef UNRESOLVED_OBJECT_REF(0, 1);
+
+	static const FString ClientWorkerType = TEXT("UnrealClient");
+	static const FString ServerWorkerType = TEXT("UnrealWorker");
 
 	inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	{

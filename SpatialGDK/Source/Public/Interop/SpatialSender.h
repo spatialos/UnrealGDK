@@ -33,7 +33,7 @@ struct FPendingRPCParams
 	int Attempts; // For reliable RPCs
 };
 
-// TODO: Clear TMap entries when USpatialActorChannel gets deleted
+// TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FOutgoingRPCMap = TMap<const UObject*, TArray<TSharedRef<FPendingRPCParams>>>;
@@ -84,11 +84,22 @@ private:
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor);
 
 private:
+	UPROPERTY()
 	USpatialNetDriver* NetDriver;
+
+	UPROPERTY()
 	USpatialView* View;
+
+	UPROPERTY()
 	USpatialWorkerConnection* Connection;
+
+	UPROPERTY()
 	USpatialReceiver* Receiver;
+
+	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
+
+	UPROPERTY()
 	USpatialTypebindingManager* TypebindingManager;
 	FTimerManager* TimerManager;
 
