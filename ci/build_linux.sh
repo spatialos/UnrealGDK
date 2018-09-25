@@ -22,17 +22,17 @@ markStartOfBlock "$0"
 
 markStartOfBlock "Setup dependencies"
 
-   # ./Setup.bat
+  ./Setup.bat
 
 markEndOfBlock "Setup dependencies"
 
 markStartOfBlock "Build the TestSuite (Linux)"
 
-    # pushd "SpatialGDK"
+  pushd "SpatialGDK"
 
-    # "${UNREAL_HOME}/Engine/Build/BatchFiles/RunUAT.bat" BuildPlugin -Plugin="$PWD/SpatialGDK.uplugin" -TargetPlatforms=Linux -Package="$PWD/Intermediate/BuildPackage/Linux"
+  "${UNREAL_HOME}/Engine/Build/BatchFiles/RunUAT.bat" BuildPlugin -Plugin="$PWD/SpatialGDK.uplugin" -TargetPlatforms=Linux -Package="$PWD/Intermediate/BuildPackage/Linux"
 
-    # popd
+  popd
 
 markEndOfBlock "Build the TestSuite (Linux)"
 
