@@ -126,7 +126,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	{
 		if (DeploymentList->error != nullptr)
 		{
-			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Error fetching deployment list: %s"), DeploymentList->error);
+			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Error fetching deployment list: %s"), UTF8_TO_TCHAR(DeploymentList->error));
 		}
 
 		if (DeploymentList->deployment_count == 0)
