@@ -21,7 +21,7 @@ DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
 namespace
 {
-//This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
+// This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
 void UpdateChangelistHistory(FRepState * RepState)
@@ -37,7 +37,8 @@ void UpdateChangelistHistory(FRepState * RepState)
 
 		FRepChangedHistory & HistoryItem = RepState->ChangeHistory[HistoryIndex];
 
-		check(HistoryItem.Changed.Num() > 0);		// All active history items should contain a change list
+		// All active history items should contain a change list
+		check(HistoryItem.Changed.Num() > 0);
 
 		HistoryItem.Changed.Empty();
 		HistoryItem.OutPacketIdRange = FPacketIdRange();
@@ -223,9 +224,9 @@ bool USpatialActorChannel::ReplicateActor()
 		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
 	}
 
-	//Here, Unreal would have determined if this connection belongs to this actor's Outer.
-	//We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
-	//Setting this to true, but should not matter in the end.
+	// Here, Unreal would have determined if this connection belongs to this actor's Outer.
+	// We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
+	// Setting this to true, but should not matter in the end.
 	RepFlags.bNetOwner = true;
 
 	// If initial, send init data.
@@ -284,15 +285,12 @@ bool USpatialActorChannel::ReplicateActor()
 	// Update the handover property change list.
 	FHandoverChangeState HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
 
-	//todo-giray: We currently don't take replication of custom delta properties into account here because it doesn't use changelists.
-	// see ActorReplicator->ReplicateCustomDeltaProperties().
-
 	// If any properties have changed, send a component update.
 	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
 	{		
 		if (bCreatingNewEntity)
 		{
-			// TODO: This check potentially isn't needed any more due to deleting startup actors but need to check
+			// TODO: This check potentially isn't needed any more due to deleting startup actors but need to check - UNR:580
 			//check(!Actor->IsFullNameStableForNetworking());
 
 			Sender->SendCreateEntityRequest(this, GetPlayerWorkerId());
@@ -346,20 +344,7 @@ bool USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	/*
-	// Do we need to add support for deleted subobjects?
-	for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
-	{
-	if (!RepComp.Key().IsValid())
-	{
-	// Write a deletion content header:
-	WriteContentBlockForSubObjectDelete(Bunch, RepComp.Value()->ObjectNetGUID);
-	bWroteSomethingImportant = true;
-	Bunch.bReliable = true;
-	RepComp.Value()->CleanUp();
-	RepComp.RemoveCurrent();
-	}
-	}*/
+	// TODO: Handle deleted subobjects - see DataChannel.cpp:2542 - UNR:581
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
 	LastUpdateTime = Connection->Driver->Time;

@@ -37,8 +37,8 @@ namespace SpatialConstants
 	const UnrealObjectRef NULL_OBJECT_REF(0, 0);
 	const UnrealObjectRef UNRESOLVED_OBJECT_REF(0, 1);
 
-	static const TCHAR* ClientWorkerType = TEXT("UnrealClient");
-	static const TCHAR* ServerWorkerType = TEXT("UnrealWorker");
+	static const FString ClientWorkerType = TEXT("UnrealClient");
+	static const FString ServerWorkerType = TEXT("UnrealWorker");
 
 	inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	{

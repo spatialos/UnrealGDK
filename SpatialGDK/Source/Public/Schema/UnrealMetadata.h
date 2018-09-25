@@ -68,7 +68,7 @@ struct UnrealMetadata : Component
 	SubobjectToOffsetMap SubobjectNameToOffset;
 };
 
-static SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor)
+FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor)
 {
 	SubobjectToOffsetMap SubobjectNameToOffset;
 	uint32 CurrentOffset = 1;

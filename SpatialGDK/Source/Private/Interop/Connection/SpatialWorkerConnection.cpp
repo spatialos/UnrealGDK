@@ -48,7 +48,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
 	}
 
-	// TODO: Move creation of connection parameters into a function somehow
+	// TODO: Move creation of connection parameters into a function somehow - UNR:579
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
 	FTCHARToUTF8 WorkerTypeCStr(*ReceptionistConfig.WorkerType);
 	ConnectionParams.worker_type = WorkerTypeCStr.Get();
