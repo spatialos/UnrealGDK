@@ -2,7 +2,7 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "Toolbar",
+	"FriendlyName": "SpatialGDK Toolbar",
 	"Description": "SpatialOS Unreal GDK Toolbar",
 	"Category": "SpatialOS Unreal GDK",
 	"CreatedBy": "Improbable Worlds, Ltd.",
@@ -19,12 +19,6 @@
 			"Type": "Editor",
 			"LoadingPhase": "Default",
 			"WhitelistPlatforms": [ "Win64" ]
-		}
-	],
-	"Plugins": [
-		{
-			"Name": "SpatialGDK",
-			"Enabled": true
 		}
 	]
 }

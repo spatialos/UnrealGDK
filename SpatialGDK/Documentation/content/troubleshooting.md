@@ -4,21 +4,15 @@
 
 
 
-**Q:** I’m getting the error `"Could not find definition for module 'SpatialGDK' (referenced via Target -> <ProjectName>.Build.cs)"` when building my project.
-
-**A:** You need to setup symlinks to the GDK as per [step 3 here]({{urlRoot}}/setup-and-installing#building).
-
-------
-
 **Q:** I've set up my Actor for replication according to Unreal Engine’s [documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), but my Actor does not replicate.
 
 **A:** There could be a few different reasons for this. The list below provides some of the most common ones, ordered by likelihood:
-1. It's easy to forget to generate the [type bindings]({{urlRoot}}/content/interop) for your replicated Actor. Make sure you run the Interop Code Generator and rebuild your project with these type bindings setup.
+1. It's easy to forget to generate the schema for your replicated Actor. Make sure you run the Interop Code Generator before launching your project..
 1. As per Unreal Engine’s [replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), your Actor needs to be created on the server-worker before it can replicate to the client-workers.
 1. Ensure that your call to `SpawnActor` is happening on your server-worker.
 Validate that the SpatialOS entity that represents your Actor appears in the Inspector. If it doesn't, then it's likely that it's not marked up for replication correctly.
 1. Mark your Actor for replication as per [Unreal Engine’s Actor replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors). You can validate that your Actor is replicated in `USpatialNetDriver::ServerReplicateActors`.
-1. Validate that you receive an `AddEntityOp` for the entity representing your Actor in the `USpatialnteropPipelineBlock` and that your entity is spawned in `USpatialnteropPipelineBlock::CreateEntity`.
+1. Validate that you receive an `WORKER_OP_TYPE_ADD_ENTITY` for the entity representing your Actor in the `USpatialView::ProcessOps` and that your entity is spawned in `USpatialReceiver::CreateActor`.
 
 ------
 
@@ -30,8 +24,7 @@ Validate that the SpatialOS entity that represents your Actor appears in the Ins
 
 **Q:** Can I change between Unreal Engine’s networking stack and the SpatialOS GDK for Unreal networking stack?
 
-**A:** Yes you can! In Visual Studio open the Properties window for you game project (right-click on your project and select **Properties**). Select the **Debugging** tab and, in the **Command Arguments** field, add the following to the to the end of the existing command line arguments:
-`-NetDriverOverrides=/Script/OnlineSubsystemUtils.IpNetDriver`. When you launch your project, it'll use the default Unreal networking stack. Just remove the line if you want to go back to the SpatialOS GDK for Unreal networking stack.
+**A:** Yes you can! In the Unreal editor, select the `Play` dropdown from the toolbar, and toogle the `Spatial Networking` tickbox to switch between the two networking stacks.
 
 ------
 
@@ -41,39 +34,9 @@ Validate that the SpatialOS entity that represents your Actor appears in the Ins
 
 ------
 
-**Q:** When running the Interop Code Generator, I’m getting the following error: `Error: Could not move generated interop files during the diff-copy stage`.
-
-**A:** Due to the [known issue]({{urlRoot}}/known-issues) with piped input from child processes, it is not possible to get the exact error message. However, the most likely cause of the error, especially when working with Perforce, is that some of the files in the output folder (see the second argument in the error message) are marked as read-only. If that is the cause, you can resolve the error by changing all files to be writable.
-
-Note that you may see similar errors if the same issue applies to the schema generation or the legacy SDK codegen output within the interop code generation step.
-
-------
-
 **Q:** My game uses reliable multicast RPCs - why does the SpatialOS GDK for Unreal not support these?
 
 **A:** The underlying implementation of multicast RPCs uses SpatialOS [events](https://docs.improbable.io/reference/latest/shared/glossary#event) (SpatialOS documentation). SpatialOS events can only be sent unreliably. Additionally, the cost of a multicast RPC scales with the number of client-workers present in a deployment, which means they can get very expensive. A better approach would be to send RPCs to only the workers that are close to the broadcasting worker.
-
-------
-
-**Q:** I’m getting the error `Unrecognized type 'UCommander' - type must be a UCLASS, USTRUCT or UENUM` when building my project in Visual Studio.
-
-**A:** This is most likely due to not having run the legacy SDK code generation. Try running `Scripts/Codegen.bat` at least once. This should generate the required files for continuing the build process.
-
-------
-
-**Q:** When I try to start SpatialOS from the toolbar plugin, I get the following notification:
-`[improbable.worker.assembly.WorkerAssemblyProvider] The worker assembly does not contain any worker configurations. No workers will be able to connect to this deployment. Unless you specifically intended to start a deployment without any workers, please make sure your assembly was built correctly, and in case of a cloud deployment, also make sure it was uploaded correctly.`
-
-**A:** This is an indication that you haven’t built the worker configurations for the server-workers and client-workers. You can fix this by running the `Scripts/BuildWorkerConfig.bat` script. This generates the worker configs which allow your workers to connect to the local instance of SpatialOS.
-
-------
-
-**Q:** I'm getting a check failure in one of my typebinding classes:
-```
-check(!Value->IsFullNameStableForNetworking())
-```
-
-**A:** This is mostly likely caused by attempting to replicate a stably-named actor. This can occur if you place an Actor within a level and mark it for replication. We don't currently support this combination, although we will soon. Until then please spawn your actor dynamically at runtime.
 
 ------
 

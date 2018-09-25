@@ -32,13 +32,13 @@ The SpatialOS Unreal GDK also supports:
 * Replicated Blueprint events
 * RPC validation
 
-## Static component replication
+## Static subobject replication
 
-The SpatialOS Unreal GDK supports only one instance of each type of static component replication for components owned by an Actor. For example, an Actor can have one `FooComponent` but not two `FooComponent`s.
+The SpatialOS Unreal GDK supports only one instance of each type of static subobject replication for objects owned by an Actor. This includes components. For example, an Actor can have one `FooComponent` but not two `FooComponent`s.
 
-Properties and RPCs within components have the same support as an Actor’s properties and RPCs.
+Properties and RPCs within subobjects have the same support as an Actor’s properties and RPCs.
 
-> The SpatialOS Unreal GDK does not yet support dynamic component replication.
+> The SpatialOS Unreal GDK does not yet support dynamic subobject replication.
 
 ## Property handover
 
@@ -46,10 +46,8 @@ Actor property handover is a new feature we’re introducing with the SpatialOS 
 
 ## Singleton Actors
 
-“Singleton Actors” is a new term that describes Actors which contain global state and logic.  Only one of these Actors exists in a game world. For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
-
-> Currently, the SpatialOS Unreal GDK supports proper replication of public Singleton Actors, such as `GameState`, between multiple servers. It does not support private Singleton Actors, such as `GameMode`, but we plan to support this in the future.
+“Singleton Actors” is a new term that describes Actors which contain global state and logic.  Only one of these Actors exists in a game world. The SpatialOS Unreal GDK supports both client accessible and server only singletons (respectively known as public and private singletons). For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 ## Networking switch
 
-We’ve implemented a way to switch between the native Unreal networking and SpatialOS networking with a command line argument. This is useful to test valid functionality on a single server, and performance. See the documentation on the networking switch on the [Troubleshooting]({{urlRoot}}/content/troubleshooting) page.
+We’ve implemented a way to switch between the native Unreal networking and SpatialOS networking via an editor tickbox. This can be found inside `Play` dropdown option in the toolbar under `Spatial Networking`. This is useful to test valid functionality on a single server, and performance. See the documentation on the networking switch on the [Troubleshooting]({{urlRoot}}/content/troubleshooting) page.

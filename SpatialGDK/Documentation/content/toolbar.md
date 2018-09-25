@@ -38,10 +38,10 @@ You can also access these from the **Window** menu:
 Generates a [SpatialOS snapshot](https://docs.improbable.io/reference/latest/shared/glossary#snapshot) (SpatialOS documentation).
 
 * Codegen</br>
-Creates [SpatialOS Unreal GDK interop code]({{urlRoot}}/content/interop).
+Creates `schema` for your Unreal project.
 
 * Launch</br>
-Runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)).
+Builds `worker configs` and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)).
 
 * Stop</br>
 Stops `spatial local launch`.
@@ -74,8 +74,8 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 
 * **Interop Codegen**
 
-    * **Output path for the interop code generation**</br>
-    Use this to specify the filepath of ICG-generated typebindings file.  If you leave this empty, it defaults to `<GameSourceDir>/<ProjectName>/Generated`.
+    * **Generate Schema for all Supported Classes**</br>
+    **Experimental** Use this to generate schema for all AActor and UActorComponent classes without explicitly tagging them as `SpatialType` with their UCLASS defintion. 
 
     * **Output path for the generated schemas**</br>
     Use this to specify the filepath of ICG-generated schema file.  If you leave this empty, it defaults to `<ProjectFileLocation>/../spatial/schema/improbable/unreal/generated/`.
