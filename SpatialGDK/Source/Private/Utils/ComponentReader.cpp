@@ -106,6 +106,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
 					bool bProcessedArray = false;
 
+					// Check if this is a FastArraySerializer array so we can simulate the FFastArraySerializerItem PreReplicatedRemove and PostReplicatedAdd calls.
 					if (UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property))
 					{
 						if (ParentStruct->Struct->IsChildOf(FFastArraySerializer::StaticStruct()))
@@ -127,6 +128,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 								UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
 								check(CppStructOps);
 
+								// This call resolves into FFastArraySerializer::SpatialFastArrayDeltaSerialize where our custom FFastArraySerializerItem
+								// callback are triggered.
 								CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
 							}
 						}
