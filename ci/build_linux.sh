@@ -5,6 +5,7 @@ set -e -u -x -o pipefail
 cd "$(dirname "$0")/../"
 
 source ci/pinned-tools.sh
+source ci/profiling.sh
 
 if ! isTeamCity ; then
   echo "This script should only be run on the CI agents."
@@ -12,11 +13,9 @@ if ! isTeamCity ; then
 fi
 
 if ! isWindows ; then
-  echo "TestSuite can only be built on Windows."
+  echo "Unreal GDK can only be built on Windows."
   exit 0
 fi
-
-source ci/profiling.sh
 
 markStartOfBlock "$0"
 
@@ -26,7 +25,7 @@ markStartOfBlock "Setup dependencies"
 
 markEndOfBlock "Setup dependencies"
 
-markStartOfBlock "Build the TestSuite (Linux)"
+markStartOfBlock "Build the GDK (Linux)"
 
   pushd "SpatialGDK"
 
@@ -34,6 +33,6 @@ markStartOfBlock "Build the TestSuite (Linux)"
 
   popd
 
-markEndOfBlock "Build the TestSuite (Linux)"
+markEndOfBlock "Build the GDK (Linux)"
 
 markEndOfBlock "$0"
