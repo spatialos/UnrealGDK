@@ -41,7 +41,7 @@ Generates a [SpatialOS snapshot](https://docs.improbable.io/reference/latest/sha
 Creates `schema` for your Unreal project.
 
 * Launch</br>
-Builds `worker configs` and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)).
+Runs [spatial worker build build-config](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)).
 
 * Stop</br>
 Stops `spatial local launch`.

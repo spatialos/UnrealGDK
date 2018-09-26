@@ -34,7 +34,7 @@ class AMyActor
 {
 ```
 
-1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#type-bindings) for your Actor’s class, including the `Handover` bindings.
+1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#type-bindings) for your Actor’s class.
 
 The GDK now ensures that server-workers transfer these tagged Actor’s properties between them.
 

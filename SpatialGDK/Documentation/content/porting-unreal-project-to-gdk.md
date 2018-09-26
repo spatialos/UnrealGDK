@@ -16,11 +16,11 @@ Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setti
 1. Open the `StarterProject` repo and copy everything except the `\Game\` folder alongside your `<GameRoot>` folder. 
 Your folder structure should now resemble -
 ```
-\<RootFolder>\ci\
-\<RootFolder>\<GameRoot>\
-\<RootFolder>\spatial\
-\<RootFolder>\ProjectPaths.bat
-\<RootFolder>\LaunchClient.bat 
+\<ProjectRoot>\ci\
+\<ProjectRoot>\<GameRoot>\
+\<ProjectRoot>\spatial\
+\<ProjectRoot>\ProjectPaths.bat
+\<ProjectRoot>\LaunchClient.bat 
 etc...
 ```
 1. Open **`ProjectPaths.bat`** for editing and replace `Game` with `<GameRoot>`, and `StarterProject` with the name of your uproject (which we'll refer to as `<YourProject>`).
@@ -161,7 +161,7 @@ For example:
     1. In File Explorer, navigate to `<ProjectRoot>\<GameRoot>`.
     1. Right-click your uproject file and select **Switch Unreal Engine version**.
     1. Select the path to the Unreal Engine fork you cloned earlier.
-    1. In your terminal, from `<UnrealGDKRoot>\SpatialGDK\Build\Scripts`, run `BuildWorker.bat <YourProject>Editor Win64 Development <YourProject>.uproject`
+    1. In your terminal, from `Plugins\<UnrealGDKRoot>\SpatialGDK\Build\Scripts`, run `BuildWorker.bat <YourProject>Editor Win64 Development <YourProject>.uproject`
     1. In File Explorer, right-click your uproject file and select **Generate Visual Studio project files**.
     1. Open the solution in Visual Studio, and compile and run the project in the Development Editor configuration.
 
