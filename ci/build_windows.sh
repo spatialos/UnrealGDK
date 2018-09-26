@@ -31,7 +31,7 @@ markStartOfBlock "Setup dependencies"
 
 markEndOfBlock "Setup dependencies"
 
-markStartOfBlock "Build the GDK (Linux)"
+markStartOfBlock "Build the GDK (Windows)"
 
   pushd "SpatialGDK"
 
@@ -39,6 +39,6 @@ markStartOfBlock "Build the GDK (Linux)"
 
   popd
 
-markEndOfBlock "Build the GDK (Linux)"
+markEndOfBlock "Build the GDK (Windows)"
 
 markEndOfBlock "$0"
