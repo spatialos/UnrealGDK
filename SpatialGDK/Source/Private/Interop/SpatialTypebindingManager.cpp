@@ -212,7 +212,7 @@ void USpatialTypebindingManager::AddSubobjectClass(FClassInfo& ClassInfo, UClass
 {
 	if (IsSupportedClass(Class))
 	{
-		if(ClassInfo.SubobjectClasses.Find(Class) == nullptr)
+		if(ClassInfo.SubobjectClasses.Find(Class) != nullptr)
 		{
 			return;
 		};
