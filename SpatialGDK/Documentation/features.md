@@ -34,7 +34,7 @@ The SpatialOS Unreal GDK also supports:
 
 ## Static subobject replication
 
-The SpatialOS Unreal GDK supports only one instance of each type of static subobject replication for objects owned by an Actor. This includes components. For example, an Actor can have one `FooComponent` but not two `FooComponent`s.
+The SpatialOS Unreal GDK currently supports only one instance of each type of static subobject replication for objects owned by an Actor. This includes components. For example, an Actor can have one `FooComponent` but not two `FooComponent`s.
 
 Properties and RPCs within subobjects have the same support as an Actor’s properties and RPCs.
 

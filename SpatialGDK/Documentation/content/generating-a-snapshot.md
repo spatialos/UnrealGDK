@@ -4,11 +4,11 @@
 
 If you're not familiar with snapshots in the context of SpatialOS, please look at the [full snapshot documentation](https://docs.improbable.io/reference/latest/shared/operate/snapshots) (SpatialOS documentation).
 
-The SpatialOS GDK for Unreal snapshots contain three kinds of entities: critical entities, stably named replicated actors and placeholders.
+The GDK snapshots contain three kinds of entities: critical entities, stably named replicated actors and placeholders.
 
 ### Startup actors
 
-Startup actors are replicated actors that have been placed in a level. See Unreal's documentation of [Stably Named Objects](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/ObjectReferences). We write these startup actors to the snapshot so we can ensure that only one of each entity is spawned when launching multiple server-workers.
+Startup actors are replicated actors that have been placed in a level. We write these startup actors to the snapshot so we can ensure that only one of each entity is spawned when launching multiple server-workers.
 
 ### Critical entities
 
@@ -33,7 +33,7 @@ To generate a snapshot, use the **Snapshot** button on the SpatialOS GDK for Unr
 
 You need to regenerate snapshots when:
 1. Generating schema for a new class.
-1. Modifying replicated properties or RPCs for any class who's schema was previously generated.
+1. Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
 1. Placing or removing replicated actors in the level.
 1. Modifying replicated values on placed replicated actors.
 1. Adding or removing a singleton class.

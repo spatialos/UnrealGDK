@@ -24,7 +24,7 @@ Validate that the SpatialOS entity that represents your Actor appears in the Ins
 
 **Q:** Can I change between Unreal Engine’s networking stack and the SpatialOS GDK for Unreal networking stack?
 
-**A:** Yes you can! In the Unreal editor, select the `Play` dropdown from the toolbar, and toogle the `Spatial Networking` tickbox to switch between the two networking stacks.
+**A:** Yes you can! In the `Unreal Editor`, select the `Play` dropdown from the toolbar, and toggle the `Spatial Networking` checkbox to switch between the two networking stacks.
 
 ------
 

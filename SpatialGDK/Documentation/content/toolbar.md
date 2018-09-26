@@ -77,7 +77,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
     * **Generate Schema for all Supported Classes**</br>
     **Experimental** Use this to generate schema for all `AActor` and `UActorComponent` classes (which *don't* extend `USceneComponent`) without explicitly tagging them as `SpatialType` within their UCLASS defintion. 
     `USceneComponent` is unsupported due to there often being multiple of these components on an Actor which isn't currently supported.
-    If you have `UActorComponents` which don't extend `USceneComponent` but exist in multiple on an Actor, *this can potentially crash your game*. Make sure there are never multiple componented of the same type on an Actor. If there are make sure you modify your Actor to only have one, or use the explicit `SpatialType` tagging approach and don't tag the duplicate `UActorComponent`.
+    If you have `UActorComponent`s which don't extend `USceneComponent` but exist in multiple on an Actor, *this can potentially crash your game*. Make sure there are never multiple components of the same type on an Actor. If there are make sure you modify your Actor to only have one, or use the explicit `SpatialType` tagging approach and don't tag the duplicate `UActorComponent`.
 
     * **Output path for the generated schemas**</br>
     Use this to specify the filepath of ICG-generated schema file.  If you leave this empty, it defaults to `<ProjectFileLocation>/../spatial/schema/improbable/unreal/generated/`.

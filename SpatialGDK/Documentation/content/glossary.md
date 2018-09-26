@@ -25,7 +25,7 @@ The Global State Manager (GSM) makes sure that Singleton Actors are replicated p
 Short for "Global State Manager".
 
 ### Schema Generator
-An Unreal toolbar plugin which takes a set of Unreal classes and generates SpatialOS schema that enables automated communication between Unreal and SpatialOS. See the [SpatialOS website documentation’s .schema introduction](https://docs.improbable.io/reference/latest/shared/schema/introduction) for more information.
+An Unreal Editor toolbar command which takes a set of Unreal classes and generates SpatialOS schema that enables automated communication between Unreal and SpatialOS. See the [SpatialOS website documentation’s .schema introduction](https://docs.improbable.io/reference/latest/shared/schema/introduction) for more information.
 
 ### Singleton Actor
 A server-side authoritative Actor that is restricted to one instantiation on SpatialOS. See documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).
