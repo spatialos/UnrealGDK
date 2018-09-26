@@ -190,7 +190,7 @@ void USpatialNetDriver::OnConnected()
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 
 	View->Init(this);
-	Sender->Init(this, TimerManager);
+	Sender->Init(this);
 	Receiver->Init(this);
 	GlobalStateManager->Init(this);
 }
@@ -860,7 +860,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Sender->SendRPC(MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters));
+		Sender->SendRPC(CallingObject, Function, Parameters, false);
 	}
 }
 
