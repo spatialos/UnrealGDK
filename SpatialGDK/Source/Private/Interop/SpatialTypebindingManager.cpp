@@ -212,7 +212,11 @@ void USpatialTypebindingManager::AddSubobjectClass(FClassInfo& ClassInfo, UClass
 {
 	if (IsSupportedClass(Class))
 	{
-		checkf(ClassInfo.SubobjectClasses.Find(Class) == nullptr, TEXT("Invalid class layout, duplicate subobject type found - %s"), *Class->GetName());
+		if(ClassInfo.SubobjectClasses.Find(Class) != nullptr)
+		{
+			return;
+		};
+		
 		ClassInfo.SubobjectClasses.Add(Class);
 	}
 }
