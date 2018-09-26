@@ -9,7 +9,6 @@
 - ***
 - <h3>+ Concepts</h3>
     - [SpatialOS concepts]({{urlRoot}}/content/concepts)
-    - [Interop Code Generator (ICG)]({{urlRoot}}/content/interop)
     - [Actor property handover]({{urlRoot}}/content/handover-between-server-workers)
     - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
 - ***

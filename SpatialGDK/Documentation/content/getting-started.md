@@ -7,8 +7,8 @@ We recommend you start by following the [Installation and setup guide]({{urlRoot
 
 After you've run through the setup guide (including setting up Actor replication), take a look at the following pages, which explain some of the key concepts to understand when developing SpatialOS games:
 
-* [Interop Code Generator]({{urlRoot}}/content/interop.md)
 * [Actor handover]({{urlRoot}}/content/handover-between-server-workers.md)
+* [Singleton actors]({{urlRoot}}/content/singleton-actors.md)
 
 To get some background on the GDK, you can check out [our blogpost](https://improbable.io/games/blog/spatialos-unreal-gdk-pre-alpha).
 

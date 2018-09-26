@@ -54,11 +54,11 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot.Small",
 		new IMAGE_BRUSH(TEXT("Snapshot@0.5x"), Icon20x20));
 
-	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode",
-		new IMAGE_BRUSH(TEXT("Codegen"), Icon40x40));
+	Style->Set("SpatialGDKEditorToolbar.GenerateSchema",
+		new IMAGE_BRUSH(TEXT("Schema"), Icon40x40));
 
-	Style->Set("SpatialGDKEditorToolbar.GenerateInteropCode.Small",
-		new IMAGE_BRUSH(TEXT("Codegen@0.5x"), Icon20x20));
+	Style->Set("SpatialGDKEditorToolbar.GenerateSchema.Small",
+		new IMAGE_BRUSH(TEXT("Schema@0.5x"), Icon20x20));
 
 	Style->Set("SpatialGDKEditorToolbar.StartSpatialOSStackAction",
 		new IMAGE_BRUSH(TEXT("Launch"), Icon40x40));

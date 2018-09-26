@@ -22,7 +22,6 @@ We recommend you use the GDK documentation on the SpatialOS documentation websit
 [//]: # (* License - ../LICENSE.md)
 
 [//]: # (#### Concepts)
-[//]: # (* Interop Code Generator [ICG] - content/interop.md)
 [//]: # (* Actor property handover - content/handover-between-server-workers.md)
 [//]: # (* Singleton Actors - content/singleton-actors.md)
 

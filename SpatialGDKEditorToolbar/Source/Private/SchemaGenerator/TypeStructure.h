@@ -5,8 +5,6 @@
 #include "EngineMinimal.h"
 #include "Net/RepLayout.h"
 
-#include "SpatialGDKEditorInteropCodeGenerator.h"
-
 /*
 
 This file contains functions to generate an abstract syntax tree which is used by the code generating in
