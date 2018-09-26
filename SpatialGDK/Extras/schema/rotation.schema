@@ -1,0 +1,9 @@
+package improbable.unreal;
+
+component Rotation
+{
+    id = 100001;
+    float pitch = 1;
+    float yaw = 2;
+    float roll = 3;
+}
