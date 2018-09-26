@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialGDKEditorInteropCodeGenerator.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 
 #include "AssetRegistryModule.h"
 #include "Engine/LevelScriptActor.h"
@@ -18,14 +18,14 @@
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialGDKInteropCodeGenerator);
+DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
 namespace
 {
 
 void OnStatusOutput(FString Message)
 {
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("%s"), *Message);
+	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("%s"), *Message);
 }
 
 int GenerateCompleteSchemaFromClass(const FString& SchemaPath, int ComponentId, UClass* Class)
@@ -59,7 +59,7 @@ bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and '%s' - schema not generated"), *ClassA, *ClassB);
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and '%s' - schema not generated"), *ClassA, *ClassB);
 				return false;
 			}
 		}
@@ -71,7 +71,7 @@ bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 		FString ClassName = Class->GetName();
 		if (FChar::IsLower(ClassName[0]))
 		{
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("SpatialType class begins with lowercase letter: %s. Schema not generated"), *ClassName);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("SpatialType class begins with lowercase letter: %s. Schema not generated"), *ClassName);
 			return false;
 		}
 	}
@@ -87,27 +87,6 @@ void GenerateSchemaFromClasses(const TArray<UClass*>& Classes, const FString& Co
 	{
 		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, ComponentId, Class);
 	}
-}
-
-bool RunProcess(const FString& ExecutablePath, const FString& Arguments)
-{
-	TSharedPtr<FMonitoredProcess> Process = MakeShareable(new FMonitoredProcess(ExecutablePath, Arguments, true));
-	Process->OnOutput().BindStatic(&OnStatusOutput);
-	Process->Launch();
-	// We currently spin on the thread calling this function as this appears to be
-	// The idiomatic way according to the other usages of the FMonitoredProcess interface in the Unreal engine 
-	// codebase. See TargetPlatformManagerModule.cpp for another example of this setup.
-	while (Process->Update())
-	{
-		FPlatformProcess::Sleep(0.01f);
-	}
-
-	if (Process->GetReturnCode() != 0)
-	{
-		return false;
-	}
-
-	return true;
 }
 
 FString GenerateIntermediateDirectory()
@@ -209,33 +188,33 @@ TArray<UClass*> GetAllSupportedClasses()
 	return Classes;
 }
 
-bool SpatialGDKGenerateInteropCode()
+bool SpatialGDKGenerateSchema()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	TArray<UClass*> InteropGeneratedClasses;
+	TArray<UClass*> SchemaGeneratedClasses;
 	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)
 	{
-		InteropGeneratedClasses = GetAllSupportedClasses();	
+		SchemaGeneratedClasses = GetAllSupportedClasses();	
 	}
 	else
 	{
-		InteropGeneratedClasses = GetAllSpatialTypeClasses();
+		SchemaGeneratedClasses = GetAllSpatialTypeClasses();
 	}
 
-	if (!CheckClassNameListValidity(InteropGeneratedClasses))
+	if (!CheckClassNameListValidity(SchemaGeneratedClasses))
 	{
 		return false;
 	}
 
 	FString SchemaOutputPath = SpatialGDKToolbarSettings->GetGeneratedSchemaOutputFolder();
 
-	UE_LOG(LogSpatialGDKInteropCodeGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
+	UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
 
 	// Check schema path is valid.
 	if (!FPaths::CollapseRelativeDirectories(SchemaOutputPath))
 	{
-		UE_LOG(LogSpatialGDKInteropCodeGenerator, Error, TEXT("Invalid path: '%s'. Schema not generated."), *SchemaOutputPath);
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Invalid path: '%s'. Schema not generated."), *SchemaOutputPath);
 		return false;
 	}
 
@@ -246,9 +225,9 @@ bool SpatialGDKGenerateInteropCode()
 		PlatformFile.CreateDirectory(*SchemaOutputPath);
 	}
 
-	GenerateSchemaFromClasses(InteropGeneratedClasses, SchemaOutputPath);
+	GenerateSchemaFromClasses(SchemaGeneratedClasses, SchemaOutputPath);
 
-	CreateSchemaDatabase(InteropGeneratedClasses);
+	CreateSchemaDatabase(SchemaGeneratedClasses);
 
 	return true;
 }

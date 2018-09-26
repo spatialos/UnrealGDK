@@ -50,13 +50,13 @@ private:
 
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
-	void GenerateInteropCodeButtonClicked();
+	void SchemaGenerateButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
 	void CacheSpatialObjects(uint32 SpatialFlags);
 
 private:
-	bool CanExecuteInteropCodeGen();
+	bool CanExecuteSchemaGenerator();
 	void StopRunningStack();
 	void CheckForRunningStack();
 
@@ -80,6 +80,6 @@ private:
 	USoundBase* ExecutionSuccessSound;
 	USoundBase* ExecutionFailSound;
 
-	TFuture<bool> InteropCodegenResult;
-	bool bInteropCodeGenRunning;
+	TFuture<bool> SchemaGeneratorResult;
+	bool bSchemaGeneratorRunning;
 };

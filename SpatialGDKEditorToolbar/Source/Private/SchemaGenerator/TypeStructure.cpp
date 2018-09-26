@@ -4,6 +4,8 @@
 
 #include "Engine/SCS_Node.h"
 
+#include "SpatialGDKEditorSchemaGenerator.h"
+
 namespace Errors
 {
 	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support multiple static components of the same type.\n"
@@ -269,7 +271,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			// If this is an editor-only property, skip it. As we've already added to the property list at this stage, just remove it.
 			if (Value->IsEditorOnly())
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
 				TypeNode->Properties.Remove(Property);
 				continue;
 			}
@@ -277,7 +279,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			// Check whether the owner of this value is the CDO itself.
 			if (Value->GetOuter() == ContainerCDO)
 			{
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
 				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, 0, bIsRPC);
@@ -300,13 +302,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			else
 			{
 				// The values outer is not us, store as weak reference.
-				UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 			}
 		}
 		else
 		{
 			// If value is just nullptr, then we clearly don't own it.
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Warning, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 		}
 
 		// Weak reference static arrays are handled as a single UObjectRef per static array member.
@@ -542,7 +544,7 @@ TArray<FString> GetRPCTypeOwners(TSharedPtr<FUnrealType> TypeInfo)
 		{
 			FString RPCOwnerName = *RPC.Value->Function->GetOuter()->GetName();
 			RPCTypeOwners.AddUnique(RPCOwnerName);
-			UE_LOG(LogSpatialGDKInteropCodeGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"), *RPCOwnerName, *RPC.Value->Function->GetName());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("RPC Type Owner Found - %s ::  %s"), *RPCOwnerName, *RPC.Value->Function->GetName());
 		}
 		return true;
 	}, false);

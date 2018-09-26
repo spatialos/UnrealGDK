@@ -10,7 +10,7 @@
 #include "NotificationManager.h"
 #include "SNotificationList.h"
 #include "SpatialGDKEditorGenerateSnapshot.h"
-#include "SpatialGDKEditorInteropCodeGenerator.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "SpatialGDKEditorToolbarStyle.h"
@@ -53,7 +53,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionSuccessSound->AddToRoot();
 	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
-	bInteropCodeGenRunning = false;
+	bSchemaGeneratorRunning = false;
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = GetDefault<USpatialGDKEditorToolbarSettings>()->bStopSpatialOnExit;
@@ -152,9 +152,9 @@ bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 	return true;
 }
 
-bool FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen()
+bool FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator()
 {
-	return !bInteropCodeGenRunning;
+	return !bSchemaGeneratorRunning;
 }
 
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -165,9 +165,9 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction());
 
 	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteInteropCodeGen));
+		FSpatialGDKEditorToolbarCommands::Get().GenerateSchema,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction,
@@ -215,7 +215,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 	Builder.BeginSection("SpatialOS Unreal GDK", LOCTEXT("SpatialOS Unreal GDK", "SpatialOS Unreal GDK"));
 	{
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().GenerateSchema);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
@@ -227,7 +227,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 {
 	Builder.AddSeparator(NAME_None);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().GenerateInteropCode);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().GenerateSchema);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
@@ -252,25 +252,25 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::GenerateInteropCodeButtonClicked()
+void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 {
-	ShowTaskStartNotification("Generating Interop Code");
-	bInteropCodeGenRunning = true;
+	ShowTaskStartNotification("Generating Schema");
+	bSchemaGeneratorRunning = true;
 
 	// Ensure all our spatial classes are loaded into memory before running
 	CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings);
 
-	InteropCodegenResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateInteropCode, [this]()
+	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema, [this]()
 	{
-		if (!InteropCodegenResult.IsReady() || InteropCodegenResult.Get() != true)
+		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
 		{
-			ShowFailedNotification("Interop Codegen Failed");
+			ShowFailedNotification("Schema Generation Failed");
 		}
 		else
 		{
-			ShowSuccessNotification("Interop Codegen Completed!");
+			ShowSuccessNotification("Schema Generation Completed!");
 		}
-		bInteropCodeGenRunning = false;
+		bSchemaGeneratorRunning = false;
 	});
 }
 		
@@ -317,7 +317,7 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 			GEditor->PlayEditorSound(ExecutionSuccessSound);
 		}
 
-		bInteropCodeGenRunning = false;
+		bSchemaGeneratorRunning = false;
 	});
 }
 
@@ -336,7 +336,7 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 			GEditor->PlayEditorSound(ExecutionFailSound);
 		}
 
-		bInteropCodeGenRunning = false;
+		bSchemaGeneratorRunning = false;
 	});
 }
 
@@ -470,7 +470,7 @@ void FSpatialGDKEditorToolbarModule::CacheSpatialObjects(uint32 SpatialFlags)
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
 	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
 
-	// Before running the interop generator, ensure all blueprint classes that have been tagged with 'spatial' are loaded
+	// Before running the schema generator, ensure all blueprint classes that have been tagged with 'spatial' are loaded
 	TArray<FAssetData> AssetData;
 	uint32 SpatialClassFlags = 0;
 	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetFName(), AssetData, true);

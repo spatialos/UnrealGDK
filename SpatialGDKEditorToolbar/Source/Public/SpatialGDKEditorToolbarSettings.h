@@ -39,7 +39,7 @@ public:
 	bool bStopSpatialOnExit;
 
 	/** Generate schema for all classes supported by the GDK */
-	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Generate Schema for all Supported Classes"))
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (ConfigRestartRequired = false, DisplayName = "Generate Schema for all Supported Classes"))
 	bool bGenerateSchemaForAllSupportedClasses;
 
 private:
@@ -52,7 +52,7 @@ private:
 	FString SpatialOSSnapshotFile;
 
 	/** Generated schema output path */
-	UPROPERTY(EditAnywhere, config, Category = "Interop codegen", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
 	FDirectoryPath GeneratedSchemaOutputFolder;
 
 public:

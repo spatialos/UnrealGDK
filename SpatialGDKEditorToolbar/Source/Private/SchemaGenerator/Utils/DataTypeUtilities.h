@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-#include "InteropCodeGenerator/TypeStructure.h"
+#include "SchemaGenerator/TypeStructure.h"
 
 // Return the string representation of the underlying data type of an enum property
 FString GetEnumDataType(const UEnumProperty* EnumProperty);

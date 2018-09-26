@@ -21,7 +21,7 @@ public:
 
 public:
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
-	TSharedPtr<FUICommandInfo> GenerateInteropCode;
+	TSharedPtr<FUICommandInfo> GenerateSchema;
 	TSharedPtr<FUICommandInfo> StartSpatialOSStackAction;
 	TSharedPtr<FUICommandInfo> StopSpatialOSStackAction;
 	TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
