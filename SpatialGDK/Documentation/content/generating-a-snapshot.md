@@ -6,9 +6,9 @@ If you're not familiar with snapshots in the context of SpatialOS, please look a
 
 The SpatialOS GDK for Unreal snapshots contain three kinds of entities: critical entities, stably named replicated actors and placeholders.
 
-### Stably named replicated actors
+### Startup actors
 
-See Unreal's documentation of [Stably Named Objects](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/ObjectReferences). We write place stably named replicated actors to the snapshot so we can ensure that only one of each entity is spawned when launching multiple `server-workers`.
+Startup actors are replicated actors that have been placed in a level. See Unreal's documentation of [Stably Named Objects](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/ObjectReferences). We write these startup actors to the snapshot so we can ensure that only one of each entity is spawned when launching multiple server-workers.
 
 ### Critical entities
 
