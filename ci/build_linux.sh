@@ -21,8 +21,6 @@ markStartOfBlock "Setup variables"
     UNREAL_VERSION=$(cat unreal-engine.version)
     UNREAL_HOME=C:/Unreal/UnrealEngine-${UNREAL_VERSION}
 
-    echo ${UNREAL_VERSION}
-
   popd
 
 markEndOfBlock "Setup variables"
