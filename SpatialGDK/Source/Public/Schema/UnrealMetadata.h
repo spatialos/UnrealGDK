@@ -2,10 +2,11 @@
 
 #pragma once
 
+#include "GameFramework/Actor.h"
+#include "Schema/Component.h"
+#include "SpatialConstants.h"
 #include "Platform.h"
 #include "UObjectHash.h"
-
-#include "Schema/Component.h"
 #include "Utils/SchemaUtils.h"
 
 #include <improbable/c_schema.h>

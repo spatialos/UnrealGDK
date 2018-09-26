@@ -3,6 +3,8 @@
 #pragma once
 
 #include "Containers/UnrealString.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 #include "SpatialConstants.h"
 
 #include <improbable/c_worker.h>
