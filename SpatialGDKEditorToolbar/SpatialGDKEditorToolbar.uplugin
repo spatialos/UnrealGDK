@@ -20,5 +20,11 @@
 			"LoadingPhase": "Default",
 			"WhitelistPlatforms": [ "Win64" ]
 		}
+	],
+	"Plugins": [
+		{
+			"Name": "SpatialGDK",
+			"Enabled": true
+		}
 	]
 }

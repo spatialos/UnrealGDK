@@ -28,7 +28,7 @@ float MyServerSideVariable;
 
 2. In the Actor's UCLASS definiton, mark the class as a `SpatialType`
 
-1. Run the Interop Code Generator. This generates the [schema]({{urlRoot}}/content/glossary#type-bindings) for your Actor’s class, including the `Handover` bindings.
+1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#type-bindings) for your Actor’s class, including the `Handover` bindings.
 
 The GDK now ensures that server-workers transfer these tagged Actor’s properties between them.
 

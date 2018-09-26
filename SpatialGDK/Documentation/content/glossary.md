@@ -24,17 +24,8 @@ The Global State Manager (GSM) makes sure that Singleton Actors are replicated p
 ### GSM
 Short for "Global State Manager".
 
-### ICG
-Short for “Interop Code Generator”.
-
-## interop
-Short for “interoperable” and “interoperability”. See [Stack Overflow](https://stackoverflow.com/questions/5300383/interoperability).
-
-### Interop Code Generator
-An Unreal toolbar plugin which takes a set of Unreal classes and generates Spatial schema that enables automated communication between Unreal and SpatialOS.
-
-### interop code
-The contents of ` .schema` files which the Interop Code Generator creates. See the [SpatialOS website documentation’s .schema introduction](https://docs.improbable.io/reference/latest/shared/schema/introduction) for more information.
+### Schema Generator
+An Unreal toolbar plugin which takes a set of Unreal classes and generates SpatialOS schema that enables automated communication between Unreal and SpatialOS. See the [SpatialOS website documentation’s .schema introduction](https://docs.improbable.io/reference/latest/shared/schema/introduction) for more information.
 
 ### Singleton Actor
 A server-side authoritative Actor that is restricted to one instantiation on SpatialOS. See documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).

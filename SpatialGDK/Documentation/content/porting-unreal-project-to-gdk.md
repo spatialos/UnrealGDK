@@ -13,6 +13,16 @@ Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setti
 
 ## Setting up the project structure
 1. In a terminal window, navigate to the root directory of the SpatialOS Unreal GDK repository you cloned and run `Setup.bat`. This requires authorization with your SpatialOS account.
+1. Open the `StarterProject` repo and copy everything except the `\Game\` folder alongside your `<GameRoot>` folder. 
+Your folder structure should now resemble -
+```
+\<RootFolder>\ci\
+\<RootFolder>\<GameRoot>\
+\<RootFolder>\spatial\
+\<RootFolder>\ProjectPaths.bat
+\<RootFolder>\LaunchClient.bat 
+etc...
+```
 1. Open **`ProjectPaths.bat`** for editing and replace `Game` with `<GameRoot>`, and `StarterProject` with the name of your uproject (which we'll refer to as `<YourProject>`).
 
 ## Adding the SpatialGDK module to your project
@@ -33,7 +43,7 @@ Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setti
                 }
             );
     ```
-    
+
 ## Modifying Unreal classes for GDK compatibility
 1. In your project's `GameInstance` header file(s), add the following `#include`:
 `"SpatialGameInstance.h"`
@@ -103,16 +113,12 @@ Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setti
 
     > These lines ensure that the SpatialOS Unreal GDK can override Unreal's network replication.
     >
-    > If you ever need to run with Unreal networking for workflow or validation reasons, untick `Spatial Networking` in the `Play` drop down menu in the Unreal editor.
+    > If you ever need to run with Unreal networking for workflow or validation reasons, untick `Spatial Networking` in the `Play` drop down menu in the Unreal editor. This flag is maintained in your Unreal config files under `/Script/EngineSettings.GeneralProjectSettings` and is also valid for non-editor builds.
     >
     > You can easily switch between networking modes using this tickbox. As the SpatialOS Unreal GDK is in pre-alpha, switching back to Unreal's networking may be a viable way to work around some issues you may encounter, and may speed up your iteration. However, in Unreal networking mode you lose access to key multi-server features of the GDK, which may lead to erratic behavior.
     >
     > In the future, we expect to achieve parity with Unreal networking in terms of iteration speed and stability, thus removing the need for a networking mode switch.
 1. Open the game's uproject file in the Editor and navigate to *Edit > Project Settings... > SpatialOS Unreal GDK > Toolbar*.
-
-1. In the Interop Codegen section:
-    1. Modify the output path for the Interop code generation to: `<ProjectRoot>/spatial/schema/improbable/generated/`.
-    1. Modify the output path for the generated schemas to: `<GameRoot>/Source/<GameName>/Generated/`.
 
 1. Tag all replicated classes with the UCLASS tag `SpatialType`:
     ``` 
@@ -159,8 +165,8 @@ For example:
     1. In File Explorer, right-click your uproject file and select **Generate Visual Studio project files**.
     1. Open the solution in Visual Studio, and compile and run the project in the Development Editor configuration.
 
-## Running the Interop Code Generator and setting up the UE4 Editor
-1. In the Unreal Editor, on the SpatialOS Unreal GDK toolbar, click **Codegen** to run the `Interop Code Generator`.
+## Running the Schema Generator and setting up the UE4 Editor
+1. In the Unreal Editor, on the SpatialOS Unreal GDK toolbar, click **Generate Schema** to run the `Schema Generator`.
 1. On the same toolbar, click **Snapshot**.
 
 ## Running your game

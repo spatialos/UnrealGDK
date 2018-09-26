@@ -38,7 +38,7 @@ class TESTSUITE_API AExampleGameGameState : public AGameStateBase
 
 To make sure all server-workers check out Singleton Actor entities, you need to configure the worker to have [streaming queries](https://docs.improbable.io/reference/latest/shared/worker-configuration/bridge-config#streaming-queries) for each Singleton Actor’s components.
 
-In our example with `ExampleGameGameState`, the Interop Code Generator creates a schema component called `ExampleGameGameStateMultiClientRepData`. You need to add this as a streaming query to the worker configuration file (spatial/workers/unreal/spatialos.UnrealWorker.worker.json).
+In our example with `ExampleGameGameState`, the Schema Generator creates a schema component called `ExampleGameGameStateMultiClientRepData`. You need to add this as a streaming query to the worker configuration file (spatial/workers/unreal/spatialos.UnrealWorker.worker.json).
 
 In the `bridge` field of the worker configuration file, there should be a section that looks like this:
 

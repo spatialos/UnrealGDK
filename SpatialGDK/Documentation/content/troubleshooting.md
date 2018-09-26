@@ -7,7 +7,7 @@
 **Q:** I've set up my Actor for replication according to Unreal Engine’s [documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), but my Actor does not replicate.
 
 **A:** There could be a few different reasons for this. The list below provides some of the most common ones, ordered by likelihood:
-1. It's easy to forget to generate the schema for your replicated Actor. Make sure you run the Interop Code Generator before launching your project..
+1. It's easy to forget to generate the schema for your replicated Actor. Make sure you run the Schema Generator before launching your project..
 1. As per Unreal Engine’s [replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), your Actor needs to be created on the server-worker before it can replicate to the client-workers.
 1. Ensure that your call to `SpawnActor` is happening on your server-worker.
 Validate that the SpatialOS entity that represents your Actor appears in the Inspector. If it doesn't, then it's likely that it's not marked up for replication correctly.

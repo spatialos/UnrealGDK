@@ -116,7 +116,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	Worker_EntityId EntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor);
 	check(EntityId > 0);
 
-	// Get interop.
 	USpatialReceiver* Receiver = SpatialNetDriver->Receiver;
 
 	// Set up the NetGUID and ObjectRef for this actor.

@@ -31,4 +31,9 @@ To generate a snapshot, use the **Snapshot** button on the SpatialOS GDK for Unr
 
  This creates a snapshot called `default.snapshot` in `spatial\snapshots`.
 
-You need to regenerate snapshots when adding/removing `SpatialType` classes or when adding/removing stably named replicated actors in your level.
+You need to regenerate snapshots when:
+1. Generating schema for a new class.
+1. Modifying replicated properties or RPCs for any class who's schema was previously generated.
+1. Placing or removing replicated actors in the level.
+1. Modifying replicated values on placed replicated actors.
+1. Adding or removing a singleton class.

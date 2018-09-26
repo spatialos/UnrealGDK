@@ -113,7 +113,7 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
     1. Select the path to the Unreal Engine fork you cloned earlier.
 1. In the same directory, open **StarterProject.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **StarterProject** and select **Build**.
-1. Open **StarterProject.uproject** in the Unreal Editor and click [**Codegen**]({{urlRoot}}/content/interop) to generate schema.
+1. Open **StarterProject.uproject** in the Unreal Editor and click `Generate Schema` to generate schema.
 
 ### Running the Starter Project locally
 
@@ -149,4 +149,4 @@ Unreal provides a system called [Actor replication](https://docs.unrealengine.co
 To set up Actor replication:
 
 1. Set up your Actor for replication (including property replication and RPCs) using the [native Unreal workflow](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors) (Unreal documentation).
-1. Tag the Actors and Subobjects you want to replicate with the `SpatialType` class tag. Then generate `schema` for your project via the `Interop Code Generator`. This allows the SpatialOS Unreal GDK to serialize Unreal's replication data to SpatialOS.
+1. Tag the Actors and Subobjects you want to replicate with the `SpatialType` class tag. Then generate `schema` for your project via the `Schema Generator`. This allows the SpatialOS Unreal GDK to serialize Unreal's replication data to SpatialOS.
