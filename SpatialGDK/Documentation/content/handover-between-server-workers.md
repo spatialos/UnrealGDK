@@ -34,7 +34,7 @@ class AMyActor
 {
 ```
 
-1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#type-bindings) for your Actor’s class.
+1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#schema-generator) for your Actor’s class.
 
 The GDK now ensures that server-workers transfer these tagged Actor’s properties between them.
 
@@ -55,4 +55,3 @@ It’s important to understand that the native Unreal tag `Replicated` and GDK f
 * `Handover` tags identify Actor properties that only server-workers need to have interest in and allow server-workers to transfer authority between them.
 
 Note that while you could replace all `Handover` tags with `Replicated` tags and your simulation would function correctly, its network performance could suffer. This is because there are a lot of workers with interest in `Replicated`-tagged properties. `Handover`-tagged properties have limited worker interest; they only need to be serialized on demand to server-workers taking over authority.
-
