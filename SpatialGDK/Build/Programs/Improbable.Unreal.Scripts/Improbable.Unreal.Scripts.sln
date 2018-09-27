@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2047
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Build", "Build\Build.csproj", "{914F8489-3031-4A27-B403-8AC318AFD71B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csproj", "{D2CC2525-EC22-4A24-BDE8-D9A6BFF55BAD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Linter", "Linter\Linter.csproj", "{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{914F8489-3031-4A27-B403-8AC318AFD71B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{914F8489-3031-4A27-B403-8AC318AFD71B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{914F8489-3031-4A27-B403-8AC318AFD71B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{914F8489-3031-4A27-B403-8AC318AFD71B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2CC2525-EC22-4A24-BDE8-D9A6BFF55BAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2CC2525-EC22-4A24-BDE8-D9A6BFF55BAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2CC2525-EC22-4A24-BDE8-D9A6BFF55BAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2CC2525-EC22-4A24-BDE8-D9A6BFF55BAD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

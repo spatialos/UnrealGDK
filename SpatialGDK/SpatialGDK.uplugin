@@ -1,0 +1,31 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "SpatialGDK",
+	"Description": "SpatialOS Unreal GDK",
+	"Category": "SpatialOS Unreal GDK",
+	"CreatedBy": "Improbable Worlds, Ltd.",
+	"CreatedByURL": "https://improbable.io",
+	"DocsURL": "https://docs.improbable.io/unreal/",
+	"MarketplaceURL": "",
+	"SupportURL": "https://forums.improbable.io/",
+	"EnabledByDefault" : true,
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "SpatialGDK",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"WhitelistPlatforms": [ "Win64", "Linux", "XboxOne", "PS4" ]
+		},
+	],
+	"Plugins": [
+		{
+			"Name": "OnlineSubsystemUtils",
+			"Enabled": true
+		}
+	]
+}
