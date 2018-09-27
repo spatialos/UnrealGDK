@@ -4,6 +4,7 @@
 
 #include "EngineMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "TimerManager.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -38,7 +39,7 @@ T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
 	return nullptr;
 }
 
-void USpatialReceiver::Init(USpatialNetDriver* InNetDriver)
+void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
 	View = InNetDriver->View;
@@ -47,6 +48,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver)
 	World = InNetDriver->GetWorld();
 	TypebindingManager = InNetDriver->TypebindingManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
+	TimerManager = InTimerManager;
 }
 
 void USpatialReceiver::OnCriticalSection(bool InCriticalSection)
@@ -571,7 +573,49 @@ void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponse(Op);
 	}
 
-	// TODO: Resend reliable RPCs on timeout
+	ReceiveCommandResponse(Op);
+}
+
+void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
+{
+	TSharedRef<FPendingRPCParams>* ReliableRPCPtr = PendingReliableRPCs.Find(Op.request_id);
+	if (ReliableRPCPtr == nullptr)
+	{
+		// We received a response for an unreliable RPC, ignore.
+		return;
+	}
+
+	TSharedRef<FPendingRPCParams> ReliableRPC = *ReliableRPCPtr;
+	PendingReliableRPCs.Remove(Op.request_id);
+	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+	{
+		if (ReliableRPC->Attempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		{
+			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(ReliableRPC->Attempts);
+			UE_LOG(LogSpatialReceiver, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"),
+				*ReliableRPC->Function->GetName(), WaitTime, (int)Op.status_code, UTF8_TO_TCHAR(Op.message));
+
+			if (!ReliableRPC->TargetObject.IsValid())
+			{
+				UE_LOG(LogSpatialReceiver, Warning, TEXT("%s: target object was destroyed before we could deliver the RPC."),
+					*ReliableRPC->Function->GetName());
+				return;
+			}
+
+			// Queue retry
+			FTimerHandle RetryTimer;
+			TimerManager->SetTimer(RetryTimer, [this, ReliableRPC]()
+			{
+				ReliableRPC->Attempts++;
+				Sender->SendRPC(ReliableRPC);
+			}, WaitTime, false);
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Error, TEXT("%s: failed too many times, giving up (%u attempts). Error code: %d Message: %s"),
+				*ReliableRPC->Function->GetName(), SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS, (int)Op.status_code, UTF8_TO_TCHAR(Op.message));
+		}
+	}
 }
 
 void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover)
@@ -688,6 +732,11 @@ void USpatialReceiver::OnCreateEntityIdResponse(Worker_CreateEntityResponseOp& O
 void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel)
 {
 	PendingActorRequests.Add(RequestId, Channel);
+}
+
+void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<FPendingRPCParams> Params)
+{
+	PendingReliableRPCs.Add(RequestId, Params);
 }
 
 USpatialActorChannel* USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)

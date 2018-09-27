@@ -5,6 +5,7 @@
 #include "Platform.h"
 
 #include "Schema/Component.h"
+#include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
 #include <improbable/c_schema.h>
