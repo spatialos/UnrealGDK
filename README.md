@@ -1,7 +1,5 @@
 # The SpatialOS GDK for Unreal (pre-alpha)
 
-<%(TOC)%>
-
 Welcome to the SpatialOS and GDK for Unreal community.
 
 Our SpatialOS community shapes the functionality of the GDK for Unreal, so make sure you are part of the conversation. Come and find us on [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368) or talk to us on the **Feedback** section in our [forums](https://forums.improbable.io/) (use the **unreal-gdk** tag - [this link](https://forums.improbable.io/new-topic?category=Feedback&tags=unreal-gdk) takes you there and pre-fills the category and tag). You can also [sign up for SpatialOS GDK for Unreal updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
@@ -14,6 +12,10 @@ The SpatialOS GDK for Unreal is an Unreal Engine 4 (UE4) [module](https://docs.u
 (Your access to and use of the Unreal Engine is governed by the [Unreal Engine End User License Agreement](https://www.unrealengine.com/en-US/previous-versions/udk-licensing-resources?sessionInvalidated=true). Please ensure that you have agreed to those terms before you access or use the Unreal Engine.)
 * Version: pre-alpha (for evaluation only)
 * Unreal Game Development Kit repository: [github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
+
+# Documentation
+* For information on the SpatialOS GDK for Unreal, we recommend you use the [GDK documentation on the SpatialOS website](https://docs.improbable.io/unreal/pre-alpha/index).
+* For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/latest/shared/concepts/spatialos). <br/>
 
 ## Recommended use
 We are releasing the GDK in [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) so we can react to feedback and iterate on development quickly. To facilitate this, during our pre-alpha stage we don't have a formal deprecation cycle for APIs and workflows. This means that everything and anything can change. In addition, documentation is limited and some aspects of the GDK are not optimized.
@@ -52,10 +54,6 @@ The GDK and its starter projects are available on GitHub.
 * [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK) </br>
 **NOTE:** This link may give you a 404. 
 In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
-
-## SpatialOS Documentation
-* For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/latest/shared/concepts/spatialos). <br/>
-* For information on the SpatialOS GDK for Unreal, we recommend you use the [GDK documentation on the SpatialOS website](https://docs.improbable.io/unreal/pre-alpha/index) because the documentation is designed for the website, however, you can look at the [documentation on GitHub](https://github.com/spatialos/UnrealGDK/tree/master/docs).
 
 ## Installation and setup
 For prerequisites, installation and setup, see the [Installation and setup]({{urlRoot}}/setup-and-installing.md) documentation.
