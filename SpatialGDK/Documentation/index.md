@@ -30,7 +30,7 @@ Although every feature you need to build your optimal SpatialOS game may not be 
 
 ## Feature List
 See the [full feature list]({{urlRoot}}/features) for what is supported in the Unreal GDK.
-  
+
 ## Give us feedback
 We have released the Unreal GDK this early in development because we want your feedback. Please come and talk to us about the software and the documentation via:
 
@@ -45,12 +45,13 @@ Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issu
 
 ## Where to get the GDK and starter projects
 The GDK and its starter projects are available on GitHub.
+
 * [GDK: github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 * [Third Person Shooter Game](https://github.com/spatialos/UnrealGDKThirdPersonShooter)
 * [Starter Project](https://github.com/spatialos/UnrealStarterProject)
 * [The Test Suite](https://github.com/spatialos/UnrealGDKTestSuite)
 * [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK) </br>
-**NOTE:** This link may give you a 404. 
+**NOTE:** This link may give you a 404.
 In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the Unreal GDK without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
 ## SpatialOS Documentation
