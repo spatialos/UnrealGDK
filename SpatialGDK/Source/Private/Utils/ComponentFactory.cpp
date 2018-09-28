@@ -182,6 +182,14 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
+		// TODO UNR-625 - This is only hit when generating a snapshot and an object wants to be assigned
+		// a NetGUID. For now this is a work around but we need to figure out the proper solution
+		if (PackageMap == nullptr)
+		{
+			AddObjectRefToSchema(Object, FieldId, SpatialConstants::NULL_OBJECT_REF);
+			return;
+		}
+
 		UnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
