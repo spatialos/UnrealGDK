@@ -606,7 +606,6 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 			FTimerHandle RetryTimer;
 			TimerManager->SetTimer(RetryTimer, [this, ReliableRPC]()
 			{
-				ReliableRPC->Attempts++;
 				Sender->SendRPC(ReliableRPC);
 			}, WaitTime, false);
 		}

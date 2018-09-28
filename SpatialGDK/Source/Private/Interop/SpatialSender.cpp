@@ -24,7 +24,7 @@ using namespace improbable;
 FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
-	, Attempts(1)
+	, Attempts(0)
 {
 	Parameters.SetNumZeroed(Function->ParmsSize);
 
@@ -316,11 +316,13 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 		if (!UnresolvedObject)
 		{
-			check(EntityId > 0);
+			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 			Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, RPCInfo->Index + 1);
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
+				// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
+				Params->Attempts++;
 				Receiver->AddPendingReliableRPC(RequestId, Params);
 			}
 		}
@@ -332,7 +334,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 		if (!UnresolvedObject)
 		{
-			check(EntityId > 0);
+			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 		}
 		break;
