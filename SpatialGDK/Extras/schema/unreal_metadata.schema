@@ -1,7 +1,5 @@
 package improbable.unreal;
 
-import "improbable/unreal/gdk/core_types.schema";
-
 component UnrealMetadata
 {
     id = 100004;

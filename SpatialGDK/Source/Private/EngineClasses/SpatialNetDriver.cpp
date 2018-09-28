@@ -191,7 +191,7 @@ void USpatialNetDriver::OnConnected()
 
 	View->Init(this);
 	Sender->Init(this);
-	Receiver->Init(this);
+	Receiver->Init(this, TimerManager);
 	GlobalStateManager->Init(this);
 }
 
@@ -860,7 +860,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Sender->SendRPC(CallingObject, Function, Parameters, false);
+		Sender->SendRPC(MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters));
 	}
 }
 

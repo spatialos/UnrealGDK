@@ -1,8 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package improbable.unreal;
 
-import "improbable/unreal/gdk/core_types.schema";
-
 type SpawnPlayerRequest
 {
     string url = 1;

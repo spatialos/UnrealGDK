@@ -26,6 +26,7 @@ using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObje
 using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
 struct FObjectReferences;
 using FObjectReferencesMap = TMap<int32, FObjectReferences>;
+using FReliableRPCMap = TMap<Worker_RequestId, TSharedRef<struct FPendingRPCParams>>;
 
 struct PendingAddComponentWrapper
 {
@@ -96,13 +97,12 @@ class USpatialReceiver : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver);
+	void Init(USpatialNetDriver* NetDriver, FTimerManager* InTimerManager);
 
 	// Dispatcher Calls
 	void OnCriticalSection(bool InCriticalSection);
 	void OnAddEntity(Worker_AddEntityOp& Op);
 	void OnAddComponent(Worker_AddComponentOp& Op);
-	void OnRemoveComponent(Worker_RemoveComponentOp& Op);
 	void OnRemoveEntity(Worker_RemoveEntityOp& Op);
 	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 
@@ -112,7 +112,9 @@ public:
 
 	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityIdResponse(Worker_CreateEntityResponseOp& Op);
+
 	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
+	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FPendingRPCParams> Params);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
@@ -134,6 +136,8 @@ private:
 	void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, UObject* TargetObject, UFunction* Function);
 	void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, const TArray<UFunction*>& RPCArray);
 	void ApplyRPC(UObject* TargetObject, UFunction* Function, TArray<uint8>& PayloadData, int64 CountBits);
+
+	void ReceiveCommandResponse(Worker_CommandResponseOp& Op);
 
 	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<UnrealObjectRef>& UnresolvedRefs);
 	void QueueIncomingRPC(const TSet<UnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits);
@@ -172,6 +176,8 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
+	FTimerManager* TimerManager;
+
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
 	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
@@ -185,4 +191,5 @@ private:
 	TArray<Worker_EntityId> PendingRemoveEntities;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
+	FReliableRPCMap PendingReliableRPCs;
 };
