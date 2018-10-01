@@ -4,6 +4,7 @@
 
 #include "AssetRegistryModule.h"
 #include "Engine/LevelScriptActor.h"
+#include "GeneralProjectSettings.h"
 #include "GenericPlatform/GenericPlatformFile.h"
 #include "GenericPlatform/GenericPlatformProcess.h"
 #include "Misc/FileHelper.h"
@@ -225,6 +226,7 @@ bool SpatialGDKGenerateSchema()
 		PlatformFile.CreateDirectory(*SchemaOutputPath);
 	}
 
+	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
 	GenerateSchemaFromClasses(SchemaGeneratedClasses, SchemaOutputPath);
 
 	CreateSchemaDatabase(SchemaGeneratedClasses);

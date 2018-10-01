@@ -37,6 +37,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
                 "Core",
                 "CoreUObject",
                 "Engine",
+                "EngineSettings",
                 "InputCore",
                 "LevelEditor",
                 "Projects",
