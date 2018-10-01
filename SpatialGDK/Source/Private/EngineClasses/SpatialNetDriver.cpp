@@ -22,6 +22,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "EngineClasses/SpatialPlayerController.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
 
@@ -1006,6 +1007,11 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 		}
 		else
 		{
+			if (ASpatialPlayerController* SpatialPlayerController = Cast<ASpatialPlayerController>(SpatialConnection->PlayerController))
+			{
+				SpatialPlayerController->WorkerId = ClientWorkerId;
+			}
+
 			//todo-giray: Client travel needs to be handled here.
 		}
 	}

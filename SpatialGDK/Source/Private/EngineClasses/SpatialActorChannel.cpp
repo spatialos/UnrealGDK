@@ -10,6 +10,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialPlayerController.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
@@ -200,6 +201,11 @@ bool USpatialActorChannel::ReplicateActor()
 	check(!Closing);
 	check(Connection);
 	check(Connection->PackageMap);
+
+	if (Actor->Role != ROLE_Authority)
+	{
+		return false;
+	}
 	
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
@@ -653,7 +659,10 @@ FString USpatialActorChannel::GetPlayerWorkerId()
 	// But since we do not have multiple connections per client, this should be equal to the above flow
 	if (UNetConnection* ActorOwningConnection = Actor->GetNetConnection())
 	{
-		PlayerWorkerId = ActorOwningConnection->PlayerController->PlayerState->UniqueId.ToString();
+		if (ASpatialPlayerController* SpatialPlayerController = Cast<ASpatialPlayerController>(ActorOwningConnection->PlayerController))
+		{
+			PlayerWorkerId = SpatialPlayerController->WorkerId;
+		}
 	}
 	else
 	{
@@ -673,11 +682,14 @@ void USpatialActorChannel::SpatialViewTick()
 		{
 			if (NetDriver->IsServer())
 			{
-				bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
-
-				if (bFirstTick && bSuccess)
+				if (IsAuthoritativeServer())
 				{
-					bFirstTick = false;
+					bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
+
+					if (bFirstTick && bSuccess)
+					{
+						bFirstTick = false;
+					}
 				}
 			}
 			else

@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialPlayerController.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialView.h"
@@ -649,7 +650,10 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	FString PlayerWorkerId;
 	if (Actor->GetNetConnection() != nullptr)
 	{
-		PlayerWorkerId = Actor->GetNetConnection()->PlayerController->PlayerState->UniqueId.ToString();
+		if (ASpatialPlayerController* SpatialPlayerController = Cast<ASpatialPlayerController>(Actor->GetNetConnection()->PlayerController))
+		{
+			PlayerWorkerId = SpatialPlayerController->WorkerId;
+		}
 	}
 
 	WorkerAttributeSet OwningClientAttribute = { TEXT("workerId:") + PlayerWorkerId };
