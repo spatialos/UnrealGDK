@@ -89,6 +89,11 @@ public:
 
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
+	UFUNCTION(BlueprintCallable, Server, WithValidation, Reliable)
+	void WipeWorld();
+
+	void LoadSnapshot();
+
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()

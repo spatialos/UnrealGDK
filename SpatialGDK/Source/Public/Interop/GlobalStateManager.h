@@ -36,8 +36,12 @@ public:
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
 
 	bool IsSingletonEntity(Worker_EntityId EntityId);
+
 	void FindDeploymentMapURL();
 	void SetDeploymentMapURL(FString MapURL);
+	void WorldWipe();
+	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
+	void LoadSnapshot();
 
 	FString DeploymentMapURL;
 

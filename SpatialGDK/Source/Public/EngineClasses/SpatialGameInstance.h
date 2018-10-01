@@ -20,10 +20,15 @@ public:
 #endif
 	virtual void StartGameInstance() override;
 
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void ServerTravel();
+
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
 	bool HasSpatialNetDriver() const;
 	// Helper function that bypasses some of the Unreal flow (which won't work with the SpatialOS model) when launching a new game as a client.
 	bool StartGameInstance_SpatialGDKClient(FString& Error);
+
+
 };

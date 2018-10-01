@@ -102,6 +102,11 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	if (Connection != nullptr)
 	{
+		if (ServerConnection) // If we're a client this is probably server travel.
+		{
+			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("SpatialOS connection already exists.... Spawning instead."));
+			OnConnected();
+		}
 		return;
 	}
 
@@ -1175,4 +1180,24 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId)
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
+}
+
+void USpatialNetDriver::WipeWorld_Implementation()
+{
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Wiping world!"));
+	GlobalStateManager->WorldWipe();
+}
+
+bool USpatialNetDriver::WipeWorld_Validate()
+{
+	if(ServerConnection)
+	{
+		return false;
+	}
+	return true;
+}
+
+void USpatialNetDriver::LoadSnapshot()
+{
+	GlobalStateManager->LoadSnapshot();
 }
