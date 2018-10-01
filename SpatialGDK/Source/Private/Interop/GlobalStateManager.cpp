@@ -60,6 +60,9 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 		USpatialActorChannel* Channel = nullptr;
 		GetSingletonActorAndChannel(Pair.Key, SingletonActor, Channel);
 
+		SingletonActor->Role = ROLE_SimulatedProxy;
+		SingletonActor->RemoteRole = ROLE_Authority;
+
 		// Singleton wasn't found or channel is already set up
 		if (Channel == nullptr || Channel->Actor != nullptr)
 		{
@@ -106,6 +109,9 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 		{
 			continue;
 		}
+
+		SingletonActor->Role = ROLE_Authority;
+		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
 
 		// Set entity id of channel from the GlobalStateManager.
 		// If the id was 0, SetChannelActor will create the entity.

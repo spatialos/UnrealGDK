@@ -54,6 +54,16 @@ public:
 		return NetDriver->View->GetAuthority(EntityId, Info->RPCComponents[RPC_Client]) == WORKER_AUTHORITY_AUTHORITATIVE;
 	}
 
+	FORCEINLINE bool IsAuthoritativeServer()
+	{
+		if (!NetDriver->IsServer())
+		{
+			return false;
+		}
+
+		return NetDriver->View->GetAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE;
+	}
+
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
