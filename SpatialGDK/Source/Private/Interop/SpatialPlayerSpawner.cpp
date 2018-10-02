@@ -26,9 +26,9 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* 
 	NumberOfAttempts = 0;
 }
 
-void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(FString URLString, const char* CallerWorkerId, Worker_RequestId RequestId )
+void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(FString URLString, const char* CallerAttributeSet, Worker_RequestId RequestId )
 {
-	URLString.Append(TEXT("?workerId=")).Append(UTF8_TO_TCHAR(CallerWorkerId));
+	URLString.Append(TEXT("?workerAttributeSet=")).Append(UTF8_TO_TCHAR(CallerAttributeSet));
 
 	NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
 

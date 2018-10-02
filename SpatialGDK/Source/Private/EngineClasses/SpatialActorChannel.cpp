@@ -299,7 +299,7 @@ bool USpatialActorChannel::ReplicateActor()
 			// TODO: This check potentially isn't needed any more due to deleting startup actors but need to check - UNR:580
 			//check(!Actor->IsFullNameStableForNetworking());
 
-			Sender->SendCreateEntityRequest(this, GetPlayerWorkerId());
+			Sender->SendCreateEntityRequest(this);
 		}
 		else
 		{
@@ -582,10 +582,19 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
-		Sender->SendCreateEntityRequest(this, GetPlayerWorkerId());
-		return;
+		if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
+		{
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s Reason: %s. Retrying..."), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+			Sender->SendCreateEntityRequest(this);
+			return;
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+			return;
+		}
 	}
+
 	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), EntityId, *Actor->GetName());
 }
 

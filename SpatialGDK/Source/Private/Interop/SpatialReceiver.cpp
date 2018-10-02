@@ -295,7 +295,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			checkf(!UnrealMetadataComponent->OwnerWorkerId.IsEmpty(), TEXT("A player controller entity must have an owner worker ID."));
 			FString URLString = FURL().ToString();
 			FString OwnerWorkerId = UnrealMetadataComponent->OwnerWorkerId;
-			URLString += TEXT("?workerId=") + OwnerWorkerId;
+			URLString += TEXT("?workerAttributeSet=") + OwnerWorkerId;
 			Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), true);
 			check(Connection);
 			EntityActor = Connection->PlayerController;
@@ -614,7 +614,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
 	{
 		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(GetStringFromSchema(Payload, 1), Op.caller_worker_id, Op.request_id);
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(GetStringFromSchema(Payload, 1), Op.caller_attribute_set.attributes[1], Op.request_id);
 		return;
 	}
 
