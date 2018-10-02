@@ -7,6 +7,8 @@
 
 #include "Utils/SchemaUtils.h"
 
+#include "EngineClasses/SpatialNetDriver.h" // TODO: Remove this.
+
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
@@ -39,7 +41,7 @@ public:
 
 	void FindDeploymentMapURL();
 	void SetDeploymentMapURL(FString MapURL);
-	void WorldWipe();
+	void WorldWipe(const USpatialNetDriver::WorldWipeDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
 	void LoadSnapshot();
 

@@ -149,15 +149,3 @@ void USpatialGameInstance::StartGameInstance()
 		}
 	}
 }
-
-void USpatialGameInstance::ServerTravel_Implementation()
-{
-	UE_LOG(LogSpatialGameInstance, Error, TEXT("SERVER TRAVEL BABY"));
-
-	GetWorld()->ServerTravel(TEXT("BestMap"), true);
-}
-
-bool USpatialGameInstance::ServerTravel_Validate()
-{
-	return true;
-}

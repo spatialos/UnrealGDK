@@ -259,7 +259,7 @@ void UGlobalStateManager::SetDeploymentMapURL(FString MapURL)
 	//WorldWipe(); // Because why not
 }
 
-void UGlobalStateManager::WorldWipe()
+void UGlobalStateManager::WorldWipe(const USpatialNetDriver::WorldWipeDelegate& Delegate)
 {
 	Worker_EntityIdConstraint GSMConstraintEID;
 	GSMConstraintEID.entity_id = SpatialConstants::GLOBAL_STATE_MANAGER;
@@ -282,7 +282,7 @@ void UGlobalStateManager::WorldWipe()
 	Worker_RequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&WorldQuery);
 
-	EntityQueryFunction WorldQueryFunction = [this, RequestID](const Worker_EntityQueryResponseOp& Op)
+	EntityQueryFunction WorldQueryFunction = [this, RequestID, Delegate](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.request_id != RequestID)
 		{
@@ -303,6 +303,13 @@ void UGlobalStateManager::WorldWipe()
 		{
 			UE_LOG(LogGlobalStateManager, Error, TEXT("Found some entities in the world query: %u"), Op.result_count);
 			DeleteEntities(Op);
+
+			// Reload snapshot after the world has been wiped
+			// TODO: Needs moving from here............
+			// NetDriver->LoadSnapshot();
+
+			// Move this too....
+			Delegate.ExecuteIfBound();
 		}
 	};
 
@@ -319,6 +326,20 @@ void UGlobalStateManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
 		UE_LOG(LogGlobalStateManager, Error, TEXT("- Sending delete request for: %i"), Op.results[i].entity_id);
 		NetDriver->Connection->SendDeleteEntityRequest(Op.results[i].entity_id);
 	}
+}
+
+void DeepCopy(Schema_Object* source, Schema_Object* target) {
+	auto length = Schema_GetWriteBufferLength(source);
+	auto buffer = Schema_AllocateBuffer(target, length);
+	Schema_WriteToBuffer(source, buffer);
+	Schema_Clear(target);
+	Schema_MergeFromBuffer(target, buffer, length);
+}
+
+Schema_ComponentData* Schema_DeepCopyComponentData(Schema_ComponentData* source) {
+	auto* copy = Schema_CreateComponentData(Schema_GetComponentDataComponentId(source));
+	DeepCopy(Schema_GetComponentDataFields(source), Schema_GetComponentDataFields(copy));
+	return copy;
 }
 
 void UGlobalStateManager::LoadSnapshot()
@@ -352,8 +373,15 @@ void UGlobalStateManager::LoadSnapshot()
 		if (Error.IsEmpty())
 		{
 			UE_LOG(LogGlobalStateManager, Warning, TEXT("- Sending entity create request for: %i"), EntityToSpawn->entity_id);
-			NetDriver->Connection->SendCreateEntityRequest(EntityToSpawn->component_count, EntityToSpawn->components, &EntityToSpawn->entity_id);
-
+			TArray<Worker_ComponentData> components;
+			for (uint32_t i = 0; i < EntityToSpawn->component_count; ++i) {
+				auto* copy = Schema_DeepCopyComponentData(EntityToSpawn->components[i].schema_type);
+				auto copy_data = Worker_ComponentData{};
+				copy_data.component_id = Schema_GetComponentDataComponentId(copy);
+				copy_data.schema_type = copy;
+				components.Add(copy_data);
+			}
+			NetDriver->Connection->SendCreateEntityRequest(components.Num(), components.GetData(), &EntityToSpawn->entity_id);
 		}
 		else
 		{

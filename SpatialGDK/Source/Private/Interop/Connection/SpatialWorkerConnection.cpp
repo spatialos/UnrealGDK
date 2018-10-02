@@ -55,7 +55,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	ConnectionParams.enable_protocol_logging_at_startup = ReceptionistConfig.EnableProtocolLoggingAtStartup;
 
 	Worker_ComponentVtable DefaultVtable = {};
-	//ConnectionParams.component_vtable_count = 0;
+	ConnectionParams.component_vtable_count = 0;
 	ConnectionParams.default_component_vtable = &DefaultVtable;
 
 	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;

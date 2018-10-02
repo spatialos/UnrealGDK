@@ -89,14 +89,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	//checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
-
-	// Set the timer manager.
-	TimerManager = &LoadedWorld->GetTimerManager();
-
-	// Set up manager objects.
-	EntityRegistry = NewObject<UEntityRegistry>(this);
-
+	// Josh - Moved this ealrier to prevent accidental changes in connection when we've already re-connected.
 	// Handle Spatial connection configurations.
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
 
@@ -104,11 +97,21 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	{
 		if (ServerConnection) // If we're a client this is probably server travel.
 		{
-			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("SpatialOS connection already exists.... Spawning instead."));
-			OnConnected();
+			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Client attempted to re-connec to Spatial even though it had a connection."));
+			// Josh - Disabled this as we might not need to call OnConnected
+			// Purpose of this was to send a spawn request...
+			//OnConnected();
 		}
 		return;
 	}
+
+	//checkf(!SpatialOSInstance->IsConnected(), TEXT("SpatialOS should not be connected already. This is probably because we attempted to travel to a different level, which current isn't supported."));
+
+	// Set the timer manager.
+	TimerManager = &LoadedWorld->GetTimerManager();
+
+	// Set up manager objects.
+	EntityRegistry = NewObject<UEntityRegistry>(this);
 
 	Connection = NewObject<USpatialWorkerConnection>();
 
@@ -151,6 +154,12 @@ void USpatialNetDriver::Connect()
 	{
 		OnConnectFailed(Reason);
 	});
+
+	if(ServerConnection) // Make clients wait to allow the server to finish loading and connecting to spatial.
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Doing some disgusting wait as a client."));
+		FPlatformProcess::Sleep(4);
+	}
 
 	Connection->Connect(bConnectAsClient);
 }
@@ -1185,7 +1194,7 @@ USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_Entity
 void USpatialNetDriver::WipeWorld_Implementation()
 {
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Wiping world!"));
-	GlobalStateManager->WorldWipe();
+	GlobalStateManager->WorldWipe(Delegate);
 }
 
 bool USpatialNetDriver::WipeWorld_Validate()

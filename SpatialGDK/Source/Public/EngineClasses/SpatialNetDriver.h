@@ -89,6 +89,9 @@ public:
 
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
+	DECLARE_DELEGATE(WorldWipeDelegate);
+	WorldWipeDelegate Delegate;
+
 	UFUNCTION(BlueprintCallable, Server, WithValidation, Reliable)
 	void WipeWorld();
 
