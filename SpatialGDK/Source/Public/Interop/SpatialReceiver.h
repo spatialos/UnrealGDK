@@ -176,15 +176,10 @@ private:
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 
-<<<<<<< HEAD
 	FTimerManager* TimerManager;
 
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
-	TMap<UnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
-=======
-	// TODO: Figure out how to remove entries when Channel/Actor gets deleted
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
->>>>>>> Moved over to the engine unreal object ref stubs
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
