@@ -87,8 +87,12 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 			{
 				if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
 				{
-					UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
-					// TODO: call failure callback
+					FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
+					AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
+					{
+						UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), *ErrorMessage);
+						this->OnConnectFailed.ExecuteIfBound(ErrorMessage);
+					});
 				}
 			}
 
@@ -126,21 +130,23 @@ void USpatialWorkerConnection::ConnectToLocator()
 	Worker_DeploymentListFuture_Get(DeploymentListFuture, nullptr, this,
 		[](void* UserData, const Worker_DeploymentList* DeploymentList)
 	{
+		USpatialWorkerConnection* SpatialConnection = static_cast<USpatialWorkerConnection*>(UserData);
+
 		if (DeploymentList->error != nullptr)
 		{
-			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: error fetching deployment list: %s"), UTF8_TO_TCHAR(DeploymentList->error));
-			// TODO: call failure callback
+			FString ErrorMessage = FString::Printf(TEXT("error fetching deployment list: %s"), UTF8_TO_TCHAR(DeploymentList->error));
+			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), *ErrorMessage);
+			SpatialConnection->OnConnectFailed.ExecuteIfBound(ErrorMessage);
 			return;
 		}
 
 		if (DeploymentList->deployment_count == 0)
 		{
-			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: received empty list of deployments."));
-			// TODO: call failure callback
+			FString ErrorMessage = FString::Printf(TEXT("received empty list of deployments."));
+			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), *ErrorMessage);
+			SpatialConnection->OnConnectFailed.ExecuteIfBound(ErrorMessage);
 			return;
 		}
-
-		USpatialWorkerConnection* SpatialConnection = static_cast<USpatialWorkerConnection*>(UserData);
 
 		// TODO: Move creation of connection parameters into a function somehow
 		Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
@@ -174,9 +180,10 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 		if (!bFoundRequestedDeployment)
 		{
-			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: requested deployment name was not present in the deployment list: %s"),
+			FString ErrorMessage = FString::Printf(TEXT("requested deployment name was not present in the deployment list: %s"),
 				*SpatialConnection->LocatorConfig.DeploymentName);
-			// TODO: call failure callback
+			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), *ErrorMessage);
+			SpatialConnection->OnConnectFailed.ExecuteIfBound(ErrorMessage);
 			return;
 		}
 
@@ -204,8 +211,12 @@ void USpatialWorkerConnection::ConnectToLocator()
 				{
 					if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
 					{
-						UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
-						// TODO: call failure callback
+						FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
+						AsyncTask(ENamedThreads::GameThread, [ErrorMessage, SpatialConnection]
+						{
+							UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), *ErrorMessage);
+							SpatialConnection->OnConnectFailed.ExecuteIfBound(ErrorMessage);
+						});
 					}
 				}
 			}

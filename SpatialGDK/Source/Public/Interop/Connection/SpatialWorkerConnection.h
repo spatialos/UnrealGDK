@@ -10,7 +10,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
-DECLARE_DELEGATE(OnConnectedDelegate)
+DECLARE_DELEGATE(OnConnectedDelegate);
+DECLARE_DELEGATE_OneParam(OnConnectFailedDelegate, FString);
 
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject
@@ -38,6 +39,7 @@ public:
 	FString GetWorkerId() const;
 
 	OnConnectedDelegate OnConnected;
+	OnConnectFailedDelegate OnConnectFailed;
 
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;

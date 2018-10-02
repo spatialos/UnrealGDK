@@ -139,6 +139,10 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 void USpatialNetDriver::Connect()
 {
 	Connection->OnConnected.BindUFunction(this, FName("OnConnected"));
+	Connection->OnConnectFailed.BindLambda([this](FString Reason)
+	{
+		this->OnSpatialOSConnectFailed(Reason);
+	});
 
 	Connection->Connect(bConnectAsClient);
 }
