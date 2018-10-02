@@ -656,8 +656,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	check(Info);
 
-	WorkerAttributeSet OwningClientAttribute;
-
+	FString PlayerWorkerAttributeSet;
 	if (Actor->GetNetConnection() != nullptr)
 	{
 		if (APlayerController* PlayerController = Actor->GetNetConnection()->PlayerController)
@@ -668,12 +667,14 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
 
 			WorkerRequirementSet RequirementSet = EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]];
-			WorkerAttributeSet AttributeSet = RequirementSet[0];
+			// Going to rewrite to make readable
+			FString AttributeSet = EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]][0][0];
 
-			OwningClientAttribute = AttributeSet;
+			PlayerWorkerAttributeSet = AttributeSet;
 		}
 	}
 
+	WorkerAttributeSet OwningClientAttribute = { PlayerWorkerAttributeSet };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
 	if (EntityACL->ComponentWriteAcl.Contains(Info->RPCComponents[RPC_Client]))
