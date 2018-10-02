@@ -103,11 +103,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			{
 				if (Cmd.Type == REPCMD_DynamicArray)
 				{
-					ApplyArray(ComponentObject, FieldId, Cast<UArrayProperty>(Cmd.Property), Data, SwappedCmd.Offset, Cmd.ParentIndex);
+					ApplyArray(ComponentObject, FieldId, Cast<UArrayProperty>(Cmd.Property), Data, (uint8*)Object, SwappedCmd.Offset, Cmd.ParentIndex);
 				}
 				else
 				{
-					ApplyProperty(ComponentObject, FieldId, 0, Cmd.Property, Data, SwappedCmd.Offset, Cmd.ParentIndex);
+					ApplyProperty(ComponentObject, FieldId, 0, Cmd.Property, Data, (uint8*)Object, SwappedCmd.Offset, Cmd.ParentIndex);
 				}
 
 				if (Cmd.Property->GetFName() == NAME_RemoteRole)
@@ -164,11 +164,11 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 		{
 			if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
 			{
-				ApplyArray(ComponentObject, FieldId, ArrayProperty, Data, PropertyInfo.Offset, -1);
+				ApplyArray(ComponentObject, FieldId, ArrayProperty, Data, (uint8*)Object, PropertyInfo.Offset, -1);
 			}
 			else
 			{
-				ApplyProperty(ComponentObject, FieldId, 0, PropertyInfo.Property, Data, PropertyInfo.Offset, -1);
+				ApplyProperty(ComponentObject, FieldId, 0, PropertyInfo.Property, Data, (uint8*)Object, PropertyInfo.Offset, -1);
 			}
 		}
 	}
@@ -176,7 +176,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 	Channel->PostReceiveSpatialUpdate(Object, TArray<UProperty*>());
 }
 
-void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex)
+void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, uint32 Index, UProperty* Property, uint8* Data, uint8* OwnerData, int32 Offset, int32 ParentIndex)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
@@ -275,6 +275,12 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			}
 		}
 
+		UClass* OwningClass = Property->GetOwnerClass();
+		FString ContextName = Property->GetName() + TEXT("_Context");
+		UProperty* ContextProperty = OwningClass->FindPropertyByName(*ContextName);
+		FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(OwnerData + ContextProperty->GetOffset_ForInternal()));
+		Context = ObjectRef;
+
 		if (!bUnresolved && ObjectReferencesMap.Find(Offset))
 		{
 			ObjectReferencesMap.Remove(Offset);
@@ -300,7 +306,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		}
 		else
 		{
-			ApplyProperty(Object, FieldId, Index, EnumProperty->GetUnderlyingProperty(), Data, Offset, ParentIndex);
+			ApplyProperty(Object, FieldId, Index, EnumProperty->GetUnderlyingProperty(), Data, OwnerData, Offset, ParentIndex);
 		}
 	}
 	else
@@ -309,7 +315,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 }
 
-void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex)
+void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, UArrayProperty* Property, uint8* Data, uint8* OwnerData, int32 Offset, int32 ParentIndex)
 {
 	FObjectReferencesMap* ArrayObjectReferences;
 	bool bNewArrayMap = false;
@@ -333,7 +339,7 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, 
 	for (int i = 0; i < Count; i++)
 	{
 		int32 ElementOffset = i * Property->Inner->ElementSize;
-		ApplyProperty(Object, FieldId, i, Property->Inner, ArrayHelper.GetRawPtr(i), ElementOffset, ParentIndex);
+		ApplyProperty(Object, FieldId, i, Property->Inner, ArrayHelper.GetRawPtr(i), OwnerData, ElementOffset, ParentIndex);
 	}
 
 	if (ArrayObjectReferences->Num() > 0)
