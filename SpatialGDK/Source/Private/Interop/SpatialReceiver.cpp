@@ -424,6 +424,11 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		}
 	}
 
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		return;
+	}
+
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
 	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative 
