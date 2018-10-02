@@ -39,7 +39,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				const uint8* Data = (uint8*)Object + Cmd.Offset;
 				TSet<const UObject*> UnresolvedObjects;
 
-				AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, (uint8*)Object, UnresolvedObjects, ClearedIds);
+				AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
 
 				if (UnresolvedObjects.Num() == 0)
 				{
@@ -86,7 +86,7 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
 		TSet<const UObject*> UnresolvedObjects;
 
-		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, (uint8*)Object, UnresolvedObjects, ClearedIds);
+		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, UnresolvedObjects, ClearedIds);
 
 		if (UnresolvedObjects.Num() == 0)
 		{
@@ -108,7 +108,7 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 	return bWroteSomething;
 }
 
-void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, const uint8* OwnerData, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds)
+void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
@@ -204,6 +204,18 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 				}
 			}
 			ObjectRef = FUnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
+
+			UObject* Outer = Property->GetOuter();
+			if (Outer->IsA<UStruct>())
+			{
+				UStruct* Owner = Cast<UStruct>(Outer);
+				FString ContextName = Property->GetName() + TEXT("_Context");
+				UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
+				const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
+				FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
+				Context = ObjectRef;
+			}
+
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				// A legal static object reference should never be unresolved.
@@ -212,19 +224,18 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 				ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 			}
 		}
-
-		UObject* Outer = Property->GetOuter();
-		if (Outer->IsA<UStruct>())
-		{
-			UStruct* Owner = Cast<UStruct>(Outer);
-			FString ContextName = Property->GetName() + TEXT("_Context");
-			UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
-			FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(OwnerData) + ContextProperty->GetOffset_ForInternal()));
-			Context = ObjectRef;
-		}
 		else
 		{
-			checkf(false, TEXT("Something isn't a Ustruct."));
+			UObject* Outer = Property->GetOuter();
+			if (Outer->IsA<UStruct>())
+			{
+				UStruct* Owner = Cast<UStruct>(Outer);
+				FString ContextName = Property->GetName() + TEXT("_Context");
+				UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
+				const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
+				FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
+				Context = ObjectRef;
+			}
 		}
 
 		AddObjectRefToSchema(Object, FieldId, ObjectRef);
@@ -246,7 +257,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 		for (int i = 0; i < ArrayHelper.Num(); i++)
 		{
-			AddProperty(Object, FieldId, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), OwnerData, UnresolvedObjects, ClearedIds);
+			AddProperty(Object, FieldId, ArrayProperty->Inner, ArrayHelper.GetRawPtr(i), UnresolvedObjects, ClearedIds);
 		}
 
 		if (ArrayHelper.Num() == 0 && ClearedIds)
@@ -262,7 +273,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		}
 		else
 		{
-			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, OwnerData, UnresolvedObjects, ClearedIds);
+			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, UnresolvedObjects, ClearedIds);
 		}
 	}
 	else

@@ -96,7 +96,7 @@ inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Obj
 	return RequirementSet;
 }
 
-inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const UnrealObjectRef& ObjectRef)
+inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const FUnrealObjectRef& ObjectRef)
 {
 	Schema_Object* ObjectRefObject = Schema_AddObject(Object, Id);
 
@@ -112,9 +112,9 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 	}
 }
 
-UnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);
+FUnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);
 
-inline UnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
 	FUnrealObjectRef ObjectRef;
 
