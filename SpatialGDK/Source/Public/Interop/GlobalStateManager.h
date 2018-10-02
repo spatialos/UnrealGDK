@@ -41,9 +41,9 @@ public:
 
 	void FindDeploymentMapURL();
 	void SetDeploymentMapURL(FString MapURL);
-	void WorldWipe(const USpatialNetDriver::WorldWipeDelegate& Delegate);
+	void WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
-	void LoadSnapshot();
+	void LoadSnapshot(const USpatialNetDriver::ServerTravelDelegate& Delegate);
 
 	FString DeploymentMapURL;
 

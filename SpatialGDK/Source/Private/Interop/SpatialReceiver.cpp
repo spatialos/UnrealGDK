@@ -795,14 +795,25 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 void USpatialReceiver::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op)
 {
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Received reserve entity Id: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
+
 	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
 	{
 		Channel->OnReserveEntityIdResponse(Op);
 	}
 }
 
-void USpatialReceiver::OnCreateEntityIdResponse(Worker_CreateEntityResponseOp& Op)
+void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 {
+
+	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("FAILED create entity response: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, *FString(Op.message));
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("SUCCESS create entity response: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, Op.message);
+	}
+
 	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
 	{
 		Channel->OnCreateEntityResponse(Op);

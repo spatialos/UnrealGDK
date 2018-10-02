@@ -111,7 +111,7 @@ public:
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
 	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
-	void OnCreateEntityIdResponse(Worker_CreateEntityResponseOp& Op);
+	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
 
 	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
 	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FPendingRPCParams> Params);

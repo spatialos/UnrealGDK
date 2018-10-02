@@ -51,6 +51,8 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 	AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
 
+	// Josh - Make an entity query here for the SpatialSpawner.
+
 	NetDriver->Connection->SendCommandRequest(SpatialConstants::SPAWNER_ENTITY_ID, &CommandRequest, 1);
 
 	++NumberOfAttempts;

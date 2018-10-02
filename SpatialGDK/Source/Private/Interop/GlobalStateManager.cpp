@@ -114,6 +114,12 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 
 		SingletonActor->Role = ROLE_Authority;
 		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
+		if (Channel->Actor)
+		{
+			// Channel already has an Actor
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Singleton Actor already has a channel: %s"), *SingletonActor->GetClass()->GetName());
+			continue;
+		}
 
 		// Set entity id of channel from the GlobalStateManager.
 		// If the id was 0, SetChannelActor will create the entity.
@@ -259,7 +265,7 @@ void UGlobalStateManager::SetDeploymentMapURL(FString MapURL)
 	//WorldWipe(); // Because why not
 }
 
-void UGlobalStateManager::WorldWipe(const USpatialNetDriver::WorldWipeDelegate& Delegate)
+void UGlobalStateManager::WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate)
 {
 	Worker_EntityIdConstraint GSMConstraintEID;
 	GSMConstraintEID.entity_id = SpatialConstants::GLOBAL_STATE_MANAGER;
@@ -309,8 +315,8 @@ void UGlobalStateManager::WorldWipe(const USpatialNetDriver::WorldWipeDelegate& 
 			// NetDriver->LoadSnapshot();
 
 			// Move this too....
-			Delegate.ExecuteIfBound();
 		}
+			Delegate.ExecuteIfBound();
 	};
 
 	View->AddEntityQueryResponse(WorldQueryFunction);
@@ -342,7 +348,7 @@ Schema_ComponentData* Schema_DeepCopyComponentData(Schema_ComponentData* source)
 	return copy;
 }
 
-void UGlobalStateManager::LoadSnapshot()
+void UGlobalStateManager::LoadSnapshot(const USpatialNetDriver::ServerTravelDelegate& FinishServerTravel)
 {
 	// YOLO
 	Worker_ComponentVtable DefaultVtable{};
@@ -381,7 +387,8 @@ void UGlobalStateManager::LoadSnapshot()
 				copy_data.schema_type = copy;
 				components.Add(copy_data);
 			}
-			NetDriver->Connection->SendCreateEntityRequest(components.Num(), components.GetData(), &EntityToSpawn->entity_id);
+			// TODO: Save all the entities and then reserve the IDs, then spawn.
+			NetDriver->Connection->SendCreateEntityRequest(components.Num(), components.GetData(), nullptr /**Reserved entity ID**/);
 		}
 		else
 		{
@@ -394,4 +401,6 @@ void UGlobalStateManager::LoadSnapshot()
 
 	// End it
 	Worker_SnapshotInputStream_Destroy(Snapshot);
+
+	FinishServerTravel.ExecuteIfBound();
 }

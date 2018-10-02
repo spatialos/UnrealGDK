@@ -72,7 +72,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
 			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityIdResponse(Op->create_entity_response);
+			Receiver->OnCreateEntityResponse(Op->create_entity_response);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			break;

@@ -62,6 +62,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	else
 	{
 		// The server should already have a world.
+		SnapshotToLoad = URL.GetOption(TEXT("snapshot"), TEXT(""));
 		OnMapLoaded(GetWorld());
 	}
 
@@ -158,7 +159,7 @@ void USpatialNetDriver::Connect()
 	if(ServerConnection) // Make clients wait to allow the server to finish loading and connecting to spatial.
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Doing some disgusting wait as a client."));
-		FPlatformProcess::Sleep(4);
+		FPlatformProcess::Sleep(10);
 	}
 
 	Connection->Connect(bConnectAsClient);
@@ -215,6 +216,14 @@ void USpatialNetDriver::OnConnected()
 	Sender->Init(this);
 	Receiver->Init(this, TimerManager);
 	GlobalStateManager->Init(this);
+
+	// Josh - Here if we are a server and this is server travel we want to load the snapshot.
+	if(!SnapshotToLoad.IsEmpty())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Loading snapshot: %s"), *SnapshotToLoad);
+		ServerTravelDelegate Delegate;
+		LoadSnapshot(Delegate);
+	}
 }
 
 void USpatialNetDriver::OnConnectFailed(const FString& Reason)
@@ -1191,22 +1200,13 @@ USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_Entity
 	return EntityToActorChannel.FindRef(EntityId);
 }
 
-void USpatialNetDriver::WipeWorld_Implementation()
+void USpatialNetDriver::WipeWorld(const USpatialNetDriver::ServerTravelDelegate& LoadSnapshotAfterWorldWipe)
 {
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Wiping world!"));
-	GlobalStateManager->WorldWipe(Delegate);
+	GlobalStateManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 }
 
-bool USpatialNetDriver::WipeWorld_Validate()
+void USpatialNetDriver::LoadSnapshot(const USpatialNetDriver::ServerTravelDelegate& FinishServerTravel)
 {
-	if(ServerConnection)
-	{
-		return false;
-	}
-	return true;
-}
-
-void USpatialNetDriver::LoadSnapshot()
-{
-	GlobalStateManager->LoadSnapshot();
+	GlobalStateManager->LoadSnapshot(FinishServerTravel);
 }
