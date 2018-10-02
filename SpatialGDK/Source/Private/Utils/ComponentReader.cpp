@@ -245,11 +245,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-<<<<<<< HEAD
-		UnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
-=======
-		FUnrealObjectRef ObjectRef = Schema_IndexObjectRef(Object, FieldId, Index);
->>>>>>> Moved over to the engine unreal object ref stubs
+		FUnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
