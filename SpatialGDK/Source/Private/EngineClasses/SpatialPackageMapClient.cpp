@@ -187,19 +187,19 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 
 	// Remove actor.
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
-	UnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
+	FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
 	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
 	UnrealObjectRefToNetGUID.Remove(*ActorRef);
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)
 {
-	UnrealObjectRef NetRemappedObjectRef = ObjectRef;
+	FUnrealObjectRef NetRemappedObjectRef = ObjectRef;
 	NetworkRemapObjectRefPaths(NetRemappedObjectRef);
 	return GetNetGUIDFromUnrealObjectRefInternal(NetRemappedObjectRef);
 }
 
-FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const UnrealObjectRef& ObjectRef)
+FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const FUnrealObjectRef& ObjectRef)
 {
 	FNetworkGUID* CachedGUID = UnrealObjectRefToNetGUID.Find(ObjectRef);
 	FNetworkGUID NetGUID = CachedGUID ? *CachedGUID : FNetworkGUID{};
@@ -216,8 +216,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const U
 	return NetGUID;
 }
 
-<<<<<<< HEAD
-void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef) const
+void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const
 {
 	// If we have paths, network-sanitize all of them (e.g. removing PIE prefix).
 	if (!ObjectRef.Path.IsSet())
@@ -225,7 +224,7 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef
 		return;
 	}
 
-	UnrealObjectRef* Iterator = &ObjectRef;
+	FUnrealObjectRef* Iterator = &ObjectRef;
 	while (true)
 	{
 		if (Iterator->Path.IsSet())
@@ -243,10 +242,7 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(UnrealObjectRef& ObjectRef
 
 }
 
-UnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
-=======
 FUnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
->>>>>>> Moved over to the engine unreal object ref stubs
 {
 	const FUnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
 	return ObjRef ? (FUnrealObjectRef)*ObjRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
