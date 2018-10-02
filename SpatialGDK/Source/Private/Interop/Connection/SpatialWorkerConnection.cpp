@@ -127,11 +127,13 @@ void USpatialWorkerConnection::ConnectToLocator()
 		if (DeploymentList->error != nullptr)
 		{
 			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Error fetching deployment list: %s"), UTF8_TO_TCHAR(DeploymentList->error));
+			return;
 		}
 
 		if (DeploymentList->deployment_count == 0)
 		{
 			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Received empty list of deployments. Failed to connect."));
+			return;
 		}
 
 		USpatialWorkerConnection* SpatialConnection = static_cast<USpatialWorkerConnection*>(UserData);
@@ -174,8 +176,15 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 			AsyncTask(ENamedThreads::GameThread, [SpatialConnection]
 			{
-				SpatialConnection->bIsConnected = true;
-				SpatialConnection->OnConnected.ExecuteIfBound();
+				if (SpatialConnection->WorkerConnection == nullptr)
+				{
+					SpatialConnection->bIsConnected = false;
+				}
+				else
+				{
+					SpatialConnection->bIsConnected = true;
+					SpatialConnection->OnConnected.ExecuteIfBound();
+				}
 			});
 		});
 	});
