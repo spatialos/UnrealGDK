@@ -259,7 +259,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
-			EntityActor->FinishSpawning(FTransform(Rotation->ToFRotator(), SpawnLocation));
+			EntityActor->SpatialFinishSpawning(FTransform(Rotation->ToFRotator(), SpawnLocation));
 		}
 
 		SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->SubobjectNameToOffset);
@@ -295,9 +295,27 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				FInBunch Bunch(NetDriver->ServerConnection);
 				EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 			}
+		}
 
-			// Call PostNetInit on client only.
+		if (!NetDriver->IsServer())
+		{
+			// Call PostNetInit if we're on a client.
 			EntityActor->PostNetInit();
+		}
+		else
+		{
+			// Otherwise just manually do what PostNetInit does. DispatchBeginPlay and UpdateOverlaps should have been deferred in FinishSpawning above.
+			// Note that vanilla Unreal Engine only doesn't normally do this deferred on servers, hence the need to do it manually here.
+			if (!EntityActor->HasActorBegunPlay())
+			{
+				const UWorld* MyWorld = EntityActor->GetWorld();
+				if (MyWorld && MyWorld->HasBegunPlay())
+				{
+					SCOPE_CYCLE_COUNTER(STAT_ActorBeginPlay);
+					EntityActor->DispatchBeginPlay();
+				}
+			}
+			EntityActor->UpdateOverlaps();
 		}
 	}
 }
