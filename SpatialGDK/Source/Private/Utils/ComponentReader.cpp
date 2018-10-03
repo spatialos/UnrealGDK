@@ -276,7 +276,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
 		{
 			UStruct* Owner = Cast<UStruct>(Outer);
-			FString ContextName = Property->GetName() + TEXT("_Context");
+			const FString ContextName = Property->GetName() + TEXT("_Context");
 			UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
 			const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
 			FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
