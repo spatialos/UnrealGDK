@@ -259,6 +259,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
+			// Call the spatial version of FinishSpawning, which will always defer BeginPlay (which we will manually call down below).
 			EntityActor->SpatialFinishSpawning(FTransform(Rotation->ToFRotator(), SpawnLocation));
 		}
 
@@ -299,19 +300,20 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		if (!NetDriver->IsServer())
 		{
-			// Call PostNetInit if we're on a client.
+			// Call PostNetInit if we're on a client. This calls DispatchBeginPlay and UpdateOverlaps, which have been deferred above in SpatialFinishSpawning.
 			EntityActor->PostNetInit();
 		}
 		else
 		{
-			// Otherwise just manually do what PostNetInit does. DispatchBeginPlay and UpdateOverlaps should have been deferred in FinishSpawning above.
+			// Otherwise just manually do what PostNetInit does. DispatchBeginPlay and UpdateOverlaps should have been deferred in SpatialFinishSpawning above.
 			// Note that vanilla Unreal Engine only doesn't normally do this deferred on servers, hence the need to do it manually here.
 			if (!EntityActor->HasActorBegunPlay())
 			{
 				const UWorld* MyWorld = EntityActor->GetWorld();
 				if (MyWorld && MyWorld->HasBegunPlay())
 				{
-					SCOPE_CYCLE_COUNTER(STAT_ActorBeginPlay);
+					// Can't use a stat counter from a different module. Note that this might throw off engine performance stats measurement.
+					//SCOPE_CYCLE_COUNTER(STAT_ActorBeginPlay);
 					EntityActor->DispatchBeginPlay();
 				}
 			}
