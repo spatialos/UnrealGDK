@@ -398,7 +398,7 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 void ComponentFactory::AssignUnrealObjectRefToContext(UProperty* Property, const uint8* Data, FUnrealObjectRef ObjectRef)
 {
 	UObject* Outer = Property->GetOuter();
-	// TODO: This check will be removed once arrays contexts are supported UNR-???
+	// TODO: This check will be removed once arrays contexts are supported UNR-633
 	if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
 	{
 		UStruct* Owner = Cast<UStruct>(Outer);
