@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Schema/Component.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -31,8 +32,10 @@ public:
 	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	improbable::UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 	improbable::EntityAcl* GetEntityACL(Worker_EntityId EntityId);
+	template <typename T> typename  T* GetComponentData(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
 
 private:
+	// TODO(nik): Helper method to get list of components via entity id?
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
@@ -47,7 +50,9 @@ private:
 	UPROPERTY()
 	USpatialSender* Sender;
 
+	// TODO(nik): Merge this map with the component map
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
-	TMap<Worker_EntityId_Key, TSharedPtr<improbable::UnrealMetadata>> EntityUnrealMetadataMap;
-	TMap<Worker_EntityId_Key, TSharedPtr<improbable::EntityAcl>> EntityACLMap;
+
+	// TODO(nik): Should this be a shared pointer or a unique pointer?
+	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TSharedPtr<improbable::ComponentStorageBase>>> EntityComponentMap;
 };
