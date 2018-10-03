@@ -6,8 +6,6 @@
 
 #include <improbable/c_worker.h>
 
-using Worker_EntityId_Key = int64;
-
 namespace SpatialConstants
 {
 	enum EntityIds

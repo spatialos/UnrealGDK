@@ -152,6 +152,11 @@ void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
 	{
 	    EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = MakeShared<improbable::ComponentStorage<improbable::UnrealMetadata>>(Op.data);
 	}
+
+	if (Op.data.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+	{
+	    EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = MakeShared<improbable::ComponentStorage<improbable::Position>>(Op.data);
+	}
 }
 
 void USpatialView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
@@ -161,6 +166,7 @@ void USpatialView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 void USpatialView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
+	// TODO(nik): Enforce that all hand-crafted components have this function to remove the need for logic here?
 	if (Op.update.component_id == improbable::EntityAcl::ComponentId)
 	{
 		if (improbable::EntityAcl* aclComponent = GetComponentData<improbable::EntityAcl>(Op.entity_id))

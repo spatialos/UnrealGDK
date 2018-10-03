@@ -33,7 +33,6 @@ public:
 	template <typename T> typename  T* GetComponentData(Worker_EntityId EntityId);
 
 private:
-	// TODO(nik): Helper method to get list of components via entity id?
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
@@ -49,8 +48,6 @@ private:
 	USpatialSender* Sender;
 
 	// TODO(nik): Merge this map with the component map
-	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
-
-	// TODO(nik): Should this be a shared pointer or a unique pointer?
-	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TSharedPtr<improbable::ComponentStorageBase>>> EntityComponentMap;
+	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
+	TMap<Worker_EntityId, TMap<Worker_ComponentId, TSharedPtr<improbable::ComponentStorageBase>>> EntityComponentMap;
 };
