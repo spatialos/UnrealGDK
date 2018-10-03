@@ -81,7 +81,6 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 		}
 		else
 		{
-			bIsConnected = false;
 			Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
 			for (int i = 0; i < (int)OpList->op_count; i++)
 			{
@@ -205,7 +204,6 @@ void USpatialWorkerConnection::ConnectToLocator()
 			}
 			else
 			{
-				SpatialConnection->bIsConnected = false;
 				Worker_OpList* OpList = Worker_Connection_GetOpList(SpatialConnection->WorkerConnection, 0);
 				for (int i = 0; i < (int)OpList->op_count; i++)
 				{
