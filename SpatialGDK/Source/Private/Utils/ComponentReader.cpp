@@ -272,7 +272,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		}
 
 		UObject* Outer = Property->GetOuter();
-		if (Outer->IsA<UStruct>())
+		if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
 		{
 			UStruct* Owner = Cast<UStruct>(Outer);
 			FString ContextName = Property->GetName() + TEXT("_Context");

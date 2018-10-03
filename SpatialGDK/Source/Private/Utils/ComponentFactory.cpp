@@ -206,7 +206,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			ObjectRef = FUnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
 
 			UObject* Outer = Property->GetOuter();
-			if (Outer->IsA<UStruct>())
+			if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
 			{
 				UStruct* Owner = Cast<UStruct>(Outer);
 				FString ContextName = Property->GetName() + TEXT("_Context");
@@ -227,7 +227,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		else
 		{
 			UObject* Outer = Property->GetOuter();
-			if (Outer->IsA<UStruct>())
+			if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
 			{
 				UStruct* Owner = Cast<UStruct>(Outer);
 				FString ContextName = Property->GetName() + TEXT("_Context");
