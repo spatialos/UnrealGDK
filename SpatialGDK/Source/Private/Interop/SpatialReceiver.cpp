@@ -243,17 +243,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId))
 	{
-		UClass* ActorClass = GetNativeEntityClass(Metadata);
-
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
-
-		improbable::UnrealMetadata* UnrealMetadata = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
-		check(UnrealMetadata);
-
-		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
-		check(SpatialPackageMap);
-
-		FNetworkGUID NetGUID = SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadata->SubobjectNameToOffset);
 
 		// Assume SimulatedProxy until we've been delegated Authority
 		bool bAuthority = View->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
