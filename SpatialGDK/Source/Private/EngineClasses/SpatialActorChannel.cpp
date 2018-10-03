@@ -10,7 +10,6 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "EngineClasses/SpatialPlayerController.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
@@ -656,29 +655,6 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
 	{
 		return FVector::ZeroVector;
 	}
-}
-
-FString USpatialActorChannel::GetPlayerWorkerId()
-{
-	// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
-	// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called.
-	FString PlayerWorkerId;
-
-	// Native unreal version: OwningConnection == Connection || (OwningConnection != NULL && OwningConnection->IsA(UChildConnection::StaticClass()) && ((UChildConnection*)OwningConnection)->Parent == Connection)
-	// But since we do not have multiple connections per client, this should be equal to the above flow
-	if (UNetConnection* ActorOwningConnection = Actor->GetNetConnection())
-	{
-		if (ASpatialPlayerController* SpatialPlayerController = Cast<ASpatialPlayerController>(ActorOwningConnection->PlayerController))
-		{
-			PlayerWorkerId = SpatialPlayerController->WorkerId;
-		}
-	}
-	else
-	{
-		UE_LOG(LogSpatialActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
-	}
-
-	return PlayerWorkerId;
 }
 
 void USpatialActorChannel::SpatialViewTick()
