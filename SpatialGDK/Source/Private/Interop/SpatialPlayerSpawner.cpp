@@ -8,8 +8,8 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
-#include "SpatialView.h"
 #include "Utils/SchemaUtils.h"
 
 #include <improbable/c_schema.h>
@@ -67,14 +67,9 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	Worker_RequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery);
 
-	EntityQueryFunction SpatialSpawnerQueryFunction = [this, RequestID, CommandRequest](const Worker_EntityQueryResponseOp& Op)
+	EntityQueryDelegate SpatialSpawnerQueryDelegate;
+	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID, CommandRequest](Worker_EntityQueryResponseOp& Op)
 	{
-		if (Op.request_id != RequestID)
-		{
-			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Not my job - SpatialSpawnerQuery"));
-			return;
-		}
-
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Could not find SpatialSpawner via entity query: %s"), Op.message);
@@ -90,10 +85,10 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Found SpatialSpawner!! EntityID: %i"), Op.results[0].entity_id);
 			NetDriver->Connection->SendCommandRequest(Op.results[0].entity_id, &CommandRequest, 1);
 		}
-	};
+	});
 
 	UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Sending player spawn request"));
-	NetDriver->View->AddEntityQueryResponse(SpatialSpawnerQueryFunction);
+	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, SpatialSpawnerQueryDelegate);
 
 	++NumberOfAttempts;
 }

@@ -91,6 +91,7 @@ struct FPendingIncomingRPC
 
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
+DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
 
 UCLASS()
@@ -119,15 +120,15 @@ public:
 	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
 	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FPendingRPCParams> Params);
 
+	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
+	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
+
 	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
 	void ProcessQueuedResolvedObjects();
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
-
-	TArray<EntityQueryFunction> EntityQueryFunctions;
-	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 
 private:
 	void EnterCriticalSection();
@@ -203,4 +204,7 @@ private:
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
+
+	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
+	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 };

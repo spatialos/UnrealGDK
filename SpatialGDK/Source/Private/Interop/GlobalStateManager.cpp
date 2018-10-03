@@ -219,13 +219,9 @@ void UGlobalStateManager::FindDeploymentMapURL()
 	Worker_RequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&MapQuery);
 
-	EntityQueryFunction MapQueryFunction = [this, RequestID](const Worker_EntityQueryResponseOp& Op)
+	EntityQueryDelegate MapQueryDelegate;
+	MapQueryDelegate.BindLambda([this, RequestID](Worker_EntityQueryResponseOp& Op)
 	{
-		if (Op.request_id != RequestID)
-		{
-			return;
-		}
-
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogGlobalStateManager, Error, TEXT("Could not find GSM via entity query: %s"), Op.message);
@@ -252,11 +248,10 @@ void UGlobalStateManager::FindDeploymentMapURL()
 					this->SetDeploymentMapURL(MapURL);
 				}
 			}
-
 		}
-	};
+	});
 
-	View->AddEntityQueryResponse(MapQueryFunction);
+	Receiver->AddEntityQueryDelegate(RequestID, MapQueryDelegate);
 }
 
 void UGlobalStateManager::SetDeploymentMapURL(FString MapURL)
@@ -288,13 +283,9 @@ void UGlobalStateManager::WorldWipe(const USpatialNetDriver::ServerTravelDelegat
 	Worker_RequestId RequestID;
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&WorldQuery);
 
-	EntityQueryFunction WorldQueryFunction = [this, RequestID, Delegate](const Worker_EntityQueryResponseOp& Op)
+	EntityQueryDelegate WorldQueryDelegate;
+	WorldQueryDelegate.BindLambda([this, RequestID, Delegate](Worker_EntityQueryResponseOp& Op)
 	{
-		if (Op.request_id != RequestID)
-		{
-			return;
-		}
-
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogGlobalStateManager, Error, TEXT("World query failed: %s"), Op.message);
@@ -310,10 +301,11 @@ void UGlobalStateManager::WorldWipe(const USpatialNetDriver::ServerTravelDelegat
 			UE_LOG(LogGlobalStateManager, Error, TEXT("Found some entities in the world query: %u"), Op.result_count);
 			DeleteEntities(Op);
 		}
-			Delegate.ExecuteIfBound();
-	};
 
-	View->AddEntityQueryResponse(WorldQueryFunction);
+		Delegate.ExecuteIfBound();
+	});
+
+	Receiver->AddEntityQueryDelegate(RequestID, WorldQueryDelegate);
 }
 
 void UGlobalStateManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
@@ -437,7 +429,5 @@ void UGlobalStateManager::LoadSnapshot()
 	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num());
 
 	// Add the spawn delegate
-	Receiver->ReserveEntityIDsDelegates.Add(ReserveRequestID, SpawnEntitiesDelegate);
-
-	// Josh - Finish server travel should no longer be called in the snapshot loading. Instead it should be in the LoadMap.
+	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, SpawnEntitiesDelegate);
 }

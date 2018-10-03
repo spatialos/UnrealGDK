@@ -192,8 +192,3 @@ void USpatialView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
 	EntityComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
 }
-
-void USpatialView::AddEntityQueryResponse(EntityQueryFunction Func)
-{
-	Receiver->EntityQueryFunctions.Add(Func);
-}

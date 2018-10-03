@@ -809,34 +809,56 @@ void USpatialReceiver::OnReserveEntityIdsResponse(Worker_ReserveEntityIdsRespons
 		auto RequestDelegate = ReserveEntityIDsDelegates.Find(Op.request_id);
 		if (RequestDelegate)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing ReserveEntityIdsResponse with delegate, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, *FString(Op.message));
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing ReserveEntityIdsResponse with delegate, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
 			RequestDelegate->ExecuteIfBound(Op);
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved ReserveEntityIdsResponse but with no delegate set, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, *FString(Op.message));
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved ReserveEntityIdsResponse but with no delegate set, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("Failed ReserveEntityIds: request id: %d, message: %s"), Op.request_id, *FString(Op.message));
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Failed ReserveEntityIds: request id: %d, message: %s"), Op.request_id, UTF8_TO_TCHAR(Op.message));
 	}
 }
 
 void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 {
+	// Josh - TODO: Remove this debugging code.
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("FAILED create entity response: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, *FString(Op.message));
+		UE_LOG(LogSpatialReceiver, Error, TEXT("FAILED create entity response: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("SUCCESS create entity response: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, *FString(Op.message));
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("SUCCESS create entity response: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 	}
 
 	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
 	{
 		Channel->OnCreateEntityResponse(Op);
+	}
+}
+
+void USpatialReceiver::OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op)
+{
+	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+	{
+		auto RequestDelegate = EntityQueryDelegates.Find(Op.request_id);
+		if (RequestDelegate)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Executing EntityQueryResponse with delegate, request id: %d, number of entities: %lld, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
+			RequestDelegate->ExecuteIfBound(Op);
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved EntityQueryResponse but with no delegate set, request id: %d, number of entities: %lld, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("EntityQuery failed: request id: %d, message: %s"), Op.request_id, *FString(Op.message));
 	}
 }
 
@@ -850,12 +872,14 @@ void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TShared
 	PendingReliableRPCs.Add(RequestId, Params);
 }
 
-void USpatialReceiver::OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op)
+void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
 {
-	for (EntityQueryFunction Func : EntityQueryFunctions)
-	{
-		Func(Op);
-	}
+	EntityQueryDelegates.Add(RequestId, Delegate);
+}
+
+void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
+{
+	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
 }
 
 USpatialActorChannel* USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)

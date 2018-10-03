@@ -228,7 +228,7 @@ void USpatialNetDriver::OnConnected()
 	if(!SnapshotToLoad.IsEmpty())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Loading snapshot: %s"), *SnapshotToLoad);
-		LoadSnapshot();
+		LoadSnapshot(); // We also need to check if we are authoratative over the GSM.
 	}
 }
 
