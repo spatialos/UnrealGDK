@@ -132,7 +132,8 @@ void USpatialTypebindingManager::CreateTypebindings()
 				}
 
 				// Components that are added in a blueprint won't appear in the CDO.
-				if (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(Class))
+				UClass* BlueprintClass = Class;
+				while (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(BlueprintClass))
 				{
 					if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
 					{
@@ -146,6 +147,8 @@ void USpatialTypebindingManager::CreateTypebindings()
 							AddSubobjectClass(Info, Node->ComponentTemplate->GetClass());
 						}
 					}
+
+					BlueprintClass = BlueprintClass->GetSuperClass();
 				}
 			}
 		}

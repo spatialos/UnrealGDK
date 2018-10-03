@@ -638,18 +638,18 @@ void USpatialActorChannel::UpdateSpatialRotation()
 	Sender->SendRotationUpdate(EntityId, Actor->GetActorRotation());
 }
 
-FVector USpatialActorChannel::GetActorSpatialPosition(AActor* Actor)
+FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 {
 	// If the Actor has an Owner, use its position.
 	// Otherwise if the Actor has a well defined location then use that
 	// Otherwise use the origin
-	if (Actor->GetOwner())
+	if (InActor->GetOwner())
 	{
-		return GetActorSpatialPosition(Actor->GetOwner());
+		return GetActorSpatialPosition(InActor->GetOwner());
 	}
-	else if (Actor->GetRootComponent()) 
+	else if (InActor->GetRootComponent())
 	{
-		return Actor->GetRootComponent()->GetComponentLocation();
+		return InActor->GetRootComponent()->GetComponentLocation();
 	}
 	else
 	{
