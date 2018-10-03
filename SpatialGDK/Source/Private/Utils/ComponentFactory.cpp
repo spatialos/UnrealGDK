@@ -203,18 +203,9 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 				}
 			}
-			ObjectRef = FUnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
 
-			UObject* Outer = Property->GetOuter();
-			if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
-			{
-				UStruct* Owner = Cast<UStruct>(Outer);
-				FString ContextName = Property->GetName() + TEXT("_Context");
-				UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
-				const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
-				FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
-				Context = ObjectRef;
-			}
+			ObjectRef = FUnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
+			AssignUnrealObjectRefToContext(Property, Data, ObjectRef);
 
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
@@ -226,16 +217,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		}
 		else
 		{
-			UObject* Outer = Property->GetOuter();
-			if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
-			{
-				UStruct* Owner = Cast<UStruct>(Outer);
-				FString ContextName = Property->GetName() + TEXT("_Context");
-				UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
-				const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
-				FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
-				Context = ObjectRef;
-			}
+			AssignUnrealObjectRefToContext(Property, Data, ObjectRef);
 		}
 
 		AddObjectRefToSchema(Object, FieldId, ObjectRef);
@@ -411,6 +393,21 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	}
 
 	return ComponentUpdate;
+}
+
+void ComponentFactory::AssignUnrealObjectRefToContext(UProperty* Property, const uint8* Data, FUnrealObjectRef ObjectRef)
+{
+	UObject* Outer = Property->GetOuter();
+	// TODO: This check will be removed once arrays contexts are supported UNR-???
+	if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
+	{
+		UStruct* Owner = Cast<UStruct>(Outer);
+		const FString ContextName = Property->GetName() + TEXT("_Context");
+		UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
+		const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
+		FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
+		Context = ObjectRef;
+	}
 }
 
 }

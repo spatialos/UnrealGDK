@@ -272,6 +272,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		}
 
 		UObject* Outer = Property->GetOuter();
+		// TODO: This check will be removed once arrays contexts are supported UNR-???
 		if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
 		{
 			UStruct* Owner = Cast<UStruct>(Outer);
