@@ -29,6 +29,7 @@ public:
 	// Worker Connection Interface
 	Worker_OpList* GetOpList();
 	Worker_RequestId SendReserveEntityIdRequest();
+	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
 	Worker_RequestId SendCreateEntityRequest(uint32_t ComponentCount, const Worker_ComponentData* Components, const Worker_EntityId* EntityId);
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
 	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate);

@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialReceiver.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
@@ -21,8 +22,10 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
+	Receiver = InNetDriver->Receiver;
+	GlobalStateManagerEntityId = SpatialConstants::INTIAL_GLOBAL_STATE_MANAGER;
 
-	FindDeploymentMapURL(); // TODO: This is in the wrong place.
+	FindDeploymentMapURL(); // TODO: This needs a complete overhaul and is in the wrong place.
 }
 
 void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
@@ -141,7 +144,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 
 	AddStringToEntityMapToSchema(UpdateObject, 1, SingletonNameToEntityId);
 
-	NetDriver->Connection->SendComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER, &Update);
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
 void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel)
@@ -203,7 +206,7 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId)
 
 void UGlobalStateManager::FindDeploymentMapURL()
 {
-	Worker_EntityIdConstraint GSMConstraintEID{ Worker_EntityId{ SpatialConstants::GLOBAL_STATE_MANAGER } };
+	Worker_EntityIdConstraint GSMConstraintEID{ Worker_EntityId{ GlobalStateManagerEntityId } };
 
 	Worker_Constraint GSMConstraint;
 	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
@@ -260,15 +263,12 @@ void UGlobalStateManager::SetDeploymentMapURL(FString MapURL)
 {
 	UE_LOG(LogGlobalStateManager, Error, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
-
-	// TODO - Callbacks on map change.
-	//WorldWipe(); // Because why not
 }
 
 void UGlobalStateManager::WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate)
 {
 	Worker_EntityIdConstraint GSMConstraintEID;
-	GSMConstraintEID.entity_id = SpatialConstants::GLOBAL_STATE_MANAGER;
+	GSMConstraintEID.entity_id = GlobalStateManagerEntityId;
 
 	Worker_Constraint GSMConstraint;
 	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
@@ -309,12 +309,6 @@ void UGlobalStateManager::WorldWipe(const USpatialNetDriver::ServerTravelDelegat
 		{
 			UE_LOG(LogGlobalStateManager, Error, TEXT("Found some entities in the world query: %u"), Op.result_count);
 			DeleteEntities(Op);
-
-			// Reload snapshot after the world has been wiped
-			// TODO: Needs moving from here............
-			// NetDriver->LoadSnapshot();
-
-			// Move this too....
 		}
 			Delegate.ExecuteIfBound();
 	};
@@ -332,6 +326,9 @@ void UGlobalStateManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
 		UE_LOG(LogGlobalStateManager, Error, TEXT("- Sending delete request for: %i"), Op.results[i].entity_id);
 		NetDriver->Connection->SendDeleteEntityRequest(Op.results[i].entity_id);
 	}
+
+	// Also kill the GSM
+	NetDriver->Connection->SendDeleteEntityRequest(GlobalStateManagerEntityId);
 }
 
 void DeepCopy(Schema_Object* source, Schema_Object* target) {
@@ -348,13 +345,14 @@ Schema_ComponentData* Schema_DeepCopyComponentData(Schema_ComponentData* source)
 	return copy;
 }
 
-void UGlobalStateManager::LoadSnapshot(const USpatialNetDriver::ServerTravelDelegate& FinishServerTravel)
+void UGlobalStateManager::LoadSnapshot()
 {
 	// YOLO
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_SnapshotParameters Parameters{};
 	Parameters.default_component_vtable = &DefaultVtable;
 
+	// TODO: Move the snapshot to a variable and get it from the `snapshot=` param in the URL.
 	Worker_SnapshotInputStream* Snapshot = Worker_SnapshotInputStream_Create("E:\\Projects\\UnrealGDKStarterProjectPlugin\\spatial\\snapshots\\BestMap.snapshot", &Parameters);
 
 	FString Error = Worker_SnapshotInputStream_GetError(Snapshot);
@@ -364,6 +362,9 @@ void UGlobalStateManager::LoadSnapshot(const USpatialNetDriver::ServerTravelDele
 		return;
 	}
 
+	TArray<TArray<Worker_ComponentData>> EntitiesToSpawn;
+
+	// Get all of the entities from the snapshot.
 	while (Snapshot && Worker_SnapshotInputStream_HasNext(Snapshot) > 0)
 	{
 		Error = Worker_SnapshotInputStream_GetError(Snapshot);
@@ -378,17 +379,18 @@ void UGlobalStateManager::LoadSnapshot(const USpatialNetDriver::ServerTravelDele
 		Error = Worker_SnapshotInputStream_GetError(Snapshot);
 		if (Error.IsEmpty())
 		{
-			UE_LOG(LogGlobalStateManager, Warning, TEXT("- Sending entity create request for: %i"), EntityToSpawn->entity_id);
-			TArray<Worker_ComponentData> components;
+			TArray<Worker_ComponentData> EntityComponents;
 			for (uint32_t i = 0; i < EntityToSpawn->component_count; ++i) {
-				auto* copy = Schema_DeepCopyComponentData(EntityToSpawn->components[i].schema_type);
-				auto copy_data = Worker_ComponentData{};
-				copy_data.component_id = Schema_GetComponentDataComponentId(copy);
-				copy_data.schema_type = copy;
-				components.Add(copy_data);
+				// Entity component data must be deep copied so that it can be used for CreateEntityRequest.
+				auto* CopySchemaData = Schema_DeepCopyComponentData(EntityToSpawn->components[i].schema_type);
+				auto EntityComponentData = Worker_ComponentData{};
+				EntityComponentData.component_id = Schema_GetComponentDataComponentId(CopySchemaData);
+				EntityComponentData.schema_type = CopySchemaData;
+				EntityComponents.Add(EntityComponentData);
 			}
-			// TODO: Save all the entities and then reserve the IDs, then spawn.
-			NetDriver->Connection->SendCreateEntityRequest(components.Num(), components.GetData(), nullptr /**Reserved entity ID**/);
+
+			// Josh - New flow. Bulk reserve the EntityIDs and then send.
+			EntitiesToSpawn.Add(EntityComponents);
 		}
 		else
 		{
@@ -402,5 +404,40 @@ void UGlobalStateManager::LoadSnapshot(const USpatialNetDriver::ServerTravelDele
 	// End it
 	Worker_SnapshotInputStream_Destroy(Snapshot);
 
-	FinishServerTravel.ExecuteIfBound();
+	// Set up reserve IDs delegate
+	ReserveEntityIDsDelegate SpawnEntitiesDelegate;
+	SpawnEntitiesDelegate.BindLambda([EntitiesToSpawn, this] (Worker_ReserveEntityIdsResponseOp& Op) { // Need to get the reserved IDs in here.
+		UE_LOG(LogGlobalStateManager, Error, TEXT("Creating entities in snapshot, num of entities: %i"), Op.number_of_entity_ids);
+
+		// Ensure we have the same number of reserved IDs as we have entities to spawn
+		check(EntitiesToSpawn.Num() == Op.number_of_entity_ids);
+
+		for (uint32_t i = 0; i < Op.number_of_entity_ids; i++)
+		{
+			// Get an entity to spawn and a reserved EntityID
+			auto& EntityToSpawn = EntitiesToSpawn[i];
+			Worker_EntityId EntityID = Op.first_entity_id + i;
+
+			// Check if this is the GSM
+			for (auto& ComponentData : EntityToSpawn)
+			{
+				if (ComponentData.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID)
+				{
+					// Save the ID in this class
+					GlobalStateManagerEntityId = EntityID;
+				}
+			}
+
+			UE_LOG(LogGlobalStateManager, Warning, TEXT("- Sending entity create request for: %i"), EntityID);
+			NetDriver->Connection->SendCreateEntityRequest(EntityToSpawn.Num(), EntityToSpawn.GetData(), &EntityID /**Reserved entity ID**/);
+		}
+	});
+
+	// Reserve the Entity IDs
+	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num());
+
+	// Add the spawn delegate
+	Receiver->ReserveEntityIDsDelegates.Add(ReserveRequestID, SpawnEntitiesDelegate);
+
+	// Josh - Finish server travel should no longer be called in the snapshot loading. Instead it should be in the LoadMap.
 }

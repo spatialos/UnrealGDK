@@ -43,7 +43,7 @@ public:
 	void SetDeploymentMapURL(FString MapURL);
 	void WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
-	void LoadSnapshot(const USpatialNetDriver::ServerTravelDelegate& Delegate);
+	void LoadSnapshot();
 
 	FString DeploymentMapURL;
 
@@ -60,5 +60,10 @@ private:
 	UPROPERTY()
 	USpatialSender* Sender;
 
+	UPROPERTY()
+	USpatialReceiver* Receiver;
+
 	StringToEntityMap SingletonNameToEntityId;
+
+	Worker_EntityId GlobalStateManagerEntityId;
 };

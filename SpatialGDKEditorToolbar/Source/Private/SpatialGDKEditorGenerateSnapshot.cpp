@@ -40,7 +40,7 @@ const improbable::Coordinates Origin{ 0, 0, 0 };
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity SpawnerEntity;
-	SpawnerEntity.entity_id = SpatialConstants::SPAWNER_ENTITY_ID;
+	SpawnerEntity.entity_id = SpatialConstants::INITIAL_SPAWNER_ENTITY_ID;
 
 	Worker_ComponentData PlayerSpawnerData = {};
 	PlayerSpawnerData.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
@@ -108,7 +108,7 @@ Worker_ComponentData CreateGlobalStateManagerData()
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity GSM;
-	GSM.entity_id = SpatialConstants::GLOBAL_STATE_MANAGER;
+	GSM.entity_id = SpatialConstants::INTIAL_GLOBAL_STATE_MANAGER;
 
 	TArray<Worker_ComponentData> Components;
 

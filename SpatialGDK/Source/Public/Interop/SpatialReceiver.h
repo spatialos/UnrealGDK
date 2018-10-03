@@ -91,6 +91,8 @@ struct FPendingIncomingRPC
 
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
+DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
+
 UCLASS()
 class USpatialReceiver : public UObject
 {
@@ -111,6 +113,7 @@ public:
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
 	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
+	void OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op);
 	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
 
 	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
@@ -124,6 +127,7 @@ public:
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
 	TArray<EntityQueryFunction> EntityQueryFunctions;
+	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 
 private:
 	void EnterCriticalSection();
