@@ -57,15 +57,15 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
 
-	FString ClientWorkerAttributeSet;
+	FString ClientWorkerAttribute;
 	if (UNetConnection* Connection = Channel->Actor->GetNetConnection())
 	{
-		ClientWorkerAttributeSet = Connection->PlayerController->PlayerState->UniqueId.ToString();
+		ClientWorkerAttribute= Connection->PlayerController->PlayerState->UniqueId.ToString();
 	}
 
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
 	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
-	WorkerAttributeSet OwningClientAttribute = { ClientWorkerAttributeSet };
+	WorkerAttributeSet OwningClientAttribute = { ClientWorkerAttribute };
 
 	WorkerRequirementSet ServersOnly = { ServerAttribute };
 	WorkerRequirementSet ClientsOnly = { ClientAttribute };
@@ -122,7 +122,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttributeSet, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
@@ -655,7 +655,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	check(Info);
 
-	FString PlayerWorkerAttributeSet;
+	FString PlayerWorkerAttribute;
 	if (Actor->GetNetConnection() != nullptr)
 	{
 		if (APlayerController* PlayerController = Actor->GetNetConnection()->PlayerController)
@@ -665,15 +665,15 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 
 			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
 
-			WorkerRequirementSet RequirementSet = EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]];
-			// Going to rewrite to make readable
-			FString AttributeSet = EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]][0][0];
+			WorkerRequirementSet ClientRPCRequirementSet = EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]];
+			WorkerAttributeSet ClientRPCAttributeSet = ClientRPCRequirementSet[0];
+			FString Attribute = ClientRPCAttributeSet[0];
 
-			PlayerWorkerAttributeSet = AttributeSet;
+			PlayerWorkerAttribute = Attribute; 
 		}
 	}
 
-	WorkerAttributeSet OwningClientAttribute = { PlayerWorkerAttributeSet };
+	WorkerAttributeSet OwningClientAttribute = { PlayerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
 	if (EntityACL->ComponentWriteAcl.Contains(Info->RPCComponents[RPC_Client]))

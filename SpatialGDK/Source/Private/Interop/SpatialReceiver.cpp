@@ -292,12 +292,14 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 		if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
 		{
-			checkf(!UnrealMetadataComponent->OwnerWorkerId.IsEmpty(), TEXT("A player controller entity must have an owner worker ID."));
+			checkf(!UnrealMetadataComponent->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+
 			FString URLString = FURL().ToString();
-			FString OwnerWorkerId = UnrealMetadataComponent->OwnerWorkerId;
-			URLString += TEXT("?workerAttributeSet=") + OwnerWorkerId;
+			URLString += TEXT("?workerAttribute=") + UnrealMetadataComponent->OwnerWorkerAttribute;
+
 			Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), true);
 			check(Connection);
+
 			EntityActor = Connection->PlayerController;
 		}
 		else
@@ -614,6 +616,11 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
 	{
 		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
+
+		// Op.caller_attribute_set has two attributes.
+		// 1. The attribute of the worker type
+		// 2. The attribute of the specific worker that sent the request
+		// We want to give authority to the specific worker, so we grab the second element from the attribute set.
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(GetStringFromSchema(Payload, 1), Op.caller_attribute_set.attributes[1], Op.request_id);
 		return;
 	}

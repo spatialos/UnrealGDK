@@ -929,10 +929,10 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	AddClientConnection(SpatialConnection);
 
 	// Set up the net ID for this player.
-	const TCHAR* WorkerAttributeSetOption = InUrl.GetOption(TEXT("workerAttributeSet"), nullptr);
-	check(WorkerAttributeSetOption);
-	FString WorkerAttributeSet = FString(WorkerAttributeSetOption).Mid(1); // Trim off the = at the beginning.
-	FUniqueNetIdRepl WorkerAttributeSetId(TSharedPtr<FSpatialWorkerUniqueNetId>(new FSpatialWorkerUniqueNetId(WorkerAttributeSet)));
+	const TCHAR* WorkerAttributeOption = InUrl.GetOption(TEXT("workerAttribute"), nullptr);
+	check(WorkerAttributeOption);
+	FString WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
+	FUniqueNetIdRepl WorkerAttributeId(TSharedPtr<FSpatialWorkerUniqueNetId>(new FSpatialWorkerUniqueNetId(WorkerAttribute)));
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
@@ -948,7 +948,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
 	if (GameMode)
 	{
-		GameMode->PreLogin(Tmp, SpatialConnection->LowLevelGetRemoteAddress(), WorkerAttributeSetId, ErrorMsg);
+		GameMode->PreLogin(Tmp, SpatialConnection->LowLevelGetRemoteAddress(), WorkerAttributeId, ErrorMsg);
 	}
 
 	if (!ErrorMsg.IsEmpty())
@@ -972,7 +972,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 		if (!bExistingPlayer)
 		{
-			SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, WorkerAttributeSetId, ErrorMsg);
+			SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, WorkerAttributeId, ErrorMsg);
 		}
 		else
 		{

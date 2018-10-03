@@ -24,14 +24,14 @@ struct UnrealMetadata : Component
 	UnrealMetadata() = default;
 
 	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId, const SubobjectToOffsetMap& InSubobjectNameToOffset)
-		: StaticPath(InStaticPath), OwnerWorkerId(InOwnerWorkerId), SubobjectNameToOffset(InSubobjectNameToOffset) {}
+		: StaticPath(InStaticPath), OwnerWorkerAttribute(InOwnerWorkerId), SubobjectNameToOffset(InSubobjectNameToOffset) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		StaticPath = GetStringFromSchema(ComponentObject, 1);
-		OwnerWorkerId = GetStringFromSchema(ComponentObject, 2);
+		OwnerWorkerAttribute = GetStringFromSchema(ComponentObject, 2);
 
 		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 3);
 		for (uint32 i = 0; i < KVPairCount; i++)
@@ -52,7 +52,7 @@ struct UnrealMetadata : Component
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 		AddStringToSchema(ComponentObject, 1, StaticPath);
-		AddStringToSchema(ComponentObject, 2, OwnerWorkerId);
+		AddStringToSchema(ComponentObject, 2, OwnerWorkerAttribute);
 
 		for (const auto& KVPair : SubobjectNameToOffset)
 		{
@@ -65,7 +65,7 @@ struct UnrealMetadata : Component
 	}
 
 	FString StaticPath;
-	FString OwnerWorkerId;
+	FString OwnerWorkerAttribute;
 	SubobjectToOffsetMap SubobjectNameToOffset;
 };
 
