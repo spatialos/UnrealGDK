@@ -72,7 +72,7 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 
 		Channel->SetChannelActor(SingletonActor);
 
-		improbable::UnrealMetadata* UnrealMetadata = View->GetUnrealMetadata(SingletonEntityId);
+		improbable::UnrealMetadata* UnrealMetadata = View->GetComponentData<improbable::UnrealMetadata>(SingletonEntityId);
 		if (UnrealMetadata == nullptr)
 		{
 			// Don't have entity checked out

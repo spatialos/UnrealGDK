@@ -30,9 +30,7 @@ public:
 	void ProcessOps(Worker_OpList* OpList);
 
 	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	improbable::UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
-	improbable::EntityAcl* GetEntityACL(Worker_EntityId EntityId);
-	template <typename T> typename  T* GetComponentData(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId);
+	template <typename T> typename  T* GetComponentData(Worker_EntityId EntityId);
 
 private:
 	// TODO(nik): Helper method to get list of components via entity id?

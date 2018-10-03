@@ -173,7 +173,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 {
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
-	const SubobjectToOffsetMap& SubobjectNameToOffset = SpatialNetDriver->View->GetUnrealMetadata(EntityId)->SubobjectNameToOffset;
+	const SubobjectToOffsetMap& SubobjectNameToOffset = SpatialNetDriver->View->GetComponentData<improbable::UnrealMetadata>(EntityId)->SubobjectNameToOffset;
 
 	for (const auto& Pair : SubobjectNameToOffset)
 	{

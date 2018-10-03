@@ -125,25 +125,12 @@ Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_Com
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
-// TODO(nik): Delete?
-improbable::UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
-{
-	return GetComponentData<improbable::UnrealMetadata>(EntityId, SpatialConstants::UNREAL_METADATA_COMPONENT_ID);
-}
-
-// TODO(nik): Delete?
-improbable::EntityAcl* USpatialView::GetEntityACL(Worker_EntityId EntityId)
-{
-	return GetComponentData<improbable::EntityAcl>(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID);
-}
-
-// TODO(nik): Make a map between type and component data so we don't require a component ID.
 template <typename T>
-typename T* USpatialView::GetComponentData(const Worker_EntityId EntityId, const Worker_ComponentId ComponentId)
+typename T* USpatialView::GetComponentData(Worker_EntityId EntityId)
 {
 	if (TMap<Worker_ComponentId, TSharedPtr<ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 	{
-		if (TSharedPtr<improbable::ComponentStorageBase>* Component = ComponentStorageMap->Find(ComponentId))
+		if (TSharedPtr<improbable::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
 		{
 			// TODO(nik): Wat
 			return &static_cast<improbable::ComponentStorage<T>&>(*(Component->Get())).Get();
@@ -176,7 +163,7 @@ void USpatialView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
 	if (Op.update.component_id == improbable::EntityAcl::ComponentId)
 	{
-		if (improbable::EntityAcl* aclComponent = GetComponentData<improbable::EntityAcl>(Op.entity_id, Op.update.component_id))
+		if (improbable::EntityAcl* aclComponent = GetComponentData<improbable::EntityAcl>(Op.entity_id))
 		{
 			aclComponent->ApplyComponentUpdate(Op.update);
 		}

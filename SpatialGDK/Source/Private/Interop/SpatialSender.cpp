@@ -636,7 +636,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 
 bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 {
-	improbable::EntityAcl* EntityACL = View->GetEntityACL(EntityId);
+	improbable::EntityAcl* EntityACL = View->GetComponentData<improbable::EntityAcl>(EntityId);
 
 	if (EntityACL == nullptr)
 	{

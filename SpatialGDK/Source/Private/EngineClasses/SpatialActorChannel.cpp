@@ -101,7 +101,7 @@ bool USpatialActorChannel::IsSingletonEntity()
 
 bool USpatialActorChannel::IsStablyNamedEntity()
 {
-	improbable::UnrealMetadata* UnrealMetadata = NetDriver->View->GetUnrealMetadata(EntityId);
+	improbable::UnrealMetadata* UnrealMetadata = NetDriver->View->GetComponentData<improbable::UnrealMetadata>(EntityId);
 	return UnrealMetadata ? !UnrealMetadata->StaticPath.IsEmpty() : false;
 }
 
