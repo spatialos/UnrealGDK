@@ -11,8 +11,6 @@ struct Component
 	bool bIsDynamic = false;
 };
 
-// TODO(nik): This should probable live somewhere else...
-// Storage for arbitrary component data.
 class ComponentStorageBase
 {
 public:

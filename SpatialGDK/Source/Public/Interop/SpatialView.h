@@ -47,7 +47,6 @@ private:
 	UPROPERTY()
 	USpatialSender* Sender;
 
-	// TODO(nik): Merge this map with the component map
 	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
 	TMap<Worker_EntityId, TMap<Worker_ComponentId, TSharedPtr<improbable::ComponentStorageBase>>> EntityComponentMap;
 };

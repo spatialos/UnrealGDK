@@ -132,7 +132,6 @@ typename T* USpatialView::GetComponentData(Worker_EntityId EntityId)
 	{
 		if (TSharedPtr<improbable::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
 		{
-			// TODO(nik): Wat
 			return &static_cast<improbable::ComponentStorage<T>&>(*(Component->Get())).Get();
 		}
 	}
@@ -142,21 +141,32 @@ typename T* USpatialView::GetComponentData(Worker_EntityId EntityId)
 
 void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
-	// TODO(nik): Clean up - need a map of component id to related class  - surely exists in code somewhere already?
-	if (Op.data.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
+	TSharedPtr<improbable::ComponentStorageBase> Data;
+	switch (Op.data.component_id)
 	{
-	    EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = MakeShared<improbable::ComponentStorage<improbable::EntityAcl>>(Op.data);
+	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
+		Data = MakeShared<improbable::ComponentStorage<improbable::EntityAcl>>(Op.data);
+		break;
+	case SpatialConstants::METADATA_COMPONENT_ID:
+		Data = MakeShared<improbable::ComponentStorage<improbable::Metadata>>(Op.data);
+		break;
+	case SpatialConstants::POSITION_COMPONENT_ID:
+		Data = MakeShared<improbable::ComponentStorage<improbable::Position>>(Op.data);
+		break;
+	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
+		Data = MakeShared<improbable::ComponentStorage<improbable::Persistence>>(Op.data);
+		break;
+	case SpatialConstants::ROTATION_COMPONENT_ID:
+		Data = MakeShared<improbable::ComponentStorage<improbable::Rotation>>(Op.data);
+		break;
+	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
+		Data = MakeShared<improbable::ComponentStorage<improbable::UnrealMetadata>>(Op.data);
+		break;
+	default:
+		return;
 	}
 
-	if (Op.data.component_id == SpatialConstants::UNREAL_METADATA_COMPONENT_ID)
-	{
-	    EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = MakeShared<improbable::ComponentStorage<improbable::UnrealMetadata>>(Op.data);
-	}
-
-	if (Op.data.component_id == SpatialConstants::POSITION_COMPONENT_ID)
-	{
-	    EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = MakeShared<improbable::ComponentStorage<improbable::Position>>(Op.data);
-	}
+	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = Data;
 }
 
 void USpatialView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
@@ -166,8 +176,7 @@ void USpatialView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 void USpatialView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
-	// TODO(nik): Enforce that all hand-crafted components have this function to remove the need for logic here?
-	if (Op.update.component_id == improbable::EntityAcl::ComponentId)
+	if (Op.update.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
 	{
 		if (improbable::EntityAcl* aclComponent = GetComponentData<improbable::EntityAcl>(Op.entity_id))
 		{
