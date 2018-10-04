@@ -53,7 +53,6 @@ private:
 
 	void GetAndPrintConnectionFailureMessage();
 
-private:
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLocator;
 

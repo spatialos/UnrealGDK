@@ -214,6 +214,7 @@ void USpatialWorkerConnection::GetAndPrintConnectionFailureMessage()
 				UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), *ErrorMessage);
 				OnConnectFailed.ExecuteIfBound(ErrorMessage);
 			});
+			break;
 		}
 	}
 }
