@@ -10,8 +10,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
-DECLARE_DELEGATE(OnConnectedDelegate);
-DECLARE_DELEGATE_OneParam(OnConnectFailedDelegate, FString);
+DECLARE_DELEGATE(FOnConnectedDelegate);
+DECLARE_DELEGATE_OneParam(FOnConnectFailedDelegate, const FString&);
 
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject
@@ -38,8 +38,8 @@ public:
 	void SendComponentInterest(Worker_EntityId EntityId, const TArray<Worker_InterestOverride>& ComponentInterest);
 	FString GetWorkerId() const;
 
-	OnConnectedDelegate OnConnected;
-	OnConnectFailedDelegate OnConnectFailed;
+	FOnConnectedDelegate OnConnected;
+	FOnConnectFailedDelegate OnConnectFailed;
 
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
