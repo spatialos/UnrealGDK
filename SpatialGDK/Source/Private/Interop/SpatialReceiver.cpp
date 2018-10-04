@@ -75,7 +75,6 @@ void USpatialReceiver::LeaveCriticalSection()
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Leaving critical section."));
 	check(bInCriticalSection);
 
-	// Add entities.
 	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
 	{
 		ReceiveActor(PendingAddEntity);
@@ -86,7 +85,6 @@ void USpatialReceiver::LeaveCriticalSection()
 		HandleActorAuthority(PendingAuthorityChange);
 	}
 
-	// Remove entities.
 	for (Worker_EntityId& PendingRemoveEntity : PendingRemoveEntities)
 	{
 		RemoveActor(PendingRemoveEntity);
@@ -295,10 +293,14 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		else
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
-			EntityActor = CreateActor(Position, Rotation, ActorClass, true);
-			bDoingDeferredSpawn = true;
 
-			check(EntityActor);
+			EntityActor = CreateActor(Position, Rotation, ActorClass, true);
+
+			// Don't have authority over Actor until SpatialOS delegates authority
+			EntityActor->Role = ROLE_SimulatedProxy;
+			EntityActor->RemoteRole = ROLE_Authority;
+
+			bDoingDeferredSpawn = true;
 
 			// Get the net connection for this actor.
 			if (NetDriver->IsServer())
@@ -345,20 +347,20 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		// Assume SimulatedProxy until we're delegated Authority
-		bool bAuthority = View->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
-		EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
-		EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
-		if (bAuthority)
-		{
-			if (EntityActor->GetNetConnection() != nullptr || EntityActor->IsA<APawn>())
-			{
-				EntityActor->RemoteRole = ROLE_AutonomousProxy;
-			}
-		}
+		//bool bAuthority = View->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+		//EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
+		//EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
+		//if (bAuthority)
+		//{
+		//	if (EntityActor->GetNetConnection() != nullptr || EntityActor->IsA<APawn>())
+		//	{
+		//		EntityActor->RemoteRole = ROLE_AutonomousProxy;
+		//	}
+		//}
 
 		if (!NetDriver->IsServer())
 		{
-			EntityActor->Role = Channel->IsClientAutonomousProxy() ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+			//EntityActor->Role = Channel->IsClientAutonomousProxy() ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
 			Sender->SendComponentInterest(EntityActor, EntityId);
