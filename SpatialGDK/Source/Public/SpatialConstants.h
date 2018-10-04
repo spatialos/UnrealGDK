@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "UnrealObjectRef.h"
+#include "improbable/UnrealObjectRef.h"
 
 #include <improbable/c_worker.h>
 
