@@ -23,7 +23,6 @@ class ComponentStorage : public ComponentStorageBase
 {
 public:
 	explicit ComponentStorage(const typename T& data) : data{data} {}
-	// TODO(nik): nowhere else is using 'std' - does this need to change?
 	explicit ComponentStorage(typename T&& data) : data{std::move(data)} {}
 	~ComponentStorage() override {}
 
