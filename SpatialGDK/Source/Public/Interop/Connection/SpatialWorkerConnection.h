@@ -51,6 +51,8 @@ private:
 	Worker_ConnectionParameters CreateConnectionParameters(FConnectionConfig& Config);
 	bool ShouldConnectWithLocator();
 
+	void GetAndPrintConnectionFailureMessage();
+
 private:
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLocator;

@@ -139,10 +139,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 void USpatialNetDriver::Connect()
 {
 	Connection->OnConnected.BindUFunction(this, FName("OnConnected"));
-	Connection->OnConnectFailed.BindLambda([this](FString Reason)
-	{
-		this->OnSpatialOSConnectFailed(Reason);
-	});
+	Connection->OnConnectFailed.BindUFunction(this, FName("OnConnectFailed"));
 
 	Connection->Connect(bConnectAsClient);
 }
@@ -199,12 +196,7 @@ void USpatialNetDriver::OnConnected()
 	GlobalStateManager->Init(this);
 }
 
-void USpatialNetDriver::OnSpatialOSDisconnected(const FString& Reason)
-{
-	UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
-}
-
-void USpatialNetDriver::OnSpatialOSConnectFailed(const FString& Reason)
+void USpatialNetDriver::OnConnectFailed(FString Reason)
 {
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
 }
