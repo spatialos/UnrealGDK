@@ -119,23 +119,13 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Data = MakeShared<improbable::EntityAcl>(Op.data);
-		break;
 	case SpatialConstants::METADATA_COMPONENT_ID:
-		Data = MakeShared<improbable::Metadata>(Op.data);
-		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
-		Data = MakeShared<improbable::Position>(Op.data);
-		break;
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-		Data = MakeShared<improbable::Persistence>(Op.data);
-		break;
 	case SpatialConstants::ROTATION_COMPONENT_ID:
-		Data = MakeShared<improbable::Rotation>(Op.data);
-		break;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-		Data = MakeShared<improbable::UnrealMetadata>(Op.data);
-		break;
+		// Ignore 'hand-crafted' components as they are managed by the view.
+		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyData(Op.data);
 		GlobalStateManager->LinkExistingSingletonActors();
@@ -172,9 +162,9 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(EntityRegistry);
 
-	improbable::Position* Position = GetComponentData<improbable::Position>(*this, EntityId);
-	improbable::Metadata* Metadata = GetComponentData<improbable::Metadata>(*this, EntityId);
-	improbable::Rotation* Rotation = GetComponentData<improbable::Rotation>(*this, EntityId);
+	improbable::Position* Position = View->GetComponentData<improbable::Position>(EntityId);
+	improbable::Metadata* Metadata = View->GetComponentData<improbable::Metadata>(EntityId);
+	improbable::Rotation* Rotation = View->GetComponentData<improbable::Rotation>(EntityId);
 
 	check(Position && Metadata);
 
@@ -184,7 +174,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 
-		improbable::UnrealMetadata* UnrealMetadata = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
+		improbable::UnrealMetadata* UnrealMetadata = View->GetComponentData<improbable::UnrealMetadata>(EntityId);
 		check(UnrealMetadata);
 
 		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
@@ -209,7 +199,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		UNetConnection* Connection = nullptr;
-		improbable::UnrealMetadata* UnrealMetadataComponent = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
+		improbable::UnrealMetadata* UnrealMetadataComponent = View->GetComponentData<improbable::UnrealMetadata>(EntityId);
 		check(UnrealMetadataComponent);
 		bool bDoingDeferredSpawn = false;
 
