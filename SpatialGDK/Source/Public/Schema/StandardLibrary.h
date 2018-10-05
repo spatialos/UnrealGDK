@@ -15,7 +15,6 @@ using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 
 namespace improbable
 {
-
 struct Coordinates
 {
 	double X;
@@ -217,6 +216,15 @@ struct Position : Component
 		Schema_AddDouble(CoordsObject, 3, Coords.Z);
 
 		return ComponentUpdate;
+	}
+
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		Schema_Object* CoordsObject = Schema_GetObject(ComponentObject, 1);
+		Coords.X = Schema_GetDouble(CoordsObject, 1);
+		Coords.Y = Schema_GetDouble(CoordsObject, 2);
+		Coords.Z = Schema_GetDouble(CoordsObject, 3);
 	}
 
 	Coordinates Coords;

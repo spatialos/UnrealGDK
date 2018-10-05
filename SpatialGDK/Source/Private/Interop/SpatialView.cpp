@@ -176,12 +176,28 @@ void USpatialView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 void USpatialView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
-	if (Op.update.component_id == SpatialConstants::ENTITY_ACL_COMPONENT_ID)
+	switch (Op.update.component_id)
 	{
+	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
 		if (improbable::EntityAcl* aclComponent = GetComponentData<improbable::EntityAcl>(Op.entity_id))
 		{
 			aclComponent->ApplyComponentUpdate(Op.update);
 		}
+		break;
+	case SpatialConstants::POSITION_COMPONENT_ID:
+		if (improbable::Position* positionComponent = GetComponentData<improbable::Position>(Op.entity_id))
+		{
+			positionComponent->ApplyComponentUpdate(Op.update);
+		}
+		break;
+	case SpatialConstants::ROTATION_COMPONENT_ID:
+		if (improbable::Rotation* rotationComponent = GetComponentData<improbable::Rotation>(Op.entity_id))
+		{
+			rotationComponent->ApplyComponentUpdate(Op.update);
+		}
+		break;
+	default:
+		return;
 	}
 }
 
