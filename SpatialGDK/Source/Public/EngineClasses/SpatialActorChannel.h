@@ -123,6 +123,7 @@ private:
 	class USpatialReceiver* Receiver;
 
 	FVector LastSpatialPosition;
+	FRotator LastSpatialRotation;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains

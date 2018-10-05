@@ -621,6 +621,17 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 void USpatialActorChannel::UpdateSpatialRotation()
 {
+	FRotator ActorSpatialRotation = Actor->GetActorRotation();
+
+	// Check that it's rotated sufficiently far to be updated.
+	const float SpatialRotationThreshold = 0.1f;  // Radians.
+	FRotator RotationDelta = ActorSpatialRotation - LastSpatialRotation;
+	if (RotationDelta.Quaternion().AngularDistance(FQuat::Identity) < SpatialRotationThreshold)
+	{
+		return;
+	}
+
+	LastSpatialRotation = ActorSpatialRotation;
 	Sender->SendRotationUpdate(EntityId, Actor->GetActorRotation());
 }
 
