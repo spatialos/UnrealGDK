@@ -124,7 +124,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 	case SpatialConstants::ROTATION_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-		// Ignore 'hand-crafted' components as they are managed by the view.
+		// Ignore hand written components as they are managed by the view.
 		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyData(Op.data);

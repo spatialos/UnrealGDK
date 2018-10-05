@@ -40,4 +40,4 @@ private:
 	typename T data;
 };
 
-}  // namespace improbable
+}
