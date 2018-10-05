@@ -132,7 +132,7 @@ typename T* USpatialView::GetComponentData(Worker_EntityId EntityId)
 	{
 		if (TSharedPtr<improbable::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
 		{
-			return &static_cast<improbable::ComponentStorage<T>&>(*(Component->Get())).Get();
+			return &(static_cast<improbable::ComponentStorage<T>*>(Component->Get())->Get());
 		}
 	}
 
