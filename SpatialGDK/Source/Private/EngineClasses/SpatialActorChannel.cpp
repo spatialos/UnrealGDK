@@ -624,7 +624,7 @@ void USpatialActorChannel::UpdateSpatialRotation()
 	FRotator ActorSpatialRotation = Actor->GetActorRotation();
 
 	// Check that it's rotated sufficiently far to be updated.
-	const float SpatialRotationThreshold = 0.1f;  // Radians.
+	const float SpatialRotationThreshold = 0.1f;  // 0.1 radian (~5.7 degrees)
 	FRotator RotationDelta = ActorSpatialRotation - LastSpatialRotation;
 	if (RotationDelta.Quaternion().AngularDistance(FQuat::Identity) < SpatialRotationThreshold)
 	{
