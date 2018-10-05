@@ -4,6 +4,7 @@
 
 namespace improbable
 {
+
 struct Component
 {
 	virtual ~Component() {}
