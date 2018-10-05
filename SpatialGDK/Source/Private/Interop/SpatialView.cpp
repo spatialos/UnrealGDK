@@ -128,9 +128,9 @@ Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_Com
 template <typename T>
 typename T* USpatialView::GetComponentData(Worker_EntityId EntityId)
 {
-	if (TMap<Worker_ComponentId, TSharedPtr<ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
+	if (TMap<Worker_ComponentId, TUniquePtr<ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 	{
-		if (TSharedPtr<improbable::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
+		if (TUniquePtr<improbable::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
 		{
 			return &(static_cast<improbable::ComponentStorage<T>*>(Component->Get())->Get());
 		}
@@ -141,32 +141,32 @@ typename T* USpatialView::GetComponentData(Worker_EntityId EntityId)
 
 void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
-	TSharedPtr<improbable::ComponentStorageBase> Data;
+	TUniquePtr<improbable::ComponentStorageBase> Data;
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Data = MakeShared<improbable::ComponentStorage<improbable::EntityAcl>>(Op.data);
+		Data = MakeUnique<improbable::ComponentStorage<improbable::EntityAcl>>(Op.data);
 		break;
 	case SpatialConstants::METADATA_COMPONENT_ID:
-		Data = MakeShared<improbable::ComponentStorage<improbable::Metadata>>(Op.data);
+		Data = MakeUnique<improbable::ComponentStorage<improbable::Metadata>>(Op.data);
 		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
-		Data = MakeShared<improbable::ComponentStorage<improbable::Position>>(Op.data);
+		Data = MakeUnique<improbable::ComponentStorage<improbable::Position>>(Op.data);
 		break;
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-		Data = MakeShared<improbable::ComponentStorage<improbable::Persistence>>(Op.data);
+		Data = MakeUnique<improbable::ComponentStorage<improbable::Persistence>>(Op.data);
 		break;
 	case SpatialConstants::ROTATION_COMPONENT_ID:
-		Data = MakeShared<improbable::ComponentStorage<improbable::Rotation>>(Op.data);
+		Data = MakeUnique<improbable::ComponentStorage<improbable::Rotation>>(Op.data);
 		break;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-		Data = MakeShared<improbable::ComponentStorage<improbable::UnrealMetadata>>(Op.data);
+		Data = MakeUnique<improbable::ComponentStorage<improbable::UnrealMetadata>>(Op.data);
 		break;
 	default:
 		return;
 	}
 
-	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = Data;
+	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = std::move(Data);
 }
 
 void USpatialView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
