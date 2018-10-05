@@ -29,6 +29,7 @@ public:
 	void ProcessOps(Worker_OpList* OpList);
 
 	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	improbable::UnrealMetadata* GetUnrealMetadata(Worker_EntityId EntityId);
 	improbable::EntityAcl* GetEntityACL(Worker_EntityId EntityId);
 

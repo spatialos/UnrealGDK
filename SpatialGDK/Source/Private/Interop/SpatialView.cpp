@@ -125,6 +125,19 @@ Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_Com
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
+bool USpatialView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
+	{
+		if (Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
+		{
+			return *Authority == WORKER_AUTHORITY_AUTHORITATIVE;
+		}
+	}
+
+	return false;
+}
+
 improbable::UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
 {
 	if (TSharedPtr<improbable::UnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))

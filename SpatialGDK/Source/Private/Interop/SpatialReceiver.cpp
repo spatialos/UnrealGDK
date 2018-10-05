@@ -181,6 +181,8 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			return;
 		}
 
+		// If we became authoritative over the position component. set our role to be ROLE_Authority
+		// and set our RemoteRole to be ROLE_AutonomousProxy iff the actor has an owning connection.
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
 			if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
@@ -188,12 +190,12 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 				{
 					Actor->Role = ROLE_Authority;
+
 					if (Actor->GetNetConnection() != nullptr)
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
-					// TODO: Change to see it has an APlayerController
-					else if (Cast<APawn>(Actor) != nullptr)
+					else if (Actor->IsA<APawn>())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
@@ -212,6 +214,8 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	}
 	else
 	{
+		// Check to see if we became authoritative over the ClientRPC component over this entity
+		// If we did, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
 		if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
 		{
 			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
@@ -346,22 +350,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			}
 		}
 
-		// Assume SimulatedProxy until we're delegated Authority
-		//bool bAuthority = View->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
-		//EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
-		//EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
-		//if (bAuthority)
-		//{
-		//	if (EntityActor->GetNetConnection() != nullptr || EntityActor->IsA<APawn>())
-		//	{
-		//		EntityActor->RemoteRole = ROLE_AutonomousProxy;
-		//	}
-		//}
-
 		if (!NetDriver->IsServer())
 		{
-			//EntityActor->Role = Channel->IsClientAutonomousProxy() ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
-
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
 			Sender->SendComponentInterest(EntityActor, EntityId);
 
@@ -380,9 +370,15 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 			}
 
-			// Call PostNetInit on client only.
-			EntityActor->PostNetInit();
 		}
+
+		// Taken from PostNetInit
+		if (!EntityActor->HasActorBegunPlay())
+		{
+			EntityActor->DispatchBeginPlay();
+		}
+
+		EntityActor->UpdateOverlaps();
 	}
 }
 

@@ -201,11 +201,6 @@ bool USpatialActorChannel::ReplicateActor()
 	check(Connection);
 	check(Connection->PackageMap);
 
-	if (Actor->Role != ROLE_Authority)
-	{
-		return false;
-	}
-	
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
 	// Time how long it takes to replicate this particular actor
@@ -672,19 +667,16 @@ void USpatialActorChannel::SpatialViewTick()
 		bNetOwned = Actor->GetNetConnection() != nullptr;
 		if (bFirstTick || bOldNetOwned != bNetOwned)
 		{
-			if (NetDriver->IsServer())
+			if (IsAuthoritativeServer())
 			{
-				if (IsAuthoritativeServer())
-				{
-					bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
+				bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
 
-					if (bFirstTick && bSuccess)
-					{
-						bFirstTick = false;
-					}
+				if (bFirstTick && bSuccess)
+				{
+					bFirstTick = false;
 				}
 			}
-			else
+			else if(!NetDriver->IsServer())
 			{
 				Sender->SendComponentInterest(Actor, GetEntityId());
 

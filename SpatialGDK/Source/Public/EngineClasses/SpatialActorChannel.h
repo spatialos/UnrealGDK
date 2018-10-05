@@ -37,7 +37,13 @@ public:
 	FORCEINLINE bool IsReadyForReplication() const
 	{
 		// Wait until we've reserved an entity ID.		
-		return EntityId != 0;
+		if (EntityId == 0)
+		{
+			return false;
+		}
+
+		// Make sure we have authority
+		return Actor->Role == ROLE_Authority;
 	}
 
 	// Called on the client when receiving an update.
@@ -51,17 +57,12 @@ public:
 		FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 		check(Info);
 
-		return NetDriver->View->GetAuthority(EntityId, Info->RPCComponents[RPC_Client]) == WORKER_AUTHORITY_AUTHORITATIVE;
+		return NetDriver->View->HasAuthority(EntityId, Info->RPCComponents[RPC_Client]);
 	}
 
 	FORCEINLINE bool IsAuthoritativeServer()
 	{
-		if (!NetDriver->IsServer())
-		{
-			return false;
-		}
-
-		return NetDriver->View->GetAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE;
+		return NetDriver->IsServer() && NetDriver->View->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID);
 	}
 
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
