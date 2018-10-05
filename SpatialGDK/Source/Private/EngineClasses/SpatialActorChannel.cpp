@@ -573,7 +573,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 	RegisterEntityId(EntityId);
 
 	// Register Actor with package map since we know what the entity id is.
-	NetDriver->PackageMap ->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor));
+	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor));
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)

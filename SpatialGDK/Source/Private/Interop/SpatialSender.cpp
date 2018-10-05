@@ -60,7 +60,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	FString ClientWorkerAttribute;
 	if (UNetConnection* Connection = Channel->Actor->GetNetConnection())
 	{
-		ClientWorkerAttribute= Connection->PlayerController->PlayerState->UniqueId.ToString();
+		if (Connection->PlayerController->PlayerState != nullptr)
+		{
+			ClientWorkerAttribute = Connection->PlayerController->PlayerState->UniqueId.ToString();
+		}
 	}
 
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
@@ -661,6 +664,11 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 		if (APlayerController* PlayerController = Actor->GetNetConnection()->PlayerController)
 		{
 			Worker_EntityId PlayerControllerEntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(PlayerController);
+			if (PlayerControllerEntityId == 0)
+			{
+				return false;
+			}
+
 			improbable::EntityAcl* EntityACL = View->GetEntityACL(PlayerControllerEntityId);
 
 			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
