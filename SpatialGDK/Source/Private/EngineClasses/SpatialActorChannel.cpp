@@ -60,6 +60,8 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, EntityId(0)
 	, bFirstTick(true)
 	, NetDriver(nullptr)
+	, LastSpatialPosition(FVector::ZeroVector)
+	, LastSpatialRotation(FRotator::ZeroRotator)
 	, bCreatingNewEntity(false)
 {
 }
@@ -623,10 +625,11 @@ void USpatialActorChannel::UpdateSpatialRotation()
 {
 	FRotator ActorSpatialRotation = Actor->GetActorRotation();
 
-	// Check that it's rotated sufficiently far to be updated.
+	// Only update the Actor's rotation if it has rotated far enough
 	const float SpatialRotationThreshold = 0.1f;  // 0.1 radian (~5.7 degrees)
-	FRotator RotationDelta = ActorSpatialRotation - LastSpatialRotation;
-	if (RotationDelta.Quaternion().AngularDistance(FQuat::Identity) < SpatialRotationThreshold)
+	FQuat RotationDelta = (ActorSpatialRotation - LastSpatialRotation).Quaternion();
+	RotationDelta.Normalize();
+	if (RotationDelta.GetAngle() < SpatialRotationThreshold)
 	{
 		return;
 	}
