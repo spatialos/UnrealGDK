@@ -135,7 +135,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL:
-		GlobalStateManager->ApplyMapData(Op.data);
+ 		GlobalStateManager->ApplyMapData(Op.data);
 		return;
 	default:
 		Data = MakeShared<improbable::DynamicComponent>(Op.data);

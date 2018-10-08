@@ -206,7 +206,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	LoadedWorld->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
 	Connect();
 }
-
+ 
 void USpatialNetDriver::Connect()
 {
 	Connection->OnConnected.BindLambda([this]
@@ -270,23 +270,24 @@ void USpatialNetDriver::OnConnected()
 	Dispatcher->Init(this);
 	Sender->Init(this);
 	Receiver->Init(this, TimerManager);
-	GlobalStateManager->Init(this);
+	GlobalStateManager->Init(this, TimerManager);
 
 	// Josh - duplicated this and moved it below since the Receiver needs to be initialized to spawn now.
 	// If we're the client, we can now ask the server to spawn our controller.
 	if (ServerConnection)
 	{
-		PlayerSpawner->SendPlayerSpawnRequest();
 		// We should have a streaming query for the GSM. Simply wait for the accepting_players to be true.
 		auto PlayerSpawnerRef = TWeakObjectPtr<USpatialPlayerSpawner>(PlayerSpawner);
-		GlobalStateManager->AcceptingPlayersChanged.BindLambda([PlayerSpawnerRef] (bool bAcceptingPlayers) {
+		GlobalStateManager->AcceptingPlayersChanged.BindLambda([PlayerSpawnerRef](bool bAcceptingPlayers) {
 			if (bAcceptingPlayers)
 			{
-				// Spawn once the GSM is now accepting players
 				// Send the player spawn commands with retries
 				PlayerSpawnerRef->SendPlayerSpawnRequest();
 			}
 		});
+
+		// Get the state of the GSM for map and accepting players.
+		GlobalStateManager->QueryGSM();
 	}
 
 	// Josh - Here if we are a server and this is server travel we want to load the snapshot.

@@ -12,20 +12,20 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
+#include "Runtime/Engine/Public/TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
 using namespace improbable;
-
-void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
+ 
+void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	Receiver = InNetDriver->Receiver;
+	TimerManager = InTimerManager;
 	GlobalStateManagerEntityId = SpatialConstants::INTIAL_GLOBAL_STATE_MANAGER;
-
-	FindDeploymentMapURL(); // TODO: This needs a complete overhaul and is in the wrong place.
 }
 
 void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
@@ -37,13 +37,51 @@ void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
 void UGlobalStateManager::ApplyMapData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-	bAcceptingPlayers = Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+
+	// Set the Map URL.
+	FString MapURL = GetStringFromSchema(ComponentObject, 1);
+	this->SetDeploymentMapURL(MapURL);
+
+	// Josh after lunch - There is an issue with Schema_GetBool returning false when it's actually true.
+	// Set the AcceptingPlayers state.
+	uint8_t SchemaBool = Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+
+	// Early out if this data isn't new to us
+	if(bAcceptingPlayers == bool(SchemaBool))
+	{
+		return;
+	}
+
+	bAcceptingPlayers = bool(SchemaBool);
 
 	if (bAcceptingPlayers)
 	{
 		UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager ApplyData - Accepting new players"));
 		AcceptingPlayersChanged.ExecuteIfBound(bAcceptingPlayers);
 	}
+	else 
+	{
+		// TODO: Refactor this function elsewhere.
+		if(!NetDriver->IsServer())
+		{
+			// TODO: UNR-??? - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
+			// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
+			// This means that the clients never actually receive updates or data on the GSM. To get around this we are making timed entity queries to
+			// find the state of the GSM and the accepting players. Remove this work-around when the runtime bug is fixed.
+			RetryQueryGSM();
+		}
+	}
+}
+
+void UGlobalStateManager::RetryQueryGSM()
+{
+	UE_LOG(LogGlobalStateManager, Error, TEXT("Entity query could not find Global State Manager. Retrying in 3 seconds"));
+	// Retry the query after 3 seconds.
+	FTimerHandle RetryTimer;
+	TimerManager->SetTimer(RetryTimer, [this]()
+	{
+		QueryGSM();
+	}, 3.f, false);
 }
 
 void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
@@ -58,7 +96,7 @@ void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
 
 void UGlobalStateManager::ApplyMapUpdate(const Worker_ComponentUpdate& Update)
 {
-	UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager Update"));
+	UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager Map Update"));
 
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
@@ -176,6 +214,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 // if we are the GSM then we can toggle if we are accepting players or not.
 void UGlobalStateManager::ToggleAcceptingPlayers(bool AcceptingPlayers)
 {
+	UE_LOG(LogGlobalStateManager, Error, TEXT("Toggling accepting players %d"), AcceptingPlayers);
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
 	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
@@ -245,23 +284,24 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId)
 	return false;
 }
 
-void UGlobalStateManager::FindDeploymentMapURL()
+void UGlobalStateManager::QueryGSM()
 {
-	Worker_EntityIdConstraint GSMConstraintEID{ Worker_EntityId{ GlobalStateManagerEntityId } };
+	Worker_ComponentConstraint GSMComponentConstraint{};
+	GSMComponentConstraint.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
 
 	Worker_Constraint GSMConstraint;
-	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
-	GSMConstraint.entity_id_constraint = GSMConstraintEID;
+	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
+	GSMConstraint.component_constraint = GSMComponentConstraint;
 
-	Worker_EntityQuery MapQuery{};
-	MapQuery.constraint = GSMConstraint;
-	MapQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
+	Worker_EntityQuery GSMQuery{};
+	GSMQuery.constraint = GSMConstraint;
+	GSMQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
 	Worker_RequestId RequestID;
-	RequestID = NetDriver->Connection->SendEntityQueryRequest(&MapQuery);
+	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
-	EntityQueryDelegate MapQueryDelegate;
-	MapQueryDelegate.BindLambda([this, RequestID](Worker_EntityQueryResponseOp& Op)
+	EntityQueryDelegate GSMQueryDelegate;
+	GSMQueryDelegate.BindLambda([this, RequestID](Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -270,29 +310,24 @@ void UGlobalStateManager::FindDeploymentMapURL()
 
 		if (Op.result_count == 0)
 		{
-			UE_LOG(LogGlobalStateManager, Error, TEXT("Found no GSM"));
+			RetryQueryGSM();
 		}
 
 		if (Op.result_count == 1)
 		{
 			UE_LOG(LogGlobalStateManager, Error, TEXT("Found GSM!!"));
-
-			// Extract the map
-			UE_LOG(LogGlobalStateManager, Error, TEXT("Found %u components"), Op.results->component_count);
 			for (uint32_t i = 0; i < Op.results->component_count; i++)
 			{
 				Worker_ComponentData Data = Op.results[0].components[i];
 				if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL)
 				{
-					Schema_Object* SchemaObject = Schema_GetComponentDataFields(Data.schema_type);
-					FString MapURL = GetStringFromSchema(SchemaObject, 1);
-					this->SetDeploymentMapURL(MapURL);
+					ApplyMapData(Data);
 				}
 			}
 		}
 	});
 
-	Receiver->AddEntityQueryDelegate(RequestID, MapQueryDelegate);
+	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
 }
 
 void UGlobalStateManager::SetDeploymentMapURL(FString MapURL)
@@ -464,10 +499,10 @@ void UGlobalStateManager::LoadSnapshot()
 
 			UE_LOG(LogGlobalStateManager, Warning, TEXT("- Sending entity create request for: %i"), EntityID);
 			NetDriver->Connection->SendCreateEntityRequest(EntityToSpawn.Num(), EntityToSpawn.GetData(), &EntityID /**Reserved entity ID**/);
-
-			// Once all the requests have been sent we can start accepting players.
-			ToggleAcceptingPlayers(true);
 		}
+
+		// Once all the requests have been sent we can start accepting players.
+		ToggleAcceptingPlayers(true);
 	});
 
 	// Reserve the Entity IDs
@@ -475,9 +510,4 @@ void UGlobalStateManager::LoadSnapshot()
 
 	// Add the spawn delegate
 	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, SpawnEntitiesDelegate);
-}
-
-void UGlobalStateManager::SetupGSMStreamingQuery()
-{
-
 }

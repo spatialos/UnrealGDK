@@ -30,7 +30,7 @@ class SPATIALGDK_API UGlobalStateManager : public UObject
 
 public:
 
-	void Init(USpatialNetDriver* InNetDriver);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
 
 	void ApplyData(const Worker_ComponentData& Data);
 	void ApplyMapData(const Worker_ComponentData& Data);
@@ -42,13 +42,13 @@ public:
 
 	bool IsSingletonEntity(Worker_EntityId EntityId);
 
-	void FindDeploymentMapURL();
+	void QueryGSM();
+	void RetryQueryGSM();
 	void SetDeploymentMapURL(FString MapURL);
 	void WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
 	void LoadSnapshot();
 	void ToggleAcceptingPlayers(bool bAcceptingPlayers);
-	void SetupGSMStreamingQuery();
 
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers = false;
@@ -74,4 +74,6 @@ private:
 	StringToEntityMap SingletonNameToEntityId;
 
 	Worker_EntityId GlobalStateManagerEntityId;
+
+	FTimerManager* TimerManager;
 };
