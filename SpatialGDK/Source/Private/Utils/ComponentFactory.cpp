@@ -190,7 +190,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			return;
 		}
 
-		UnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+		FUnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
 		if (ObjectValue != nullptr)
@@ -203,7 +203,10 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 				}
 			}
-			ObjectRef = UnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
+
+			ObjectRef = FUnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
+			AssignUnrealObjectRefToContext(Property, Data, ObjectRef);
+
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				// A legal static object reference should never be unresolved.
@@ -211,6 +214,10 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 				UnresolvedObjects.Add(ObjectValue);
 				ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 			}
+		}
+		else
+		{
+			AssignUnrealObjectRefToContext(Property, Data, ObjectRef);
 		}
 
 		AddObjectRefToSchema(Object, FieldId, ObjectRef);
@@ -386,6 +393,21 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	}
 
 	return ComponentUpdate;
+}
+
+void ComponentFactory::AssignUnrealObjectRefToContext(UProperty* Property, const uint8* Data, FUnrealObjectRef ObjectRef)
+{
+	UObject* Outer = Property->GetOuter();
+	// TODO: This check will be removed once arrays contexts are supported UNR-633
+	if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
+	{
+		UStruct* Owner = Cast<UStruct>(Outer);
+		const FString ContextName = Property->GetName() + TEXT("_SpatialOSContext");
+		UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
+		const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
+		FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
+		Context = ObjectRef;
+	}
 }
 
 }
