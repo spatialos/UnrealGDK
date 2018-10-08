@@ -15,6 +15,7 @@ using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 
 namespace improbable
 {
+
 struct Coordinates
 {
 	double X;
