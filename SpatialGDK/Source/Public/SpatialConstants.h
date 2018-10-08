@@ -5,6 +5,7 @@
 #include "improbable/UnrealObjectRef.h"
 
 #include <improbable/c_worker.h>
+#include <improbable/c_schema.h>
 
 // IMPORTANT: This is required for Linux builds to succeed - don't remove!
 // Worker_EntityId from the Worker SDK resolves to a long on Linux.
@@ -33,6 +34,8 @@ namespace SpatialConstants
 	const Worker_ComponentId GLOBAL_STATE_MANAGER_COMPONENT_ID	= 100007;
 	const Worker_ComponentId GLOBAL_STATE_MANAGER_MAP_URL		= 100008;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID	= 100010;
+
+	const Schema_FieldId GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID = 2;
 
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;

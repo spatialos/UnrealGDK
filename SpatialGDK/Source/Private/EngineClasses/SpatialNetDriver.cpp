@@ -145,14 +145,6 @@ void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBas
 		}
 	});
 
-	// Josh - Not being used at the moment, moving to be in the NewServer.
-	// LoadSnapshotAfterWorldWipe - Load the snapshot after the deletion commands have been sent.
-	USpatialNetDriver::ServerTravelDelegate LoadSnapshotAfterWorldWipe;
-	LoadSnapshotAfterWorldWipe.BindLambda([World, NetDriver, URL] {
-		UE_LOG(LogGameMode, Log, TEXT("- Loading the snapshot"));
-		NetDriver->LoadSnapshot();
-	});
-
 	NetDriver->WipeWorld(FinishServerTravel);
 #endif // WITH_SERVER_CODE
 }
@@ -226,11 +218,11 @@ void USpatialNetDriver::Connect()
 		OnConnectFailed(Reason);
 	});
 
-	if(ServerConnection) // Make clients wait to allow the server to finish loading and connecting to spatial.
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Doing some disgusting wait as a client."));
-		FPlatformProcess::Sleep(10);
-	}
+	//if(ServerConnection) // Make clients wait to allow the server to finish loading and connecting to spatial.
+	//{
+	//	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Doing some disgusting wait as a client."));
+	//	FPlatformProcess::Sleep(10);
+	//}
 
 	Connection->Connect(bConnectAsClient);
 }
@@ -255,16 +247,9 @@ void USpatialNetDriver::OnConnected()
 	// So for now we just give the connection a dummy url, might change in the future.
 	FURL DummyURL;
 
-	// If we're the client, we can now ask the server to spawn our controller.
-
 	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
 	// There may be more than one of these connections in the future for different replication conditions.
-	if (ServerConnection)
-	{
-		// Send the player spawn commands with retries
-		//PlayerSpawner->SendPlayerSpawnRequest();
-	}
-	else
+	if (!ServerConnection)
 	{
 		USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 		check(NetConnection);
@@ -288,17 +273,31 @@ void USpatialNetDriver::OnConnected()
 	GlobalStateManager->Init(this);
 
 	// Josh - duplicated this and moved it below since the Receiver needs to be initialized to spawn now.
+	// If we're the client, we can now ask the server to spawn our controller.
 	if (ServerConnection)
 	{
-		// Send the player spawn commands with retries
 		PlayerSpawner->SendPlayerSpawnRequest();
+		// We should have a streaming query for the GSM. Simply wait for the accepting_players to be true.
+		auto PlayerSpawnerRef = TWeakObjectPtr<USpatialPlayerSpawner>(PlayerSpawner);
+		GlobalStateManager->AcceptingPlayersChanged.BindLambda([PlayerSpawnerRef] (bool bAcceptingPlayers) {
+			if (bAcceptingPlayers)
+			{
+				// Spawn once the GSM is now accepting players
+				// Send the player spawn commands with retries
+				PlayerSpawnerRef->SendPlayerSpawnRequest();
+			}
+		});
 	}
 
 	// Josh - Here if we are a server and this is server travel we want to load the snapshot.
-	if(!SnapshotToLoad.IsEmpty())
+	if(!ServerConnection && !SnapshotToLoad.IsEmpty())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Loading snapshot: %s"), *SnapshotToLoad);
-		LoadSnapshot(); // We also need to check if we are authoratative over the GSM.
+		// ToggleAcceptingPlayers is set to true once the snapshot has loaded.
+		LoadSnapshot(); // TODO: We also need to check if we are authoritative over the GSM.
+	} else if(!ServerConnection)
+	{
+		GlobalStateManager->ToggleAcceptingPlayers(true);
 	}
 }
 

@@ -34,6 +34,18 @@ void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
 	SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, 1);
 }
 
+void UGlobalStateManager::ApplyMapData(const Worker_ComponentData& Data)
+{
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	bAcceptingPlayers = Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+
+	if (bAcceptingPlayers)
+	{
+		UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager ApplyData - Accepting new players"));
+		AcceptingPlayersChanged.ExecuteIfBound(bAcceptingPlayers);
+	}
+}
+
 void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
@@ -41,6 +53,20 @@ void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
 	if (Schema_GetObjectCount(ComponentObject, 1) > 0)
 	{
 		SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, 1);
+	}
+}
+
+void UGlobalStateManager::ApplyMapUpdate(const Worker_ComponentUpdate& Update)
+{
+	UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager Update"));
+
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
+	{
+		UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager Update - Accepting new players"));
+		bAcceptingPlayers = Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+		AcceptingPlayersChanged.ExecuteIfBound(bAcceptingPlayers);
 	}
 }
 
@@ -143,6 +169,21 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	AddStringToEntityMapToSchema(UpdateObject, 1, SingletonNameToEntityId);
+
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+}
+
+// if we are the GSM then we can toggle if we are accepting players or not.
+void UGlobalStateManager::ToggleAcceptingPlayers(bool AcceptingPlayers)
+{
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
+	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
+	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	uint8_t AcceptingPlayersInt = uint8_t(AcceptingPlayers);
+
+	Schema_AddBool(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, AcceptingPlayersInt);
 
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
@@ -396,6 +437,7 @@ void UGlobalStateManager::LoadSnapshot()
 	// End it
 	Worker_SnapshotInputStream_Destroy(Snapshot);
 
+	// TODO: This needs retry logic in case of failures.
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate SpawnEntitiesDelegate;
 	SpawnEntitiesDelegate.BindLambda([EntitiesToSpawn, this] (Worker_ReserveEntityIdsResponseOp& Op) { // Need to get the reserved IDs in here.
@@ -422,6 +464,9 @@ void UGlobalStateManager::LoadSnapshot()
 
 			UE_LOG(LogGlobalStateManager, Warning, TEXT("- Sending entity create request for: %i"), EntityID);
 			NetDriver->Connection->SendCreateEntityRequest(EntityToSpawn.Num(), EntityToSpawn.GetData(), &EntityID /**Reserved entity ID**/);
+
+			// Once all the requests have been sent we can start accepting players.
+			ToggleAcceptingPlayers(true);
 		}
 	});
 
@@ -430,4 +475,9 @@ void UGlobalStateManager::LoadSnapshot()
 
 	// Add the spawn delegate
 	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, SpawnEntitiesDelegate);
+}
+
+void UGlobalStateManager::SetupGSMStreamingQuery()
+{
+
 }

@@ -134,9 +134,15 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 	Schema_Object* MapObject = Schema_AddObject(ComponentObject, 1);
 	AddStringToSchema(MapObject, 1, TEXT("BestMap"));
+
+	Schema_Object* AcceptingPlayersObject = Schema_AddObject(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+	Schema_AddBool(AcceptingPlayersObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(false));
+
 	Components.Add(Data);
 
-	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
+	// Josh after lunch - Add the accepting players to the snapshot...
+
+	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();

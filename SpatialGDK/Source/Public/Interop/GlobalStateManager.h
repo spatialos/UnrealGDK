@@ -21,6 +21,8 @@ class USpatialSender;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
 
+DECLARE_DELEGATE_OneParam(AcceptingPlayersDelegate, bool);
+
 UCLASS()
 class SPATIALGDK_API UGlobalStateManager : public UObject
 {
@@ -31,8 +33,9 @@ public:
 	void Init(USpatialNetDriver* InNetDriver);
 
 	void ApplyData(const Worker_ComponentData& Data);
+	void ApplyMapData(const Worker_ComponentData& Data);
 	void ApplyUpdate(const Worker_ComponentUpdate& Update);
-
+	void ApplyMapUpdate(const Worker_ComponentUpdate& Update);
 	void LinkExistingSingletonActors();
 	void ExecuteInitialSingletonActorReplication();
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
@@ -44,8 +47,13 @@ public:
 	void WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
 	void LoadSnapshot();
+	void ToggleAcceptingPlayers(bool bAcceptingPlayers);
+	void SetupGSMStreamingQuery();
 
 	FString DeploymentMapURL;
+	bool bAcceptingPlayers = false;
+
+	AcceptingPlayersDelegate AcceptingPlayersChanged;
 
 private:
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
