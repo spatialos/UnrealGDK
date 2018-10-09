@@ -33,7 +33,7 @@ void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if (Schema_GetObjectCount(ComponentObject, 1) == 1)
+	if (Schema_GetObjectCount(ComponentObject, 1) > 0)
 	{
 		SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, 1);
 	}
