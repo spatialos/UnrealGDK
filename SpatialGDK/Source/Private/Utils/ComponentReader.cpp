@@ -274,7 +274,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 
 		UObject* Outer = Property->GetOuter();
 		// TODO: Second check will be removed once arrays contexts are supported UNR-633
-		// TODO: Third check will be removed once we support blueprint classes
+		// TODO: Third check will be removed once we support blueprint classes UNR-635
 		if (Outer->IsA<UStruct>() && Property->ArrayDim == 1 && Cast<UBlueprintGeneratedClass>(Outer) == nullptr)
 		{
 			UStruct* Owner = Cast<UStruct>(Outer);

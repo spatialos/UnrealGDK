@@ -125,6 +125,7 @@ Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_Com
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
+// TODO UNR-640 - Need to fix for authority loss imminent
 bool USpatialView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))

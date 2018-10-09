@@ -676,6 +676,8 @@ FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 	return FString();
 }
 
+// Authority over the ClientRPC Schema component is dictated by the owning connection of a client.
+// This function updates the authority of that component as the owning connection can change.
 bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 {
 	improbable::EntityAcl* EntityACL = View->GetEntityACL(EntityId);
@@ -689,7 +691,6 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	check(Info);
 
 	FString OwnerWorkerAttribute = GetOwnerWorkerAttribute(Actor);
-
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
