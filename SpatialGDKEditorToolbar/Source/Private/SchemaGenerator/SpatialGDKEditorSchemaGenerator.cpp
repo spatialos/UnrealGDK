@@ -170,7 +170,7 @@ TArray<UClass*> GetAllSupportedClasses()
 		UClass* SupportedClass = nullptr;
 		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt; ++PropertyIt)
 		{
-			if (PropertyIt->PropertyFlags & CPF_Net || PropertyIt->PropertyFlags & CPF_Handover)
+			if (PropertyIt->HasAnyPropertyFlags(CPF_Net | CPF_Handover))
 			{
 				SupportedClass = *ClassIt;
 				break;
