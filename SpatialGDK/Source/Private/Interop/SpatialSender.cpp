@@ -57,14 +57,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
 
-	FString ClientWorkerAttribute;
-	if (UNetConnection* Connection = Channel->Actor->GetNetConnection())
-	{
-		if (Connection->PlayerController->PlayerState != nullptr)
-		{
-			ClientWorkerAttribute = Connection->PlayerController->PlayerState->UniqueId.ToString();
-		}
-	}
+	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
 	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
@@ -646,6 +639,43 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 	}
 }
 
+FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
+{
+	if (Actor->GetNetConnection() == nullptr)
+	{
+		return FString();
+	}
+
+	if (APlayerController* PlayerController = Actor->GetNetConnection()->PlayerController)
+	{
+		if (APlayerState* PlayerState = PlayerController->PlayerState)
+		{
+			if (PlayerState->UniqueId.IsValid())
+			{
+				return PlayerState->UniqueId.ToString();
+			}
+			else
+			{
+				Worker_EntityId PlayerControllerEntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(PlayerController);
+				if (PlayerControllerEntityId == 0)
+				{
+					return FString();
+				}
+
+				improbable::EntityAcl* EntityACL = View->GetEntityACL(PlayerControllerEntityId);
+
+				FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
+
+				WorkerRequirementSet ClientRPCRequirementSet = EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]];
+				WorkerAttributeSet ClientRPCAttributeSet = ClientRPCRequirementSet[0];
+				return ClientRPCAttributeSet[0];
+			}
+		}
+	}
+
+	return FString();
+}
+
 bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 {
 	improbable::EntityAcl* EntityACL = View->GetEntityACL(EntityId);
@@ -658,30 +688,9 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	check(Info);
 
-	FString PlayerWorkerAttribute;
-	if (Actor->GetNetConnection() != nullptr)
-	{
-		if (APlayerController* PlayerController = Actor->GetNetConnection()->PlayerController)
-		{
-			Worker_EntityId PlayerControllerEntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(PlayerController);
-			if (PlayerControllerEntityId == 0)
-			{
-				return false;
-			}
+	FString OwnerWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
-			improbable::EntityAcl* EntityACL = View->GetEntityACL(PlayerControllerEntityId);
-
-			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
-
-			WorkerRequirementSet ClientRPCRequirementSet = EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]];
-			WorkerAttributeSet ClientRPCAttributeSet = ClientRPCRequirementSet[0];
-			FString Attribute = ClientRPCAttributeSet[0];
-
-			PlayerWorkerAttribute = Attribute; 
-		}
-	}
-
-	WorkerAttributeSet OwningClientAttribute = { PlayerWorkerAttribute };
+	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
 	if (EntityACL->ComponentWriteAcl.Contains(Info->RPCComponents[RPC_Client]))
