@@ -103,7 +103,42 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			{
 				if (Cmd.Type == REPCMD_DynamicArray)
 				{
-					ApplyArray(ComponentObject, FieldId, Cast<UArrayProperty>(Cmd.Property), Data, SwappedCmd.Offset, Cmd.ParentIndex);
+					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+					bool bProcessedArray = false;
+
+					// Check if this is a FastArraySerializer array so we can simulate the FFastArraySerializerItem PreReplicatedRemove and PostReplicatedAdd calls.
+					if (UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property))
+					{
+						if (ParentStruct->Struct->IsChildOf(FFastArraySerializer::StaticStruct()))
+						{
+							// Read array into a temporary array so the appropriate remove/add operations can be processed
+							FScriptArray TempArray;
+							// Populate array with existing data so compare will incorporate non-replicated entities
+							Cmd.Property->CopyCompleteValue((void*)&TempArray, Data);
+
+							ApplyArray(ComponentObject, FieldId, ArrayProperty, (uint8*)&TempArray, SwappedCmd.Offset, Cmd.ParentIndex);
+							bProcessedArray = true;
+
+							if (!Cmd.Property->Identical((void*)&TempArray, Data))
+							{
+								FSpatialNetDeltaSerializeInfo Parms;
+								Parms.NewArray = &TempArray;
+								Parms.ArrayProperty = ArrayProperty;
+
+								UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
+								check(CppStructOps);
+
+								// This call resolves into FFastArraySerializer::SpatialFastArrayDeltaSerialize where our custom FFastArraySerializerItem
+								// callback are triggered.
+								CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
+							}
+						}
+					}
+
+					if (!bProcessedArray)
+					{
+						ApplyArray(ComponentObject, FieldId, ArrayProperty, Data, SwappedCmd.Offset, Cmd.ParentIndex);
+					}
 				}
 				else
 				{
