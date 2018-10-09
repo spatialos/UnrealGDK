@@ -541,6 +541,7 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 		NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), ActorEntityId);
 	}
 
+	// TODO: Check if this code is needed anymore?
 	if (Actor->IsFullNameStableForNetworking())
 	{
 		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);

@@ -182,14 +182,6 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		// TODO UNR-625 - This is only hit when generating a snapshot and an object wants to be assigned
-		// a NetGUID. For now this is a work around but we need to figure out the proper solution
-		if (PackageMap == nullptr)
-		{
-			AddObjectRefToSchema(Object, FieldId, SpatialConstants::NULL_OBJECT_REF);
-			return;
-		}
-
 		FUnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
@@ -198,7 +190,14 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
 			if (!NetGUID.IsValid())
 			{
-				if (ObjectValue->IsFullNameStableForNetworking())
+				// IsFullNameStableForNetworking for Actors relies on AActor::bNetStartup being set to true.
+				// This is set to true in InitalizeNetworkActors, which doesn't happen till the game starts
+				// So we can safely say that if we are in the editor, every Actor can be referred to.
+				if (NetDriver->World->WorldType == EWorldType::Editor)
+				{
+					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
+				}
+				else if (ObjectValue->IsFullNameStableForNetworking())
 				{
 					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 				}

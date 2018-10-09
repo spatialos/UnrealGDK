@@ -73,7 +73,6 @@ void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 
 FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(const UObject* Object)
 {
-	check(Object->IsFullNameStableForNetworking());
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	return SpatialGuidCache->AssignNewStablyNamedObjectNetGUID(Object);
 }
@@ -126,7 +125,11 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId);
 
-	Receiver->ResolvePendingOperations(Actor, ObjectRef);
+	// This will be null when being used in the snapshot generator
+	if (Receiver != nullptr)
+	{
+		Receiver->ResolvePendingOperations(Actor, ObjectRef);
+	}
 
 	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
 	TArray<UObject*> ActorSubobjects;
@@ -142,7 +145,12 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
 				*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
-			Receiver->ResolvePendingOperations(Subobject, SubobjectRef);
+
+			// This will be null when being used in the snapshot generator
+			if (Receiver != nullptr)
+			{
+				Receiver->ResolvePendingOperations(Subobject, SubobjectRef);
+			}
 		}
 	}
 
@@ -280,14 +288,6 @@ FNetworkGUID FSpatialNetGUIDCache::GenerateNewNetGUID(const int32 IsStatic)
 FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
-	if (Object != nullptr)
-	{
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: GetOrAssignNetGUID for object %s returned %s. IsDynamicObject: %d"),
-			*Cast<USpatialNetDriver>(Driver)->Connection->GetWorkerId(),
-			*Object->GetName(),
-			*NetGUID.ToString(),
-			(int)IsDynamicObject(Object));
-	}
 
 	// One major difference between how Unreal does NetGUIDs vs us is, we don't attempt to make them consistent across workers and client.
 	// The function above might have returned without assigning new GUID, because we are the client.

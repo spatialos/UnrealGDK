@@ -12,6 +12,7 @@
 #include "SpatialNetDriver.h"
 #include "SpatialTypebindingManager.h"
 #include "Utils/ComponentFactory.h"
+#include "Utils/EntityRegistry.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaUtils.h"
@@ -34,7 +35,7 @@ const WorkerRequirementSet UnrealServerPermission{ { UnrealServerAttributeSet } 
 const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
 const WorkerRequirementSet AnyWorkerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet } };
 
-const improbable::Coordinates Origin{ 0, 0, 0 };
+const improbable::Coordinates Origin{ 0, 0, -5 };
 
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
@@ -182,7 +183,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 }
 
 // Set up classes needed for Startup Actor creation
-void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialTypebindingManager*& TypebindingManager)
+void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialTypebindingManager*& TypebindingManager, UWorld* World)
 {
 	TypebindingManager = NewObject<USpatialTypebindingManager>();
 	TypebindingManager->Init();
@@ -190,10 +191,19 @@ void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnect
 	NetDriver = NewObject<USpatialNetDriver>();
 	NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 	NetDriver->TypebindingManager = TypebindingManager;
+	NetDriver->GuidCache = MakeShareable(new FSpatialNetGUIDCache(NetDriver));
+	NetDriver->EntityRegistry = NewObject<UEntityRegistry>();
+	NetDriver->World = World;
 
 	NetConnection = NewObject<USpatialNetConnection>();
 	NetConnection->Driver = NetDriver;
 	NetConnection->State = USOCK_Closed;
+
+	PackageMap = NewObject<USpatialPackageMapClient>();
+	PackageMap->Initialize(NetConnection, NetDriver->GuidCache);
+
+	NetConnection->PackageMap = PackageMap;
+	NetDriver->PackageMap = PackageMap;
 }
 
 void CleanupNetDriverAndConnection(USpatialNetDriver* NetDriver, USpatialNetConnection* NetConnection)
@@ -313,13 +323,9 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &Entity) != 0;
 }
 
-bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
+bool ProcessSupportedActors(UWorld* World, USpatialTypebindingManager* TypebindingManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
 {
-	USpatialNetDriver* NetDriver = nullptr;
-	USpatialNetConnection* NetConnection = nullptr;
-	USpatialTypebindingManager* TypebindingManager = nullptr;
-
-	SetupStartupActorCreation(NetDriver, NetConnection, TypebindingManager);
+	bool bSuccess = true;
 
 	Worker_EntityId CurrentEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
 
@@ -339,14 +345,40 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 			continue;
 		}
 
-		CreateStartupActor(OutputStream, Actor, CurrentEntityId, NetConnection, TypebindingManager);
+		bSuccess &= Process(Actor, CurrentEntityId);
 
 		CurrentEntityId++;
 	}
 
+	return bSuccess;
+}
+
+bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
+{
+	USpatialNetDriver* NetDriver = nullptr;
+	USpatialNetConnection* NetConnection = nullptr;
+	USpatialPackageMapClient* PackageMap = nullptr;
+	USpatialTypebindingManager* TypebindingManager = nullptr;
+
+	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, TypebindingManager, World);
+
+	bool bSuccess = true;
+
+	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&PackageMap, &NetDriver](AActor* Actor, Worker_EntityId EntityId)
+	{
+		NetDriver->GetEntityRegistry()->AddToRegistry(EntityId, Actor);
+		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor));
+		return true;
+	});
+
+	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&NetConnection, &OutputStream, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
+	{
+		return CreateStartupActor(OutputStream, Actor, EntityId, NetConnection, TypebindingManager);
+	});
+
 	CleanupNetDriverAndConnection(NetDriver, NetConnection);
 
-	return true;
+	return bSuccess;
 }
 
 bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
