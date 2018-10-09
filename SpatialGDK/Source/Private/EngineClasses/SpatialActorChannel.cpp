@@ -292,9 +292,6 @@ bool USpatialActorChannel::ReplicateActor()
 	{		
 		if (bCreatingNewEntity)
 		{
-			// TODO: This check potentially isn't needed any more due to deleting startup actors but need to check - UNR:580
-			//check(!Actor->IsFullNameStableForNetworking());
-
 			Sender->SendCreateEntityRequest(this);
 
 			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
@@ -539,14 +536,6 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), ActorEntityId);
-	}
-
-	// TODO: Check if this code is needed anymore?
-	if (Actor->IsFullNameStableForNetworking())
-	{
-		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
-
-		PackageMap->ResolveEntityActor(Actor, ActorEntityId, improbable::CreateOffsetMapFromActor(Actor));
 	}
 }
 

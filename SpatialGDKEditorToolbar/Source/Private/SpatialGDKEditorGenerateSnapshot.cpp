@@ -35,7 +35,7 @@ const WorkerRequirementSet UnrealServerPermission{ { UnrealServerAttributeSet } 
 const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
 const WorkerRequirementSet AnyWorkerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet } };
 
-const improbable::Coordinates Origin{ 0, 0, -5 };
+const improbable::Coordinates Origin{ 0, 0, 0 };
 
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
