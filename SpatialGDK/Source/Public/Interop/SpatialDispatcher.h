@@ -18,7 +18,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
 class USpatialNetDriver;
 class USpatialReceiver;
-class USpatialSender;
 class USpatialStaticComponentView;
 
 UCLASS()
@@ -31,16 +30,11 @@ public:
 	void ProcessOps(Worker_OpList* OpList);
 
 private:
-	// TODO(nik): Tidy-up - we don't need all of these.
-
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
 	UPROPERTY()
 	USpatialReceiver* Receiver;
-
-	UPROPERTY()
-	USpatialSender* Sender;
 
 	UPROPERTY()
     USpatialStaticComponentView* StaticComponentView;

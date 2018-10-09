@@ -5,7 +5,6 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialSender.h"
 #include "Interop/SpatialStaticComponentView.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
@@ -14,7 +13,6 @@ void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	Receiver = InNetDriver->Receiver;
-	Sender = InNetDriver->Sender;
     StaticComponentView = InNetDriver->StaticComponentView;
 }
 
