@@ -75,13 +75,16 @@ void USpatialReceiver::LeaveCriticalSection()
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Leaving critical section."));
 	check(bInCriticalSection);
 
-	// Add entities.
 	for (Worker_EntityId& PendingAddEntity : PendingAddEntities)
 	{
 		ReceiveActor(PendingAddEntity);
 	}
 
-	// Remove entities.
+	for (Worker_AuthorityChangeOp& PendingAuthorityChange : PendingAuthorityChanges)
+	{
+		HandleActorAuthority(PendingAuthorityChange);
+	}
+
 	for (Worker_EntityId& PendingRemoveEntity : PendingRemoveEntities)
 	{
 		RemoveActor(PendingRemoveEntity);
@@ -91,6 +94,7 @@ void USpatialReceiver::LeaveCriticalSection()
 	bInCriticalSection = false;
 	PendingAddEntities.Empty();
 	PendingAddComponents.Empty();
+	PendingAuthorityChanges.Empty();
 	PendingRemoveEntities.Empty();
 }
 
@@ -157,10 +161,72 @@ void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 
 void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 {
-	if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID
-		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (bInCriticalSection)
 	{
-		GlobalStateManager->ExecuteInitialSingletonActorReplication();
+		PendingAuthorityChanges.Add(Op);
+		return;
+	}
+
+	HandleActorAuthority(Op);
+}
+
+// TODO UNR-640 - This function needs a pass once we introduce soft handover (AUTHORITY_LOSS_IMMINENT)
+void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
+{
+	if (NetDriver->IsServer())
+	{
+		if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID
+			&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			GlobalStateManager->ExecuteInitialSingletonActorReplication();
+			return;
+		}
+
+		// If we became authoritative over the position component. set our role to be ROLE_Authority
+		// and set our RemoteRole to be ROLE_AutonomousProxy iff the actor has an owning connection.
+		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
+		{
+			if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
+			{
+				if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+				{
+					Actor->Role = ROLE_Authority;
+
+					if (Actor->GetNetConnection() != nullptr)
+					{
+						Actor->RemoteRole = ROLE_AutonomousProxy;
+					}
+					else if (Actor->IsA<APawn>())
+					{
+						Actor->RemoteRole = ROLE_AutonomousProxy;
+					}
+					else
+					{
+						Actor->RemoteRole = ROLE_SimulatedProxy;
+					}
+				}
+				else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+				{
+					Actor->Role = ROLE_SimulatedProxy;
+					Actor->RemoteRole = ROLE_Authority;
+				}
+			}
+		}
+	}
+	else
+	{
+		// Check to see if we became authoritative over the ClientRPC component over this entity
+		// If we did, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
+		if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
+		{
+			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+			check(Info);
+
+			if (Op.component_id == Info->RPCComponents[RPC_Client])
+			{
+				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+			}
+		}
 	}
 }
 
@@ -180,17 +246,20 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId))
 	{
-		UClass* ActorClass = GetNativeEntityClass(Metadata);
-
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 
-		improbable::UnrealMetadata* UnrealMetadata = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
-		check(UnrealMetadata);
+		// Assume SimulatedProxy until we've been delegated Authority
+		bool bAuthority = View->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+		EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
+		EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
+		if (bAuthority)
+		{
+			if (EntityActor->GetNetConnection() != nullptr || EntityActor->IsA<APawn>())
+			{
+				EntityActor->RemoteRole = ROLE_AutonomousProxy;
+			}
+		}
 
-		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
-		check(SpatialPackageMap);
-
-		FNetworkGUID NetGUID = SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadata->SubobjectNameToOffset);
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Received create entity response op for %lld"), EntityId);
 	}
 	else
@@ -216,21 +285,27 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 		if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
 		{
-			checkf(!UnrealMetadataComponent->OwnerWorkerId.IsEmpty(), TEXT("A player controller entity must have an owner worker ID."));
+			checkf(!UnrealMetadataComponent->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+
 			FString URLString = FURL().ToString();
-			FString OwnerWorkerId = UnrealMetadataComponent->OwnerWorkerId;
-			URLString += TEXT("?workerId=") + OwnerWorkerId;
+			URLString += TEXT("?workerAttribute=") + UnrealMetadataComponent->OwnerWorkerAttribute;
+
 			Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), true);
 			check(Connection);
+
 			EntityActor = Connection->PlayerController;
 		}
 		else
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
-			EntityActor = CreateActor(Position, Rotation, ActorClass, true);
-			bDoingDeferredSpawn = true;
 
-			check(EntityActor);
+			EntityActor = CreateActor(Position, Rotation, ActorClass, true);
+
+			// Don't have authority over Actor until SpatialOS delegates authority
+			EntityActor->Role = ROLE_SimulatedProxy;
+			EntityActor->RemoteRole = ROLE_Authority;
+
+			bDoingDeferredSpawn = true;
 
 			// Get the net connection for this actor.
 			if (NetDriver->IsServer())
@@ -296,9 +371,15 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				EntityActor->OnActorChannelOpen(Bunch, NetDriver->ServerConnection);
 			}
 
-			// Call PostNetInit on client only.
-			EntityActor->PostNetInit();
 		}
+
+		// Taken from PostNetInit
+		if (!EntityActor->HasActorBegunPlay())
+		{
+			EntityActor->DispatchBeginPlay();
+		}
+
+		EntityActor->UpdateOverlaps();
 	}
 }
 
@@ -332,6 +413,11 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		{
 			Pawn->Controller = nullptr;
 		}
+	}
+
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		return;
 	}
 
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
@@ -519,7 +605,12 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
 	{
 		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(GetStringFromSchema(Payload, 1), Op.caller_worker_id, Op.request_id);
+
+		// Op.caller_attribute_set has two attributes.
+		// 1. The attribute of the worker type
+		// 2. The attribute of the specific worker that sent the request
+		// We want to give authority to the specific worker, so we grab the second element from the attribute set.
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(GetStringFromSchema(Payload, 1), Op.caller_attribute_set.attributes[1], Op.request_id);
 		return;
 	}
 

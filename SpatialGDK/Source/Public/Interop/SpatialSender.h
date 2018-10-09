@@ -59,7 +59,7 @@ public:
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 
 	void SendReserveEntityIdRequest(USpatialActorChannel* Channel);
-	void SendCreateEntityRequest(USpatialActorChannel* Channel, const FString& PlayerWorkerId);
+	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
 
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
@@ -68,7 +68,7 @@ public:
 	bool UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId);
 private:
 	// Actor Lifecycle
-	Worker_RequestId CreateEntity(const FString& ClientWorkerId, const FString& Metadata, USpatialActorChannel* Channel);
+	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
 
 	// Queuing
 	void ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover);
@@ -80,6 +80,7 @@ private:
 	Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor);
+	FString GetOwnerWorkerAttribute(AActor* Actor);
 
 private:
 	UPROPERTY()

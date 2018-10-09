@@ -53,13 +53,15 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 	TypebindingManager = InNetDriver->TypebindingManager;
 }
 
-Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, const FString& EntityType, USpatialActorChannel* Channel)
+Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
 
+	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
+
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
 	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
-	WorkerAttributeSet OwningClientAttribute = { TEXT("workerId:") + ClientWorkerId };
+	WorkerAttributeSet OwningClientAttribute = { ClientWorkerAttribute };
 
 	WorkerRequirementSet ServersOnly = { ServerAttribute };
 	WorkerRequirementSet ClientsOnly = { ClientAttribute };
@@ -112,11 +114,11 @@ Worker_RequestId USpatialSender::CreateEntity(const FString& ClientWorkerId, con
 
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
-	ComponentDatas.Add(improbable::Metadata(EntityType).CreateMetadataData());
+	ComponentDatas.Add(improbable::Metadata(Channel->Actor->GetClass()->GetPathName()).CreateMetadataData());
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerId, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
@@ -357,13 +359,13 @@ void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
-void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel, const FString& PlayerWorkerId)
+void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
 {
 	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s"), *Channel->Actor->GetName());
 
 	FSoftClassPath ActorClassPath(Channel->Actor->GetClass());
 
-	Worker_RequestId RequestId = CreateEntity(PlayerWorkerId, ActorClassPath.ToString(), Channel);
+	Worker_RequestId RequestId = CreateEntity(Channel);
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
@@ -441,7 +443,10 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	*Unresolved = UnresolvedObjects;
 
 	FHandleToUnresolved& HandleToUnresolved = PropertyToUnresolved.FindOrAdd(ChannelObjectPair);
-	check(!HandleToUnresolved.Find(Handle));
+	if (HandleToUnresolved.Find(Handle))
+	{
+		HandleToUnresolved.Remove(Handle);
+	}
 	HandleToUnresolved.Add(Handle, Unresolved);
 
 	for (const UObject* UnresolvedObject : UnresolvedObjects)
@@ -634,6 +639,48 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 	}
 }
 
+FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
+{
+	// If we don't have an owning connection, there is no assoicated client
+	if (Actor->GetNetConnection() == nullptr)
+	{
+		return FString();
+	}
+
+	if (APlayerController* PlayerController = Actor->GetNetConnection()->PlayerController)
+	{
+		if (APlayerState* PlayerState = PlayerController->PlayerState)
+		{
+			// If the player state is resolved, the UniqueId is set to be the owning attribute - USpatialNetDriver::AcceptNewPlayer
+			if (PlayerState->UniqueId.IsValid())
+			{
+				return PlayerState->UniqueId.ToString();
+			}
+			else
+			{
+				// If the UniqueId is invalid, get the owning attribute from the PlayerController's EntityACL.
+				Worker_EntityId PlayerControllerEntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(PlayerController);
+				if (PlayerControllerEntityId == 0)
+				{
+					return FString();
+				}
+
+				improbable::EntityAcl* EntityACL = View->GetEntityACL(PlayerControllerEntityId);
+
+				FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
+
+				WorkerRequirementSet ClientRPCRequirementSet = EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]];
+				WorkerAttributeSet ClientRPCAttributeSet = ClientRPCRequirementSet[0];
+				return ClientRPCAttributeSet[0];
+			}
+		}
+	}
+
+	return FString();
+}
+
+// Authority over the ClientRPC Schema component is dictated by the owning connection of a client.
+// This function updates the authority of that component as the owning connection can change.
 bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 {
 	improbable::EntityAcl* EntityACL = View->GetEntityACL(EntityId);
@@ -646,13 +693,8 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	check(Info);
 
-	FString PlayerWorkerId;
-	if (Actor->GetNetConnection() != nullptr)
-	{
-		PlayerWorkerId = Actor->GetNetConnection()->PlayerController->PlayerState->UniqueId.ToString();
-	}
-
-	WorkerAttributeSet OwningClientAttribute = { TEXT("workerId:") + PlayerWorkerId };
+	FString OwnerWorkerAttribute = GetOwnerWorkerAttribute(Actor);
+	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
 	if (EntityACL->ComponentWriteAcl.Contains(Info->RPCComponents[RPC_Client]))

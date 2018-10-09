@@ -66,6 +66,9 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 			continue;
 		}
 
+		SingletonActor->Role = ROLE_SimulatedProxy;
+		SingletonActor->RemoteRole = ROLE_Authority;
+
 		// Add to entity registry
 		// This indirectly causes SetChannelActor to not create a new entity for this actor
 		NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
@@ -106,6 +109,9 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 		{
 			continue;
 		}
+
+		SingletonActor->Role = ROLE_Authority;
+		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
 
 		// Set entity id of channel from the GlobalStateManager.
 		// If the id was 0, SetChannelActor will create the entity.

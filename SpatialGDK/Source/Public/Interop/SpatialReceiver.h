@@ -130,6 +130,8 @@ private:
 	AActor* CreateActor(improbable::Position* Position, struct improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred);
 	UClass* GetNativeEntityClass(improbable::Metadata* Metadata);
 
+	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
+
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
@@ -187,6 +189,7 @@ private:
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;
+	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_EntityId> PendingRemoveEntities;
 

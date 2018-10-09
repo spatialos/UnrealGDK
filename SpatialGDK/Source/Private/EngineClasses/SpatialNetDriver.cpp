@@ -931,11 +931,10 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	AddClientConnection(SpatialConnection);
 
 	// Set up the net ID for this player.
-	const TCHAR* ClientWorkerIdOption = InUrl.GetOption(TEXT("workerId"), nullptr);
-	check(ClientWorkerIdOption);
-	FString ClientWorkerId(ClientWorkerIdOption);
-	ClientWorkerId = ClientWorkerId.Mid(1); // Trim off the = at the beginning.
-	FUniqueNetIdRepl WorkerId(TSharedPtr<FSpatialWorkerUniqueNetId>(new FSpatialWorkerUniqueNetId(ClientWorkerId)));
+	const TCHAR* WorkerAttributeOption = InUrl.GetOption(TEXT("workerAttribute"), nullptr);
+	check(WorkerAttributeOption);
+	FString WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
+	FUniqueNetIdRepl WorkerAttributeId(TSharedPtr<FSpatialWorkerUniqueNetId>(new FSpatialWorkerUniqueNetId(WorkerAttribute)));
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
@@ -951,7 +950,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
 	if (GameMode)
 	{
-		GameMode->PreLogin(Tmp, SpatialConnection->LowLevelGetRemoteAddress(), WorkerId, ErrorMsg);
+		GameMode->PreLogin(Tmp, SpatialConnection->LowLevelGetRemoteAddress(), WorkerAttributeId, ErrorMsg);
 	}
 
 	if (!ErrorMsg.IsEmpty())
@@ -975,7 +974,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 		if (!bExistingPlayer)
 		{
-			SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, WorkerId, ErrorMsg);
+			SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, WorkerAttributeId, ErrorMsg);
 		}
 		else
 		{
@@ -1005,10 +1004,6 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Join failure: %s"), *ErrorMsg);
 			SpatialConnection->FlushNet(true);
 			bOk = false;
-		}
-		else
-		{
-			//todo-giray: Client travel needs to be handled here.
 		}
 	}
 
