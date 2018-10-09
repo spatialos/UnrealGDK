@@ -641,6 +641,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 
 FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 {
+	// If we don't have an owning connection, there is no assoicated client
 	if (Actor->GetNetConnection() == nullptr)
 	{
 		return FString();
@@ -650,12 +651,14 @@ FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 	{
 		if (APlayerState* PlayerState = PlayerController->PlayerState)
 		{
+			// If the player state is resolved, the UniqueId is set to be the owning attribute - USpatialNetDriver::AcceptNewPlayer
 			if (PlayerState->UniqueId.IsValid())
 			{
 				return PlayerState->UniqueId.ToString();
 			}
 			else
 			{
+				// If the UniqueId is invalid, get the owning attribute from the PlayerController's EntityACL.
 				Worker_EntityId PlayerControllerEntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(PlayerController);
 				if (PlayerControllerEntityId == 0)
 				{
