@@ -404,6 +404,12 @@ void ComponentFactory::AssignUnrealObjectRefToContext(UProperty* Property, const
 		UStruct* Owner = Cast<UStruct>(Outer);
 		const FString ContextName = Property->GetName() + TEXT("_SpatialOSContext");
 		UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
+
+		if (ContextProperty == nullptr)
+		{
+			return;
+		}
+
 		const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
 		FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
 		Context = ObjectRef;
