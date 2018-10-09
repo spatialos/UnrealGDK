@@ -165,25 +165,35 @@ TArray<UClass*> GetAllSupportedClasses()
 {
 	TArray<UClass*> Classes;
 
-	for (TObjectIterator<UClass> It; It; ++It)
+	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
-		// Only support Actors and ActorComponents for now
-		if (!(It->IsChildOf<AActor>() || It->IsChildOf<UActorComponent>())) continue;
+		UClass* SupportedClass = nullptr;
+		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt; ++PropertyIt)
+		{
+			if (PropertyIt->PropertyFlags & CPF_Net || PropertyIt->PropertyFlags & CPF_Handover)
+			{
+				SupportedClass = *ClassIt;
+				break;
+			}
+		}
 
-		// Any component which has child components
-		if (It->IsChildOf<USceneComponent>()) continue;
+		// No replicated/handover properties found
+		if (SupportedClass == nullptr) continue;
+
+		// Currently can't support components which have child components
+		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
 
 		// Doesn't let us save the schema database
-		if (It->IsChildOf<ALevelScriptActor>()) continue;
+		if (SupportedClass->IsChildOf<ALevelScriptActor>()) continue;
 
 		// Ensure we don't process skeleton or reinitialized classes
-		if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			|| It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
+		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
+			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
 		{
 			continue;
 		}
 
-		Classes.Add(*It);
+		Classes.Add(SupportedClass);
 	}
 
 	return Classes;
