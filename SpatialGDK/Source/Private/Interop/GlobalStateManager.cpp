@@ -19,7 +19,7 @@ using namespace improbable;
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	View = InNetDriver->View;
+	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 }
 
@@ -72,7 +72,7 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 
 		Channel->SetChannelActor(SingletonActor);
 
-		improbable::UnrealMetadata* UnrealMetadata = View->GetComponentData<improbable::UnrealMetadata>(SingletonEntityId);
+		improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(SingletonEntityId);
 		if (UnrealMetadata == nullptr)
 		{
 			// Don't have entity checked out

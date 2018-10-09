@@ -5,7 +5,7 @@
 #include "Engine/ActorChannel.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
-#include "Interop/SpatialView.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialTypebindingManager.h"
 #include "Utils/RepDataUtils.h"
 
@@ -51,7 +51,7 @@ public:
 		FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 		check(Info);
 
-		return NetDriver->View->GetAuthority(EntityId, Info->RPCComponents[RPC_Client]) == WORKER_AUTHORITY_AUTHORITATIVE;
+		return NetDriver->StaticComponentView->GetAuthority(EntityId, Info->RPCComponents[RPC_Client]) == WORKER_AUTHORITY_AUTHORITATIVE;
 	}
 
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)

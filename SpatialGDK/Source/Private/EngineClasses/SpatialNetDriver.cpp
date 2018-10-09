@@ -17,7 +17,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialTypebindingManager.h"
-#include "Interop/SpatialView.h"
+#include "Interop/SpatialDispatcher.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -156,11 +156,12 @@ void USpatialNetDriver::OnConnected()
 
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 
-	View = NewObject<USpatialView>();
+	Dispatcher = NewObject<USpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
 	GlobalStateManager = NewObject<UGlobalStateManager>();
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
+	StaticComponentView = NewObject<USpatialStaticComponentView>();
 
 	PlayerSpawner->Init(this, TimerManager);
 
@@ -196,7 +197,7 @@ void USpatialNetDriver::OnConnected()
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 
-	View->Init(this);
+	Dispatcher->Init(this);
 	Sender->Init(this);
 	Receiver->Init(this, TimerManager);
 	GlobalStateManager->Init(this);
@@ -819,7 +820,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		Worker_OpList* OpList = Connection->GetOpList();
 
-		View->ProcessOps(OpList);
+		Dispatcher->ProcessOps(OpList);
 
 		Worker_OpList_Destroy(OpList);
 	}

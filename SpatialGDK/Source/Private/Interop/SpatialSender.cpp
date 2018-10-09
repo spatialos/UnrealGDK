@@ -9,7 +9,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialView.h"
+#include "Interop/SpatialDispatcher.h"
 #include "Schema/Rotation.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
@@ -46,7 +46,7 @@ FPendingRPCParams::~FPendingRPCParams()
 void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	View = InNetDriver->View;
+	StaticComponentView = InNetDriver->StaticComponentView;
 	Connection = InNetDriver->Connection;
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
@@ -636,7 +636,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 
 bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 {
-	improbable::EntityAcl* EntityACL = View->GetComponentData<improbable::EntityAcl>(EntityId);
+	improbable::EntityAcl* EntityACL = StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId);
 
 	if (EntityACL == nullptr)
 	{

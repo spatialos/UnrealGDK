@@ -12,16 +12,17 @@
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
-#include "SpatialView.generated.h"
+#include "SpatialDispatcher.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialView, Log, All);
 
 class USpatialNetDriver;
 class USpatialReceiver;
 class USpatialSender;
+class USpatialStaticComponentView;
 
 UCLASS()
-class SPATIALGDK_API USpatialView : public UObject
+class SPATIALGDK_API USpatialDispatcher : public UObject
 {
 	GENERATED_BODY()
 
@@ -29,14 +30,8 @@ public:
 	void Init(USpatialNetDriver* NetDriver);
 	void ProcessOps(Worker_OpList* OpList);
 
-	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-	template <typename T> typename  T* GetComponentData(Worker_EntityId EntityId);
-
 private:
-	void OnAddComponent(const Worker_AddComponentOp& Op);
-	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
-	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
-	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
+	// TODO(nik): Tidy-up - we don't need all of these.
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -46,6 +41,9 @@ private:
 
 	UPROPERTY()
 	USpatialSender* Sender;
+
+	UPROPERTY()
+    USpatialStaticComponentView* StaticComponentView;
 
 	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
 	TMap<Worker_EntityId, TMap<Worker_ComponentId, TUniquePtr<improbable::ComponentStorageBase>>> EntityComponentMap;

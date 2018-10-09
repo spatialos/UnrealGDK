@@ -159,7 +159,7 @@ private:
 	USpatialNetDriver* NetDriver;
 
 	UPROPERTY()
-	USpatialView* View;
+	USpatialStaticComponentView* StaticComponentView;
 
 	UPROPERTY()
 	USpatialSender* Sender;
