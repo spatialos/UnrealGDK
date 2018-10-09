@@ -3,7 +3,7 @@
 #pragma once
 
 #include "EngineClasses/SpatialNetBitWriter.h"
-#include "Schema/UnrealObjectRef.h"
+#include "improbable/UnrealObjectRef.h"
 
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
@@ -96,7 +96,7 @@ inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Obj
 	return RequirementSet;
 }
 
-inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const UnrealObjectRef& ObjectRef)
+inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const FUnrealObjectRef& ObjectRef)
 {
 	Schema_Object* ObjectRefObject = Schema_AddObject(Object, Id);
 
@@ -112,11 +112,11 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 	}
 }
 
-UnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);
+FUnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id);
 
-inline UnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	UnrealObjectRef ObjectRef;
+	FUnrealObjectRef ObjectRef;
 
 	Schema_Object* ObjectRefObject = Schema_IndexObject(Object, Id, Index);
 
@@ -128,13 +128,13 @@ inline UnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_Fi
 	}
 	if (Schema_GetObjectCount(ObjectRefObject, 4) > 0)
 	{
-		ObjectRef.Outer = UnrealObjectRef(GetObjectRefFromSchema(ObjectRefObject, 4));
+		ObjectRef.Outer = FUnrealObjectRef(GetObjectRefFromSchema(ObjectRefObject, 4));
 	}
 
 	return ObjectRef;
 }
 
-inline UnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id)
+inline FUnrealObjectRef GetObjectRefFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
 	return IndexObjectRefFromSchema(Object, Id, 0);
 }

@@ -5,14 +5,14 @@
 #include "CoreMinimal.h"
 #include "UObject/CoreNet.h"
 
-#include "Schema/UnrealObjectRef.h"
+#include "improbable/UnrealObjectRef.h"
 
 class USpatialPackageMapClient;
 
 class SPATIALGDK_API FSpatialNetBitReader : public FNetBitReader
 {
 public:
-	FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<UnrealObjectRef>& InUnresolvedRefs);
+	FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InUnresolvedRefs);
 
 	using FArchive::operator<<; // For visibility of the overloads we don't override
 
@@ -21,7 +21,7 @@ public:
 	virtual FArchive& operator<<(struct FWeakObjectPtr& Value) override;
 
 protected:
-	void DeserializeObjectRef(UnrealObjectRef& ObjectRef);
+	void DeserializeObjectRef(FUnrealObjectRef& ObjectRef);
 
-	TSet<UnrealObjectRef>& UnresolvedRefs;
+	TSet<FUnrealObjectRef>& UnresolvedRefs;
 };

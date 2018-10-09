@@ -474,7 +474,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 	CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, CommandIndex);
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
-	UnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
+	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
@@ -512,7 +512,7 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 	Schema_Object* EventData = Schema_AddObject(EventsObject, EventIndex);
 
-	UnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
+	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;

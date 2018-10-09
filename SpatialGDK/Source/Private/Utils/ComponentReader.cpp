@@ -14,7 +14,7 @@
 namespace improbable
 {
 
-ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<UnrealObjectRef>& InUnresolvedRefs)
+ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
 	, TypebindingManager(InNetDriver->TypebindingManager)
@@ -184,7 +184,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		TArray<uint8> ValueData = IndexPayloadFromSchema(Object, FieldId, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
 		int64 CountBits = ValueData.Num() * 8;
-		TSet<UnrealObjectRef> NewUnresolvedRefs;
+		TSet<FUnrealObjectRef> NewUnresolvedRefs;
 		FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
 		bool bHasUnmapped = false;
 
@@ -246,7 +246,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		UnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
+		FUnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
@@ -270,6 +270,18 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 				UnresolvedRefs.Add(ObjectRef);
 				bUnresolved = true;
 			}
+		}
+
+		UObject* Outer = Property->GetOuter();
+		// TODO: This check will be removed once arrays contexts are supported UNR-633
+		if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
+		{
+			UStruct* Owner = Cast<UStruct>(Outer);
+			const FString ContextName = Property->GetName() + TEXT("_SpatialOSContext");
+			UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
+			const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
+			FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
+			Context = ObjectRef;
 		}
 
 		if (!bUnresolved && ObjectReferencesMap.Find(Offset))
