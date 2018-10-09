@@ -386,7 +386,7 @@ AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable
 void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel)
 {
 	UClass* Class = TypebindingManager->FindClassByComponentId(Data.component_id);
-	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."));
+	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."), Data.component_id);
 
 	UObject* TargetObject = GetTargetObjectFromChannelAndClass(Channel, Class);
 	if (!TargetObject)

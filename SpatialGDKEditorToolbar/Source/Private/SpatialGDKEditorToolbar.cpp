@@ -20,6 +20,7 @@
 #include "Sound/SoundBase.h"
 
 #include "AssetRegistryModule.h"
+#include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
@@ -257,10 +258,16 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 	ShowTaskStartNotification("Generating Schema");
 	bSchemaGeneratorRunning = true;
 
+	// Force spatial networking so schema layouts are correct
+	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
+	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
+	GeneralProjectSettings->bSpatialNetworking = true;
+
+
 	// Ensure all our spatial classes are loaded into memory before running
 	CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings);
 
-	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema, [this]()
+	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema, [this, bCachedSpatialNetworking]()
 	{
 		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
 		{
@@ -270,6 +277,7 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 		{
 			ShowSuccessNotification("Schema Generation Completed!");
 		}
+		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
 		bSchemaGeneratorRunning = false;
 	});
 }
