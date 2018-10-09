@@ -170,6 +170,7 @@ void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 	HandleActorAuthority(Op);
 }
 
+// TODO UNR-640 - This function needs a pass once we introduce soft handover (AUTHORITY_LOSS_IMMINENT)
 void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 {
 	if (NetDriver->IsServer())

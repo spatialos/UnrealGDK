@@ -399,7 +399,7 @@ void ComponentFactory::AssignUnrealObjectRefToContext(UProperty* Property, const
 {
 	UObject* Outer = Property->GetOuter();
 	// TODO: This check will be removed once arrays contexts are supported UNR-633
-	if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
+	if (Outer->IsA<UStruct>() && Property->ArrayDim == 1 && Cast<UBlueprintGeneratedClass>(Outer) == nullptr)
 	{
 		UStruct* Owner = Cast<UStruct>(Outer);
 		const FString ContextName = Property->GetName() + TEXT("_SpatialOSContext");

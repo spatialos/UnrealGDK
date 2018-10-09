@@ -273,8 +273,9 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		}
 
 		UObject* Outer = Property->GetOuter();
-		// TODO: This check will be removed once arrays contexts are supported UNR-633
-		if (Outer->IsA<UStruct>() && Property->ArrayDim == 1)
+		// TODO: Second check will be removed once arrays contexts are supported UNR-633
+		// TODO: Third check will be removed once we support blueprint classes
+		if (Outer->IsA<UStruct>() && Property->ArrayDim == 1 && Cast<UBlueprintGeneratedClass>(Outer) == nullptr)
 		{
 			UStruct* Owner = Cast<UStruct>(Outer);
 			const FString ContextName = Property->GetName() + TEXT("_SpatialOSContext");
