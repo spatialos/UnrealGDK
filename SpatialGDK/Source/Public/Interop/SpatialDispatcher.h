@@ -44,7 +44,4 @@ private:
 
 	UPROPERTY()
     USpatialStaticComponentView* StaticComponentView;
-
-	TMap<Worker_EntityId, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
-	TMap<Worker_EntityId, TMap<Worker_ComponentId, TUniquePtr<improbable::ComponentStorageBase>>> EntityComponentMap;
 };
