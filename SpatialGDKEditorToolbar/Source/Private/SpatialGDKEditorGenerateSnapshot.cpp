@@ -364,6 +364,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 
 	bool bSuccess = true;
 
+	// Need to add all actors in the world to the package map so they have assigned UnrealObjRefs for the ComponentFactory to use
 	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&PackageMap, &NetDriver](AActor* Actor, Worker_EntityId EntityId)
 	{
 		NetDriver->GetEntityRegistry()->AddToRegistry(EntityId, Actor);
