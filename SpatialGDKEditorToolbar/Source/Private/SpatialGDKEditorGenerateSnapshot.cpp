@@ -183,7 +183,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 }
 
 // Set up classes needed for Startup Actor creation
-void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialTypebindingManager*& TypebindingManager, UWorld* World)
+void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialTypebindingManager*& TypebindingManager, UEntityRegistry*& EntityRegistry, UWorld* World)
 {
 	TypebindingManager = NewObject<USpatialTypebindingManager>();
 	TypebindingManager->Init();
@@ -192,8 +192,10 @@ void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnect
 	NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 	NetDriver->TypebindingManager = TypebindingManager;
 	NetDriver->GuidCache = MakeShareable(new FSpatialNetGUIDCache(NetDriver));
-	NetDriver->EntityRegistry = NewObject<UEntityRegistry>();
 	NetDriver->World = World;
+
+	EntityRegistry = NewObject<UEntityRegistry>();
+	NetDriver->EntityRegistry = EntityRegistry;
 
 	NetConnection = NewObject<USpatialNetConnection>();
 	NetConnection->Driver = NetDriver;
@@ -360,15 +362,16 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	USpatialNetConnection* NetConnection = nullptr;
 	USpatialPackageMapClient* PackageMap = nullptr;
 	USpatialTypebindingManager* TypebindingManager = nullptr;
+	UEntityRegistry* EntityRegistry = nullptr;
 
-	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, TypebindingManager, World);
+	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, TypebindingManager, EntityRegistry, World);
 
 	bool bSuccess = true;
 
 	// Need to add all actors in the world to the package map so they have assigned UnrealObjRefs for the ComponentFactory to use
-	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&PackageMap, &NetDriver](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&PackageMap, &EntityRegistry](AActor* Actor, Worker_EntityId EntityId)
 	{
-		NetDriver->GetEntityRegistry()->AddToRegistry(EntityId, Actor);
+		EntityRegistry->AddToRegistry(EntityId, Actor);
 		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor));
 		return true;
 	});
