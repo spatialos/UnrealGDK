@@ -141,7 +141,7 @@ void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrea
 // core_types.schema should only be included if any components in the file have
 // 1. An UnrealObjectRef
 // 2. A list of UnrealObjectRefs
-// 3. A RPC
+// 3. An RPC
 bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo)
 {
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
@@ -151,14 +151,14 @@ bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo)
 		for (auto& PropertyPair : PropertyGroup.Value)
 		{
 			UProperty* Property = PropertyPair.Value->Property;
-			if(Property->IsA(UObjectPropertyBase::StaticClass()))
+			if(Property->IsA<UObjectPropertyBase>())
 			{
 				return true;
 			}
 
-			if (Property->IsA(UArrayProperty::StaticClass()))
+			if (Property->IsA<UArrayProperty>())
 			{
-				if (Cast<UArrayProperty>(Property)->Inner->IsA(UObjectPropertyBase::StaticClass()))
+				if (Cast<UArrayProperty>(Property)->Inner->IsA<UObjectPropertyBase>())
 				{
 					return true;
 				}
