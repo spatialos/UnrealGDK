@@ -54,56 +54,56 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 	}
 	else if (Property->IsA(UInt8Property::StaticClass()))
 	{
-		DataType = TEXT("int32");
+	DataType = TEXT("int32");
 	}
 	else if (Property->IsA(UInt16Property::StaticClass()))
 	{
-		DataType = TEXT("int32");
+	DataType = TEXT("int32");
 	}
 	else if (Property->IsA(UIntProperty::StaticClass()))
 	{
-		DataType = TEXT("int32");
+	DataType = TEXT("int32");
 	}
 	else if (Property->IsA(UInt64Property::StaticClass()))
 	{
-		DataType = TEXT("int64");
+	DataType = TEXT("int64");
 	}
 	else if (Property->IsA(UByteProperty::StaticClass()))
 	{
-		DataType = TEXT("uint32"); // uint8 not supported in schema.
+	DataType = TEXT("uint32"); // uint8 not supported in schema.
 	}
 	else if (Property->IsA(UUInt16Property::StaticClass()))
 	{
-		DataType = TEXT("uint32");
+	DataType = TEXT("uint32");
 	}
 	else if (Property->IsA(UUInt32Property::StaticClass()))
 	{
-		DataType = TEXT("uint32");
+	DataType = TEXT("uint32");
 	}
 	else if (Property->IsA(UUInt64Property::StaticClass()))
 	{
-		DataType = TEXT("uint64");
+	DataType = TEXT("uint64");
 	}
 	else if (Property->IsA(UNameProperty::StaticClass()) || Property->IsA(UStrProperty::StaticClass()) || Property->IsA(UTextProperty::StaticClass()))
 	{
-		DataType = TEXT("string");
+	DataType = TEXT("string");
 	}
 	else if (Property->IsA(UObjectPropertyBase::StaticClass()))
 	{
-		DataType = TEXT("UnrealObjectRef");
+	DataType = TEXT("UnrealObjectRef");
 	}
 	else if (Property->IsA(UArrayProperty::StaticClass()))
 	{
-		DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner, bIsRPCProperty);
-		DataType = FString::Printf(TEXT("list<%s>"), *DataType);
+	DataType = PropertyToSchemaType(Cast<UArrayProperty>(Property)->Inner, bIsRPCProperty);
+	DataType = FString::Printf(TEXT("list<%s>"), *DataType);
 	}
 	else if (Property->IsA(UEnumProperty::StaticClass()))
 	{
-		DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
+	DataType = GetEnumDataType(Cast<UEnumProperty>(Property));
 	}
 	else
 	{
-		DataType = TEXT("bytes");
+	DataType = TEXT("bytes");
 	}
 
 	return DataType;
@@ -138,19 +138,61 @@ void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrea
 	);
 }
 
+// core_types.schema should only be included if the component has
+// 1. An UnrealObjectRef
+// 2. A List of UnrealObjectRefs
+// 3. Any RPCs
+bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo)
+{
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+
+	for (auto& PropertyGroup : RepData)
+	{
+		for (auto& PropertyPair : PropertyGroup.Value)
+		{
+			UProperty* Property = PropertyPair.Value->Property;
+			if(Property->IsA(UObjectPropertyBase::StaticClass()))
+			{
+				return true;
+			}
+
+			if (Property->IsA(UArrayProperty::StaticClass()))
+			{
+				if (Cast<UArrayProperty>(Property)->Inner->IsA(UObjectPropertyBase::StaticClass()))
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	if (TypeInfo->RPCs.Num() > 0)
+	{
+		return true;
+	}
+
+	return false;
+}
+
 int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
 	FComponentIdGenerator IdGenerator(ComponentId);
 
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-		package improbable.unreal.generated.%s;
+		package improbable.unreal.generated.%s;)""",
+		*UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
 
-		import "improbable/unreal/gdk/core_types.schema";)""", *UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
+	if (ShouldIncludeCoreTypes(TypeInfo))
+	{
+		Writer.PrintNewLine();
+		Writer.Printf("import \"improbable/unreal/gdk/core_types.schema\";");
+	}
+
 	Writer.PrintNewLine();
-
-	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
 	// Client-server replicated properties.
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
