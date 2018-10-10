@@ -149,7 +149,9 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 				*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
 
 			// This will be null when being used in the snapshot generator
+#if WITH_EDITOR
 			if (Receiver != nullptr)
+#endif
 			{
 				Receiver->ResolvePendingOperations(Subobject, SubobjectRef);
 			}

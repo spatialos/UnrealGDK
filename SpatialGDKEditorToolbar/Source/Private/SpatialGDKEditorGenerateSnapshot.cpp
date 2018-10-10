@@ -325,8 +325,6 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 
 bool ProcessSupportedActors(UWorld* World, USpatialTypebindingManager* TypebindingManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
 {
-	bool bSuccess = true;
-
 	Worker_EntityId CurrentEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
 
 	for (TActorIterator<AActor> It(World); It; ++It)
@@ -345,12 +343,15 @@ bool ProcessSupportedActors(UWorld* World, USpatialTypebindingManager* Typebindi
 			continue;
 		}
 
-		bSuccess &= Process(Actor, CurrentEntityId);
+		if (!Process(Actor, CurrentEntityId))
+		{
+			return false;
+		}
 
 		CurrentEntityId++;
 	}
 
-	return bSuccess;
+	return true;
 }
 
 bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
