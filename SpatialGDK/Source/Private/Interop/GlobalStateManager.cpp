@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialReceiver.h"
@@ -36,28 +37,29 @@ void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
 
 void UGlobalStateManager::ApplyMapData(const Worker_ComponentData& Data)
 {
+	UE_LOG(LogGlobalStateManager, Error, TEXT("ApplyMapData"));
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	// Set the Map URL.
-	FString MapURL = GetStringFromSchema(ComponentObject, 1);
-	this->SetDeploymentMapURL(MapURL);
+	//FString MapURL = GetStringFromSchema(ComponentObject, 1);
+	//this->SetDeploymentMapURL(MapURL);
 
-	// Josh after lunch - There is an issue with Schema_GetBool returning false when it's actually true.
+	auto BoolCount = Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+	UE_LOG(LogGlobalStateManager, Error, TEXT("ApplyMapData - BoolCount %u"), BoolCount);
+
 	// Set the AcceptingPlayers state.
 	uint8_t SchemaBool = Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
 
-	// Early out if this data isn't new to us
-	if(bAcceptingPlayers == bool(SchemaBool))
-	{
-		return;
-	}
+	auto bNewAcceptingPlayers = bool(SchemaBool);
 
-	bAcceptingPlayers = bool(SchemaBool);
-
-	if (bAcceptingPlayers)
+	if (bNewAcceptingPlayers)
 	{
-		UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager ApplyData - Accepting new players"));
-		AcceptingPlayersChanged.ExecuteIfBound(bAcceptingPlayers);
+		if (bNewAcceptingPlayers != bAcceptingPlayers)
+		{
+			UE_LOG(LogGlobalStateManager, Error, TEXT("ApplyMapData - Accepting new players"));
+			bAcceptingPlayers = bNewAcceptingPlayers;
+			AcceptingPlayersChanged.ExecuteIfBound(bAcceptingPlayers);
+		}
 	}
 	else 
 	{
@@ -68,6 +70,7 @@ void UGlobalStateManager::ApplyMapData(const Worker_ComponentData& Data)
 			// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
 			// This means that the clients never actually receive updates or data on the GSM. To get around this we are making timed entity queries to
 			// find the state of the GSM and the accepting players. Remove this work-around when the runtime bug is fixed.
+			UE_LOG(LogGlobalStateManager, Error, TEXT("ApplyMapData - Not yet accepting new players, trying again..."));
 			RetryQueryGSM();
 		}
 	}
@@ -75,7 +78,7 @@ void UGlobalStateManager::ApplyMapData(const Worker_ComponentData& Data)
 
 void UGlobalStateManager::RetryQueryGSM()
 {
-	UE_LOG(LogGlobalStateManager, Error, TEXT("Entity query could not find Global State Manager. Retrying in 3 seconds"));
+	//UE_LOG(LogGlobalStateManager, Error, TEXT("Entity query could not find Global State Manager. Retrying in 3 seconds"));
 	// Retry the query after 3 seconds.
 	FTimerHandle RetryTimer;
 	TimerManager->SetTimer(RetryTimer, [this]()
@@ -96,15 +99,22 @@ void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
 
 void UGlobalStateManager::ApplyMapUpdate(const Worker_ComponentUpdate& Update)
 {
-	UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager Map Update"));
-
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
+	auto Count = Schema_GetObjectCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+
+	UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager Map Update. Count: %u"), Count);
+
+	if (Count == 1)
 	{
 		UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager Update - Accepting new players"));
-		bAcceptingPlayers = Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
-		AcceptingPlayersChanged.ExecuteIfBound(bAcceptingPlayers);
+		auto bNewAcceptingPlayers = Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+		if(bool(bNewAcceptingPlayers) != bAcceptingPlayers)
+		{
+			bAcceptingPlayers = bNewAcceptingPlayers;
+			AcceptingPlayersChanged.ExecuteIfBound(bAcceptingPlayers);
+		}
+		
 	}
 }
 
@@ -212,19 +222,90 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 }
 
 // if we are the GSM then we can toggle if we are accepting players or not.
-void UGlobalStateManager::ToggleAcceptingPlayers(bool AcceptingPlayers)
+void UGlobalStateManager::ToggleAcceptingPlayers(bool bInAcceptingPlayers)
 {
-	UE_LOG(LogGlobalStateManager, Error, TEXT("Toggling accepting players %d"), AcceptingPlayers);
-	Worker_ComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
-	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
-	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+	if (!bHasLiveMapAuthority)
+	{
+		UE_LOG(LogGlobalStateManager, Error, TEXT("Tried to toggle AcceptingPlayers but we don't yet have authority. Trying again in 3 seconds."));
+		FTimerHandle RetryTimer;
+		TimerManager->SetTimer(RetryTimer, [this, bInAcceptingPlayers]()
+		{
+			ToggleAcceptingPlayers(bInAcceptingPlayers);
+		}, 3.f, false);
+	}
 
-	uint8_t AcceptingPlayersInt = uint8_t(AcceptingPlayers);
+	// Query that the GSM and PlayerSpawner exists, if they do, send the AcceptingPlayers component update.
+	// If they don't, try again after waiting a short time.
 
-	Schema_AddBool(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, AcceptingPlayersInt);
+	// GSM Constraint
+	Worker_ComponentConstraint GSMComponentConstraint{};
+	GSMComponentConstraint.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
 
-	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+	Worker_Constraint GSMConstraint;
+	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
+	GSMConstraint.component_constraint = GSMComponentConstraint;
+
+	// Spawner Constraint
+	Worker_ComponentConstraint SpatialSpawnerComponentConstraint{};
+	SpatialSpawnerComponentConstraint.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
+
+	Worker_Constraint SpatialSpawnerConstraint;
+	SpatialSpawnerConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
+	SpatialSpawnerConstraint.component_constraint = SpatialSpawnerComponentConstraint;
+
+	// Together
+	Worker_Constraint Constraints[2]{ GSMConstraint , SpatialSpawnerConstraint };
+	Worker_AndConstraint GSMAndSpawnerConstraint;
+	GSMAndSpawnerConstraint.constraint_count = 2;
+	GSMAndSpawnerConstraint.constraints = Constraints;
+
+	Worker_Constraint GSMAndSpawner;
+	GSMAndSpawner.constraint_type = WORKER_CONSTRAINT_TYPE_AND;
+	GSMAndSpawner.and_constraint = GSMAndSpawnerConstraint;
+
+	// Query
+	Worker_EntityQuery GSMAndSpawnerQuery{};
+	GSMAndSpawnerQuery.constraint = GSMConstraint;
+	GSMAndSpawnerQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
+
+	Worker_RequestId RequestID;
+	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMAndSpawnerQuery);
+
+	EntityQueryDelegate GSMAndSpawnerQueryDelegate;
+	GSMAndSpawnerQueryDelegate.BindLambda([this, bInAcceptingPlayers](Worker_EntityQueryResponseOp& Op)
+	{
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS || Op.result_count == 0)
+		{
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Tried to toggle AcceptingPlayers but the GSM or Spawner don't exist yet. Trying again in 3 seconds."));
+			FTimerHandle RetryTimer;
+			TimerManager->SetTimer(RetryTimer, [this, bInAcceptingPlayers]()
+			{
+				ToggleAcceptingPlayers(bInAcceptingPlayers);
+			}, 3.f, false);
+		}
+		else if (Op.result_count == 1)
+		{
+			// Send the component update that we can now accept players.
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Toggling accepting players %d"), bInAcceptingPlayers);
+			Worker_ComponentUpdate Update = {};
+			Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
+			Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
+			Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+			uint8_t AcceptingPlayersInt = uint8_t(bInAcceptingPlayers);
+
+			// Tomorrow Josh -- For some reason the Schema_AddBool is not actually adding a bool OR the update is losing the bool...
+			// Schema_AddBool(UpdateObject, 1, AcceptingPlayersInt);
+			Schema_AddBool(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, AcceptingPlayersInt);
+			check(Op.results->entity_id == GlobalStateManagerEntityId);
+
+			// Component updates are short circuited...
+			bAcceptingPlayers = bInAcceptingPlayers;
+			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+		}
+	});
+
+	Receiver->AddEntityQueryDelegate(RequestID, GSMAndSpawnerQueryDelegate);
 }
 
 void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel)
@@ -310,6 +391,7 @@ void UGlobalStateManager::QueryGSM()
 
 		if (Op.result_count == 0)
 		{
+			UE_LOG(LogGlobalStateManager, Error, TEXT("GSM not yet spawned. Retrying."));
 			RetryQueryGSM();
 		}
 
@@ -321,6 +403,7 @@ void UGlobalStateManager::QueryGSM()
 				Worker_ComponentData Data = Op.results[0].components[i];
 				if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL)
 				{
+					UE_LOG(LogGlobalStateManager, Error, TEXT("Applying MaptData via entity query delegate."));
 					ApplyMapData(Data);
 				}
 			}
@@ -413,7 +496,7 @@ Schema_ComponentData* Schema_DeepCopyComponentData(Schema_ComponentData* source)
 	return copy;
 }
 
-void UGlobalStateManager::LoadSnapshot()
+void UGlobalStateManager::LoadSnapshot(FString SnapshotName)
 {
 	// YOLO
 	Worker_ComponentVtable DefaultVtable{};
@@ -421,7 +504,11 @@ void UGlobalStateManager::LoadSnapshot()
 	Parameters.default_component_vtable = &DefaultVtable;
 
 	// TODO: Move the snapshot to a variable and get it from the `snapshot=` param in the URL.
+	FString SnapshotsDirectory = FPaths::ProjectContentDir().Append("Spatial/Snapshots/");
+	FString SnapshotPath = SnapshotsDirectory + SnapshotName;
+
 	Worker_SnapshotInputStream* Snapshot = Worker_SnapshotInputStream_Create("E:\\Projects\\UnrealGDKStarterProjectPlugin\\spatial\\snapshots\\BestMap.snapshot", &Parameters);
+	// JOSH TOMORROW - The default snapshot path needs moving into somewhere and then we need to use that with the snapshot name / map name.
 
 	FString Error = Worker_SnapshotInputStream_GetError(Snapshot);
 	if (!Error.IsEmpty())
@@ -462,7 +549,7 @@ void UGlobalStateManager::LoadSnapshot()
 		}
 		else
 		{
-			UE_LOG(LogGlobalStateManager, Error, TEXT(" Fucking error reading entity mate: %s"), *Error);
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Fucking error reading entity mate: %s"), *Error);
 			// Abort
 			Worker_SnapshotInputStream_Destroy(Snapshot);
 			return;
@@ -494,6 +581,7 @@ void UGlobalStateManager::LoadSnapshot()
 				{
 					// Save the ID in this class
 					GlobalStateManagerEntityId = EntityID;
+					UE_LOG(LogGlobalStateManager, Error, TEXT("GLOBAL STATE MANAGER WILL BE: %i"), EntityID);
 				}
 			}
 
@@ -501,7 +589,6 @@ void UGlobalStateManager::LoadSnapshot()
 			NetDriver->Connection->SendCreateEntityRequest(EntityToSpawn.Num(), EntityToSpawn.GetData(), &EntityID /**Reserved entity ID**/);
 		}
 
-		// Once all the requests have been sent we can start accepting players.
 		ToggleAcceptingPlayers(true);
 	});
 
@@ -511,3 +598,5 @@ void UGlobalStateManager::LoadSnapshot()
 	// Add the spawn delegate
 	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, SpawnEntitiesDelegate);
 }
+
+

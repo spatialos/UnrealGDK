@@ -47,11 +47,12 @@ public:
 	void SetDeploymentMapURL(FString MapURL);
 	void WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
-	void LoadSnapshot();
+	void LoadSnapshot(FString SnapshotName);
 	void ToggleAcceptingPlayers(bool bAcceptingPlayers);
 
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers = false;
+	bool bHasLiveMapAuthority = false;
 
 	AcceptingPlayersDelegate AcceptingPlayersChanged;
 

@@ -20,6 +20,8 @@ public:
 #endif
 	virtual void StartGameInstance() override;
 
+	bool bIsWorkerAuthorativeOverGSM;
+
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.

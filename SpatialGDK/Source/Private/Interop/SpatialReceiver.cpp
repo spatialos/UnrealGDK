@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
@@ -220,6 +221,14 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
 		}
+	}
+
+	if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		// Make sure the GameInstance knows that this worker is now authoritative over the GSM (used for server travel)
+		Cast<USpatialGameInstance>(NetDriver->GetWorld()->GetGameInstance())->bIsWorkerAuthorativeOverGSM = true;
+		// If we are authoritative over the GSM then we can now toggle accepting players.
+		GlobalStateManager->bHasLiveMapAuthority = true;
 	}
 }
 
@@ -655,7 +664,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 {
-	if (Op.entity_id == SpatialConstants::INITIAL_SPAWNER_ENTITY_ID && Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
+	if (Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 	{
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnResponse(Op);
 	}

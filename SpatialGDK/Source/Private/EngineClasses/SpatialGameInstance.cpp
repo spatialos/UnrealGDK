@@ -78,7 +78,6 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 	WorldContext->PendingNetGame->Initialize(URL);
 	WorldContext->PendingNetGame->InitNetDriver();
 
-
 	bool bOk = true;
 
 	if (!WorldContext->PendingNetGame->NetDriver)
