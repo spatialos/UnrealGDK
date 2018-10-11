@@ -11,6 +11,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPlayerSpawner, Log, All);
 
+class FTimerManager;
 class USpatialNetDriver;
 
 UCLASS()
@@ -20,7 +21,7 @@ class SPATIALGDK_API USpatialPlayerSpawner : public UObject
 	
 public:
 
-	void Init(USpatialNetDriver* NetDriver, class FTimerManager* TimerManager);
+	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
 
 	// Server
 	void ReceivePlayerSpawnRequest(FString URLString, const char* CallerAttribute, Worker_RequestId RequestId);
@@ -33,6 +34,6 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 	
-	class FTimerManager* TimerManager;
+	FTimerManager* TimerManager;
 	int NumberOfAttempts;
 };
