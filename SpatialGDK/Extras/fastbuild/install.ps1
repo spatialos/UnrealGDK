@@ -5,7 +5,7 @@ param (
 Import-Module BitsTransfer
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-$fileshare="\\filesharing2\files"
+$fileshare="\\lonv-file-01.corp.improbable.io"
 $version="v0.96"
 $rootPath=[System.Io.Path]::GetFullPath("$env:HOMEDRIVE:\tools\fastbuild")
 
@@ -37,7 +37,7 @@ $ar = New-Object System.Security.AccessControl.FileSystemAccessRule( `
 $ar = New-Object System.Security.AccessControl.FileSystemAccessRule( `
 	"BUILTIN\Users", "Write", "Allow")
 $acl.AddAccessRule($ar)
-Set-Acl -Path $rootPath -AclObject $acl
+Set-Acl -Path $rootPath -AclObject $acl | Out-Null
 
 # FBuildWorker launches a detached sub-process to avoid losing data when builds are canceled.
 # This copy is the one that accesses the network, so that's what we add to the firewall.
@@ -45,6 +45,7 @@ $fbuildWorkerCopyPath = [System.IO.Path]::GetFullPath("$rootPath\FBuildWorker.ex
 
 $port="31264"
 
+Write-Host "Adding to firewall..."
 New-NetFirewallRule -Name "FBuild (Outbound)" `
     -DisplayName "FBuild (Outbound)" `
     -Group "FASTBuild" `
@@ -55,7 +56,7 @@ New-NetFirewallRule -Name "FBuild (Outbound)" `
     -LocalPort $port `
     -Program "$fbuildPath" `
     -Action Allow `
-    -ErrorAction Stop
+    -ErrorAction Stop | Out-Null
 
 New-NetFirewallRule -Name "FBuildWorker (Outbound)" `
     -DisplayName "FBuildWorker (Outbound)" `
@@ -67,7 +68,7 @@ New-NetFirewallRule -Name "FBuildWorker (Outbound)" `
     -LocalPort $port `
     -Program "$fbuildWorkerCopyPath" `
     -Action Allow `
-    -ErrorAction Stop
+    -ErrorAction Stop | Out-Null
 
 New-NetFirewallRule -Name "FBuildWorker (Inbound)" `
     -DisplayName "FBuildWorker (Inbound)" `
@@ -79,7 +80,7 @@ New-NetFirewallRule -Name "FBuildWorker (Inbound)" `
     -LocalPort $port `
     -Program "$fbuildWorkerCopyPath" `
     -Action Allow `
-    -ErrorAction Stop
+    -ErrorAction Stop | Out-Null
 
 New-NetFirewallRule -Name "FBuildWorker.Copy (Outbound)" `
     -DisplayName "FBuildWorker.Copy (Outbound)" `
@@ -91,7 +92,7 @@ New-NetFirewallRule -Name "FBuildWorker.Copy (Outbound)" `
     -LocalPort $port `
     -Program "$fbuildWorkerPath" `
     -Action Allow `
-    -ErrorAction Stop
+    -ErrorAction Stop | Out-Null
 
 New-NetFirewallRule -Name "FBuildWorker.Copy (Inbound)" `
     -DisplayName "FBuildWorker.Copy (Inbound)" `
@@ -103,18 +104,21 @@ New-NetFirewallRule -Name "FBuildWorker.Copy (Inbound)" `
     -LocalPort $port `
     -Program "$fbuildWorkerPath" `
     -Action Allow `
-    -ErrorAction Stop
+    -ErrorAction Stop | Out-Null
 
+Write-Host "Setting environment variables..."
 [System.Environment]::SetEnvironmentVariable("FASTBUILD_EXE_PATH", $fbuildPath, [System.EnvironmentVariableTarget]::Machine)
-[System.Environment]::SetEnvironmentVariable("FASTBUILD_CACHE_PATH", "$fileshare\FastBuild_Cache", [System.EnvironmentVariableTarget]::Machine)
-[System.Environment]::SetEnvironmentVariable("FASTBUILD_BROKERAGE_PATH", "$fileshare\FastBuild_Brokerage", [System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable("FASTBUILD_CACHE_PATH", "$fileshare\fastbuild\Cache", [System.EnvironmentVariableTarget]::Machine)
+[System.Environment]::SetEnvironmentVariable("FASTBUILD_BROKERAGE_PATH", "$fileshare\fastbuild\Brokerage", [System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable("FASTBUILD_CACHE_MODE", "rw", [System.EnvironmentVariableTarget]::Machine)
 
 refreshenv
 
+Write-Host "Setting up FASTBuild to startup on login..."
+
 if ($service) {
     # Install a service manager to wrap FBuildWorker so it can run as a service.
-    #http ://nssm.cc
+    # http://nssm.cc
     Start-Process "choco" "install","nssm","-y","--version=2.24.101.20180116" -Wait -ErrorAction Stop -NoNewWindow
     refreshenv
 
@@ -141,5 +145,8 @@ if ($service) {
         -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run\ `
         -Name "FBuildWorker" `
         -Value """$fbuildWorkerPath""" -Force
+
+    Start-Process "$fbuildWorkerPath" -ErrorAction Stop
 }
 
+Write-Host "Finished!" -ForegroundColor Green
