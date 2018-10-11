@@ -63,7 +63,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	else
 	{
 		// The server should already have a world.
-		SnapshotToLoad = URL.GetOption(TEXT("snapshot"), TEXT(""));
+		SnapshotToLoad = URL.GetOption(TEXT("snapshot="), TEXT(""));
 		OnMapLoaded(GetWorld());
 	}
 

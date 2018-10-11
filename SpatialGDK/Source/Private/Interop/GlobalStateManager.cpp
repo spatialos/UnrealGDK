@@ -505,9 +505,9 @@ void UGlobalStateManager::LoadSnapshot(FString SnapshotName)
 
 	// TODO: Move the snapshot to a variable and get it from the `snapshot=` param in the URL.
 	FString SnapshotsDirectory = FPaths::ProjectContentDir().Append("Spatial/Snapshots/");
-	FString SnapshotPath = SnapshotsDirectory + SnapshotName;
+	FString SnapshotPath = SnapshotsDirectory + SnapshotName + ".snapshot";;
 
-	Worker_SnapshotInputStream* Snapshot = Worker_SnapshotInputStream_Create("E:\\Projects\\UnrealGDKStarterProjectPlugin\\spatial\\snapshots\\BestMap.snapshot", &Parameters);
+	Worker_SnapshotInputStream* Snapshot = Worker_SnapshotInputStream_Create(TCHAR_TO_UTF8(*SnapshotPath), &Parameters);
 	// JOSH TOMORROW - The default snapshot path needs moving into somewhere and then we need to use that with the snapshot name / map name.
 
 	FString Error = Worker_SnapshotInputStream_GetError(Snapshot);
