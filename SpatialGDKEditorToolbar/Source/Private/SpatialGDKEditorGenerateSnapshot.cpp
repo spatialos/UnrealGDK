@@ -133,7 +133,6 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Data.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 	Schema_Object* MapObject = Schema_AddObject(ComponentObject, 1);
-	AddStringToSchema(MapObject, 1, TEXT("BestMap"));
 	Schema_AddBool(MapObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(false));
 
 	Components.Add(Data);

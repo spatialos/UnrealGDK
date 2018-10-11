@@ -37,7 +37,6 @@ void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
 
 void UGlobalStateManager::ApplyMapData(const Worker_ComponentData& Data)
 {
-	UE_LOG(LogGlobalStateManager, Log, TEXT("ApplyingMapData"));
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	// Set the Map URL.
@@ -267,10 +266,13 @@ void UGlobalStateManager::ToggleAcceptingPlayers(bool bInAcceptingPlayers)
 
 void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority)
 {
-	// Make sure the GameInstance knows that this worker is now authoritative over the GSM (used for server travel)
+	// Make sure the GameInstance knows that this worker is now authoritative over the GSM (used for server travel).
+	// The GameInstance is the only persistent object during server travel.
+	// bIsWorkerAuthorativeOverGSM exists to inform the worker that was previously authoritative over the GSM that it has the responsibility of loading the new snapshot.
 	Cast<USpatialGameInstance>(NetDriver->GetWorld()->GetGameInstance())->bIsWorkerAuthorativeOverGSM = bWorkerAuthority;
 
-	// Also update this instance of the GSM that it has current authority (used for accepting players toggle)
+	// Also update this instance of the GSM that it has current authority (used for accepting players toggle).
+	// The instance of each GSM is destroyed on server travel and a new one is made, hence the need for 'live' authority.
 	bHasLiveMapAuthority = bWorkerAuthority;
 
 	OnAuthorityChanged.ExecuteIfBound(bWorkerAuthority);
@@ -357,6 +359,7 @@ void UGlobalStateManager::QueryGSM(bool bWithRetry)
 			UE_LOG(LogGlobalStateManager, Error, TEXT("Could not find GSM via entity query: %s"), Op.message);
 			if (bWithRetry)
 			{
+				UE_LOG(LogGlobalStateManager, Error, TEXT("Retrying entity query for the GSM in %d seconds"), 3);
 				FTimerHandle RetryTimer;
 				TimerManager->SetTimer(RetryTimer, [this, bWithRetry]()
 				{
@@ -367,13 +370,12 @@ void UGlobalStateManager::QueryGSM(bool bWithRetry)
 
 		if (Op.result_count == 1)
 		{
-			UE_LOG(LogGlobalStateManager, Error, TEXT("Found GSM!!"));
 			for (uint32_t i = 0; i < Op.results->component_count; i++)
 			{
 				Worker_ComponentData Data = Op.results[0].components[i];
 				if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL)
 				{
-					UE_LOG(LogGlobalStateManager, Error, TEXT("Applying MaptData via entity query delegate."));
+					UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager found via entity query. Applying MapData.."));
 					ApplyMapData(Data);
 				}
 			}
@@ -468,17 +470,14 @@ Schema_ComponentData* Schema_DeepCopyComponentData(Schema_ComponentData* source)
 
 void UGlobalStateManager::LoadSnapshot(FString SnapshotName)
 {
-	// YOLO
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_SnapshotParameters Parameters{};
 	Parameters.default_component_vtable = &DefaultVtable;
 
-	// TODO: Move the snapshot to a variable and get it from the `snapshot=` param in the URL.
 	FString SnapshotsDirectory = FPaths::ProjectContentDir().Append("Spatial/Snapshots/");
 	FString SnapshotPath = SnapshotsDirectory + SnapshotName + ".snapshot";;
 
 	Worker_SnapshotInputStream* Snapshot = Worker_SnapshotInputStream_Create(TCHAR_TO_UTF8(*SnapshotPath), &Parameters);
-	// JOSH TOMORROW - The default snapshot path needs moving into somewhere and then we need to use that with the snapshot name / map name.
 
 	FString Error = Worker_SnapshotInputStream_GetError(Snapshot);
 	if (!Error.IsEmpty())
