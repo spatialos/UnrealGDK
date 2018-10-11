@@ -49,6 +49,7 @@ public:
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
 	void LoadSnapshot(FString SnapshotName);
 	void ToggleAcceptingPlayers(bool bAcceptingPlayers);
+	void AuthorityChanged(bool bWorkerAuthority);
 
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers = false;
@@ -57,8 +58,6 @@ public:
 	AcceptingPlayersDelegate AcceptingPlayersChanged;
 	AuthorityChangedDelegate OnAuthorityChanged;
 
-
-	void AuthorityChanged(bool param1);
 private:
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
 

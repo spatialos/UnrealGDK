@@ -52,7 +52,6 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 	AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
 
-	// Josh TODO: - Refactor this.
 	Worker_ComponentConstraint SpatialSpawnerComponentConstraint{};
 	SpatialSpawnerComponentConstraint.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 
@@ -70,19 +69,13 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	EntityQueryDelegate SpatialSpawnerQueryDelegate;
 	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID, CommandRequest](Worker_EntityQueryResponseOp& Op)
 	{
-		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS || Op.result_count == 0)
 		{
 			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Could not find SpatialSpawner via entity query: %s"), Op.message);
 		}
 
-		if (Op.result_count == 0)
+		if (Op.result_count == 1)
 		{
-			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Found no SpatialSpawner"));
-		}
-
-		if (Op.result_count >= 1)
-		{
-			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Found SpatialSpawner!! EntityID: %i"), Op.results[0].entity_id);
 			NetDriver->Connection->SendCommandRequest(Op.results[0].entity_id, &CommandRequest, 1);
 		}
 	});

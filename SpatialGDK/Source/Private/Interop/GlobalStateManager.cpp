@@ -237,9 +237,9 @@ void UGlobalStateManager::ToggleAcceptingPlayers(bool bInAcceptingPlayers)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS || Op.result_count == 0)
 		{
-			UE_LOG(LogGlobalStateManager, Error, TEXT("Tried to toggle AcceptingPlayers but the GSM doesn't exist yet. Trying again in 3 seconds."));
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Tried to toggle AcceptingPlayers but the query for the GSM failed. Trying again in 3 seconds."));
 			FTimerHandle RetryTimer;
-			TimerManager->SetTimer(RetryTimer, [this, bInAcceptingPlayers]()
+			TimerManager->SetTimer(RetryTimer, [this, bInAcceptingPlayers]() 
 			{
 				ToggleAcceptingPlayers(bInAcceptingPlayers);
 			}, 3.f, false);
@@ -252,6 +252,11 @@ void UGlobalStateManager::ToggleAcceptingPlayers(bool bInAcceptingPlayers)
 			Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
 			Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
 			Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+			// Set the map URL on the GSM.
+			AddStringToSchema(UpdateObject, 1, NetDriver->GetWorld()->URL.ToString());
+
+			// Set the AcceptingPlayers state on the GSM
 			Schema_AddBool(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(bInAcceptingPlayers));
 			check(Op.results->entity_id == GlobalStateManagerEntityId);
 

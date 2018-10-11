@@ -267,16 +267,16 @@ void USpatialNetDriver::OnConnected()
 	Receiver->Init(this, TimerManager);
 	GlobalStateManager->Init(this, TimerManager);
 
-	// Josh - duplicated this and moved it below since the Receiver needs to be initialized to spawn now.
 	// If we're the client, we can now ask the server to spawn our controller.
 	if (ServerConnection)
 	{
+		// If we know the GSM is already accepting players, simply spawn.
 		if (GlobalStateManager->bAcceptingPlayers)
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 		}
 
-		// We should have a streaming query for the GSM. Simply wait for the accepting_players to be true.
+		// Bind a delegate to spawn this player if AcceptingPlayers becomes true.
 		auto PlayerSpawnerRef = TWeakObjectPtr<USpatialPlayerSpawner>(PlayerSpawner);
 		GlobalStateManager->AcceptingPlayersChanged.BindLambda([PlayerSpawnerRef](bool bAcceptingPlayers) {
 			if (bAcceptingPlayers)
@@ -286,7 +286,7 @@ void USpatialNetDriver::OnConnected()
 			}
 		});
 
-		// Get the state of the GSM for map and accepting players.
+		// Begin querying the state of the GSM so we know if / when AcceptingPlayers changes.
 		GlobalStateManager->QueryGSM(true /*bWithRetry*/);
 	}
 
