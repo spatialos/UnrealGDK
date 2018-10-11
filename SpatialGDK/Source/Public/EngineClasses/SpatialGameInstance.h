@@ -20,6 +20,7 @@ public:
 #endif
 	virtual void StartGameInstance() override;
 
+	// bIsWorkerAuthorativeOverGSM exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
 	bool bIsWorkerAuthorativeOverGSM;
 
 protected:

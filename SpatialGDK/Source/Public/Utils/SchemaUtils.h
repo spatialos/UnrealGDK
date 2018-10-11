@@ -167,4 +167,18 @@ inline StringToEntityMap GetStringToEntityMapFromSchema(Schema_Object* Object, S
 	return Map;
 }
 
+inline void DeepCopySchemaObject(Schema_Object* Source, Schema_Object* Target) {
+	auto Length = Schema_GetWriteBufferLength(Source);
+	auto Buffer = Schema_AllocateBuffer(Target, Length);
+	Schema_WriteToBuffer(Source, Buffer);
+	Schema_Clear(Target);
+	Schema_MergeFromBuffer(Target, Buffer, Length);
+}
+
+inline Schema_ComponentData* DeepCopyComponentData(Schema_ComponentData* Source) {
+	auto* Copy = Schema_CreateComponentData(Schema_GetComponentDataComponentId(Source));
+	DeepCopySchemaObject(Schema_GetComponentDataFields(Source), Schema_GetComponentDataFields(Copy));
+	return Copy;
+}
+
 }
