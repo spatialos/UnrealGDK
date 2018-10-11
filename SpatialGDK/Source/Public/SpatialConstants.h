@@ -39,7 +39,7 @@ namespace SpatialConstants
 
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;
-	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 10u;
+	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
 	const FUnrealObjectRef NULL_OBJECT_REF(0, 0);
 	const FUnrealObjectRef UNRESOLVED_OBJECT_REF(0, 1);

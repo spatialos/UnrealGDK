@@ -7,8 +7,6 @@
 
 #include "Utils/SchemaUtils.h"
 
-#include "EngineClasses/SpatialNetDriver.h" // TODO: Remove this.
-
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
@@ -18,6 +16,7 @@ class USpatialNetDriver;
 class USpatialActorChannel;
 class USpatialStaticComponentView;
 class USpatialSender;
+class USpatialReceiver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
 

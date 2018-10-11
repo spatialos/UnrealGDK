@@ -53,8 +53,6 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	FTCHARToUTF8 WorkerTypeCStr(*ReceptionistConfig.WorkerType);
 	ConnectionParams.worker_type = WorkerTypeCStr.Get();
 	ConnectionParams.enable_protocol_logging_at_startup = ReceptionistConfig.EnableProtocolLoggingAtStartup;
-	//ConnectionParams.enable_protocol_logging_at_startup = true;
-	//ConnectionParams.protocol_logging.log_prefix = "E:\\Projects\\UnrealGDKStarterProjectPlugin\\logs\\protocol";
 
 	Worker_ComponentVtable DefaultVtable = {};
 	ConnectionParams.component_vtable_count = 0;

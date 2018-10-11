@@ -5,14 +5,15 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Utils/SchemaUtils.h"
-
-#include "EngineClasses/SpatialNetDriver.h" // TODO: Remove this.
 
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
 
 #include "SnapshotManager.generated.h"
+
+class UGlobalStateManager;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSnapshotManager, Log, All)
 

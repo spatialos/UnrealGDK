@@ -3,18 +3,11 @@
 #include "SnapshotManager.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
-#include "EngineClasses/SpatialActorChannel.h"
-#include "EngineClasses/SpatialNetConnection.h"
-#include "EngineClasses/SpatialPackageMapClient.h"
-#include "EngineClasses/SpatialGameInstance.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialReceiver.h"
-#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityRegistry.h"
 #include "Utils/SchemaUtils.h"
-#include "Runtime/Engine/Public/TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogSnapshotManager);
 

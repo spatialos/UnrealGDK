@@ -127,18 +127,16 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(improbable::UnrealMetadata().CreateUnrealMetadataData());
 	Components.Add(CreateGlobalStateManagerData());
 
-	// Add the map name. TODO: Refactor.
-	Worker_ComponentData Data;
-	Data.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
-	Data.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+	// Add the accepting players state of the GSM.
+	Worker_ComponentData MapData;
+	MapData.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
+	MapData.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(MapData.schema_type);
 	Schema_Object* MapObject = Schema_AddObject(ComponentObject, 1);
 	Schema_AddBool(MapObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(false));
+	Components.Add(MapData);
 
-	Components.Add(Data);
-
-	// TODO: UNR-??? There is a bug with read permissions for streaming queries at the moment.
-	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();

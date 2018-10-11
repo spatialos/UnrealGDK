@@ -18,7 +18,7 @@
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
 using namespace improbable;
- 
+
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
@@ -54,21 +54,20 @@ void UGlobalStateManager::ApplyMapData(const Worker_ComponentData& Data)
 		{
 			if (bDataAcceptingPlayers != bAcceptingPlayers)
 			{
-				UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager ApplyMapData - AcceptingPlayers: %s"), bDataAcceptingPlayers ? TEXT("true") : TEXT("false"));
+				UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager ApplyMapData - AcceptingPlayers: %s"), bDataAcceptingPlayers ? TEXT("true") : TEXT("false"));
 				bAcceptingPlayers = bDataAcceptingPlayers;
 				AcceptingPlayersChanged.ExecuteIfBound(bAcceptingPlayers);
 			}
 		}
 		else
 		{
-			// TODO: Refactor this function elsewhere.
 			if (!NetDriver->IsServer())
 			{
 				// TODO: UNR-??? - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
 				// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
 				// This means that the clients never actually receive updates or data on the GSM. To get around this we are making timed entity queries to
 				// find the state of the GSM and the accepting players. Remove this work-around when the runtime bug is fixed.
-				UE_LOG(LogGlobalStateManager, Error, TEXT("ApplyMapData - Not yet accepting new players, trying again..."));
+				UE_LOG(LogGlobalStateManager, Warning, TEXT("ApplyMapData - Not yet accepting new players, trying again..."));
 				QueryGSM(true /*bWithRetry*/);
 			}
 		}
@@ -99,7 +98,7 @@ void UGlobalStateManager::ApplyMapUpdate(const Worker_ComponentUpdate& Update)
 		bool bUpdateAcceptingPlayers = bool(Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID));
 		if (bUpdateAcceptingPlayers != bAcceptingPlayers)
 		{
-			UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager Update - AcceptingPlayers: %s"), bUpdateAcceptingPlayers ? TEXT("true") : TEXT("false"));
+			UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - AcceptingPlayers: %s"), bUpdateAcceptingPlayers ? TEXT("true") : TEXT("false"));
 			bAcceptingPlayers = bUpdateAcceptingPlayers;
 			AcceptingPlayersChanged.ExecuteIfBound(bAcceptingPlayers);
 		}
@@ -274,12 +273,9 @@ void UGlobalStateManager::ToggleAcceptingPlayers(bool bInAcceptingPlayers)
 	}
 
 	// GSM Constraint
-	Worker_ComponentConstraint GSMComponentConstraint{};
-	GSMComponentConstraint.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
-
 	Worker_Constraint GSMConstraint;
 	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-	GSMConstraint.component_constraint = GSMComponentConstraint;
+	GSMConstraint.component_constraint.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
 
 	// GSM Query
 	Worker_EntityQuery GSMQuery{};
@@ -304,7 +300,7 @@ void UGlobalStateManager::ToggleAcceptingPlayers(bool bInAcceptingPlayers)
 		else if (Op.result_count == 1)
 		{
 			// Send the component update that we can now accept players.
-			UE_LOG(LogGlobalStateManager, Error, TEXT("Toggling accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
+			UE_LOG(LogGlobalStateManager, Log, TEXT("Toggling accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
 			Worker_ComponentUpdate Update = {};
 			Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
 			Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
@@ -352,7 +348,7 @@ void UGlobalStateManager::QueryGSM(bool bWithRetry)
 			UE_LOG(LogGlobalStateManager, Error, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
 			if (bWithRetry)
 			{
-				UE_LOG(LogGlobalStateManager, Error, TEXT("Retrying entity query for the GSM in %d seconds"), 3);
+				UE_LOG(LogGlobalStateManager, Warning, TEXT("Retrying entity query for the GSM in 3 seconds"));
 				FTimerHandle RetryTimer;
 				TimerManager->SetTimer(RetryTimer, [this, bWithRetry]()
 				{
@@ -368,7 +364,7 @@ void UGlobalStateManager::QueryGSM(bool bWithRetry)
 				Worker_ComponentData Data = Op.results[0].components[i];
 				if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL)
 				{
-					UE_LOG(LogGlobalStateManager, Error, TEXT("GlobalStateManager found via entity query. Applying MapData.."));
+					UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager found via entity query. Applying MapData."));
 					ApplyMapData(Data);
 				}
 			}
@@ -394,6 +390,6 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority)
 
 void UGlobalStateManager::SetDeploymentMapURL(FString MapURL)
 {
-	UE_LOG(LogGlobalStateManager, Error, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
 }

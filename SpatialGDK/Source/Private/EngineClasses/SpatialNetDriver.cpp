@@ -115,25 +115,20 @@ void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBas
 
 	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), GameMode->GetWorld()->IsPlayInEditor());
 
-	UE_LOG(LogGameMode, Error, TEXT("- Clients told to disconnect"));
 	// Notify clients we're switching level and give them time to receive.
 	FString URLMod = URL;
 	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, NextMapGuid, bSeamless, bAbsolute);
 
-	// Set up delegates. Order of WipeWorld -> LoadSnapshot -> FinishServerTravel.
-	UE_LOG(LogGameMode, Error, TEXT("- Wiping the world"), *URL);
+	UE_LOG(LogGameMode, Warning, TEXT("SpatialServerTravel - Wiping the world"), *URL);
 	UWorld* World = GameMode->GetWorld();
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	ENetMode NetMode = GameMode->GetNetMode();
 
 	// FinishServerTravel - Allows Unreal to finish it's normal server travel.
 	USpatialNetDriver::ServerTravelDelegate FinishServerTravel;
-
-	// Josh - Moved this outside of the lambda (could not access AGameModeBase)
-	ENetMode NetMode = GameMode->GetNetMode();
-
 	FinishServerTravel.BindLambda([World, NetDriver, URL, NetMode, bSeamless, bAbsolute] {
 
-		UE_LOG(LogGameMode, Log, TEXT("- ProcessServerTravel: %s"), *URL);
+		UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Finishing Server Travel : %s"), *URL);
 		check(World);
 		World->NextURL = URL;
 
@@ -205,11 +200,11 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		}
 	}
 
-	// Bind the ProcessServerTravel delegate to the spatial variant.
+	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and UseSpatialNetworking is enabled that we can travel properly.
 	LoadedWorld->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
 	Connect();
 }
- 
+
 void USpatialNetDriver::Connect()
 {
 	Connection->OnConnected.BindLambda([this]

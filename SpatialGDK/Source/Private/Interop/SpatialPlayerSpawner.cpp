@@ -52,12 +52,10 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 	AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
 
-	Worker_ComponentConstraint SpatialSpawnerComponentConstraint{};
-	SpatialSpawnerComponentConstraint.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
-
+	// Send an entity query for the SpatialSpawner and bind a delegate so that once it's found, we send a spawn command.
 	Worker_Constraint SpatialSpawnerConstraint;
 	SpatialSpawnerConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
-	SpatialSpawnerConstraint.component_constraint = SpatialSpawnerComponentConstraint;
+	SpatialSpawnerConstraint.component_constraint.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 
 	Worker_EntityQuery SpatialSpawnerQuery{};
 	SpatialSpawnerQuery.constraint = SpatialSpawnerConstraint;
