@@ -837,14 +837,13 @@ void USpatialReceiver::OnReserveEntityIdsResponse(Worker_ReserveEntityIdsRespons
 
 void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 {
-	// Josh - TODO: Remove this debugging code.
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("FAILED create entity response: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Create entity request failed: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("SUCCESS create entity response: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request succeeded: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 	}
 
 	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
@@ -870,7 +869,7 @@ void USpatialReceiver::OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op)
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("EntityQuery failed: request id: %d, message: %s"), Op.request_id, *FString(Op.message));
+		UE_LOG(LogSpatialReceiver, Error, TEXT("EntityQuery failed: request id: %d, message: %s"), Op.request_id, UTF8_TO_TCHAR(Op.message));
 	}
 }
 

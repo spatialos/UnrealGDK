@@ -45,9 +45,7 @@ public:
 
 	void QueryGSM(bool bWithRetry);
 	void SetDeploymentMapURL(FString MapURL);
-	void WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate);
-	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
-	void LoadSnapshot(FString SnapshotName);
+
 	void ToggleAcceptingPlayers(bool bAcceptingPlayers);
 	void AuthorityChanged(bool bWorkerAuthority);
 
@@ -57,6 +55,8 @@ public:
 
 	AcceptingPlayersDelegate AcceptingPlayersChanged;
 	AuthorityChangedDelegate OnAuthorityChanged;
+
+	Worker_EntityId GlobalStateManagerEntityId;
 
 private:
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
@@ -75,8 +75,6 @@ private:
 	USpatialReceiver* Receiver;
 
 	StringToEntityMap SingletonNameToEntityId;
-
-	Worker_EntityId GlobalStateManagerEntityId;
 
 	FTimerManager* TimerManager;
 };

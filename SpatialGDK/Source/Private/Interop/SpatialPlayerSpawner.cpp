@@ -71,7 +71,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS || Op.result_count == 0)
 		{
-			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Could not find SpatialSpawner via entity query: %s"), Op.message);
+			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Could not find SpatialSpawner via entity query: %s"), UTF8_TO_TCHAR(Op.message));
 		}
 
 		if (Op.result_count == 1)

@@ -18,6 +18,8 @@
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialTypebindingManager.h"
 #include "Interop/SpatialDispatcher.h"
+#include "Interop/SpatialView.h"
+#include "Interop/SnapshotManager.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -62,8 +64,10 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	}
 	else
 	{
-		// The server should already have a world.
+		// Extract the snapshot to load (if any) so that once we are connected to a deployment we can load that snapshot into the world.
 		SnapshotToLoad = URL.GetOption(TEXT("snapshot="), TEXT(""));
+
+		// The server should already have a world.
 		OnMapLoaded(GetWorld());
 	}
 
@@ -111,7 +115,6 @@ void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBas
 
 	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), GameMode->GetWorld()->IsPlayInEditor());
 
-	UE_LOG(LogGameMode, Error, TEXT("Hiacking server travel: %s"), *URL);
 	UE_LOG(LogGameMode, Error, TEXT("- Clients told to disconnect"));
 	// Notify clients we're switching level and give them time to receive.
 	FString URLMod = URL;
@@ -165,7 +168,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	// Josh - Moved this earlier to prevent accidental changes in connection when we've already re-connected.
 	// Handle Spatial connection configurations.
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
 
@@ -233,7 +235,11 @@ void USpatialNetDriver::OnConnected()
 	Receiver = NewObject<USpatialReceiver>();
 	GlobalStateManager = NewObject<UGlobalStateManager>();
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
+<<<<<<< HEAD
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
+=======
+	SnapshotManager = NewObject<USnapshotManager>();
+>>>>>>> Created SnapshotManager to handle snapshot code, refactored code out of GSM
 
 	PlayerSpawner->Init(this, TimerManager);
 
@@ -266,6 +272,7 @@ void USpatialNetDriver::OnConnected()
 	Sender->Init(this);
 	Receiver->Init(this, TimerManager);
 	GlobalStateManager->Init(this, TimerManager);
+	SnapshotManager->Init(this, GlobalStateManager);
 
 	// If we're the client, we can now ask the server to spawn our controller.
 	if (ServerConnection)
@@ -276,7 +283,7 @@ void USpatialNetDriver::OnConnected()
 			PlayerSpawner->SendPlayerSpawnRequest();
 		}
 
-		// Bind a delegate to spawn this player if AcceptingPlayers becomes true.
+		// Bind a delegate to spawn this player if AcceptingPlayers changes to true.
 		auto PlayerSpawnerRef = TWeakObjectPtr<USpatialPlayerSpawner>(PlayerSpawner);
 		GlobalStateManager->AcceptingPlayersChanged.BindLambda([PlayerSpawnerRef](bool bAcceptingPlayers) {
 			if (bAcceptingPlayers)
@@ -286,7 +293,7 @@ void USpatialNetDriver::OnConnected()
 			}
 		});
 
-		// Begin querying the state of the GSM so we know if / when AcceptingPlayers changes.
+		// Begin querying the state of the GSM so we know the state of AcceptingPlayers.
 		GlobalStateManager->QueryGSM(true /*bWithRetry*/);
 	}
 
@@ -294,7 +301,7 @@ void USpatialNetDriver::OnConnected()
 	if(!ServerConnection && !SnapshotToLoad.IsEmpty() && Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bIsWorkerAuthorativeOverGSM)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker authoriative over the GSM is loading snapshot: %s"), *SnapshotToLoad);
-		GlobalStateManager->LoadSnapshot(SnapshotToLoad);
+		SnapshotManager->LoadSnapshot(SnapshotToLoad);
 	}
 	else if (!ServerConnection)
 	{
@@ -1286,5 +1293,5 @@ USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_Entity
 void USpatialNetDriver::WipeWorld(const USpatialNetDriver::ServerTravelDelegate& LoadSnapshotAfterWorldWipe)
 {
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Wiping world!"));
-	GlobalStateManager->WorldWipe(LoadSnapshotAfterWorldWipe);
+	SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 }
