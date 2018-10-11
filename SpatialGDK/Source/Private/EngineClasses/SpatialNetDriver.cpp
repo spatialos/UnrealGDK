@@ -287,7 +287,7 @@ void USpatialNetDriver::OnConnected()
 		});
 
 		// Get the state of the GSM for map and accepting players.
-		GlobalStateManager->QueryGSM();
+		GlobalStateManager->QueryGSM(true /*bWithRetry*/);
 	}
 
 	// Here if we are a server and this is server travel (there is a snapshot to load) we want to load the snapshot.
@@ -298,7 +298,14 @@ void USpatialNetDriver::OnConnected()
 	}
 	else if (!ServerConnection)
 	{
-		GlobalStateManager->ToggleAcceptingPlayers(true);
+		// If we already have authority over the GSM then toggle accepting players.
+		if(GlobalStateManager->bHasLiveMapAuthority)
+		{
+			GlobalStateManager->ToggleAcceptingPlayers(true);
+		}
+
+		// Set a delegate which toggles accepting players when we receive authority changes over the GSM.
+		GlobalStateManager->OnAuthorityChanged.BindUObject(GlobalStateManager, &UGlobalStateManager::ToggleAcceptingPlayers);
 	}
 }
 

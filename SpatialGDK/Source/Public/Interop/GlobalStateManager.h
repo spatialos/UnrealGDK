@@ -22,6 +22,7 @@ class USpatialSender;
 DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
 
 DECLARE_DELEGATE_OneParam(AcceptingPlayersDelegate, bool);
+DECLARE_DELEGATE_OneParam(AuthorityChangedDelegate, bool);
 
 UCLASS()
 class SPATIALGDK_API UGlobalStateManager : public UObject
@@ -42,8 +43,7 @@ public:
 
 	bool IsSingletonEntity(Worker_EntityId EntityId);
 
-	void QueryGSM();
-	void RetryQueryGSM();
+	void QueryGSM(bool bWithRetry);
 	void SetDeploymentMapURL(FString MapURL);
 	void WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
@@ -55,7 +55,10 @@ public:
 	bool bHasLiveMapAuthority = false;
 
 	AcceptingPlayersDelegate AcceptingPlayersChanged;
+	AuthorityChangedDelegate OnAuthorityChanged;
 
+
+	void AuthorityChanged(bool param1);
 private:
 	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
 

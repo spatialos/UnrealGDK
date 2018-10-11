@@ -225,10 +225,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 
 	if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		// Make sure the GameInstance knows that this worker is now authoritative over the GSM (used for server travel)
-		Cast<USpatialGameInstance>(NetDriver->GetWorld()->GetGameInstance())->bIsWorkerAuthorativeOverGSM = true;
-		// If we are authoritative over the GSM then we can now toggle accepting players.
-		GlobalStateManager->bHasLiveMapAuthority = true;
+		GlobalStateManager->AuthorityChanged(true);
 	}
 }
 
