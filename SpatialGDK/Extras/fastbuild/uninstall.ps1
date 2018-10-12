@@ -30,6 +30,10 @@ if ($service) {
         -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run\ `
         -Name "FBuildWorker" `
         -ErrorAction SilentlyContinue
+
+    Write-Host "Stopping process..."
+    Stop-Process -Name "FBuildWorker.exe" -ErrorAction SilentlyContinue
+    Stop-Process -Name "FBuildWorker.exe.copy" -ErrorAction SilentlyContinue
 }
 
 Write-Host "Cleaning environment..."
@@ -44,3 +48,5 @@ if (Test-Path $rootPath) {
     Write-Host "Removing $rootPath..."
     [System.IO.Directory]::Delete($rootPath, $true)
 }
+
+Write-Host "Finished!" -ForegroundColor Green
