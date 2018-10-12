@@ -11,6 +11,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPlayerSpawner, Log, All);
 
+class FTimerManager;
 class USpatialNetDriver;
 
 UCLASS()
