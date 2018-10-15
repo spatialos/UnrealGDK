@@ -9,6 +9,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
+class USpatialWorkerConnection;
+
 UCLASS()
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 {
@@ -22,6 +24,9 @@ public:
 
 	// bIsWorkerAuthorativeOverGSM exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
 	bool bIsWorkerAuthorativeOverGSM;
+
+	UPROPERTY()
+	USpatialWorkerConnection* SpatialConnection;
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.

@@ -39,6 +39,12 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	bConnectAsClient = bInitAsClient;
 
+	// Josh - Hack for server travel. Grab the game instance's SpatialConnection.
+	if (!bConnectAsClient)
+	{
+		Connection = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->SpatialConnection;
+	}
+
 	bAuthoritativeDestruction = true;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
@@ -68,10 +74,15 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		SnapshotToLoad = URL.GetOption(TEXT("snapshot="), TEXT(""));
 
 		// The server should already have a world.
-		OnMapLoaded(GetWorld());
+		//OnMapLoaded(GetWorld());
 	}
 
 	return true;
+}
+
+void USpatialNetDriver::Init(USpatialWorkerConnection* InConnection)
+{
+	Connection = InConnection;
 }
 
 void USpatialNetDriver::PostInitProperties()
@@ -158,8 +169,69 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	if (Connection != nullptr)
+	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and UseSpatialNetworking is enabled that we can travel properly.
+	LoadedWorld->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
+
+	// If we have hit OnMapLoaded and we already have a connection then we know we are in ServerTravel.
+	// For a server this means cleaning up the old SpatialConnection ready for a fresh instance.
+	// It also involves loading a fresh snapshot and toggling Accepting players on the GSM when ready.
+	if (Connection && Connection->IsConnected() && !ServerConnection && !SnapshotToLoad.IsEmpty())
 	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Loaded Map %s. Server in ServerTravel. Cleaning up old connection..."), *LoadedWorld->GetName());
+
+		TimerManager = &LoadedWorld->GetTimerManager();
+
+		EntityRegistry = NewObject<UEntityRegistry>(this);
+		View = NewObject<USpatialView>();
+		Sender = NewObject<USpatialSender>();
+		Receiver = NewObject<USpatialReceiver>();
+		GlobalStateManager = NewObject<UGlobalStateManager>();
+		PlayerSpawner = NewObject<USpatialPlayerSpawner>();
+		SnapshotManager = NewObject<USnapshotManager>();
+
+		PlayerSpawner->Init(this, TimerManager);
+
+		//--------
+		FURL DummyURL;
+
+		USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
+		check(NetConnection);
+
+		ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
+		TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
+
+		NetConnection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
+		Notify->NotifyAcceptedConnection(NetConnection);
+		NetConnection->bReliableSpatialConnection = true;
+		AddClientConnection(NetConnection);
+		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
+		NetConnection->SetClientLoginState(EClientLoginState::Welcomed);
+		//--------
+
+
+		PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+
+		View->Init(this);
+		Sender->Init(this);
+		Receiver->Init(this, TimerManager);
+		GlobalStateManager->Init(this, TimerManager);
+		SnapshotManager->Init(this, GlobalStateManager);
+
+		// Here if we are a server and this is server travel (there is a snapshot to load) we want to load the snapshot.
+		if (!SnapshotToLoad.IsEmpty() && Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bIsWorkerAuthorativeOverGSM)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker authoriative over the GSM is loading snapshot: %s"), *SnapshotToLoad);
+			SnapshotManager->LoadSnapshot(SnapshotToLoad);
+		}
+
+		// If we already have authority over the GSM then toggle accepting players.
+		if (GlobalStateManager->bHasLiveMapAuthority)
+		{
+			GlobalStateManager->ToggleAcceptingPlayers(true);
+		}
+
+		// Set a delegate which toggles accepting players when we receive authority changes over the GSM.
+		GlobalStateManager->OnAuthorityChanged.BindUObject(GlobalStateManager, &UGlobalStateManager::ToggleAcceptingPlayers);
 		return;
 	}
 
@@ -172,7 +244,11 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// Set up manager objects.
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 
-	Connection = NewObject<USpatialWorkerConnection>();
+	// Josh - As a client we always want to re-connect to spatial when loading a new map.
+	if (ServerConnection)
+	{
+		Connection = NewObject<USpatialWorkerConnection>();
+	}
 
 	if (LoadedWorld->URL.HasOption(TEXT("locator")))
 	{
@@ -200,8 +276,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		}
 	}
 
-	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and UseSpatialNetworking is enabled that we can travel properly.
-	LoadedWorld->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
 	Connect();
 }
 
