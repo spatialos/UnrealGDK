@@ -77,7 +77,6 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);
 	WorldContext->PendingNetGame->InitNetDriver();
-
 	bool bOk = true;
 
 	if (!WorldContext->PendingNetGame->NetDriver)
@@ -137,12 +136,12 @@ void USpatialGameInstance::StartGameInstance()
 {
 	if (!GIsClient)
 	{
-		if (!HasSpatialNetDriver()){
+		if (!HasSpatialNetDriver()) {
 			Super::StartGameInstance();
 		}
 		else
 		{
-			// Spatial server workers require a persistent spatial connection and so it is initalised and stored here in the GameInstance.
+			// Spatial server workers require a persistent spatial connection and so it is initialized and stored here in the GameInstance.
 			SpatialConnection = NewObject<USpatialWorkerConnection>();
 			Super::StartGameInstance();
 		}

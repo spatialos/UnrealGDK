@@ -38,13 +38,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	}
 
 	bConnectAsClient = bInitAsClient;
-
-	// Josh - Hack for server travel. Grab the game instance's SpatialConnection.
-	if (!bConnectAsClient)
-	{
-		Connection = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->SpatialConnection;
-	}
-
 	bAuthoritativeDestruction = true;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
@@ -70,19 +63,15 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	}
 	else
 	{
-		// Extract the snapshot to load (if any) so that once we are connected to a deployment we can load that snapshot into the world.
-		SnapshotToLoad = URL.GetOption(TEXT("snapshot="), TEXT(""));
+		// ServerWorkers will already have a SpatialConnection which is created and owned by the SpatialGameInstance.
+		// This is so they can maintain a persistent connection to a deployment during Server Travel.
+		Connection = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->SpatialConnection;
 
-		// The server should already have a world.
-		//OnMapLoaded(GetWorld());
+		// Extract the snapshot to load (if any) from the map URL so that once we are connected to a deployment we can load that snapshot into the Spatial deployment.
+		SnapshotToLoad = URL.GetOption(TEXT("snapshot="), TEXT(""));
 	}
 
 	return true;
-}
-
-void USpatialNetDriver::Init(USpatialWorkerConnection* InConnection)
-{
-	Connection = InConnection;
 }
 
 void USpatialNetDriver::PostInitProperties()
@@ -159,6 +148,11 @@ void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBas
 #endif // WITH_SERVER_CODE
 }
 
+void InitConnectionStuff()
+{
+
+}
+
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
 	if (LoadedWorld->GetNetDriver() != this)
@@ -169,7 +163,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and UseSpatialNetworking is enabled that we can travel properly.
+	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and Spatial networking is enabled, we can travel properly.
 	LoadedWorld->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
 
 	// If we have hit OnMapLoaded and we already have a connection then we know we are in ServerTravel.
@@ -244,9 +238,9 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// Set up manager objects.
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 
-	// Josh - As a client we always want to re-connect to spatial when loading a new map.
-	if (ServerConnection)
+	if (bConnectAsClient)
 	{
+		// Clients always create a new connection to Spatial when loading a new map.
 		Connection = NewObject<USpatialWorkerConnection>();
 	}
 

@@ -25,6 +25,7 @@ public:
 	// bIsWorkerAuthorativeOverGSM exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
 	bool bIsWorkerAuthorativeOverGSM;
 
+	// SpatialConnection is located in the SpatialGameInstance for ServerWorkers only.
 	UPROPERTY()
 	USpatialWorkerConnection* SpatialConnection;
 
