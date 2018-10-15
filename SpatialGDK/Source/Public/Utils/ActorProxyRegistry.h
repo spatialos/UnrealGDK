@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "SpatialConstants.h"
 
 #include "improbable/UnrealObjectRef.h"
 

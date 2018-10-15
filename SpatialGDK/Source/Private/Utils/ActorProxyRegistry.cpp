@@ -3,6 +3,7 @@
 #include "ActorProxyRegistry.h"
 
 #include "EngineUtils.h"
+#include "SpatialConstants.h"
 
 DEFINE_LOG_CATEGORY(LogActorProxyRegistry);
 
