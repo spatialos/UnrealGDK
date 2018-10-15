@@ -37,7 +37,13 @@ public:
 	FORCEINLINE bool IsReadyForReplication() const
 	{
 		// Wait until we've reserved an entity ID.		
-		return EntityId != 0;
+		if (EntityId == 0)
+		{
+			return false;
+		}
+
+		// Make sure we have authority
+		return Actor->Role == ROLE_Authority;
 	}
 
 	// Called on the client when receiving an update.
@@ -51,7 +57,13 @@ public:
 		FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 		check(Info);
 
-		return NetDriver->StaticComponentView->GetAuthority(EntityId, Info->RPCComponents[RPC_Client]) == WORKER_AUTHORITY_AUTHORITATIVE;
+		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info->RPCComponents[RPC_Client]);
+	}
+
+	FORCEINLINE bool IsAuthoritativeServer()
+	{
+		return NetDriver->IsServer() && NetDriver->View->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID);
+>>>>>>> master
 	}
 
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
@@ -106,8 +118,6 @@ private:
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
 
-	FString GetPlayerWorkerId();
-
 private:
 	Worker_EntityId EntityId;
 	bool bFirstTick;
@@ -123,6 +133,7 @@ private:
 	class USpatialReceiver* Receiver;
 
 	FVector LastSpatialPosition;
+	FRotator LastSpatialRotation;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains

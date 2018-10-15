@@ -16,6 +16,20 @@ Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId Entit
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
+// TODO UNR-640 - Need to fix for authority loss imminent
+bool USpatialView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
+	{
+		if (Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
+		{
+			return *Authority == WORKER_AUTHORITY_AUTHORITATIVE;
+		}
+	}
+
+	return false;
+}
+
 template <typename T>
 typename T* USpatialStaticComponentView::GetComponentData(Worker_EntityId EntityId)
 {

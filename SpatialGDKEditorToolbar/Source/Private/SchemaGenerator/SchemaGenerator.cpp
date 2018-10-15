@@ -138,6 +138,42 @@ void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrea
 	);
 }
 
+// core_types.schema should only be included if any components in the file have
+// 1. An UnrealObjectRef
+// 2. A list of UnrealObjectRefs
+// 3. An RPC
+bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo)
+{
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+
+	for (auto& PropertyGroup : RepData)
+	{
+		for (auto& PropertyPair : PropertyGroup.Value)
+		{
+			UProperty* Property = PropertyPair.Value->Property;
+			if(Property->IsA<UObjectPropertyBase>())
+			{
+				return true;
+			}
+
+			if (Property->IsA<UArrayProperty>())
+			{
+				if (Cast<UArrayProperty>(Property)->Inner->IsA<UObjectPropertyBase>())
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	if (TypeInfo->RPCs.Num() > 0)
+	{
+		return true;
+	}
+
+	return false;
+}
+
 int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
 	FComponentIdGenerator IdGenerator(ComponentId);
@@ -145,9 +181,15 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-		package improbable.unreal.generated.%s;
+		package improbable.unreal.generated.%s;)""",
+		*UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
 
-		import "improbable/unreal/gdk/core_types.schema";)""", *UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
+	if (ShouldIncludeCoreTypes(TypeInfo))
+	{
+		Writer.PrintNewLine();
+		Writer.Printf("import \"improbable/unreal/gdk/core_types.schema\";");
+	}
+
 	Writer.PrintNewLine();
 
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);

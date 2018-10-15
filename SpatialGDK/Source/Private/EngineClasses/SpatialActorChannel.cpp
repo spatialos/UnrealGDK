@@ -60,6 +60,8 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, EntityId(0)
 	, bFirstTick(true)
 	, NetDriver(nullptr)
+	, LastSpatialPosition(FVector::ZeroVector)
+	, LastSpatialRotation(FRotator::ZeroRotator)
 	, bCreatingNewEntity(false)
 {
 }
@@ -200,7 +202,7 @@ bool USpatialActorChannel::ReplicateActor()
 	check(!Closing);
 	check(Connection);
 	check(Connection->PackageMap);
-	
+
 	const UWorld* const ActorWorld = Actor->GetWorld();
 
 	// Time how long it takes to replicate this particular actor
@@ -290,10 +292,11 @@ bool USpatialActorChannel::ReplicateActor()
 	{		
 		if (bCreatingNewEntity)
 		{
-			// TODO: This check potentially isn't needed any more due to deleting startup actors but need to check - UNR:580
-			//check(!Actor->IsFullNameStableForNetworking());
+			Sender->SendCreateEntityRequest(this);
 
-			Sender->SendCreateEntityRequest(this, GetPlayerWorkerId());
+			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
+			Actor->Role = ROLE_SimulatedProxy;
+			Actor->RemoteRole = ROLE_Authority;
 		}
 		else
 		{
@@ -534,13 +537,6 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 	{
 		NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), ActorEntityId);
 	}
-
-	if (Actor->IsFullNameStableForNetworking())
-	{
-		USpatialPackageMapClient* PackageMap = Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap);
-
-		PackageMap->ResolveEntityActor(Actor, ActorEntityId, improbable::CreateOffsetMapFromActor(Actor));
-	}
 }
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityIdResponseOp& Op)
@@ -553,16 +549,17 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		// Temporary hack to avoid failure to reserve entities due to timeout on large maps
+		// UNR-630 - Temporary hack to avoid failure to reserve entities due to timeout on large maps
 		if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
 		{
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to reserve entity for actor %s due to timeout.  Retrying now..."), *Actor->GetName());
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Failed to reserve entity for Actor %s Reason: %s. Retrying..."), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
 			Sender->SendReserveEntityIdRequest(this);
 		}
 		else
 		{
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to reserve entity id for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to reserve entity id for Actor %s: Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
 		}
+    
 		return;
 	}
 
@@ -570,6 +567,9 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
   
 	EntityId = Op.entity_id;
 	RegisterEntityId(EntityId);
+
+	// Register Actor with package map since we know what the entity id is.
+	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor));
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
@@ -587,12 +587,12 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		// UNR-630 - Temporary hack to avoid failure to create entities due to timeout on large maps
 		if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
 		{
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s due to timeout.  Retrying now..."), *Actor->GetName());
-			Sender->SendCreateEntityRequest(this, GetPlayerWorkerId());
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Failed to create entity for actor %s Reason: %s. Retrying..."), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+			Sender->SendCreateEntityRequest(this);
 		}
 		else
 		{
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to create entity for actor %s: Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
 		}
 
 		return;
@@ -639,6 +639,18 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 void USpatialActorChannel::UpdateSpatialRotation()
 {
+	FRotator ActorSpatialRotation = Actor->GetActorRotation();
+
+	// Only update the Actor's rotation if it has rotated far enough
+	const float SpatialRotationThreshold = 0.1f;  // 0.1 radian (~5.7 degrees)
+	FQuat RotationDelta = (ActorSpatialRotation - LastSpatialRotation).Quaternion();
+	RotationDelta.Normalize();
+	if (RotationDelta.GetAngle() < SpatialRotationThreshold)
+	{
+		return;
+	}
+
+	LastSpatialRotation = ActorSpatialRotation;
 	Sender->SendRotationUpdate(EntityId, Actor->GetActorRotation());
 }
 
@@ -661,26 +673,6 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	}
 }
 
-FString USpatialActorChannel::GetPlayerWorkerId()
-{
-	// When a player is connected, a FUniqueNetIdRepl is created with the players worker ID. This eventually gets stored
-	// inside APlayerState::UniqueId when UWorld::SpawnPlayActor is called.
-	FString PlayerWorkerId;
-
-	// Native unreal version: OwningConnection == Connection || (OwningConnection != NULL && OwningConnection->IsA(UChildConnection::StaticClass()) && ((UChildConnection*)OwningConnection)->Parent == Connection)
-	// But since we do not have multiple connections per client, this should be equal to the above flow
-	if (UNetConnection* ActorOwningConnection = Actor->GetNetConnection())
-	{
-		PlayerWorkerId = ActorOwningConnection->PlayerController->PlayerState->UniqueId.ToString();
-	}
-	else
-	{
-		UE_LOG(LogSpatialActorChannel, Log, TEXT("Unable to find PlayerState for %s, this usually means that this actor is not owned by a player."), *Actor->GetClass()->GetName());
-	}
-
-	return PlayerWorkerId;
-}
-
 void USpatialActorChannel::SpatialViewTick()
 {
 	if (Actor != nullptr && !Actor->IsPendingKill() && IsReadyForReplication())
@@ -689,7 +681,7 @@ void USpatialActorChannel::SpatialViewTick()
 		bNetOwned = Actor->GetNetConnection() != nullptr;
 		if (bFirstTick || bOldNetOwned != bNetOwned)
 		{
-			if (NetDriver->IsServer())
+			if (IsAuthoritativeServer())
 			{
 				bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
 
@@ -698,7 +690,7 @@ void USpatialActorChannel::SpatialViewTick()
 					bFirstTick = false;
 				}
 			}
-			else
+			else if(!NetDriver->IsServer())
 			{
 				Sender->SendComponentInterest(Actor, GetEntityId());
 

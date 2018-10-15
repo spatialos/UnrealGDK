@@ -14,7 +14,7 @@
 namespace improbable
 {
 
-ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<UnrealObjectRef>& InUnresolvedRefs)
+ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
 	, TypebindingManager(InNetDriver->TypebindingManager)
@@ -80,7 +80,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
 	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;
 
-	bool bIsServer = NetDriver->IsServer();
+	bool bIsAuthServer = Channel->IsAuthoritativeServer();
+
 	FSpatialConditionMapFilter ConditionMap(Channel, bAutonomousProxy);
 
 	TArray<UProperty*> RepNotifies;
@@ -92,10 +93,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		const FRepLayoutCmd& Cmd = Cmds[BaseHandleToCmdIndex[FieldId - 1].CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
-		if (bIsServer || ConditionMap.IsRelevant(Parent.Condition))
+		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
 		{
 			// This swaps Role/RemoteRole as we write it
-			const FRepLayoutCmd& SwappedCmd = (!bIsServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
+			const FRepLayoutCmd& SwappedCmd = (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
 
 			uint8* Data = (uint8*)Object + SwappedCmd.Offset;
 
@@ -103,7 +104,42 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			{
 				if (Cmd.Type == REPCMD_DynamicArray)
 				{
-					ApplyArray(ComponentObject, FieldId, Cast<UArrayProperty>(Cmd.Property), Data, SwappedCmd.Offset, Cmd.ParentIndex);
+					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+					bool bProcessedArray = false;
+
+					// Check if this is a FastArraySerializer array so we can simulate the FFastArraySerializerItem PreReplicatedRemove and PostReplicatedAdd calls.
+					if (UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property))
+					{
+						if (ParentStruct->Struct->IsChildOf(FFastArraySerializer::StaticStruct()))
+						{
+							// Read array into a temporary array so the appropriate remove/add operations can be processed
+							FScriptArray TempArray;
+							// Populate array with existing data so compare will incorporate non-replicated entities
+							Cmd.Property->CopyCompleteValue((void*)&TempArray, Data);
+
+							ApplyArray(ComponentObject, FieldId, ArrayProperty, (uint8*)&TempArray, SwappedCmd.Offset, Cmd.ParentIndex);
+							bProcessedArray = true;
+
+							if (!Cmd.Property->Identical((void*)&TempArray, Data))
+							{
+								FSpatialNetDeltaSerializeInfo Parms;
+								Parms.NewArray = &TempArray;
+								Parms.ArrayProperty = ArrayProperty;
+
+								UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
+								check(CppStructOps);
+
+								// This call resolves into FFastArraySerializer::SpatialFastArrayDeltaSerialize where our custom FFastArraySerializerItem
+								// callback are triggered.
+								CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
+							}
+						}
+					}
+
+					if (!bProcessedArray)
+					{
+						ApplyArray(ComponentObject, FieldId, ArrayProperty, Data, SwappedCmd.Offset, Cmd.ParentIndex);
+					}
 				}
 				else
 				{
@@ -115,7 +151,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 					// the client RPCs component.
 					UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
-					if (!bIsServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
+					if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 					{
 						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
 					}
@@ -183,7 +219,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		TArray<uint8> ValueData = IndexPayloadFromSchema(Object, FieldId, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
 		int64 CountBits = ValueData.Num() * 8;
-		TSet<UnrealObjectRef> NewUnresolvedRefs;
+		TSet<FUnrealObjectRef> NewUnresolvedRefs;
 		FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
 		bool bHasUnmapped = false;
 
@@ -245,7 +281,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		UnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
+		FUnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
 		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
@@ -269,6 +305,19 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 				UnresolvedRefs.Add(ObjectRef);
 				bUnresolved = true;
 			}
+		}
+
+		UObject* Outer = Property->GetOuter();
+		// TODO: Second check will be removed once arrays contexts are supported UNR-633
+		// TODO: Third check will be removed once we support blueprint classes UNR-635
+		if (Outer->IsA<UStruct>() && Property->ArrayDim == 1 && Cast<UBlueprintGeneratedClass>(Outer) == nullptr)
+		{
+			UStruct* Owner = Cast<UStruct>(Outer);
+			const FString ContextName = Property->GetName() + TEXT("_SpatialOSContext");
+			UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
+			const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
+			FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
+			Context = ObjectRef;
 		}
 
 		if (!bUnresolved && ObjectReferencesMap.Find(Offset))

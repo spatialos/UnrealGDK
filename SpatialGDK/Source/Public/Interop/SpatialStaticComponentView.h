@@ -21,6 +21,7 @@ class SPATIALGDK_API USpatialStaticComponentView : public UObject
 
 public:
 	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
+	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	template <typename T> typename  T* GetComponentData(Worker_EntityId EntityId);
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);

@@ -33,7 +33,7 @@ void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if (Schema_GetObjectCount(ComponentObject, 1) == 1)
+	if (Schema_GetObjectCount(ComponentObject, 1) > 0)
 	{
 		SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, 1);
 	}
@@ -65,6 +65,9 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 		{
 			continue;
 		}
+
+		SingletonActor->Role = ROLE_SimulatedProxy;
+		SingletonActor->RemoteRole = ROLE_Authority;
 
 		// Add to entity registry
 		// This indirectly causes SetChannelActor to not create a new entity for this actor
@@ -106,6 +109,9 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 		{
 			continue;
 		}
+
+		SingletonActor->Role = ROLE_Authority;
+		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
 
 		// Set entity id of channel from the GlobalStateManager.
 		// If the id was 0, SetChannelActor will create the entity.

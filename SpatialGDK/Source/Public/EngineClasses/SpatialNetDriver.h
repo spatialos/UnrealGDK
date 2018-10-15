@@ -106,7 +106,10 @@ public:
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
 	UPROPERTY()
+
 	USpatialStaticComponentView* StaticComponentView;
+
+	UEntityRegistry* EntityRegistry;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
@@ -118,9 +121,6 @@ public:
 
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
-
-	UPROPERTY()
-	UEntityRegistry* EntityRegistry;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 
