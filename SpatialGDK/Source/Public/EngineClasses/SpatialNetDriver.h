@@ -106,7 +106,6 @@ public:
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
 	UPROPERTY()
-
 	USpatialStaticComponentView* StaticComponentView;
 
 	UEntityRegistry* EntityRegistry;
