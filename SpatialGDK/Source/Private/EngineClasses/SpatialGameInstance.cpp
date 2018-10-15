@@ -74,6 +74,9 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 	FURL URL = WorldContext->LastURL;
 	URL.Host = SpatialConstants::LOCAL_HOST;
 
+	// Josh - Give the clients a SpatialConnection here too
+	SpatialConnection = NewObject<USpatialWorkerConnection>();
+
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);
 	WorldContext->PendingNetGame->InitNetDriver();

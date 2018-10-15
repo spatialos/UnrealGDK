@@ -61,15 +61,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 			WorldContext->PendingNetGame->bSentJoinRequest = false;
 		}
 	}
-	else
-	{
-		// ServerWorkers will already have a SpatialConnection which is created and owned by the SpatialGameInstance.
-		// This is so they can maintain a persistent connection to a deployment during Server Travel.
-		Connection = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->SpatialConnection;
 
-		// Extract the snapshot to load (if any) from the map URL so that once we are connected to a deployment we can load that snapshot into the Spatial deployment.
-		SnapshotToLoad = URL.GetOption(TEXT("snapshot="), TEXT(""));
-	}
+	// Extract the snapshot to load (if any) from the map URL so that once we are connected to a deployment we can load that snapshot into the Spatial deployment.
+	SnapshotToLoad = URL.GetOption(TEXT("snapshot="), TEXT(""));
 
 	return true;
 }
@@ -170,11 +164,15 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// Set up manager objects.
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 
-	if (bConnectAsClient)
-	{
-		// Clients always create a new connection to Spatial when loading a new map.
-		Connection = NewObject<USpatialWorkerConnection>();
-	}
+	//if (bConnectAsClient)
+	//{
+	//	// Clients always create a new connection to Spatial when loading a new map.
+	//	Connection = NewObject<USpatialWorkerConnection>();
+	//}
+
+	// ServerWorkers will already have a SpatialConnection which is created and owned by the SpatialGameInstance.
+	// This is so they can maintain a persistent connection to a deployment during Server Travel.
+	Connection = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->SpatialConnection;
 
 	if (LoadedWorld->URL.HasOption(TEXT("locator")))
 	{
@@ -205,7 +203,8 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// If we have hit OnMapLoaded and we already have a connection then we know we are in ServerTravel.
 	// For a server this means cleaning up the old SpatialConnection ready for a fresh instance.
 	// It also involves loading a fresh snapshot and toggling Accepting players on the GSM when ready.
-	if (Connection && Connection->IsConnected() && !ServerConnection && !SnapshotToLoad.IsEmpty())
+	//if (Connection && Connection->IsConnected() && !ServerConnection && !SnapshotToLoad.IsEmpty())
+	if (Connection->IsConnected())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Loaded Map %s. Server in ServerTravel. Cleaning up old connection..."), *LoadedWorld->GetName());
 		OnConnected();
