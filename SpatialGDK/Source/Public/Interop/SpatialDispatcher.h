@@ -37,5 +37,5 @@ private:
 	USpatialReceiver* Receiver;
 
 	UPROPERTY()
-    USpatialStaticComponentView* StaticComponentView;
+	USpatialStaticComponentView* StaticComponentView;
 };
