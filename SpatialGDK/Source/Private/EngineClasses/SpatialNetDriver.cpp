@@ -196,10 +196,9 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// If we have hit OnMapLoaded and we already have a connection then we know we are in ServerTravel.
 	// For a server this means cleaning up the old SpatialConnection ready for a fresh instance.
 	// It also involves loading a fresh snapshot and toggling Accepting players on the GSM when ready.
-	//if (Connection && Connection->IsConnected() && !ServerConnection && !SnapshotToLoad.IsEmpty())
 	if (Connection->IsConnected())
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Loaded Map %s. Server in ServerTravel. Cleaning up old connection..."), *LoadedWorld->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Loaded Map %s. Server in ServerTravel. Cleaning up old connection..."), *LoadedWorld->GetName());
 		OnConnected();
 		return;
 	}
@@ -211,6 +210,7 @@ void USpatialNetDriver::Connect()
 {
 	Connection->OnConnected.BindLambda([this]
 	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS."));
 		OnConnected();
 	});
 	Connection->OnConnectFailed.BindLambda([this](const FString& Reason)
@@ -223,8 +223,6 @@ void USpatialNetDriver::Connect()
 
 void USpatialNetDriver::OnConnected()
 {
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS."));
-
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 
 	Dispatcher = NewObject<USpatialDispatcher>();
