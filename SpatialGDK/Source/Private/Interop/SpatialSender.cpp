@@ -666,7 +666,7 @@ FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 					return FString();
 				}
 
-				improbable::EntityAcl* EntityACL = View->GetEntityACL(PlayerControllerEntityId);
+				improbable::EntityAcl* EntityACL = StaticComponentView->GetComponentData<improbable::EntityAcl>(PlayerControllerEntityId);
 
 				FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
 

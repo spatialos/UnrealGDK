@@ -62,8 +62,7 @@ public:
 
 	FORCEINLINE bool IsAuthoritativeServer()
 	{
-		return NetDriver->IsServer() && NetDriver->View->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID);
->>>>>>> master
+		return NetDriver->IsServer() && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID);
 	}
 
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)
