@@ -698,14 +698,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	if (EntityACL->ComponentWriteAcl.Contains(Info->RPCComponents[RPC_Client]))
-	{
-		EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]] = OwningClientOnly;
-	}
-	else
-	{
-		EntityACL->ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
-	}
+	EntityACL->ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
 
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 

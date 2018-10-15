@@ -678,7 +678,16 @@ void USpatialActorChannel::SpatialViewTick()
 	if (Actor != nullptr && !Actor->IsPendingKill() && IsReadyForReplication())
 	{
 		bool bOldNetOwned = bNetOwned;
-		bNetOwned = Actor->GetNetConnection() != nullptr;
+
+		bNetOwned = false;
+		if (UNetConnection* Connection = Actor->GetNetConnection())
+		{
+			if (APlayerController* PlayerController = Connection->PlayerController)
+			{
+				bNetOwned = PlayerController->PlayerState != nullptr;
+			}
+		}
+
 		if (bFirstTick || bOldNetOwned != bNetOwned)
 		{
 			if (IsAuthoritativeServer())
