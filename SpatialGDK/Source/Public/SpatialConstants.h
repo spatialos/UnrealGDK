@@ -14,7 +14,6 @@ using Worker_EntityId_Key = int64;
 
 namespace SpatialConstants
 {
-
 	enum EntityIds
 	{
 		INVALID_ENTITY_ID = 0,

@@ -13,7 +13,7 @@ void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	Receiver = InNetDriver->Receiver;
-    StaticComponentView = InNetDriver->StaticComponentView;
+        StaticComponentView = InNetDriver->StaticComponentView;
 }
 
 void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
