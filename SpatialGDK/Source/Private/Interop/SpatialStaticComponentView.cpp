@@ -73,28 +73,25 @@ void USpatialStaticComponentView::OnRemoveEntity(const Worker_RemoveEntityOp& Op
 
 void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
+	improbable::Component* Component = nullptr;
+
 	switch (Op.update.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		if (improbable::EntityAcl* aclComponent = GetComponentData<improbable::EntityAcl>(Op.entity_id))
-		{
-			aclComponent->ApplyComponentUpdate(Op.update);
-		}
+		Component = GetComponentData<improbable::EntityAcl>(Op.entity_id);
 		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
-		if (improbable::Position* positionComponent = GetComponentData<improbable::Position>(Op.entity_id))
-		{
-			positionComponent->ApplyComponentUpdate(Op.update);
-		}
+		Component = GetComponentData<improbable::Position>(Op.entity_id);
 		break;
 	case SpatialConstants::ROTATION_COMPONENT_ID:
-		if (improbable::Rotation* rotationComponent = GetComponentData<improbable::Rotation>(Op.entity_id))
-		{
-			rotationComponent->ApplyComponentUpdate(Op.update);
-		}
+		Component = GetComponentData<improbable::Rotation>(Op.entity_id);
 		break;
 	default:
 		return;
+	}
+
+	if (Component) {
+		Component->ApplyComponentUpdate(Op.update);
 	}
 }
 

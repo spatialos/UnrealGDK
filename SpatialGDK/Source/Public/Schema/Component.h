@@ -8,6 +8,7 @@ namespace improbable
 struct Component
 {
 	virtual ~Component() {}
+	virtual void ApplyComponentUpdate(const Worker_ComponentUpdate& Update) {}
 
 	bool bIsDynamic = false;
 };
