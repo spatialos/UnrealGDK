@@ -74,9 +74,6 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 	FURL URL = WorldContext->LastURL;
 	URL.Host = SpatialConstants::LOCAL_HOST;
 
-	// Josh - Give the clients a SpatialConnection here too
-	SpatialConnection = NewObject<USpatialWorkerConnection>();
-
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);
 	WorldContext->PendingNetGame->InitNetDriver();
@@ -106,14 +103,17 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 	}
 
+	// If we are using spatial networking then prepare a spatial connection.
+	SpatialConnection = NewObject<USpatialWorkerConnection>();
+
 	// This is sadly hacky to avoid a larger engine change. It borrows code from UGameInstance::StartPlayInEditorGameInstance() and 
-	//  UEngine::Browse().
+	// UEngine::Browse().
 	check(WorldContext);
 
 	ULevelEditorPlaySettings const* PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
 	const EPlayNetMode PlayNetMode = [&PlayInSettings] { EPlayNetMode NetMode(PIE_Standalone); return (PlayInSettings->GetPlayNetMode(NetMode) ? NetMode : PIE_Standalone); }();
 
-	// for clients, just connect to the server
+	// For clients, just connect to the server
 	bool bOk = true;
 
 	if (PlayNetMode != PIE_Client)
@@ -137,17 +137,14 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 
 void USpatialGameInstance::StartGameInstance()
 {
+	if (HasSpatialNetDriver())
+	{
+		// If we are using spatial networking then prepare a spatial connection.
+		SpatialConnection = NewObject<USpatialWorkerConnection>();
+	}
 	if (!GIsClient)
 	{
-		if (!HasSpatialNetDriver()) {
-			Super::StartGameInstance();
-		}
-		else
-		{
-			// Spatial server workers require a persistent spatial connection and so it is initialized and stored here in the GameInstance.
-			SpatialConnection = NewObject<USpatialWorkerConnection>();
-			Super::StartGameInstance();
-		}
+		Super::StartGameInstance();
 	}
 	else
 	{

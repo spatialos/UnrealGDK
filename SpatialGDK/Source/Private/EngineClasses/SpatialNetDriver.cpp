@@ -164,14 +164,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// Set up manager objects.
 	EntityRegistry = NewObject<UEntityRegistry>(this);
 
-	//if (bConnectAsClient)
-	//{
-	//	// Clients always create a new connection to Spatial when loading a new map.
-	//	Connection = NewObject<USpatialWorkerConnection>();
-	//}
-
-	// ServerWorkers will already have a SpatialConnection which is created and owned by the SpatialGameInstance.
-	// This is so they can maintain a persistent connection to a deployment during Server Travel.
+	// Grab the SpatialWorkerConnection from the SpatialGameInstance (stored there for persistence in server travel). 
 	Connection = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->SpatialConnection;
 
 	if (LoadedWorld->URL.HasOption(TEXT("locator")))
