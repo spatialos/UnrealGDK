@@ -148,11 +148,6 @@ void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBas
 #endif // WITH_SERVER_CODE
 }
 
-void InitConnectionStuff()
-{
-
-}
-
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
 	if (LoadedWorld->GetNetDriver() != this)
@@ -165,69 +160,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and Spatial networking is enabled, we can travel properly.
 	LoadedWorld->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
-
-	// If we have hit OnMapLoaded and we already have a connection then we know we are in ServerTravel.
-	// For a server this means cleaning up the old SpatialConnection ready for a fresh instance.
-	// It also involves loading a fresh snapshot and toggling Accepting players on the GSM when ready.
-	if (Connection && Connection->IsConnected() && !ServerConnection && !SnapshotToLoad.IsEmpty())
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Loaded Map %s. Server in ServerTravel. Cleaning up old connection..."), *LoadedWorld->GetName());
-
-		TimerManager = &LoadedWorld->GetTimerManager();
-
-		EntityRegistry = NewObject<UEntityRegistry>(this);
-		View = NewObject<USpatialView>();
-		Sender = NewObject<USpatialSender>();
-		Receiver = NewObject<USpatialReceiver>();
-		GlobalStateManager = NewObject<UGlobalStateManager>();
-		PlayerSpawner = NewObject<USpatialPlayerSpawner>();
-		SnapshotManager = NewObject<USnapshotManager>();
-
-		PlayerSpawner->Init(this, TimerManager);
-
-		//--------
-		FURL DummyURL;
-
-		USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
-		check(NetConnection);
-
-		ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
-		TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
-
-		NetConnection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
-		Notify->NotifyAcceptedConnection(NetConnection);
-		NetConnection->bReliableSpatialConnection = true;
-		AddClientConnection(NetConnection);
-		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
-		NetConnection->SetClientLoginState(EClientLoginState::Welcomed);
-		//--------
-
-
-		PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
-
-		View->Init(this);
-		Sender->Init(this);
-		Receiver->Init(this, TimerManager);
-		GlobalStateManager->Init(this, TimerManager);
-		SnapshotManager->Init(this, GlobalStateManager);
-
-		// Here if we are a server and this is server travel (there is a snapshot to load) we want to load the snapshot.
-		if (!SnapshotToLoad.IsEmpty() && Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bIsWorkerAuthorativeOverGSM)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker authoriative over the GSM is loading snapshot: %s"), *SnapshotToLoad);
-			SnapshotManager->LoadSnapshot(SnapshotToLoad);
-		}
-
-		// If we already have authority over the GSM then toggle accepting players.
-		if (GlobalStateManager->bHasLiveMapAuthority)
-		{
-			GlobalStateManager->ToggleAcceptingPlayers(true);
-		}
-
-		// Set a delegate which toggles accepting players when we receive authority changes over the GSM.
-		GlobalStateManager->OnAuthorityChanged.BindUObject(GlobalStateManager, &UGlobalStateManager::ToggleAcceptingPlayers);
-		return;
-	}
 
 	// Handle Spatial connection configurations.
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
@@ -268,6 +200,16 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		{
 			Connection->ReceptionistConfig.UseExternalIp = true;
 		}
+	}
+
+	// If we have hit OnMapLoaded and we already have a connection then we know we are in ServerTravel.
+	// For a server this means cleaning up the old SpatialConnection ready for a fresh instance.
+	// It also involves loading a fresh snapshot and toggling Accepting players on the GSM when ready.
+	if (Connection && Connection->IsConnected() && !ServerConnection && !SnapshotToLoad.IsEmpty())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Loaded Map %s. Server in ServerTravel. Cleaning up old connection..."), *LoadedWorld->GetName());
+		OnConnected();
+		return;
 	}
 
 	Connect();
