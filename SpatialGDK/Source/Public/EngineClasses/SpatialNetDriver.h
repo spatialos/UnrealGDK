@@ -30,6 +30,7 @@ class USpatialStaticComponentView;
 class USnapshotManager;
 
 class UEntityRegistry;
+class UActorProxyRegistry;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -120,6 +121,8 @@ public:
 	UEntityRegistry* EntityRegistry;
 	UPROPERTY()
 	USnapshotManager* SnapshotManager;
+	UPROPERTY()
+	UActorProxyRegistry* ActorProxyRegistry;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
