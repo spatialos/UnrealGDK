@@ -142,7 +142,8 @@ void USpatialGameInstance::StartGameInstance()
 		// If we are using spatial networking then prepare a spatial connection.
 		SpatialConnection = NewObject<USpatialWorkerConnection>();
 	}
-	if (!GIsClient)
+
+	if (!GIsClient || !HasSpatialNetDriver())
 	{
 		Super::StartGameInstance();
 	}
