@@ -194,8 +194,8 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	// If we have hit OnMapLoaded and we already have a connection then we know we are in ServerTravel.
-	// For a server this means cleaning up the old SpatialConnection ready for a fresh instance.
-	// It also involves loading a fresh snapshot and toggling Accepting players on the GSM when ready.
+	// This involves some clean up ready for a fresh instance.
+	// For the server (with authority over the GSM) it also involves loading a fresh snapshot and toggling Accepting players when ready.
 	if (Connection->IsConnected())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Loaded Map %s. Server in ServerTravel. Cleaning up old connection..."), *LoadedWorld->GetName());
