@@ -61,6 +61,11 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 			WorldContext->PendingNetGame->bSentJoinRequest = false;
 		}
 	}
+	else
+	{
+		// The server should already have a world.
+		OnMapLoaded(GetWorld());
+	}
 
 	// Extract the snapshot to load (if any) from the map URL so that once we are connected to a deployment we can load that snapshot into the Spatial deployment.
 	SnapshotToLoad = URL.GetOption(TEXT("snapshot="), TEXT(""));
