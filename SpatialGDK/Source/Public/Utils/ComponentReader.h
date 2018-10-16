@@ -20,8 +20,8 @@ private:
 	void ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 	void ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	void ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex);
-	void ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex);
+	void ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex);
+	void ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex);
 
 	uint32 GetPropertyCount(const Schema_Object* Object, Schema_FieldId Id, UProperty* Property);
 
@@ -29,7 +29,7 @@ private:
 	class USpatialPackageMapClient* PackageMap;
 	class USpatialNetDriver* NetDriver;
 	class USpatialTypebindingManager* TypebindingManager;
-	FObjectReferencesMap& ObjectReferencesMap;
+	FObjectReferencesMap& RootObjectReferencesMap;
 	TSet<FUnrealObjectRef>& UnresolvedRefs;
 };
 

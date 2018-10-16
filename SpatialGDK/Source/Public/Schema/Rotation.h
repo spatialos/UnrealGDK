@@ -66,6 +66,14 @@ struct Rotation : Component
 		return ComponentUpdate;
 	}
 
+	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		Pitch = Schema_GetDouble(ComponentObject, 1);
+		Yaw = Schema_GetDouble(ComponentObject, 2);
+		Roll = Schema_GetDouble(ComponentObject, 3);
+	}
+
 	float Pitch;
 	float Yaw;
 	float Roll;

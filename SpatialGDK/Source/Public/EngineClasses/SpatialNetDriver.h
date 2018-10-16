@@ -20,12 +20,13 @@ class USpatialNetConnection;
 class USpatialPackageMapClient;
 
 class USpatialWorkerConnection;
-class USpatialView;
+class USpatialDispatcher;
 class USpatialSender;
 class USpatialReceiver;
 class USpatialTypebindingManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
+class USpatialStaticComponentView;
 
 class UEntityRegistry;
 
@@ -91,7 +92,7 @@ public:
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
 	UPROPERTY()
-	USpatialView* View;
+	USpatialDispatcher* Dispatcher;
 	UPROPERTY()
 	USpatialSender* Sender;
 	UPROPERTY()
@@ -104,6 +105,8 @@ public:
 	USpatialPlayerSpawner* PlayerSpawner;
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
+	UPROPERTY()
+	USpatialStaticComponentView* StaticComponentView;
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
 

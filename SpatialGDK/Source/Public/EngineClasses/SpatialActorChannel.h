@@ -5,7 +5,7 @@
 #include "Engine/ActorChannel.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
-#include "Interop/SpatialView.h"
+#include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialTypebindingManager.h"
 #include "Utils/RepDataUtils.h"
 
@@ -57,12 +57,12 @@ public:
 		FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 		check(Info);
 
-		return NetDriver->View->HasAuthority(EntityId, Info->RPCComponents[RPC_Client]);
+		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info->RPCComponents[RPC_Client]);
 	}
 
 	FORCEINLINE bool IsAuthoritativeServer()
 	{
-		return NetDriver->IsServer() && NetDriver->View->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID);
+		return NetDriver->IsServer() && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID);
 	}
 
 	FORCEINLINE FRepLayout& GetObjectRepLayout(UObject* Object)

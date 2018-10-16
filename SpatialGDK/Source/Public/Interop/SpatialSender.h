@@ -15,7 +15,7 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
 class USpatialNetDriver;
-class USpatialView;
+class USpatialDispatcher;
 class USpatialWorkerConnection;
 class USpatialActorChannel;
 class USpatialPackageMapClient;
@@ -87,7 +87,7 @@ private:
 	USpatialNetDriver* NetDriver;
 
 	UPROPERTY()
-	USpatialView* View;
+	USpatialStaticComponentView* StaticComponentView;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;

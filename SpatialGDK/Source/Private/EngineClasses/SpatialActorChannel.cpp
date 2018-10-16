@@ -83,7 +83,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		return;
 	}
 
-	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->View->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->StaticComponentView->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 
 	UE_LOG(LogSpatialActorChannel, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
@@ -103,7 +103,7 @@ bool USpatialActorChannel::IsSingletonEntity()
 
 bool USpatialActorChannel::IsStablyNamedEntity()
 {
-	improbable::UnrealMetadata* UnrealMetadata = NetDriver->View->GetUnrealMetadata(EntityId);
+	improbable::UnrealMetadata* UnrealMetadata = NetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 	return UnrealMetadata ? !UnrealMetadata->StaticPath.IsEmpty() : false;
 }
 
@@ -678,7 +678,16 @@ void USpatialActorChannel::SpatialViewTick()
 	if (Actor != nullptr && !Actor->IsPendingKill() && IsReadyForReplication())
 	{
 		bool bOldNetOwned = bNetOwned;
-		bNetOwned = Actor->GetNetConnection() != nullptr;
+
+		bNetOwned = false;
+		if (UNetConnection* Connection = Actor->GetNetConnection())
+		{
+			if (APlayerController* PlayerController = Connection->PlayerController)
+			{
+				bNetOwned = PlayerController->PlayerState != nullptr;
+			}
+		}
+
 		if (bFirstTick || bOldNetOwned != bNetOwned)
 		{
 			if (IsAuthoritativeServer())
