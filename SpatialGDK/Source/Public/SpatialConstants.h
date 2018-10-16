@@ -6,6 +6,9 @@
 
 #include <improbable/c_worker.h>
 
+// IMPORTANT: This is required for Linux builds to succeed - don't remove!
+// Worker_EntityId from the Worker SDK resolves to a long on Linux.
+// These are not a type of key supported by TMap.
 using Worker_EntityId_Key = int64;
 
 namespace SpatialConstants

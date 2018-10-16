@@ -14,7 +14,7 @@
 
 class USpatialNetDriver;
 class USpatialActorChannel;
-class USpatialView;
+class USpatialStaticComponentView;
 class USpatialSender;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
@@ -45,7 +45,7 @@ private:
 	USpatialNetDriver* NetDriver;
 
 	UPROPERTY()
-	USpatialView* View;
+	USpatialStaticComponentView* StaticComponentView;
 
 	UPROPERTY()
 	USpatialSender* Sender;

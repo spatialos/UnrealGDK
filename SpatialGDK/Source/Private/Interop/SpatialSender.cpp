@@ -9,7 +9,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialView.h"
+#include "Interop/SpatialDispatcher.h"
 #include "Schema/Rotation.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
@@ -47,7 +47,7 @@ FPendingRPCParams::~FPendingRPCParams()
 void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	View = InNetDriver->View;
+	StaticComponentView = InNetDriver->StaticComponentView;
 	Connection = InNetDriver->Connection;
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
@@ -666,7 +666,7 @@ FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 					return FString();
 				}
 
-				improbable::EntityAcl* EntityACL = View->GetEntityACL(PlayerControllerEntityId);
+				improbable::EntityAcl* EntityACL = StaticComponentView->GetComponentData<improbable::EntityAcl>(PlayerControllerEntityId);
 
 				FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
 
@@ -684,7 +684,7 @@ FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 // This function updates the authority of that component as the owning connection can change.
 bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 {
-	improbable::EntityAcl* EntityACL = View->GetEntityACL(EntityId);
+	improbable::EntityAcl* EntityACL = StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId);
 
 	if (EntityACL == nullptr)
 	{

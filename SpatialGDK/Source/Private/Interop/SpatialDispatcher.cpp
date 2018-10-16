@@ -1,22 +1,22 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialView.h"
+#include "SpatialDispatcher.h"
 
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialSender.h"
+#include "Interop/SpatialStaticComponentView.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
-void USpatialView::Init(USpatialNetDriver* InNetDriver)
+void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	Receiver = InNetDriver->Receiver;
-	Sender = InNetDriver->Sender;
+	StaticComponentView = InNetDriver->StaticComponentView;
 }
 
-void USpatialView::ProcessOps(Worker_OpList* OpList)
+void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 {
 	TArray<Worker_Op*> QueuedComponentUpdateOps;
 
@@ -36,19 +36,19 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
 			Receiver->OnRemoveEntity(Op->remove_entity);
-			OnRemoveEntity(Op->remove_entity);
+			StaticComponentView->OnRemoveEntity(Op->remove_entity);
 			break;
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
-			OnAddComponent(Op->add_component);
+			StaticComponentView->OnAddComponent(Op->add_component);
 			Receiver->OnAddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			QueuedComponentUpdateOps.Add(Op);
-			OnComponentUpdate(Op->component_update);
+			StaticComponentView->OnComponentUpdate(Op->component_update);
 			break;
 
 		// Commands
@@ -61,7 +61,7 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 
 		// Authority Change
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			OnAuthorityChange(Op->authority_change);
+			StaticComponentView->OnAuthorityChange(Op->authority_change);
 			Receiver->OnAuthorityChange(Op->authority_change);
 			break;
 
@@ -110,83 +110,4 @@ void USpatialView::ProcessOps(Worker_OpList* OpList)
 			Channel->SpatialViewTick();
 		}
 	}
-}
-
-Worker_Authority USpatialView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
-{
-	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
-	{
-		if (Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
-		{
-			return *Authority;
-		}
-	}
-
-	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
-}
-
-// TODO UNR-640 - Need to fix for authority loss imminent
-bool USpatialView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
-{
-	if (TMap<Worker_ComponentId, Worker_Authority>* ComponentAuthorityMap = EntityComponentAuthorityMap.Find(EntityId))
-	{
-		if (Worker_Authority* Authority = ComponentAuthorityMap->Find(ComponentId))
-		{
-			return *Authority == WORKER_AUTHORITY_AUTHORITATIVE;
-		}
-	}
-
-	return false;
-}
-
-improbable::UnrealMetadata* USpatialView::GetUnrealMetadata(Worker_EntityId EntityId)
-{
-	if (TSharedPtr<improbable::UnrealMetadata>* UnrealMetadataPtr = EntityUnrealMetadataMap.Find(EntityId))
-	{
-		return UnrealMetadataPtr->Get();
-	}
-
-	return nullptr;
-}
-
-improbable::EntityAcl* USpatialView::GetEntityACL(Worker_EntityId EntityId)
-{
-	if (TSharedPtr<improbable::EntityAcl>* EntityAclPtr = EntityACLMap.Find(EntityId))
-	{
-		return EntityAclPtr->Get();
-	}
-
-	return nullptr;
-}
-
-void USpatialView::OnAddComponent(const Worker_AddComponentOp& Op)
-{
-	if (Op.data.component_id == improbable::UnrealMetadata::ComponentId)
-	{
-		EntityUnrealMetadataMap.Add(Op.entity_id, MakeShared<improbable::UnrealMetadata>(Op.data));
-	}
-
-	if (Op.data.component_id == improbable::EntityAcl::ComponentId)
-	{
-		EntityACLMap.Add(Op.entity_id, MakeShared<improbable::EntityAcl>(Op.data));
-	}
-}
-
-void USpatialView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
-{
-	EntityUnrealMetadataMap.Remove(Op.entity_id);
-	EntityACLMap.Remove(Op.entity_id);
-}
-
-void USpatialView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
-{
-	if (Op.update.component_id == improbable::EntityAcl::ComponentId)
-	{
-		EntityACLMap[Op.entity_id]->ApplyComponentUpdate(Op.update);
-	}
-}
-
-void USpatialView::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
-{
-	EntityComponentAuthorityMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.component_id) = (Worker_Authority)Op.authority;
 }

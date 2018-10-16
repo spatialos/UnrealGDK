@@ -42,7 +42,7 @@ T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
-	View = InNetDriver->View;
+	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	PackageMap = InNetDriver->PackageMap;
 	World = InNetDriver->GetWorld();
@@ -123,23 +123,13 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Data = MakeShared<improbable::EntityAcl>(Op.data);
-		break;
 	case SpatialConstants::METADATA_COMPONENT_ID:
-		Data = MakeShared<improbable::Metadata>(Op.data);
-		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
-		Data = MakeShared<improbable::Position>(Op.data);
-		break;
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-		Data = MakeShared<improbable::Persistence>(Op.data);
-		break;
 	case SpatialConstants::ROTATION_COMPONENT_ID:
-		Data = MakeShared<improbable::Rotation>(Op.data);
-		break;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-		Data = MakeShared<improbable::UnrealMetadata>(Op.data);
-		break;
+		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
+		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyData(Op.data);
 		GlobalStateManager->LinkExistingSingletonActors();
@@ -238,9 +228,9 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(EntityRegistry);
 
-	improbable::Position* Position = GetComponentData<improbable::Position>(*this, EntityId);
-	improbable::Metadata* Metadata = GetComponentData<improbable::Metadata>(*this, EntityId);
-	improbable::Rotation* Rotation = GetComponentData<improbable::Rotation>(*this, EntityId);
+	improbable::Position* Position = StaticComponentView->GetComponentData<improbable::Position>(EntityId);
+	improbable::Metadata* Metadata = StaticComponentView->GetComponentData<improbable::Metadata>(EntityId);
+	improbable::Rotation* Rotation = StaticComponentView->GetComponentData<improbable::Rotation>(EntityId);
 
 	check(Position && Metadata);
 
@@ -249,7 +239,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
 
 		// Assume SimulatedProxy until we've been delegated Authority
-		bool bAuthority = View->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+		bool bAuthority = StaticComponentView->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 		EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
 		EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
 		if (bAuthority)
@@ -278,7 +268,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		UNetConnection* Connection = nullptr;
-		improbable::UnrealMetadata* UnrealMetadataComponent = GetComponentData<improbable::UnrealMetadata>(*this, EntityId);
+		improbable::UnrealMetadata* UnrealMetadataComponent = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 		check(UnrealMetadataComponent);
 		bool bDoingDeferredSpawn = false;
 
@@ -494,7 +484,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
 	check(Info);
 
-	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && View->GetAuthority(EntityId, Info->RPCComponents[RPC_Client] == WORKER_AUTHORITY_AUTHORITATIVE);
+	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && StaticComponentView->GetAuthority(EntityId, Info->RPCComponents[RPC_Client] == WORKER_AUTHORITY_AUTHORITATIVE);
 
 	if (Data.component_id == Info->SingleClientComponent || Data.component_id == Info->MultiClientComponent)
 	{
@@ -524,7 +514,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 {
-	if (View->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (StaticComponentView->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping update because this was short circuited"), Op.entity_id, Op.update.component_id);
 		return;
