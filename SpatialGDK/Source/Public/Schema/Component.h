@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <improbable/c_worker.h>
+
 namespace improbable
 {
 
