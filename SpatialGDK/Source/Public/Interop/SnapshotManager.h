@@ -27,7 +27,7 @@ public:
 
 	void WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate);
 	void DeleteEntities(const Worker_EntityQueryResponseOp& Op);
-	void LoadSnapshot(FString SnapshotName);
+	void LoadSnapshot(const FString& SnapshotName);
 
 private:
 	UPROPERTY()

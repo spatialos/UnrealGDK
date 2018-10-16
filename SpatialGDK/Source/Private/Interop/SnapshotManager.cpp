@@ -86,15 +86,15 @@ void USnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
 }
 
 // GetSnapshotPath will take a snapshot (without the .snapshot extension) name and convert it to a relative path in the Game/Content folder.
-FString GetSnapshotPath(FString SnapshotName)
+FString GetSnapshotPath(const FString& SnapshotName)
 {
 	FString SnapshotsDirectory = FPaths::ProjectContentDir().Append("Spatial/Snapshots/");
-	return SnapshotsDirectory + SnapshotName + ".snapshot";;
+	return SnapshotsDirectory + SnapshotName + ".snapshot";
 }
 
 // LoadSnapshot will take a snapshot name which should be on disk and attempt to read and spawn all of the entities in that snapshot.
 // This should only be called from the worker which has authority over the GSM.
-void USnapshotManager::LoadSnapshot(FString SnapshotName)
+void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 {
 	FString SnapshotPath = GetSnapshotPath(SnapshotName);
 

@@ -21,10 +21,10 @@
 #include "Interop/SpatialView.h"
 #include "Interop/SnapshotManager.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
-#include "EngineClasses/SpatialGameInstance.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
 

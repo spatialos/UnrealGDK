@@ -2,18 +2,17 @@
 
 #include "GlobalStateManager.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "EngineClasses/SpatialGameInstance.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialSender.h"
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
+#include "Runtime/Engine/Public/TimerManager.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
-#include "Runtime/Engine/Public/TimerManager.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
@@ -63,7 +62,7 @@ void UGlobalStateManager::ApplyMapData(const Worker_ComponentData& Data)
 		{
 			if (!NetDriver->IsServer())
 			{
-				// TODO: UNR-??? - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
+				// TODO: UNR-656 - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
 				// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
 				// This means that the clients never actually receive updates or data on the GSM. To get around this we are making timed entity queries to
 				// find the state of the GSM and the accepting players. Remove this work-around when the runtime bug is fixed.
