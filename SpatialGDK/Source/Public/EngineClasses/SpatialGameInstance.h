@@ -26,4 +26,7 @@ protected:
 	bool HasSpatialNetDriver() const;
 	// Helper function that bypasses some of the Unreal flow (which won't work with the SpatialOS model) when launching a new game as a client.
 	bool StartGameInstance_SpatialGDKClient(FString& Error);
+
+	// Builds a URL for initial connection, similar to what UGameInstance::StartGameInstance does.
+	FURL GetInitialGameURL() const;
 };

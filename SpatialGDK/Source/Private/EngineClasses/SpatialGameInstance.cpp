@@ -71,8 +71,7 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 		GetEngine()->ShutdownWorldNetDriver(GetWorldContext()->World());
 	}
 
-	FURL URL = WorldContext->LastURL;
-	URL.Host = SpatialConstants::LOCAL_HOST;
+	FURL URL = GetInitialGameURL();
 
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);
@@ -90,6 +89,35 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 	}
 
 	return bOk;
+}
+
+FURL USpatialGameInstance::GetInitialGameURL() const
+{
+	// Load the default URL from config files.
+	FURL DefaultURL;
+	DefaultURL.LoadURLConfig(TEXT("DefaultPlayer"), GGameIni);
+
+	const TCHAR* Cmd = FCommandLine::Get();
+
+	// Load up the default game map settings.
+	const UGameMapsSettings* GameMapsSettings = GetDefault<UGameMapsSettings>();
+	const FString& DefaultMap = GameMapsSettings->GetGameDefaultMap();
+
+	// Check to see if there's a command line URL override.
+	FString URLToLoad;
+	if (!FParse::Token(Cmd, URLToLoad, 0) || **URLToLoad == '-')
+	{
+		// If not, use the default map and options.
+		URLToLoad = DefaultMap + GameMapsSettings->LocalMapOptions;
+	}
+
+	FURL URL(&DefaultURL, *URLToLoad, TRAVEL_Partial);
+	checkf(URL.Valid == 1, TEXT("Initial URL was invalid: %s"), *URL.ToString());
+
+	// If the default is just a map, set the URL to localhost to make sure we attempt to make a connection.
+	URL.Host = SpatialConstants::LOCAL_HOST;
+
+	return URL;
 }
 
 #if WITH_EDITOR
