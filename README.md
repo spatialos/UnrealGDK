@@ -49,7 +49,7 @@ Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issu
 The GDK and its starter projects are available on GitHub.
 * [GDK: github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 * [Third Person Shooter Game](https://github.com/spatialos/UnrealGDKThirdPersonShooter)
-* [Starter Project](https://github.com/spatialos/UnrealStarterProject)
+* [Starter Project](https://github.com/spatialos/UnrealGDKStarterProject)
 * [The Test Suite](https://github.com/spatialos/UnrealGDKTestSuite)
 * [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK) </br>
 **NOTE:** This link may give you a 404. 
