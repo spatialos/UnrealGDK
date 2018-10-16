@@ -107,7 +107,7 @@ public:
 	USpatialPackageMapClient* PackageMap;
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
-
+	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
