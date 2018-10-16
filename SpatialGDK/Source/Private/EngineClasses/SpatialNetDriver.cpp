@@ -79,69 +79,6 @@ void USpatialNetDriver::PostInitProperties()
 	}
 }
 
-// TODO: Move this to it's own class.
-void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode)
-{
-#if WITH_SERVER_CODE
-
-	GameMode->StartToLeaveMap();
-
-	// Force an old style load screen if the server has been up for a long time so that TimeSeconds doesn't overflow and break everything
-	bool bSeamless = (GameMode->bUseSeamlessTravel && GameMode->GetWorld()->TimeSeconds < 172800.0f); // 172800 seconds == 48 hours
-
-	FString NextMap;
-	if (URL.ToUpper().Contains(TEXT("?RESTART")))
-	{
-		NextMap = UWorld::RemovePIEPrefix(GameMode->GetOutermost()->GetName());
-	}
-	else
-	{
-		int32 OptionStart = URL.Find(TEXT("?"));
-		if (OptionStart == INDEX_NONE)
-		{
-			NextMap = URL;
-		}
-		else
-		{
-			NextMap = URL.Left(OptionStart);
-		}
-	}
-
-	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), GameMode->GetWorld()->IsPlayInEditor());
-
-	// Notify clients we're switching level and give them time to receive.
-	FString URLMod = URL;
-	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, NextMapGuid, bSeamless, bAbsolute);
-
-	UE_LOG(LogGameMode, Warning, TEXT("SpatialServerTravel - Wiping the world"), *URL);
-	UWorld* World = GameMode->GetWorld();
-	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-	ENetMode NetMode = GameMode->GetNetMode();
-
-	// FinishServerTravel - Allows Unreal to finish it's normal server travel.
-	USpatialNetDriver::ServerTravelDelegate FinishServerTravel;
-	FinishServerTravel.BindLambda([World, NetDriver, URL, NetMode, bSeamless, bAbsolute] {
-
-		UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Finishing Server Travel : %s"), *URL);
-		check(World);
-		World->NextURL = URL;
-
-		if (bSeamless)
-		{
-			World->SeamlessTravel(World->NextURL, bAbsolute);
-			World->NextURL = TEXT("");
-		}
-		// Switch immediately if not networking.
-		else if (NetMode != NM_DedicatedServer && NetMode != NM_ListenServer)
-		{
-			World->NextSwitchCountdown = 0.0f;
-		}
-	});
-
-	NetDriver->WipeWorld(FinishServerTravel);
-#endif // WITH_SERVER_CODE
-}
-
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
 	if (LoadedWorld->GetNetDriver() != this)
@@ -314,6 +251,68 @@ void USpatialNetDriver::OnConnected()
 void USpatialNetDriver::OnConnectFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
+}
+
+void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode)
+{
+#if WITH_SERVER_CODE
+
+	GameMode->StartToLeaveMap();
+
+	// Force an old style load screen if the server has been up for a long time so that TimeSeconds doesn't overflow and break everything
+	bool bSeamless = (GameMode->bUseSeamlessTravel && GameMode->GetWorld()->TimeSeconds < 172800.0f); // 172800 seconds == 48 hours
+
+	FString NextMap;
+	if (URL.ToUpper().Contains(TEXT("?RESTART")))
+	{
+		NextMap = UWorld::RemovePIEPrefix(GameMode->GetOutermost()->GetName());
+	}
+	else
+	{
+		int32 OptionStart = URL.Find(TEXT("?"));
+		if (OptionStart == INDEX_NONE)
+		{
+			NextMap = URL;
+		}
+		else
+		{
+			NextMap = URL.Left(OptionStart);
+		}
+	}
+
+	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), GameMode->GetWorld()->IsPlayInEditor());
+
+	// Notify clients we're switching level and give them time to receive.
+	FString URLMod = URL;
+	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, NextMapGuid, bSeamless, bAbsolute);
+
+	UE_LOG(LogGameMode, Warning, TEXT("SpatialServerTravel - Wiping the world"), *URL);
+	UWorld* World = GameMode->GetWorld();
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	ENetMode NetMode = GameMode->GetNetMode();
+
+	// FinishServerTravel - Allows Unreal to finish it's normal server travel.
+	USpatialNetDriver::ServerTravelDelegate FinishServerTravel;
+	FinishServerTravel.BindLambda([World, NetDriver, URL, NetMode, bSeamless, bAbsolute] {
+
+		UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Finishing Server Travel : %s"), *URL);
+		check(World);
+		World->NextURL = URL;
+
+		if (bSeamless)
+		{
+			World->SeamlessTravel(World->NextURL, bAbsolute);
+			World->NextURL = TEXT("");
+		}
+		// Switch immediately if not networking.
+		else if (NetMode != NM_DedicatedServer && NetMode != NM_ListenServer)
+		{
+			World->NextSwitchCountdown = 0.0f;
+		}
+	});
+
+	NetDriver->WipeWorld(FinishServerTravel);
+#endif // WITH_SERVER_CODE
 }
 
 bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const

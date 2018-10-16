@@ -146,6 +146,8 @@ private:
 
 	UFUNCTION()
 	void OnConnectFailed(const FString& Reason);
+
+	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 		
 #if WITH_SERVER_CODE
 	//SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.
