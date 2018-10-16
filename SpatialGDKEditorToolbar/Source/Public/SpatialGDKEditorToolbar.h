@@ -56,7 +56,8 @@ private:
 	void CacheSpatialObjects(uint32 SpatialFlags);
 
 private:
-	bool CanExecuteSchemaGenerator();
+	bool CanExecuteSchemaGenerator() const;
+	bool CanExecuteSnapshotGenerator() const;
 	void StopRunningStack();
 	void CheckForRunningStack();
 
