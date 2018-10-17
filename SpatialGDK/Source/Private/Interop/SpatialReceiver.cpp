@@ -317,6 +317,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
 		if (!Channel)
 		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
 			EntityActor->Destroy(true);
 			return;
 		}
