@@ -178,7 +178,10 @@ void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 
 	OutChannel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
-	NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
+	if (OutChannel)
+	{
+		NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
+	}
 }
 
 bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId)

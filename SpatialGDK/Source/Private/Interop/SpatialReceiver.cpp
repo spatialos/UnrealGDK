@@ -312,13 +312,17 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			}
 		}
 
-		// Add to entity registry. 
-		EntityRegistry->AddToRegistry(EntityId, EntityActor);
-
 		// Set up actor channel.
 		USpatialPackageMapClient* SpatialPackageMap = Cast<USpatialPackageMapClient>(Connection->PackageMap);
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
-		check(Channel);
+		if (!Channel)
+		{
+			EntityActor->Destroy(true);
+			return;
+		}
+
+		// Add to entity registry.
+		EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
 		if (bDoingDeferredSpawn)
 		{
@@ -382,6 +386,10 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (!Actor || Actor->IsPendingKill())
 	{
+		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
+		{
+			ActorChannel->ConditionalCleanUp();
+		}
 		CleanupDeletedEntity(EntityId);
 		return;
 	}
@@ -422,9 +430,21 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	// In neither situation do we want to delete associated entities, so prevent them from being issued.
 	// TODO: fix this with working sets (UNR-411)
 	NetDriver->StartIgnoringAuthoritativeDestruction();
-	if (!World->DestroyActor(Actor, true))
+
+	// Clean up the actor channel. For clients, this will also call destroy on the actor.
+	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("World->DestroyActor failed on RemoveActor %s %lld"), *Actor->GetName(), EntityId);
+		ActorChannel->ConditionalCleanUp();
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! Actor: %s %lld"), *Actor->GetName(), EntityId);
+	}
+
+	// It is safe to call AActor::Destroy even if the destruction has already started.
+	if (!Actor->Destroy(true))
+	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Failed to destroy actor in RemoveActor %s %lld"), *Actor->GetName(), EntityId);
 	}
 	NetDriver->StopIgnoringAuthoritativeDestruction();
 
