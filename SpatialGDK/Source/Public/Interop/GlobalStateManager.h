@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "TimerManager.h"
 #include "UObject/NoExportTypes.h"
 
 #include "Utils/SchemaUtils.h"
@@ -43,7 +44,7 @@ public:
 	bool IsSingletonEntity(Worker_EntityId EntityId);
 
 	void QueryGSM(bool bWithRetry);
-	void SetDeploymentMapURL(FString MapURL);
+	void SetDeploymentMapURL(const FString& MapURL);
 
 	void ToggleAcceptingPlayers(bool bAcceptingPlayers);
 	void AuthorityChanged(bool bWorkerAuthority);

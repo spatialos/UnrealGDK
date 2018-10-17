@@ -387,7 +387,7 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority)
 	OnAuthorityChanged.ExecuteIfBound(bWorkerAuthority);
 }
 
-void UGlobalStateManager::SetDeploymentMapURL(FString MapURL)
+void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;

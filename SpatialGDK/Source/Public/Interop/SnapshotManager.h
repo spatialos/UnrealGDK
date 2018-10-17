@@ -14,6 +14,7 @@
 #include "SnapshotManager.generated.h"
 
 class UGlobalStateManager;
+class USpatialReceiver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSnapshotManager, Log, All)
 
