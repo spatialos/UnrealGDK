@@ -240,7 +240,8 @@ void USpatialNetDriver::OnConnected()
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker authoriative over the GSM is loading snapshot: %s"), *SnapshotToLoad);
 		SnapshotManager->LoadSnapshot(SnapshotToLoad);
 	}
-	else if (!ServerConnection)
+
+	if (!ServerConnection)
 	{
 		// If we already have authority over the GSM then toggle accepting players.
 		if(GlobalStateManager->bHasLiveMapAuthority)

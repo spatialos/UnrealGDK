@@ -37,7 +37,7 @@ void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
 void UGlobalStateManager::ApplyMapData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-
+	
 	// Set the Map URL.
 	if(Schema_GetObjectCount(ComponentObject, 1) == 1)
 	{

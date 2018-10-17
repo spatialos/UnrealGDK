@@ -131,9 +131,10 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Worker_ComponentData MapData;
 	MapData.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
 	MapData.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(MapData.schema_type);
-	Schema_Object* MapObject = Schema_AddObject(ComponentObject, 1);
-	Schema_AddBool(MapObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(false));
+	Schema_Object* MapDataObject = Schema_GetComponentDataFields(MapData.schema_type);
+	Schema_Object* MapURLObject = Schema_AddObject(MapDataObject, 1);
+	AddStringToSchema(MapURLObject, 1, TEXT("default"));
+	Schema_AddBool(MapDataObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(false));
 	Components.Add(MapData);
 
 	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
