@@ -115,7 +115,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
 	}
-	else if (LoadedWorld->URL.HasOption(TEXT("receptionist")))
+	else
 	{
 		// Check for overrides in the travel URL.
 		if (!LoadedWorld->URL.Host.IsEmpty())

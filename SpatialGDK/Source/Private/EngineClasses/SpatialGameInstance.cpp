@@ -143,18 +143,5 @@ void USpatialGameInstance::StartGameInstance()
 		SpatialConnection = NewObject<USpatialWorkerConnection>();
 	}
 
-	if (!GIsClient || !HasSpatialNetDriver())
-	{
-		Super::StartGameInstance();
-	}
-	else
-	{
-		FString Error;
-
-		if (!StartGameInstance_SpatialGDKClient(Error))
-		{
-			UE_LOG(LogSpatialGameInstance, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
-			FPlatformMisc::RequestExit(false);
-		}
-	}
+	Super::StartGameInstance();
 }
