@@ -53,7 +53,12 @@ FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
 		if (NetGUID.IsValid())
 		{
 			Value = PackageMapClient->GetObjectFromNetGUID(NetGUID, true);
-			checkf(Value, TEXT("An object ref %s should map to a valid object."), *ObjectRef.ToString());
+			//checkf(Value, TEXT("An object ref %s should map to a valid object."), *ObjectRef.ToString());
+			if (!Value)
+			{
+				UE_LOG(LogTemp, Error, TEXT("An object ref %s %s should map to a valid object."), *ObjectRef.ToString(), ObjectRef.Path.IsSet() ? **ObjectRef.Path : TEXT("NO PATH"));
+				Value = nullptr;
+			}
 		}
 		else
 		{
