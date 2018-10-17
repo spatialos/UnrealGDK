@@ -51,7 +51,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	return bHasSpatialNetDriver;
 }
 
-bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
+bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(bool bIsPIE, FString& Error)
 {
 	if (WorldContext->PendingNetGame)
 	{
@@ -71,7 +71,18 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 		GetEngine()->ShutdownWorldNetDriver(GetWorldContext()->World());
 	}
 
-	FURL URL = GetInitialGameURL();
+	FURL URL;
+	if (bIsPIE)
+	{
+		// Do this so we load the same world that the editor had running.
+		URL = WorldContext->LastURL;
+	}
+	else
+	{
+		URL = GetInitialGameURL();
+	}
+	// If the default is just a map, set the URL to localhost to make sure we attempt to make a connection.
+	URL.Host = SpatialConstants::LOCAL_HOST;
 
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
 	WorldContext->PendingNetGame->Initialize(URL);
@@ -114,9 +125,6 @@ FURL USpatialGameInstance::GetInitialGameURL() const
 	FURL URL(&DefaultURL, *URLToLoad, TRAVEL_Partial);
 	checkf(URL.Valid == 1, TEXT("Initial URL was invalid: %s"), *URL.ToString());
 
-	// If the default is just a map, set the URL to localhost to make sure we attempt to make a connection.
-	URL.Host = SpatialConstants::LOCAL_HOST;
-
 	return URL;
 }
 
@@ -148,7 +156,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 
 	FString Error;
 
-	if (StartGameInstance_SpatialGDKClient(Error))
+	if (StartGameInstance_SpatialGDKClient(true, Error))
 	{
 		GetEngine()->TransitionType = TT_WaitingToConnect;
 		return FGameInstancePIEResult::Success();
@@ -170,7 +178,7 @@ void USpatialGameInstance::StartGameInstance()
 	{
 		FString Error;
 
-		if (!StartGameInstance_SpatialGDKClient(Error))
+		if (!StartGameInstance_SpatialGDKClient(false, Error))
 		{
 			UE_LOG(LogSpatialGameInstance, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
 			FPlatformMisc::RequestExit(false);
