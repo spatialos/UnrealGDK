@@ -7,6 +7,8 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialConstants.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialNetBitReader);
+
 FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMap, uint8* Source, int64 CountBits, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: FNetBitReader(InPackageMap, Source, CountBits)
 	, UnresolvedRefs(InUnresolvedRefs) {}
@@ -55,7 +57,10 @@ FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
 			Value = PackageMapClient->GetObjectFromNetGUID(NetGUID, true);
 			if (!Value)
 			{
-				UE_LOG(LogTemp, Error, TEXT("An object ref %s %s should map to a valid object."), *ObjectRef.ToString(), ObjectRef.Path.IsSet() ? **ObjectRef.Path : TEXT("NO PATH"));
+				// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
+				// it's part of a streaming level that hasn't been streamed in. In either case, there's nothing we can do.
+				UE_LOG(LogSpatialNetBitReader, Warning, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
+					*ObjectRef.ToString(), ObjectRef.Path.IsSet() ? **ObjectRef.Path : TEXT("[NO PATH]"));
 				Value = nullptr;
 			}
 		}
