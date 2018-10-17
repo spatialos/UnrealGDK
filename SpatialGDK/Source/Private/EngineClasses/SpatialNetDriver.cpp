@@ -18,7 +18,6 @@
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialTypebindingManager.h"
 #include "Interop/SpatialDispatcher.h"
-#include "Interop/SpatialView.h"
 #include "Interop/SnapshotManager.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
@@ -172,11 +171,8 @@ void USpatialNetDriver::OnConnected()
 	Receiver = NewObject<USpatialReceiver>();
 	GlobalStateManager = NewObject<UGlobalStateManager>();
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
-<<<<<<< HEAD
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
-=======
 	SnapshotManager = NewObject<USnapshotManager>();
->>>>>>> Created SnapshotManager to handle snapshot code, refactored code out of GSM
 
 	PlayerSpawner->Init(this, TimerManager);
 
