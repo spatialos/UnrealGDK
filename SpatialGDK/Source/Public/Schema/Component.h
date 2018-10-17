@@ -26,8 +26,8 @@ template <typename T>
 class ComponentStorage : public ComponentStorageBase
 {
 public:
-	explicit ComponentStorage(const typename T& data) : data{data} {}
-	explicit ComponentStorage(typename T&& data) : data{std::move(data)} {}
+	explicit ComponentStorage(const T& data) : data{data} {}
+	explicit ComponentStorage(T&& data) : data{std::move(data)} {}
 	~ComponentStorage() override {}
 
 	TUniquePtr<ComponentStorageBase> Copy() const override
@@ -35,13 +35,13 @@ public:
 		return TUniquePtr<ComponentStorageBase>{new ComponentStorage{data}};
 	}
 
-	typename T& Get()
+	T& Get()
 	{
 		return data;
 	}
 
 private:
-	typename T data;
+	T data;
 };
 
 }

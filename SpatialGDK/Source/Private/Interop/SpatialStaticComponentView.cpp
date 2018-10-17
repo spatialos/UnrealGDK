@@ -22,7 +22,7 @@ bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_
 }
 
 template <typename T>
-typename T* USpatialStaticComponentView::GetComponentData(Worker_EntityId EntityId)
+T* USpatialStaticComponentView::GetComponentData(Worker_EntityId EntityId)
 {
 	if (TMap<Worker_ComponentId, TUniquePtr<ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 	{
