@@ -295,9 +295,10 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			if (NetGUID.IsValid())
 			{
 				UObject* ObjectValue = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-				//checkf(ObjectValue, TEXT("An object ref %s should map to a valid object."), *ObjectRef.ToString());
 				if (!ObjectValue)
 				{
+					// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
+					// it's part of a streaming level that hasn't been streamed in. In either case, there's nothing we can do.
 					UE_LOG(LogTemp, Error, TEXT("An object ref %s %s should map to a valid object."), *ObjectRef.ToString(), ObjectRef.Path.IsSet() ? **ObjectRef.Path : TEXT("NO PATH"));
 					return;
 				}
