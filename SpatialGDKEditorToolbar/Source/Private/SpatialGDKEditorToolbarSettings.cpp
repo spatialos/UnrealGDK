@@ -6,7 +6,7 @@ USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObject
 	, SpatialOSLaunchConfig(TEXT("default_launch.json"))
 	, bStopSpatialOnExit(false)
 	, SpatialOSSnapshotFile(GetSpatialOSSnapshotFile())
-	, bGenerateSchemaForAllSupportedClasses(false)
+	, bGenerateSchemaForAllSupportedClasses(true)
 {
 	ProjectRootFolder.Path = TEXT("");
 	SpatialOSSnapshotPath.Path = TEXT("");
