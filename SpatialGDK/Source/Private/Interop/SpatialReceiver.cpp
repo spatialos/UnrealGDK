@@ -806,6 +806,7 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 		{
 			return Obj->GetClass() == Class;
 		});
+
 		if (FoundSubobject != nullptr)
 		{
 			TargetObject = *FoundSubobject;
