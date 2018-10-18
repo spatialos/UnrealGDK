@@ -3,6 +3,9 @@
 #pragma once
 
 #include "Math/Vector.h"
+#include "Platform.h"
+
+#include "improbable/UnrealObjectRef.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
@@ -13,6 +16,7 @@
 #include <WorkerSDK/improbable/c_worker.h>
 
 using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
+//using ComponentInterestMap = TMap<uint32, 
 
 namespace improbable
 {
@@ -43,6 +47,203 @@ struct Coordinates
 		return Location;
 	}
 };
+
+using EdgeLength = Coordinates;
+
+inline void AddCoordinateToSchema(Schema_Object* Object, Schema_FieldId Id, const Coordinates& Coordinate)
+{
+	Schema_Object* CoordsObject = Schema_AddObject(Object, Id);
+
+	Schema_AddDouble(CoordsObject, 1, Coordinate.X);
+	Schema_AddDouble(CoordsObject, 2, Coordinate.Y);
+	Schema_AddDouble(CoordsObject, 3, Coordinate.Z);
+}
+
+inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id)
+{
+	Schema_Object* CoordsObject = Schema_GetObject(Object, Id);
+
+	Coordinates Coordinate;
+	Coordinate.X = Schema_GetDouble(CoordsObject, 1);
+	Coordinate.Y = Schema_GetDouble(CoordsObject, 2);
+	Coordinate.Z = Schema_GetDouble(CoordsObject, 3);
+
+	return Coordinate;
+}
+
+struct ComponentInterest
+{
+	struct SphereConstraint
+	{
+		Coordinates Center;
+		double Radius;
+	};
+
+	struct CylinderConstraint 
+	{
+		Coordinates Center;
+		double Radius;
+	};
+
+	struct BoxConstraint
+	{
+		Coordinates Center;
+		EdgeLength EdgeLength;
+	};
+
+	struct RelativeSphereConstraint
+	{
+		double Radius;
+	};
+
+	struct RelativeCylinderConstraint
+	{
+		double Radius;
+	};
+
+	struct RelativeBoxConstraint
+	{
+		EdgeLength EdgeLength;
+	};
+
+	struct QueryConstraint
+	{
+		TSchemaOption<SphereConstraint> SphereConstraint;
+		TSchemaOption<CylinderConstraint> CylinderConstraint;
+		TSchemaOption<BoxConstraint> BoxConstraint;
+		TSchemaOption<RelativeSphereConstraint> RelativeSphereConstraint;
+		TSchemaOption<RelativeCylinderConstraint> RelativeCylinderConstraint;
+		TSchemaOption<RelativeBoxConstraint> RelativeBoxConstraint;
+		TSchemaOption<int64> EntityIdConstraint;
+		TSchemaOption<uint32> ComponentConstraint;
+		TArray<QueryConstraint> AndConstraint;
+		TArray<QueryConstraint> OrConstraint;
+	};
+
+	struct Query
+	{
+		QueryConstraint Constraint;
+		TSchemaOption<bool> FullSnapshotResult;
+		TArray<uint32> ResultComponentId;
+		TSchemaOption<float> Frequency;
+	};
+
+	TArray<Query> Queries;
+};
+
+inline void AddQueryConstraintToSchema(Schema_Object* Object, Schema_FieldId Id, const ComponentInterest::QueryConstraint& Constraint)
+{
+	Schema_Object* QueryConstraintObject = Schema_AddObject(Object, Id);
+
+	//option<SphereConstraint> sphere_constraint = 1;
+	if (Constraint.SphereConstraint)
+	{
+		Schema_Object* SphereConstraintObject = Schema_AddObject(QueryConstraintObject, 1);
+
+		AddCoordinateToSchema(SphereConstraintObject, 1, Constraint.SphereConstraint->Center);
+		Schema_AddDouble(SphereConstraintObject, 2, Constraint.SphereConstraint->Radius);
+	}
+
+	//option<CylinderConstraint> cylinder_constraint = 2;
+	if (Constraint.CylinderConstraint)
+	{
+		Schema_Object* CylinderConstraintObject = Schema_AddObject(QueryConstraintObject, 2);
+
+		AddCoordinateToSchema(CylinderConstraintObject, 1, Constraint.CylinderConstraint->Center);
+		Schema_AddDouble(CylinderConstraintObject, 2, Constraint.CylinderConstraint->Radius);
+	}
+	//option<BoxConstraint> box_constraint = 3;
+	if (Constraint.BoxConstraint)
+	{
+		Schema_Object* BoxConstraintObject = Schema_AddObject(QueryConstraintObject, 3);
+		AddCoordinateToSchema(BoxConstraintObject, 1, Constraint.BoxConstraint->Center);
+		AddCoordinateToSchema(BoxConstraintObject, 2, Constraint.BoxConstraint->EdgeLength);
+	}
+	//option<RelativeSphereConstraint> relative_sphere_constraint = 4;
+	if (Constraint.RelativeSphereConstraint)
+	{
+		Schema_Object* RelativeSphereConstraintObject = Schema_AddObject(QueryConstraintObject, 4);
+
+		Schema_AddDouble(RelativeSphereConstraintObject, 1, Constraint.RelativeSphereConstraint->Radius);
+	}
+
+	//option<RelativeCylinderConstraint> relative_cylinder_constraint = 5;
+	if (Constraint.RelativeCylinderConstraint)
+	{
+		Schema_Object* RelativeCylinderConstraintObject = Schema_AddObject(QueryConstraintObject, 5);
+		Schema_AddDouble(RelativeCylinderConstraintObject, 1, Constraint.RelativeCylinderConstraint->Radius);
+	}
+	//option<RelativeBoxConstraint> relative_box_constraint = 6;
+	if (Constraint.RelativeBoxConstraint)
+	{
+		Schema_Object* RelativeBoxConstraintObject = Schema_AddObject(QueryConstraintObject, 6);
+		AddCoordinateToSchema(RelativeBoxConstraintObject, 1, Constraint.RelativeBoxConstraint->EdgeLength);
+	}
+	//option<int64> entity_id_constraint = 7;
+	if (Constraint.EntityIdConstraint)
+	{
+		Schema_Object* EntityIdConstraintObject = Schema_AddObject(QueryConstraintObject, 7);
+		Schema_AddInt64(EntityIdConstraintObject, 1, *Constraint.EntityIdConstraint);
+	}
+
+	//option<uint32> component_constraint = 8;
+	if (Constraint.ComponentConstraint)
+	{
+		Schema_Object* ComponentConstraintObject = Schema_AddObject(QueryConstraintObject, 8);
+		Schema_AddUint32(ComponentConstraintObject, 1, *Constraint.ComponentConstraint);
+	}
+
+	//list<QueryConstraint> and_constraint = 9;
+	if (Constraint.AndConstraint.Num() > 0)
+	{
+		Schema_Object* AndConstraintObject = Schema_AddObject(QueryConstraintObject, 9);
+
+		for (const ComponentInterest::QueryConstraint& AndConstraintEntry : Constraint.AndConstraint)
+		{
+			AddQueryConstraintToSchema(AndConstraintObject, 1, AndConstraintEntry);
+		}
+	}
+
+	//list<QueryConstraint> or_constraint = 10;
+	if (Constraint.OrConstraint.Num() > 0)
+	{
+		Schema_Object* OrConstraintObject = Schema_AddObject(QueryConstraintObject, 10);
+
+		for (const ComponentInterest::QueryConstraint& OrConstraintEntry : Constraint.OrConstraint)
+		{
+			AddQueryConstraintToSchema(OrConstraintObject, 1, OrConstraintEntry);
+		}
+	}
+}
+
+inline void AddQueryToSchema(Schema_Object* Object, Schema_FieldId Id, const ComponentInterest::Query& Query)
+{
+	Schema_Object* QueryObject = Schema_AddObject(Object, Id);
+
+	// Write the query constraint
+	AddQueryConstraintToSchema(QueryObject, 1, Query.Constraint);
+
+	//write the snapshot option
+	if (Query.FullSnapshotResult)
+	{
+		Schema_Object* FullSnapshotResultObject = Schema_AddObject(QueryObject, 2);
+		Schema_AddBool(FullSnapshotResultObject, 1, *Query.FullSnapshotResult);
+	}
+
+	// write the resulting component if
+	Schema_Object* ResultComponentIdObject = Schema_AddObject(QueryObject, 3);
+
+	for (uint32 ComponentId : Query.ResultComponentId)
+	{
+		Schema_AddUint32(ResultComponentIdObject, 1, ComponentId);
+	}
+	// write option for frequency
+	if (Query.Frequency)
+	{
+		Schema_Object* FrequencyObject = Schema_AddObject(QueryObject, 4);
+		Schema_AddFloat(FrequencyObject, 1, *Query.Frequency);
+	}
+}
 
 struct EntityAcl : Component
 {
@@ -181,11 +382,7 @@ struct Position : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		Schema_Object* CoordsObject = Schema_GetObject(ComponentObject, 1);
-
-		Coords.X = Schema_GetDouble(CoordsObject, 1);
-		Coords.Y = Schema_GetDouble(CoordsObject, 2);
-		Coords.Z = Schema_GetDouble(CoordsObject, 3);
+		Coords = GetCoordinateFromSchema(ComponentObject, 1);
 	}
 
 	Worker_ComponentData CreatePositionData()
@@ -195,11 +392,7 @@ struct Position : Component
 		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		Schema_Object* CoordsObject = Schema_AddObject(ComponentObject, 1);
-
-		Schema_AddDouble(CoordsObject, 1, Coords.X);
-		Schema_AddDouble(CoordsObject, 2, Coords.Y);
-		Schema_AddDouble(CoordsObject, 3, Coords.Z);
+		AddCoordinateToSchema(ComponentObject, 1, Coords);
 
 		return Data;
 	}
@@ -211,11 +404,7 @@ struct Position : Component
 		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
-		Schema_Object* CoordsObject = Schema_AddObject(ComponentObject, 1);
-
-		Schema_AddDouble(CoordsObject, 1, Coords.X);
-		Schema_AddDouble(CoordsObject, 2, Coords.Y);
-		Schema_AddDouble(CoordsObject, 3, Coords.Z);
+		AddCoordinateToSchema(ComponentObject, 1, Coords);
 
 		return ComponentUpdate;
 	}
@@ -249,6 +438,71 @@ struct Persistence : Component
 
 		return Data;
 	}
+};
+
+struct Interest : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::INTEREST_COMPONENT_ID;
+
+	Interest() = default;
+
+	Interest(const Worker_ComponentData& Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		//TODO TODO TODO
+	}
+
+	Worker_ComponentData CreateInterestData()
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		for (const auto& KVPair : ComponentInterest)
+		{
+			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 1);
+			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
+			AddComponentInterestToSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
+		}
+
+		return Data;
+	}
+
+	Worker_ComponentUpdate CreateInterestUpdate()
+	{
+		Worker_ComponentUpdate ComponentUpdate = {};
+		ComponentUpdate.component_id = ComponentId;
+		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+		for (const auto& KVPair : ComponentInterest)
+		{
+			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 2);
+			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
+			AddComponentInterestToSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
+		}
+
+		return ComponentUpdate;
+	}
+
+	inline void AddComponentInterestToSchema(Schema_Object* Object, Schema_FieldId Id, const ComponentInterest& Value)
+	{
+		Schema_Object* ComponentInterestObject = Schema_AddObject(Object, Id);
+
+		for (const ComponentInterest::Query& QueryEntry : Value.Queries)
+		{
+			AddQueryToSchema(ComponentInterestObject, 1, QueryEntry);
+		}
+	}
+
+	inline WorkerRequirementSet GetComponentInterestFromSchema(Schema_Object* Object, Schema_FieldId Id)
+	{
+
+	}
+
+	TMap<uint32, ComponentInterest> ComponentInterest;
 };
 
 }

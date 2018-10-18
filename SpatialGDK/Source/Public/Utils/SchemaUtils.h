@@ -96,6 +96,8 @@ inline WorkerRequirementSet GetWorkerRequirementSetFromSchema(Schema_Object* Obj
 	return RequirementSet;
 }
 
+
+
 inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const FUnrealObjectRef& ObjectRef)
 {
 	Schema_Object* ObjectRefObject = Schema_AddObject(Object, Id);
