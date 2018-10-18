@@ -45,9 +45,9 @@ inline void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, U
 	{
 		const FRepLayoutCmd& Cmd = RepLayout.Cmds[CmdIndex];
 
-		check(Cmd.Type != REPCMD_Return);
+		check(Cmd.Type != ERepLayoutCmdType::Return);
 
-		if (Cmd.Type == REPCMD_DynamicArray)
+		if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 		{
 			RepLayout_SerializeProperties_DynamicArray(RepLayout, Ar, Map, CmdIndex, (uint8*)Data + Cmd.Offset, bHasUnmapped);
 			CmdIndex = Cmd.EndCmd - 1;		// The -1 to handle the ++ in the for loop

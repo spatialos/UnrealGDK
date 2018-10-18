@@ -103,7 +103,8 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	Receiver->ProcessQueuedResolvedObjects();
 
 	// Check every channel for net ownership changes (determines ACL and component interest)
-	for (auto& Pair : NetDriver->GetSpatialOSNetConnection()->ActorChannels)
+	const FActorChannelMap& ChannelMap = NetDriver->GetSpatialOSNetConnection()->ActorChannelMap();
+	for (auto& Pair : ChannelMap)
 	{
 		if (USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Pair.Value))
 		{

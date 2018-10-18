@@ -77,7 +77,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
 
-	FRepState* RepState = Replicator.RepState;
+	TSharedPtr<FRepState> RepState = Replicator.RepState;
 	TArray<FRepLayoutCmd>& Cmds = Replicator.RepLayout->Cmds;
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
 	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;
@@ -104,7 +104,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 			if (bIsInitialData || GetPropertyCount(ComponentObject, FieldId, Cmd.Property) > 0 || ClearedIds->Find(FieldId) != INDEX_NONE)
 			{
-				if (Cmd.Type == REPCMD_DynamicArray)
+				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 				{
 					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
 					bool bProcessedArray = false;

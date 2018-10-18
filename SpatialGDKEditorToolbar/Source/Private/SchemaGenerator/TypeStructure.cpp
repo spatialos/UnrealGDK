@@ -161,7 +161,7 @@ uint32 GenerateChecksum(UProperty* Property, uint32 ParentChecksum, int32 Static
 	uint32 Checksum = 0;
 	Checksum = FCrc::StrCrc32(*Property->GetName().ToLower(), ParentChecksum);            // Evolve checksum on name
 	Checksum = FCrc::StrCrc32(*Property->GetCPPType(nullptr, 0).ToLower(), Checksum);     // Evolve by property type
-	Checksum = FCrc::StrCrc32(*FString::Printf(TEXT("%i"), StaticArrayIndex), Checksum);  // Evolve by StaticArrayIndex
+	Checksum = FCrc::MemCrc32(&StaticArrayIndex, sizeof(StaticArrayIndex), Checksum);     // Evolve by StaticArrayIndex (to make all unrolled static array elements unique)
 	return Checksum;
 }
 
@@ -374,7 +374,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 	for (int CmdIndex = 0; CmdIndex < RepLayout.Cmds.Num(); ++CmdIndex)
 	{
 		FRepLayoutCmd& Cmd = RepLayout.Cmds[CmdIndex];
-		if (Cmd.Type == REPCMD_Return || Cmd.Property == nullptr)
+		if (Cmd.Type == ERepLayoutCmdType::Return || Cmd.Property == nullptr)
 		{
 			continue;
 		}
@@ -457,7 +457,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		PropertyNode->ReplicationData = RepDataNode;
 		PropertyNode->ReplicationData->Handle = Cmd.RelativeHandle;
 
-		if (Cmd.Type == REPCMD_DynamicArray)
+		if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 		{
 			// Bypass the inner properties and null terminator cmd when processing dynamic arrays.
 			CmdIndex = Cmd.EndCmd - 1;
