@@ -806,8 +806,16 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 		{
 			return Obj->GetClass() == Class;
 		});
-		check(FoundSubobject);
-		TargetObject = *FoundSubobject;
+		
+		if (FoundSubobject != nullptr)
+		{
+			TargetObject = *FoundSubobject;
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object for Class %s on Actor %s. Most likely this subobject was deleted?"),
+				*Class->GetName(), *Channel->Actor->GetName());
+		}
 	}
 
 	return TargetObject;
