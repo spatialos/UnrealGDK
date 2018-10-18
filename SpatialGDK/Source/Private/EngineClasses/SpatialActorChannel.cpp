@@ -284,6 +284,10 @@ bool USpatialActorChannel::ReplicateActor()
 		{
 			ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
 		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("EntityId: %lld Actor: %s Changelist with index %d has no changed items"), EntityId, *Actor->GetName(), i);
+		}
 	}
 
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
@@ -390,6 +394,10 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		if (HistoryItem.Changed.Num() > 0)
 		{
 			Replicator.RepLayout->MergeChangeList((uint8*)Object, HistoryItem.Changed, Temp, RepChanged);
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("EntityId: %lld Actor: %s Subobject: %s Changelist with index %d has no changed items"), EntityId, *Actor->GetName(), *Object->GetName(), i);
 		}
 	}
 
