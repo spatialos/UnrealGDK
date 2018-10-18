@@ -346,66 +346,6 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 	OnAuthorityChanged.ExecuteIfBound(bWorkerAuthority);
 }
 
-void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel)
-{
-	OutActor = nullptr;
-	OutChannel = nullptr;
-
-	UClass* SingletonActorClass = LoadObject<UClass>(nullptr, *ClassName);
-
-	if (SingletonActorClass == nullptr)
-	{
-		UE_LOG(LogGlobalStateManager, Error, TEXT("Failed to find Singleton Actor Class."));
-		return;
-	}
-
-	if (TPair<AActor*, USpatialActorChannel*>* Pair = NetDriver->SingletonActorChannels.Find(SingletonActorClass))
-	{
-		OutActor = Pair->Key;
-		OutChannel = Pair->Value;
-		return;
-	}
-
-	// Class doesn't exist in our map, have to find actor and create channel
-	// Get Singleton Actor in world
-	TArray<AActor*> SingletonActorList;
-	UGameplayStatics::GetAllActorsOfClass(NetDriver->GetWorld(), SingletonActorClass, SingletonActorList);
-
-	if (SingletonActorList.Num() == 0)
-	{
-		UE_LOG(LogGlobalStateManager, Error, TEXT("No Singletons of type %s exist!"), *ClassName);
-		return;
-	}
-
-	if (SingletonActorList.Num() > 1)
-	{
-		UE_LOG(LogGlobalStateManager, Error, TEXT("More than one Singleton Actor exists of type %s"), *ClassName);
-		return;
-	}
-
-	OutActor = SingletonActorList[0];
-
-	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
-
-	OutChannel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
-	if (OutChannel)
-	{
-		NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
-	}
-}
-
-bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId)
-{
-	for (const auto& Pair : SingletonNameToEntityId)
-	{
-		if (Pair.Value == EntityId)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
 // Queries for the GlobalStateManager in the deployment.
 // bWithRetry will continue querying until the state of AcceptingPlayers is true, this is so clients know when to connect to the deployment.
 void UGlobalStateManager::QueryGSM(bool bWithRetry)
@@ -456,20 +396,6 @@ void UGlobalStateManager::QueryGSM(bool bWithRetry)
 	});
 
 	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
-}
-
-void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority)
-{
-	// Make sure the GameInstance knows that this worker is now authoritative over the GSM (used for server travel).
-	// The GameInstance is the only persistent object during server travel.
-	// bIsWorkerAuthorativeOverGSM exists to inform the worker that was previously authoritative over the GSM that it has the responsibility of loading the new snapshot.
-	Cast<USpatialGameInstance>(NetDriver->GetWorld()->GetGameInstance())->bIsWorkerAuthorativeOverGSM = bWorkerAuthority;
-
-	// Also update this instance of the GSM that it has current authority (used for accepting players toggle).
-	// The instance of each GSM is destroyed on server travel and a new one is made, hence the need for 'live' authority.
-	bHasLiveMapAuthority = bWorkerAuthority;
-
-	OnAuthorityChanged.ExecuteIfBound(bWorkerAuthority);
 }
 
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
