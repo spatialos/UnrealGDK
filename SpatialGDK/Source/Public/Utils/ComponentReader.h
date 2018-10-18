@@ -5,6 +5,8 @@
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/SpatialReceiver.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialComponentReader, All, All);
+
 namespace improbable
 {
 
