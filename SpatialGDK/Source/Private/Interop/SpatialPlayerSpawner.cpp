@@ -62,6 +62,12 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp&
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Display, TEXT("Player spawned sucessfully"));
 	}
+#if WITH_EDITOR
+	else if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
+	{
+		UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Player spawn request timed out in editor. This is probably due the server taking a long time to start up. The player should spawn once it's finished loading."));
+	}
+#endif
 	else if (NumberOfAttempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
