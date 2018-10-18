@@ -4,10 +4,11 @@
 
 #include "improbable/UnrealObjectRef.h"
 
+namespace improbable
+{
 
-namespace improbable {
-
-void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath) {
+void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath)
+{
 	if (!ObjectRef.Path.IsSet())
 	{
 		return;
