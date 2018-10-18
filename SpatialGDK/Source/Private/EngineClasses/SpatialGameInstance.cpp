@@ -2,6 +2,7 @@
 
 #include "SpatialGameInstance.h"
 
+#include "Engine/EngineTypes.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
 #if WITH_EDITOR
@@ -53,24 +54,6 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(bool bIsPIE, FString& Error)
 {
-	if (WorldContext->PendingNetGame)
-	{
-		if (WorldContext->PendingNetGame->NetDriver && WorldContext->PendingNetGame->NetDriver->ServerConnection)
-		{
-			WorldContext->PendingNetGame->NetDriver->ServerConnection->Close();
-			GetEngine()->DestroyNamedNetDriver(WorldContext->PendingNetGame, WorldContext->PendingNetGame->NetDriver->NetDriverName);
-			WorldContext->PendingNetGame->NetDriver = nullptr;
-		}
-
-		WorldContext->PendingNetGame = nullptr;
-	}
-
-	// Clean up the netdriver/socket so that the pending level succeeds
-	if (GetWorldContext()->World())
-	{
-		GetEngine()->ShutdownWorldNetDriver(GetWorldContext()->World());
-	}
-
 	FURL URL;
 	if (bIsPIE)
 	{
@@ -84,22 +67,14 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(bool bIsPIE, FStri
 	// If the default is just a map, set the URL to localhost to make sure we attempt to make a connection.
 	URL.Host = SpatialConstants::LOCAL_HOST;
 
-	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
-	WorldContext->PendingNetGame->Initialize(URL);
-	WorldContext->PendingNetGame->InitNetDriver();
-	bool bOk = true;
+	EBrowseReturnVal::Type BrowseResult = EBrowseReturnVal::Failure;
 
-	if (!WorldContext->PendingNetGame->NetDriver)
+	if (URL.Valid)
 	{
-		// UPendingNetGame will set the appropriate error code and connection lost type, so
-		// we just have to propagate that message to the game.
-		GetEngine()->BroadcastTravelFailure(WorldContext->World(), ETravelFailure::PendingNetGameCreateFailure, WorldContext->PendingNetGame->ConnectionError);
-		Error = WorldContext->PendingNetGame->ConnectionError;
-		WorldContext->PendingNetGame = NULL;
-		bOk = false;
+		BrowseResult = GEngine->Browse(*WorldContext, URL, Error);
 	}
 
-	return bOk;
+	return BrowseResult != EBrowseReturnVal::Failure;
 }
 
 FURL USpatialGameInstance::GetInitialGameURL() const
@@ -122,10 +97,7 @@ FURL USpatialGameInstance::GetInitialGameURL() const
 		URLToLoad = DefaultMap + GameMapsSettings->LocalMapOptions;
 	}
 
-	FURL URL(&DefaultURL, *URLToLoad, TRAVEL_Partial);
-	checkf(URL.Valid == 1, TEXT("Initial URL was invalid: %s"), *URL.ToString());
-
-	return URL;
+	return FURL(&DefaultURL, *URLToLoad, TRAVEL_Partial);
 }
 
 #if WITH_EDITOR
