@@ -813,7 +813,7 @@ UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChann
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object for Class %s on Actor %s. Most likely this subobject was deleted?"),
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object for Class %s on Actor %s. Was this subobject was deleted?"),
 				*Class->GetName(), *Channel->Actor->GetName());
 		}
 	}
