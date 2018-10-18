@@ -345,6 +345,8 @@ inline ComponentInterest::QueryConstraint IndexQueryConstraintFromSchema(Schema_
 	{
 		NewQueryConstraint.OrConstraint.Add(IndexQueryConstraintFromSchema(QueryConstraintObject, 10, OrIndex));
 	}
+
+	return NewQueryConstraint;
 }
 
 inline ComponentInterest::QueryConstraint GetQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id)

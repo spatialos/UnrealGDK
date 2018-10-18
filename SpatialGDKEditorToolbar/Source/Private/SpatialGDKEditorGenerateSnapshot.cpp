@@ -303,6 +303,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
@@ -365,6 +366,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
 	Components.Add(improbable::UnrealMetadata(StaticPath, {}, ActorClass->GetPathName()).CreateUnrealMetadataData());
+	Components.Add(improbable::Interest().CreateInterestData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
 

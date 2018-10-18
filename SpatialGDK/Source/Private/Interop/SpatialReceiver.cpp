@@ -133,6 +133,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
+	case SpatialConstants::INTEREST_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
@@ -483,17 +484,6 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 	NetDriver->GetEntityRegistry()->RemoveFromRegistry(EntityId);
 	NetDriver->RemoveActorChannel(EntityId);
-<<<<<<< HEAD
-=======
-
-	PackageMap->RemoveEntityActor(EntityId);
-}
-
-UClass* USpatialReceiver::GetNativeEntityClass(improbable::Metadata* Metadata)
-{
-	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *Metadata->EntityType);
-	return Class->IsChildOf<AActor>() ? Class : nullptr;
->>>>>>> Cleaned up
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
