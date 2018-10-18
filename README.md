@@ -51,7 +51,7 @@ The GDK and its starter projects are available on GitHub.
 * [Third Person Shooter Game](https://github.com/spatialos/UnrealGDKThirdPersonShooter)
 * [Starter Project](https://github.com/spatialos/UnrealGDKStarterProject)
 * [The Test Suite](https://github.com/spatialos/UnrealGDKTestSuite)
-* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK) </br>
+* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK) </br>
 **NOTE:** This link may give you a 404. 
 In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
@@ -74,7 +74,7 @@ We are not supporting the pre-alpha release for game development, as this versio
 See the [latest roadmap (Trello board)](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap) and let us know what you'd like to see in there.
 
 ## Unreal Engine changes
-In order to transform Unreal from a single server engine to a distributed model, we had to make a small number of changes to UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo, `4.19-SpatialOSUnrealGDK` branch](https://github.com/improbableio/UnrealEngine/tree/4.19-SpatialOSUnrealGDK).
+In order to transform Unreal from a single server engine to a distributed model, we had to make a small number of changes to UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo, `4.20-SpatialOSUnrealGDK` branch](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK).
 > You may get a 404 error from this link. To get access, see [these instructions](https://docs.improbable.io/unreal/latest/setup-and-installing#unreal-engine-eula). <br/>
 
 ## Email updates
