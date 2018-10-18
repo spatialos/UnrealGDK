@@ -279,7 +279,11 @@ bool USpatialActorChannel::ReplicateActor()
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 		TArray<uint16> Temp = RepChanged;
-		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
+
+		if (HistoryItem.Changed.Num() > 0)
+		{
+			ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
+		}
 	}
 
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
@@ -382,7 +386,11 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 		TArray<uint16> Temp = RepChanged;
-		Replicator.RepLayout->MergeChangeList((uint8*)Object, HistoryItem.Changed, Temp, RepChanged);
+
+		if (HistoryItem.Changed.Num() > 0)
+		{
+			Replicator.RepLayout->MergeChangeList((uint8*)Object, HistoryItem.Changed, Temp, RepChanged);
+		}
 	}
 
 	Replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
