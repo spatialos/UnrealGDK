@@ -224,7 +224,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 
 	if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		GlobalStateManager->AuthorityChanged(true);
+		GlobalStateManager->AuthorityChanged(true, Op.entity_id);
 	}
 }
 

@@ -47,7 +47,7 @@ public:
 	void SetDeploymentMapURL(const FString& MapURL);
 
 	void ToggleAcceptingPlayers(bool bAcceptingPlayers);
-	void AuthorityChanged(bool bWorkerAuthority);
+	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
 
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers = false;
