@@ -19,6 +19,9 @@
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
 
+#include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
+#include "Runtime/Engine/Classes/GameFramework/Actor.h"
+
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
 namespace
@@ -29,18 +32,23 @@ void OnStatusOutput(FString Message)
 	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("%s"), *Message);
 }
 
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, int ComponentId, UClass* Class)
+int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, UClass* Class)
 {
-	FCodeWriter OutputSchema;
-
-	FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *UnrealNameToSchemaTypeName(Class->GetName()));
+	FString SchemaFilename = UnrealNameToSchemaTypeName(Class->GetName());
 
 	// Parent and static array index start at 0 for checksum calculations.
 	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, 0, 0, false);
 
-	// Generate schema.
-	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo, SchemaPath);
-	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
+	int NumComponents = 0;
+	if (!Class->IsChildOf<AActor>())
+	{
+		GenerateActorComponentSchema(Class, TypeInfo, SchemaPath + TEXT("ActorComponents/"));
+	}
+	else
+	{
+		NumComponents = GenerateActorSchema(ComponentId, Class, TypeInfo, SchemaPath);
+	}
+
 
 	return NumComponents;
 }
@@ -179,9 +187,6 @@ TArray<UClass*> GetAllSupportedClasses()
 
 		// No replicated/handover properties found
 		if (SupportedClass == nullptr) continue;
-
-		// Currently can't support components which have child components
-		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
 
 		// Doesn't let us save the schema database
 		if (SupportedClass->IsChildOf<ALevelScriptActor>()) continue;

@@ -111,12 +111,10 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 
 void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const FString& PropertyPath, const int FieldCounter)
 {
-	Writer.Printf("%s %s = %d; // %s // %s",
+	Writer.Printf("%s %s = %d;",
 		*PropertyToSchemaType(RepProp->Property, false),
 		*SchemaFieldName(RepProp),
-		FieldCounter,
-		*GetLifetimeConditionAsString(RepProp->ReplicationData->Condition),
-		*PropertyPath
+		FieldCounter
 	);
 }
 
@@ -171,32 +169,130 @@ bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo)
 		return true;
 	}
 
+	for (auto& PropertyPair : TypeInfo->Properties)
+	{
+		UProperty* Property = PropertyPair.Key;
+		if (Property->IsA<UObjectPropertyBase>() && PropertyPair.Value->Type.IsValid())
+		{
+			if (PropertyPair.Value->Type->RPCs.Num() > 0)
+			{
+				return true;
+			}
+		}
+	}
+
 	return false;
 }
 
-int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
+bool IsRelevantActorComponent(TSharedPtr<FUnrealType> TypeInfo)
 {
+	if (GetFlatRepData(TypeInfo)[REP_MultiClient].Num() > 0 || GetFlatRepData(TypeInfo)[REP_SingleClient].Num() > 0)
+	{
+		return true;
+	}
+
+	if (GetFlatHandoverData(TypeInfo).Num() > 0)
+	{
+		return true;
+	}
+
+	if (TypeInfo->RPCs.Num() > 0)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void GenerateActorComponentSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
+{
+	FCodeWriter Writer;
+
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated;)""");
+
+	if (ShouldIncludeCoreTypes(TypeInfo))
+	{
+		Writer.PrintNewLine();
+		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
+	}
+
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		if (RepData[Group].Num() == 0)
+		{
+			continue;
+		}
+
+		Writer.PrintNewLine();
+		Writer.Printf("type %s {", *SchemaReplicatedDataName(Group, Class));
+		Writer.Indent();
+		for (auto& RepProp : RepData[Group])
+		{
+			WriteSchemaRepField(Writer,
+				RepProp.Value,
+				TEXT(""),
+				RepProp.Value->ReplicationData->Handle);
+		}
+		Writer.Outdent().Print("}");
+	}
+
+	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
+	if (HandoverData.Num() > 0)
+	{
+		Writer.PrintNewLine();
+
+		Writer.Printf("type %s {", *SchemaHandoverDataName(Class));
+		Writer.Indent();
+		int FieldCounter = 0;
+		for (auto& Prop : HandoverData)
+		{
+			FieldCounter++;
+			WriteSchemaHandoverField(Writer,
+				Prop.Value,
+				FieldCounter);
+		}
+		Writer.Outdent().Print("}");
+	}
+
+	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *UnrealNameToSchemaTypeName(Class->GetName())));
+}
+
+
+int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
+{
+	FCodeWriter Writer;
+
 	FComponentIdGenerator IdGenerator(ComponentId);
 
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-		package improbable.unreal.generated.%s;)""",
+		package unreal.generated.%s;)""",
 		*UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
 
 	if (ShouldIncludeCoreTypes(TypeInfo))
 	{
 		Writer.PrintNewLine();
-		Writer.Printf("import \"improbable/unreal/gdk/core_types.schema\";");
+		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
 	}
-
-	Writer.PrintNewLine();
 
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
 	// Client-server replicated properties.
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
+		if (RepData[Group].Num() == 0)
+		{
+			continue;
+		}
+
+		Writer.PrintNewLine();
+
 		Writer.Printf("component %s {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
 		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
@@ -242,19 +338,25 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		Writer.Outdent().Print("}");
 	}
 
-	// Handover (server to server) replicated properties.
-	Writer.Printf("component %s {", *SchemaHandoverDataName(Class));
-	Writer.Indent();
-	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
-	int FieldCounter = 0;
-	for (auto& Prop : GetFlatHandoverData(TypeInfo))
+	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
+	if (HandoverData.Num() > 0)
 	{
-		FieldCounter++;
-		WriteSchemaHandoverField(Writer,
-			Prop.Value,
-			FieldCounter);
+		Writer.PrintNewLine();
+
+		// Handover (server to server) replicated properties.
+		Writer.Printf("component %s {", *SchemaHandoverDataName(Class));
+		Writer.Indent();
+		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
+		int FieldCounter = 0;
+		for (auto& Prop : HandoverData)
+		{
+			FieldCounter++;
+			WriteSchemaHandoverField(Writer,
+				Prop.Value,
+				FieldCounter);
+		}
+		Writer.Outdent().Print("}");
 	}
-	Writer.Outdent().Print("}");
 
 	// RPC components.
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
@@ -263,6 +365,13 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	for (auto Group : GetRPCTypes())
 	{
+		if (RPCsByType[Group].Num() == 0 && Group != RPC_Client)
+		{
+			continue;
+		}
+
+		Writer.PrintNewLine();
+
 		Writer.Printf("component %s {", *SchemaRPCComponentName(Group, Class));
 		Writer.Indent();
 		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
@@ -287,6 +396,13 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		Writer.Outdent().Print("}");
 	}
 
+	//if (Class->GetName().Contains(TEXT("Sphere_Blueprint")))
+	//{
+	//	auto x = 11;
+	//}
+
+	GenerateActorComponentSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath);
+
 	if (ReliableMulticasts.Num() > 0)
 	{
 		FString AllReliableMulticasts;
@@ -298,5 +414,156 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 		UE_LOG(LogTemp, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
 	}
 
+	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *UnrealNameToSchemaTypeName(Class->GetName())));
+
 	return IdGenerator.GetNumUsedIds();
+}
+
+void GenerateActorComponentSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass)
+{
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		if (RepData[Group].Num() == 0)
+		{
+			continue;
+		}
+
+		Writer.PrintNewLine();
+
+		FString ComponentName = PropertyName + GetReplicatedPropertyGroupName(Group);
+		Writer.Printf("component %s {", *ComponentName);
+		Writer.Indent();
+		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
+		Writer.Printf("data %s;", *SchemaReplicatedDataName(Group, ComponentClass));
+		Writer.Outdent().Print("}");
+	}
+
+	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
+	if (HandoverData.Num() > 0)
+	{
+		Writer.PrintNewLine();
+
+		// Handover (server to server) replicated properties.
+		Writer.Printf("component %s {", *(PropertyName + TEXT("Handover")));
+		Writer.Indent();
+		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
+		Writer.Printf("data %s;", *SchemaHandoverDataName(ComponentClass));
+		Writer.Outdent().Print("}");
+	}
+
+	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
+
+	for (auto Group : GetRPCTypes())
+	{
+		if (RPCsByType[Group].Num() == 0 && Group != RPC_Client)
+		{
+			continue;
+		}
+
+		Writer.PrintNewLine();
+
+		FString ComponentName = PropertyName + GetRPCTypeName(Group) + TEXT("RPCs");
+		Writer.Printf("component %s {", *ComponentName);
+		Writer.Indent();
+		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
+		for (auto& RPC : RPCsByType[Group])
+		{
+			if (Group == ERPCType::RPC_NetMulticast)
+			{
+				Writer.Printf("event UnrealRPCCommandRequest %s;",
+					*SchemaRPCName(Cast<UClass>(ComponentClass), RPC->Function));
+			}
+			else
+			{
+				Writer.Printf("command UnrealRPCCommandResponse %s(UnrealRPCCommandRequest);",
+					*SchemaRPCName(Cast<UClass>(ComponentClass), RPC->Function));
+			}
+		}
+		Writer.Outdent().Print("}");
+	}
+}
+
+void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
+{
+	FCodeWriter Writer;
+
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated.%s.components;)""",
+		*UnrealNameToSchemaTypeName(TypeInfo->Type->GetName().ToLower()));
+
+	Writer.PrintNewLine();
+
+	GenerateActorIncludes(Writer, TypeInfo);
+
+	bool bHasComponents = false;
+	TSet<UObject*> SeenComponents;
+	for (auto& PropertyPair : TypeInfo->Properties)
+	{
+		UProperty* Property = PropertyPair.Key;
+		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
+
+		TSharedPtr<FUnrealType>& PropertyTypeInfo = PropertyPair.Value->Type;
+
+		if (ObjectProperty)
+		{
+			UObject* ContainerCDO = ActorClass->GetDefaultObject();
+			UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
+
+			if (Value != nullptr && Value->GetOuter() == ContainerCDO)
+			{
+				if (IsRelevantActorComponent(PropertyTypeInfo) && !SeenComponents.Contains(Value))
+				{
+					bHasComponents = true;
+					SeenComponents.Add(Value);
+					GenerateActorComponentSpecificSchema(Writer, IdGenerator, Property->GetName(), PropertyTypeInfo, Value->GetClass());
+				}
+			}
+		}
+	}
+
+	if (bHasComponents)
+	{
+		Writer.WriteToFile(FString::Printf(TEXT("%s%sComponents.schema"), *SchemaPath, *UnrealNameToSchemaTypeName(ActorClass->GetName())));
+	}
+}
+
+void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInfo)
+{
+	TSet<UStruct*> AlreadyImported;
+
+	bool bImportCoreTypes = false;
+
+	for (auto& PropertyPair : TypeInfo->Properties)
+	{
+		UProperty* Property = PropertyPair.Key;
+		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
+
+		TSharedPtr<FUnrealType>& PropertyTypeInfo = PropertyPair.Value->Type;
+
+		if (ObjectProperty)
+		{
+			UObject* ContainerCDO = Cast<UClass>(TypeInfo->Type)->GetDefaultObject();
+			UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
+
+			if (Value != nullptr && Value->GetOuter() == ContainerCDO && IsRelevantActorComponent(PropertyTypeInfo))
+			{
+				bImportCoreTypes |= PropertyTypeInfo->RPCs.Num() > 0;
+
+				if (!AlreadyImported.Contains(Value->GetClass()))
+				{
+					Writer.Printf("import \"unreal/generated/ActorComponents/%s.schema\";", *UnrealNameToSchemaTypeName(Value->GetClass()->GetName()));
+					AlreadyImported.Add(Value->GetClass());
+				}
+			}
+		}
+	}
+
+	if (bImportCoreTypes)
+	{
+		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
+	}
 }

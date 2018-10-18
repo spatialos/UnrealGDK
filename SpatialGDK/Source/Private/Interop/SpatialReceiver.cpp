@@ -100,7 +100,7 @@ void USpatialReceiver::LeaveCriticalSection()
 
 void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
 {
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
+	UE_LOG(LogSpatialReceiver, Error, TEXT("Worker: %s AddEntity: %lld"), *NetDriver->Connection->GetWorkerId(), Op.entity_id);
 	check(bInCriticalSection);
 
 	PendingAddEntities.Emplace(Op.entity_id);
@@ -144,13 +144,15 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 {
-	UE_LOG(LogSpatialReceiver, Log, TEXT("RemoveEntity: %lld"), Op.entity_id);
+	UE_LOG(LogSpatialReceiver, Error, TEXT("Worker: %s RemoveEntity: %lld"), *NetDriver->Connection->GetWorkerId(), Op.entity_id);
 
 	RemoveActor(Op.entity_id);
 }
 
 void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 {
+	//UE_LOG(LogSpatialReceiver, Error, TEXT("Worker: %s AuthorityChange Entity: %lld, ComponentId: %lld, Authority: %d"), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.component_id, Op.authority);
+
 	if (bInCriticalSection)
 	{
 		PendingAuthorityChanges.Add(Op);
@@ -382,7 +384,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
 	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Remove Actor: %s %lld"), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (!Actor || Actor->IsPendingKill())
@@ -569,7 +571,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 	if (ActorChannel == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - No actor channel for update"), Op.entity_id, Op.update.component_id);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Worker: %s Entity: %d Component: %d - No actor channel for update"), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
 		return;
 	}
 

@@ -40,12 +40,12 @@ FString UnrealNameToCppName(const FString& UnrealName)
 
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%s%s%sRepData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
+	return FString::Printf(TEXT("%s%s%s"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
 }
 
 FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%s%sHandoverData"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()));
+	return FString::Printf(TEXT("%s%sHandover"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()));
 }
 
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace /*= false*/)
@@ -82,12 +82,15 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 	Algo::Transform(GetPropertyChain(Property), ChainNames, [](const TSharedPtr<FUnrealProperty>& Property) -> FString
 	{
 		FString PropName = Property->Property->GetName().ToLower();
-		PropName.Append(FString::FromInt(Property->StaticArrayIndex));
+		if (Property->StaticArrayIndex > 0)
+		{
+			PropName.Append(FString::FromInt(Property->StaticArrayIndex));
+		}
 		return UnrealNameToSchemaTypeName(PropName);
 	});
 
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
 	// which the generated code extends :troll:.
-	FString FieldName = TEXT("field_") + FString::Join(ChainNames, TEXT("_"));
+	FString FieldName = FString::Join(ChainNames, TEXT("_"));
 	return FieldName;
 }

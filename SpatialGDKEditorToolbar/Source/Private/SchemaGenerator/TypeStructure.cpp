@@ -48,13 +48,13 @@ FString GetRepNotifyLifetimeConditionAsString(ELifetimeRepNotifyCondition Condit
 
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 {
-	static TArray<EReplicatedPropertyGroup> Groups = {REP_SingleClient, REP_MultiClient};
+	static TArray<EReplicatedPropertyGroup> Groups = {REP_MultiClient, REP_SingleClient};
 	return Groups;
 }
 
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 {
-	return Group == REP_SingleClient ? TEXT("SingleClient") : TEXT("MultiClient");
+	return Group == REP_SingleClient ? TEXT("OwnerOnly") : TEXT("");
 }
 
 TArray<ERPCType> GetRPCTypes()
