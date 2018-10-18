@@ -52,7 +52,7 @@ namespace SpatialConstants
 	const Worker_ComponentId METADATA_COMPONENT_ID				= 53;
 	const Worker_ComponentId POSITION_COMPONENT_ID				= 54;
 	const Worker_ComponentId PERSISTENCE_COMPONENT_ID			= 55;
-	const Worker_ComponentId INTEREST_COMPONENT_ID = 58;
+	const Worker_ComponentId INTEREST_COMPONENT_ID              = 58;
 
 	const Worker_ComponentId ROTATION_COMPONENT_ID							= 100001;
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 100002;

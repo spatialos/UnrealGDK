@@ -475,8 +475,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	}
 	NetDriver->StopIgnoringAuthoritativeDestruction();
 
-	Actor->SetActorAsProxy(true);
-	//CleanupDeletedEntity(EntityId);
+	CleanupDeletedEntity(EntityId);
 }
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
@@ -484,6 +483,17 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 	NetDriver->GetEntityRegistry()->RemoveFromRegistry(EntityId);
 	NetDriver->RemoveActorChannel(EntityId);
+<<<<<<< HEAD
+=======
+
+	PackageMap->RemoveEntityActor(EntityId);
+}
+
+UClass* USpatialReceiver::GetNativeEntityClass(improbable::Metadata* Metadata)
+{
+	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *Metadata->EntityType);
+	return Class->IsChildOf<AActor>() ? Class : nullptr;
+>>>>>>> Cleaned up
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
