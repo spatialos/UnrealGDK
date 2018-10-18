@@ -11,6 +11,8 @@
 #include "Utils/SchemaUtils.h"
 #include "Utils/RepLayoutUtils.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialComponentReader);
+
 namespace improbable
 {
 
@@ -295,7 +297,17 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			if (NetGUID.IsValid())
 			{
 				UObject* ObjectValue = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-				checkf(ObjectValue, TEXT("An object ref %s should map to a valid object."), *ObjectRef.ToString());
+				if (ObjectValue == nullptr)
+				{
+					// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
+					// it's part of a streaming level that hasn't been streamed in. In either case, there's nothing we can do.
+					FString FullPath;
+					improbable::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
+					UE_LOG(LogSpatialComponentReader, Warning, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
+						*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
+					ObjectProperty->SetObjectPropertyValue(Data, nullptr);
+					return;
+				}
 				checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
 				ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
 			}
