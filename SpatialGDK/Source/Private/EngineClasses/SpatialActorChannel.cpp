@@ -24,7 +24,7 @@ namespace
 // This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
-void UpdateChangelistHistory(TSharedPtr<FRepState> RepState)
+void UpdateChangelistHistory(TSharedPtr<FRepState>& RepState)
 {
 	check(RepState->HistoryEnd >= RepState->HistoryStart);
 
