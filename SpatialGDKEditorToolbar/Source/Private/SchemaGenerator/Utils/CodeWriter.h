@@ -28,11 +28,11 @@ class FCodeWriter
 public:
 	FCodeWriter();
 
-	template <typename... T>
-	FCodeWriter& Printf(const FString& Format, const T&... Args)
-	{
-		return Print(FString::Printf(*Format, Args...));
-	}
+ 	template <typename... T>
+ 	FCodeWriter& Printf(const FString& Format, const T&... Args)
+ 	{
+		return Print(FString::Format(*Format, TArray<FStringFormatArg>{Args...}));
+ 	}
 
 	FCodeWriter& PrintNewLine();
 	FCodeWriter& Print(const FString& String);

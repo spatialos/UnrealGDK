@@ -9,7 +9,7 @@
 namespace Errors
 {
 	FString DuplicateComponentError = TEXT("WARNING: Unreal GDK does not currently support multiple static components of the same type.\n"
-		"Make sure %s has only one instance of %s or don't generate type bindings for %s");
+		"Make sure {0} has only one instance of {1} or don't generate type bindings for {2}");
 }
 
 FString GetFullCPPName(UClass* Class)
@@ -614,10 +614,8 @@ void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClas
 		}
 		else
 		{
-			FMessageDialog::Debugf(FText::FromString(FString::Printf(*Errors::DuplicateComponentError,
-				*ActorClass->GetName(),
-				*ComponentClass->GetName(),
-				*ComponentClass->GetName())));
+			FMessageDialog::Debugf(FText::FromString(FString::Format(*Errors::DuplicateComponentError,
+				{ *ActorClass->GetName(), *ComponentClass->GetName(), *ComponentClass->GetName() })));
 		}
 	}
 }

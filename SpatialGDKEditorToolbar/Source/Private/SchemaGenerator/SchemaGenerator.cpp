@@ -111,7 +111,7 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 
 void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const FString& PropertyPath, const int FieldCounter)
 {
-	Writer.Printf("%s %s = %d; // %s // %s",
+	Writer.Printf("{0} {1} = {2}; // {3} // {4}",
 		*PropertyToSchemaType(RepProp->Property, false),
 		*SchemaFieldName(RepProp),
 		FieldCounter,
@@ -122,7 +122,7 @@ void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> 
 
 void WriteSchemaHandoverField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> HandoverProp, const int FieldCounter)
 {
-	Writer.Printf("%s %s = %d;",
+	Writer.Printf("{0} {1} = {2};",
 		*PropertyToSchemaType(HandoverProp->Property, false),
 		*SchemaFieldName(HandoverProp),
 		FieldCounter
@@ -131,7 +131,7 @@ void WriteSchemaHandoverField(FCodeWriter& Writer, const TSharedPtr<FUnrealPrope
 
 void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrealProperty> RPCProp, const int FieldCounter)
 {
-	Writer->Printf("%s %s = %d;",
+	Writer->Printf("{0} {1} = {2};",
 		*PropertyToSchemaType(RPCProp->Property, true),
 		*SchemaFieldName(RPCProp),
 		FieldCounter
@@ -181,7 +181,7 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-		package improbable.unreal.generated.%s;)""",
+		package improbable.unreal.generated.{0};)""",
 		*UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
 
 	if (ShouldIncludeCoreTypes(TypeInfo))
@@ -197,9 +197,9 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	// Client-server replicated properties.
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
-		Writer.Printf("component %s {", *SchemaReplicatedDataName(Group, Class));
+		Writer.Printf("component {0} {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
-		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
 		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
 		{
@@ -243,9 +243,9 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 	}
 
 	// Handover (server to server) replicated properties.
-	Writer.Printf("component %s {", *SchemaHandoverDataName(Class));
+	Writer.Printf("component {0} {", *SchemaHandoverDataName(Class));
 	Writer.Indent();
-	Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
+	Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
 	int FieldCounter = 0;
 	for (auto& Prop : GetFlatHandoverData(TypeInfo))
 	{
@@ -263,9 +263,9 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 
 	for (auto Group : GetRPCTypes())
 	{
-		Writer.Printf("component %s {", *SchemaRPCComponentName(Group, Class));
+		Writer.Printf("component {0} {", *SchemaRPCComponentName(Group, Class));
 		Writer.Indent();
-		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
 		for (auto& RPC : RPCsByType[Group])
 		{
 			if (Group == ERPCType::RPC_NetMulticast)
@@ -275,12 +275,12 @@ int GenerateTypeBindingSchema(FCodeWriter& Writer, int ComponentId, UClass* Clas
 					ReliableMulticasts.Add(FString::Printf(TEXT("%s::%s"), *GetFullCPPName(Class), *RPC->Function->GetName()));
 				}
 
-				Writer.Printf("event UnrealRPCCommandRequest %s;",
+				Writer.Printf("event UnrealRPCCommandRequest {0};",
 					*SchemaRPCName(Class, RPC->Function));
 			}
 			else
 			{
-				Writer.Printf("command UnrealRPCCommandResponse %s(UnrealRPCCommandRequest);",
+				Writer.Printf("command UnrealRPCCommandResponse {0}(UnrealRPCCommandRequest);",
 					*SchemaRPCName(Class, RPC->Function));
 			}
 		}
