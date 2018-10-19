@@ -23,13 +23,15 @@ public:
 	Worker_Authority GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
-	template <class T> T* GetComponentData(Worker_EntityId EntityId);
+	template <typename T>
+	T* GetComponentData(Worker_EntityId EntityId);
 
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
+private:
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TUniquePtr<improbable::ComponentStorageBase>>> EntityComponentMap;
 };
