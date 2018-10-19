@@ -75,15 +75,8 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 
 		Channel->SetChannelActor(SingletonActor);
 
-		improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(SingletonEntityId);
-		if (UnrealMetadata == nullptr)
-		{
-			// Don't have entity checked out
-			continue;
-		}
-
 		// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
-		NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, UnrealMetadata->SubobjectNameToOffset);
+		NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, improbable::CreateOffsetMapFromActor(SingletonActor));
 		UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
 	}
 }
