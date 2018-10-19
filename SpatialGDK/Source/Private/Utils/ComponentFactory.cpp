@@ -58,7 +58,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				}
 			}
 
-			if (Cmd.Type == REPCMD_DynamicArray)
+			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 			{
 				if (!HandleIterator.JumpOverArray())
 				{

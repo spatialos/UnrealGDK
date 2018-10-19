@@ -22,7 +22,7 @@ public:
 	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
 	void RemoveEntityActor(Worker_EntityId EntityId);
 
-	FNetworkGUID ResolveStablyNamedObject(const UObject* Object);
+	FNetworkGUID ResolveStablyNamedObject(UObject* Object);
 	
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef) const;
@@ -40,7 +40,7 @@ public:
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);
 	void RemoveNetGUID(const FNetworkGUID& NetGUID);
 
-	FNetworkGUID AssignNewStablyNamedObjectNetGUID(const UObject* Object);
+	FNetworkGUID AssignNewStablyNamedObjectNetGUID(UObject* Object);
 	
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
@@ -50,7 +50,7 @@ private:
 	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRefInternal(const FUnrealObjectRef& ObjectRef);
 
-	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(const UObject* Object);
+	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const FUnrealObjectRef& ObjectRef);
 	
 	FNetworkGUID RegisterNetGUIDFromPath(const FString& PathName, const FNetworkGUID& OuterGUID);

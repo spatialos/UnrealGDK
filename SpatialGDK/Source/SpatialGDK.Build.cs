@@ -14,15 +14,6 @@ public class SpatialGDK : ModuleRules
     {
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PublicIncludePaths.AddRange(
-            new string[]
-            {
-                "Public",
-                "Public/WorkerSdk",
-                "Generated/Cpp",
-                "Generated/UClasses",
-            });
-
         PrivateIncludePaths.Add("Private");
 
         PublicDependencyModuleNames.AddRange(

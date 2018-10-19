@@ -79,8 +79,8 @@ public:
 
 	// UChannel interface
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, bool bOpenedLocally) override;
-	virtual void Close() override;
-	virtual bool ReplicateActor() override;
+	virtual int64 Close() override;
+	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 
 	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
