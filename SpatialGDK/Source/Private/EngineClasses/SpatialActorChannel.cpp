@@ -24,7 +24,7 @@ namespace
 // This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
-void UpdateChangelistHistory(FRepState * RepState)
+void UpdateChangelistHistory(TSharedPtr<FRepState>& RepState)
 {
 	check(RepState->HistoryEnd >= RepState->HistoryStart);
 
@@ -128,10 +128,10 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 	return UActorChannel::CleanUp(bForDestroy);
 }
 
-void USpatialActorChannel::Close()
+int64 USpatialActorChannel::Close()
 {
 	DeleteEntityIfAuthoritative();
-	Super::Close();
+	return Super::Close();
 }
 
 bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
@@ -140,7 +140,7 @@ bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 	TSharedPtr<FRepLayout>& RepLayout = Replicator.RepLayout;
 	check(Handle - 1 < RepLayout->BaseHandleToCmdIndex.Num());
-	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == REPCMD_DynamicArray;
+	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == ERepLayoutCmdType::DynamicArray;
 }
 
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(UObject* Object)
@@ -157,7 +157,7 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(UObject* Objec
 
 		InitialRepChanged.Add(Cmd.RelativeHandle);
 
-		if (Cmd.Type == REPCMD_DynamicArray)
+		if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 		{
 			DynamicArrayDepth++;
 
@@ -170,7 +170,7 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(UObject* Objec
 				InitialRepChanged.Add((Cmd.EndCmd - CmdIdx) - 2);
 			}
 		}
-		else if (Cmd.Type == REPCMD_Return)
+		else if (Cmd.Type == ERepLayoutCmdType::Return)
 		{
 			DynamicArrayDepth--;
 			checkf(DynamicArrayDepth >= 0 || CmdIdx == CmdCount - 1, TEXT("Encountered erroneous RepLayout"));
@@ -191,11 +191,11 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(FCla
 	return HandoverChanged;
 }
 
-bool USpatialActorChannel::ReplicateActor()
+int64 USpatialActorChannel::ReplicateActor()
 {
 	if (!IsReadyForReplication())
 	{
-		return false;
+		return 0;
 	}
 	
 	check(Actor);
@@ -212,7 +212,7 @@ bool USpatialActorChannel::ReplicateActor()
 	FOutBunch Bunch(this, 0);
 	if (Bunch.IsError())
 	{
-		return false;
+		return 0;
 	}
 
 	bIsReplicatingActor = true;
@@ -279,7 +279,15 @@ bool USpatialActorChannel::ReplicateActor()
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 		TArray<uint16> Temp = RepChanged;
-		ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
+
+		if (HistoryItem.Changed.Num() > 0)
+		{
+			ActorReplicator->RepLayout->MergeChangeList((uint8*)Actor, HistoryItem.Changed, Temp, RepChanged);
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("EntityId: %lld Actor: %s Changelist with index %d has no changed items"), EntityId, *Actor->GetName(), i);
+		}
 	}
 
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
@@ -358,7 +366,7 @@ bool USpatialActorChannel::ReplicateActor()
 
 	bForceCompareProperties = false;		// Only do this once per frame when set
 
-	return bWroteSomethingImportant;
+	return (bWroteSomethingImportant) ? 1 : 0;	// TODO: return number of bits written (UNR-664)
 }
 
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)
@@ -382,7 +390,15 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		const int32 HistoryIndex = i % FRepChangelistState::MAX_CHANGE_HISTORY;
 		FRepChangedHistory& HistoryItem = ChangelistState->ChangeHistory[HistoryIndex];
 		TArray<uint16> Temp = RepChanged;
-		Replicator.RepLayout->MergeChangeList((uint8*)Object, HistoryItem.Changed, Temp, RepChanged);
+
+		if (HistoryItem.Changed.Num() > 0)
+		{
+			Replicator.RepLayout->MergeChangeList((uint8*)Object, HistoryItem.Changed, Temp, RepChanged);
+		}
+		else
+		{
+			UE_LOG(LogSpatialActorChannel, Warning, TEXT("EntityId: %lld Actor: %s Subobject: %s Changelist with index %d has no changed items"), EntityId, *Actor->GetName(), *Object->GetName(), i);
+		}
 	}
 
 	Replicator.RepState->LastCompareIndex = ChangelistState->CompareIndex;
@@ -623,12 +639,12 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	{
 		if (APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController()))
 		{
-			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController));
+			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(PlayerController));
 			if (ControllerActorChannel)
 			{
 				Sender->SendPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
 			}
-			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannels.FindRef(PlayerController->PlayerState));
+			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(PlayerController->PlayerState));
 			if (PlayerStateActorChannel)
 			{
 				Sender->SendPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);

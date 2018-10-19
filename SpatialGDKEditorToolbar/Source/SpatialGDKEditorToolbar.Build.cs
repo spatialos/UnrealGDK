@@ -9,12 +9,6 @@ public class SpatialGDKEditorToolbar : ModuleRules
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
         bFasterWithoutUnity = true;
 
-        PublicIncludePaths.AddRange(
-            new string[] {
-                "Public"
-            }
-        );
-
         PrivateIncludePaths.AddRange(
             new string[]
             {

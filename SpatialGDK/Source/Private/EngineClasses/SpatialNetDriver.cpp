@@ -235,7 +235,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 				ClientConnection->SentTemporaries.Remove(ThisActor);
 			}
 
-			if (UActorChannel* Channel = ClientConnection->ActorChannels.FindRef(ThisActor))
+			if (UActorChannel* Channel = ClientConnection->ActorChannelMap().FindRef(ThisActor))
 			{
 				check(Channel->OpenedLocally);
 				Channel->bClearRecentActorRefs = false;
@@ -379,7 +379,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 		{
 			AActor* Actor = ActorInfo->Actor;
 
-			UActorChannel* Channel = InConnection->ActorChannels.FindRef(Actor);
+			UActorChannel* Channel = InConnection->ActorChannelMap().FindRef(Actor);
 
 			UNetConnection* PriorityConnection = InConnection;
 
@@ -447,9 +447,9 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 		}
 
 		// Add in deleted actors
-		for (auto It = InConnection->DestroyedStartupOrDormantActors.CreateIterator(); It; ++It)
+		for (auto It = InConnection->GetDestroyedStartupOrDormantActorGUIDs().CreateIterator(); It; ++It)
 		{
-			FActorDestructionInfo& DInfo = DestroyedStartupOrDormantActors.FindChecked(*It);
+			FActorDestructionInfo& DInfo = *DestroyedStartupOrDormantActors.FindChecked(*It);
 			OutPriorityList[FinalSortedCount] = FActorPriority(InConnection, &DInfo, ConnectionViewers);
 			OutPriorityActors[FinalSortedCount] = OutPriorityList + FinalSortedCount;
 			FinalSortedCount++;
@@ -496,7 +496,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				UE_LOG(LogNetTraffic, Log, TEXT("Server replicate actor creating destroy channel for NetGUID <%s,%s> Priority: %d"), *PriorityActors[j]->DestructionInfo->NetGUID.ToString(), *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
 
 				Channel->SetChannelActorForDestroy(PriorityActors[j]->DestructionInfo);						   // Send a close bunch on the new channel
-				InConnection->DestroyedStartupOrDormantActors.Remove(PriorityActors[j]->DestructionInfo->NetGUID); // Remove from connections to-be-destroyed list (close bunch of reliable, so it will make it there)
+				InConnection->GetDestroyedStartupOrDormantActorGUIDs().Remove(PriorityActors[j]->DestructionInfo->NetGUID); // Remove from connections to-be-destroyed list (close bunch of reliable, so it will make it there)
 			}
 			continue;
 		}
@@ -523,7 +523,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			//SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
 			// only check visibility on already visible actors every 1.0 + 0.5R seconds
 			// bTearOff actors should never be checked
-			if (!Actor->bTearOff && (!Channel || Time - Channel->RelevantTime > 1.f))
+			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
 			{
 				if (IsActorRelevantToConnection(Actor, ConnectionViewers))
 				{
@@ -617,7 +617,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			}
 
 			// If the actor wasn't recently relevant, or if it was torn off, close the actor channel if it exists for this connection
-			if ((!bIsRecentlyRelevant || Actor->bTearOff) && Channel != NULL)
+			if ((!bIsRecentlyRelevant || Actor->GetTearOff()) && Channel != NULL)
 			{
 				// Non startup (map) actors have their channels closed immediately, which destroys them.
 				// Startup actors get to keep their channels open.
@@ -702,7 +702,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				if (Actor != NULL && !ConsiderList[ConsiderIdx]->bPendingNetUpdate)
 				{
 					// find the channel
-					UActorChannel *Channel = SpatialConnection->ActorChannels.FindRef(Actor);
+					UActorChannel *Channel = SpatialConnection->ActorChannelMap().FindRef(Actor);
 					// and if the channel last update time doesn't match the last net update time for the actor
 					if (Channel != NULL && Channel->LastUpdateTime < ConsiderList[ConsiderIdx]->LastNetUpdateTime)
 					{
@@ -981,7 +981,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 		{
 			// Most of this is taken from "World->SpawnPlayActor", excluding the logic to spawn a pawn which happens during
 			// GameMode->PostLogin(...).
-			APlayerController* NewPlayerController = GameMode->SpawnPlayerController(ROLE_AutonomousProxy, FVector::ZeroVector, FRotator::ZeroRotator);
+			APlayerController* NewPlayerController = GameMode->SpawnPlayerController(ROLE_AutonomousProxy, UrlString);
 
 			// Destroy the player state (as we'll be replacing it anyway).
 			NewPlayerController->CleanupPlayerState();
