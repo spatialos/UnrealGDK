@@ -57,7 +57,7 @@ public:
 		FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 		check(Info);
 
-		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info->RPCComponents[RPC_Client]);
+		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[TYPE_ClientRPC]);
 	}
 
 	FORCEINLINE bool IsAuthoritativeServer()

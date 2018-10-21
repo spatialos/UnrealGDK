@@ -507,9 +507,11 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
 	check(Info);
 
-	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && StaticComponentView->GetAuthority(EntityId, Info->RPCComponents[RPC_Client] == WORKER_AUTHORITY_AUTHORITATIVE);
+	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && StaticComponentView->GetAuthority(EntityId, Info->SchemaComponents[TYPE_ClientRPC] == WORKER_AUTHORITY_AUTHORITATIVE);
 
-	if (Data.component_id == Info->SingleClientComponent || Data.component_id == Info->MultiClientComponent)
+	EComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Data.component_id);
+
+	if (ComponentType == TYPE_Data || ComponentType == TYPE_OwnerOnly)
 	{
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<FUnrealObjectRef> UnresolvedRefs;
@@ -519,7 +521,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
-	else if (Data.component_id == Info->HandoverComponent)
+	else if (ComponentType == TYPE_Handover)
 	{
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<FUnrealObjectRef> UnresolvedRefs;
@@ -559,14 +561,18 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	UClass* Class = TypebindingManager->FindClassByComponentId(Op.update.component_id);
-	if (Class == nullptr)
+	uint32 Offset = 0;
+	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Op.update.component_id, Offset);
+	if (!bFoundOffset)
 	{
 		return;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
-	check(Info);
+	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset));
+	if (TargetObject == nullptr)
+	{
+		return;
+	}
 
 	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 	if (ActorChannel == nullptr)
@@ -575,33 +581,33 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	if (Op.update.component_id == Info->SingleClientComponent || Op.update.component_id == Info->MultiClientComponent)
+	FClassInfo* Info = TypebindingManager->FindClassInfoByComponentId(Op.update.component_id);
+	if (Info == nullptr)
 	{
-		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
-		{
-			ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ false);
-		}
+		return;
 	}
-	else if (Op.update.component_id == Info->HandoverComponent)
+
+	EComponentType Category = TypebindingManager->FindCategoryByComponentId(Op.update.component_id);
+
+	if (Category == EComponentType::TYPE_Data || Category == EComponentType::TYPE_OwnerOnly)
+	{
+		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ false);
+	}
+	else if (Category == EComponentType::TYPE_Handover)
 	{
 		if (!NetDriver->IsServer())
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping Handover component because we're a client."), Op.entity_id, Op.update.component_id);
 			return;
 		}
-		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
-		{
-			ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ true);
-		}
+
+		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ true);
 	}
-	else if (Op.update.component_id == Info->RPCComponents[RPC_NetMulticast])
+	else if (Category == EComponentType::TYPE_NetMulticastRPC)
 	{
-		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
+		if (TArray<UFunction*>* RPCArray = Info->RPCs.Find(TYPE_NetMulticastRPC))
 		{
-			if (TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPC_NetMulticast))
-			{
-				ReceiveMulticastUpdate(Op.update, TargetObject, *RPCArray);
-			}
+			ReceiveMulticastUpdate(Op.update, TargetObject, *RPCArray);
 		}
 	}
 	else
@@ -639,33 +645,34 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 
-	if (UClass* Class = TypebindingManager->FindClassByComponentId(Op.request.component_id))
+	uint32 Offset = 0;
+	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Op.request.component_id, Offset);
+	if (!bFoundOffset)
 	{
-		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
-		check(Info);
-
-		if (UObject* TargetObject = GetTargetObjectFromChannelAndClass(ActorChannel, Class))
-		{
-			ERPCType RPCType = RPC_Count;
-			for (int i = RPC_Client; i <= RPC_CrossServer; i++)
-			{
-				if (Info->RPCComponents[i] == Op.request.component_id)
-				{
-					RPCType = (ERPCType)i;
-					break;
-				}
-			}
-			check(RPCType <= RPC_CrossServer);
-
-			const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);
-			check(RPCArray);
-			check((int)CommandIndex - 1 < RPCArray->Num());
-
-			UFunction* Function = (*RPCArray)[CommandIndex - 1];
-
-			ReceiveRPCCommandRequest(Op.request, TargetObject, Function);
-		}
+		Sender->SendCommandResponse(Op.request_id, Response);
+		return;
 	}
+
+	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset));
+	if (TargetObject == nullptr)
+	{
+		Sender->SendCommandResponse(Op.request_id, Response);
+		return;
+	}
+
+	FClassInfo* Info = TypebindingManager->FindClassInfoByClassAndOffset(TargetObject->GetClass(), Offset);
+	check(Info);
+
+	EComponentType RPCType = TypebindingManager->FindCategoryByComponentId(Op.request.component_id);
+	check(RPCType >= TYPE_ClientRPC && RPCType < TYPE_Count);
+
+	const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);
+	check(RPCArray);
+	check((int)CommandIndex - 1 < RPCArray->Num());
+
+	UFunction* Function = (*RPCArray)[CommandIndex - 1];
+
+	ReceiveRPCCommandRequest(Op.request, TargetObject, Function);
 
 	Sender->SendCommandResponse(Op.request_id, Response);
 }

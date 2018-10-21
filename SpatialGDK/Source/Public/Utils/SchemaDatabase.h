@@ -4,58 +4,31 @@
 #include "Engine/DataAsset.h"
 #include "SchemaDatabase.generated.h"
 
-USTRUCT(BlueprintType)
-struct FActorSchemaData
+USTRUCT()
+struct FSubobjectSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 SingleClientRepData;
+	UPROPERTY()
+	UClass* Class = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 MultiClientRepData;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 HandoverData;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 ClientRPCs;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 ServerRPCs;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 NetMulticastRPCs;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 CrossServerRPCs;
+	UPROPERTY()
+	uint32 SchemaComponents[7] = {};
 };
 
-USTRUCT(BlueprintType)
-struct FSubobjectData
+USTRUCT()
+struct FSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 SingleClientRepData;
+	UPROPERTY()
+	UClass* Class = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int32 MultiClientRepData;
+	UPROPERTY()
+	uint32 SchemaComponents[7] = {};
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int32 HandoverData;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int32 ClientRPCs;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int32 ServerRPCs;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int32 NetMulticastRPCs;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int32 CrossServerRPCs;
+	UPROPERTY()
+	TMap<uint32, FSubobjectSchemaData> SubobjectData;
 };
 
 UCLASS()
@@ -64,6 +37,6 @@ class SPATIALGDK_API USchemaDatabase : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
-	TMap<UClass*, FActorSchemaData> ClassToSchema;
+	UPROPERTY()
+	TMap<UClass*, FSchemaData> ClassToSchema;
 };

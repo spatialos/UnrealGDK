@@ -233,37 +233,29 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	TArray<Worker_ComponentData> ComponentData = DataFactory.CreateComponentDatas(Actor, InitialRepChanges, InitialHandoverChanges);
 
 	// Add Actor RPCs to entity
-	for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
+	for (int32 RPCType = TYPE_ClientRPC; RPCType < TYPE_Count; RPCType++)
 	{
-		ComponentData.Add(ComponentFactory::CreateEmptyComponentData(Info->RPCComponents[RPCType]));
+		ComponentData.Add(ComponentFactory::CreateEmptyComponentData(Info->SchemaComponents[RPCType]));
 	}
 
 	// Visit each supported subobject and create component data for initial state of each subobject
-	for (UClass* SubobjectClass : Info->SubobjectClasses)
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
-		check(ComponentInfo);
+		uint32 Offset = SubobjectInfoPair.Key;
+		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		// Find subobject corresponding to supported class
-		TArray<UObject*> DefaultSubobjects;
-		Actor->GetDefaultSubobjects(DefaultSubobjects);
-		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
-		{
-			return (Obj->GetClass() == SubobjectClass);
-		});
-		check(FoundSubobject);
-		UObject* Subobject = *FoundSubobject;
+		UObject* Subobject = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset));
 
 		FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
-		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(ComponentInfo);
+		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 		// Create component data for initial state of subobject
 		ComponentData.Append(DataFactory.CreateComponentDatas(Subobject, SubobjectRepChanges, SubobjectHandoverChanges));
 
 		// Add subobject RPCs to entity
-		for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
+		for (int32 RPCType = TYPE_ClientRPC; RPCType < TYPE_Count; RPCType++)
 		{
-			ComponentData.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->RPCComponents[RPCType]));
+			ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo->SchemaComponents[RPCType]));
 		}
 	}
 
@@ -281,31 +273,50 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	check(ActorInfo);
 
 	WriteAclMap ComponentWriteAcl;
+
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(ActorInfo->SingleClientComponent, UnrealServerPermission);
-	ComponentWriteAcl.Add(ActorInfo->MultiClientComponent, UnrealServerPermission);
-	ComponentWriteAcl.Add(ActorInfo->HandoverComponent, UnrealServerPermission);
-	// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
-	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_Server], UnrealServerPermission);
-	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_CrossServer], UnrealServerPermission);
-	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_NetMulticast], UnrealServerPermission);
 
-	for (UClass* SubobjectClass : ActorInfo->SubobjectClasses)
+	ForAllSchemaComponentTypes([&](EComponentType Type) {
+		Worker_ComponentId ComponentId = ActorInfo->SchemaComponents[Type];
+
+		if (ComponentId == 0)
+		{
+			return;
+		}
+
+		if (Type == TYPE_ClientRPC)
+		{
+			// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
+			return;
+		}
+
+		ComponentWriteAcl.Add(ComponentId, UnrealServerPermission);
+	});
+
+	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
 	{
-		FClassInfo* SubobjectInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
-		check(SubobjectInfo);
+		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
-		ComponentWriteAcl.Add(SubobjectInfo->SingleClientComponent, UnrealServerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->MultiClientComponent, UnrealServerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->HandoverComponent, UnrealServerPermission);
-		// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
-		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_Server], UnrealServerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_CrossServer], UnrealServerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_NetMulticast], UnrealServerPermission);
+		ForAllSchemaComponentTypes([&](EComponentType Type) {
+			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
+			if (ComponentId == 0)
+			{
+				return;
+			}
+
+			if (Type == TYPE_ClientRPC)
+			{
+				// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
+				return;
+			}
+
+			ComponentWriteAcl.Add(ComponentId, UnrealServerPermission);
+		});
 	}
 
 	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(NetConnection->CreateChannel(CHTYPE_Actor, 1));
+	Channel->SetEntityId(EntityId);
 
 	FString StaticPath = Actor->GetPathName(nullptr);
 

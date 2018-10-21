@@ -24,6 +24,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
+USchemaDatabase* SchemaDatabase = nullptr;
+
 namespace
 {
 
@@ -107,30 +109,11 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
-void CreateSchemaDatabase(TArray<UClass*> Classes)
+void SaveSchemaDatabase(TArray<UClass*> Classes)
 {
 	AsyncTask(ENamedThreads::GameThread, [Classes]{
 		FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-
 		UPackage *Package = CreatePackage(nullptr, *PackagePath);
-
-		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
-
-		Worker_ComponentId ComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
-
-		for (UClass* Class : Classes)
-		{
-			FSchemaData SchemaData;
-			SchemaData.SingleClientRepData = ComponentId++;
-			SchemaData.MultiClientRepData = ComponentId++;
-			SchemaData.HandoverData = ComponentId++;
-			SchemaData.ClientRPCs = ComponentId++;
-			SchemaData.ServerRPCs = ComponentId++;
-			SchemaData.CrossServerRPCs = ComponentId++;
-			SchemaData.NetMulticastRPCs = ComponentId++;
-
-			SchemaDatabase->ClassToSchema.Add(Class, SchemaData);
-		}
 
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
@@ -208,6 +191,10 @@ bool SpatialGDKGenerateSchema()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
+	FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+	UPackage *Package = CreatePackage(nullptr, *PackagePath);
+	SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+
 	TArray<UClass*> SchemaGeneratedClasses;
 	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)
 	{
@@ -244,7 +231,7 @@ bool SpatialGDKGenerateSchema()
 	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
 	GenerateSchemaFromClasses(SchemaGeneratedClasses, SchemaOutputPath);
 
-	CreateSchemaDatabase(SchemaGeneratedClasses);
+	SaveSchemaDatabase(SchemaGeneratedClasses);
 
 	return true;
 }

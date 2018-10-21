@@ -5,15 +5,16 @@
 #include "EngineMinimal.h"
 
 #include "TypeStructure.h"
+#include "SchemaDatabase.h"
 
 class FCodeWriter;
 struct FComponentIdGenerator;
 
-//static USchemaDatabase* SchemaDatabase;
+extern USchemaDatabase* SchemaDatabase;
 
 // Generates a schema file, given an output code writer, component ID, Unreal type and type info.
 int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
 void GenerateActorComponentSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
-void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
-void GenerateActorComponentSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator,  FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo);
+void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath, FSchemaData& ActorSchemaData);
+FSubobjectSchemaData GenerateActorComponentSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass);
 void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInfo);

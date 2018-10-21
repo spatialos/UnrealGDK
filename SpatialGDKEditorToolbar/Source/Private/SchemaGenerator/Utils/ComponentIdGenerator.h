@@ -13,6 +13,11 @@ struct FComponentIdGenerator
 		return InitialId + (NumIds++);
 	}
 
+	int GetCurrentId()
+	{
+		return InitialId + NumIds;
+	}
+
 	int GetNumUsedIds() const
 	{
 		return NumIds;

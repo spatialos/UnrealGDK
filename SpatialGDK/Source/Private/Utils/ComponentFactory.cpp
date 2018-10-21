@@ -270,9 +270,20 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
 	check(Info);
 
-	ComponentDatas.Add(CreateComponentData(Info->SingleClientComponent, Object, RepChangeState, GROUP_SingleClient));
-	ComponentDatas.Add(CreateComponentData(Info->MultiClientComponent, Object, RepChangeState, GROUP_MultiClient));
-	ComponentDatas.Add(CreateHandoverComponentData(Info->HandoverComponent, Object, HandoverChangeState));
+	if (Info->SchemaComponents[TYPE_Data] != 0)
+	{
+		ComponentDatas.Add(CreateComponentData(Info->SchemaComponents[TYPE_Data], Object, RepChangeState, GROUP_MultiClient));
+	}
+
+	if (Info->SchemaComponents[TYPE_OwnerOnly] != 0)
+	{
+		ComponentDatas.Add(CreateComponentData(Info->SchemaComponents[TYPE_OwnerOnly], Object, RepChangeState, GROUP_SingleClient));
+	}
+
+	if (Info->SchemaComponents[TYPE_Handover] != 0)
+	{
+		ComponentDatas.Add(CreateHandoverComponentData(Info->SchemaComponents[TYPE_Handover], Object, HandoverChangeState));
+	}
 
 	return ComponentDatas;
 }
@@ -317,27 +328,37 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 
 	if (RepChangeState)
 	{
-		bool bWroteSomething = false;
-		Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info->SingleClientComponent, Object, *RepChangeState, GROUP_SingleClient, bWroteSomething);
-		if (bWroteSomething)
+		if (Info->SchemaComponents[TYPE_Data] != 0)
 		{
-			ComponentUpdates.Add(SingleClientUpdate);
+			bool bWroteSomething = false;
+			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info->SchemaComponents[TYPE_Data], Object, *RepChangeState, GROUP_MultiClient, bWroteSomething);
+			if (bWroteSomething)
+			{
+				ComponentUpdates.Add(MultiClientUpdate);
+			}
 		}
-		bWroteSomething = false;
-		Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info->MultiClientComponent, Object, *RepChangeState, GROUP_MultiClient, bWroteSomething);
-		if (bWroteSomething)
+
+		if (Info->SchemaComponents[TYPE_OwnerOnly] != 0)
 		{
-			ComponentUpdates.Add(MultiClientUpdate);
+			bool bWroteSomething = false;
+			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info->SchemaComponents[TYPE_OwnerOnly], Object, *RepChangeState, GROUP_SingleClient, bWroteSomething);
+			if (bWroteSomething)
+			{
+				ComponentUpdates.Add(SingleClientUpdate);
+			}
 		}
 	}
 
 	if (HandoverChangeState)
 	{
-		bool bWroteSomething = false;
-		Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info->HandoverComponent, Object, *HandoverChangeState, bWroteSomething);
-		if (bWroteSomething)
+		if (Info->SchemaComponents[TYPE_Handover] != 0)
 		{
-			ComponentUpdates.Add(HandoverUpdate);
+			bool bWroteSomething = false;
+			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info->SchemaComponents[TYPE_Handover], Object, *HandoverChangeState, bWroteSomething);
+			if (bWroteSomething)
+			{
+				ComponentUpdates.Add(HandoverUpdate);
+			}
 		}
 	}
 

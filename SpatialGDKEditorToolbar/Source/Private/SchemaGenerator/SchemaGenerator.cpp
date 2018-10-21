@@ -7,6 +7,7 @@
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
+#include "SpatialTypebindingManager.h"
 
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.
@@ -184,7 +185,7 @@ bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo)
 	return false;
 }
 
-bool IsRelevantActorComponent(TSharedPtr<FUnrealType> TypeInfo)
+bool IsReplicatedActorComponent(TSharedPtr<FUnrealType> TypeInfo)
 {
 	if (GetFlatRepData(TypeInfo)[REP_MultiClient].Num() > 0 || GetFlatRepData(TypeInfo)[REP_SingleClient].Num() > 0)
 	{
@@ -281,6 +282,9 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
 	}
 
+	FSchemaData ActorSchemaData;
+	ActorSchemaData.Class = Class;
+
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
 	// Client-server replicated properties.
@@ -296,6 +300,16 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.Printf("component %s {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
 		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
+
+		if (Group == REP_MultiClient)
+		{
+			ActorSchemaData.SchemaComponents[EComponentType::TYPE_Data] = IdGenerator.GetCurrentId();
+		}
+		else if (Group == REP_SingleClient)
+		{
+			ActorSchemaData.SchemaComponents[EComponentType::TYPE_OwnerOnly] = IdGenerator.GetCurrentId();
+		}
+
 		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
 		{
@@ -347,6 +361,9 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.Printf("component %s {", *SchemaHandoverDataName(Class));
 		Writer.Indent();
 		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
+
+		ActorSchemaData.SchemaComponents[EComponentType::TYPE_Handover] = IdGenerator.GetCurrentId();
+
 		int FieldCounter = 0;
 		for (auto& Prop : HandoverData)
 		{
@@ -375,6 +392,24 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.Printf("component %s {", *SchemaRPCComponentName(Group, Class));
 		Writer.Indent();
 		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
+
+		if (Group == RPC_Client)
+		{
+			ActorSchemaData.SchemaComponents[EComponentType::TYPE_ClientRPC] = IdGenerator.GetCurrentId();
+		}
+		else if (Group == RPC_Server)
+		{
+			ActorSchemaData.SchemaComponents[EComponentType::TYPE_ServerRPC] = IdGenerator.GetCurrentId();
+		}
+		else if (Group == RPC_NetMulticast)
+		{
+			ActorSchemaData.SchemaComponents[EComponentType::TYPE_NetMulticastRPC] = IdGenerator.GetCurrentId();
+		}
+		else if (Group == RPC_CrossServer)
+		{
+			ActorSchemaData.SchemaComponents[EComponentType::TYPE_CrossServerRPC] = IdGenerator.GetCurrentId();
+		}
+
 		for (auto& RPC : RPCsByType[Group])
 		{
 			if (Group == ERPCType::RPC_NetMulticast)
@@ -396,12 +431,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.Outdent().Print("}");
 	}
 
-	//if (Class->GetName().Contains(TEXT("Sphere_Blueprint")))
-	//{
-	//	auto x = 11;
-	//}
-
-	GenerateActorComponentSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath);
+	GenerateActorComponentSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData);
 
 	if (ReliableMulticasts.Num() > 0)
 	{
@@ -414,14 +444,19 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		UE_LOG(LogTemp, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
 	}
 
+	SchemaDatabase->ClassToSchema.Add(Class, ActorSchemaData);
+
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *UnrealNameToSchemaTypeName(Class->GetName())));
 
 	return IdGenerator.GetNumUsedIds();
 }
 
-void GenerateActorComponentSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass)
+FSubobjectSchemaData GenerateActorComponentSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass)
 {
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+
+	FSubobjectSchemaData SubobjectData;
+	SubobjectData.Class = ComponentClass;
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -438,6 +473,15 @@ void GenerateActorComponentSpecificSchema(FCodeWriter& Writer, FComponentIdGener
 		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
 		Writer.Printf("data %s;", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
+
+		if (Group == REP_MultiClient)
+		{
+			SubobjectData.SchemaComponents[EComponentType::TYPE_Data] = IdGenerator.GetCurrentId();
+		}
+		else if (Group == REP_SingleClient)
+		{
+			SubobjectData.SchemaComponents[EComponentType::TYPE_OwnerOnly] = IdGenerator.GetCurrentId();
+		}
 	}
 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
@@ -451,6 +495,8 @@ void GenerateActorComponentSpecificSchema(FCodeWriter& Writer, FComponentIdGener
 		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
 		Writer.Printf("data %s;", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
+
+		SubobjectData.SchemaComponents[EComponentType::TYPE_Handover] = IdGenerator.GetCurrentId();
 	}
 
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
@@ -482,10 +528,29 @@ void GenerateActorComponentSpecificSchema(FCodeWriter& Writer, FComponentIdGener
 			}
 		}
 		Writer.Outdent().Print("}");
+
+		if (Group == RPC_Client)
+		{
+			SubobjectData.SchemaComponents[EComponentType::TYPE_ClientRPC] = IdGenerator.GetCurrentId();
+		}
+		else if (Group == RPC_Server)
+		{
+			SubobjectData.SchemaComponents[EComponentType::TYPE_ServerRPC] = IdGenerator.GetCurrentId();
+		}
+		else if (Group == RPC_NetMulticast)
+		{
+			SubobjectData.SchemaComponents[EComponentType::TYPE_NetMulticastRPC] = IdGenerator.GetCurrentId();
+		}
+		else if (Group == RPC_CrossServer)
+		{
+			SubobjectData.SchemaComponents[EComponentType::TYPE_CrossServerRPC] = IdGenerator.GetCurrentId();
+		}
 	}
+
+	return SubobjectData;
 }
 
-void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
+void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath, FSchemaData& ActorSchemaData)
 {
 	FCodeWriter Writer;
 
@@ -501,6 +566,8 @@ void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UC
 
 	bool bHasComponents = false;
 	TSet<UObject*> SeenComponents;
+	int32 CurrentOffset = 1;
+
 	for (auto& PropertyPair : TypeInfo->Properties)
 	{
 		UProperty* Property = PropertyPair.Key;
@@ -513,14 +580,20 @@ void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UC
 			UObject* ContainerCDO = ActorClass->GetDefaultObject();
 			UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
 
-			if (Value != nullptr && Value->GetOuter() == ContainerCDO)
+			if (Value != nullptr && Value->GetOuter() == ContainerCDO && !Value->IsEditorOnly())
 			{
-				if (IsRelevantActorComponent(PropertyTypeInfo) && !SeenComponents.Contains(Value))
+				if (IsReplicatedActorComponent(PropertyTypeInfo) && !SeenComponents.Contains(Value))
 				{
 					bHasComponents = true;
 					SeenComponents.Add(Value);
-					GenerateActorComponentSpecificSchema(Writer, IdGenerator, Property->GetName(), PropertyTypeInfo, Value->GetClass());
+
+					FSubobjectSchemaData SubobjectData = GenerateActorComponentSpecificSchema(Writer, IdGenerator, Property->GetName(), PropertyTypeInfo, Value->GetClass());
+					ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
+
+					SchemaDatabase->ClassToSchema.Add(Value->GetClass(), FSchemaData());
 				}
+
+				CurrentOffset++;
 			}
 		}
 	}
@@ -549,7 +622,7 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 			UObject* ContainerCDO = Cast<UClass>(TypeInfo->Type)->GetDefaultObject();
 			UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
 
-			if (Value != nullptr && Value->GetOuter() == ContainerCDO && IsRelevantActorComponent(PropertyTypeInfo))
+			if (Value != nullptr && Value->GetOuter() == ContainerCDO && !Value->IsEditorOnly() && IsReplicatedActorComponent(PropertyTypeInfo))
 			{
 				bImportCoreTypes |= PropertyTypeInfo->RPCs.Num() > 0;
 
