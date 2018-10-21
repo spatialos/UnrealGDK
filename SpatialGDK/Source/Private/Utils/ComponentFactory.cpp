@@ -20,7 +20,7 @@ ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMa
 	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
 { }
 
-bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
+bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, EComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
 	bool bWroteSomething = false;
 
@@ -272,12 +272,12 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 
 	if (Info->SchemaComponents[TYPE_Data] != 0)
 	{
-		ComponentDatas.Add(CreateComponentData(Info->SchemaComponents[TYPE_Data], Object, RepChangeState, GROUP_MultiClient));
+		ComponentDatas.Add(CreateComponentData(Info->SchemaComponents[TYPE_Data], Object, RepChangeState, TYPE_Data));
 	}
 
 	if (Info->SchemaComponents[TYPE_OwnerOnly] != 0)
 	{
-		ComponentDatas.Add(CreateComponentData(Info->SchemaComponents[TYPE_OwnerOnly], Object, RepChangeState, GROUP_SingleClient));
+		ComponentDatas.Add(CreateComponentData(Info->SchemaComponents[TYPE_OwnerOnly], Object, RepChangeState, TYPE_OwnerOnly));
 	}
 
 	if (Info->SchemaComponents[TYPE_Handover] != 0)
@@ -288,7 +288,7 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	return ComponentDatas;
 }
 
-Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup)
+Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EComponentType PropertyGroup)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
@@ -323,25 +323,53 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 {
 	TArray<Worker_ComponentUpdate> ComponentUpdates;
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	check(Info);
+	FClassInfo Info;
+
+	// If Subobject
+	if (AActor* Actor = Cast<AActor>(Object->GetOuter()))
+	{
+		FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Object);
+
+		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
+		{
+			return ComponentUpdates;
+		}
+
+		FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Object->GetClass());
+		if (ActorInfo == nullptr)
+		{
+			return ComponentUpdates;
+		}
+
+		Info = *ActorInfo->SubobjectInfo[ObjectRef.Offset];
+	}
+	else
+	{
+		FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Object->GetClass());
+		if (ActorInfo == nullptr)
+		{
+			return ComponentUpdates;
+		}
+
+		Info = *ActorInfo;
+	}
 
 	if (RepChangeState)
 	{
-		if (Info->SchemaComponents[TYPE_Data] != 0)
+		if (Info.SchemaComponents[TYPE_Data] != 0)
 		{
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info->SchemaComponents[TYPE_Data], Object, *RepChangeState, GROUP_MultiClient, bWroteSomething);
+			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[TYPE_Data], Object, *RepChangeState, TYPE_Data, bWroteSomething);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(MultiClientUpdate);
 			}
 		}
 
-		if (Info->SchemaComponents[TYPE_OwnerOnly] != 0)
+		if (Info.SchemaComponents[TYPE_OwnerOnly] != 0)
 		{
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info->SchemaComponents[TYPE_OwnerOnly], Object, *RepChangeState, GROUP_SingleClient, bWroteSomething);
+			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info.SchemaComponents[TYPE_OwnerOnly], Object, *RepChangeState, TYPE_OwnerOnly, bWroteSomething);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
@@ -351,10 +379,10 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 
 	if (HandoverChangeState)
 	{
-		if (Info->SchemaComponents[TYPE_Handover] != 0)
+		if (Info.SchemaComponents[TYPE_Handover] != 0)
 		{
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info->SchemaComponents[TYPE_Handover], Object, *HandoverChangeState, bWroteSomething);
+			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info.SchemaComponents[TYPE_Handover], Object, *HandoverChangeState, bWroteSomething);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(HandoverUpdate);
@@ -365,7 +393,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	return ComponentUpdates;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EComponentType PropertyGroup, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 

@@ -109,7 +109,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value;
+		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
 		ForAllSchemaComponentTypes([&](EComponentType Type) {
 			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
@@ -163,7 +163,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
 		uint32 Offset = SubobjectInfoPair.Key;
-		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value;
+		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
 		UObject* Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset));
 
@@ -187,7 +187,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 		}
 
-		for (int32 RPCType = TYPE_ClientRPC; RPCType < RPC_Count; RPCType++)
+		for (int32 RPCType = TYPE_ClientRPC; RPCType < TYPE_Count; RPCType++)
 		{
 			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo.SchemaComponents[RPCType]));
 		}
@@ -273,10 +273,10 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 	FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	FillComponentInterests(ActorInfo, bNetOwned, ComponentInterest);
 
-	for (auto& SubobjectInfo : ActorInfo->SubobjectInfo)
+	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
 	{
-		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value;
-		FillComponentInterests(SubobjectInfo, bNetOwned, ComponentInterest);
+		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
+		FillComponentInterests(&SubobjectInfo, bNetOwned, ComponentInterest);
 	}
 
 	return ComponentInterest;
@@ -326,7 +326,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		{
 			return;
 		}
-		Info = ActorInfo->SubobjectInfo[ObjectRef.Offset];
+
+		Info = *ActorInfo->SubobjectInfo[ObjectRef.Offset];
 	}
 	else
 	{
@@ -335,6 +336,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		{
 			return;
 		}
+
 		Info = *ActorInfo;
 	}
 
@@ -705,7 +707,7 @@ FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 
 				FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
 
-				WorkerRequirementSet ClientRPCRequirementSet = EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]];
+				WorkerRequirementSet ClientRPCRequirementSet = EntityACL->ComponentWriteAcl[Info->SchemaComponents[TYPE_ClientRPC]];
 				WorkerAttributeSet ClientRPCAttributeSet = ClientRPCRequirementSet[0];
 				return ClientRPCAttributeSet[0];
 			}
@@ -733,7 +735,8 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	EntityACL->ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
+	// TODO: Update subobject authority
+	EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[TYPE_ClientRPC], OwningClientOnly);
 
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 

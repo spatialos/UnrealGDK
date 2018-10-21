@@ -214,7 +214,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 			check(Info);
 
-			if (Op.component_id == Info->RPCComponents[RPC_Client])
+			if (Op.component_id == Info->SchemaComponents[TYPE_ClientRPC])
 			{
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
@@ -494,20 +494,29 @@ AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable
 
 void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel)
 {
-	UClass* Class = TypebindingManager->FindClassByComponentId(Data.component_id);
-	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."), Data.component_id);
-
-	UObject* TargetObject = GetTargetObjectFromChannelAndClass(Channel, Class);
-	if (!TargetObject)
+	uint32 Offset = 0;
+	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Data.component_id, Offset);
+	if (!bFoundOffset)
 	{
 		return;
 	}
+
+	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset));
+	if (TargetObject == nullptr)
+	{
+		return;
+	}
+
+	FClassInfo* Info = TypebindingManager->FindClassInfoByComponentId(Data.component_id);
+	if (Info == nullptr)
+	{
+		return;
+	}
+
+	UClass* Class = TypebindingManager->FindClassByComponentId(Data.component_id);
+	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."), Data.component_id);
+
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
-
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
-	check(Info);
-
-	bool bAutonomousProxy = NetDriver->GetNetMode() == NM_Client && StaticComponentView->GetAuthority(EntityId, Info->SchemaComponents[TYPE_ClientRPC] == WORKER_AUTHORITY_AUTHORITATIVE);
 
 	EComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Data.component_id);
 
@@ -787,47 +796,6 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 	{
 		It->DestroyValue_InContainer(Parms);
 	}
-}
-
-UObject* USpatialReceiver::GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class)
-{
-	UObject* TargetObject = nullptr;
-
-	if (Class->IsChildOf<AActor>())
-	{
-		check(Channel->Actor->IsA(Class));
-		TargetObject = Channel->Actor;
-	}
-	else
-	{
-		FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Channel->Actor->GetClass());
-		check(ActorInfo);
-		if (!ActorInfo->SubobjectClasses.Contains(Class))
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object for Class %s on Actor %s probably caused by dynamic component"),
-				*Class->GetName(), *Channel->Actor->GetName());
-			return nullptr;
-		}
-
-		TArray<UObject*> DefaultSubobjects;
-		Channel->Actor->GetDefaultSubobjects(DefaultSubobjects);
-		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([Class](const UObject* Obj)
-		{
-			return Obj->GetClass() == Class;
-		});
-
-		if (FoundSubobject != nullptr)
-		{
-			TargetObject = *FoundSubobject;
-		}
-		else
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object for Class %s on Actor %s. Was this subobject deleted?"),
-				*Class->GetName(), *Channel->Actor->GetName());
-		}
-	}
-
-	return TargetObject;
 }
 
 void USpatialReceiver::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op)

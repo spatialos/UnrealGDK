@@ -110,7 +110,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 
 		Info.Class = Class;
 
-		ClassInfoMap.Add(Class, MakeUnique<FClassInfo>(Info));
+		ClassInfoMap.Add(Class, MakeShared<FClassInfo>(Info));
 	}
 
 	for (UClass* Class : SupportedClasses)
@@ -134,7 +134,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				}
 			});
 
-			ActorInfo->SubobjectInfo.Add(Offset, MakeUnique<FClassInfo>(SubobjectInfo));
+			ActorInfo->SubobjectInfo.Add(Offset, MakeShared<FClassInfo>(SubobjectInfo));
 		}
 	}
 }

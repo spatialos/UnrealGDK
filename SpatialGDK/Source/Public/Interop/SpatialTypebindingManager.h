@@ -61,8 +61,11 @@ struct FHandoverPropertyInfo
 	UProperty* Property;
 };
 
+USTRUCT()
 struct FClassInfo
 {
+	GENERATED_BODY()
+
 	UClass* Class;
 
 	TMap<EComponentType, TArray<UFunction*>> RPCs;
@@ -72,7 +75,7 @@ struct FClassInfo
 
 	Worker_ComponentId SchemaComponents[EComponentType::TYPE_Count];
 
-	TMap<uint32, TUniquePtr<FClassInfo>> SubobjectInfo;
+	TMap<uint32, TSharedPtr<FClassInfo>> SubobjectInfo;
 };
 
 UCLASS()
@@ -105,7 +108,7 @@ private:
 	UPROPERTY()
 	TArray<UClass*> SupportedClasses;
 
-	TMap<UClass*, TUniquePtr<FClassInfo>> ClassInfoMap;
+	TMap<UClass*, TSharedPtr<FClassInfo>> ClassInfoMap;
 
 	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;

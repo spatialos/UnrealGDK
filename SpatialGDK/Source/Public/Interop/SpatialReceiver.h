@@ -149,8 +149,6 @@ private:
 	void ResolveIncomingRPCs(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
 
-	UObject* GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class);
-
 	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
 
 private:

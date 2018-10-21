@@ -323,15 +323,10 @@ bool USpatialActorChannel::ReplicateActor()
 	{
 		FOutBunch DummyOutBunch;
 
-		FClassInfo* ClassInfo = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-
 		for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 		{
-			if (ClassInfo->SubobjectClasses.Contains(ActorComponent->GetClass()))
-			{
-				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, RepFlags);
-				bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-			}
+			bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, RepFlags);
+			bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 		}
 
 		for (UObject* Subobject : NetDriver->TypebindingManager->GetHandoverSubobjects(Actor))

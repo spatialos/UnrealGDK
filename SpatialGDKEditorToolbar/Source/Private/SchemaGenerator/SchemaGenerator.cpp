@@ -568,6 +568,11 @@ void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UC
 	TSet<UObject*> SeenComponents;
 	int32 CurrentOffset = 1;
 
+	if (TypeInfo->Type->GetName().Contains(TEXT("Sphere_Blueprint")))
+	{
+		auto x = 1;
+	}
+
 	for (auto& PropertyPair : TypeInfo->Properties)
 	{
 		UProperty* Property = PropertyPair.Key;
