@@ -73,7 +73,9 @@ struct FClassInfo
 
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 
-	Worker_ComponentId SchemaComponents[EComponentType::TYPE_Count];
+	Worker_ComponentId SchemaComponents[EComponentType::TYPE_Count] = {};
+
+	UObjectProperty* SubobjectProperty = nullptr;
 
 	TMap<uint32, TSharedPtr<FClassInfo>> SubobjectInfo;
 };
@@ -91,8 +93,6 @@ public:
 	FClassInfo* FindClassInfoByClassAndOffset(UClass* Class, uint32 Offset);
 	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
 	UClass* FindClassByComponentId(Worker_ComponentId ComponentId);
-
-	TArray<UObject*> GetHandoverSubobjects(AActor* Actor);
 
 	bool FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
 	EComponentType FindCategoryByComponentId(Worker_ComponentId ComponentId);

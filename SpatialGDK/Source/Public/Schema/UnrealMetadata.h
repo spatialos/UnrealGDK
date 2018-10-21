@@ -11,6 +11,7 @@
 
 #include <improbable/c_schema.h>
 #include <improbable/c_worker.h>
+#include "SpatialTypebindingManager.h"
 
 using SubobjectToOffsetMap = TMap<FString, uint32>;
 
@@ -69,19 +70,23 @@ struct UnrealMetadata : Component
 	SubobjectToOffsetMap SubobjectNameToOffset;
 };
 
-FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor)
+FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, FClassInfo* Info)
 {
 	SubobjectToOffsetMap SubobjectNameToOffset;
-	uint32 CurrentOffset = 1;
-	ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		// Objects can only be allocated NetGUIDs if this is true.
-		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
-		{
-			SubobjectNameToOffset.Add(*Object->GetName(), CurrentOffset);
-			CurrentOffset++;
-		}
-	});
+		uint32 Offset = SubobjectInfoPair.Key;
+
+		UObjectPropertyBase* Property = SubobjectInfoPair.Value->SubobjectProperty;
+		check(Property);
+
+		UObject* Subobject = Property->GetObjectPropertyValue_InContainer(Actor);
+		check(Subobject);
+
+		SubobjectNameToOffset.Add(Subobject->GetName(), Offset);
+	}
+
 	return SubobjectNameToOffset;
 }
 

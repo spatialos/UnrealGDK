@@ -84,8 +84,10 @@ public:
 	virtual void SetChannelActor(AActor* InActor) override;
 
 	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
-	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
+	bool ReplicateSubobject(UObject* Obj, FClassInfo* Info, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
+
+	TMap<UObject*, FClassInfo*> GetHandoverSubobjects();
 
 	FRepChangeState CreateInitialRepChangeState(UObject* Object);
 	FHandoverChangeState CreateInitialHandoverChangeState(FClassInfo* ClassInfo);

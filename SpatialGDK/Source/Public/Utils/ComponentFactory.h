@@ -28,8 +28,8 @@ class SPATIALGDK_API ComponentFactory
 public:
 	ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver);
 
-	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState);
-	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState);
+	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, FClassInfo* Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState);
+	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, FClassInfo* Info, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState);
 
 	static Worker_ComponentData CreateEmptyComponentData(Worker_ComponentId ComponentId);
 

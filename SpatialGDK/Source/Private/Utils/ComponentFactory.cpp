@@ -76,7 +76,10 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 	bool bWroteSomething = false;
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	check(Info);
+	if (Info == nullptr)
+	{
+		return false;
+	}
 
 	for (uint16 ChangedHandle : Changes)
 	{
@@ -263,12 +266,9 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 }
 
-TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState)
+TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, FClassInfo* Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState)
 {
 	TArray<Worker_ComponentData> ComponentDatas;
-
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	check(Info);
 
 	if (Info->SchemaComponents[TYPE_Data] != 0)
 	{
@@ -319,57 +319,26 @@ Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 	return ComponentData;
 }
 
-TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState)
+TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, FClassInfo* Info, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState)
 {
 	TArray<Worker_ComponentUpdate> ComponentUpdates;
 
-	FClassInfo Info;
-
-	// If Subobject
-	if (AActor* Actor = Cast<AActor>(Object->GetOuter()))
-	{
-		FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Object);
-
-		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
-		{
-			return ComponentUpdates;
-		}
-
-		FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-		if (ActorInfo == nullptr)
-		{
-			return ComponentUpdates;
-		}
-
-		Info = *ActorInfo->SubobjectInfo[ObjectRef.Offset];
-	}
-	else
-	{
-		FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-		if (ActorInfo == nullptr)
-		{
-			return ComponentUpdates;
-		}
-
-		Info = *ActorInfo;
-	}
-
 	if (RepChangeState)
 	{
-		if (Info.SchemaComponents[TYPE_Data] != 0)
+		if (Info->SchemaComponents[TYPE_Data] != 0)
 		{
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info.SchemaComponents[TYPE_Data], Object, *RepChangeState, TYPE_Data, bWroteSomething);
+			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info->SchemaComponents[TYPE_Data], Object, *RepChangeState, TYPE_Data, bWroteSomething);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(MultiClientUpdate);
 			}
 		}
 
-		if (Info.SchemaComponents[TYPE_OwnerOnly] != 0)
+		if (Info->SchemaComponents[TYPE_OwnerOnly] != 0)
 		{
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info.SchemaComponents[TYPE_OwnerOnly], Object, *RepChangeState, TYPE_OwnerOnly, bWroteSomething);
+			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info->SchemaComponents[TYPE_OwnerOnly], Object, *RepChangeState, TYPE_OwnerOnly, bWroteSomething);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(SingleClientUpdate);
@@ -379,10 +348,10 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 
 	if (HandoverChangeState)
 	{
-		if (Info.SchemaComponents[TYPE_Handover] != 0)
+		if (Info->SchemaComponents[TYPE_Handover] != 0)
 		{
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info.SchemaComponents[TYPE_Handover], Object, *HandoverChangeState, bWroteSomething);
+			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info->SchemaComponents[TYPE_Handover], Object, *HandoverChangeState, bWroteSomething);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(HandoverUpdate);

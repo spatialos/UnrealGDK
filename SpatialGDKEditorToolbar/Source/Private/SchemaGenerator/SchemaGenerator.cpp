@@ -584,52 +584,37 @@ void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UC
 
 		if (ObjectProperty && PropertyTypeInfo.IsValid())
 		{
-			//UObject* ContainerCDO = ActorClass->GetDefaultObject();
-			//UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
 			UObject* Value = PropertyTypeInfo->Object;
 
-			if (Value != nullptr /*&& Value->GetOuter() == ContainerCDO*/ && !Value->IsEditorOnly())
+			if (Value != nullptr && !Value->IsEditorOnly())
 			{
-				if (IsReplicatedActorComponent(PropertyTypeInfo) && !SeenComponents.Contains(Value))
+				if (!SeenComponents.Contains(Value))
 				{
-					bHasComponents = true;
 					SeenComponents.Add(Value);
 
-					FSubobjectSchemaData SubobjectData = GenerateActorComponentSpecificSchema(Writer, IdGenerator, Property->GetName(), PropertyTypeInfo, Value->GetClass());
-					ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
+					if (IsReplicatedActorComponent(PropertyTypeInfo))
+					{
+						bHasComponents = true;
 
-					SchemaDatabase->ClassToSchema.Add(Value->GetClass(), FSchemaData());
+						FSubobjectSchemaData SubobjectData = GenerateActorComponentSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaTypeName(Property->GetName()), PropertyTypeInfo, Value->GetClass());
+						SubobjectData.Property = ObjectProperty;
+						ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
+
+						SchemaDatabase->ClassToSchema.Add(Value->GetClass(), FSchemaData());
+					}
+					else
+					{
+						FSubobjectSchemaData SubobjectData;
+						SubobjectData.Property = ObjectProperty;
+						SubobjectData.Class = Value->GetClass();
+						ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
+						SchemaDatabase->ClassToSchema.Add(Value->GetClass(), FSchemaData());
+					}
 				}
 
 				CurrentOffset++;
 			}
 		}
-	}
-
-	UClass* BlueprintClass = ActorClass;
-	while (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(BlueprintClass))
-	{
-		if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
-		{
-			for (USCS_Node* Node : SCS->GetAllNodes())
-			{
-				if (Node->ComponentTemplate == nullptr)
-				{
-					continue;
-				}
-
-				bHasComponents = true;
-
-				//for()
-
-				//FSubobjectSchemaData SubobjectData = GenerateActorComponentSpecificSchema(Writer, IdGenerator, Node->VariableName.ToString(), PropertyTypeInfo, Node->ComponentClass);
-				//ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
-
-				//SchemaDatabase->ClassToSchema.Add(Value->GetClass(), FSchemaData());
-			}
-		}
-
-		BlueprintClass = BlueprintClass->GetSuperClass();
 	}
 
 	if (bHasComponents)
@@ -651,12 +636,11 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 
 		TSharedPtr<FUnrealType>& PropertyTypeInfo = PropertyPair.Value->Type;
 
-		if (ObjectProperty)
+		if (ObjectProperty && PropertyTypeInfo.IsValid())
 		{
-			UObject* ContainerCDO = Cast<UClass>(TypeInfo->Type)->GetDefaultObject();
-			UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
+			UObject* Value = PropertyTypeInfo->Object;
 
-			if (Value != nullptr && Value->GetOuter() == ContainerCDO && !Value->IsEditorOnly() && IsReplicatedActorComponent(PropertyTypeInfo))
+			if (Value != nullptr && !Value->IsEditorOnly() && IsReplicatedActorComponent(PropertyTypeInfo))
 			{
 				bImportCoreTypes |= PropertyTypeInfo->RPCs.Num() > 0;
 

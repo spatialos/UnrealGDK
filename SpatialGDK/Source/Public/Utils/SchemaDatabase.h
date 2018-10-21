@@ -13,6 +13,9 @@ struct FSubobjectSchemaData
 	UClass* Class = nullptr;
 
 	UPROPERTY()
+	UObjectProperty* Property = nullptr;
+
+	UPROPERTY()
 	uint32 SchemaComponents[7] = {};
 };
 

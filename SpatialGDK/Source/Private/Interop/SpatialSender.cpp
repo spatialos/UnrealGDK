@@ -102,6 +102,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		if (Type == TYPE_ClientRPC)
 		{
 			ComponentWriteAcl.Add(ComponentId, OwningClientOnly);
+			return;
 		}
 
 		ComponentWriteAcl.Add(ComponentId, ServersOnly);
@@ -121,6 +122,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			if (Type == TYPE_ClientRPC)
 			{
 				ComponentWriteAcl.Add(ComponentId, OwningClientOnly);
+				return;
 			}
 
 			ComponentWriteAcl.Add(ComponentId, ServersOnly);
@@ -133,7 +135,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, improbable::CreateOffsetMapFromActor(Actor, Info)).CreateUnrealMetadataData());
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
@@ -142,7 +144,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
 
-	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, InitialRepChanges, InitialHandoverChanges);
+	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
 
 	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
@@ -157,7 +159,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	for (int32 RPCType = TYPE_ClientRPC; RPCType < TYPE_Count; RPCType++)
 	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Info->SchemaComponents[RPCType]));
+		if (Info->SchemaComponents[RPCType] != 0)
+		{
+			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Info->SchemaComponents[RPCType]));
+		}
 	}
 
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
@@ -174,7 +179,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		UnresolvedObjectsMap.Empty();
 		HandoverUnresolvedObjectsMap.Empty();
 
-		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectRepChanges, SubobjectHandoverChanges);
+		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, &SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 		ComponentDatas.Append(ActorSubobjectDatas);
 
 		for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
@@ -189,7 +194,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 		for (int32 RPCType = TYPE_ClientRPC; RPCType < TYPE_Count; RPCType++)
 		{
-			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo.SchemaComponents[RPCType]));
+			if (SubobjectInfo.SchemaComponents[RPCType] != 0)
+			{
+				ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo.SchemaComponents[RPCType]));
+			}
 		}
 	}
 
@@ -200,7 +208,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	return CreateEntityRequestId;
 }
 
-void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
+void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo* Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
 {
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
@@ -210,7 +218,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
 	ComponentFactory UpdateFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
 
-	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, RepChanges, HandoverChanges);
+	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, RepChanges, HandoverChanges);
 
 	if (RepChanges)
 	{
@@ -584,7 +592,7 @@ void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_Com
 	Connection->SendCommandResponse(request_id, &Response);
 }
 
-void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover)
+void USpatialSender::ResolveOutgoingOperations(UObject* Object, FClassInfo* Info, bool bIsHandover)
 {
 	// Choose the correct container based on whether it's handover or not
 	FChannelToHandleToUnresolved& PropertyToUnresolved = bIsHandover ? HandoverPropertyToUnresolved : RepPropertyToUnresolved;
@@ -640,14 +648,14 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 		{
 			if (bIsHandover)
 			{
-				SendComponentUpdates(ReplicatingObject, DependentChannel, nullptr, &PropertyHandles);
+				SendComponentUpdates(ReplicatingObject, Info, DependentChannel, nullptr, &PropertyHandles);
 			}
 			else
 			{
 				// End with zero to indicate the end of the list of handles.
 				PropertyHandles.Add(0);
 				FRepChangeState RepChangeState = { PropertyHandles, DependentChannel->GetObjectRepLayout(ReplicatingObject) };
-				SendComponentUpdates(ReplicatingObject, DependentChannel, &RepChangeState, nullptr);
+				SendComponentUpdates(ReplicatingObject, Info, DependentChannel, &RepChangeState, nullptr);
 			}
 		}
 	}

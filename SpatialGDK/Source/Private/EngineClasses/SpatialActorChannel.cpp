@@ -287,6 +287,8 @@ bool USpatialActorChannel::ReplicateActor()
 	// Update the handover property change list.
 	FHandoverChangeState HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
 
+	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+
 	// If any properties have changed, send a component update.
 	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
 	{		
@@ -301,7 +303,7 @@ bool USpatialActorChannel::ReplicateActor()
 		else
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
-			Sender->SendComponentUpdates(Actor, this, &RepChangeState, &HandoverChangeState);
+			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState);
 		}
 
 		bWroteSomethingImportant = true;
@@ -325,21 +327,31 @@ bool USpatialActorChannel::ReplicateActor()
 
 		for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 		{
-			bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, RepFlags);
-			bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-		}
+			FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
 
-		for (UObject* Subobject : NetDriver->TypebindingManager->GetHandoverSubobjects(Actor))
-		{
-			// Handover shadow data should already exist for this object. If it doesn't, it must have
-			// started replicating after SetChannelActor was called on the owning actor.
-			TArray<uint8>& SubobjectHandoverShadowData = HandoverShadowDataMap.FindChecked(Subobject).Get();
-			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData, Subobject);
-			if (SubobjectHandoverChangeState.Num() > 0)
+			if (ObjectRef != SpatialConstants::NULL_OBJECT_REF)
 			{
-				Sender->SendComponentUpdates(Subobject, this, nullptr, &SubobjectHandoverChangeState);
+				FClassInfo& SubobjectInfo = *Info->SubobjectInfo[ObjectRef.Offset];
+
+				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, &SubobjectInfo, RepFlags);
+				bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 			}
 		}
+
+		//for (auto& SubobjectInfoPair : GetHandoverSubobjects())
+		//{
+		//	UObject* Subobject = SubobjectInfoPair.Key;
+		//	FClassInfo* Info = SubobjectInfoPair.Value;
+
+		//	// Handover shadow data should already exist for this object. If it doesn't, it must have
+		//	// started replicating after SetChannelActor was called on the owning actor.
+		//	TArray<uint8>& SubobjectHandoverShadowData = HandoverShadowDataMap.FindChecked(Subobject).Get();
+		//	FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData, Subobject);
+		//	if (SubobjectHandoverChangeState.Num() > 0)
+		//	{
+		//		Sender->SendComponentUpdates(Subobject, Info, this, nullptr, &SubobjectHandoverChangeState);
+		//	}
+		//}
 	}
 
 	// TODO: Handle deleted subobjects - see DataChannel.cpp:2542 - UNR:581
@@ -356,9 +368,9 @@ bool USpatialActorChannel::ReplicateActor()
 	return bWroteSomethingImportant;
 }
 
-bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)
+bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo* Info, const FReplicationFlags& RepFlags)
 {
-	if (!NetDriver->TypebindingManager->IsSupportedClass(Object->GetClass()))
+	if (Info == nullptr)
 	{
 		return false;
 	}
@@ -385,7 +397,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	if (RepChanged.Num() > 0)
 	{
 		FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Object) };
-		Sender->SendComponentUpdates(Object, this, &RepChangeState, nullptr);
+		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr);
 		Replicator.RepState->HistoryEnd++;
 	}
 
@@ -398,7 +410,38 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags)
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
-	return ReplicateSubobject(Obj, RepFlags);
+	return ReplicateSubobject(Obj, nullptr, RepFlags);
+}
+
+TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
+{
+	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	check(Info);
+
+	TMap<UObject*, FClassInfo*> FoundSubobjects;
+
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
+	{
+		uint32 Offset = SubobjectInfoPair.Key;
+		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
+
+		if (SubobjectInfo.HandoverProperties.Num() == 0)
+		{
+			// Not interested in this component if it has no handover properties
+			continue;
+		}
+
+		UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset));
+
+		if (Object == nullptr)
+		{
+			continue;
+		}
+
+		FoundSubobjects.Add(Object, &SubobjectInfo);
+	}
+
+	return FoundSubobjects;
 }
 
 void USpatialActorChannel::InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object)
@@ -472,8 +515,9 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
 
 	// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
-	for (UObject* Subobject : NetDriver->TypebindingManager->GetHandoverSubobjects(InActor))
+	for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 	{
+		UObject* Subobject = SubobjectInfoPair.Key;
 		check(!HandoverShadowDataMap.Contains(Subobject));
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
@@ -564,7 +608,8 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 	RegisterEntityId(EntityId);
 
 	// Register Actor with package map since we know what the entity id is.
-	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor));
+	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
@@ -670,36 +715,36 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 
 void USpatialActorChannel::SpatialViewTick()
 {
-	if (Actor != nullptr && !Actor->IsPendingKill() && IsReadyForReplication())
-	{
-		bool bOldNetOwned = bNetOwned;
+	//if (Actor != nullptr && !Actor->IsPendingKill() && IsReadyForReplication())
+	//{
+	//	bool bOldNetOwned = bNetOwned;
 
-		bNetOwned = false;
-		if (UNetConnection* Connection = Actor->GetNetConnection())
-		{
-			if (APlayerController* PlayerController = Connection->PlayerController)
-			{
-				bNetOwned = PlayerController->PlayerState != nullptr;
-			}
-		}
+	//	bNetOwned = false;
+	//	if (UNetConnection* Connection = Actor->GetNetConnection())
+	//	{
+	//		if (APlayerController* PlayerController = Connection->PlayerController)
+	//		{
+	//			bNetOwned = PlayerController->PlayerState != nullptr;
+	//		}
+	//	}
 
-		if (bFirstTick || bOldNetOwned != bNetOwned)
-		{
-			if (IsAuthoritativeServer())
-			{
-				bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
+	//	if (bFirstTick || bOldNetOwned != bNetOwned)
+	//	{
+	//		if (IsAuthoritativeServer())
+	//		{
+	//			bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
 
-				if (bFirstTick && bSuccess)
-				{
-					bFirstTick = false;
-				}
-			}
-			else if(!NetDriver->IsServer())
-			{
-				Sender->SendComponentInterest(Actor, GetEntityId());
+	//			if (bFirstTick && bSuccess)
+	//			{
+	//				bFirstTick = false;
+	//			}
+	//		}
+	//		else if(!NetDriver->IsServer())
+	//		{
+	//			Sender->SendComponentInterest(Actor, GetEntityId());
 
-				bFirstTick = false;
-			}
-		}
-	}
+	//			bFirstTick = false;
+	//		}
+	//	}
+	//}
 }

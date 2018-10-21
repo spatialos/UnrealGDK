@@ -230,12 +230,15 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
 
 	// Create component data from initial state of Actor (which is the state the Actor is in before running the level)
-	TArray<Worker_ComponentData> ComponentData = DataFactory.CreateComponentDatas(Actor, InitialRepChanges, InitialHandoverChanges);
+	TArray<Worker_ComponentData> ComponentData = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 
 	// Add Actor RPCs to entity
 	for (int32 RPCType = TYPE_ClientRPC; RPCType < TYPE_Count; RPCType++)
 	{
-		ComponentData.Add(ComponentFactory::CreateEmptyComponentData(Info->SchemaComponents[RPCType]));
+		if (Info->SchemaComponents[RPCType] != 0)
+		{
+			ComponentData.Add(ComponentFactory::CreateEmptyComponentData(Info->SchemaComponents[RPCType]));
+		}
 	}
 
 	// Visit each supported subobject and create component data for initial state of each subobject
@@ -250,12 +253,15 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 		// Create component data for initial state of subobject
-		ComponentData.Append(DataFactory.CreateComponentDatas(Subobject, SubobjectRepChanges, SubobjectHandoverChanges));
+		ComponentData.Append(DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges));
 
 		// Add subobject RPCs to entity
 		for (int32 RPCType = TYPE_ClientRPC; RPCType < TYPE_Count; RPCType++)
 		{
-			ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo->SchemaComponents[RPCType]));
+			if (SubobjectInfo->SchemaComponents[RPCType] != 0)
+			{
+				ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo->SchemaComponents[RPCType]));
+			}
 		}
 	}
 
@@ -326,7 +332,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	Components.Add(improbable::UnrealMetadata(StaticPath, {}, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
+	Components.Add(improbable::UnrealMetadata(StaticPath, {}, improbable::CreateOffsetMapFromActor(Actor, ActorInfo)).CreateUnrealMetadataData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
 
@@ -380,10 +386,11 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	bool bSuccess = true;
 
 	// Need to add all actors in the world to the package map so they have assigned UnrealObjRefs for the ComponentFactory to use
-	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&PackageMap, &EntityRegistry](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&PackageMap, &EntityRegistry, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
 	{
 		EntityRegistry->AddToRegistry(EntityId, Actor);
-		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor));
+		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
 		return true;
 	});
 

@@ -122,6 +122,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 
 			FClassInfo* ActorInfo = FindClassInfoByClass(Class);
 			FClassInfo SubobjectInfo = *FindClassInfoByClass(SubobjectSchemaData.Class);
+			SubobjectInfo.SubobjectProperty = SubobjectSchemaData.Property;
 
 			ForAllSchemaComponentTypes([&](EComponentType Type) {
 				Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
@@ -184,38 +185,6 @@ UClass* USpatialTypebindingManager::FindClassByComponentId(Worker_ComponentId Co
 bool USpatialTypebindingManager::IsSupportedClass(UClass* Class)
 {
 	return SupportedClasses.Contains(Class);
-}
-
-TArray<UObject*> USpatialTypebindingManager::GetHandoverSubobjects(AActor* Actor)
-{
-	FClassInfo* Info = FindClassInfoByClass(Actor->GetClass());
-	check(Info);
-
-	TArray<UObject*> DefaultSubobjects;
-	Actor->GetDefaultSubobjects(DefaultSubobjects);
-
-	TArray<UObject*> FoundSubobjects;
-
-	//for (UClass* SubobjectClass : Info->SubobjectClasses)
-	//{
-	//	FClassInfo* SubobjectInfo = FindClassInfoByClass(SubobjectClass);
-	//	check(SubobjectInfo);
-
-	//	if (SubobjectInfo->HandoverProperties.Num() == 0)
-	//	{
-	//		// Not interested in this component if it has no handover properties
-	//		continue;
-	//	}
-
-	//	UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
-	//	{
-	//		return Obj->GetClass() == SubobjectClass;
-	//	});
-	//	check(FoundSubobject);
-	//	FoundSubobjects.Add(*FoundSubobject);
-	//}
-
-	return FoundSubobjects;
 }
 
 bool USpatialTypebindingManager::FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)

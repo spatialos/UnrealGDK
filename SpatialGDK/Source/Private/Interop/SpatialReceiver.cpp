@@ -100,7 +100,6 @@ void USpatialReceiver::LeaveCriticalSection()
 
 void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
 {
-	UE_LOG(LogSpatialReceiver, Error, TEXT("Worker: %s AddEntity: %lld"), *NetDriver->Connection->GetWorkerId(), Op.entity_id);
 	check(bInCriticalSection);
 
 	PendingAddEntities.Emplace(Op.entity_id);
@@ -144,8 +143,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 {
-	UE_LOG(LogSpatialReceiver, Error, TEXT("Worker: %s RemoveEntity: %lld"), *NetDriver->Connection->GetWorkerId(), Op.entity_id);
-
 	RemoveActor(Op.entity_id);
 }
 
@@ -235,6 +232,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	improbable::Rotation* Rotation = StaticComponentView->GetComponentData<improbable::Rotation>(EntityId);
 
 	check(Position && Metadata);
+
+	if (!NetDriver->IsServer())
+	{
+		auto x = 1;
+	}
 
 	if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId))
 	{
@@ -886,8 +888,19 @@ void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& Unresolved
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)
 {
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
-	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
-	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
+
+	FClassInfo* Info = nullptr;
+	if (AActor* Actor = Cast<AActor>(Object->GetOuter()))
+	{
+		Info = TypebindingManager->FindClassInfoByClassAndOffset(Actor->GetClass(), ObjectRef.Offset);
+	}
+	else
+	{
+		Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
+	}
+
+	Sender->ResolveOutgoingOperations(Object, Info, /* bIsHandover */ false);
+	Sender->ResolveOutgoingOperations(Object, Info, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
 	Sender->ResolveOutgoingRPCs(Object);
 	ResolveIncomingRPCs(Object, ObjectRef);
