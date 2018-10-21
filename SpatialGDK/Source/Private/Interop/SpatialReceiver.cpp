@@ -233,11 +233,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	check(Position && Metadata);
 
-	if (!NetDriver->IsServer())
-	{
-		auto x = 1;
-	}
-
 	if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId))
 	{
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
