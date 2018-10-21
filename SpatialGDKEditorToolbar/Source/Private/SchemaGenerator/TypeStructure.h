@@ -103,6 +103,7 @@ struct FUnrealHandoverData;
 struct FUnrealType
 {
 	UStruct* Type;
+	UObject* Object;
 	TMultiMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
 	TMap<UFunction*, TSharedPtr<FUnrealRPC>> RPCs;
 	TWeakPtr<FUnrealProperty> ParentProperty;

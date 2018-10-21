@@ -8,6 +8,8 @@
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 #include "SpatialTypebindingManager.h"
+#include "Engine/BlueprintGeneratedClass.h"
+#include "Engine/SCS_Node.h"
 
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.
@@ -580,12 +582,13 @@ void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UC
 
 		TSharedPtr<FUnrealType>& PropertyTypeInfo = PropertyPair.Value->Type;
 
-		if (ObjectProperty)
+		if (ObjectProperty && PropertyTypeInfo.IsValid())
 		{
-			UObject* ContainerCDO = ActorClass->GetDefaultObject();
-			UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
+			//UObject* ContainerCDO = ActorClass->GetDefaultObject();
+			//UObject* Value = ObjectProperty->GetPropertyValue_InContainer(ContainerCDO);
+			UObject* Value = PropertyTypeInfo->Object;
 
-			if (Value != nullptr && Value->GetOuter() == ContainerCDO && !Value->IsEditorOnly())
+			if (Value != nullptr /*&& Value->GetOuter() == ContainerCDO*/ && !Value->IsEditorOnly())
 			{
 				if (IsReplicatedActorComponent(PropertyTypeInfo) && !SeenComponents.Contains(Value))
 				{
@@ -601,6 +604,32 @@ void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UC
 				CurrentOffset++;
 			}
 		}
+	}
+
+	UClass* BlueprintClass = ActorClass;
+	while (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(BlueprintClass))
+	{
+		if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
+		{
+			for (USCS_Node* Node : SCS->GetAllNodes())
+			{
+				if (Node->ComponentTemplate == nullptr)
+				{
+					continue;
+				}
+
+				bHasComponents = true;
+
+				//for()
+
+				//FSubobjectSchemaData SubobjectData = GenerateActorComponentSpecificSchema(Writer, IdGenerator, Node->VariableName.ToString(), PropertyTypeInfo, Node->ComponentClass);
+				//ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
+
+				//SchemaDatabase->ClassToSchema.Add(Value->GetClass(), FSchemaData());
+			}
+		}
+
+		BlueprintClass = BlueprintClass->GetSuperClass();
 	}
 
 	if (bHasComponents)
