@@ -119,6 +119,12 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 {
 	SingletonNameToEntityId[ClassName] = SingletonEntityId;
 
+	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::GLOBAL_STATE_MANAGER, SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID))
+	{
+		UE_LOG(LogGlobalStateManager, Warning, TEXT("UpdateSingletonEntityId: no authority over the GSM! Singleton class: %s, entity: %lld"), *ClassName, SingletonEntityId);
+		return;
+	}
+
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID);
