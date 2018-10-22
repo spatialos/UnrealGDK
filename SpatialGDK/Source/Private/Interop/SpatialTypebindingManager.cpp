@@ -45,7 +45,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
 				RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 			{
-				EComponentType RPCType;
+				ESchemaComponentType RPCType;
 				if (RemoteFunction->FunctionFlags & FUNC_NetClient)
 				{
 					RPCType = TYPE_ClientRPC;
@@ -97,14 +97,14 @@ void USpatialTypebindingManager::CreateTypebindings()
 			}
 		}
 
-		ForAllSchemaComponentTypes([&](EComponentType Type) {
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			Worker_ComponentId ComponentId = SchemaDatabase->ClassToSchema[Class].SchemaComponents[Type];
 			if (ComponentId != 0)
 			{
 				Info.SchemaComponents[Type] = ComponentId;
 				ComponentToClassMap.Add(ComponentId, Class);
 				ComponentToOffsetMap.Add(ComponentId, 0);
-				ComponentToCategoryMap.Add(ComponentId, (EComponentType)Type);
+				ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
 			}
 		});
 
@@ -124,14 +124,14 @@ void USpatialTypebindingManager::CreateTypebindings()
 			FClassInfo SubobjectInfo = *FindClassInfoByClass(SubobjectSchemaData.Class);
 			SubobjectInfo.SubobjectProperty = SubobjectSchemaData.Property;
 
-			ForAllSchemaComponentTypes([&](EComponentType Type) {
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 				Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
 				if (ComponentId != 0)
 				{
 					SubobjectInfo.SchemaComponents[Type] = ComponentId;
 					ComponentToClassMap.Add(ComponentId, SubobjectSchemaData.Class);
 					ComponentToOffsetMap.Add(ComponentId, Offset);
-					ComponentToCategoryMap.Add(ComponentId, (EComponentType)Type);
+					ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
 				}
 			});
 
@@ -198,12 +198,12 @@ bool USpatialTypebindingManager::FindOffsetByComponentId(Worker_ComponentId Comp
 	return false;
 }
 
-EComponentType USpatialTypebindingManager::FindCategoryByComponentId(Worker_ComponentId ComponentId)
+ESchemaComponentType USpatialTypebindingManager::FindCategoryByComponentId(Worker_ComponentId ComponentId)
 {
-	if (EComponentType* Category = ComponentToCategoryMap.Find(ComponentId))
+	if (ESchemaComponentType* Category = ComponentToCategoryMap.Find(ComponentId))
 	{
 		return *Category;
 	}
 
-	return EComponentType::TYPE_Invalid;
+	return ESchemaComponentType::TYPE_Invalid;
 }

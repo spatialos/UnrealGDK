@@ -71,7 +71,7 @@ void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 	}
 }
 
-FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(const UObject* Object)
+FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(UObject* Object)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	return SpatialGuidCache->AssignNewStablyNamedObjectNetGUID(Object);
@@ -199,7 +199,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 // Recursively assign netguids to the outer chain of a UObject. Then associate them with their Spatial representation (FUnrealObjectRef)
 // This is required in order to be able to refer to a non-replicated stably named UObject.
 // Dynamically spawned actors and references to their subobjects do not go through this codepath.
-FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(const UObject* Object)
+FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Object);
 	FNetworkGUID OuterGUID;
@@ -330,7 +330,7 @@ FNetworkGUID FSpatialNetGUIDCache::GenerateNewNetGUID(const int32 IsStatic)
 	return NetGUID;
 }
 
-FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(const UObject* Object)
+FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID(Object);
 

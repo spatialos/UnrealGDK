@@ -7,6 +7,8 @@
 
 #include "improbable/UnrealObjectRef.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetBitReader, All, All);
+
 class USpatialPackageMapClient;
 
 class SPATIALGDK_API FSpatialNetBitReader : public FNetBitReader

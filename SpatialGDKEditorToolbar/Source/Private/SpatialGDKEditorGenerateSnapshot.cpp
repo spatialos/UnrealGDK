@@ -282,8 +282,9 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 
-	ForAllSchemaComponentTypes([&](EComponentType Type) {
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 		Worker_ComponentId ComponentId = ActorInfo->SchemaComponents[Type];
 
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
@@ -300,11 +301,12 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 		ComponentWriteAcl.Add(ComponentId, UnrealServerPermission);
 	});
 
+
 	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
 	{
 		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
-		ForAllSchemaComponentTypes([&](EComponentType Type) {
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
 			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 			{

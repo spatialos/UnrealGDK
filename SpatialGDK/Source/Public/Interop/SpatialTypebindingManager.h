@@ -9,15 +9,15 @@
 
 #include "SpatialTypebindingManager.generated.h"
 
-FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(EComponentType)> Callback)
+FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)> Callback)
 {
 	for (int32 Type = TYPE_Data; Type < TYPE_Count; Type++)
 	{
-		Callback(EComponentType(Type));
+		Callback(ESchemaComponentType(Type));
 	}
 }
 
-FORCEINLINE EComponentType GetGroupFromCondition(ELifetimeCondition Condition)
+FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condition)
 {
 	switch (Condition)
 	{
@@ -31,7 +31,7 @@ FORCEINLINE EComponentType GetGroupFromCondition(ELifetimeCondition Condition)
 
 struct FRPCInfo
 {
-	EComponentType Type;
+	ESchemaComponentType Type;
 	uint32 Index;
 };
 
@@ -50,12 +50,12 @@ struct FClassInfo
 
 	UClass* Class;
 
-	TMap<EComponentType, TArray<UFunction*>> RPCs;
+	TMap<ESchemaComponentType, TArray<UFunction*>> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
 
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 
-	Worker_ComponentId SchemaComponents[EComponentType::TYPE_Count] = {};
+	Worker_ComponentId SchemaComponents[ESchemaComponentType::TYPE_Count] = {};
 
 	UObjectProperty* SubobjectProperty = nullptr;
 
@@ -77,7 +77,7 @@ public:
 	UClass* FindClassByComponentId(Worker_ComponentId ComponentId);
 
 	bool FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
-	EComponentType FindCategoryByComponentId(Worker_ComponentId ComponentId);
+	ESchemaComponentType FindCategoryByComponentId(Worker_ComponentId ComponentId);
 
 private:
 	void FindSupportedClasses();
@@ -94,5 +94,5 @@ private:
 
 	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
-	TMap<Worker_ComponentId, EComponentType> ComponentToCategoryMap;
+	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
 };

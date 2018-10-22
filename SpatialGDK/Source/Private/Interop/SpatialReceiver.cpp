@@ -517,7 +517,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
-	EComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Data.component_id);
+	ESchemaComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Data.component_id);
 
 	if (ComponentType == TYPE_Data || ComponentType == TYPE_OwnerOnly)
 	{
@@ -595,13 +595,13 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	EComponentType Category = TypebindingManager->FindCategoryByComponentId(Op.update.component_id);
+	ESchemaComponentType Category = TypebindingManager->FindCategoryByComponentId(Op.update.component_id);
 
-	if (Category == EComponentType::TYPE_Data || Category == EComponentType::TYPE_OwnerOnly)
+	if (Category == ESchemaComponentType::TYPE_Data || Category == ESchemaComponentType::TYPE_OwnerOnly)
 	{
 		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ false);
 	}
-	else if (Category == EComponentType::TYPE_Handover)
+	else if (Category == ESchemaComponentType::TYPE_Handover)
 	{
 		if (!NetDriver->IsServer())
 		{
@@ -611,7 +611,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 
 		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ true);
 	}
-	else if (Category == EComponentType::TYPE_NetMulticastRPC)
+	else if (Category == ESchemaComponentType::TYPE_NetMulticastRPC)
 	{
 		if (TArray<UFunction*>* RPCArray = Info->RPCs.Find(TYPE_NetMulticastRPC))
 		{
@@ -671,7 +671,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClassAndOffset(TargetObject->GetClass(), Offset);
 	check(Info);
 
-	EComponentType RPCType = TypebindingManager->FindCategoryByComponentId(Op.request.component_id);
+	ESchemaComponentType RPCType = TypebindingManager->FindCategoryByComponentId(Op.request.component_id);
 	check(RPCType >= TYPE_ClientRPC && RPCType < TYPE_Count);
 
 	const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);

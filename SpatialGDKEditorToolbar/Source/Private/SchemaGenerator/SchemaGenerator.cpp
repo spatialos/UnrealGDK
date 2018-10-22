@@ -114,7 +114,7 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 
 void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const FString& PropertyPath, const int FieldCounter)
 {
-	Writer.Printf("%s %s = %d;",
+	Writer.Printf("{0} {1} = {2};",
 		*PropertyToSchemaType(RepProp->Property, false),
 		*SchemaFieldName(RepProp),
 		FieldCounter
@@ -123,7 +123,7 @@ void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> 
 
 void WriteSchemaHandoverField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> HandoverProp, const int FieldCounter)
 {
-	Writer.Printf("%s %s = %d;",
+	Writer.Printf("{0} {1} = {2};",
 		*PropertyToSchemaType(HandoverProp->Property, false),
 		*SchemaFieldName(HandoverProp),
 		FieldCounter
@@ -132,7 +132,7 @@ void WriteSchemaHandoverField(FCodeWriter& Writer, const TSharedPtr<FUnrealPrope
 
 void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrealProperty> RPCProp, const int FieldCounter)
 {
-	Writer->Printf("%s %s = %d;",
+	Writer->Printf("{0} {1} = {2};",
 		*PropertyToSchemaType(RPCProp->Property, true),
 		*SchemaFieldName(RPCProp),
 		FieldCounter
@@ -232,7 +232,7 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 		}
 
 		Writer.PrintNewLine();
-		Writer.Printf("type %s {", *SchemaReplicatedDataName(Group, Class));
+		Writer.Printf("type {0} {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
 		for (auto& RepProp : RepData[Group])
 		{
@@ -249,7 +249,7 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 	{
 		Writer.PrintNewLine();
 
-		Writer.Printf("type %s {", *SchemaHandoverDataName(Class));
+		Writer.Printf("type {0} {", *SchemaHandoverDataName(Class));
 		Writer.Indent();
 		int FieldCounter = 0;
 		for (auto& Prop : HandoverData)
@@ -275,7 +275,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-		package unreal.generated.%s;)""",
+		package unreal.generated.{0};)""",
 		*UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
 
 	if (ShouldIncludeCoreTypes(TypeInfo))
@@ -299,17 +299,17 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 
 		Writer.PrintNewLine();
 
-		Writer.Printf("component %s {", *SchemaReplicatedDataName(Group, Class));
+		Writer.Printf("component {0} {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
-		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
 
 		if (Group == REP_MultiClient)
 		{
-			ActorSchemaData.SchemaComponents[EComponentType::TYPE_Data] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_Data] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == REP_SingleClient)
 		{
-			ActorSchemaData.SchemaComponents[EComponentType::TYPE_OwnerOnly] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_OwnerOnly] = IdGenerator.GetCurrentId();
 		}
 
 		int FieldCounter = 0;
@@ -360,11 +360,11 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
-		Writer.Printf("component %s {", *SchemaHandoverDataName(Class));
+		Writer.Printf("component {0} {", *SchemaHandoverDataName(Class));
 		Writer.Indent();
-		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
 
-		ActorSchemaData.SchemaComponents[EComponentType::TYPE_Handover] = IdGenerator.GetCurrentId();
+		ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_Handover] = IdGenerator.GetCurrentId();
 
 		int FieldCounter = 0;
 		for (auto& Prop : HandoverData)
@@ -391,25 +391,25 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 
 		Writer.PrintNewLine();
 
-		Writer.Printf("component %s {", *SchemaRPCComponentName(Group, Class));
+		Writer.Printf("component {0} {", *SchemaRPCComponentName(Group, Class));
 		Writer.Indent();
-		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
 
 		if (Group == RPC_Client)
 		{
-			ActorSchemaData.SchemaComponents[EComponentType::TYPE_ClientRPC] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_ClientRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_Server)
 		{
-			ActorSchemaData.SchemaComponents[EComponentType::TYPE_ServerRPC] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_ServerRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_NetMulticast)
 		{
-			ActorSchemaData.SchemaComponents[EComponentType::TYPE_NetMulticastRPC] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_NetMulticastRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_CrossServer)
 		{
-			ActorSchemaData.SchemaComponents[EComponentType::TYPE_CrossServerRPC] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_CrossServerRPC] = IdGenerator.GetCurrentId();
 		}
 
 		for (auto& RPC : RPCsByType[Group])
@@ -421,12 +421,12 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 					ReliableMulticasts.Add(FString::Printf(TEXT("%s::%s"), *GetFullCPPName(Class), *RPC->Function->GetName()));
 				}
 
-				Writer.Printf("event UnrealRPCCommandRequest %s;",
+				Writer.Printf("event UnrealRPCCommandRequest {0};",
 					*SchemaRPCName(Class, RPC->Function));
 			}
 			else
 			{
-				Writer.Printf("command UnrealRPCCommandResponse %s(UnrealRPCCommandRequest);",
+				Writer.Printf("command UnrealRPCCommandResponse {0}(UnrealRPCCommandRequest);",
 					*SchemaRPCName(Class, RPC->Function));
 			}
 		}
@@ -470,19 +470,19 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		Writer.PrintNewLine();
 
 		FString ComponentName = PropertyName + GetReplicatedPropertyGroupName(Group);
-		Writer.Printf("component %s {", *ComponentName);
+		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
-		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
-		Writer.Printf("data %s;", *SchemaReplicatedDataName(Group, ComponentClass));
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
+		Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
 		if (Group == REP_MultiClient)
 		{
-			SubobjectData.SchemaComponents[EComponentType::TYPE_Data] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_Data] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == REP_SingleClient)
 		{
-			SubobjectData.SchemaComponents[EComponentType::TYPE_OwnerOnly] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_OwnerOnly] = IdGenerator.GetCurrentId();
 		}
 	}
 
@@ -492,13 +492,13 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
-		Writer.Printf("component %s {", *(PropertyName + TEXT("Handover")));
+		Writer.Printf("component {0} {", *(PropertyName + TEXT("Handover")));
 		Writer.Indent();
-		Writer.Printf("id = %d;", IdGenerator.GetNextAvailableId());
-		Writer.Printf("data %s;", *SchemaHandoverDataName(ComponentClass));
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
+		Writer.Printf("data {0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
-		SubobjectData.SchemaComponents[EComponentType::TYPE_Handover] = IdGenerator.GetCurrentId();
+		SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_Handover] = IdGenerator.GetCurrentId();
 	}
 
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
@@ -513,19 +513,19 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		Writer.PrintNewLine();
 
 		FString ComponentName = PropertyName + GetRPCTypeName(Group) + TEXT("RPCs");
-		Writer.Printf("component %s {", *ComponentName);
+		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
-		Writer.Printf("id = %i;", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
 		for (auto& RPC : RPCsByType[Group])
 		{
 			if (Group == ERPCType::RPC_NetMulticast)
 			{
-				Writer.Printf("event UnrealRPCCommandRequest %s;",
+				Writer.Printf("event UnrealRPCCommandRequest {0};",
 					*SchemaRPCName(Cast<UClass>(ComponentClass), RPC->Function));
 			}
 			else
 			{
-				Writer.Printf("command UnrealRPCCommandResponse %s(UnrealRPCCommandRequest);",
+				Writer.Printf("command UnrealRPCCommandResponse {0}(UnrealRPCCommandRequest);",
 					*SchemaRPCName(Cast<UClass>(ComponentClass), RPC->Function));
 			}
 		}
@@ -533,19 +533,19 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 
 		if (Group == RPC_Client)
 		{
-			SubobjectData.SchemaComponents[EComponentType::TYPE_ClientRPC] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_ClientRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_Server)
 		{
-			SubobjectData.SchemaComponents[EComponentType::TYPE_ServerRPC] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_ServerRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_NetMulticast)
 		{
-			SubobjectData.SchemaComponents[EComponentType::TYPE_NetMulticastRPC] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_NetMulticastRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_CrossServer)
 		{
-			SubobjectData.SchemaComponents[EComponentType::TYPE_CrossServerRPC] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_CrossServerRPC] = IdGenerator.GetCurrentId();
 		}
 	}
 
@@ -559,7 +559,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-		package unreal.generated.%s.components;)""",
+		package unreal.generated.{0}.components;)""",
 		*UnrealNameToSchemaTypeName(TypeInfo->Type->GetName().ToLower()));
 
 	Writer.PrintNewLine();
@@ -641,7 +641,7 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 
 				if (!AlreadyImported.Contains(Value->GetClass()))
 				{
-					Writer.Printf("import \"unreal/generated/ActorComponents/%s.schema\";", *UnrealNameToSchemaTypeName(Value->GetClass()->GetName()));
+					Writer.Printf("import \"unreal/generated/ActorComponents/{0}.schema\";", *UnrealNameToSchemaTypeName(Value->GetClass()->GetName()));
 					AlreadyImported.Add(Value->GetClass());
 				}
 			}

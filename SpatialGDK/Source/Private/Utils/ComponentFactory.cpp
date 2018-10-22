@@ -20,7 +20,7 @@ ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMa
 	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
 { }
 
-bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, EComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
+bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
 	bool bWroteSomething = false;
 
@@ -58,7 +58,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				}
 			}
 
-			if (Cmd.Type == REPCMD_DynamicArray)
+			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 			{
 				if (!HandleIterator.JumpOverArray())
 				{
@@ -288,7 +288,7 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	return ComponentDatas;
 }
 
-Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EComponentType PropertyGroup)
+Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
@@ -362,7 +362,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	return ComponentUpdates;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EComponentType PropertyGroup, bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 

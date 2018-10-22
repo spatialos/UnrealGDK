@@ -75,15 +75,8 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 
 		Channel->SetChannelActor(SingletonActor);
 
-		improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(SingletonEntityId);
-		if (UnrealMetadata == nullptr)
-		{
-			// Don't have entity checked out
-			continue;
-		}
-
 		// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
-		NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, UnrealMetadata->SubobjectNameToOffset);
+		//NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, improbable::CreateOffsetMapFromActor(SingletonActor));
 		UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
 	}
 }
@@ -125,6 +118,12 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId)
 {
 	SingletonNameToEntityId[ClassName] = SingletonEntityId;
+
+	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::GLOBAL_STATE_MANAGER, SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID))
+	{
+		UE_LOG(LogGlobalStateManager, Warning, TEXT("UpdateSingletonEntityId: no authority over the GSM! Update will not be sent. Singleton class: %s, entity: %lld"), *ClassName, SingletonEntityId);
+		return;
+	}
 
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID;

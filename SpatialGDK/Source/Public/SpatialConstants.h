@@ -11,7 +11,7 @@
 // These are not a type of key supported by TMap.
 using Worker_EntityId_Key = int64;
 
-enum EComponentType : int32
+enum ESchemaComponentType : int32
 {
 	TYPE_Invalid = -1,
 

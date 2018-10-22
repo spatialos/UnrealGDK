@@ -6,6 +6,7 @@
 #include "CoreOnline.h"
 #include "Engine.h"
 #include "IpNetDriver.h"
+#include "OnlineSubsystemNames.h"
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
@@ -43,6 +44,7 @@ public:
 	bool IsValid() const override { return true; }
 	FString ToString() const override { return WorkerId; }
 	FString ToDebugString() const override { return TEXT("workerId:") + WorkerId; }
+	virtual FName GetType() const override { return NULL_SUBSYSTEM; };
 
 private:
 	FString WorkerId;

@@ -167,4 +167,8 @@ inline StringToEntityMap GetStringToEntityMapFromSchema(Schema_Object* Object, S
 	return Map;
 }
 
+// Generates the full path from an ObjectRef, if it has paths. Writes the result to OutPath.
+// Does not clear OutPath first.
+void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);
+
 }
