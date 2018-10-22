@@ -38,6 +38,8 @@ The GDK currently supports only one instance of each static subobject type when 
 
 Properties and RPCs within subobjects have the same support as an Actor’s properties and RPCs.
 
+The SpatialOS Unreal GDK does not yet support dynamic subobject replication.
+
 ## Property handover
 
 Actor property handover is a new feature we’re introducing with the SpatialOS Unreal GDK. It replicates server-side properties between servers so Unreal games can take advantage of the SpatialOS cloud server architecture. For more information, see [the Actor property handover]({{urlRoot}}/content/handover-between-server-workers) documentation.
