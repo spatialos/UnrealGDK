@@ -162,19 +162,24 @@ etc...
             ],
     
 ## Generating code for SpatialOS C++ workers and building your project
-1. Set your Unreal project to work with the SpatialOS GDK for Unreal fork of the Unreal Engine, which you cloned and installed earlier. To do this:
-    1. In File Explorer, navigate to `<ProjectRoot>\<GameRoot>`.
-    2. Right-click your uproject file and select **Switch Unreal Engine version**.
-    3. Select the path to the Unreal Engine fork you cloned earlier.
-    4. In a terminal window, from `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\SpatialGDK\Build\Scripts`, run `BuildWorker.bat <YourProject>Editor Win64 Development <YourProject>.uproject` e.g. "`BuildWorker.bat StarterProjectEditor Win64 Development StarterProject.uproject`" This builds and packages your workers for a Spatial deployment.
-    5. In File Explorer, right-click your uproject file and select **Generate Visual Studio project files**.
-    6. Open the solution in Visual Studio, and compile and run the project in the Development Editor configuration.
+Set your Unreal project to work with the SpatialOS GDK for Unreal fork of the Unreal Engine, which you cloned and installed earlier. To do this:
+1. In File Explorer, navigate to `<ProjectRoot>\<GameRoot>`.
+2. Right-click your uproject file and select **Switch Unreal Engine version**.
+3. Select the path to the Unreal Engine fork you cloned earlier.
+4. In a terminal window, from `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\SpatialGDK\Build\Scripts`, run `BuildWorker.bat <YourProject>Editor Win64 Development <YourProject>.uproject`   
+For Example "`BuildWorker.bat StarterProjectEditor Win64 Development StarterProject.uproject`"  
+This builds and packages your workers ready for a Spatial deployment.
+5. In File Explorer, right-click your uproject file and select **Generate Visual Studio project files**.
+6. Open the solution in Visual Studio, and compile and run the project in the Development Editor configuration.
 
 ## Running the Schema and Snapshot Generator
 1. In the Unreal Editor, on the SpatialOS Unreal GDK toolbar, click  the **Schema** button to run the `Schema Generator`.
 2. On the same toolbar, click the **Snapshot** button.
 
 ## Running your game
-1. In the Unreal Editor, on the toolbar, open the **Play** drop-down menu and check the box next to **Run Dedicated Server**.
-1. On the SpatialOS Unreal GDK toolbar, click **Launch** and wait for the output `SpatialOS ready`.
-1. On the main Unreal toolbar, click **Play**.
+1. In the Unreal Editor, on the toolbar, open the **Play** drop-down menu and check the box next to **Run Dedicated Server** as well as the checkbox for **Spatial Networking**
+2. On the SpatialOS Unreal GDK toolbar, click the green **Launch** (not the default Launch button in the Unreal Editor), `spatial local launch` will be ran in a seperate console window, wait for the output `SpatialOS ready`.
+3. On the main Unreal toolbar, click **Play**.
+
+## Modifying default behaviour
+If you wish to modify the default behaviour for the SpatialOS GDK for Unreal; such as the default snapshot save path and filename, the spatial launch configuration used when pressing **Launch** and more... you can modify these settings from the Unreal Editior by navigating to `Edit->Project Settings->SpatialOS Unreal GDK->Toolbar`. 
