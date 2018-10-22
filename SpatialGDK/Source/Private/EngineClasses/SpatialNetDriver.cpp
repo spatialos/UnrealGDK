@@ -123,14 +123,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
 		}
 
-		if (Connection->ReceptionistConfig.ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) == 0)
-		{
-			Connection->ReceptionistConfig.UseExternalIp = false;
-		}
-		else
-		{
-			Connection->ReceptionistConfig.UseExternalIp = true;
-		}
+		Connection->ReceptionistConfig.UseExternalIp = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
 	}
 
 	Connect();
