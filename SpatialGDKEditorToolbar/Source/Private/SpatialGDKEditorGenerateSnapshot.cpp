@@ -283,6 +283,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(ActorInfo->SingleClientComponent, UnrealServerPermission);
 	ComponentWriteAcl.Add(ActorInfo->MultiClientComponent, UnrealServerPermission);
 	ComponentWriteAcl.Add(ActorInfo->HandoverComponent, UnrealServerPermission);
