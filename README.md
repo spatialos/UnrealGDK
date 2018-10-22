@@ -1,34 +1,28 @@
-# The SpatialOS GDK for Unreal (pre-alpha)
+# The SpatialOS GDK for Unreal Engine (Alpha)
 
-Welcome to the SpatialOS and GDK for Unreal community.
+Welcome to the SpatialOS and GDK (Game Development Kit) for Unreal community.
 
 Our SpatialOS community shapes the functionality of the GDK for Unreal, so make sure you are part of the conversation. Come and find us on [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368) or talk to us on the **Feedback** section in our [forums](https://forums.improbable.io/) (use the **unreal-gdk** tag - [this link](https://forums.improbable.io/new-topic?category=Feedback&tags=unreal-gdk) takes you there and pre-fills the category and tag). You can also [sign up for SpatialOS GDK for Unreal updates](http://go.pardot.com/l/169082/2018-06-15/27ld2t) direct to your mailbox.
 
-#### What's the GDK for Unreal all about?
-The SpatialOS GDK for Unreal is an Unreal Engine 4 (UE4) [plugin](https://docs.unrealengine.com/en-us/Programming/Plugins) made by Improbable. You can use the GDK for Unreal to integrate persistent multiplayer worlds into your Unreal game using the SpatialOS platform. Find out more about the GDK for Unreal in [our blogpost](https://improbable.io/games/blog/spatialos-unreal-gdk-pre-alpha).
+#### What is SpatialOS GDK for Unreal Engine?
+The SpatialOS GDK for Unreal Engine is an Unreal Engine 4 (UE4) [plugin](https://docs.unrealengine.com/en-us/Programming/Plugins) made by Improbable. You can use the GDK to make use of multiple Unreal servers in a single game instance using the SpatialOS platform, unlocking the ability to implement large scale, complex and persistent worlds. Find out more about the GDK in [our blogpost](https://improbable.io/games/blog/spatialos-unreal-gdk-pre-alpha).
 
 
 * License: use of the contents of this repository is subject to the [Improbable license](https://docs.improbable.io/unreal/latest/license) </br>
 (Your access to and use of the Unreal Engine is governed by the [Unreal Engine End User License Agreement](https://www.unrealengine.com/en-US/previous-versions/udk-licensing-resources?sessionInvalidated=true). Please ensure that you have agreed to those terms before you access or use the Unreal Engine.)
-* Version: pre-alpha (for evaluation only)
-* Unreal Game Development Kit repository: [github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
+* Version: Alpha (Stability and performance improvements pending)
+* GDK Repository: [github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 
 # Documentation
-* For information on the SpatialOS GDK for Unreal, we recommend you use the [GDK documentation on the SpatialOS website](https://docs.improbable.io/unreal/pre-alpha/index).
+* For information on the GDK, we recommend you use the [GDK documentation on the SpatialOS website](https://docs.improbable.io/unreal/pre-alpha/index).
 * For guidance on SpatialOS concepts see the documentation on the [SpatialOS website](https://docs.improbable.io/reference/latest/shared/concepts/spatialos). <br/>
 
 ## Recommended use
-We are releasing the GDK in [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) so we can react to feedback and iterate on development quickly. To facilitate this, during our pre-alpha stage we don't have a formal deprecation cycle for APIs and workflows. This means that everything and anything can change. In addition, documentation is limited and some aspects of the GDK are not optimized.
+We are releasing the GDK in [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) so we can react to feedback and iterate on development quickly. To facilitate this, during our alpha stage we don't have a formal deprecation cycle for APIs and workflows. This means that everything and anything can change. In addition, documentation is limited and some aspects of the GDK are not optimized.
 
-Given this, we don’t recommend using the the GDK for Unreal for games in the production phase just yet.
+Given this, for now we recommend using the GDK in projects in early production or prototype stage. This would ensure that your project's requirements are in line with the GDK's timeline.
 
-**Who is it for?**<br>
-We recommend you start using the GDK if:
-
-* You don’t mind the rough edges and are interested in contributing to the GDK (see our [contributions](https://docs.improbable.io/unreal/latest/contributing) policy).
-* You want to start evaluating the GDK or prototyping on it for a future project.
-
-Although every feature you need to build your optimal SpatialOS game may not be ready yet, this is a great time to get involved and shape the GDK for Unreal. We are committed to improving the GDK rapidly, aiming for an alpha release in Fall 2018.
+Although the GDK is not fully ready in terms of performance and stability yet, this is a great time to get involved and shape it with us. We are committed to improving the GDK rapidly, aiming for a beta release in Q1 2019.
 
 ## Feature List
 See the [full feature list](https://docs.improbable.io/unreal/latest/features) for what is supported in the GDK for Unreal.
