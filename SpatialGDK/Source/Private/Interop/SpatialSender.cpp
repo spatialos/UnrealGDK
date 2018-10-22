@@ -743,8 +743,17 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	// TODO: Update subobject authority
 	EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[TYPE_ClientRPC], OwningClientOnly);
+
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
+	{
+		FClassInfo & SubobjectInfo = *SubobjectInfoPair.Value;
+
+		if (SubobjectInfo.SchemaComponents[TYPE_ClientRPC] != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			EntityACL->ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[TYPE_ClientRPC], OwningClientOnly);
+		}
+	}
 
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 

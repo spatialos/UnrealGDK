@@ -723,36 +723,36 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 
 void USpatialActorChannel::SpatialViewTick()
 {
-	//if (Actor != nullptr && !Actor->IsPendingKill() && IsReadyForReplication())
-	//{
-	//	bool bOldNetOwned = bNetOwned;
+	if (Actor != nullptr && !Actor->IsPendingKill() && IsReadyForReplication())
+	{
+		bool bOldNetOwned = bNetOwned;
 
-	//	bNetOwned = false;
-	//	if (UNetConnection* Connection = Actor->GetNetConnection())
-	//	{
-	//		if (APlayerController* PlayerController = Connection->PlayerController)
-	//		{
-	//			bNetOwned = PlayerController->PlayerState != nullptr;
-	//		}
-	//	}
+		bNetOwned = false;
+		if (UNetConnection* Connection = Actor->GetNetConnection())
+		{
+			if (APlayerController* PlayerController = Connection->PlayerController)
+			{
+				bNetOwned = PlayerController->PlayerState != nullptr;
+			}
+		}
 
-	//	if (bFirstTick || bOldNetOwned != bNetOwned)
-	//	{
-	//		if (IsAuthoritativeServer())
-	//		{
-	//			bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
+		if (bFirstTick || bOldNetOwned != bNetOwned)
+		{
+			if (IsAuthoritativeServer())
+			{
+				bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
 
-	//			if (bFirstTick && bSuccess)
-	//			{
-	//				bFirstTick = false;
-	//			}
-	//		}
-	//		else if(!NetDriver->IsServer())
-	//		{
-	//			Sender->SendComponentInterest(Actor, GetEntityId());
+				if (bFirstTick && bSuccess)
+				{
+					bFirstTick = false;
+				}
+			}
+			else if(!NetDriver->IsServer())
+			{
+				Sender->SendComponentInterest(Actor, GetEntityId());
 
-	//			bFirstTick = false;
-	//		}
-	//	}
-	//}
+				bFirstTick = false;
+			}
+		}
+	}
 }
