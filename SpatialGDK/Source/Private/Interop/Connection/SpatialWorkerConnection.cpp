@@ -52,7 +52,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
 	FTCHARToUTF8 WorkerTypeCStr(*ReceptionistConfig.WorkerType);
 	ConnectionParams.worker_type = WorkerTypeCStr.Get();
-	ConnectionParams.enable_protocol_logging_at_startup = true;
+	ConnectionParams.enable_protocol_logging_at_startup = ReceptionistConfig.EnableProtocolLoggingAtStartup;
 
 	Worker_ComponentVtable DefaultVtable = {};
 	ConnectionParams.component_vtable_count = 0;
@@ -60,13 +60,6 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
-
-	//FString filename = "C:\\workspace\\UnrealGDKTestSuite\\spatial\\" + ReceptionistConfig.WorkerId;
-	//FTCHARToUTF8 what (*filename);
-
-	//ConnectionParams.protocol_logging.log_prefix = what.Get();
-	//ConnectionParams.protocol_logging.max_log_file_size_bytes = 10000000;
-	//ConnectionParams.protocol_logging.max_log_files = 100000;
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(

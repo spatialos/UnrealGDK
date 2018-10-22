@@ -338,20 +338,25 @@ bool USpatialActorChannel::ReplicateActor()
 			}
 		}
 
-		//for (auto& SubobjectInfoPair : GetHandoverSubobjects())
-		//{
-		//	UObject* Subobject = SubobjectInfoPair.Key;
-		//	FClassInfo* Info = SubobjectInfoPair.Value;
+		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
+		{
+			UObject* Subobject = SubobjectInfoPair.Key;
+			FClassInfo* Info = SubobjectInfoPair.Value;
 
-		//	// Handover shadow data should already exist for this object. If it doesn't, it must have
-		//	// started replicating after SetChannelActor was called on the owning actor.
-		//	TArray<uint8>& SubobjectHandoverShadowData = HandoverShadowDataMap.FindChecked(Subobject).Get();
-		//	FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData, Subobject);
-		//	if (SubobjectHandoverChangeState.Num() > 0)
-		//	{
-		//		Sender->SendComponentUpdates(Subobject, Info, this, nullptr, &SubobjectHandoverChangeState);
-		//	}
-		//}
+			// Handover shadow data should already exist for this object. If it doesn't, it must have
+			// started replicating after SetChannelActor was called on the owning actor.
+			TSharedRef<TArray<uint8>>* SubobjectHandoverShadowData = HandoverShadowDataMap.Find(Subobject);
+			if (SubobjectHandoverShadowData == nullptr)
+			{
+				continue;
+			}
+
+			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
+			if (SubobjectHandoverChangeState.Num() > 0)
+			{
+				Sender->SendComponentUpdates(Subobject, Info, this, nullptr, &SubobjectHandoverChangeState);
+			}
+		}
 	}
 
 	// TODO: Handle deleted subobjects - see DataChannel.cpp:2542 - UNR:581
