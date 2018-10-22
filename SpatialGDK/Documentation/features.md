@@ -2,9 +2,9 @@
 
 # Feature list
 
-The SpatialOS Unreal GDK works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
+The SpatialOS GDK for Unreal Engine works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
 
-The SpatialOS Unreal GDK pre-alpha release (2018-07-31) has the following features:
+The GDK alpha release (2018-10-25) has the following features:
 
 ## Replicated properties, conditions and notifications
 The SpatialOS Unreal GDK supports:
@@ -32,13 +32,11 @@ The SpatialOS Unreal GDK also supports:
 * Replicated Blueprint events
 * RPC validation
 
-## Static subobject replication
+## Subobject replication
 
-The SpatialOS Unreal GDK currently supports only one instance of each static subobject type when replicating objects owned by an Actor. This includes components. For example, multiple Actors can have a `FooComponent` but no Actor can have two `FooComponent`s.
+The GDK currently supports only one instance of each static subobject type when replicating objects owned by an Actor. This includes components. For example, multiple Actors can have a `FooComponent` but no Actor can have two `FooComponent`s.
 
 Properties and RPCs within subobjects have the same support as an Actor’s properties and RPCs.
-
-> The SpatialOS Unreal GDK does not yet support dynamic subobject replication.
 
 ## Property handover
 
@@ -48,6 +46,10 @@ Actor property handover is a new feature we’re introducing with the SpatialOS 
 
 `Singleton Actors` is a new term that describes Actors which contain global state and logic.  Only one of these Actors exists in a game world. The SpatialOS Unreal GDK supports both client accessible and server only singletons (respectively known as public and private singletons). For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
+## Cross-server RPCs
+
+`Cross-server RPCs` is a new type of RPC that functions between two servers. These will enable a server without authority over an Actor to communicate with the server which has authority and is able to manipulate the Actor. For more information, see [Cross-server RPC]({{urlRoot}}/content/dummy-link) documentation.
+
 ## Networking switch
 
-We’ve implemented a way to switch between the native Unreal networking and SpatialOS networking via an editor tickbox. This can be found inside `Play` dropdown option in the toolbar under `Spatial Networking`. This is useful to test valid functionality on a single server, and performance. See the documentation on the networking switch on the [Troubleshooting]({{urlRoot}}/content/troubleshooting) page.
+We’ve implemented a convenient way to switch between the native Unreal networking and SpatialOS networking via an editor tickbox. This can be found inside `Play` dropdown option in the toolbar under `Spatial Networking`. This is useful to test valid functionality and performance on a single server. See the documentation on the networking switch on the [Troubleshooting]({{urlRoot}}/content/troubleshooting) page.
