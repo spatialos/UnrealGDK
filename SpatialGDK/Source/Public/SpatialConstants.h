@@ -22,6 +22,8 @@ namespace SpatialConstants
 		PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
 	};
 
+	const Worker_ComponentId INVALID_COMPONENT_ID				= 0;
+
 	const Worker_ComponentId ENTITY_ACL_COMPONENT_ID			= 50;
 	const Worker_ComponentId METADATA_COMPONENT_ID				= 53;
 	const Worker_ComponentId POSITION_COMPONENT_ID				= 54;

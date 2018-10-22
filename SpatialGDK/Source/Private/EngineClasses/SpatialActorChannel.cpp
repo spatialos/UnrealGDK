@@ -338,23 +338,26 @@ bool USpatialActorChannel::ReplicateActor()
 			}
 		}
 
-		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
+		if (HandoverShadowDataMap.Num() > 0)
 		{
-			UObject* Subobject = SubobjectInfoPair.Key;
-			FClassInfo* Info = SubobjectInfoPair.Value;
-
-			// Handover shadow data should already exist for this object. If it doesn't, it must have
-			// started replicating after SetChannelActor was called on the owning actor.
-			TSharedRef<TArray<uint8>>* SubobjectHandoverShadowData = HandoverShadowDataMap.Find(Subobject);
-			if (SubobjectHandoverShadowData == nullptr)
+			for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 			{
-				continue;
-			}
+				UObject* Subobject = SubobjectInfoPair.Key;
+				FClassInfo* Info = SubobjectInfoPair.Value;
 
-			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
-			if (SubobjectHandoverChangeState.Num() > 0)
-			{
-				Sender->SendComponentUpdates(Subobject, Info, this, nullptr, &SubobjectHandoverChangeState);
+				// Handover shadow data should already exist for this object. If it doesn't, it must have
+				// started replicating after SetChannelActor was called on the owning actor.
+				TSharedRef<TArray<uint8>>* SubobjectHandoverShadowData = HandoverShadowDataMap.Find(Subobject);
+				if (SubobjectHandoverShadowData == nullptr)
+				{
+					continue;
+				}
+
+				FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
+				if (SubobjectHandoverChangeState.Num() > 0)
+				{
+					Sender->SendComponentUpdates(Subobject, Info, this, nullptr, &SubobjectHandoverChangeState);
+				}
 			}
 		}
 	}
@@ -512,21 +515,6 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		return;
 	}
 
-	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
-	check(!HandoverShadowDataMap.Contains(InActor));
-
-	// Create the shadow map, and store a quick access pointer to it
-	ActorHandoverShadowData = &HandoverShadowDataMap.Add(InActor, MakeShared<TArray<uint8>>()).Get();
-	InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
-
-	// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
-	for (auto& SubobjectInfoPair : GetHandoverSubobjects())
-	{
-		UObject* Subobject = SubobjectInfoPair.Key;
-		check(!HandoverShadowDataMap.Contains(Subobject));
-		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
-	}
-
 	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
 	check(NetDriver->GetEntityRegistry());
 	EntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor);
@@ -615,6 +603,21 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 	// Register Actor with package map since we know what the entity id is.
 	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
+
+	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
+	check(!HandoverShadowDataMap.Contains(Actor));
+
+	// Create the shadow map, and store a quick access pointer to it
+	ActorHandoverShadowData = &HandoverShadowDataMap.Add(Actor, MakeShared<TArray<uint8>>()).Get();
+	InitializeHandoverShadowData(*ActorHandoverShadowData, Actor);
+
+	// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
+	for (auto& SubobjectInfoPair : GetHandoverSubobjects())
+	{
+		UObject* Subobject = SubobjectInfoPair.Key;
+		check(!HandoverShadowDataMap.Contains(Subobject));
+		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
+	}
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)

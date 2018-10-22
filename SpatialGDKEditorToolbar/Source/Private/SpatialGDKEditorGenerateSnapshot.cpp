@@ -286,7 +286,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	ForAllSchemaComponentTypes([&](EComponentType Type) {
 		Worker_ComponentId ComponentId = ActorInfo->SchemaComponents[Type];
 
-		if (ComponentId == 0)
+		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			return;
 		}
@@ -306,7 +306,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 
 		ForAllSchemaComponentTypes([&](EComponentType Type) {
 			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
-			if (ComponentId == 0)
+			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 			{
 				return;
 			}

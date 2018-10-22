@@ -270,17 +270,17 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 {
 	TArray<Worker_ComponentData> ComponentDatas;
 
-	if (Info->SchemaComponents[TYPE_Data] != 0)
+	if (Info->SchemaComponents[TYPE_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		ComponentDatas.Add(CreateComponentData(Info->SchemaComponents[TYPE_Data], Object, RepChangeState, TYPE_Data));
 	}
 
-	if (Info->SchemaComponents[TYPE_OwnerOnly] != 0)
+	if (Info->SchemaComponents[TYPE_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		ComponentDatas.Add(CreateComponentData(Info->SchemaComponents[TYPE_OwnerOnly], Object, RepChangeState, TYPE_OwnerOnly));
 	}
 
-	if (Info->SchemaComponents[TYPE_Handover] != 0)
+	if (Info->SchemaComponents[TYPE_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		ComponentDatas.Add(CreateHandoverComponentData(Info->SchemaComponents[TYPE_Handover], Object, HandoverChangeState));
 	}
@@ -325,7 +325,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 
 	if (RepChangeState)
 	{
-		if (Info->SchemaComponents[TYPE_Data] != 0)
+		if (Info->SchemaComponents[TYPE_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			bool bWroteSomething = false;
 			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info->SchemaComponents[TYPE_Data], Object, *RepChangeState, TYPE_Data, bWroteSomething);
@@ -335,7 +335,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 			}
 		}
 
-		if (Info->SchemaComponents[TYPE_OwnerOnly] != 0)
+		if (Info->SchemaComponents[TYPE_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			bool bWroteSomething = false;
 			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info->SchemaComponents[TYPE_OwnerOnly], Object, *RepChangeState, TYPE_OwnerOnly, bWroteSomething);
@@ -348,7 +348,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 
 	if (HandoverChangeState)
 	{
-		if (Info->SchemaComponents[TYPE_Handover] != 0)
+		if (Info->SchemaComponents[TYPE_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			bool bWroteSomething = false;
 			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info->SchemaComponents[TYPE_Handover], Object, *HandoverChangeState, bWroteSomething);

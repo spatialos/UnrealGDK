@@ -94,7 +94,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	ForAllSchemaComponentTypes([&](EComponentType Type) {
 		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
-		if (ComponentId == 0)
+		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			return;
 		}
@@ -114,7 +114,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 		ForAllSchemaComponentTypes([&](EComponentType Type) {
 			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
-			if (ComponentId == 0)
+			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 			{
 				return;
 			}
@@ -159,7 +159,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	for (int32 RPCType = TYPE_ClientRPC; RPCType < TYPE_Count; RPCType++)
 	{
-		if (Info->SchemaComponents[RPCType] != 0)
+		if (Info->SchemaComponents[RPCType] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Info->SchemaComponents[RPCType]));
 		}
@@ -194,7 +194,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 		for (int32 RPCType = TYPE_ClientRPC; RPCType < TYPE_Count; RPCType++)
 		{
-			if (SubobjectInfo.SchemaComponents[RPCType] != 0)
+			if (SubobjectInfo.SchemaComponents[RPCType] != SpatialConstants::INVALID_COMPONENT_ID)
 			{
 				ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo.SchemaComponents[RPCType]));
 			}
@@ -258,13 +258,13 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo* Info, USp
 
 void FillComponentInterests(FClassInfo* Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
 {
-	if (Info->SchemaComponents[TYPE_OwnerOnly] != 0)
+	if (Info->SchemaComponents[TYPE_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		Worker_InterestOverride SingleClientInterest = { Info->SchemaComponents[TYPE_OwnerOnly], bNetOwned };
 		ComponentInterest.Add(SingleClientInterest);
 	}
 
-	if (Info->SchemaComponents[TYPE_Handover] != 0)
+	if (Info->SchemaComponents[TYPE_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		Worker_InterestOverride HandoverInterest = { Info->SchemaComponents[TYPE_Handover], false };
 		ComponentInterest.Add(HandoverInterest);
