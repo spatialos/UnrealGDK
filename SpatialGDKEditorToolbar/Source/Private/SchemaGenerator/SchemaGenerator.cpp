@@ -446,7 +446,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		UE_LOG(LogTemp, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
 	}
 
-	SchemaDatabase->ClassToSchema.Add(Class, ActorSchemaData);
+	ClassToSchema.Add(Class, ActorSchemaData);
 
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *UnrealNameToSchemaTypeName(Class->GetName())));
 
@@ -505,7 +505,7 @@ FSubobjectSchemaData GenerateActorComponentSpecificSchema(FCodeWriter& Writer, F
 
 	for (auto Group : GetRPCTypes())
 	{
-		if (RPCsByType[Group].Num() == 0 && Group != RPC_Client)
+		if (RPCsByType[Group].Num() == 0)
 		{
 			continue;
 		}
@@ -600,7 +600,7 @@ void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UC
 						SubobjectData.Property = ObjectProperty;
 						ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
 
-						SchemaDatabase->ClassToSchema.Add(Value->GetClass(), FSchemaData());
+						ClassToSchema.Add(Value->GetClass(), FSchemaData());
 					}
 					else
 					{
@@ -608,7 +608,7 @@ void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UC
 						SubobjectData.Property = ObjectProperty;
 						SubobjectData.Class = Value->GetClass();
 						ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
-						SchemaDatabase->ClassToSchema.Add(Value->GetClass(), FSchemaData());
+						ClassToSchema.Add(Value->GetClass(), FSchemaData());
 					}
 				}
 

@@ -24,7 +24,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
-USchemaDatabase* SchemaDatabase = nullptr;
+TMap<UClass*, FSchemaData> ClassToSchema;
 
 namespace
 {
@@ -109,11 +109,14 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
-void SaveSchemaDatabase(TArray<UClass*> Classes)
+void SaveSchemaDatabase()
 {
-	AsyncTask(ENamedThreads::GameThread, [Classes]{
+	AsyncTask(ENamedThreads::GameThread, []{
 		FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
 		UPackage *Package = CreatePackage(nullptr, *PackagePath);
+
+		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+		SchemaDatabase->ClassToSchema = ClassToSchema;
 
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
@@ -191,10 +194,6 @@ bool SpatialGDKGenerateSchema()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-	UPackage *Package = CreatePackage(nullptr, *PackagePath);
-	SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
-
 	TArray<UClass*> SchemaGeneratedClasses;
 	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)
 	{
@@ -231,7 +230,7 @@ bool SpatialGDKGenerateSchema()
 	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
 	GenerateSchemaFromClasses(SchemaGeneratedClasses, SchemaOutputPath);
 
-	SaveSchemaDatabase(SchemaGeneratedClasses);
+	SaveSchemaDatabase();
 
 	return true;
 }
