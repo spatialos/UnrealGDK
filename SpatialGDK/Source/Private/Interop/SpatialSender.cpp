@@ -240,7 +240,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 	{
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
 		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send component update but don't have authority! Component Id: %d, entity: %lld"), Update.component_id, EntityId);
+			UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send component update but don't have authority! Update will not be sent. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
 			continue;
 		}
 
@@ -286,11 +286,13 @@ void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId Entity
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
 {
+#if !UE_BUILD_SHIPPING
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send Position component update but don't have authority! Entity: %lld"), EntityId);
+		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 		return;
 	}
+#endif
 
 	Worker_ComponentUpdate Update = improbable::Position::CreatePositionUpdate(improbable::Coordinates::FromFVector(Location));
 	Connection->SendComponentUpdate(EntityId, &Update);
@@ -298,11 +300,13 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 
 void USpatialSender::SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rotation)
 {
+#if !UE_BUILD_SHIPPING
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ROTATION_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send Rotation component update but don't have authority! Entity: %lld"), EntityId);
+		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send Rotation component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 		return;
 	}
+#endif
 
 	Worker_ComponentUpdate Update = improbable::Rotation(Rotation).CreateRotationUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
@@ -360,9 +364,10 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
 			{
-				UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send MulticastRPC component update but don't have authority! Entity: %lld"), EntityId);
+				UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send MulticastRPC component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 				return;
 			}
+
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 		}
 		break;
@@ -718,7 +723,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ENTITY_ACL_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to update EntityACL but don't have authority! Entity: %lld"), EntityId);
+		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to update EntityACL but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 		return false;
 	}
 
