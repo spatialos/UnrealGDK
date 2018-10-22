@@ -1,4 +1,5 @@
-package improbable.unreal;
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
 
 component PlayerControlClient
 {

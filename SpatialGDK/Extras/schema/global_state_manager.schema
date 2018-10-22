@@ -1,4 +1,4 @@
-package improbable.unreal;
+package unreal;
 
 component GlobalStateManager {
     id = 100007;
