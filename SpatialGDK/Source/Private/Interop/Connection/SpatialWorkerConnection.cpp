@@ -105,7 +105,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	Worker_LoginTokenCredentials Credentials;
 	Credentials.token = LoginTokenCStr.Get();
 
-	Worker_LocatorParameters LocatorParams;
+	Worker_LocatorParameters LocatorParams = {};
 	LocatorParams.credentials_type = WORKER_LOCATOR_LOGIN_TOKEN_CREDENTIALS;
 	LocatorParams.project_name = ProjectNameCStr.Get();
 	LocatorParams.login_token = Credentials;
