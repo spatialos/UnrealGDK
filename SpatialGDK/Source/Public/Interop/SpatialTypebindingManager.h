@@ -9,24 +9,6 @@
 
 #include "SpatialTypebindingManager.generated.h"
 
-enum EComponentType : int32
-{
-	TYPE_Invalid = -1,
-
-	// Properties
-	TYPE_Data,
-	TYPE_OwnerOnly,
-	TYPE_Handover,
-
-	// RPCs
-	TYPE_ClientRPC,
-	TYPE_ServerRPC,
-	TYPE_NetMulticastRPC,
-	TYPE_CrossServerRPC,
-
-	TYPE_Count
-};
-
 FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(EComponentType)> Callback)
 {
 	for (int32 Type = TYPE_Data; Type < TYPE_Count; Type++)

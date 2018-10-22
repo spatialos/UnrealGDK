@@ -110,7 +110,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
+		const FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
 		ForAllSchemaComponentTypes([&](EComponentType Type) {
 			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
@@ -168,18 +168,18 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
 		uint32 Offset = SubobjectInfoPair.Key;
-		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
+		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 
 		UObject* Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset));
 
 		FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
-		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(&SubobjectInfo);
+		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 		// Reset unresolved objects so they can be filled again by DataFactory
 		UnresolvedObjectsMap.Empty();
 		HandoverUnresolvedObjectsMap.Empty();
 
-		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, &SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 		ComponentDatas.Append(ActorSubobjectDatas);
 
 		for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
@@ -194,9 +194,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 		for (int32 RPCType = TYPE_ClientRPC; RPCType < TYPE_Count; RPCType++)
 		{
-			if (SubobjectInfo.SchemaComponents[RPCType] != SpatialConstants::INVALID_COMPONENT_ID)
+			if (SubobjectInfo->SchemaComponents[RPCType] != SpatialConstants::INVALID_COMPONENT_ID)
 			{
-				ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo.SchemaComponents[RPCType]));
+				ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo->SchemaComponents[RPCType]));
 			}
 		}
 	}
@@ -283,8 +283,8 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 
 	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
 	{
-		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
-		FillComponentInterests(&SubobjectInfo, bNetOwned, ComponentInterest);
+		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
+		FillComponentInterests(SubobjectInfo, bNetOwned, ComponentInterest);
 	}
 
 	return ComponentInterest;

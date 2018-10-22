@@ -90,7 +90,7 @@ public:
 	TMap<UObject*, FClassInfo*> GetHandoverSubobjects();
 
 	FRepChangeState CreateInitialRepChangeState(UObject* Object);
-	FHandoverChangeState CreateInitialHandoverChangeState(FClassInfo* ClassInfo);
+	FHandoverChangeState CreateInitialHandoverChangeState(const FClassInfo* ClassInfo);
 
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);

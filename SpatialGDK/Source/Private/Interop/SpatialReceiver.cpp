@@ -100,6 +100,8 @@ void USpatialReceiver::LeaveCriticalSection()
 
 void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
 {
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
+
 	check(bInCriticalSection);
 
 	PendingAddEntities.Emplace(Op.entity_id);

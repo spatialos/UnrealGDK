@@ -4,12 +4,12 @@
 
 #include "Algo/Reverse.h"
 
+#include "Engine/BlueprintGeneratedClass.h"
+#include "Engine/SCS_Node.h"
+#include "SpatialTypebindingManager.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
-#include "SpatialTypebindingManager.h"
-#include "Engine/BlueprintGeneratedClass.h"
-#include "Engine/SCS_Node.h"
 
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.
@@ -187,7 +187,7 @@ bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo)
 	return false;
 }
 
-bool IsReplicatedActorComponent(TSharedPtr<FUnrealType> TypeInfo)
+bool IsReplicatedSubobject(TSharedPtr<FUnrealType> TypeInfo)
 {
 	if (GetFlatRepData(TypeInfo)[REP_MultiClient].Num() > 0 || GetFlatRepData(TypeInfo)[REP_SingleClient].Num() > 0)
 	{
@@ -207,7 +207,7 @@ bool IsReplicatedActorComponent(TSharedPtr<FUnrealType> TypeInfo)
 	return false;
 }
 
-void GenerateActorComponentSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
+void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
 	FCodeWriter Writer;
 
@@ -433,7 +433,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.Outdent().Print("}");
 	}
 
-	GenerateActorComponentSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData);
+	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData);
 
 	if (ReliableMulticasts.Num() > 0)
 	{
@@ -453,7 +453,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 	return IdGenerator.GetNumUsedIds();
 }
 
-FSubobjectSchemaData GenerateActorComponentSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass)
+FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass)
 {
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
@@ -552,7 +552,7 @@ FSubobjectSchemaData GenerateActorComponentSpecificSchema(FCodeWriter& Writer, F
 	return SubobjectData;
 }
 
-void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath, FSchemaData& ActorSchemaData)
+void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath, FSchemaData& ActorSchemaData)
 {
 	FCodeWriter Writer;
 
@@ -569,11 +569,6 @@ void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UC
 	bool bHasComponents = false;
 	TSet<UObject*> SeenComponents;
 	int32 CurrentOffset = 1;
-
-	if (TypeInfo->Type->GetName().Contains(TEXT("Sphere_Blueprint")))
-	{
-		auto x = 1;
-	}
 
 	for (auto& PropertyPair : TypeInfo->Properties)
 	{
@@ -592,11 +587,11 @@ void GenerateActorComponentSchemaForActor(FComponentIdGenerator& IdGenerator, UC
 				{
 					SeenComponents.Add(Value);
 
-					if (IsReplicatedActorComponent(PropertyTypeInfo))
+					if (IsReplicatedSubobject(PropertyTypeInfo))
 					{
 						bHasComponents = true;
 
-						FSubobjectSchemaData SubobjectData = GenerateActorComponentSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaTypeName(Property->GetName()), PropertyTypeInfo, Value->GetClass());
+						FSubobjectSchemaData SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaTypeName(Property->GetName()), PropertyTypeInfo, Value->GetClass());
 						SubobjectData.Property = ObjectProperty;
 						ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
 
@@ -640,7 +635,7 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 		{
 			UObject* Value = PropertyTypeInfo->Object;
 
-			if (Value != nullptr && !Value->IsEditorOnly() && IsReplicatedActorComponent(PropertyTypeInfo))
+			if (Value != nullptr && !Value->IsEditorOnly() && IsReplicatedSubobject(PropertyTypeInfo))
 			{
 				bImportCoreTypes |= PropertyTypeInfo->RPCs.Num() > 0;
 

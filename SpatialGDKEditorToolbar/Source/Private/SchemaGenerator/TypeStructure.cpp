@@ -2,10 +2,9 @@
 
 #include "TypeStructure.h"
 
-#include "Engine/SCS_Node.h"
-
-#include "SpatialGDKEditorSchemaGenerator.h"
 #include "Engine/BlueprintGeneratedClass.h"
+#include "Engine/SCS_Node.h"
+#include "SpatialGDKEditorSchemaGenerator.h"
 
 namespace Errors
 {

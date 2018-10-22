@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "SpatialConstants.h"
+
 #include "SchemaDatabase.generated.h"
 
 USTRUCT()
@@ -16,7 +18,7 @@ struct FSubobjectSchemaData
 	UObjectProperty* Property = nullptr;
 
 	UPROPERTY()
-	uint32 SchemaComponents[7] = {};
+	uint32 SchemaComponents[EComponentType::TYPE_Count] = {};
 };
 
 USTRUCT()
@@ -28,7 +30,7 @@ struct FSchemaData
 	UClass* Class = nullptr;
 
 	UPROPERTY()
-	uint32 SchemaComponents[7] = {};
+	uint32 SchemaComponents[EComponentType::TYPE_Count] = {};
 
 	UPROPERTY()
 	TMap<uint32, FSubobjectSchemaData> SubobjectData;

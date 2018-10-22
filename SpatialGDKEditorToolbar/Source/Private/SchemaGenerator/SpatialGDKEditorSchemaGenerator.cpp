@@ -42,15 +42,14 @@ int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, UClass*
 	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, 0, 0, false);
 
 	int NumComponents = 0;
-	if (!Class->IsChildOf<AActor>())
-	{
-		GenerateActorComponentSchema(Class, TypeInfo, SchemaPath + TEXT("ActorComponents/"));
-	}
-	else
+	if (Class->IsChildOf<AActor>())
 	{
 		NumComponents = GenerateActorSchema(ComponentId, Class, TypeInfo, SchemaPath);
 	}
-
+	else
+	{
+		GenerateSubobjectSchema(Class, TypeInfo, SchemaPath + TEXT("ActorComponents/"));
+	}
 
 	return NumComponents;
 }

@@ -180,7 +180,7 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(UObject* Objec
 	return { InitialRepChanged, *Replicator.RepLayout };
 }
 
-FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(FClassInfo* ClassInfo)
+FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(const FClassInfo* ClassInfo)
 {
 	FHandoverChangeState HandoverChanged;
 	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo->HandoverProperties)
@@ -284,32 +284,35 @@ bool USpatialActorChannel::ReplicateActor()
 
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
-	// Update the handover property change list.
-	FHandoverChangeState HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
-
 	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 
-	// If any properties have changed, send a component update.
-	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
-	{		
-		if (bCreatingNewEntity)
-		{
-			Sender->SendCreateEntityRequest(this);
+	// Update the handover property change list.
+	if (ActorHandoverShadowData != nullptr)
+	{
+		FHandoverChangeState HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
 
-			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
-			Actor->Role = ROLE_SimulatedProxy;
-			Actor->RemoteRole = ROLE_Authority;
-		}
-		else
+		// If any properties have changed, send a component update.
+		if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
 		{
-			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
-			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState);
-		}
+			if (bCreatingNewEntity)
+			{
+				Sender->SendCreateEntityRequest(this);
 
-		bWroteSomethingImportant = true;
-		if (RepChanged.Num() > 0)
-		{
-			ActorReplicator->RepState->HistoryEnd++;
+				// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
+				Actor->Role = ROLE_SimulatedProxy;
+				Actor->RemoteRole = ROLE_Authority;
+			}
+			else
+			{
+				FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
+				Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState);
+			}
+
+			bWroteSomethingImportant = true;
+			if (RepChanged.Num() > 0)
+			{
+				ActorReplicator->RepState->HistoryEnd++;
+			}
 		}
 	}
 

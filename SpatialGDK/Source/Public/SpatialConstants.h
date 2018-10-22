@@ -11,6 +11,24 @@
 // These are not a type of key supported by TMap.
 using Worker_EntityId_Key = int64;
 
+enum EComponentType : int32
+{
+	TYPE_Invalid = -1,
+
+	// Properties
+	TYPE_Data,
+	TYPE_OwnerOnly,
+	TYPE_Handover,
+
+	// RPCs
+	TYPE_ClientRPC,
+	TYPE_ServerRPC,
+	TYPE_NetMulticastRPC,
+	TYPE_CrossServerRPC,
+
+	TYPE_Count
+};
+
 namespace SpatialConstants
 {
 	enum EntityIds
