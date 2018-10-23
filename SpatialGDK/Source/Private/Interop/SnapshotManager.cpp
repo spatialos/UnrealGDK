@@ -180,7 +180,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			NetDriver->Connection->SendCreateEntityRequest(EntityToSpawn.Num(), EntityToSpawn.GetData(), &ReservedEntityID);
 		}
 
-		GlobalStateManager->ToggleAcceptingPlayers(true);
+		GlobalStateManager->SetAcceptingPlayers(true);
 	});
 
 	// Reserve the Entity IDs

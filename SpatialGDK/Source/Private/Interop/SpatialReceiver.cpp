@@ -138,7 +138,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL:
- 		GlobalStateManager->ApplyMapData(Op.data);
+ 		GlobalStateManager->ApplyDeploymentMapURLData(Op.data);
 		return;
 	default:
 		Data = MakeShared<improbable::DynamicComponent>(Op.data);
@@ -570,7 +570,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL:
-		NetDriver->GlobalStateManager->ApplyMapUpdate(Op.update);
+		NetDriver->GlobalStateManager->ApplyDeploymentMapURLUpdate(Op.update);
 		return;
 	}
 

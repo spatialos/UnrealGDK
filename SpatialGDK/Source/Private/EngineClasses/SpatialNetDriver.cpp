@@ -131,7 +131,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	// If we have hit OnMapLoaded and we already have a connection then we know we are in ServerTravel.
-	// This involves some clean up ready for a fresh instance.
+	// This involves some clean up to the SpatialConnection ready for new map.
 	// For the server (with authority over the GSM) it also involves loading a fresh snapshot and toggling Accepting players when ready.
 	if (Connection->IsConnected())
 	{
@@ -231,18 +231,6 @@ void USpatialNetDriver::OnConnected()
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker authoriative over the GSM is loading snapshot: %s"), *SnapshotToLoad);
 		SnapshotManager->LoadSnapshot(SnapshotToLoad);
-	}
-
-	if (!ServerConnection)
-	{
-		// If we already have authority over the GSM then toggle accepting players.
-		if(GlobalStateManager->bHasLiveMapAuthority)
-		{
-			GlobalStateManager->ToggleAcceptingPlayers(true);
-		}
-
-		// Set a delegate which toggles accepting players when we receive authority changes over the GSM.
-		GlobalStateManager->OnAuthorityChanged.BindUObject(GlobalStateManager, &UGlobalStateManager::ToggleAcceptingPlayers);
 	}
 }
 
@@ -1283,6 +1271,6 @@ USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_Entity
 
 void USpatialNetDriver::WipeWorld(const USpatialNetDriver::ServerTravelDelegate& LoadSnapshotAfterWorldWipe)
 {
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Wiping world!"));
+	UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("WorldWipe has been called! All entities in deployment will be deleted."));
 	SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 }
