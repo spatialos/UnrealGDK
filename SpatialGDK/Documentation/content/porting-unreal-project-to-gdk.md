@@ -30,7 +30,7 @@ Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setti
     \<ProjectRoot>\README.md
     etc...
     ```
-1. Open **` \<ProjectRoot>\ProjectPaths.bat`** for editing and replace `Game` (located at `set PROJECT_PATH=Game`) with your `<GameRoot>` folder name, and `StarterProject` (located at `set GAME_NAME=StarterProject`) with the name of your games uproject (which we'll refer to as `<YourProject>`).
+1. Open **` \<ProjectRoot>\ProjectPaths.bat`** for editing and replace `Game` (located at `set PROJECT_PATH=Game`) with your `<GameRoot>` folder name, and `StarterProject` (located at `set GAME_NAME=StarterProject`) with the name of your game's `.uproject` (which we'll refer to as `<YourProject>`).
 
 ## Adding the SpatialGDK module to your project
 1. In your project's `*.build.cs` file, add "SpatialGDK" to the `PublicDependencyModuleNames`.
@@ -171,7 +171,7 @@ Set your Unreal project to work with the SpatialOS GDK for Unreal fork of the Un
 1. In a terminal window, from `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\SpatialGDK\Build\Scripts`, run `BuildWorker.bat <YourProject>Editor Win64 Development <YourProject>.uproject`   
 For Example "`BuildWorker.bat StarterProjectEditor Win64 Development StarterProject.uproject`"  
 This allows you to run locally managed workers. For example running a local spatial deployment with `one_worker` or `two_worker` launch configurations.
-1. In File Explorer, right-click your uproject file and select **Generate Visual Studio project files**.
+1. In File Explorer, right-click your `.uproject` file and select **Generate Visual Studio project files**.
 1. Open the solution in Visual Studio, and compile and run the project in the Development Editor configuration.
 
 ## Running the Schema and Snapshot Generator
