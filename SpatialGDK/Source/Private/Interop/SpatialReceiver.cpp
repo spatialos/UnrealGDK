@@ -137,7 +137,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		GlobalStateManager->ApplyData(Op.data);
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
-	case SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL:
+	case SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID:
  		GlobalStateManager->ApplyDeploymentMapURLData(Op.data);
 		return;
 	default:
@@ -169,6 +169,11 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 {
 	if (NetDriver->IsServer())
 	{
+		if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID)
+		{
+			GlobalStateManager->AuthorityChanged(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE, Op.entity_id);
+		}
+
 		if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID
 			&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
@@ -221,11 +226,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
 		}
-	}
-
-	if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-	{
-		GlobalStateManager->AuthorityChanged(true, Op.entity_id);
 	}
 }
 
@@ -569,8 +569,8 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		GlobalStateManager->ApplyUpdate(Op.update);
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
-	case SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL:
-		NetDriver->GlobalStateManager->ApplyDeploymentMapURLUpdate(Op.update);
+	case SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID:
+		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
 		return;
 	}
 
@@ -823,8 +823,7 @@ void USpatialReceiver::OnReserveEntityIdsResponse(Worker_ReserveEntityIdsRespons
 {
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{
-		auto RequestDelegate = ReserveEntityIDsDelegates.Find(Op.request_id);
-		if (RequestDelegate)
+		if (ReserveEntityIDsDelegate* RequestDelegate = ReserveEntityIDsDelegates.Find(Op.request_id))
 		{
 			UE_LOG(LogSpatialReceiver, Log, TEXT("Executing ReserveEntityIdsResponse with delegate, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
 			RequestDelegate->ExecuteIfBound(Op);
@@ -848,7 +847,7 @@ void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Create entity request succeeded: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request succeeded: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 	}
 
 	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))

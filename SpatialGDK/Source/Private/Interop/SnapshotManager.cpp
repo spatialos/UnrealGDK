@@ -13,20 +13,20 @@ DEFINE_LOG_CATEGORY(LogSnapshotManager);
 
 using namespace improbable;
 
-void USnapshotManager::Init(USpatialNetDriver* InNetDriver, UGlobalStateManager* InGlobalStateManager)
+void USnapshotManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	Receiver = InNetDriver->Receiver;
-	GlobalStateManager = InGlobalStateManager;
+	GlobalStateManager = InNetDriver->GlobalStateManager;
 }
 
 // WorldWipe will send out an expensive entity query for every entity in the deployment.
 // It does this by having an entity query for all entities that are not the GSM (workaround for not having the ability to make a query for all entities).
 // Once it has the response to this query, it will send deletion requests for all found entities and then one for the GSM itself.
 // Should only be triggered by the worker which is authoritative over the GSM.
-void USnapshotManager::WorldWipe(const USpatialNetDriver::ServerTravelDelegate& Delegate)
+void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate& PostWorldWipeDelegate)
 {
-	UE_LOG(LogSnapshotManager, Warning, TEXT("World wipe for deployment has been triggered. All entities will be deleted."));
+	UE_LOG(LogSnapshotManager, Log, TEXT("World wipe for deployment has been triggered. All entities will be deleted!"));
 
 	Worker_Constraint GSMConstraint;
 	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
@@ -47,28 +47,27 @@ void USnapshotManager::WorldWipe(const USpatialNetDriver::ServerTravelDelegate& 
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&WorldQuery);
 
 	EntityQueryDelegate WorldQueryDelegate;
-	WorldQueryDelegate.BindLambda([this, Delegate](Worker_EntityQueryResponseOp& Op)
+	WorldQueryDelegate.BindLambda([this, PostWorldWipeDelegate](Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
 			UE_LOG(LogSnapshotManager, Error, TEXT("SnapshotManager WorldWipe - World entity query failed: %s"), UTF8_TO_TCHAR(Op.message));
 		}
-
-		if (Op.result_count == 0)
+		else if (Op.result_count == 0)
 		{
 			UE_LOG(LogSnapshotManager, Error, TEXT("SnapshotManager WorldWipe - No entities found in world entity query"));
 		}
-
-		if (Op.result_count >= 1)
+		else
 		{
 			// Send deletion requests for all entities found in the world entity query.
 			DeleteEntities(Op);
 
 			// Also make sure that we kill the GSM.
 			NetDriver->Connection->SendDeleteEntityRequest(GlobalStateManager->GlobalStateManagerEntityId);
-		}
 
-		Delegate.ExecuteIfBound();
+			// The world is now ready to finish ServerTravel which means loading in a new map.
+			PostWorldWipeDelegate.ExecuteIfBound();
+		}
 	});
 
 	Receiver->AddEntityQueryDelegate(RequestID, WorldQueryDelegate);
@@ -76,20 +75,26 @@ void USnapshotManager::WorldWipe(const USpatialNetDriver::ServerTravelDelegate& 
 
 void USnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
 {
-	UE_LOG(LogSnapshotManager, Warning, TEXT("Deleting %u entities."), Op.result_count);
+	UE_LOG(LogSnapshotManager, Log, TEXT("Deleting %u entities."), Op.result_count);
 
 	for (uint32_t i = 0; i < Op.result_count; i++)
 	{
-		UE_LOG(LogSnapshotManager, Log, TEXT("Sending delete request for: %i"), Op.results[i].entity_id);
+		UE_LOG(LogSnapshotManager, Verbose, TEXT("Sending delete request for: %i"), Op.results[i].entity_id);
 		NetDriver->Connection->SendDeleteEntityRequest(Op.results[i].entity_id);
 	}
 }
 
-// GetSnapshotPath will take a snapshot (without the .snapshot extension) name and convert it to a relative path in the Game/Content folder.
+// GetSnapshotPath will take a snapshot (with or the .snapshot extension) name and convert it to a relative path in the Game/Content folder.
 FString GetSnapshotPath(const FString& SnapshotName)
 {
-	FString SnapshotsDirectory = FPaths::ProjectContentDir().Append("Spatial/Snapshots/");
-	return SnapshotsDirectory + SnapshotName + ".snapshot";
+	FString SnapshotsDirectory = FPaths::ProjectContentDir() + TEXT("Spatial/Snapshots/");
+
+	if (!SnapshotName.EndsWith(TEXT(".snapshot")))
+	{
+		return SnapshotsDirectory + SnapshotName + TEXT(".snapshot");
+	}
+
+	return SnapshotsDirectory + SnapshotName;
 }
 
 // LoadSnapshot will take a snapshot name which should be on disk and attempt to read and spawn all of the entities in that snapshot.
@@ -98,7 +103,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 {
 	FString SnapshotPath = GetSnapshotPath(SnapshotName);
 
-	UE_LOG(LogSnapshotManager, Warning, TEXT("Loading snapshot: '%s'"), *SnapshotPath);
+	UE_LOG(LogSnapshotManager, Log, TEXT("Loading snapshot: '%s'"), *SnapshotPath);
 
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_SnapshotParameters Parameters{};
@@ -110,18 +115,20 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 	if (!Error.IsEmpty())
 	{
 		UE_LOG(LogSnapshotManager, Error, TEXT("Error when attempting to read snapshot '%s': %s"), *SnapshotPath, *Error);
+		Worker_SnapshotInputStream_Destroy(Snapshot);
 		return;
 	}
 
 	TArray<TArray<Worker_ComponentData>> EntitiesToSpawn;
 
 	// Get all of the entities from the snapshot.
-	while (Snapshot && Worker_SnapshotInputStream_HasNext(Snapshot) > 0)
+	while (Worker_SnapshotInputStream_HasNext(Snapshot) > 0)
 	{
 		Error = Worker_SnapshotInputStream_GetError(Snapshot);
 		if (!Error.IsEmpty())
 		{
 			UE_LOG(LogSnapshotManager, Error, TEXT("Error when reading snapshot. Aborting load snapshot: %s"), *Error);
+			Worker_SnapshotInputStream_Destroy(Snapshot);
 			return;
 		}
 
@@ -131,10 +138,11 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 		if (Error.IsEmpty())
 		{
 			TArray<Worker_ComponentData> EntityComponents;
-			for (uint32_t i = 0; i < EntityToSpawn->component_count; ++i) {
+			for (uint32_t i = 0; i < EntityToSpawn->component_count; ++i)
+			{
 				// Entity component data must be deep copied so that it can be used for CreateEntityRequest.
-				auto* CopySchemaData = DeepCopyComponentData(EntityToSpawn->components[i].schema_type);
-				auto EntityComponentData = Worker_ComponentData{};
+				Schema_ComponentData* CopySchemaData = DeepCopyComponentData(EntityToSpawn->components[i].schema_type);
+				Worker_ComponentData EntityComponentData{};
 				EntityComponentData.component_id = Schema_GetComponentDataComponentId(CopySchemaData);
 				EntityComponentData.schema_type = CopySchemaData;
 				EntityComponents.Add(EntityComponentData);
@@ -154,8 +162,9 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate SpawnEntitiesDelegate;
-	SpawnEntitiesDelegate.BindLambda([EntitiesToSpawn, this](Worker_ReserveEntityIdsResponseOp& Op) {
-		UE_LOG(LogSnapshotManager, Error, TEXT("Creating entities in snapshot, number of entities to spawn: %i"), Op.number_of_entity_ids);
+	SpawnEntitiesDelegate.BindLambda([EntitiesToSpawn, this](Worker_ReserveEntityIdsResponseOp& Op)
+	{
+		UE_LOG(LogSnapshotManager, Log, TEXT("Creating entities in snapshot, number of entities to spawn: %i"), Op.number_of_entity_ids);
 
 		// Ensure we have the same number of reserved IDs as we have entities to spawn
 		check(EntitiesToSpawn.Num() == Op.number_of_entity_ids);
@@ -185,6 +194,9 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 	// Reserve the Entity IDs
 	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToSpawn.Num());
+
+	// TODO: UNR-654
+	// References to entities that are stored within the snapshot need remapping once we know the new entity IDs.
 
 	// Add the spawn delegate
 	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, SpawnEntitiesDelegate);

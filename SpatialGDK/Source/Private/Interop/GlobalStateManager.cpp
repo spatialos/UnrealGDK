@@ -28,7 +28,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 	Sender = InNetDriver->Sender;
 	Receiver = InNetDriver->Receiver;
 	TimerManager = InTimerManager;
-	GlobalStateManagerEntityId = SpatialConstants::INTIAL_GLOBAL_STATE_MANAGER;
+	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 }
 
 void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
@@ -42,41 +42,16 @@ void UGlobalStateManager::ApplyDeploymentMapURLData(const Worker_ComponentData& 
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 	
 	// Set the Deployment Map URL.
-	if(Schema_GetObjectCount(ComponentObject, 1) == 1)
+	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID) == 1)
 	{
 		SetDeploymentMapURL(GetStringFromSchema(ComponentObject, 1));
 	}
 
-	if(Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
+	// Set the AcceptingPlayers state.
+	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
 	{
-		// Set the AcceptingPlayers state.
 		bool bDataAcceptingPlayers = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
-
-		if (bDataAcceptingPlayers)
-		{
-			ApplyAcceptingPlayersUpdate(bDataAcceptingPlayers);
-		}
-		else
-		{
-			if (!NetDriver->IsServer())
-			{
-				// TODO: UNR-656 - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
-				// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
-				// This means that the clients never actually receive updates or data on the GSM. To get around this we are making timed entity queries to
-				// find the state of the GSM and the accepting players. Remove this work-around when the runtime bug is fixed.
-				float RetryTimerDelay = 3.f;
-// In PIE we want to retry the entity query as soon as possible.
-#if WITH_EDITOR
-				RetryTimerDelay = 0.1f;
-#endif
-				UE_LOG(LogGlobalStateManager, Warning, TEXT("ApplyMapData - Not yet accepting new players, trying again in %f seconds"), RetryTimerDelay);
-				FTimerHandle RetryTimer;
-				TimerManager->SetTimer(RetryTimer, [this]()
-				{
-					QueryGSM(/*bWithRetry*/ true);
-				}, RetryTimerDelay, false);
-			}
-		}
+		ApplyAcceptingPlayersUpdate(bDataAcceptingPlayers);
 	}
 }
 
@@ -90,13 +65,13 @@ void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
 	}
 }
 
-void UGlobalStateManager::ApplyDeploymentMapURLUpdate(const Worker_ComponentUpdate& Update)
+void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if (Schema_GetObjectCount(ComponentObject, 1) == 1)
+	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID) == 1)
 	{
-		SetDeploymentMapURL(GetStringFromSchema(ComponentObject, 1));
+		SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID));
 	}
 
 	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
@@ -112,7 +87,9 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 	{
 		UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager Update - AcceptingPlayers: %s"), bAcceptingPlayersUpdate ? TEXT("true") : TEXT("false"));
 		bAcceptingPlayers = bAcceptingPlayersUpdate;
-		AcceptingPlayersChanged.ExecuteIfBound(bAcceptingPlayers);
+
+		// Tell the SpatialNetDriver that AcceptingPlayers has changed.
+		NetDriver->OnAcceptingPlayersChanged(bAcceptingPlayersUpdate);
 	}
 }
 
@@ -186,12 +163,6 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 
 		SingletonActor->Role = ROLE_Authority;
 		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
-		if (Channel->Actor)
-		{
-			// Channel already has an Actor
-			UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to change Singleton Actor channel: %s"), *SingletonActor->GetClass()->GetName());
-			continue;
-		}
 
 		// Set entity id of channel from the GlobalStateManager.
 		// If the id was 0, SetChannelActor will create the entity.
@@ -206,7 +177,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 {
 	SingletonNameToEntityId[ClassName] = SingletonEntityId;
 
-	if (!NetDriver->StaticComponentView->HasAuthority(SpatialConstants::GLOBAL_STATE_MANAGER, SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID))
+	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID))
 	{
 		UE_LOG(LogGlobalStateManager, Warning, TEXT("UpdateSingletonEntityId: no authority over the GSM! Update will not be sent. Singleton class: %s, entity: %lld"), *ClassName, SingletonEntityId);
 		return;
@@ -264,7 +235,7 @@ void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 
 	OutChannel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
-	if(OutChannel)
+	if (OutChannel)
 	{
 		NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
 	}
@@ -284,20 +255,21 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId)
 
 void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 {
-	if (!bHasLiveMapAuthority || !Cast<USpatialGameInstance>(NetDriver->GetWorld()->GetGameInstance())->bIsWorkerAuthorativeOverGSM)
+	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID))
 	{
-		UE_LOG(LogGlobalStateManager, Error, TEXT("Tried to set AcceptingPlayers on the GSM but this worker does not have authority."));
+		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to set AcceptingPlayers on the GSM but this worker does not have authority."));
+		return;
 	}
 
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
 	Worker_ComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
-	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL);
+	Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID);
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	// Set the map URL on the GSM.
-	AddStringToSchema(UpdateObject, 1, NetDriver->GetWorld()->URL.ToString());
+	AddStringToSchema(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID, NetDriver->GetWorld()->URL.ToString());
 
 	// Set the AcceptingPlayers state on the GSM
 	Schema_AddBool(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(bInAcceptingPlayers));
@@ -309,27 +281,22 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 
 void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID)
 {
-	// Make sure the GameInstance knows that this worker is now authoritative over the GSM (used for server travel).
-	// The GameInstance is the only persistent object during server travel.
-	// bIsWorkerAuthorativeOverGSM exists to inform the worker that was previously authoritative over the GSM that it has the responsibility of loading the new snapshot.
-	Cast<USpatialGameInstance>(NetDriver->GetWorld()->GetGameInstance())->bIsWorkerAuthorativeOverGSM = bWorkerAuthority;
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM has changed. This worker %s authority."),  bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
 
-	// Also update this instance of the GSM that it has current authority (used for accepting players toggle).
-	// The instance of each GSM is destroyed on server travel and a new one is made, hence the need for 'live' authority.
-	bHasLiveMapAuthority = bWorkerAuthority;
-
-	// Make sure we update our known entity id for the GSM when we receive authority.
-	GlobalStateManagerEntityId = CurrentEntityID;
-
-	SetAcceptingPlayers(bWorkerAuthority);
+	if (bWorkerAuthority)
+	{
+		// Make sure we update our known entity id for the GSM when we receive authority.
+		GlobalStateManagerEntityId = CurrentEntityID;
+		SetAcceptingPlayers(true);
+	}
 }
 
 // Queries for the GlobalStateManager in the deployment.
-// bWithRetry will continue querying until the state of AcceptingPlayers is true, this is so clients know when to connect to the deployment.
-void UGlobalStateManager::QueryGSM(bool bWithRetry)
+// bRetryUntilAcceptingPlayers will continue querying until the state of AcceptingPlayers is true, this is so clients know when to connect to the deployment.
+void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 {
 	Worker_ComponentConstraint GSMComponentConstraint{};
-	GSMComponentConstraint.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL;
+	GSMComponentConstraint.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID;
 
 	Worker_Constraint GSMConstraint;
 	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
@@ -343,37 +310,86 @@ void UGlobalStateManager::QueryGSM(bool bWithRetry)
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
 	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, bWithRetry](Worker_EntityQueryResponseOp& Op)
+	GSMQueryDelegate.BindLambda([this, bRetryUntilAcceptingPlayers](Worker_EntityQueryResponseOp& Op)
 	{
-		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS || Op.result_count == 0)
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
-			UE_LOG(LogGlobalStateManager, Error, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
-			if (bWithRetry)
+			UE_LOG(LogGlobalStateManager, Warning, TEXT("Could not find GSM via entity query: %s"), UTF8_TO_TCHAR(Op.message));
+		}
+		else if (Op.result_count == 0)
+		{
+			UE_LOG(LogGlobalStateManager, Log, TEXT("GSM entity query shows the GSM does not yet exist in the world."));
+		}
+		else
+		{
+			bool bNewAcceptingPlayers = GetAcceptingPlayersFromQueryResponse(Op);
+
+			if (!bNewAcceptingPlayers && bRetryUntilAcceptingPlayers)
 			{
-				UE_LOG(LogGlobalStateManager, Warning, TEXT("Retrying entity query for the GSM in 3 seconds"));
-				FTimerHandle RetryTimer;
-				TimerManager->SetTimer(RetryTimer, [this, bWithRetry]()
-				{
-					QueryGSM(bWithRetry);
-				}, 3.f, false);
+				UE_LOG(LogGlobalStateManager, Log, TEXT("Not yet accepting new players. Will retry query for GSM."));
+				RetryQueryGSM(bRetryUntilAcceptingPlayers);
 			}
+			else
+			{
+				ApplyAcceptingPlayersUpdate(bNewAcceptingPlayers);
+			}
+
+			return;
 		}
 
-		if (Op.result_count == 1)
+		if (bRetryUntilAcceptingPlayers)
 		{
-			for (uint32_t i = 0; i < Op.results->component_count; i++)
-			{
-				Worker_ComponentData Data = Op.results[0].components[i];
-				if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL)
-				{
-					UE_LOG(LogGlobalStateManager, Log, TEXT("GlobalStateManager found via entity query. Applying MapData."));
-					ApplyDeploymentMapURLData(Data);
-				}
-			}
+			RetryQueryGSM(bRetryUntilAcceptingPlayers);
 		}
 	});
 
 	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
+}
+
+bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(Worker_EntityQueryResponseOp& Op)
+{
+	checkf(Op.result_count == 1, TEXT("There should never be more than one GSM"));
+
+	// Iterate over each component on the GSM until we get the DeploymentMap component.
+	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
+	{
+		Worker_ComponentData Data = Op.results[0].components[i];
+		if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID)
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+			if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
+			{
+				bool bDataAcceptingPlayers = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+				return bDataAcceptingPlayers;
+			}
+		}
+	}
+
+	UE_LOG(LogGlobalStateManager, Warning, TEXT("Entity query response for the GSM did not contain an AcceptingPlayers state."));
+
+	return false;
+}
+
+void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
+{
+	// TODO: UNR-656 - TLDR: Hack to get around runtime not giving data on streaming queries unless you have write authority.
+	// There is currently a bug in runtime which prevents clients from being able to have read access on the component via the streaming query.
+	// This means that the clients never actually receive updates or data on the GSM. To get around this we are making timed entity queries to
+	// find the state of the GSM and the accepting players. Remove this work-around when the runtime bug is fixed.
+	float RetryTimerDelay = SpatialConstants::ENTITY_QUERY_RETRY_WAIT_SECONDS;
+
+	// In PIE we want to retry the entity query as soon as possible.
+#if WITH_EDITOR
+	RetryTimerDelay = 0.1f;
+#endif
+
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
+	FTimerHandle RetryTimer;
+	TimerManager->SetTimer(RetryTimer, [this, bRetryUntilAcceptingPlayers]()
+	{
+		QueryGSM(bRetryUntilAcceptingPlayers);
+	}, RetryTimerDelay, false);
 }
 
 void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)

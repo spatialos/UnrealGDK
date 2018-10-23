@@ -8,6 +8,13 @@ DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 void USpatialWorkerConnection::FinishDestroy()
 {
+	DestroyConnection();
+
+	Super::FinishDestroy();
+}
+
+void USpatialWorkerConnection::DestroyConnection()
+{
 	if (WorkerConnection)
 	{
 		Worker_Connection_Destroy(WorkerConnection);
@@ -19,12 +26,16 @@ void USpatialWorkerConnection::FinishDestroy()
 		Worker_Locator_Destroy(WorkerLocator);
 		WorkerLocator = nullptr;
 	}
-
-	Super::FinishDestroy();
 }
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
 {
+	if (bIsConnected)
+	{
+		OnConnected.ExecuteIfBound();
+		return;
+	}
+
 	if (ShouldConnectWithLocator())
 	{
 		ConnectToLocator();
@@ -229,7 +240,6 @@ Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdRequest()
 	return Worker_Connection_SendReserveEntityIdRequest(WorkerConnection, nullptr);
 }
 
-// Bulk reserve IDs
 Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
 	return Worker_Connection_SendReserveEntityIdsRequest(WorkerConnection, NumOfEntities, nullptr);

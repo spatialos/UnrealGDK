@@ -52,6 +52,11 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	return bHasSpatialNetDriver;
 }
 
+void USpatialGameInstance::CreateNewSpatialWorkerConnection()
+{
+	SpatialConnection = NewObject<USpatialWorkerConnection>();
+}
+
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 {
 	if (WorldContext->PendingNetGame)
@@ -105,7 +110,7 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 	}
 
 	// If we are using spatial networking then prepare a spatial connection.
-	SpatialConnection = NewObject<USpatialWorkerConnection>();
+	CreateNewSpatialWorkerConnection();
 
 	// This is sadly hacky to avoid a larger engine change. It borrows code from UGameInstance::StartPlayInEditorGameInstance() and 
 	// UEngine::Browse().
@@ -141,7 +146,7 @@ void USpatialGameInstance::StartGameInstance()
 	if (HasSpatialNetDriver())
 	{
 		// If we are using spatial networking then prepare a spatial connection.
-		SpatialConnection = NewObject<USpatialWorkerConnection>();
+		CreateNewSpatialWorkerConnection();
 	}
 
 	Super::StartGameInstance();

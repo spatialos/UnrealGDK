@@ -21,6 +21,7 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject
 
 public:
 	virtual void FinishDestroy() override;
+	void DestroyConnection();
 
 	void Connect(bool bConnectAsClient);
 

@@ -21,8 +21,6 @@ class USpatialReceiver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogGlobalStateManager, Log, All)
 
-DECLARE_DELEGATE_OneParam(AcceptingPlayersDelegate, bool);
-
 UCLASS()
 class SPATIALGDK_API UGlobalStateManager : public UObject
 {
@@ -35,14 +33,16 @@ public:
 	void ApplyData(const Worker_ComponentData& Data);
 	void ApplyDeploymentMapURLData(const Worker_ComponentData& Data);
 	void ApplyUpdate(const Worker_ComponentUpdate& Update);
-	void ApplyDeploymentMapURLUpdate(const Worker_ComponentUpdate& Update);
+	void ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update);
 	void LinkExistingSingletonActors();
 	void ExecuteInitialSingletonActorReplication();
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
 
 	bool IsSingletonEntity(Worker_EntityId EntityId);
 
-	void QueryGSM(bool bWithRetry);
+	void QueryGSM(bool bRetryUntilAcceptingPlayers);
+	void RetryQueryGSM(bool bRetryUntilAcceptingPlayers);
+	bool GetAcceptingPlayersFromQueryResponse(Worker_EntityQueryResponseOp& Op);
 	void SetDeploymentMapURL(const FString& MapURL);
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
@@ -50,9 +50,6 @@ public:
 
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers = false;
-	bool bHasLiveMapAuthority = false;
-
-	AcceptingPlayersDelegate AcceptingPlayersChanged;
 
 	Worker_EntityId GlobalStateManagerEntityId;
 

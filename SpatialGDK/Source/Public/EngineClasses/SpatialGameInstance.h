@@ -22,10 +22,12 @@ public:
 #endif
 	virtual void StartGameInstance() override;
 
-	// bIsWorkerAuthorativeOverGSM exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
-	bool bIsWorkerAuthorativeOverGSM;
+	// bResponsibleForSnapshotLoading exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
+	bool bResponsibleForSnapshotLoading = false;
 
-	// SpatialConnection is located in the SpatialGameInstance for ServerWorkers only.
+	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
+	void CreateNewSpatialWorkerConnection();
+
 	UPROPERTY()
 	USpatialWorkerConnection* SpatialConnection;
 
