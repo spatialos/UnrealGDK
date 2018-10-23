@@ -2,14 +2,12 @@
 
 # How to port a native Unreal project to the Unreal GDK
 
-> This workflow is very subject to change. We're aware that it's not optimized, and one of our priorities is to improve iteration times.
-
 ## Prerequisites
 
 <%(TOC)%>
 
 Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
-> To speed up build times, install IncrediBuild, FastBuild, or another build distributor.
+> To speed up build times we recommend installing IncrediBuild, FastBuild, or another build distributor.
 
 ## Glossary
 `<ProjectRoot>` - The root folder of your Unreal project.  
@@ -117,7 +115,7 @@ etc...
 
     > These lines ensure that the SpatialOS Unreal GDK can override Unreal's network replication.
     >
-    > If you ever need to run with default Unreal networking for workflow or validation reasons, untick `Spatial Networking` in the `Play` drop down menu in the Unreal editor. This flag is maintained in your Unreal config files under `/Script/EngineSettings.GeneralProjectSettings` and is also valid for non-editor builds.
+    > If you ever need to run with default Unreal networking for workflow or validation reasons, un-tick `Spatial Networking` in the `Play` drop down menu in the Unreal editor. This flag is maintained in your Unreal config files under `/Script/EngineSettings.GeneralProjectSettings` and is also valid for non-editor builds.
     >
     > You can easily switch between networking modes using this checkbox. As the SpatialOS Unreal GDK is in pre-alpha, switching back to Unreal's networking may be a viable way to work around some issues you may encounter, and may speed up your iteration. However, in Unreal networking mode you lose access to key multi-server features of the GDK, which may lead to erratic behavior.
     >
@@ -178,8 +176,8 @@ This builds and packages your workers ready for a Spatial deployment.
 
 ## Running your game
 1. In the Unreal Editor, on the toolbar, open the **Play** drop-down menu and check the box next to **Run Dedicated Server** as well as the checkbox for **Spatial Networking**
-2. On the SpatialOS Unreal GDK toolbar, click the green **Launch** (not the default Launch button in the Unreal Editor), `spatial local launch` will be ran in a seperate console window, wait for the output `SpatialOS ready`.
+2. On the SpatialOS Unreal GDK toolbar, click the green **Launch** (not the default Launch button in the Unreal Editor), `spatial local launch` will be ran in a separate console window, wait for the output `SpatialOS ready`.
 3. On the main Unreal toolbar, click **Play**.
 
-## Modifying default behaviour
-If you wish to modify the default behaviour for the SpatialOS GDK for Unreal; such as the default snapshot save path and filename, the spatial launch configuration used when pressing **Launch** and more... you can modify these settings from the Unreal Editior by navigating to `Edit->Project Settings->SpatialOS Unreal GDK->Toolbar`. 
+## Modifying default behavior
+If you wish to modify the default behavior for the SpatialOS GDK for Unreal; such as the default snapshot save path and filename, the spatial launch configuration used when pressing **Launch** and more... you can modify these settings from the Unreal Editor by navigating to `Edit->Project Settings->SpatialOS Unreal GDK->Toolbar`. 
