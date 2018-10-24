@@ -8,20 +8,7 @@ The GDK toolbar provides several functions required for building and launching y
 
 ## Add the GDK toolbar to your Unreal project
 
-To enable the GDK toolbar you need to add a dependency to the plugin in your Unreal project file.
-
-Either open your Unreal project's `.uproject` file in a text editor and add the GDK toolbar in the `Plugins` section:
-
-```
-"Plugins": [
-    {
-        "Name": "SpatialGDKEditorToolbar",
-        "Enabled": true
-    }
-],
-```
-
-Or inside the Unreal Editor, navigate to **Edit** > **Plugins** and scroll down to the bottom. Select the **SpatialOS Unreal GDK** section and enable the toolbar:
+To enable the GDK toolbar, navigate to **Edit** > **Plugins**  inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS Unreal GDK** section and enable the toolbar:
 
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/enable-toolbar.png)
 
