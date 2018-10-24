@@ -28,13 +28,13 @@ An Unreal Editor toolbar command which takes a set of Unreal classes and generat
 ### Singleton Actor
 A server-side authoritative Actor that is restricted to one instantiation on SpatialOS. See documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).
 
-### <ProjectRoot>
+### \<ProjectRoot\>
 The root folder of your Unreal project. 
 
-### <GameRoot>
+### \<GameRoot\>
 The folder containing your game's `.uproject` and source folder (for example, `<ProjectRoot>/ShooterGame/`). 
 
-### <YourProject>
+### \<YourProject\>
 Name of your game's `.uproject` (for example, `StarterProject.uproject`).
 
 [//]: # (Editorial review status: Full review 2018-07-23)
