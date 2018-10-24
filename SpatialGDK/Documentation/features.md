@@ -32,17 +32,17 @@ The SpatialOS Unreal GDK also supports:
 * Replicated Blueprint events
 * RPC validation
 
-## Subobject replication
+## Static subobject replication
 
-The GDK currently supports only one instance of each static subobject type when replicating objects owned by an Actor. This includes components. For example, multiple Actors can have a `FooComponent` but no Actor can have two `FooComponent`s.
+The GDK currently supports only one instance of each static subobject type when replicating objects owned by an Actor. This includes Actor's components. For example, multiple Actors can have a `FooComponent` but no Actor can have two `FooComponent`s.
 
 Properties and RPCs within subobjects have the same support as an Actor’s properties and RPCs.
 
-The SpatialOS Unreal GDK does not yet support dynamic subobject replication.
+The GDK does not yet support dynamic subobject replication.
 
 ## Property handover
 
-Actor property handover is a new feature we’re introducing with the SpatialOS Unreal GDK. It replicates server-side properties between servers so Unreal games can take advantage of the SpatialOS cloud server architecture. For more information, see [the Actor property handover]({{urlRoot}}/content/handover-between-server-workers) documentation.
+Actor property handover is a new feature we’re introducing with the GDK. It replicates server-side properties between servers so Unreal games can take advantage of the SpatialOS cloud server architecture. For more information, see [the Actor property handover]({{urlRoot}}/content/handover-between-server-workers) documentation.
 
 ## Singleton Actors
 
@@ -50,8 +50,10 @@ Actor property handover is a new feature we’re introducing with the SpatialOS 
 
 ## Cross-server RPCs
 
-`Cross-server RPCs` is a new type of RPC that functions between two servers. These will enable a server without authority over an Actor to communicate with the server which has authority and is able to manipulate the Actor. For more information, see [Cross-server RPC]({{urlRoot}}/content/dummy-link) documentation.
+`Cross-server RPC`s are a new type of RPC that functions between two servers. These enable a server without authority over an Actor to communicate with the server which has authority and is able to manipulate the Actor. For more information, see documentation.
+
+[//]: # (TODO: Add link to the Cross-server RPC doc)
 
 ## Networking switch
 
-We’ve implemented a convenient way to switch between the native Unreal networking and SpatialOS networking via an editor tickbox. This can be found inside `Play` dropdown option in the toolbar under `Spatial Networking`. This is useful to test valid functionality and performance on a single server. See the documentation on the networking switch on the [Troubleshooting]({{urlRoot}}/content/troubleshooting) page.
+The GDK offers you a convenient way to switch between native Unreal networking and SpatialOS networking via a checkbox in the Unreal Editor. This is useful to test valid functionality and performance on a single server. See the documentation on the networking switch on the [Troubleshooting]({{urlRoot}}/content/troubleshooting) page. To switch networking mode to Unreal, from the Editor toolbar menu, unmark the `Spatial networking` checkbox under `Play` dropdown in the Unreal Editor toolbar.
