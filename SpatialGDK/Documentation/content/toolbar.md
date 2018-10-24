@@ -64,7 +64,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 * **Schema Generator**
 
     * **Generate Schema for all Supported Classes**</br>
-    **Experimental** Use this to generate schema for all UObject and that have replicated or handover properties. As the GDK does not currently support muliple replicated actor components of the same type on an Actor, no schemas will be generated for classes extended from `USceneComponent`.
+    **Experimental** Use this to generate schema for all UObjects and that have replicated or handover properties. As the GDK does not currently support muliple replicated actor components of the same type on an Actor, no schemas will be generated for classes extended from `USceneComponent`.
 
     * **Output path for the generated schemas**</br>
     Use this to specify the path of the generated schema files.  If you leave this empty, it defaults to `<GameRoot>/../spatial/schema/improbable/unreal/generated/`.
