@@ -1,5 +1,3 @@
-<%(Callout type="warn" message="This [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
 # SpatialOS Unreal GDK toolbar
 
 The SpatialOS Unreal GDK toolbar provides several functions required for building and launching your client- and server-workers from inside the Unreal Editor.
@@ -8,7 +6,7 @@ The SpatialOS Unreal GDK toolbar provides several functions required for buildin
 `<ProjectRoot>` - The root folder of your Unreal project.  
 `<GameRoot>` - The folder containing your game's `.uproject` and source folder (for example, `<ProjectRoot>/ShooterGame/`).  
 
-## Add the SpatialOS Unreal GDK toolbar to your Unreal project
+## Add the GDK for Unreal toolbar to your Unreal project
 
 To enable the SpatialOS Unreal GDK toolbar you need to add a dependency to the plugin in your Unreal project file.
 
@@ -29,7 +27,7 @@ Or inside the Unreal Editor, navigate to **Edit** > **Plugins** and scroll down 
 
 ## Buttons
 
-The SpatialOS Unreal GDK toolbar has five features mapped to individual buttons and is displayed in the main editor toolbar to the right of the `Launch` button:
+The GDK toolbar has five features mapped to individual buttons and is displayed in the main editor toolbar to the right of the `Launch` button:
 
  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbar-buttons.png)
 
@@ -84,4 +82,4 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
     If you have `UActorComponent`s which don't extend `USceneComponent` but exist in multiple on an Actor, *this can potentially crash your game*. Make sure there are never multiple components of the same type on an Actor. If there are make sure you modify your Actor to only have one, or use the explicit `SpatialType` tagging approach and don't tag the duplicate `UActorComponent`.
 
     * **Output path for the generated schemas**</br>
-    Use this to specify the filepath of ICG-generated schema file.  If you leave this empty, it defaults to `<GameRoot>/../spatial/schema/improbable/unreal/generated/`.
+    Use this to specify the path of the generated schema files.  If you leave this empty, it defaults to `<GameRoot>/../spatial/schema/improbable/unreal/generated/`.
