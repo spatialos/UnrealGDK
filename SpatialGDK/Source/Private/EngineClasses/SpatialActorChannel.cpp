@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialActorChannel.h"
+#include "EngineClasses/SpatialActorChannel.h"
 
 #include "Engine/DemoNetDriver.h"
 #include "GameFramework/PlayerState.h"
