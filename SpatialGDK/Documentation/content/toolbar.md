@@ -38,19 +38,19 @@ You can also access these from the **Window** menu:
  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/window-access.png)
 
 
-* Snapshot</br>
+* **Snapshot**</br>
 Generates a [SpatialOS snapshot](https://docs.improbable.io/reference/latest/shared/glossary#snapshot) (SpatialOS documentation).
 
-* Schema </br>
+* **Schema**</br>
 Creates `schema` for your Unreal project.
 
-* Launch</br>
+* **Launch**</br>
 Runs [spatial worker build build-config](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)).
 
-* Stop</br>
+* **Stop**</br>
 Stops `spatial local launch`.
 
-* Inspector</br>
+* **Inspector**</br>
 Opens the [Inspector](https://docs.improbable.io/reference/latest/shared/glossary#inspector) (SpatialOS documentation) in a browser.
 
 ## Settings
