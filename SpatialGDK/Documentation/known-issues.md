@@ -15,4 +15,5 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 | Schema generator fails when the destination file is locked. The workflow is less than ideal as you can't run it again until you restart the Unreal Editor. | 2018-07-16 | [UNR-350](https://improbableio.atlassian.net/browse/UNR-350) | Ensure destination files/folders are unlocked. |
 | Deleting entities directly from the Inspector causes undefined behavior. | 2018-07-17 | [UNR-425](https://improbableio.atlassian.net/projects/UNR/issues/UNR-425) | None |
 | We don't support listen servers. | 2018-07-30 | | Use dedicated servers instead. |
-| Server travel does not work in PIE. | 2018-07-30 | | Server travel work must be done with external or managed workers |
+| Stably-named replicated actors cannot be referred to by their path | 2018-08-10 | [UNR-473](https://improbableio.atlassian.net/projects/UNR/issues/UNR-473) | None |
+| Server travel does not work in PIE. | 2018-10-24 | | Server travel work must be done with external or managed workers |
