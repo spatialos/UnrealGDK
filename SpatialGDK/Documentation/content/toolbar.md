@@ -1,6 +1,6 @@
-# SpatialOS Unreal GDK toolbar
+# SpatialOS GDK for Unreal toolbar
 
-The SpatialOS Unreal GDK toolbar provides several functions required for building and launching your client- and server-workers from inside the Unreal Editor.
+The toolbar for the SpatialOS GDK for Unreal provides several functions required for building and launching your client- and server-workers from inside the Unreal Editor.
 
 ## Terms used in this doc
 `<ProjectRoot>` - The root folder of your Unreal project.  
@@ -8,9 +8,9 @@ The SpatialOS Unreal GDK toolbar provides several functions required for buildin
 
 ## Add the GDK for Unreal toolbar to your Unreal project
 
-To enable the SpatialOS Unreal GDK toolbar you need to add a dependency to the plugin in your Unreal project file.
+To enable the SpatialOS GDK for Unreal toolbar you need to add a dependency to the plugin in your Unreal project file.
 
-Either open your Unreal project's `.uproject` file in a text editor and add the SpatialOS Unreal GDK toolbar in the `Plugins` section:
+Either open your Unreal project's `.uproject` file in a text editor and add the SpatialOS GDK for Unreal toolbar in the `Plugins` section:
 
 ```
 "Plugins": [
@@ -69,10 +69,10 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
     If enabled, shuts down running deployments when you close the Unreal Editor.
 
     * **Snapshot path**</br>
-    Use this to specify the filepath of your Unreal GDK snapshot. If you leave this empty, it defaults to `<GameRoot>/../spatial/snapshots`.
+    Use this to specify the filepath of your snapshot. If you leave this empty, it defaults to `<GameRoot>/../spatial/snapshots`.
 
     * **Snapshot file name**</br>
-    Name of your SpatialOS Unreal GDK snapshot file.
+    Name of your snapshot file.
 
 * **Schema Generator**
 
