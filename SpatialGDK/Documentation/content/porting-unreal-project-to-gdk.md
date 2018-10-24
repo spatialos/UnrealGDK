@@ -6,34 +6,42 @@
 
 <%(TOC)%>
 
-Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
-> To speed up build times we recommend installing IncrediBuild, FastBuild, or another build distributor.
+Before porting your project, you need to install and set up the SpatialOS GDK: follow the [set up guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
 
-## Glossary
+## Terms used in this guide
 `<ProjectRoot>` - The root folder of your Unreal project.  
-`<GameRoot>` - The folder containing your game's `.uproject` and source folder. e.g. `<ProjectRoot>/ShooterGame/`  
-`<YourProject>` - Name of your game's `.uproject` e.g. `StarterProject.uproject`  
+`<GameRoot>` - The folder containing your game's `.uproject` and source folder (for example, `<ProjectRoot>/ShooterGame/`).  
+`<YourProject>` - Name of your game's `.uproject` (for example, `StarterProject.uproject`).
 
-## Setting up the project structure
-1. Navigate to the root directory of the GDK repository you cloned (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`) and run `Setup.bat` in a terminal window or by double-clicking the file. This requires authorization with your SpatialOS account via a web-browser.
-1. We now require some files and folders for the SpatialOS Unreal GDK to run correctly with your project, we are going to obtain these by copying them from the `StarterProject` repo that you cloned earlier. Open the StarterProject repo and copy all of the files and folders except for the `\Game\` folder into your `<ProjectRoot>` folder. Your folder structure should now resemble:
+## Set up the project structure
+1. Run Setup.bat which is in the root directory of the GDK repository you cloned (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
+    - In a terminal window, navigate to the root directory of the GDK and run: `Setup.bat` or
+    - In your file manager, double-click the file.
+    > Note: This requires authorization with your SpatialOS account via a web browser. `Setup.bat` will launch the authorization page.
+1. Your project needs some extra files and folders to run with the GDK; you can copy these from the StarterProject repository that you cloned earlier.
+
+    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders except the `\Game\` _folder_ into your `<ProjectRoot>` folder. Your game's folder structure should now resemble:
+    
+        ``` cpp
+        \<ProjectRoot>\.git\
+        \<ProjectRoot>\<GameRoot>\
+        \<ProjectRoot>\spatial\
+        \<ProjectRoot>\.gitignore
+        \<ProjectRoot>\LaunchClient.bat 
+        \<ProjectRoot>\LaunchServer.bat
+        \<ProjectRoot>\LICENSE.md
+        \<ProjectRoot>\ProjectPaths.bat
+        \<ProjectRoot>\README.md
+        etc...
+        ```
+1. Our helper scripts require configuration to work correctly. Set up your project paths:
    
-    ``` cpp
-    \<ProjectRoot>\.git\
-    \<ProjectRoot>\<GameRoot>\
-    \<ProjectRoot>\spatial\
-    \<ProjectRoot>\.gitignore
-    \<ProjectRoot>\LaunchClient.bat 
-    \<ProjectRoot>\LaunchServer.bat
-    \<ProjectRoot>\LICENSE.md
-    \<ProjectRoot>\ProjectPaths.bat
-    \<ProjectRoot>\README.md
-    etc...
-    ```
-1. Open **` \<ProjectRoot>\ProjectPaths.bat`** for editing and replace `Game` (located at `set PROJECT_PATH=Game`) with your `<GameRoot>` folder name, and `StarterProject` (located at `set GAME_NAME=StarterProject`) with the name of your game's `.uproject` (which we'll refer to as `<YourProject>`).
+   Open **`\<ProjectRoot>\ProjectPaths.bat`** for editing and replace:
+    - In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.
+    - In `set GAME_NAME=StarterProject`, replace `StarterProject` with the name of your game's `.uproject` (which we'll refer to as `<YourProject>`).
 
-## Adding the SpatialGDK module to your project
-1. In your project's `*.build.cs` file, add "SpatialGDK" to the `PublicDependencyModuleNames`.
+## Add the SpatialGDK module to your project
+1. In your project's `*.build.cs` file, add `"SpatialGDK"` to the `PublicDependencyModuleNames`.
     For example:
     ``` csharp
     PublicDependencyModuleNames.AddRange(`
@@ -72,7 +80,7 @@ Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setti
     };
     ```
 
-1. In your project's `PlayerController` header file(s), add the public method declaration
+1. In your game's `PlayerController` header file(s), add the public method declaration
 `virtual void InitPlayerState() override;`.
 
 1. In your game's `PlayerController` class(es), add the following definition of the `InitPlayerState` function:
