@@ -1,16 +1,16 @@
 # SpatialOS GDK for Unreal toolbar
 
-The toolbar for the SpatialOS GDK for Unreal provides several functions required for building and launching your client- and server-workers from inside the Unreal Editor.
+The GDK toolbar provides several functions required for building and launching your client- and server-workers from inside the Unreal Editor.
 
 ## Terms used in this doc
 `<ProjectRoot>` - The root folder of your Unreal project.  
 `<GameRoot>` - The folder containing your game's `.uproject` and source folder (for example, `<ProjectRoot>/ShooterGame/`).  
 
-## Add the GDK for Unreal toolbar to your Unreal project
+## Add the GDK toolbar to your Unreal project
 
-To enable the SpatialOS GDK for Unreal toolbar you need to add a dependency to the plugin in your Unreal project file.
+To enable the GDK toolbar you need to add a dependency to the plugin in your Unreal project file.
 
-Either open your Unreal project's `.uproject` file in a text editor and add the SpatialOS GDK for Unreal toolbar in the `Plugins` section:
+Either open your Unreal project's `.uproject` file in a text editor and add the GDK toolbar in the `Plugins` section:
 
 ```
 "Plugins": [
@@ -77,9 +77,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 * **Schema Generator**
 
     * **Generate Schema for all Supported Classes**</br>
-    **Experimental** Use this to generate schema for all `AActor` and `UActorComponent` classes (which *don't* extend `USceneComponent`) without explicitly tagging them as `SpatialType` within their UCLASS defintion. 
-    `USceneComponent` is unsupported due to there often being multiple of these components on an Actor which isn't currently supported.
-    If you have `UActorComponent`s which don't extend `USceneComponent` but exist in multiple on an Actor, *this can potentially crash your game*. Make sure there are never multiple components of the same type on an Actor. If there are make sure you modify your Actor to only have one, or use the explicit `SpatialType` tagging approach and don't tag the duplicate `UActorComponent`.
+    **Experimental** Use this to generate schema for all `AActor` and `UActorComponent` classes (which *don't* extend `USceneComponent`) without explicitly tagging them as `SpatialType` within their UCLASS defintion. As the GDK does not currently support muliple replicated actor components of the same type on an Actor, no schemas will be generated for classes extended from `USceneComponent`.
 
     * **Output path for the generated schemas**</br>
     Use this to specify the path of the generated schema files.  If you leave this empty, it defaults to `<GameRoot>/../spatial/schema/improbable/unreal/generated/`.
