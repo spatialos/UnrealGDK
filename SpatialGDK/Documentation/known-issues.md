@@ -17,3 +17,5 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 | We don't support listen servers. | 2018-07-30 | | Use dedicated servers instead. |
 | Stably-named replicated actors cannot be referred to by their path | 2018-08-10 | [UNR-473](https://improbableio.atlassian.net/projects/UNR/issues/UNR-473) | None |
 | Server travel does not work in PIE. | 2018-10-24 | | Server travel work must be done with external or managed workers |
+| We don't support NetDeltaSerialize or Fast TArray Replication.  | 2018-10-24 |  | Use default serialization
+| We don't support the `ReplicateYes` policy on GameplayAbilities. | 2018-10-24 | [UNR-675](https://improbableio.atlassian.net/projects/UNR/issues/UNR-675) | Don't use replicated GameplayAbilities. If they need access to replicated data, store it on the AbilityComponent itself.
