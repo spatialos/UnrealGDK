@@ -6,7 +6,7 @@
 #include "Developer/Settings/Public/ISettingsContainer.h"
 #include "Developer/Settings/Public/ISettingsModule.h"
 #include "Developer/Settings/Public/ISettingsSection.h"
-#include "ModuleManager.h"
+#include "Modules/ModuleManager.h"
 
 #include "SpatialGDKLoader.h"
 

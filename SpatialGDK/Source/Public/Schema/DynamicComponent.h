@@ -2,13 +2,9 @@
 
 #pragma once
 
-#include "Platform.h"
-
 #include "Schema/Component.h"
-#include "Utils/SchemaUtils.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 namespace improbable
 {

@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialOutputDevice.h"
+#include "Interop/SpatialOutputDevice.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 

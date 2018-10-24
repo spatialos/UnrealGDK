@@ -3,10 +3,10 @@
 #pragma once
 
 #include "EngineClasses/SpatialNetBitWriter.h"
-#include "improbable/UnrealObjectRef.h"
+#include "UObject/improbable/UnrealObjectRef.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 using WorkerAttributeSet = TArray<FString>;
 using WorkerRequirementSet = TArray<WorkerAttributeSet>;

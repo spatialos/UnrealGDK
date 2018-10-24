@@ -2,7 +2,7 @@
 
 #include "Utils/SchemaUtils.h"
 
-#include "improbable/UnrealObjectRef.h"
+#include "UObject/improbable/UnrealObjectRef.h"
 
 namespace improbable
 {

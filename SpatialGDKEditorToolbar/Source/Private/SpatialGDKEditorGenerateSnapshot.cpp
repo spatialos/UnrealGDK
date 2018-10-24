@@ -2,6 +2,7 @@
 
 #include "SpatialGDKEditorGenerateSnapshot.h"
 
+#include "Engine/LevelScriptActor.h"
 #include "Schema/Rotation.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
@@ -21,8 +22,8 @@
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 #include "UObjectIterator.h"
 
-#include <improbable/c_worker.h>
-#include <improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
 
 using namespace improbable;
 

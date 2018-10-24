@@ -3,16 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CoreOnline.h"
-#include "Engine.h"
 #include "IpNetDriver.h"
 #include "OnlineSubsystemNames.h"
+#include "UObject/CoreOnline.h"
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "SpatialConstants.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialNetDriver.generated.h"
 

@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "EngineMinimal.h"
-
 #include "TypeStructure.h"
 
 class FCodeWriter;

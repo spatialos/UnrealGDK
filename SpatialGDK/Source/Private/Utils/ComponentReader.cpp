@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "ComponentReader.h"
+#include "Utils/ComponentReader.h"
 
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"

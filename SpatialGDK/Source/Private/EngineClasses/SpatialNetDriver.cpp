@@ -1,15 +1,18 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialNetDriver.h"
+#include "EngineClasses/SpatialNetDriver.h"
 
+#include "EngineGlobals.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/ChildConnection.h"
+#include "Engine/Engine.h"
 #include "Engine/NetworkObjectList.h"
-#include "EngineGlobals.h"
+#include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
 #include "SocketSubsystem.h"
+#include "UObject/UObjectIterator.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
