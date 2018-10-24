@@ -697,7 +697,7 @@ void USpatialActorChannel::SpatialViewTick()
 	{
 		bool bOldNetOwned = bNetOwned;
 
-		// Use Actor's connect to determine if client owned
+		// Use Actor's connection to determine if client owned
 		bNetOwned = false;
 		if (UNetConnection* NetConnection = Actor->GetNetConnection())
 		{
