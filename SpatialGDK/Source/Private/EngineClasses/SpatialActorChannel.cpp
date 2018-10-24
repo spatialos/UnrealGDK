@@ -639,7 +639,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
-		if (AController* Controller = Cast<AController>(Pawn->GetController()))
+		if (AController* Controller = Pawn->GetController())
 		{
 			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller));
 			if (ControllerActorChannel)
