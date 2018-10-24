@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialNetBitReader.h"
+#include "EngineClasses/SpatialNetBitReader.h"
 
 #include "UObject/WeakObjectPtr.h"
 

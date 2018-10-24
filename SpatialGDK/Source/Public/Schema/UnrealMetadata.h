@@ -5,12 +5,11 @@
 #include "GameFramework/Actor.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
-#include "Platform.h"
-#include "UObjectHash.h"
+#include "UObject/UObjectHash.h"
 #include "Utils/SchemaUtils.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 using SubobjectToOffsetMap = TMap<FString, uint32>;
 

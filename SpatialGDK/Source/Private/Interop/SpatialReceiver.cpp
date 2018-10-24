@@ -1,8 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialReceiver.h"
+#include "Interop/SpatialReceiver.h"
 
-#include "EngineMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 

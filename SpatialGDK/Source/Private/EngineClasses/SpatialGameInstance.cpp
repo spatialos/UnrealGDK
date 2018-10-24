@@ -1,7 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialGameInstance.h"
+#include "EngineClasses/SpatialGameInstance.h"
 
+#include "Engine/Engine.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
 #if WITH_EDITOR

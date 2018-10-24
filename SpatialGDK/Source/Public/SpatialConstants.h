@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "improbable/UnrealObjectRef.h"
+#include "UObject/improbable/UnrealObjectRef.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 // IMPORTANT: This is required for Linux builds to succeed - don't remove!
 // Worker_EntityId from the Worker SDK resolves to a long on Linux.

@@ -6,9 +6,9 @@
 #include "Engine/PackageMapClient.h"
 
 #include "Schema/UnrealMetadata.h"
-#include "improbable/UnrealObjectRef.h"
+#include "UObject/improbable/UnrealObjectRef.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialPackageMapClient.generated.h"
 
