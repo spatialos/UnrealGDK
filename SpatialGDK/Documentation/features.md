@@ -1,5 +1,3 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
 # Feature list
 
 The SpatialOS GDK for Unreal Engine works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
@@ -50,9 +48,7 @@ Actor property handover is a new feature we’re introducing with the GDK. It re
 
 ## Cross-server RPCs
 
-`Cross-server RPC`s are a new type of RPC that functions between two servers. These enable a server without authority over an Actor to communicate with the server which has authority and is able to manipulate the Actor. For more information, see documentation.
-
-[//]: # (TODO: Add link to the Cross-server RPC doc)
+`Cross-server RPC`s are a new type of RPC that functions between two servers. These enable a server without authority over an Actor to communicate with the server which has authority and is able to manipulate the Actor. For more information see the documentation on [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs).
 
 ## Networking switch
 
