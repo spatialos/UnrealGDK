@@ -27,19 +27,19 @@ public:
 
 private:
 	/** Root folder of your SpatialOS Unreal GDK project. */
-	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false))
+	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Project root folder"))
 	FDirectoryPath ProjectRootFolder;
 public:
 	/** Launch configuration file used for `spatial local launch`. */
-	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Launch Configuration"))
+	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Launch configuration"))
 	FString SpatialOSLaunchConfig;
 
 	/** Stop `spatial local launch` when shutting down editor. */
-	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Stop on Exit"))
+	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Stop on exit"))
 	bool bStopSpatialOnExit;
 
 	/** Generate schema for all classes supported by the GDK */
-	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (ConfigRestartRequired = false, DisplayName = "Generate Schema for all Supported Classes"))
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (ConfigRestartRequired = false, DisplayName = "Generate schema for all supported classes"))
 	bool bGenerateSchemaForAllSupportedClasses;
 
 private:
