@@ -11,6 +11,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Schema/Rotation.h"
+#include "Schema/Singleton.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -116,11 +117,16 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
-	ComponentDatas.Add(improbable::Metadata(Channel->Actor->GetClass()->GetPathName()).CreateMetadataData());
+	ComponentDatas.Add(improbable::Metadata(Actor->GetClass()->GetPathName()).CreateMetadataData());
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
 	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
+
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
+	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
