@@ -1,6 +1,6 @@
 # SpatialOS GDK for Unreal toolbar
 
-The GDK toolbar provides several functions required for building and launching your client- and server-workers from inside the Unreal Editor.
+The GDK toolbar provides several functions required for building and launching your client and server-workers from inside the Unreal Editor.
 
 ## Terms used in this doc
 `<ProjectRoot>` - The root folder of your Unreal project.  
@@ -11,6 +11,8 @@ The GDK toolbar provides several functions required for building and launching y
 To enable the GDK toolbar, navigate to **Edit** > **Plugins** inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS Unreal GDK** section and enable the toolbar:
 
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/enable-toolbar.png)
+
+Note: The toolbar has already been setup if you based your project off the [StarterProject](https://github.com/spatialos/UnrealGDKStarterProject).
 
 ## Buttons
 
