@@ -1,5 +1,3 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
 # How to generate a snapshot
 
 If you're not familiar with snapshots in the context of SpatialOS, please look at the [full snapshot documentation](https://docs.improbable.io/reference/latest/shared/operate/snapshots) (SpatialOS documentation).
@@ -33,7 +31,7 @@ To generate a snapshot, use the **Snapshot** button on the SpatialOS GDK for Unr
 
 You need to regenerate snapshots when:
 1. Generating schema for a new class.
-1. Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
-1. Placing or removing replicated actors in the level.
-1. Modifying replicated values on placed replicated actors.
-1. Adding or removing a singleton class.
+2. Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
+3. Placing or removing replicated actors in the level.
+4. Modifying replicated values on placed replicated actors.
+5. Adding or removing a singleton class.
