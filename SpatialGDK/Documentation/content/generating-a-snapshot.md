@@ -31,7 +31,7 @@ To generate a snapshot, use the **Snapshot** button on the SpatialOS GDK for Unr
 
 You need to regenerate snapshots when:
 1. Generating schema for a new class.
-2. Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
-3. Placing or removing replicated actors in the level.
-4. Modifying replicated values on placed replicated actors.
-5. Adding or removing a singleton class.
+1. Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
+1. Placing or removing replicated actors in the level.
+1. Modifying replicated values on placed replicated actors.
+1. Adding or removing a singleton class.
