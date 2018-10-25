@@ -210,5 +210,5 @@ ESchemaComponentType USpatialTypebindingManager::FindCategoryByComponentId(Worke
 		return *Category;
 	}
 
-	return ESchemaComponentType::TYPE_Invalid;
+	return ESchemaComponentType::SCHEMA_Invalid;
 }

@@ -450,22 +450,22 @@ TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
 		uint32 Offset = SubobjectInfoPair.Key;
-		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
+		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		if (SubobjectInfo.HandoverProperties.Num() == 0)
+		if (SubobjectInfo->HandoverProperties.Num() == 0)
 		{
 			// Not interested in this component if it has no handover properties
 			continue;
 		}
 
-		UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset));
+		UObject* Object = SubobjectInfo->SubobjectProperty->GetObjectPropertyValue_InContainer(Actor);
 
 		if (Object == nullptr)
 		{
 			continue;
 		}
 
-		FoundSubobjects.Add(Object, &SubobjectInfo);
+		FoundSubobjects.Add(Object, SubobjectInfo);
 	}
 
 	return FoundSubobjects;
@@ -532,6 +532,21 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	if (NetDriver->TypebindingManager->FindClassInfoByClass(InActor->GetClass()) == nullptr)
 	{
 		return;
+	}
+
+	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
+	check(!HandoverShadowDataMap.Contains(Actor));
+
+	// Create the shadow map, and store a quick access pointer to it
+	ActorHandoverShadowData = &HandoverShadowDataMap.Add(Actor, MakeShared<TArray<uint8>>()).Get();
+	InitializeHandoverShadowData(*ActorHandoverShadowData, Actor);
+
+	// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
+	for (auto& SubobjectInfoPair : GetHandoverSubobjects())
+	{
+		UObject* Subobject = SubobjectInfoPair.Key;
+		check(!HandoverShadowDataMap.Contains(Subobject));
+		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
 
 	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
@@ -622,21 +637,6 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 	// Register Actor with package map since we know what the entity id is.
 	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
-
-	//// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
-	//check(!HandoverShadowDataMap.Contains(Actor));
-
-	//// Create the shadow map, and store a quick access pointer to it
-	//ActorHandoverShadowData = &HandoverShadowDataMap.Add(Actor, MakeShared<TArray<uint8>>()).Get();
-	//InitializeHandoverShadowData(*ActorHandoverShadowData, Actor);
-
-	//// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
-	//for (auto& SubobjectInfoPair : GetHandoverSubobjects())
-	//{
-	//	UObject* Subobject = SubobjectInfoPair.Key;
-	//	check(!HandoverShadowDataMap.Contains(Subobject));
-	//	InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
-	//}
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)

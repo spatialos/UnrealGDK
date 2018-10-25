@@ -13,7 +13,7 @@ using Worker_EntityId_Key = int64;
 
 enum ESchemaComponentType : int32
 {
-	TYPE_Invalid = -1,
+	SCHEMA_Invalid = -1,
 
 	// Properties
 	SCHEMA_Data,

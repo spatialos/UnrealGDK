@@ -11,6 +11,49 @@
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 
+ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup Group)
+{
+	if (Group == REP_MultiClient)
+	{
+		return SCHEMA_Data;
+	}
+	else if (Group == REP_SingleClient)
+	{
+		return SCHEMA_OwnerOnly;
+	}
+	else
+	{
+		checkNoEntry();
+		return SCHEMA_Invalid;
+	}
+}
+
+ESchemaComponentType RPCTypeToSchemaComponentType(ERPCType RPC)
+{
+	if (RPC == RPC_Client)
+	{
+		return SCHEMA_ClientRPC;
+	}
+	else if (RPC == RPC_Server)
+	{
+		return SCHEMA_ServerRPC;
+	}
+	else if (RPC == RPC_NetMulticast)
+	{
+		return SCHEMA_NetMulticastRPC;
+	}
+	else if (RPC == RPC_CrossServer)
+	{
+		return SCHEMA_CrossServerRPC;
+	}
+	else
+	{
+		checkNoEntry();
+		return SCHEMA_Invalid;
+	}
+
+}
+
 // Given a RepLayout cmd type (a data type supported by the replication system). Generates the corresponding
 // type used in schema.
 FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
@@ -303,14 +346,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.Indent();
 		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
 
-		if (Group == REP_MultiClient)
-		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_Data] = IdGenerator.GetCurrentId();
-		}
-		else if (Group == REP_SingleClient)
-		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_OwnerOnly] = IdGenerator.GetCurrentId();
-		}
+		ActorSchemaData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 
 		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
@@ -395,22 +431,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.Indent();
 		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
 
-		if (Group == RPC_Client)
-		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_ClientRPC] = IdGenerator.GetCurrentId();
-		}
-		else if (Group == RPC_Server)
-		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_ServerRPC] = IdGenerator.GetCurrentId();
-		}
-		else if (Group == RPC_NetMulticast)
-		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_NetMulticastRPC] = IdGenerator.GetCurrentId();
-		}
-		else if (Group == RPC_CrossServer)
-		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_CrossServerRPC] = IdGenerator.GetCurrentId();
-		}
+		ActorSchemaData.SchemaComponents[RPCTypeToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 
 		for (auto& RPC : RPCsByType[Group])
 		{
@@ -476,18 +497,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
-		if (Group == REP_MultiClient)
-		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Data] = IdGenerator.GetCurrentId();
-		}
-		else if (Group == REP_SingleClient)
-		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_OwnerOnly] = IdGenerator.GetCurrentId();
-		}
-		else
-		{
-			checkNoEntry();
-		}
+		SubobjectData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 	}
 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
@@ -535,22 +545,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		}
 		Writer.Outdent().Print("}");
 
-		if (Group == RPC_Client)
-		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_ClientRPC] = IdGenerator.GetCurrentId();
-		}
-		else if (Group == RPC_Server)
-		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_ServerRPC] = IdGenerator.GetCurrentId();
-		}
-		else if (Group == RPC_NetMulticast)
-		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_NetMulticastRPC] = IdGenerator.GetCurrentId();
-		}
-		else if (Group == RPC_CrossServer)
-		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_CrossServerRPC] = IdGenerator.GetCurrentId();
-		}
+		SubobjectData.SchemaComponents[RPCTypeToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 	}
 
 	return SubobjectData;
