@@ -322,6 +322,8 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		}
 	} // END TFieldIterator<UProperty>
 
+	// Blueprint components don't exist on the CDO so we need to iterate over the
+	// BlueprintGeneratedClass (and all of its blueprint parents) to find all blueprint components
 	UClass* BlueprintClass = Class;
 	while (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(BlueprintClass))
 	{

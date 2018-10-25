@@ -16,17 +16,22 @@ enum ESchemaComponentType : int32
 	TYPE_Invalid = -1,
 
 	// Properties
-	TYPE_Data,
-	TYPE_OwnerOnly,
-	TYPE_Handover,
+	SCHEMA_Data,
+	SCHEMA_OwnerOnly,
+	SCHEMA_Handover,
 
 	// RPCs
-	TYPE_ClientRPC,
-	TYPE_ServerRPC,
-	TYPE_NetMulticastRPC,
-	TYPE_CrossServerRPC,
+	SCHEMA_ClientRPC,
+	SCHEMA_ServerRPC,
+	SCHEMA_NetMulticastRPC,
+	SCHEMA_CrossServerRPC,
 
-	TYPE_Count
+	SCHEMA_Count,
+
+	// Iteration helpers
+	SCHEMA_Begin = SCHEMA_Data,
+	SCHEMA_FirstRPC = SCHEMA_ClientRPC,
+	SCHEMA_LastRPC = SCHEMA_CrossServerRPC,
 };
 
 namespace SpatialConstants

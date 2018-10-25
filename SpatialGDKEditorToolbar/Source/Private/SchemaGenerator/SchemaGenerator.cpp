@@ -305,11 +305,11 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 
 		if (Group == REP_MultiClient)
 		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_Data] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_Data] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == REP_SingleClient)
 		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_OwnerOnly] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_OwnerOnly] = IdGenerator.GetCurrentId();
 		}
 
 		int FieldCounter = 0;
@@ -364,7 +364,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.Indent();
 		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
 
-		ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_Handover] = IdGenerator.GetCurrentId();
+		ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = IdGenerator.GetCurrentId();
 
 		int FieldCounter = 0;
 		for (auto& Prop : HandoverData)
@@ -397,19 +397,19 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 
 		if (Group == RPC_Client)
 		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_ClientRPC] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_ClientRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_Server)
 		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_ServerRPC] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_ServerRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_NetMulticast)
 		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_NetMulticastRPC] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_NetMulticastRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_CrossServer)
 		{
-			ActorSchemaData.SchemaComponents[ESchemaComponentType::TYPE_CrossServerRPC] = IdGenerator.GetCurrentId();
+			ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_CrossServerRPC] = IdGenerator.GetCurrentId();
 		}
 
 		for (auto& RPC : RPCsByType[Group])
@@ -478,11 +478,15 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 
 		if (Group == REP_MultiClient)
 		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_Data] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Data] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == REP_SingleClient)
 		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_OwnerOnly] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_OwnerOnly] = IdGenerator.GetCurrentId();
+		}
+		else
+		{
+			checkNoEntry();
 		}
 	}
 
@@ -498,7 +502,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		Writer.Printf("data {0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
-		SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_Handover] = IdGenerator.GetCurrentId();
+		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = IdGenerator.GetCurrentId();
 	}
 
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
@@ -533,19 +537,19 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 
 		if (Group == RPC_Client)
 		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_ClientRPC] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_ClientRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_Server)
 		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_ServerRPC] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_ServerRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_NetMulticast)
 		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_NetMulticastRPC] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_NetMulticastRPC] = IdGenerator.GetCurrentId();
 		}
 		else if (Group == RPC_CrossServer)
 		{
-			SubobjectData.SchemaComponents[ESchemaComponentType::TYPE_CrossServerRPC] = IdGenerator.GetCurrentId();
+			SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_CrossServerRPC] = IdGenerator.GetCurrentId();
 		}
 	}
 

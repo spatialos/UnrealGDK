@@ -11,7 +11,7 @@
 
 FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)> Callback)
 {
-	for (int32 Type = TYPE_Data; Type < TYPE_Count; Type++)
+	for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
 	{
 		Callback(ESchemaComponentType(Type));
 	}
@@ -23,9 +23,9 @@ FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condit
 	{
 	case COND_AutonomousOnly:
 	case COND_OwnerOnly:
-		return TYPE_OwnerOnly;
+		return SCHEMA_OwnerOnly;
 	default:
-		return TYPE_Data;
+		return SCHEMA_Data;
 	}
 }
 
@@ -55,7 +55,7 @@ struct FClassInfo
 
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 
-	Worker_ComponentId SchemaComponents[ESchemaComponentType::TYPE_Count] = {};
+	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 
 	UObjectProperty* SubobjectProperty = nullptr;
 
@@ -90,7 +90,7 @@ private:
 	UPROPERTY()
 	TArray<UClass*> SupportedClasses;
 
-	TMap<UClass*, TSharedPtr<FClassInfo>> ClassInfoMap;
+	TMap<UClass*, FClassInfo> ClassInfoMap;
 
 	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;

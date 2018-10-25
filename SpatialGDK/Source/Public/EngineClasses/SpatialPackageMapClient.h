@@ -33,8 +33,6 @@ public:
 	UObject* GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
 
-	UObject* GetObjectFromEntityIdAndComponentId(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
-
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
 private:

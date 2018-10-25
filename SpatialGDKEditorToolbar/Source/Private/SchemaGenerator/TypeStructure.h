@@ -103,7 +103,7 @@ struct FUnrealHandoverData;
 struct FUnrealType
 {
 	UStruct* Type;
-	UObject* Object;
+	UObject* Object; // Actual instance of the object. Could be the CDO or a Subobject on the CDO/BlueprintGeneratedClass
 	TMultiMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
 	TMap<UFunction*, TSharedPtr<FUnrealRPC>> RPCs;
 	TWeakPtr<FUnrealProperty> ParentProperty;

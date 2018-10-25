@@ -571,9 +571,9 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
-	TargetObject->PostNetReceive();
-	Replicator.RepNotifies = RepNotifies;
-	Replicator.CallRepNotifies(false);
+TargetObject->PostNetReceive();
+Replicator.RepNotifies = RepNotifies;
+Replicator.CallRepNotifies(false);
 }
 
 void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId)
@@ -592,7 +592,7 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityIdResponseOp& Op)
 {
-	if(Actor == nullptr || Actor->IsPendingKill())
+	if (Actor == nullptr || Actor->IsPendingKill())
 	{
 		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to reserve entity id"));
 		return;
@@ -610,12 +610,12 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 		{
 			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to reserve entity id for Actor %s: Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
 		}
-    
+
 		return;
 	}
 
 	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Reserved entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
-  
+
 	EntityId = Op.entity_id;
 	RegisterEntityId(EntityId);
 
@@ -623,27 +623,27 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
 
-	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
-	check(!HandoverShadowDataMap.Contains(Actor));
+	//// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
+	//check(!HandoverShadowDataMap.Contains(Actor));
 
-	// Create the shadow map, and store a quick access pointer to it
-	ActorHandoverShadowData = &HandoverShadowDataMap.Add(Actor, MakeShared<TArray<uint8>>()).Get();
-	InitializeHandoverShadowData(*ActorHandoverShadowData, Actor);
+	//// Create the shadow map, and store a quick access pointer to it
+	//ActorHandoverShadowData = &HandoverShadowDataMap.Add(Actor, MakeShared<TArray<uint8>>()).Get();
+	//InitializeHandoverShadowData(*ActorHandoverShadowData, Actor);
 
-	// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
-	for (auto& SubobjectInfoPair : GetHandoverSubobjects())
-	{
-		UObject* Subobject = SubobjectInfoPair.Key;
-		check(!HandoverShadowDataMap.Contains(Subobject));
-		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
-	}
+	//// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
+	//for (auto& SubobjectInfoPair : GetHandoverSubobjects())
+	//{
+	//	UObject* Subobject = SubobjectInfoPair.Key;
+	//	check(!HandoverShadowDataMap.Contains(Subobject));
+	//	InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
+	//}
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
 {
 	check(NetDriver->GetNetMode() < NM_Client);
 
-	if(Actor == nullptr || Actor->IsPendingKill())
+	if (Actor == nullptr || Actor->IsPendingKill())
 	{
 		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to create entity"));
 		return;
@@ -670,6 +670,11 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
+	//if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+	//{
+	//	return;
+	//}
+
 	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
 	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
 	// of the PlayerController and PlayerState at the same time as the pawn.
@@ -706,6 +711,11 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 void USpatialActorChannel::UpdateSpatialRotation()
 {
+	//if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ROTATION_COMPONENT_ID))
+	//{
+	//	return;
+	//}
+
 	FRotator ActorSpatialRotation = Actor->GetActorRotation();
 
 	// Only update the Actor's rotation if it has rotated far enough

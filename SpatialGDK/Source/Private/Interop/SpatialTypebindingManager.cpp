@@ -48,19 +48,19 @@ void USpatialTypebindingManager::CreateTypebindings()
 				ESchemaComponentType RPCType;
 				if (RemoteFunction->FunctionFlags & FUNC_NetClient)
 				{
-					RPCType = TYPE_ClientRPC;
+					RPCType = SCHEMA_ClientRPC;
 				}
 				else if (RemoteFunction->FunctionFlags & FUNC_NetServer)
 				{
-					RPCType = TYPE_ServerRPC;
+					RPCType = SCHEMA_ServerRPC;
 				}
 				else if (RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
 				{
-					RPCType = TYPE_CrossServerRPC;
+					RPCType = SCHEMA_CrossServerRPC;
 				}
 				else if (RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 				{
-					RPCType = TYPE_NetMulticastRPC;
+					RPCType = SCHEMA_NetMulticastRPC;
 				}
 				else
 				{
@@ -110,7 +110,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 
 		Info.Class = Class;
 
-		ClassInfoMap.Add(Class, MakeShared<FClassInfo>(Info));
+		ClassInfoMap.Emplace(Class, Info);
 	}
 
 	for (UClass* Class : SupportedClasses)
@@ -121,21 +121,26 @@ void USpatialTypebindingManager::CreateTypebindings()
 			FSubobjectSchemaData SubobjectSchemaData = SubobjectDataPair.Value;
 
 			FClassInfo* ActorInfo = FindClassInfoByClass(Class);
-			FClassInfo SubobjectInfo = *FindClassInfoByClass(SubobjectSchemaData.Class);
-			SubobjectInfo.SubobjectProperty = SubobjectSchemaData.Property;
+			FClassInfo* SubobjectInfo = FindClassInfoByClass(SubobjectSchemaData.Class);
+			if (SubobjectInfo == nullptr)
+			{
+				continue;
+			}
+
+			SubobjectInfo->SubobjectProperty = SubobjectSchemaData.Property;
 
 			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 				Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
 				if (ComponentId != 0)
 				{
-					SubobjectInfo.SchemaComponents[Type] = ComponentId;
+					SubobjectInfo->SchemaComponents[Type] = ComponentId;
 					ComponentToClassMap.Add(ComponentId, SubobjectSchemaData.Class);
 					ComponentToOffsetMap.Add(ComponentId, Offset);
 					ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
 				}
 			});
 
-			ActorInfo->SubobjectInfo.Add(Offset, MakeShared<FClassInfo>(SubobjectInfo));
+			ActorInfo->SubobjectInfo.Add(Offset, MakeShared<FClassInfo>(*SubobjectInfo));
 		}
 	}
 }
@@ -144,7 +149,7 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 {
 	if (auto* Info = ClassInfoMap.Find(Class))
 	{
-		return Info->Get();
+		return Info;
 	}
 
 	return nullptr;

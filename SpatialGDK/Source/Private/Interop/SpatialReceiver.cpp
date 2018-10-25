@@ -150,8 +150,6 @@ void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 
 void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 {
-	//UE_LOG(LogSpatialReceiver, Error, TEXT("Worker: %s AuthorityChange Entity: %lld, ComponentId: %lld, Authority: %d"), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.component_id, Op.authority);
-
 	if (bInCriticalSection)
 	{
 		PendingAuthorityChanges.Add(Op);
@@ -213,7 +211,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 			check(Info);
 
-			if (Op.component_id == Info->SchemaComponents[TYPE_ClientRPC])
+			if (Op.component_id == Info->SchemaComponents[SCHEMA_ClientRPC])
 			{
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
@@ -506,12 +504,6 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 		return;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByComponentId(Data.component_id);
-	if (Info == nullptr)
-	{
-		return;
-	}
-
 	UClass* Class = TypebindingManager->FindClassByComponentId(Data.component_id);
 	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."), Data.component_id);
 
@@ -519,7 +511,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 	ESchemaComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Data.component_id);
 
-	if (ComponentType == TYPE_Data || ComponentType == TYPE_OwnerOnly)
+	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly)
 	{
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<FUnrealObjectRef> UnresolvedRefs;
@@ -529,7 +521,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
-	else if (ComponentType == TYPE_Handover)
+	else if (ComponentType == SCHEMA_Handover)
 	{
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<FUnrealObjectRef> UnresolvedRefs;
@@ -569,21 +561,8 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	uint32 Offset = 0;
-	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Op.update.component_id, Offset);
-	if (!bFoundOffset)
-	{
-		return;
-	}
-
-	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset));
-	if (TargetObject == nullptr)
-	{
-		return;
-	}
-
-	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
-	if (ActorChannel == nullptr)
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
+	if (Channel == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Worker: %s Entity: %d Component: %d - No actor channel for update"), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
 		return;
@@ -595,13 +574,28 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
+	UObject* TargetObject = nullptr;
+	if (Info->SubobjectProperty == nullptr)
+	{
+		TargetObject = Channel->GetActor();
+	}
+	else
+	{
+		TargetObject = Info->SubobjectProperty->GetObjectPropertyValue_InContainer(Channel->GetActor());
+	}
+
+	if (TargetObject == nullptr)
+	{
+		return;
+	}
+
 	ESchemaComponentType Category = TypebindingManager->FindCategoryByComponentId(Op.update.component_id);
 
-	if (Category == ESchemaComponentType::TYPE_Data || Category == ESchemaComponentType::TYPE_OwnerOnly)
+	if (Category == ESchemaComponentType::SCHEMA_Data || Category == ESchemaComponentType::SCHEMA_OwnerOnly)
 	{
-		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ false);
+		ApplyComponentUpdate(Op.update, TargetObject, Channel, /* bIsHandover */ false);
 	}
-	else if (Category == ESchemaComponentType::TYPE_Handover)
+	else if (Category == ESchemaComponentType::SCHEMA_Handover)
 	{
 		if (!NetDriver->IsServer())
 		{
@@ -609,11 +603,11 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			return;
 		}
 
-		ApplyComponentUpdate(Op.update, TargetObject, ActorChannel, /* bIsHandover */ true);
+		ApplyComponentUpdate(Op.update, TargetObject, Channel, /* bIsHandover */ true);
 	}
-	else if (Category == ESchemaComponentType::TYPE_NetMulticastRPC)
+	else if (Category == ESchemaComponentType::SCHEMA_NetMulticastRPC)
 	{
-		if (TArray<UFunction*>* RPCArray = Info->RPCs.Find(TYPE_NetMulticastRPC))
+		if (TArray<UFunction*>* RPCArray = Info->RPCs.Find(SCHEMA_NetMulticastRPC))
 		{
 			ReceiveMulticastUpdate(Op.update, TargetObject, *RPCArray);
 		}
@@ -657,6 +651,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Op.request.component_id, Offset);
 	if (!bFoundOffset)
 	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("No offset found for ComponentId %d"), Op.request.component_id);
 		Sender->SendCommandResponse(Op.request_id, Response);
 		return;
 	}
@@ -664,6 +659,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset));
 	if (TargetObject == nullptr)
 	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object found for EntityId %d"), Op.entity_id);
 		Sender->SendCommandResponse(Op.request_id, Response);
 		return;
 	}
@@ -672,7 +668,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	check(Info);
 
 	ESchemaComponentType RPCType = TypebindingManager->FindCategoryByComponentId(Op.request.component_id);
-	check(RPCType >= TYPE_ClientRPC && RPCType < TYPE_Count);
+	check(RPCType >= SCHEMA_ClientRPC && RPCType < SCHEMA_Count);
 
 	const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);
 	check(RPCArray);

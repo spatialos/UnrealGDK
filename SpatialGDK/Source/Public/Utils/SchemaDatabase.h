@@ -18,7 +18,7 @@ struct FSubobjectSchemaData
 	UObjectProperty* Property = nullptr;
 
 	UPROPERTY()
-	uint32 SchemaComponents[7] = {};
+	uint32 SchemaComponents[SCHEMA_Count] = {};
 };
 
 USTRUCT()
@@ -30,7 +30,7 @@ struct FSchemaData
 	UClass* Class = nullptr;
 
 	UPROPERTY()
-	uint32 SchemaComponents[7] = {};
+	uint32 SchemaComponents[SCHEMA_Count] = {};
 
 	UPROPERTY()
 	TMap<uint32, FSubobjectSchemaData> SubobjectData;

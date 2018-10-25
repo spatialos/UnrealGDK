@@ -119,18 +119,6 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject*
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
-UObject* USpatialPackageMapClient::GetObjectFromEntityIdAndComponentId(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
-{
-	uint32 Offset = 0;
-	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(ComponentId, Offset);
-	if (!bFoundOffset)
-	{
-		return nullptr;
-	}
-
-	return GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset));
-}
-
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
 {
 	// Super::SerializeObject is not called here on purpose
