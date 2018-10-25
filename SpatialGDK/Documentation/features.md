@@ -20,7 +20,7 @@ The SpatialOS Unreal GDK supports the following RPCs:
 * Unreliable Client/Server
 * Unreliable NetMulticast
 
-In addition, there is also support for a new RPC type called [CrossServer]({{urlRoot}}/features#cross-server-rpcs).
+In addition, there is also support for a new RPC type called [Cross-server]({{urlRoot}}/features#cross-server-rpcs).
 
 The SpatialOS Unreal GDK does **not** support the following RPC:
 
