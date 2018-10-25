@@ -8,7 +8,7 @@ The GDK toolbar provides several functions required for building and launching y
 
 ## Add the GDK toolbar to your Unreal project
 
-To enable the GDK toolbar, navigate to **Edit** > **Plugins**  inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS Unreal GDK** section and enable the toolbar:
+To enable the GDK toolbar, navigate to **Edit** > **Plugins** inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS Unreal GDK** section and enable the toolbar:
 
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/enable-toolbar.png)
 
@@ -46,13 +46,13 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 
 * **Configuration**
 
-    * **Project Root Folder**</br>
+    * **Project root folder**</br>
     If you're using a non-standard structure, you'll need to set this yourself. This is empty by default. If you leave it empty, it defaults to `<GameRoot>/../spatial`.
 
-    * **Launch Configuration**</br>
+    * **Launch configuration**</br>
     The [launch configuration file](https://docs.improbable.io/reference/latest/shared/reference/file-formats/launch-config) (SpatialOS documentation) to use when running `spatial local launch` using the `Launch` button.
 
-    * **Stop on Exit**</br>
+    * **Stop on exit**</br>
     If enabled, shuts down running deployments when you close the Unreal Editor.
 
     * **Snapshot path**</br>
@@ -61,10 +61,10 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
     * **Snapshot file name**</br>
     Name of your snapshot file.
 
-* **Schema Generator**
+* **Schema Generation**
 
-    * **Generate Schema for all Supported Classes**</br>
-    **Experimental** Use this to generate schema for all UObjects that have replicated or handover properties. As the GDK does not currently support multiple replicated Actor components of the same type on an Actor, no schemas will be generated for classes extended from `USceneComponent`.
+    * **Generate schema for all supported classes**</br>
+    **Experimental** Use this to generate schema for all UObjects that have replicated or handover properties. As the GDK does not currently support multiple replicated Actor components of the same type on an Actor, classes extended from `USceneComponent` doesn't generate schemas.
 
     * **Output path for the generated schemas**</br>
     Use this to specify the path of the generated schema files.  If you leave this empty, it defaults to `<GameRoot>/../spatial/schema/improbable/unreal/generated/`.
