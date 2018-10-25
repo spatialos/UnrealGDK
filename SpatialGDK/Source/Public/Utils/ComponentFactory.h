@@ -5,8 +5,8 @@
 #include "Interop/SpatialTypebindingManager.h"
 #include "Utils/RepDataUtils.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 class USpatialNetDriver;
 class USpatialPackageMap;

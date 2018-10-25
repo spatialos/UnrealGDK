@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "EntityRegistry.h"
+#include "Utils/EntityRegistry.h"
 
 #include "EngineUtils.h"
 

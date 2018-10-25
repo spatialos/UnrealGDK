@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "GlobalStateManager.h"
+#include "Interop/GlobalStateManager.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialActorChannel.h"
@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
+#include "Kismet/GameplayStatics.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"

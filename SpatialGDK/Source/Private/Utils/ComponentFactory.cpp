@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "ComponentFactory.h"
+#include "Utils/ComponentFactory.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"

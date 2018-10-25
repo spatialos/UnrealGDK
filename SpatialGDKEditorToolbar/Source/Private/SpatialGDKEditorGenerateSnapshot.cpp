@@ -2,6 +2,7 @@
 
 #include "SpatialGDKEditorGenerateSnapshot.h"
 
+#include "Engine/LevelScriptActor.h"
 #include "Schema/Rotation.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
@@ -21,8 +22,8 @@
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
 #include "UObjectIterator.h"
 
-#include <improbable/c_worker.h>
-#include <improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
 
 using namespace improbable;
 
@@ -220,6 +221,11 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 {
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	check(Info);
+
+	// This ensures that the Actor has prepared it's replicated fields before replicating. For instance, the simulate physics on a UPrimitiveComponent
+	// will be queried and set the Actor's ReplicatedMovement.bRepPhysics field. These fields are then serialized correctly within the snapshot. We are
+	// modifying the editor's instance of the actor here, but in theory those fields should be inferred or transient anyway, so it shouldn't be a problem.
+	Actor->CallPreReplication(NetDriver);
 
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);

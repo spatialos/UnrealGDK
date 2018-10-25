@@ -3,8 +3,8 @@
 
 #include "Interop/Connection/ConnectionConfig.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialWorkerConnection.generated.h"
 

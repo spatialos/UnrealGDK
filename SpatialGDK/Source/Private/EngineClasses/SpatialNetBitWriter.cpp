@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialNetBitWriter.h"
+#include "EngineClasses/SpatialNetBitWriter.h"
 
 #include "UObject/WeakObjectPtr.h"
 
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "improbable/UnrealObjectRef.h"
+#include "UObject/improbable/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 
 FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<const UObject*>& InUnresolvedObjects)

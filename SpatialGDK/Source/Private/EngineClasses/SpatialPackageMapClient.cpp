@@ -1,16 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialPackageMapClient.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 
-#include "GameFramework/Actor.h"
 #include "EngineUtils.h"
+#include "Engine/Engine.h"
+#include "GameFramework/Actor.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
-#include "improbable/UnrealObjectRef.h"
+#include "UObject/improbable/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
 

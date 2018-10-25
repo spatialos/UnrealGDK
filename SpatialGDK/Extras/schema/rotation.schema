@@ -1,8 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-component Rotation
-{
+component Rotation {
     id = 100001;
     float pitch = 1;
     float yaw = 2;

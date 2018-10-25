@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialStaticComponentView.h"
+#include "Interop/SpatialStaticComponentView.h"
 
 Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
@@ -54,6 +54,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::ROTATION_COMPONENT_ID:
 		Data = MakeUnique<improbable::ComponentStorage<improbable::Rotation>>(Op.data);
+		break;
+	case SpatialConstants::SINGLETON_COMPONENT_ID:
+		Data = MakeUnique<improbable::ComponentStorage<improbable::Singleton>>(Op.data);
 		break;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		Data = MakeUnique<improbable::ComponentStorage<improbable::UnrealMetadata>>(Op.data);

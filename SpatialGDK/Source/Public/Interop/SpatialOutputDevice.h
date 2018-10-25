@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Misc/OutputDevice.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 class USpatialWorkerConnection;
 

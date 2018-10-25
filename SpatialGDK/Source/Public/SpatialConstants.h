@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "improbable/UnrealObjectRef.h"
+#include "UObject/improbable/UnrealObjectRef.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 // IMPORTANT: This is required for Linux builds to succeed - don't remove!
 // Worker_EntityId from the Worker SDK resolves to a long on Linux.
@@ -54,8 +54,9 @@ namespace SpatialConstants
 
 	const Worker_ComponentId ROTATION_COMPONENT_ID				= 100001;
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID		= 100002;
+	const Worker_ComponentId SINGLETON_COMPONENT_ID				= 100003;
 	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID		= 100004;
-	const Worker_ComponentId GLOBAL_STATE_MANAGER_COMPONENT_ID	= 100007;
+	const Worker_ComponentId GLOBAL_STATE_MANAGER_COMPONENT_ID	= 100005;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID	= 100010;
 
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;

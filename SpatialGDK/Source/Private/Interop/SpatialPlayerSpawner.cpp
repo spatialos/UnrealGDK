@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialPlayerSpawner.h"
+#include "Interop/SpatialPlayerSpawner.h"
 
 #include "SocketSubsystem.h"
 #include "TimerManager.h"
@@ -11,8 +11,8 @@
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 DEFINE_LOG_CATEGORY(LogSpatialPlayerSpawner);
 

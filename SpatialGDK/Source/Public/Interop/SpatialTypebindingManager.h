@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Utils/SchemaDatabase.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialTypebindingManager.generated.h"
 

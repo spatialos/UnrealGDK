@@ -1,16 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialTypebindingManager.h"
+#include "Interop/SpatialTypebindingManager.h"
 
 #include "AssetRegistryModule.h"
-#include "Class.h"
-#include "Core.h"
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
 #include "GameFramework/Actor.h"
+#include "Misc/MessageDialog.h"
 #include "SpatialNetDriver.h" 
+#include "UObject/Class.h"
 #include "UObjectIterator.h"
+#include "UObject/UObjectIterator.h"
 
 void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 {

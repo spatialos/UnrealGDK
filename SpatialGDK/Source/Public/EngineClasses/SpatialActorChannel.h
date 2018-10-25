@@ -9,7 +9,7 @@
 #include "Interop/SpatialTypebindingManager.h"
 #include "Utils/RepDataUtils.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialActorChannel.generated.h"
 

@@ -1,8 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialActorChannel.h"
+#include "EngineClasses/SpatialActorChannel.h"
 
 #include "Engine/DemoNetDriver.h"
+#include "Engine/World.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
@@ -15,7 +17,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
-#include "RepLayoutUtils.h"
+#include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
@@ -687,14 +689,14 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
-		if (APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController()))
+		if (AController* Controller = Pawn->GetController())
 		{
-			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(PlayerController));
+			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller));
 			if (ControllerActorChannel)
 			{
 				Sender->SendPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
 			}
-			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(PlayerController->PlayerState));
+			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller->PlayerState));
 			if (PlayerStateActorChannel)
 			{
 				Sender->SendPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
@@ -745,10 +747,11 @@ void USpatialActorChannel::SpatialViewTick()
 	{
 		bool bOldNetOwned = bNetOwned;
 
+		// Use Actor's connection to determine if client owned
 		bNetOwned = false;
-		if (UNetConnection* Connection = Actor->GetNetConnection())
+		if (UNetConnection* NetConnection = Actor->GetNetConnection())
 		{
-			if (APlayerController* PlayerController = Connection->PlayerController)
+			if (APlayerController* PlayerController = NetConnection->PlayerController)
 			{
 				bNetOwned = PlayerController->PlayerState != nullptr;
 			}

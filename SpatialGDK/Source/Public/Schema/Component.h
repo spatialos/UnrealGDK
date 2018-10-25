@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 namespace improbable
 {

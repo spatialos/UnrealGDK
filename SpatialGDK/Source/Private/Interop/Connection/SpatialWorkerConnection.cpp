@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialWorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 
 #include "Async/Async.h"
 

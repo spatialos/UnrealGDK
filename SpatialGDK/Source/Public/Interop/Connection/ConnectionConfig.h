@@ -7,7 +7,7 @@
 #include "Misc/Parse.h"
 #include "SpatialConstants.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 struct FConnectionConfig
 {

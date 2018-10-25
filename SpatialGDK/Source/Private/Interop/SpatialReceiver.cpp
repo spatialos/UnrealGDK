@@ -1,8 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialReceiver.h"
+#include "Interop/SpatialReceiver.h"
 
-#include "EngineMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 
@@ -128,6 +127,8 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::POSITION_COMPONENT_ID:
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 	case SpatialConstants::ROTATION_COMPONENT_ID:
+	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
+	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
@@ -547,13 +548,15 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::METADATA_COMPONENT_ID:
 	case SpatialConstants::POSITION_COMPONENT_ID:
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
+	case SpatialConstants::ROTATION_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
+	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
-		NetDriver->GlobalStateManager->ApplyUpdate(Op.update);
-		NetDriver->GlobalStateManager->LinkExistingSingletonActors();
+		GlobalStateManager->ApplyUpdate(Op.update);
+		GlobalStateManager->LinkExistingSingletonActors();
 		return;
 	}
 
