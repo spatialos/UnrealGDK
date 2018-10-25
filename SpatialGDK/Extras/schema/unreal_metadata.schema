@@ -1,7 +1,7 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package improbable.unreal;
 
-component UnrealMetadata
-{
+component UnrealMetadata {
     id = 100004;
     option<string> static_path = 1;
     option<string> owner_worker_attribute = 2;
