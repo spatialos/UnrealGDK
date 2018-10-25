@@ -253,7 +253,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
-		UClass* ActorClass = GetNativeEntityClass(Metadata);
+		UClass* ActorClass = Metadata->GetNativeEntityClass();
 
 		if (ActorClass == nullptr)
 		{
@@ -331,7 +331,9 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			EntityActor->FinishSpawning(FTransform(Rotation->ToFRotator(), SpawnLocation));
 		}
 
-		SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, UnrealMetadataComponent->SubobjectNameToOffset);
+		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(ActorClass);
+
+		SpatialPackageMap->ResolveEntityActor(EntityActor, EntityId, improbable::CreateOffsetMapFromActor(EntityActor, Info));
 		Channel->SetChannelActor(EntityActor);
 
 		// Apply initial replicated properties.
@@ -458,12 +460,6 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 }
 
-UClass* USpatialReceiver::GetNativeEntityClass(improbable::Metadata* Metadata)
-{
-	UClass* Class = FindObject<UClass>(ANY_PACKAGE, *Metadata->EntityType);
-	return Class->IsChildOf<AActor>() ? Class : nullptr;
-}
-
 // This function is only called for client and server workers who did not spawn the Actor
 AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred)
 {
@@ -574,14 +570,22 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
+	uint32 Offset;
+	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Op.update.component_id, Offset);
+	if (!bFoundOffset)
+	{
+		return;
+	}
+
 	UObject* TargetObject = nullptr;
-	if (Info->SubobjectProperty == nullptr)
+
+	if (Offset == 0)
 	{
 		TargetObject = Channel->GetActor();
 	}
 	else
 	{
-		TargetObject = Info->SubobjectProperty->GetObjectPropertyValue_InContainer(Channel->GetActor());
+		TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset));
 	}
 
 	if (TargetObject == nullptr)

@@ -458,8 +458,7 @@ TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 			continue;
 		}
 
-		UObject* Object = SubobjectInfo->SubobjectProperty->GetObjectPropertyValue_InContainer(Actor);
-
+		UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset));
 		if (Object == nullptr)
 		{
 			continue;

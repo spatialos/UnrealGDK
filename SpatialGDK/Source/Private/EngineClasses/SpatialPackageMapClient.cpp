@@ -145,7 +145,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
 	FUnrealObjectRef ObjectRef(EntityId, 0);
 	RegisterObjectRef(NetGUID, ObjectRef);
-	UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
+	UE_LOG(LogSpatialOSPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId);
 
 	// This will be null when being used in the snapshot generator
@@ -156,20 +156,17 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 		Receiver->ResolvePendingOperations(Actor, ObjectRef);
 	}
 
-	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
-	TArray<UObject*> ActorSubobjects;
-	GetSubobjects(Actor, ActorSubobjects);
-
-	for (UObject* Subobject : ActorSubobjects)
+	for (auto& Pair : SubobjectToOffset)
 	{
-		const uint32* Offset = SubobjectToOffset.Find(*Subobject->GetName());
-		if (Offset != nullptr)
-		{
-			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
-			FUnrealObjectRef SubobjectRef(EntityId, *Offset);
-			RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
-			UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
-				*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
+		UObject* Subobject = Pair.Key;
+		uint32 Offset = Pair.Value;
+
+		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
+		FUnrealObjectRef SubobjectRef(EntityId, Offset);
+		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
+
+		UE_LOG(LogSpatialOSPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
+			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
 
 			// This will be null when being used in the snapshot generator
 #if WITH_EDITOR
@@ -178,8 +175,25 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 			{
 				Receiver->ResolvePendingOperations(Subobject, SubobjectRef);
 			}
-		}
 	}
+
+	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
+	//TArray<UObject*> ActorSubobjects;
+	//GetSubobjects(Actor, ActorSubobjects);
+
+	//for (UObject* Subobject : ActorSubobjects)
+	//{
+	//	const uint32* Offset = SubobjectToOffset.Find(*Subobject->GetName());
+	//	if (Offset != nullptr)
+	//	{
+	//		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
+	//		FUnrealObjectRef SubobjectRef(EntityId, *Offset);
+	//		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
+	//		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
+	//			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
+
+	//	}
+	//}
 
 	return NetGUID;
 }
@@ -209,16 +223,18 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
-	improbable::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
-	if (UnrealMetadata == nullptr)
+	improbable::Metadata* Metadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::Metadata>(EntityId);
+	if (Metadata == nullptr)
 	{
 		return;
 	}
 
-	const SubobjectToOffsetMap& SubobjectNameToOffset = UnrealMetadata->SubobjectNameToOffset;
-	for (const auto& Pair : SubobjectNameToOffset)
+	UClass* Class = Metadata->GetNativeEntityClass();
+	FClassInfo* Info = SpatialNetDriver->TypebindingManager->FindClassInfoByClass(Class);
+
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		FUnrealObjectRef SubobjectRef(EntityId, Pair.Value);
+		FUnrealObjectRef SubobjectRef(EntityId, SubobjectInfoPair.Key);
 		if (FNetworkGUID* SubobjectNetGUID = UnrealObjectRefToNetGUID.Find(SubobjectRef))
 		{
 			NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);

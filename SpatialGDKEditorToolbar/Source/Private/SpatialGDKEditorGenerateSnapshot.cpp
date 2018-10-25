@@ -334,7 +334,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	Components.Add(improbable::UnrealMetadata(StaticPath, {}, improbable::CreateOffsetMapFromActor(Actor, ActorInfo)).CreateUnrealMetadataData());
+	Components.Add(improbable::UnrealMetadata(StaticPath, {}).CreateUnrealMetadataData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
 

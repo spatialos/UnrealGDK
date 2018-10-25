@@ -138,7 +138,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, improbable::CreateOffsetMapFromActor(Actor, Info)).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute).CreateUnrealMetadataData());
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
@@ -172,7 +172,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	{
 		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		UObject* Subobject = SubobjectInfo->SubobjectProperty->GetObjectPropertyValue_InContainer(Channel->GetActor());
+		UObject* Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
 
 		FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);

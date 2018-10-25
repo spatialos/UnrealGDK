@@ -130,7 +130,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				continue;
 			}
 
-			SubobjectInfo->SubobjectProperty = SubobjectSchemaData.Property;
+			SubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
 
 			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
 				Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];

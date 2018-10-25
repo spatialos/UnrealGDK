@@ -13,7 +13,7 @@
 #include <improbable/c_worker.h>
 #include "SpatialTypebindingManager.h"
 
-using SubobjectToOffsetMap = TMap<FString, uint32>;
+using SubobjectToOffsetMap = TMap<UObject*, uint32>;
 
 namespace improbable
 {
@@ -24,8 +24,8 @@ struct UnrealMetadata : Component
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId, const SubobjectToOffsetMap& InSubobjectNameToOffset)
-		: StaticPath(InStaticPath), OwnerWorkerAttribute(InOwnerWorkerId), SubobjectNameToOffset(InSubobjectNameToOffset) {}
+	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId)
+		: StaticPath(InStaticPath), OwnerWorkerAttribute(InOwnerWorkerId) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
@@ -33,16 +33,6 @@ struct UnrealMetadata : Component
 
 		StaticPath = GetStringFromSchema(ComponentObject, 1);
 		OwnerWorkerAttribute = GetStringFromSchema(ComponentObject, 2);
-
-		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 3);
-		for (uint32 i = 0; i < KVPairCount; i++)
-		{
-			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 3, i);
-			FString Key = GetStringFromSchema(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			uint32 Value = Schema_GetUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
-
-			SubobjectNameToOffset.Add(Key, Value);
-		}
 	}
 
 	Worker_ComponentData CreateUnrealMetadataData()
@@ -55,19 +45,11 @@ struct UnrealMetadata : Component
 		AddStringToSchema(ComponentObject, 1, StaticPath);
 		AddStringToSchema(ComponentObject, 2, OwnerWorkerAttribute);
 
-		for (const auto& KVPair : SubobjectNameToOffset)
-		{
-			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 3);
-			AddStringToSchema(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
-			Schema_AddUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
-		}
-
 		return Data;
 	}
 
 	FString StaticPath;
 	FString OwnerWorkerAttribute;
-	SubobjectToOffsetMap SubobjectNameToOffset;
 };
 
 FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, FClassInfo* Info)
@@ -76,15 +58,12 @@ FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, FClassI
 
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
+		UObject* Subobject = Actor->GetDefaultSubobjectByName(FName(*SubobjectInfoPair.Value->SubobjectName));
 		uint32 Offset = SubobjectInfoPair.Key;
 
-		UObjectPropertyBase* Property = SubobjectInfoPair.Value->SubobjectProperty;
-		check(Property);
-
-		UObject* Subobject = Property->GetObjectPropertyValue_InContainer(Actor);
 		check(Subobject);
 
-		SubobjectNameToOffset.Add(Subobject->GetName(), Offset);
+		SubobjectNameToOffset.Add(Subobject, Offset);
 	}
 
 	return SubobjectNameToOffset;

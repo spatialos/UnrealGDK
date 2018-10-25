@@ -128,7 +128,6 @@ private:
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
 	AActor* CreateActor(improbable::Position* Position, struct improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred);
-	UClass* GetNativeEntityClass(improbable::Metadata* Metadata);
 
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
