@@ -1,6 +1,7 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package improbable.unreal;
 
 component GlobalStateManager {
-    id = 100007;
+    id = 100005;
     map<string, EntityId> singleton_name_to_entity_id = 1;
 }
