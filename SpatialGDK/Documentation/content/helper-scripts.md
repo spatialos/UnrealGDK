@@ -1,6 +1,6 @@
 # Helper scripts
 
-These scripts are located under `<GDKDir>\SpatialGDK\Build\Scripts\` where `<GDKDir>` is the path to were you have the GDK within your project(normally in the `Plugins` folder of your game).
+These scripts are located under `Plugins\UnrealGDK\SpatialGDK\Build\Scripts\` directory of your game.
 
 | Helper script | Parameters | Description |
 | --- | --- | --- |
