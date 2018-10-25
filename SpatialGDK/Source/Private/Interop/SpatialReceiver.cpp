@@ -555,8 +555,8 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
-		NetDriver->GlobalStateManager->ApplyUpdate(Op.update);
-		NetDriver->GlobalStateManager->LinkExistingSingletonActors();
+		GlobalStateManager->ApplyUpdate(Op.update);
+		GlobalStateManager->LinkExistingSingletonActors();
 		return;
 	}
 
