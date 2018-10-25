@@ -15,7 +15,7 @@ struct FSubobjectSchemaData
 	UClass* Class = nullptr;
 
 	UPROPERTY()
-	UObjectProperty* Property = nullptr;
+	FString Name;
 
 	UPROPERTY()
 	uint32 SchemaComponents[SCHEMA_Count] = {};
@@ -25,9 +25,6 @@ USTRUCT()
 struct FSchemaData
 {
 	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY()
-	UClass* Class = nullptr;
 
 	UPROPERTY()
 	uint32 SchemaComponents[SCHEMA_Count] = {};

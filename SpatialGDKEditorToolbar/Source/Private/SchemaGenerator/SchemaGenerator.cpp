@@ -155,7 +155,7 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 	return DataType;
 }
 
-void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const FString& PropertyPath, const int FieldCounter)
+void WriteSchemaRepField(FCodeWriter& Writer, const TSharedPtr<FUnrealProperty> RepProp, const int FieldCounter)
 {
 	Writer.Printf("{0} {1} = {2};",
 		*PropertyToSchemaType(RepProp->Property, false),
@@ -281,7 +281,6 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 		{
 			WriteSchemaRepField(Writer,
 				RepProp.Value,
-				TEXT(""),
 				RepProp.Value->ReplicationData->Handle);
 		}
 		Writer.Outdent().Print("}");
@@ -328,7 +327,6 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 	}
 
 	FSchemaData ActorSchemaData;
-	ActorSchemaData.Class = Class;
 
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
@@ -351,42 +349,12 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
 		{
-			FString ParentClassName = TEXT("");
-
-			// This loop will add the owner class of each field in the component. Meant for short-term debugging only.
-			// TODO UNR-166: Delete this when InteropCodegen is in a more complete state.
-			FString PropertyPath;
-			TSharedPtr<FUnrealProperty> UnrealProperty = RepProp.Value;
-			while (UnrealProperty->ContainerType != nullptr)
-			{
-				TSharedPtr<FUnrealType> ContainerType = UnrealProperty->ContainerType.Pin();
-				check(ContainerType.IsValid());
-				if (ContainerType->ParentProperty != nullptr)
-				{
-					TSharedPtr<FUnrealProperty> ParentProperty = ContainerType->ParentProperty.Pin();
-					if (ParentProperty.IsValid())
-					{
-						PropertyPath += FString::Printf(TEXT("%s::%s"), *ContainerType->Type->GetName(), *ParentProperty->Property->GetName());
-					}
-					UnrealProperty = ParentProperty;
-				}
-				else
-				{
-					break;
-				}
-			}
-
-			if (UObject* ObjOuter = UnrealProperty->Property->GetOuter())
-			{
-				PropertyPath += FString::Printf(TEXT("::%s"), *ObjOuter->GetName());
-			}
-
 			FieldCounter++;
 			WriteSchemaRepField(Writer,
 				RepProp.Value,
-				PropertyPath,
 				RepProp.Value->ReplicationData->Handle);
 		}
+
 		Writer.Outdent().Print("}");
 	}
 
@@ -586,24 +554,21 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 				{
 					SeenComponents.Add(Value);
 
+					FSubobjectSchemaData SubobjectData;
+
 					if (IsReplicatedSubobject(PropertyTypeInfo))
 					{
 						bHasComponents = true;
-
-						FSubobjectSchemaData SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaTypeName(Property->GetName()), PropertyTypeInfo, Value->GetClass());
-						SubobjectData.Property = ObjectProperty;
-						ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
-
-						ClassToSchema.Add(Value->GetClass(), FSchemaData());
+						SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaTypeName(Property->GetName()), PropertyTypeInfo, Value->GetClass());
 					}
 					else
 					{
-						FSubobjectSchemaData SubobjectData;
-						SubobjectData.Property = ObjectProperty;
 						SubobjectData.Class = Value->GetClass();
-						ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
-						ClassToSchema.Add(Value->GetClass(), FSchemaData());
 					}
+
+					SubobjectData.Name = Value->GetName();
+					ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
+					ClassToSchema.Add(Value->GetClass(), FSchemaData());
 				}
 
 				CurrentOffset++;

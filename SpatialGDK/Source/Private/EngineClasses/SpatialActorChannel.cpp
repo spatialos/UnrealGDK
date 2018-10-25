@@ -437,7 +437,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo* Info,
 bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags)
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
-	return ReplicateSubobject(Obj, nullptr, RepFlags);
+	return ReplicateSubobject(Obj, NetDriver->TypebindingManager->FindClassInfoByObject(Obj), RepFlags);
 }
 
 TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
@@ -586,9 +586,9 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	check(!ObjectNetGUID.IsDefault() && ObjectNetGUID.IsValid())
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
-TargetObject->PostNetReceive();
-Replicator.RepNotifies = RepNotifies;
-Replicator.CallRepNotifies(false);
+	TargetObject->PostNetReceive();
+	Replicator.RepNotifies = RepNotifies;
+	Replicator.CallRepNotifies(false);
 }
 
 void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId)
@@ -670,11 +670,6 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
-	//if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
-	//{
-	//	return;
-	//}
-
 	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
 	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
 	// of the PlayerController and PlayerState at the same time as the pawn.
@@ -711,11 +706,6 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 void USpatialActorChannel::UpdateSpatialRotation()
 {
-	//if (NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ROTATION_COMPONENT_ID))
-	//{
-	//	return;
-	//}
-
 	FRotator ActorSpatialRotation = Actor->GetActorRotation();
 
 	// Only update the Actor's rotation if it has rotated far enough

@@ -19,9 +19,6 @@
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
 
-#include "Runtime/Engine/Classes/Components/CapsuleComponent.h"
-#include "Runtime/Engine/Classes/GameFramework/Actor.h"
-
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
 TMap<UClass*, FSchemaData> ClassToSchema;
