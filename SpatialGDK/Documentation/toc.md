@@ -1,12 +1,16 @@
 - <h3>[- SpatialOS GDK for Unreal]({{urlRoot}}/index)</h3>
 
  ***
+
+- <h3>[- Welcome]({{urlRoot}}/index)</h3>
+
 - <h3>+ Get started</h3>
-    - [Installation and setup]({{urlRoot}}/setup-and-installing)
-    - [Feature list]({{urlRoot}}/features)
-    - [Toolbar]({{urlRoot}}/content/toolbar)
-    - [Glossary]({{urlRoot}}/content/glossary)
-    - [License]({{urlRoot}}/license)
+    - [Introduction]({{urlRoot}}/get-started/get-started)
+    - [1 - Get the Dependencies]({{urlRoot}}/get-started/dependencies)
+    - [2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/get-started/build-unreal-fork)
+    - [3 - Set up the GDK module and the Starter Project]({{urlRoot}}/get-started/gdk-and-starter-project)
+- <h3> [ - Multi-server Shooter Tutorial]({{urlRoot}}/content/shooter-tutorial)</h3>
+- <h3> [ - Port your Unreal game]({{urlRoot}}/content/porting-unreal-project-to-gdk)</h3>
 
  ***
 - <h3>+ Concepts</h3>
@@ -23,6 +27,10 @@
 - <h3>+ Reference</h3>
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - [Feature list]({{urlRoot}}/features)
+    - [Glossary]({{urlRoot}}/content/glossary)
+    - [Toolbar]({{urlRoot}}/content/toolbar)
+    - [License]({{urlRoot}}/license)
 
  ***
 - <h3>+ Contributing to the GDK</h3>
