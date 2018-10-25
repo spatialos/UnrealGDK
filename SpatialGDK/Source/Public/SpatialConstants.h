@@ -29,6 +29,7 @@ namespace SpatialConstants
 
 	const Worker_ComponentId ROTATION_COMPONENT_ID				= 100001;
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID		= 100002;
+	const Worker_ComponentId SINGLETON_COMPONENT_ID				= 100003;
 	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID		= 100004;
 	const Worker_ComponentId GLOBAL_STATE_MANAGER_COMPONENT_ID	= 100005;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID	= 100010;
