@@ -178,24 +178,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 			}
 	}
 
-	// Allocate NetGUIDs for each subobject, sorting alphabetically to ensure stable references.
-	//TArray<UObject*> ActorSubobjects;
-	//GetSubobjects(Actor, ActorSubobjects);
-
-	//for (UObject* Subobject : ActorSubobjects)
-	//{
-	//	const uint32* Offset = SubobjectToOffset.Find(*Subobject->GetName());
-	//	if (Offset != nullptr)
-	//	{
-	//		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
-	//		FUnrealObjectRef SubobjectRef(EntityId, *Offset);
-	//		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
-	//		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
-	//			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
-
-	//	}
-	//}
-
 	return NetGUID;
 }
 

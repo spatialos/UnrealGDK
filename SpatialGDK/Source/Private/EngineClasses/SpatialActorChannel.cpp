@@ -1,10 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "EngineClasses/SpatialActorChannel.h"
+#include "SpatialActorChannel.h"
 
 #include "Engine/DemoNetDriver.h"
-#include "Engine/World.h"
-#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
@@ -17,7 +15,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
-#include "Utils/RepLayoutUtils.h"
+#include "RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
@@ -296,33 +294,29 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 
-	// Update the handover property change list.
-	if (ActorHandoverShadowData != nullptr)
+	FHandoverChangeState HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
+
+	// If any properties have changed, send a component update.
+	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
 	{
-		FHandoverChangeState HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
-
-		// If any properties have changed, send a component update.
-		if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
+		if (bCreatingNewEntity)
 		{
-			if (bCreatingNewEntity)
-			{
-				Sender->SendCreateEntityRequest(this);
+			Sender->SendCreateEntityRequest(this);
 
-				// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
-				Actor->Role = ROLE_SimulatedProxy;
-				Actor->RemoteRole = ROLE_Authority;
-			}
-			else
-			{
-				FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
-				Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState);
-			}
+			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
+			Actor->Role = ROLE_SimulatedProxy;
+			Actor->RemoteRole = ROLE_Authority;
+		}
+		else
+		{
+			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
+			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState);
+		}
 
-			bWroteSomethingImportant = true;
-			if (RepChanged.Num() > 0)
-			{
-				ActorReplicator->RepState->HistoryEnd++;
-			}
+		bWroteSomethingImportant = true;
+		if (RepChanged.Num() > 0)
+		{
+			ActorReplicator->RepState->HistoryEnd++;
 		}
 	}
 
@@ -351,26 +345,23 @@ int64 USpatialActorChannel::ReplicateActor()
 			}
 		}
 
-		if (HandoverShadowDataMap.Num() > 0)
+		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 		{
-			for (auto& SubobjectInfoPair : GetHandoverSubobjects())
+			UObject* Subobject = SubobjectInfoPair.Key;
+			FClassInfo* Info = SubobjectInfoPair.Value;
+
+			// Handover shadow data should already exist for this object. If it doesn't, it must have
+			// started replicating after SetChannelActor was called on the owning actor.
+			TSharedRef<TArray<uint8>>* SubobjectHandoverShadowData = HandoverShadowDataMap.Find(Subobject);
+			if (SubobjectHandoverShadowData == nullptr)
 			{
-				UObject* Subobject = SubobjectInfoPair.Key;
-				FClassInfo* Info = SubobjectInfoPair.Value;
+				continue;
+			}
 
-				// Handover shadow data should already exist for this object. If it doesn't, it must have
-				// started replicating after SetChannelActor was called on the owning actor.
-				TSharedRef<TArray<uint8>>* SubobjectHandoverShadowData = HandoverShadowDataMap.Find(Subobject);
-				if (SubobjectHandoverShadowData == nullptr)
-				{
-					continue;
-				}
-
-				FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
-				if (SubobjectHandoverChangeState.Num() > 0)
-				{
-					Sender->SendComponentUpdates(Subobject, Info, this, nullptr, &SubobjectHandoverChangeState);
-				}
+			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
+			if (SubobjectHandoverChangeState.Num() > 0)
+			{
+				Sender->SendComponentUpdates(Subobject, Info, this, nullptr, &SubobjectHandoverChangeState);
 			}
 		}
 	}
@@ -689,14 +680,14 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
-		if (AController* Controller = Pawn->GetController())
+		if (APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController()))
 		{
-			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller));
+			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(PlayerController));
 			if (ControllerActorChannel)
 			{
 				Sender->SendPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
 			}
-			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller->PlayerState));
+			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(PlayerController->PlayerState));
 			if (PlayerStateActorChannel)
 			{
 				Sender->SendPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
@@ -747,11 +738,10 @@ void USpatialActorChannel::SpatialViewTick()
 	{
 		bool bOldNetOwned = bNetOwned;
 
-		// Use Actor's connection to determine if client owned
 		bNetOwned = false;
-		if (UNetConnection* NetConnection = Actor->GetNetConnection())
+		if (UNetConnection* Connection = Actor->GetNetConnection())
 		{
-			if (APlayerController* PlayerController = NetConnection->PlayerController)
+			if (APlayerController* PlayerController = Connection->PlayerController)
 			{
 				bNetOwned = PlayerController->PlayerState != nullptr;
 			}
