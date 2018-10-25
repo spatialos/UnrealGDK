@@ -44,7 +44,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
 	TypebindingManager = NewObject<USpatialTypebindingManager>();
-	TypebindingManager->Init();
+	TypebindingManager->Init(this);
 
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)

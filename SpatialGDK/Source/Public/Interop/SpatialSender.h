@@ -62,7 +62,7 @@ public:
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
 
-	void ResolveOutgoingOperations(UObject* Object, FClassInfo* Info, bool bIsHandover);
+	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
 	void ResolveOutgoingRPCs(UObject* Object);
 
 	bool UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId);

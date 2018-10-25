@@ -62,21 +62,27 @@ struct FClassInfo
 	TMap<uint32, TSharedPtr<FClassInfo>> SubobjectInfo;
 };
 
+class USpatialNetDriver;
+
 UCLASS()
 class SPATIALGDK_API USpatialTypebindingManager : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	void Init();
+	void Init(USpatialNetDriver* NetDriver);
 
 	bool IsSupportedClass(UClass* Class);
+
 	FClassInfo* FindClassInfoByClass(UClass* Class);
 	FClassInfo* FindClassInfoByClassAndOffset(UClass* Class, uint32 Offset);
 	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
+	FClassInfo* FindClassInfoByObject(UObject* Object);
+
 	UClass* FindClassByComponentId(Worker_ComponentId ComponentId);
 
 	bool FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
+
 	ESchemaComponentType FindCategoryByComponentId(Worker_ComponentId ComponentId);
 
 private:
@@ -84,6 +90,9 @@ private:
 	void CreateTypebindings();
 
 private:
+	UPROPERTY()
+	USpatialNetDriver* NetDriver;
+
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
 

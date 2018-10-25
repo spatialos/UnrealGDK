@@ -9,10 +9,13 @@
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
 #include "GameFramework/Actor.h"
+#include "SpatialNetDriver.h" 
 #include "UObjectIterator.h"
 
-void USpatialTypebindingManager::Init()
+void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 {
+	NetDriver = InNetDriver;
+	
 	TSoftObjectPtr<USchemaDatabase> SchemaDatabasePtr(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")));
 	SchemaDatabasePtr.LoadSynchronous();
 	SchemaDatabase = SchemaDatabasePtr.Get();
@@ -179,6 +182,28 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByComponentId(Worker_Compon
 {
 	UClass* Class = FindClassByComponentId(ComponentId);
 	return Class != nullptr ? FindClassInfoByClass(Class) : nullptr;
+}
+
+FClassInfo* USpatialTypebindingManager::FindClassInfoByObject(UObject* Object)
+{
+	FClassInfo* Info = nullptr;
+	if (AActor* Actor = Cast<AActor>(Object))
+	{
+		Info = FindClassInfoByClass(Actor->GetClass());
+	}
+	else
+	{
+		checkSlow(Cast<AActor>(Object->GetOuter()));
+
+		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
+
+		if (ObjectRef != SpatialConstants::NULL_OBJECT_REF)
+		{
+			Info = FindClassInfoByClassAndOffset(GetOuter()->GetClass(), ObjectRef.Offset);
+		}
+	}
+
+	return Info;
 }
 
 UClass* USpatialTypebindingManager::FindClassByComponentId(Worker_ComponentId ComponentId)

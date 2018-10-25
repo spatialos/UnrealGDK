@@ -343,23 +343,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 	UObject* TargetObject = Params->TargetObject.Get();
 
-	FClassInfo* Info = nullptr;
-	if (AActor* Actor = Cast<AActor>(TargetObject))
-	{
-		Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-	}
-	else
-	{
-		checkSlow(Cast<AActor>(TargetObject->GetOuter()));
-
-		FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
-		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
-		{
-			return;
-		}
-
-		Info = TypebindingManager->FindClassInfoByClassAndOffset(TargetObject->GetOuter()->GetClass(), ObjectRef.Offset);
-	}
+	FClassInfo* Info = TypebindingManager->FindClassInfoByObject(TargetObject);
 
 	if (Info == nullptr)
 	{
@@ -618,7 +602,7 @@ void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_Com
 	Connection->SendCommandResponse(request_id, &Response);
 }
 
-void USpatialSender::ResolveOutgoingOperations(UObject* Object, FClassInfo* Info, bool bIsHandover)
+void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover)
 {
 	// Choose the correct container based on whether it's handover or not
 	FChannelToHandleToUnresolved& PropertyToUnresolved = bIsHandover ? HandoverPropertyToUnresolved : RepPropertyToUnresolved;
@@ -641,6 +625,12 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, FClassInfo* Info
 		USpatialActorChannel* DependentChannel = ChannelObjectPair.Key.Get();
 		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
 		FHandleToUnresolved& HandleToUnresolved = ChannelProperties.Value;
+
+		FClassInfo* Info = TypebindingManager->FindClassInfoByObject(ReplicatingObject);
+		if (Info == nullptr)
+		{
+			continue;
+		}
 
 		TArray<uint16> PropertyHandles;
 

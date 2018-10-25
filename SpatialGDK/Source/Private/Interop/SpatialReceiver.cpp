@@ -892,8 +892,8 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 		Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
 	}
 
-	Sender->ResolveOutgoingOperations(Object, Info, /* bIsHandover */ false);
-	Sender->ResolveOutgoingOperations(Object, Info, /* bIsHandover */ true);
+	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
+	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
 	Sender->ResolveOutgoingRPCs(Object);
 	ResolveIncomingRPCs(Object, ObjectRef);
