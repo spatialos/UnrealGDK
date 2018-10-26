@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialActorChannel.h"
+#include "EngineClasses/SpatialActorChannel.h"
 
 #include "Engine/DemoNetDriver.h"
 #include "GameFramework/PlayerState.h"
@@ -15,7 +15,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
-#include "RepLayoutUtils.h"
+#include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
@@ -452,6 +452,7 @@ TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 		}
 
 		UObject* Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset));
+
 		if (Object == nullptr)
 		{
 			continue;
@@ -527,11 +528,11 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 
 	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
-	check(!HandoverShadowDataMap.Contains(Actor));
+	check(!HandoverShadowDataMap.Contains(InActor));
 
 	// Create the shadow map, and store a quick access pointer to it
-	ActorHandoverShadowData = &HandoverShadowDataMap.Add(Actor, MakeShared<TArray<uint8>>()).Get();
-	InitializeHandoverShadowData(*ActorHandoverShadowData, Actor);
+	ActorHandoverShadowData = &HandoverShadowDataMap.Add(InActor, MakeShared<TArray<uint8>>()).Get();
+	InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
 
 	// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
 	for (auto& SubobjectInfoPair : GetHandoverSubobjects())
@@ -680,14 +681,14 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
 	if (APawn* Pawn = Cast<APawn>(Actor))
 	{
-		if (APlayerController* PlayerController = Cast<APlayerController>(Pawn->GetController()))
+		if (AController* Controller = Pawn->GetController())
 		{
-			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(PlayerController));
+			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller));
 			if (ControllerActorChannel)
 			{
 				Sender->SendPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
 			}
-			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(PlayerController->PlayerState));
+			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller->PlayerState));
 			if (PlayerStateActorChannel)
 			{
 				Sender->SendPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
