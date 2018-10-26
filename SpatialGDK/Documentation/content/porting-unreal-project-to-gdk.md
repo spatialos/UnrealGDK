@@ -182,9 +182,10 @@ You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a
     > From this drop-down menu it is possible to increase the number of servers that will be launched. For now leave this at 1.
 1. Still in the Unreal Editor but this time from the SpatialOS GDK toolbar, select the green **Launch**  button (not the default Launch button from the Unreal Editor toolbar). This builds your [worker configuration]({{URLRoot/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>
 **Launch** opens up a terminal window and runs two SpatialOS command line interface ([CLI]({{URLRoot/content/glossary#cli)) commands: `spatial build build-config` and `spatial local launch`. It is finished when you see `SpatialOS ready` in the terminal window.
-1. On the main Unreal toolbar, click **Play**.  
+1. On the main Unreal toolbar, click **Play**. 
+1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/13.3/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
   
-Job done! You have ported your Unreal game to run on SpatialOS.
+Job done! You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
 
 #### How to modify the default behavior
 You can modify some of the GDK settings from the Unreal Editor toolbar at **Edit** > **Project Settings** >**SpatialOS Unreal GDK** > **Toolbar**.
