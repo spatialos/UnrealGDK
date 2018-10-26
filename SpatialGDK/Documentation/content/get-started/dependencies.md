@@ -1,11 +1,13 @@
-# Get started: 1 - Get the Dependencies
+# Get started: 1 - Get the dependencies
+
+To get going with the GDK, you need the right hardware and software.
 
 ### Hardware
 * Refer to the <a href="https://docs.unrealengine.com/en-US/GettingStarted/RecommendedSpecifications" data-track-link="Clicked UE4 Recommendations|product=Docs|platform=Win" target="_blank">UE4 recommendation</a> (Unreal documentation)
 * Recommended storage: 60GB+ available space
 
 ### Network settings
-* Refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/get-started/requirements#network-settings) (SpatialOS documentation)
+* Refer to the [SpatialOS network settings (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/get-started/requirements#network-settings). 
 
 ### Software
 To build the SpatialOS Unreal GDK module you need the following installed:

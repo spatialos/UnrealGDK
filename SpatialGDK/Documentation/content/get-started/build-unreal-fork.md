@@ -41,10 +41,10 @@ If the environment variable is registered correctly, this returns the path you u
 
     > Note: If you encounter an `error MSB4036: The "GetReferenceNearestTargetFrameworkTask" task was not found` when building with Visual Studio 2017, check that you have NuGet Package Manager installed via the Visual Studio installer.
 1. In the same directory, open **UE4.sln** in Visual Studio.
-1. In Visual Studio, on the toolbar, go to **Build > Configuration Manager** and set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
+1. In Visual Studio, on the toolbar, go to **Build** > **Configuration Manager** and set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
 1. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first).</br>
     This builds Unreal Engine, which can take up to a couple of hours.
-1. Once the build succeeds, in the Solution Explorer, find **Programs > AutomationTool**. Right-click this project and select Build.
+1. Once the build succeeds, in the Solution Explorer, find **Programs** > **AutomationTool**. Right-click this project and select **Build**.
 </br>You have now built Unreal Engine 4 for cross-compilation for Linux.
     > Once you've built Unreal Engine, *don't move it into another directory*: that will break the integration.
 

@@ -6,10 +6,10 @@
 
 - <h3>+ Get started</h3>
     - [Introduction]({{urlRoot}}/get-started/get-started)
-    - [1 - Get the Dependencies]({{urlRoot}}/get-started/dependencies)
-    - [2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/get-started/build-unreal-fork)
+    - [1 - Get the dependencies]({{urlRoot}}/get-started/dependencies)
+    - [2 - Get and build the GDK’s Unreal Engine fork]({{urlRoot}}/get-started/build-unreal-fork)
     - [3 - Set up the GDK module and the Starter Project]({{urlRoot}}/get-started/gdk-and-starter-project)
-- <h3> [ - Multi-server Shooter Tutorial]({{urlRoot}}/content/shooter-tutorial)</h3>
+- <h3> [ - Multi-server shooter tutorial]({{urlRoot}}/content/shooter-tutorial)</h3>
 - <h3> [ - Port your Unreal game]({{urlRoot}}/content/porting-unreal-project-to-gdk)</h3>
 
  ***

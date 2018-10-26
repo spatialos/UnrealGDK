@@ -1,6 +1,6 @@
 # Get started: Introduction
 
-We recommend you start by following the [Installation and setup guide]({{urlRoot}}/setup-and-installing.md) to set up the GDK, its Unreal Engine fork, and our Starter Project. 
+We recommend you start by following our installation and set up guide to set up the GDK, its Unreal Engine fork, and our Starter Project. 
 
 At this stage, you’ll have the stack set up and be able to run your first SpatialOS deployments - both locally and in the cloud - to get an idea of what the platform provides.
 
@@ -10,7 +10,7 @@ Finally, if you have an existing Unreal multiplayer project, you can follow our 
 
 ## Your feedback and ideas
 
-We'd love to hear from you - please don't hesitate to give us feedback on your onboarding experience, our documentation, our [roadmap](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap) (Trello board), or anything else!
+We'd love to hear from you - drop into our forums or discord to give us feedback on your getting started experience, our documentation, our [development roadmap (Trello board)](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap), or anything else!
 
 **Discord**</br>
 Find us in the [**#unreal** channel](https://discordapp.com/channels/311273633307951114/339471548647866368). You may need to grab Discord [here](https://discordapp.com/).
@@ -21,4 +21,4 @@ Visit the **feedback** section in our [forums](https://forums.improbable.io/) an
 **GitHub issues**</br>
 Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issues).
 
-#### Next: [Get the Dependencies]({{urlRoot}}/content/get-started/dependencies.md) 
+#### Next: [Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md) 
