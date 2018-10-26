@@ -70,7 +70,7 @@ Set up your Unreal game project to work with the GDK for Unreal fork of the Unre
 
 ### 4. Modify Unreal classes for GDK compatibility
 <!-- // TODO: Handle this for blueprint projects -->
-It is necessary to modify your games `GameInstance` and `PlayerController` classes to work properly with the GDK.  
+It is necessary to modify your games `GameInstance` class(es) to work properly with the GDK.  
 
 1. Make your game's `GameInstance` inherit from `SpatialGameInstance`. If you have not yet made a `GameInstance` for your game you must either create a Blueprint or a native `GameInstance` class now.
     1. If your game's `GameInstance` is a `.cpp` file, locate its header file and add the following `#include`:
@@ -93,44 +93,6 @@ It is necessary to modify your games `GameInstance` and `PlayerController` class
         };
             ```
     1. If your game's `GameInstance` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** set the **Parent Class** to `SpatialGameInstance`
-
-1. Add `InitPlayerState` to your game's `PlayerController`(s). These steps involve adding a custom method to a native `PlayerController` class, therefore it is a requirement to create a native `PlayerController` if you have not yet done so. Do so now. Instructions are also provided if you wish to use a Blueprint `PlayerController`.
-    1. Create a native `PlayerController` class for your game if you have not yet done so.
-    1.  If your game's `PlayerController` class(es) is a `.cpp` file or if you have just created a native `PlayerController`:
-        1. Locate its header file, add the public method declaration:  
-    `virtual void InitPlayerState() override;`.
-
-        1. In your game's `PlayerController` `.cpp` class(es), add the following definition of the `InitPlayerState` function:
-
-            ``` cpp
-            void AYourProjectPlayerController::InitPlayerState()
-            {
-                UWorld* World = GetWorld();
-                check(World);
-                USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-                if (NetDriver)
-                {
-                    const FEntityId EntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(this);
-                    UE_LOG(LogTemp, Log, TEXT("PC:InitPlayerState called with entity id %d"), EntityId.ToSpatialEntityId());
-                    if (EntityId != 0)
-                    {
-                        // EntityId is not 0, which means that this PC has already been initialized.
-                        return;
-                    }
-                }
-
-                Super::InitPlayerState();
-            }
-            ```
-
-        1. In the file(s) where you added the `InitPlayerState` function definition, add the following `#include`s:
-
-            ``` cpp
-            #include "SpatialNetDriver.h"
-            #include "EntityId.h"
-            #include "EntityRegistry.h"
-            ```
-    1. If your game's `PlayerController` 
 
 ### 5. Add GDK configurations
 The steps below reference and introduce the following SpatialOS terms: [workers]({{URLRoot}}/content/glossary#workers), [schema]({URLRoot}}/content/glossary#schema), [Schema Generator]({{URLRoot}}/content/glossary#schema-generator) [SpatialOS components]({{URLRoot}}/content/glossary#spatialos-component), [checking out]({{URLRoot}}/content/glossary#check-out), [streaming queries]({{URLRoot}}/content/glossary#streaming-queries), [Singleton Actor]({{URLRoot}}/content/glossary#singleton-actor), [deployment]({{URLRoot}}/content/glossary#deployment), [launch configuration]({{URLRoot}}/content/glossary#launch-configuration), [snapshot]({{URLRoot}}/content/glossary#snapshot), [worker configuration]({{URLRoot/content/glossary#worker-configuration).
