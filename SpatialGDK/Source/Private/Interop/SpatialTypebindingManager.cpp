@@ -151,7 +151,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 {
-	if (auto* Info = ClassInfoMap.Find(Class))
+	if (FClassInfo* Info = ClassInfoMap.Find(Class))
 	{
 		return Info;
 	}
