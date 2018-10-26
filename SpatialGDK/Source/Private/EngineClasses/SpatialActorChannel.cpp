@@ -739,10 +739,11 @@ void USpatialActorChannel::SpatialViewTick()
 	{
 		bool bOldNetOwned = bNetOwned;
 
+		// Use Actor's connection to determine if client owned
 		bNetOwned = false;
-		if (UNetConnection* Connection = Actor->GetNetConnection())
+		if (UNetConnection* NetConnection = Actor->GetNetConnection())
 		{
-			if (APlayerController* PlayerController = Connection->PlayerController)
+			if (APlayerController* PlayerController = NetConnection->PlayerController)
 			{
 				bNetOwned = PlayerController->PlayerState != nullptr;
 			}
