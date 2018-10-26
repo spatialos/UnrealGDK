@@ -26,7 +26,7 @@ public:
 	USpatialGDKEditorToolbarSettings(const FObjectInitializer& ObjectInitializer);
 
 private:
-	/** Path to the directory containing the SpatialOS related files. */
+	/** Path to the directory containing the SpatialOS-related files. */
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
 	FDirectoryPath SpatialOSDirectory;
 public:
