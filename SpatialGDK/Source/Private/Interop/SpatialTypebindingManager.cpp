@@ -200,7 +200,7 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByObject(UObject* Object)
 
 		if (ObjectRef != SpatialConstants::NULL_OBJECT_REF)
 		{
-			Info = FindClassInfoByClassAndOffset(GetOuter()->GetClass(), ObjectRef.Offset);
+			Info = FindClassInfoByClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
 		}
 	}
 
