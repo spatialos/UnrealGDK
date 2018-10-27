@@ -646,14 +646,6 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	Response.component_id = Op.request.component_id;
 	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
 
-	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
-	if (ActorChannel == nullptr)
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("No actor channel for Entity %d"), Op.entity_id);
-		Sender->SendCommandResponse(Op.request_id, Response);
-		return;
-	}
-
 	uint32 Offset = 0;
 	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Op.request.component_id, Offset);
 	if (!bFoundOffset)
@@ -671,7 +663,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClassAndOffset(TargetObject->GetClass(), Offset);
+	FClassInfo* Info = TypebindingManager->FindClassInfoByObject(TargetObject);
 	check(Info);
 
 	ESchemaComponentType RPCType = TypebindingManager->FindCategoryByComponentId(Op.request.component_id);

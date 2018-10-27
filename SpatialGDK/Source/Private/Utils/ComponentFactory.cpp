@@ -194,20 +194,20 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			if (ObjectValue->IsFullNameStableForNetworking() || ObjectValue->IsSupportedForNetworking())
 			{
 				NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
-			}
 
-			if (!NetGUID.IsValid())
-			{
-				// IsFullNameStableForNetworking for Actors relies on AActor::bNetStartup being set to true.
-				// This is set to true in InitalizeNetworkActors, which doesn't happen till the game starts
-				// So we can safely say that if we are in the editor, every Actor can be referred to.
-				if (NetDriver->World->WorldType == EWorldType::Editor)
+				if (!NetGUID.IsValid())
 				{
-					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
-				}
-				else if (ObjectValue->IsFullNameStableForNetworking())
-				{
-					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
+					// IsFullNameStableForNetworking for Actors relies on AActor::bNetStartup being set to true.
+					// This is set to true in InitalizeNetworkActors, which doesn't happen till the game starts
+					// So we can safely say that if we are in the editor, every Actor can be referred to.
+					if (NetDriver->World->WorldType == EWorldType::Editor)
+					{
+						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
+					}
+					else if (ObjectValue->IsFullNameStableForNetworking())
+					{
+						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
+					}
 				}
 			}
 
