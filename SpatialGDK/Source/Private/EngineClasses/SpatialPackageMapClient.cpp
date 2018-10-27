@@ -206,13 +206,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
-	improbable::Metadata* Metadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::Metadata>(EntityId);
-	if (Metadata == nullptr)
-	{
-		return;
-	}
-
-	UClass* Class = Metadata->GetNativeEntityClass();
+	UClass* Class = SpatialNetDriver->EntityRegistry->GetActorFromEntityId(EntityId)->GetClass();
 	FClassInfo* Info = SpatialNetDriver->TypebindingManager->FindClassInfoByClass(Class);
 
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)

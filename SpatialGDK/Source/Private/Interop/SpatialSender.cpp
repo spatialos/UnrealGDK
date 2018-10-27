@@ -101,7 +101,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			return;
 		}
 
-		WorkerRequirementSet& RequirementSet = ServersOnly;
+		WorkerRequirementSet RequirementSet = ServersOnly;
 
 		if (Type == SCHEMA_ClientRPC)
 		{
@@ -122,7 +122,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 				return;
 			}
 
-			auto& RequirementSet = ServersOnly;
+			WorkerRequirementSet RequirementSet = ServersOnly;
 
 			if (Type == SCHEMA_ClientRPC)
 			{

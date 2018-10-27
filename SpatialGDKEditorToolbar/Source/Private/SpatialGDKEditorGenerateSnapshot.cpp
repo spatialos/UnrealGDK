@@ -381,6 +381,26 @@ bool ProcessSupportedActors(UWorld* World, USpatialTypebindingManager* Typebindi
 	return true;
 }
 
+SubobjectToOffsetMap Whoa(AActor* Actor, FClassInfo* Info)
+{
+	SubobjectToOffsetMap SubobjectNameToOffset;
+
+	TArray<UObject*> Subobjects;
+	Actor->GetDefaultSubobjects(Subobjects);
+
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
+	{
+		UObject* Subobject = Actor->GetDefaultSubobjectByName(FName(*SubobjectInfoPair.Value->SubobjectName));
+		uint32 Offset = SubobjectInfoPair.Key;
+
+		check(Subobject);
+
+		SubobjectNameToOffset.Add(Subobject, Offset);
+	}
+
+	return SubobjectNameToOffset;
+}
+
 bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 {
 	USpatialNetDriver* NetDriver = nullptr;
@@ -398,7 +418,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	{
 		EntityRegistry->AddToRegistry(EntityId, Actor);
 		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
+		PackageMap->ResolveEntityActor(Actor, EntityId, Whoa(Actor, Info));
 		return true;
 	});
 

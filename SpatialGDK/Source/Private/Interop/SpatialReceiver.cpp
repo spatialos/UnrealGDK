@@ -456,9 +456,9 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 {
+	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 	NetDriver->GetEntityRegistry()->RemoveFromRegistry(EntityId);
 	NetDriver->RemoveActorChannel(EntityId);
-	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 }
 
 // This function is only called for client and server workers who did not spawn the Actor

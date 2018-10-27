@@ -566,7 +566,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 						SubobjectData.Class = Value->GetClass();
 					}
 
-					SubobjectData.Name = Value->GetName();
+					SubobjectData.Name = PropertyTypeInfo->Name;
 					ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
 					ClassToSchema.Add(Value->GetClass(), FSchemaData());
 				}
