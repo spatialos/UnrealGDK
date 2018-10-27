@@ -190,7 +190,12 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
 		if (ObjectValue != nullptr)
 		{
-			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
+			FNetworkGUID NetGUID;
+			if (ObjectValue->IsFullNameStableForNetworking() || ObjectValue->IsSupportedForNetworking())
+			{
+				NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
+			}
+
 			if (!NetGUID.IsValid())
 			{
 				// IsFullNameStableForNetworking for Actors relies on AActor::bNetStartup being set to true.
