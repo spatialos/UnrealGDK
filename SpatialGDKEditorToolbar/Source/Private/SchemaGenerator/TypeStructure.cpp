@@ -271,7 +271,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			// If this is an editor-only property, skip it. As we've already added to the property list at this stage, just remove it.
 			if (Value->IsEditorOnly())
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("%s - editor only, skipping"), *Property->GetName());
 				TypeNode->Properties.Remove(Property);
 				continue;
 			}
@@ -279,7 +279,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			// Check whether the owner of this value is the CDO itself.
 			if (Value->GetOuter() == ContainerCDO)
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
 				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, 0, bIsRPC);
