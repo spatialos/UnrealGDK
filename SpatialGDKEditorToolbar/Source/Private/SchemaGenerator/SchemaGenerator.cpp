@@ -186,7 +186,7 @@ void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrea
 // 1. An UnrealObjectRef
 // 2. A list of UnrealObjectRefs
 // 3. An RPC
-bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo)
+bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo, bool SubobjectSchema)
 {
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
@@ -210,19 +210,22 @@ bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo)
 		}
 	}
 
-	if (TypeInfo->RPCs.Num() > 0)
+	if (!SubobjectSchema)
 	{
-		return true;
-	}
-
-	for (auto& PropertyPair : TypeInfo->Properties)
-	{
-		UProperty* Property = PropertyPair.Key;
-		if (Property->IsA<UObjectPropertyBase>() && PropertyPair.Value->Type.IsValid())
+		if (TypeInfo->RPCs.Num() > 0)
 		{
-			if (PropertyPair.Value->Type->RPCs.Num() > 0)
+			return true;
+		}
+
+		for (auto& PropertyPair : TypeInfo->Properties)
+		{
+			UProperty* Property = PropertyPair.Key;
+			if (Property->IsA<UObjectPropertyBase>() && PropertyPair.Value->Type.IsValid())
 			{
-				return true;
+				if (PropertyPair.Value->Type->RPCs.Num() > 0)
+				{
+					return true;
+				}
 			}
 		}
 	}
@@ -259,7 +262,7 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 		// Note that this file has been generated automatically
 		package unreal.generated;)""");
 
-	if (ShouldIncludeCoreTypes(TypeInfo))
+	if (ShouldIncludeCoreTypes(TypeInfo, true))
 	{
 		Writer.PrintNewLine();
 		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
@@ -320,7 +323,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		package unreal.generated.{0};)""",
 		*UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
 
-	if (ShouldIncludeCoreTypes(TypeInfo))
+	if (ShouldIncludeCoreTypes(TypeInfo, false))
 	{
 		Writer.PrintNewLine();
 		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
