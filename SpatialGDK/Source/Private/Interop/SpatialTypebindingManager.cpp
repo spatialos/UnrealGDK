@@ -168,7 +168,7 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByClassAndOffset(UClass* Cl
 			return Info;
 		}
 
-		if (auto* SubobjectInfo = Info->SubobjectInfo.Find(Offset))
+		if (TSharedPtr<FClassInfo>* SubobjectInfo = Info->SubobjectInfo.Find(Offset))
 		{
 			return SubobjectInfo->Get();
 		}
