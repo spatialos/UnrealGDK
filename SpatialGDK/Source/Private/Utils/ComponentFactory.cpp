@@ -71,15 +71,9 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 	return bWroteSomething;
 }
 
-bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
+bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
 {
 	bool bWroteSomething = false;
-
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	if (Info == nullptr)
-	{
-		return false;
-	}
 
 	for (uint16 ChangedHandle : Changes)
 	{
@@ -287,7 +281,7 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 
 	if (Info->SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
-		ComponentDatas.Add(CreateHandoverComponentData(Info->SchemaComponents[SCHEMA_Handover], Object, HandoverChangeState));
+		ComponentDatas.Add(CreateHandoverComponentData(Info->SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState));
 	}
 
 	return ComponentDatas;
@@ -314,12 +308,12 @@ Worker_ComponentData ComponentFactory::CreateEmptyComponentData(Worker_Component
 	return ComponentData;
 }
 
-Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FHandoverChangeState& Changes)
+Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes)
 {
 	Worker_ComponentData ComponentData = CreateEmptyComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	FillHandoverSchemaObject(ComponentObject, Object, Changes, true);
+	FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true);
 
 	return ComponentData;
 }
@@ -356,7 +350,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 		if (Info->SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			bool bWroteSomething = false;
-			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info->SchemaComponents[SCHEMA_Handover], Object, *HandoverChangeState, bWroteSomething);
+			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info->SchemaComponents[SCHEMA_Handover], Object, Info, *HandoverChangeState, bWroteSomething);
 			if (bWroteSomething)
 			{
 				ComponentUpdates.Add(HandoverUpdate);
@@ -392,7 +386,7 @@ Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	return ComponentUpdate;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FHandoverChangeState& Changes, bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -402,7 +396,7 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Changes, false, &ClearedIds);
+	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{
