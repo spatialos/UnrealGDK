@@ -41,16 +41,16 @@ In this step, you're going to build the Unreal GDK module dependencies, which th
 
 To run a cloud deployment, you need to prepare your server-worker and client-worker [assemblies](https://docs.improbable.io/reference/latest/shared/glossary), and upload them to the cloud.
 
-> Building the assemblies can take a while - we recommend installing [IncrediBuild](https://www.incredibuild.com/), [FastBuild](http://www.fastbuild.org/), or another build distributor.
+> Building the assemblies can take a while - we recommend installing <a href="https://www.incredibuild.com/" data-track-link="Incredibuild|product=Docs|platform=Win|label=Win" target="_blank">IncrediBuild</a> to speed up build times.
 
 1. Change the name of the project
-    1. In File Explorer, navigate to the root directory of the Starter Project repository, then to **`\spatial`**, and open the `spatialos.json` file in an editor of your choice.
+    1. In File Explorer, navigate to the root directory of the Starter Project repository, then to **`spatial`**, and open the `spatialos.json` file in an editor of your choice.
     2. Change the `name` field to the name of your project. You can find this in the [Console](https://console.improbable.io). It’ll be something like `beta_someword_anotherword_000`.
 2. In a terminal window, navigate to the root directory of the Starter Project repository.
 3. Build a server-worker assembly: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat StarterProjectServer Linux Development StarterProject.uproject`
 4. Build a client-worker assembly: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat StarterProject Win64 Development StarterProject.uproject`
 5. Navigate to `StarterProject/spatial`.
-6. Upload the assemblies to the cloud, specifying an assembly name (this covers both assemblies): `spatial cloud upload <assembly_name>`
+6. Upload the assemblies to the cloud, specifying an assembly name (this includes both client-worker and server-worker assemblies): `spatial cloud upload <assembly_name>`
 7. Launch a deployment, specifying a deployment name: `spatial cloud launch <assembly_name> one_worker_test.json <deployment_name> --snapshot=snapshots\default.snapshot`
 8. On your deployment's page in the [SpatialOS Web Console](https://console.improbable.io) click Play to launch the game.
 

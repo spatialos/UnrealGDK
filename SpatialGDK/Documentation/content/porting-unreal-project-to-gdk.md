@@ -8,7 +8,7 @@
 
 Follow the [setup guide]({{urlRoot}}/content/get-started/get-started.md) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
 
-> To speed up build times we recommend installing [IncrediBuild](https://www.incredibuild.com/), [FastBuild](http://www.fastbuild.org/), or another build distributor.
+> To speed up build times we recommend installing <a href="https://www.incredibuild.com/" data-track-link="Incredibuild|product=Docs|platform=Win|label=Win" target="_blank">IncrediBuild</a> to speed this up.
 
 ## Setting up the project structure
 1. In a terminal window, navigate to the root directory of the SpatialOS Unreal GDK repository you cloned and run `Setup.bat`. This requires authorization with your SpatialOS account.

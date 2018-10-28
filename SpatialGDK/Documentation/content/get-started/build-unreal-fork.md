@@ -1,10 +1,10 @@
 # Get started: 2 - Get and build the GDK’s Unreal Engine Fork
 
-To use the Unreal GDK, you need to build our SpatialOS fork of Unreal Engine 4 from source.
+As the GDK extends Unreal Engine's networking capabilities at its core, to use it you first need to build our SpatialOS fork of Unreal Engine 4 from source.
 
 ### Unreal Engine EULA
 
-As part of your Unreal GDK setup, you need to clone our SpatialOS fork of the Unreal Engine source code on GitHub. In order to get access to our fork, you need to link your GitHub account to a verified Epic Games account, and agree to the Unreal Engine End User License Agreement ([EULA](https://www.unrealengine.com/en-US/eula)). You will not be able to use the Unreal GDK without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
+In order to get access to our fork, you need to link your GitHub account to a verified Epic Games account, and agree to the Unreal Engine End User License Agreement ([EULA](https://www.unrealengine.com/en-US/eula)). You will not be able to use the GDK without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
 ### Getting the Unreal Engine fork source code and Unreal Linux cross-platform support
 1. In a terminal window, clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK) repository. (You may get a 404 from this link. See  the instructions above, under _Unreal Engine EULA_, on how to get access.) <br/>
@@ -44,7 +44,6 @@ If the environment variable is registered correctly, this returns the path you u
 1. In Visual Studio, on the toolbar, go to **Build** > **Configuration Manager** and set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
 1. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first).</br>
     This builds Unreal Engine, which can take up to a couple of hours.
-1. Once the build succeeds, in the Solution Explorer, find **Programs** > **AutomationTool**. Right-click this project and select **Build**.
 </br>You have now built Unreal Engine 4 for cross-compilation for Linux.
     > Once you've built Unreal Engine, *don't move it into another directory*: that will break the integration.
 
