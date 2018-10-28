@@ -5,7 +5,7 @@
 #include "Math/Vector.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
-#include "UObjectGlobals.h"
+#include "UObject/UObjectGlobals.h"
 #include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
