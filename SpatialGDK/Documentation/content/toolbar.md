@@ -1,6 +1,6 @@
 # Toolbars in the Unreal Editor
 
-There are two toolbars you can use in the Unreal Editor: the main Unreal toolbar, and the SpatialOS for Unreal GDK toolbar. Once enabled, the GDK toolbar sits alongside the main Unreal toolbar:
+There are two toolbars you can use in the Unreal Editor: the main Unreal toolbar, and the SpatialOS GDK toolbar. Once enabled, the GDK toolbar sits alongside the main Unreal toolbar:
 
  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars.png)
 
@@ -60,11 +60,11 @@ You can also access these from the **Window** menu:
 
 | Button | Description |
 | --- | --- |
-| Snapshot | Generates a [SpatialOS snapshot (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#snapshot). | 
-| Schema | Creates `schema` for your Unreal project. |
+| Snapshot | Generates a [SpatialOS snapshot]({{urlRoot}}/content/glossary#snapshot). | 
+| Schema | Creates [schema]({{urlRoot}}/content/glossary#schema) for your Unreal project. |
 | Launch | Runs [`spatial worker build build-config` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)). |
 | Stop | Stops `spatial local launch`. |
-| Inspector | Opens the [Inspector (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#inspector) in a browser. |
+| Inspector | Opens the [Inspector]({{urlRoot}}/content/glossary#inspector) in a browser. |
 
 #### Settings
 
@@ -77,7 +77,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 | Setting | Description |
 | --- | --- |
 | SpatialOS directory | If you're using a non-standard structure, you'll need to set this yourself. This is empty by default. If you leave it empty, it defaults to `<GameRoot>/../spatial`. |
-| Launch configuration | The [launch configuration file (SpatialOS documentation)]({{urlRoot}}/content/glossary#launch-configuration) to use when running `spatial local launch` using the **Launch** button. |
+| Launch configuration | The [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file) to use when running `spatial local launch` using the **Launch** button. |
 | Stop on exit |  If enabled, shuts down running deployments when you close the Unreal Editor. |
 | Snapshot path | Use this to specify the filepath of your [snapshot]({{urlRoot}}/content/glossary#snapshot). If you leave this empty, it defaults to `<GameRoot>/../spatial/snapshots`. |
 | Snapshot file name |  Name of your snapshot file. |
