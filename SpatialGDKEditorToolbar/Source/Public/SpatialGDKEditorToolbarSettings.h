@@ -26,9 +26,9 @@ public:
 	USpatialGDKEditorToolbarSettings(const FObjectInitializer& ObjectInitializer);
 
 private:
-	/** Root folder of your SpatialOS Unreal GDK project. */
-	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Project root folder"))
-	FDirectoryPath ProjectRootFolder;
+	/** Path to the directory containing the SpatialOS-related files. */
+	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
+	FDirectoryPath SpatialOSDirectory;
 public:
 	/** Launch configuration file used for `spatial local launch`. */
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Launch configuration"))
@@ -58,18 +58,18 @@ private:
 public:
 
 	UFUNCTION()
-	FORCEINLINE FString GetProjectRoot() const
+	FORCEINLINE FString GetSpatialOSDirectory() const
 	{
-		return ProjectRootFolder.Path.IsEmpty()
+		return SpatialOSDirectory.Path.IsEmpty()
 			? FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")))
-			: ProjectRootFolder.Path;
+			: SpatialOSDirectory.Path;
 	}
 
 	UFUNCTION()
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
 		return GeneratedSchemaOutputFolder.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetProjectRoot(), FString(TEXT("schema/unreal/generated/"))))
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
 			: GeneratedSchemaOutputFolder.Path;
 	}
 
@@ -77,7 +77,7 @@ public:
 	FORCEINLINE FString GetSpatialOSSnapshotPath() const
 	{
 		return SpatialOSSnapshotPath.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetProjectRoot(), FString(TEXT("../spatial/snapshots/"))))
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("../spatial/snapshots/"))))
 			: SpatialOSSnapshotPath.Path;
 	}
 
