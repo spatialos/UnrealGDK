@@ -44,11 +44,11 @@ An Unreal Editor toolbar command which takes a set of Unreal classes and generat
 ### Singleton Actor
 A server-side authoritative Actor that is restricted to one instantiation on SpatialOS. See documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).
 
-###Spatial Type
+### Spatial Type
 Unreal classes have unique properties when running in SpatialOS. Spatial Type (`SpatialType`) is a SpatialOS-specific [class specifier (Unreal documentation)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers) which reflects this information. There are different categories of Spatial Type, depending on the Actor’s function in your game.
 See the documentation on [Spatial Type](#{{urlRoot}}/content/spatial-type). 
 
-###SpatialType
+### SpatialType
 See [Spatial Type](#spatial-type).
 
 ## SpatialOS terms
