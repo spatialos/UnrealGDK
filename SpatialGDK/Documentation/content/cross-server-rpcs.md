@@ -31,7 +31,7 @@ To set up a cross-server RPC, follow the same instructions as you would for [mar
     Note: `WithValidation` is optional.
 
 1. Add the related function implementations:
-   
+
    ```
     void MyActor::MyCrossServerRPC_Implementation()
     {
