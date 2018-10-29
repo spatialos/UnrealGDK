@@ -775,7 +775,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		FClassInfo & SubobjectInfo = *SubobjectInfoPair.Value;
+		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
 		if (SubobjectInfo.SchemaComponents[SCHEMA_ClientRPC] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
