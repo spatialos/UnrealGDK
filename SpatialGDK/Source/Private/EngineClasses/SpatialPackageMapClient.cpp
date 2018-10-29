@@ -100,7 +100,7 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const Worker_Entit
 UObject* USpatialPackageMapClient::GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)
 {
 	FNetworkGUID NetGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef);
-	if (NetGUID.IsValid())
+	if (NetGUID.IsValid() && !NetGUID.IsDefault())
 	{
 		return GetObjectFromNetGUID(NetGUID, true);
 	}
@@ -206,7 +206,13 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
-	UClass* Class = SpatialNetDriver->EntityRegistry->GetActorFromEntityId(EntityId)->GetClass();
+	AActor* Actor = SpatialNetDriver->EntityRegistry->GetActorFromEntityId(EntityId);
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	UClass* Class = Actor->GetClass();
 	FClassInfo* Info = SpatialNetDriver->TypebindingManager->FindClassInfoByClass(Class);
 
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)

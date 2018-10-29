@@ -3,6 +3,9 @@
 #include "EngineClasses/SpatialActorChannel.h"
 
 #include "Engine/DemoNetDriver.h"
+#include "Engine/World.h"
+#include "GameFramework/Pawn.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
@@ -348,7 +351,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 		{
 			UObject* Subobject = SubobjectInfoPair.Key;
-			FClassInfo* Info = SubobjectInfoPair.Value;
+			FClassInfo* SubobjectInfo = SubobjectInfoPair.Value;
 
 			// Handover shadow data should already exist for this object. If it doesn't, it must have
 			// started replicating after SetChannelActor was called on the owning actor.
@@ -362,7 +365,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
 			if (SubobjectHandoverChangeState.Num() > 0)
 			{
-				Sender->SendComponentUpdates(Subobject, Info, this, nullptr, &SubobjectHandoverChangeState);
+				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState);
 			}
 		}
 	}
@@ -454,7 +457,7 @@ TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 		UObject* Object = nullptr;
 		if (EntityId == 0)
 		{
-			Object = Actor->GetDefaultSubobjectByName(FName(*SubobjectInfo->SubobjectName));
+			Object = Actor->GetDefaultSubobjectByName(SubobjectInfo->SubobjectName);
 		}
 		else
 		{
@@ -561,10 +564,16 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	ActorHandoverShadowData = &HandoverShadowDataMap.Add(InActor, MakeShared<TArray<uint8>>()).Get();
 	InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
 
-	// Assume that all the replicated static components are already set as such. This is checked later in ReplicateSubobject.
 	for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 	{
 		UObject* Subobject = SubobjectInfoPair.Key;
+		FClassInfo* Info = SubobjectInfoPair.Value;
+
+		if (Info->SchemaComponents[SCHEMA_Handover] == SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			continue;
+		}
+
 		check(!HandoverShadowDataMap.Contains(Subobject));
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}

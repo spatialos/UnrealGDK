@@ -57,7 +57,7 @@ FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, FClassI
 
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		UObject* Subobject = Actor->GetDefaultSubobjectByName(FName(*SubobjectInfoPair.Value->SubobjectName));
+		UObject* Subobject = Actor->GetDefaultSubobjectByName(SubobjectInfoPair.Value->SubobjectName);
 		uint32 Offset = SubobjectInfoPair.Key;
 
 		check(Subobject);

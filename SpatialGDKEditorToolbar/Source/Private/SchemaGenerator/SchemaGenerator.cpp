@@ -562,7 +562,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 					if (IsReplicatedSubobject(PropertyTypeInfo))
 					{
 						bHasComponents = true;
-						SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaTypeName(PropertyTypeInfo->Name), PropertyTypeInfo, Value->GetClass());
+						SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaTypeName(PropertyTypeInfo->Name.ToString()), PropertyTypeInfo, Value->GetClass());
 					}
 					else
 					{

@@ -15,7 +15,7 @@ struct FSubobjectSchemaData
 	UClass* Class = nullptr;
 
 	UPROPERTY()
-	FString Name;
+	FName Name;
 
 	UPROPERTY()
 	uint32 SchemaComponents[SCHEMA_Count] = {};

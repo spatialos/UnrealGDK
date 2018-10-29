@@ -285,7 +285,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, 0, bIsRPC);
 				PropertyNode->Type->ParentProperty = PropertyNode;
 				PropertyNode->Type->Object = Value;
-				PropertyNode->Type->Name = Value->GetName();
+				PropertyNode->Type->Name = Value->GetFName();
 
 				if (!bIsRPC)
 				{
@@ -348,7 +348,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 						PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, 0, bIsRPC);
 						PropertyNode->Type->ParentProperty = PropertyNode;
 						PropertyNode->Type->Object = Node->ComponentTemplate;
-						PropertyNode->Type->Name = ObjectProperty->GetName();
+						PropertyNode->Type->Name = ObjectProperty->GetFName();
 					}
 				}
 			}

@@ -57,7 +57,7 @@ struct FClassInfo
 
 	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 
-	FString SubobjectName;
+	FName SubobjectName;
 
 	TMap<uint32, TSharedPtr<FClassInfo>> SubobjectInfo;
 };

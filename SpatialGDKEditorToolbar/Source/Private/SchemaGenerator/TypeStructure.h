@@ -104,7 +104,7 @@ struct FUnrealType
 {
 	UStruct* Type;
 	UObject* Object; // Actual instance of the object. Could be the CDO or a Subobject on the CDO/BlueprintGeneratedClass
-	FString Name; // Name for the object. This is either the name of the object itself, or the name of the property in the blueprint
+	FName Name; // Name for the object. This is either the name of the object itself, or the name of the property in the blueprint
 	TMultiMap<UProperty*, TSharedPtr<FUnrealProperty>> Properties;
 	TMap<UFunction*, TSharedPtr<FUnrealRPC>> RPCs;
 	TWeakPtr<FUnrealProperty> ParentProperty;
