@@ -5,7 +5,7 @@ Singleton Actors allow a single source of truth for both operations and data acr
 There are two kinds of Singleton Actors:
 
 * **Public Singleton Actors** - Singleton Actors which are replicated to [server-workers and client-workers]({{urlRoot}/content/glossary#workers). [AGameState](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) is a Public Singleton Actor.
-* **Private Singleton Actors** - Singleton Actors which are replicated to [server-workers]({{urlRoot}/content/glossary#workers), but not accessible to [client-workers]({{urlRoot}/content/glossary#workers). `GameMode` is a Private Singleton Actor.
+* **Private Singleton Actors** - Singleton Actors which are replicated to [server-workers]({{urlRoot}/content/glossary#workers), but not accessible to [client-workers]({{urlRoot}/content/glossary#workers). [AGameMode](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) is a Private Singleton Actor.
 
 You can define any class as a Singleton Actor.
 
