@@ -1,4 +1,4 @@
-# The SpatialOS GDK for Unreal (pre-alpha) documentation on GitHub
+# The SpatialOS GDK for Unreal (alpha) documentation on GitHub
 
 This documentation on GitHub is a copy of the [GDK documentation on the SpatialOS documentation website](https://docs.improbable.io/unreal/pre-alpha). Due to this, the internal links do not work and the image links are broken. 
 
