@@ -52,7 +52,7 @@ Actor property handover is a new feature we’re introducing with the GDK. It re
 
 As SpatialOS has multiple servers, only one server has the [authority]({{urlRoot}}/content/glossary#authority) to manipulate an Actor at any one time. Cross-server RPCs enable a server without authority over an Actor to tell the server which has authority over that Actor to manipulate it. For more information see the documentation on [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs).
 
-`Cross-server RPC`s are a new type of RPC that functions between two servers. These enable a server without authority over an Actor to communicate with the server which has authority and is able to manipulate the Actor. .
+`Cross-server RPC`s are a new type of RPC that functions between two servers. These enable a server without authority over an Actor to communicate with the server which has authority and is able to manipulate the Actor.
 
 ## Networking switch
 
