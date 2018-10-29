@@ -40,8 +40,8 @@ We have released the GDK for Unreal this early in development because we want yo
 
 ## Where to get the GDK and starter projects
 The GDK and its starter projects are available on GitHub.
-* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK)
 * [GDK: github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
+* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK)
 * [Starter Project](https://github.com/spatialos/UnrealGDKStarterProject)
 * [Third-Person Shooter Game](https://github.com/spatialos/UnrealGDKThirdPersonShooter) (Not actively developed)
 * [The Test Suite](https://github.com/spatialos/UnrealGDKTestSuite)</br>
