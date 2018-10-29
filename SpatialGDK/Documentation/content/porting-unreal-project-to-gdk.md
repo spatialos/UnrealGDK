@@ -2,7 +2,9 @@
 
 ## Before you start
 
-Before porting your project, you need to install and set up the SpatialOS GDK: follow the [set up guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**. Additionally make sure your Spatial CLI is up to date: from a terminal window, run the command `spatial update`.
+Before porting your project: 
+* Install and set up the SpatialOS GDK: follow the [set up guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**. 
+* Make sure your Spatial CLI is up to date: from a terminal window, run the command `spatial update`.
 <!-- // TODO: Update the set up link when ready -->
 
 ### Terms used in this guide
@@ -15,22 +17,27 @@ Before porting your project, you need to install and set up the SpatialOS GDK: f
 <%(TOC)%>
 
 ### 1. Set up the project structure
-1. Your project needs some extra files and folders to run with the GDK; you can copy these from the StarterProject repository that you cloned earlier.
+1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the StarterProject repository that you cloned earlier.
 
-    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders except the `\Game\` _folder_ into your `<ProjectRoot>` folder. Your game's folder structure should now resemble:
-    
-        ``` cpp
-        \<ProjectRoot>\.git\
-        \<ProjectRoot>\<GameRoot>\
-        \<ProjectRoot>\spatial\
-        \<ProjectRoot>\.gitignore
-        \<ProjectRoot>\LaunchClient.bat 
-        \<ProjectRoot>\LaunchServer.bat
-        \<ProjectRoot>\LICENSE.md
-        \<ProjectRoot>\ProjectPaths.bat
-        \<ProjectRoot>\README.md
-        etc...
-        ```
+    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders below:  
+
+    ``` cpp
+    \StarterProject\spatial\
+    \StarterProject\LaunchClient.bat 
+    \StarterProject\LaunchServer.bat
+    \StarterProject\ProjectPaths.bat
+    ```
+    Your game's folder structure should now resemble:
+
+    ``` cpp
+    \<ProjectRoot>\<GameRoot>\
+    \<ProjectRoot>\spatial\
+    \<ProjectRoot>\LaunchClient.bat 
+    \<ProjectRoot>\LaunchServer.bat
+    \<ProjectRoot>\ProjectPaths.bat
+    etc...
+    ```
+
 1. Our helper scripts require configuration to work correctly. Set up your project paths:
    
    Open **`\<ProjectRoot>\ProjectPaths.bat`** for editing and:
