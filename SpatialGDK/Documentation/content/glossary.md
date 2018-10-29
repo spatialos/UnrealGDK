@@ -10,9 +10,9 @@ Many SpatialOS term definitions link to further information in the [SpatialOS do
 Note that this SpatialOS documentation assumes you are developing a SpatialOS game using the SpatialOS SDKs ([The Worker SDK and Platform SDK](#https://docs.improbable.io/reference/latest/shared/get-started/working-with-spatialos)), so it may reference content relevant to that workflow only. While the SpatialOS SDK underpins the GDK for Unreal, the two workflows are not always the same.
 
 ## GDK for Unreal documentation terms
-* `<ProjectRoot>` - The root folder of your Unreal game project.  
-* `<GameRoot>` - The folder containing your game project’s `.uproject` and source folder (for example, `<ProjectRoot>\ShooterGame\`).
-* `<YourProject>` - Name of your game project’s `.uproject` (for example, `StarterProject.uproject`).
+* `<GameRoot>` - The folder containing your game project's `.uproject` and source folder.  
+* `<ProjectRoot>` - The folder containing your `<GameRoot>`.  
+* `<YourProject>` - Name of your game project's `.uproject` (for example, `\<GameRoot>\StarterProject.uproject`).
 
 ## GDK for Unreal terms
 
