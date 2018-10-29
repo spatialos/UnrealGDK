@@ -2,7 +2,7 @@
 
 ## Before you start
 
-Before porting your project, you need to install and set up the SpatialOS GDK: follow the [set up guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
+Before porting your project, you need to install and set up the SpatialOS GDK: follow the [set up guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**. Additionally make sure your Spatial CLI is up to date: from a terminal window, run the command `spatial update`.
 <!-- // TODO: Update the set up link when ready -->
 
 ### Terms used in this guide
@@ -155,7 +155,16 @@ You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a
 1. On the main Unreal toolbar, click **Play**. 
 1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/13.3/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
   
-Job done! You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
+Job done! You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector. 
+
+#### Logs
+You can find Spatial log files for your local deployments in `<ProjectRoot>\spatial\logs\`.  
+- `spatial_<datetime>.log` contains all of the logs printed to your terminal during the local deployment.  
+- There are also timestamped folders here which contain additional logs:
+  1. `<ProjectRoot>\spatial\logs\workers\` contain managed worker logs which are the workers started by SpatialOS, specified in your [launch configuration]({{URLRoot}}/content/glossary#launch-configuration).
+  1. `<ProjectRoot>\spatial\logs\runtime.log` contains the logs printed by the SpatialOS runtime. These are the services required for SpatialOS to run a local deployment.  
+
+If you require additional debugging logs you can always run `spatial local launch` with the flag `log_level=debug`.
 
 #### How to modify the default behavior
 You can modify some of the GDK settings from the Unreal Editor toolbar at **Edit** > **Project Settings** >**SpatialOS Unreal GDK** > **Toolbar**.
