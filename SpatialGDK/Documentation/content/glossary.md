@@ -5,7 +5,7 @@ This glossary covers:
 * SpatialOS terms used in the GDK for Unreal documentation
 
 **SpatialOS documentation**<br/>
-Many SpatialOS term definitions link to further information in the [SpatialOS documentation](https://docs.improbable.io/reference/latest/index). This documentation covers the SpatialOS SDK - a software development kit for SpatialOS which underpins the GDK for Unreal, as well some GDK-relevant tools; the [Console](#console), [schema](#schema), [snapshots](#snapshots), and [configuration files](#configuration files) in particular.
+Many SpatialOS term definitions link to further information in the [SpatialOS documentation](https://docs.improbable.io/reference/latest/index). This documentation covers the SpatialOS SDK - a software development kit for SpatialOS which underpins the GDK for Unreal, as well some GDK-relevant tools; the [Console](#console), [schema](#schema), [snapshots](#snapshots), and [configuration files](#configuration-files) in particular.
 
 Note that this SpatialOS documentation assumes you are developing a SpatialOS game using the SpatialOS SDKs ([The Worker SDK and Platform SDK](#https://docs.improbable.io/reference/latest/shared/get-started/working-with-spatialos)), so it may reference content relevant to that workflow only. While the SpatialOS SDK underpins the GDK for Unreal, the two workflows are not always the same.
 
