@@ -297,7 +297,12 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 
-	FHandoverChangeState HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
+	FHandoverChangeState HandoverChangeState;
+
+	if (ActorHandoverShadowData != nullptr)
+	{
+		HandoverChangeState = GetHandoverChangeList(*ActorHandoverShadowData, Actor);
+	}
 
 	// If any properties have changed, send a component update.
 	if (bCreatingNewEntity || RepChanged.Num() > 0 || HandoverChangeState.Num() > 0)
@@ -561,18 +566,17 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	check(!HandoverShadowDataMap.Contains(InActor));
 
 	// Create the shadow map, and store a quick access pointer to it
-	ActorHandoverShadowData = &HandoverShadowDataMap.Add(InActor, MakeShared<TArray<uint8>>()).Get();
-	InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
+	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(InActor->GetClass());
+
+	if (Info->SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		ActorHandoverShadowData = &HandoverShadowDataMap.Add(InActor, MakeShared<TArray<uint8>>()).Get();
+		InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
+	}
 
 	for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 	{
 		UObject* Subobject = SubobjectInfoPair.Key;
-		FClassInfo* Info = SubobjectInfoPair.Value;
-
-		if (Info->SchemaComponents[SCHEMA_Handover] == SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			continue;
-		}
 
 		check(!HandoverShadowDataMap.Contains(Subobject));
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);

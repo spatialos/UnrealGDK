@@ -10,7 +10,6 @@
 #include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
 #include "UObject/Class.h"
-#include "UObjectIterator.h"
 #include "UObject/UObjectIterator.h"
 
 void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
