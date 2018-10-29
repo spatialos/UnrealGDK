@@ -19,7 +19,7 @@ Before porting your project:
 ### 1. Set up the project structure
 1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the StarterProject repository that you cloned earlier.
 
-    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders below:  
+    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders below to your `<ProjectRoot>`:  
 
     ``` cpp
     \StarterProject\spatial\
@@ -96,7 +96,7 @@ It is necessary to modify your games `GameInstance` class(es) to work properly w
         UCLASS()
         class YOURPROJECT_API UYourProjectGameInstance : public USpatialGameInstance
         {
-        GENERATED_BODY()
+            GENERATED_BODY()
         };
             ```
     1. If your game's `GameInstance` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** set the **Parent Class** to `SpatialGameInstance`
