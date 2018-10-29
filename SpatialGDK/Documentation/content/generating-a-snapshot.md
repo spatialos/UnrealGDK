@@ -35,11 +35,13 @@ These entities exists only to set up server-worker boundaries in a way that is e
 
 ## How to generate a snapshot
 
-To generate a snapshot, use the **Snapshot** button on the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbar) in the Unreal Editor.
+To generate a snapshot, use the **Snapshot** button on the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbars.md) in the Unreal Editor.
 
  ![Snapshot]({{assetRoot}}assets/screen-grabs/snapshot.png)
 
- This creates a snapshot called `default.snapshot` which you can find in `spatial\snapshots`.
+This creates a snapshot called `default.snapshot` which you can find in `spatial\snapshots`.
+
+If you want your snapshots to be exported to a different path you can specify the output path and file name of the snapshot using the [GDK toolbar settings]({{urlRoot}}/content/toolbars.md).
 
 >To ensure Startup Actors are listed in the snapshot, tag them as [SpatialType]({{urlRoot}}/content/spatial-type).
 
