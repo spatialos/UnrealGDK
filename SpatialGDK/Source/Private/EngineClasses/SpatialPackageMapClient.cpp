@@ -15,7 +15,7 @@
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialOSPackageMap);
+DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
 void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 {
@@ -146,7 +146,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
 	FUnrealObjectRef ObjectRef(EntityId, 0);
 	RegisterObjectRef(NetGUID, ObjectRef);
-	UE_LOG(LogSpatialOSPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
+	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId);
 
 	// This will be null when being used in the snapshot generator
@@ -166,7 +166,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 		FUnrealObjectRef SubobjectRef(EntityId, Offset);
 		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 
-		UE_LOG(LogSpatialOSPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
+		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
 			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
 
 			// This will be null when being used in the snapshot generator
@@ -209,6 +209,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	AActor* Actor = SpatialNetDriver->EntityRegistry->GetActorFromEntityId(EntityId);
 	if (Actor == nullptr)
 	{
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Trying to clean up Actor for EntityId %lld but Actor does not exist! Will not cleanup subobjects for this Entity"), EntityId);
 		return;
 	}
 
@@ -334,7 +335,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(UObject* Object
 		CacheObject.OuterGUID = GetOrAssignNetGUID_SpatialGDK(Object->GetOuter());
 		RegisterNetGUID_Internal(NetGUID, CacheObject);
 
-		UE_LOG(LogSpatialOSPackageMap, Log, TEXT("%s: NetGUID for object %s was not found in the cache. Generated new NetGUID %s."),
+		UE_LOG(LogSpatialPackageMap, Log, TEXT("%s: NetGUID for object %s was not found in the cache. Generated new NetGUID %s."),
 			*Cast<USpatialNetDriver>(Driver)->Connection->GetWorkerId(),
 			*Object->GetName(),
 			*NetGUID.ToString());

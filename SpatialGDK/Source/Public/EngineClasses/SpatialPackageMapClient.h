@@ -12,7 +12,7 @@
 
 #include "SpatialPackageMapClient.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSPackageMap, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
 class USpatialTypebindingManager;
 
