@@ -41,7 +41,7 @@ class TESTSUITE_API AExampleGameGameMode : public AGameModeBase
 }
 ```
 
-To tag a blueprint class as a Public Singleton, open the class in the blueprint editor and navigate to the `Class Settings`. In the `Advanced` section inside `Class Options`, tick the `Spatial Type` checkbox and add `Singleton` to the `Spatial Description` textbox. To tag a blueprint class as a Private Singleton, follow the same steps, but add `ServerOnly` to the `Spatial Description` textbox.
+To tag a Blueprint class as a Public Singleton, open the class in the Blueprint Editor and navigate to the `Class Settings`. In the `Advanced` section inside `Class Options`, check the `Spatial Type` checkbox and add `Singleton` to the `Spatial Description` textbox. To tag a Blueprint class as a Private Singleton, follow the same steps and add `ServerOnly` to the `Spatial Description` textbox.
 
 This is an example of what your blueprint `Class Options` should look like if you've tagged it as a Private Singleton:
 ![Singleton blueprint]({{assetRoot}}assets/screen-grabs/blueprint_singleton.png)
