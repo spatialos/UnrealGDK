@@ -312,7 +312,8 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	{
 		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
 			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
 			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 			{
