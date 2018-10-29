@@ -7,7 +7,7 @@ component GlobalStateManager {
 }
 
 component DeploymentMap {
-    id = 100008;
+    id = 100006;
     string map_url = 1;
     bool accepting_players = 2;
 }
