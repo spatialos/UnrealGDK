@@ -115,7 +115,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	{
 		const FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
 			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
 			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 			{
