@@ -24,7 +24,7 @@ UPROPERTY(Handover)
 float MyServerSideVariable;
 ```
 
-2. If your property is defined ni a blueprint class, mark the property with a `Handover` tag in the blueprint editor, as shown in the image below.
+2. Alternatively, if your property is defined in a blueprint class, mark the property with a `Handover` tag in the blueprint editor, as shown in the image below.
 
 1. Mark the Actor as a `SpatialType`. See SpatialType doc.
 
