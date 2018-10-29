@@ -184,9 +184,12 @@ void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrea
 
 bool IsReplicatedSubobject(TSharedPtr<FUnrealType> TypeInfo)
 {
-	if (GetFlatRepData(TypeInfo)[REP_MultiClient].Num() > 0 || GetFlatRepData(TypeInfo)[REP_SingleClient].Num() > 0)
+	for (auto& PropertyGroup : GetFlatRepData(TypeInfo))
 	{
-		return true;
+		if (PropertyGroup.Value.Num() > 0)
+		{
+			return true;
+		}
 	}
 
 	if (GetFlatHandoverData(TypeInfo).Num() > 0)
