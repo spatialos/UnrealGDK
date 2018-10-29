@@ -52,8 +52,6 @@ Actor property handover is a new feature we’re introducing with the GDK. It re
 
 As SpatialOS has multiple servers, only one server has the [authority]({{urlRoot}}/content/glossary#authority) to manipulate an Actor at any one time. Cross-server RPCs enable a server without authority over an Actor to tell the server which has authority over that Actor to manipulate it. For more information see the documentation on [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs).
 
-`Cross-server RPC`s are a new type of RPC that functions between two servers. These enable a server without authority over an Actor to communicate with the server which has authority and is able to manipulate the Actor.
-
 ## Networking switch
 
 The GDK offers you a convenient way to switch between native Unreal networking and SpatialOS networking via a checkbox in the Unreal Editor. This is useful to test valid functionality and performance on a single server. See the documentation on the networking switch on the [Troubleshooting]({{urlRoot}}/content/troubleshooting) page. To switch networking mode to Unreal, from the Editor toolbar menu, unmark the `Spatial networking` checkbox under `Play` dropdown in the Unreal Editor toolbar.
