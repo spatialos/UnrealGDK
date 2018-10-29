@@ -94,7 +94,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
 
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+	{
 		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
@@ -115,7 +116,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	{
 		const FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
 			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
 			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 			{
@@ -775,7 +777,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		FClassInfo & SubobjectInfo = *SubobjectInfoPair.Value;
+		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
 		if (SubobjectInfo.SchemaComponents[SCHEMA_ClientRPC] != SpatialConstants::INVALID_COMPONENT_ID)
 		{

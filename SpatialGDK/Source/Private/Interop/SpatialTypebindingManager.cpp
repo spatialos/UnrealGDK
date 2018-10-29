@@ -101,7 +101,8 @@ void USpatialTypebindingManager::CreateTypebindings()
 			}
 		}
 
-		ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
 			Worker_ComponentId ComponentId = SchemaDatabase->ClassToSchema[Class].SchemaComponents[Type];
 			if (ComponentId != 0)
 			{
@@ -133,7 +134,8 @@ void USpatialTypebindingManager::CreateTypebindings()
 
 			SubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
 
-			ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+			{
 				Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
 				if (ComponentId != 0)
 				{
