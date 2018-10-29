@@ -1,6 +1,8 @@
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
+
 # Singleton Actors
 
-Singleton Actors allow a single source of truth for both operations and data across a multi-server simulation. They are server-side authoritative [Actors (Unreal documentation)](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors) that are restricted to one instantiation on SpatialOS.
+Singleton Actors allow a single source of truth for both operations and data across a multi-server simulation. They are server-side authoritative [Actors](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors) that are restricted to one instantiation on SpatialOS.
 
 There are two kinds of Singleton Actors:
 
@@ -11,7 +13,7 @@ You can define any class as a Singleton Actor. At the moment the GDK for Unreal 
 
 Each server-worker should instantiate their own local version of each Singleton Actor. For `GameMode` and `GameState`, Unreal Engine does this automatically.
 
-Due to Unreal server-workers spawning their own instances of each Singleton Actor, proper replication and authority management of Singleton Actors becomes a bit tricky. To solve this issue, we have introduced the concept of a Global State Manager (GSM) to enable proper replication of Singleton Actors. The GSM solves the problem of replicating Singleton Actors by only allowing the server-worker with [authority (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#read-and-write-access-authority) over the GSM to execute the initial replication of these Actors. All other server-workers will then link their local Singleton Actors to their respective SpatialOS entity.
+Due to Unreal server-workers spawning their own instances of each Singleton Actor, proper replication and authority management of Singleton Actors becomes a bit tricky. To solve this issue, we have introduced the concept of a Global State Manager (GSM) to enable proper replication of Singleton Actors. The GSM solves the problem of replicating Singleton Actors by only allowing the server-worker with [authority](https://docs.improbable.io/reference/latest/shared/glossary#read-and-write-access-authority) over the GSM to execute the initial replication of these Actors. All other server-workers will then link their local Singleton Actors to their respective SpatialOS entity.
 
 ## Setting up Singleton Actors
 

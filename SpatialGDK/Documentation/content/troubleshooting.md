@@ -28,7 +28,7 @@ Validate that the SpatialOS entity that represents your Actor appears in the Ins
 
 **Q:** I’m getting the following compilation error when building the GDK: `Error C2248: FRepLayout::Cmds': cannot access private member declared in class 'FRepLayout`.
 
-**A:** You're building against an unsupported version of Unreal Engine. Make sure you're targeting the fork of Unreal Engine that the GDK requires. See the [setup guide]({{urlRoot}}/content/get=started/2-build-unreal) for more details.
+**A:** You're building against an unsupported version of Unreal Engine. Make sure you're targeting the fork of Unreal Engine that the GDK requires. See the [setup guide]({{urlRoot}}/content/get=started/0-get-started) for more details.
 
 ------
 

@@ -1,3 +1,5 @@
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
+
 # How to port a native Unreal project to the Unreal GDK
 
 > This workflow is very subject to change. We're aware that it's not optimized, and one of our priorities is to improve iteration times.
@@ -6,8 +8,8 @@
 
 <%(TOC)%>
 
-Follow the [setup guide]({{urlRoot}}/get-started/0-get-started) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
-> To speed up build times, install IncrediBuild, or another build distributor.
+Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
+> To speed up build times, install IncrediBuild, FastBuild, or another build distributor.
 
 ## Setting up the project structure
 1. In a terminal window, navigate to the root directory of the SpatialOS Unreal GDK repository you cloned and run `Setup.bat`. This requires authorization with your SpatialOS account.

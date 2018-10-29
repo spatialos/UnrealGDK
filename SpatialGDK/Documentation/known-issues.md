@@ -2,7 +2,7 @@
 
 Known issue = any major user-facing bug or lack of user-facing feature that:
 1. diverges from vanilla Unreal design or implementation (e.g. ordering of reliable RPCs), **OR**
-2. diverges from user expectations from a SpatialOS project (e.g. interacting across worker boundaries)
+1. diverges from user expectations from a SpatialOS project (e.g. interacting across worker boundaries)
 
 | Issue | Date added | Ticket | Workaround? |
 |-------|-------------------|--------|-------------|

@@ -1,5 +1,6 @@
-# Actor property handover between SpatialOS servers
+<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
 
+# Actor property handover between SpatialOS servers
 ## Overview
 
 <%(TOC)%>

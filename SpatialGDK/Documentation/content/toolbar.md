@@ -2,7 +2,7 @@
 
 The GDK toolbar provides several functions required for building and launching your client and server-workers from inside the Unreal Editor.
 
-## Terms used in this document
+## Terms used in this doc
 `<ProjectRoot>` - The root folder of your Unreal project.  
 `<GameRoot>` - The folder containing your game's `.uproject` and source folder (for example, `<ProjectRoot>/ShooterGame/`).  
 
