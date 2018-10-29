@@ -94,7 +94,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
 
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+	{
 		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
