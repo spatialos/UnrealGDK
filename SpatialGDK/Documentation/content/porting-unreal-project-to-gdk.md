@@ -144,14 +144,6 @@ You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a
 1. In the Unreal Editor, on the GDK toolbar, click  the **Schema** button to run the [Schema Generator]({{URLRoot}}/content/glossary#schema-generator).
 1. On the same toolbar, click the **Snapshot** button which will generate a snapshot for the map currently open in the editor.
 
-### 7. Build SpatialOS C++ workers
-1. Build workers for a local [deployment]({{URLRoot}}/content/glossary#deployment) of your game. To do this:  
-   
-    In a terminal window, from `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\SpatialGDK\Build\Scripts`, run `BuildWorker.bat <YourProject>Editor Win64 Development <YourProject>.uproject`  
-
-    If, for example, your project is called "StarterProject", this command would be: `BuildWorker.bat StarterProjectEditor Win64 Development StarterProject.uproject`.  
-    This means you can now run a local deployment with more than one server; your [launch configuration]({{URLRoot}}/content/glossary#launch-configuration) can have multiple servers-workers.
-
 ### 8. Launch your game
 1. Switch your game project to use the SpatialOS networking. To do this: in the Unreal Editor, from the toolbar, open the **Play** drop-down menu and check two checkboxes:
     * Check the box for **Run Dedicated Server**
@@ -162,7 +154,9 @@ You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a
 1. On the main Unreal toolbar, click **Play**. 
 1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/13.3/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
   
-Job done! You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector. 
+Job done! You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
+
+**For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{URLRoot}}/content/glossary#deployment)**
 
 #### Logs
 You can find Spatial log files for your local deployments in `<ProjectRoot>\spatial\logs\`.  
