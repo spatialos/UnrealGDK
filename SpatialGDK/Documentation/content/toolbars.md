@@ -28,7 +28,7 @@ These settings are valid for Editor and command-line builds. They’re stored in
 
 You can switch back by unchecking the boxes.
 
-> **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to debug and so speed up your development iteration. However, you lose access to the multi-server features of the GDK in Unreal default networking mode which may lead to erratic behavior.
+> **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to debug and so speed up your development iteration. However, you lose access to the multiserver features of the GDK in Unreal default networking mode which may lead to erratic behavior.
 
 ### Launching multiple PIE server-workers
 
