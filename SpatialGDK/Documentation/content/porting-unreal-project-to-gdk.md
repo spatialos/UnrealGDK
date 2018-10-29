@@ -122,15 +122,15 @@ The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these ar
         ```
         UCLASS(SpatialType=Singleton)
         ```
-        If your game's `GameState` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** check **Spatial Type** and in the Spatial Description text box enter `Singleton`.
+        If your game's `GameState` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the advanced drop down and check **Spatial Type**, in the Spatial Description text box enter `Singleton`.
 
     1. If your game's `GameMode` is a `.cpp` file, locate it and mark it as a Private Singleton by modifying the `UCLASS` specifier as shown:
         ```
         UCLASS(SpatialType=(Singleton,ServerOnly))
         ```
-       If your game's `GameMode` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** check **Spatial Type** and in the **Spatial Description** text box enter `Singleton,ServerOnly`.
+       If your game's `GameMode` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the advanced drop down and check **Spatial Type**, in the **Spatial Description** text box enter `Singleton,ServerOnly`.
 
-   Marking these Singleton Actor classes as `Spatial Type` enables them to work with SpatialOS as [schema]({URLRoot}}/content/glossary#schema) will now be generated for them.
+   Marking these Singleton Actor classes as `Spatial Type` enables them to work with SpatialOS as [schema]({URLRoot}}/content/glossary#schema) will now be generated for them. 
 
 ### 6. Generate schema and a snapshot
 You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a [snapshot]({{URLRoot}}/content/glossary#snapshot) to get your game's deployment started. To do this:
