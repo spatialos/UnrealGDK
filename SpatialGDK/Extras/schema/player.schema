@@ -1,7 +1,0 @@
-// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-package unreal;
-
-component PlayerControlClient
-{
-    id = 100005;
-}
