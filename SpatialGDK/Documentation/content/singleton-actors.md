@@ -1,30 +1,25 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
 # Singleton Actors
 
-Singleton Actors allow a single source of truth for both operations and data across a multi-server simulation. They are server-side authoritative [Actors](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors) that are restricted to one instantiation on SpatialOS.
+Singleton Actors allow a single source of truth for both operations and data across a multi-server simulation. They are server-side authoritative [Unreal Actors](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors) that are restricted to one instantiation on SpatialOS. For example, if you are implementing a scoreboard, you'd most likely only want there to be one of them in your world. Ensuring this behavior in a multi-server paradigm requires a few additional steps which can be easily facilitated through the Singleton Actor.
 
 There are two kinds of Singleton Actors:
 
-* **Public Singleton Actors** - Singleton Actors which are replicated to server-workers and client-workers. `GameState` is a Public Singleton Actor.
-* **Private Singletons** - Singleton Actors which are replicated to server-workers, but not accessible to client-workers. `GameMode` is a Private Singleton Actor.
+* **Public Singleton Actors** - Singleton Actors which are replicated to [server-workers and client-workers]({{urlRoot}/content/glossary#workers). [AGameState](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) is a Public Singleton Actor.
+* **Private Singleton Actors** - Singleton Actors which are replicated to [server-workers]({{urlRoot}/content/glossary#workers), but not accessible to [client-workers]({{urlRoot}/content/glossary#workers). [AGameMode](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) is a Private Singleton Actor.
 
-You can define any class as a Singleton Actor. At the moment the GDK for Unreal only supports Public Singleton Actors.
+You can define any class as a Singleton Actor.
 
-Each server-worker should instantiate their own local version of each Singleton Actor. For `GameMode` and `GameState`, Unreal Engine does this automatically.
+Each server-worker should instantiate their own local version of each Singleton Actor. For `AGameMode` and `AGameState`, Unreal Engine does this automatically. Client-workers receive Public Singletons Actors from the server-workers via the normal Actor replication lifecycle.
 
-Due to Unreal server-workers spawning their own instances of each Singleton Actor, proper replication and authority management of Singleton Actors becomes a bit tricky. To solve this issue, we have introduced the concept of a Global State Manager (GSM) to enable proper replication of Singleton Actors. The GSM solves the problem of replicating Singleton Actors by only allowing the server-worker with [authority](https://docs.improbable.io/reference/latest/shared/glossary#read-and-write-access-authority) over the GSM to execute the initial replication of these Actors. All other server-workers will then link their local Singleton Actors to their respective SpatialOS entity.
+Due to server-workers spawning their own instances of each Singleton Actor, proper replication and authority management of Singleton Actors becomes a bit tricky. To solve this issue, we have introduced the concept of a Global State Manager (GSM) to enable proper replication of Singleton Actors. The GSM solves the problem of replicating Singleton Actors by only allowing the server-worker with [authority]({{urlroot}}/content/glossary#authority) over the GSM to execute the initial replication of these Actors. All other server-workers will then link their local Singleton Actors to their respective SpatialOS entity. Because of this, you must update your snapshot whenever adding a new Singleton Actor to your project.
 
 ## Setting up Singleton Actors
 
 To set up Singleton Actors for your project, you need to:
 
-1. Register Singleton Actors by tagging them with the `SpatialType=Singleton` class attribute.
-1. Add the generated components to the UnrealWorker worker configuration file.
+1. Register Singleton Actors by tagging them with the `SpatialType=Singleton` class attribute. If you wish to make them Private Singletons, tag them with the additional `ServerOnly` class attribute.
 
-## How to tag classes with Singleton Actor identifiers
-
-The code snippet below shows how to tag a class with the appropriate identifiers.
+The code snippet below shows how to tag a native C++ class with the appropriate Public Singleton identifiers.
 
 ```
 UCLASS(SpatialType=Singleton)
@@ -35,30 +30,21 @@ class TESTSUITE_API AExampleGameGameState : public AGameStateBase
 }
 ```
 
-### Streaming queries
-
-To make sure all server-workers check out Singleton Actor entities, you need to configure the worker to have [streaming queries](https://docs.improbable.io/reference/latest/shared/worker-configuration/bridge-config#streaming-queries) for each Singleton Actor’s components.
-
-In our example with `ExampleGameGameState`, the Schema Generator creates a schema component called `ExampleGameGameStateMultiClientRepData`. You need to add this as a streaming query to the worker configuration file (spatial/workers/unreal/spatialos.UnrealWorker.worker.json).
-
-In the `bridge` field of the worker configuration file, there should be a section that looks like this:
+The code snippet below shows how to tag a native C++ class with the appropriate Private Singleton identifiers.
 
 ```
-"streaming_query": [
-      {
-        "global_component_streaming_query": {
-          "component_name": "improbable.unreal.GlobalStateManager"
-        }
-      },
-      {
-        "global_component_streaming_query": {
-          "component_name": "improbable.unreal.generated.examplegamegamestate.ExampleGameGameStateMultiClientRepData"
-        }
-      }
-    ],
+UCLASS(SpatialType=(Singleton, ServerOnly))
+class TESTSUITE_API AExampleGameGameMode : public AGameModeBase
+{
+  GENERATED_BODY()
+  ...
+}
 ```
 
-This creates two streaming queries, one for the `GlobalStateManager` and one for the `ExampleGameGameState` component. For each Singleton Actor you register, you need to add another streaming query for that Singleton Actor’s `MultiClientRepData` component. We understand this workflow is a little clumsy and will be improved in the future.
+To tag a Blueprint class as a Public Singleton, open the class in the Blueprint Editor and navigate to the `Class Settings`. In the `Advanced` section inside `Class Options`, check the `Spatial Type` checkbox and add `Singleton` to the `Spatial Description` textbox. To tag a Blueprint class as a Private Singleton, follow the same steps and add `ServerOnly` to the `Spatial Description` textbox.
 
-And that's it! You have successfully specified a Singleton Actor. Make sure you generate a new snapshot and schema using the [SpatialOS GDK for Unreal toolbar]({{urlRoot}}/content/toolbar).
+This is an example of what your Blueprint `Class Options` should look like if you've tagged it as a Private Singleton:
+![Singleton Blueprint]({{assetRoot}}assets/screen-grabs/blueprint_singleton.png)
+
+And that's it! You have successfully specified a Singleton Actor. Make sure you generate [schema]({{urlRoot}}/content/glossary#schema) and create a new [snapshot]({{urlRoot}}/content/generating-a-snapshot) using the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbar).
 
