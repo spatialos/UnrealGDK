@@ -886,16 +886,6 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 {
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
-	FClassInfo* Info = nullptr;
-	if (AActor* Actor = Cast<AActor>(Object->GetOuter()))
-	{
-		Info = TypebindingManager->FindClassInfoByClassAndOffset(Actor->GetClass(), ObjectRef.Offset);
-	}
-	else
-	{
-		Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	}
-
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
