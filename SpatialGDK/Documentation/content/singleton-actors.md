@@ -1,6 +1,6 @@
 # Singleton Actors
 
-Singleton Actors allow a single source of truth for both operations and data across a multi-server simulation. They are server-side authoritative [Unreal Actors](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors) that are restricted to one instantiation on SpatialOS.
+Singleton Actors allow a single source of truth for both operations and data across a multi-server simulation. They are server-side authoritative [Unreal Actors](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors) that are restricted to one instantiation on SpatialOS. For example, if you are implementing a scoreboard, you'd most likely only want there to be one of them in your world. Ensuring this behavior in a multi-server paradigm requires a few additional steps which can be easily facilitated through the Singleton Actor.
 
 There are two kinds of Singleton Actors:
 
