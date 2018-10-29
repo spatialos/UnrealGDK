@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-package improbable.unreal;
+package unreal;
 
 component Singleton {
     id = 100003;
