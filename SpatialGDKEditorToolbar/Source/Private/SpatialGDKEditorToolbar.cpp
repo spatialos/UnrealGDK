@@ -357,7 +357,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	const FString ExecuteAbsolutePath = SpatialGDKToolbarSettings->GetProjectRoot();
+	const FString ExecuteAbsolutePath = SpatialGDKToolbarSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
@@ -382,7 +382,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	{
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 		const FString SpatialLogPath =
-			SpatialGDKToolbarSettings->GetProjectRoot() + FString(TEXT("/logs/spatial.log"));
+			SpatialGDKToolbarSettings->GetSpatialOSDirectory() + FString(TEXT("/logs/spatial.log"));
 		UE_LOG(LogSpatialGDKEditor, Error,
 				TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."),
 				*SpatialLogPath);
