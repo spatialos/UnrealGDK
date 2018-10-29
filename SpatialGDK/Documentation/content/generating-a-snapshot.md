@@ -15,8 +15,6 @@ Startup Actors, critical entities, and placeholder entities.
 
 Startup Actors are [stably named replicated Actors (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/ObjectReferences) that you have placed in a Level. The startup Actors need to be listed in the snapshot so that SpatialOS spawns an entity only once for each Actor. If the startup Actors are not in the snapshot, you may get multiple entities for each Actor when you launch multiple [server-workers]({{urlRoot}}/content/glossary#workers). 
 
-To ensure these Actors are listed in the snapshot, tag them as [SpatialType]({{urlRoot}}/content/spatial-type).
-
 ### Critical entities
 
 Critical entities are listed in snapshots by default.
@@ -48,8 +46,8 @@ If you want your snapshots to be exported to a different path you can specify th
 ## When to generate a snapshot
 You need to regenerate a snapshot when:
 1. Generating [schema]({{urlRoot}}/content/glossary#schema) for a new class.
-1. Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
-1. Placing or removing replicated Actors in the Level.
-1. Modifying replicated values on placed replicated Actors.
-1. Adding or removing a [singleton class]({{urlRoot}}/content/singleton-actors).
+2. Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
+3. Placing or removing replicated Actors in the Level.
+4. Modifying replicated values on placed replicated Actors.
+5. Adding or removing a [singleton class]({{urlRoot}}/content/singleton-actors).
 
