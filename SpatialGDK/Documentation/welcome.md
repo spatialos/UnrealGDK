@@ -13,6 +13,6 @@ The GDK offers:
 * **An Unreal-native experience:** keeping traditional workflows and networking APIs that Unreal Engine developers are familiar with, the GDK introduces new native-feeling concepts that turn a single-authority engine into a distributed one. This enables the GDK to retain the functionality of the networking features which Unreal offers out of the box, including transform synchronization, character movement controller, client-side prediction.
 * **An easy way to get started:** we have made sure it’s easy to get started with the GDK by including a Starter Project which you can use as a tour of SpatialOS and a base for your own game, as well as a guide to porting your current multiplayer Unreal game to run on SpatialOS.
 
-#### [Get started]({{urlRoot}}/content/get-started/get-started.md) with the SpatialOS GDK for Unreal.
+#### [Get started]({{urlRoot}}/content/get-started/introduction.md) with the SpatialOS GDK for Unreal.
 
 <%(Callout type="warn" message="This is an [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal, pending stability and performance improvements. The API may change as we learn from feedback  - see the guidance on [Recommended use]({{URLRoot}}/content/recommended-use).")%>
