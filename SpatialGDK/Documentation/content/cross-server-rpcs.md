@@ -15,7 +15,7 @@ The example diagram below shows a player successfully shooting another player’
 
 ![A situation where you might need cross-server RPCs]({{assetRoot}}assets/shooting-workflow-simple.png)
 
-In the diagram, Server-worker 1 has authority over Player 1 and Server-worker 2 has authority over Player 2. If Player 1 shoots a bullet, Server-worker 1 knows about the bullet and can make any necessary changes to Player 1 but it can’t make changes to Player 2 when the bullet hits. SpatialOS ensures that Server-worker 2 can affect changes to Player 2 (the hat gets hit by the bullet) by routing the change notification from Server-worker 1 to Server-worker 2.
+In the diagram, Server-worker 1 has authority over Player 1 and Server-worker 2 has authority over Player 2. If Player 1 shoots a bullet, Server-worker 1 knows about the bullet and can make any necessary changes to Player 1 but it can’t make changes to Player 2 when the bullet hits. SpatialOS ensures that Server-worker 2 can make changes to Player 2 (the hat gets hit by the bullet) by routing the change notification from Server-worker 1 to Server-worker 2.
 
 ### How to send a cross-server RPC (using C++)
 
