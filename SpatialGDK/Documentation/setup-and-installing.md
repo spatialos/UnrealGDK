@@ -125,7 +125,7 @@ Build the Unreal GDK module dependencies which the Starter Project needs to work
 
 To run a cloud deployment, you need to prepare your server-worker and client-worker assemblies, and upload them to the cloud.
 
-> Building the assemblies can take a while - we recommend installing IncrediBuild, FastBuild, or another build distributor.
+> Building the assemblies can take a while - we recommend installing IncrediBuild, or another build distributor.
 
 1. Change the name of the project
     1. In File Explorer, navigate to the root directory of the Unreal GDK Starter Project repository, then to **`\spatial`**, and open the `spatialos.json` file in an editor of your choice.

@@ -6,12 +6,12 @@
 
 <%(TOC)%>
 
-Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
-> To speed up build times, install IncrediBuild, FastBuild, or another build distributor.
+Follow the [setup guide]({{urlRoot}}/get-started/0-get-started) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
+> To speed up build times, install IncrediBuild, or another build distributor.
 
 ## Setting up the project structure
 1. In a terminal window, navigate to the root directory of the SpatialOS Unreal GDK repository you cloned and run `Setup.bat`. This requires authorization with your SpatialOS account.
-2. Open the `StarterProject` repo and copy everything except the `\Game\` folder alongside your `<GameRoot>` folder. 
+1. Open the `StarterProject` repo and copy everything except the `\Game\` folder alongside your `<GameRoot>` folder. 
 Your folder structure should now resemble -
 ```
 \<ProjectRoot>\ci\
