@@ -342,7 +342,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 		for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 		{
-			FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
+			const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
 
 			if (ObjectRef != SpatialConstants::NULL_OBJECT_REF)
 			{

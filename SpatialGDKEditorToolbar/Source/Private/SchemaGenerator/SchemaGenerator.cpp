@@ -528,7 +528,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 					FSubobjectSchemaData SubobjectData;
 
-					if (IsReplicatedSubobject(PropertyTypeInfo))
+					if (IsReplicatedSubobject(PropertyTypeInfo) && SchemaGeneratedClasses.Contains(Value->GetClass()))
 					{
 						bHasComponents = true;
 						SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaTypeName(PropertyTypeInfo->Name.ToString()), PropertyTypeInfo, Value->GetClass());

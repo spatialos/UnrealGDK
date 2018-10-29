@@ -21,6 +21,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
+TArray<UClass*> SchemaGeneratedClasses;
 TMap<UClass*, FSchemaData> ClassToSchema;
 
 namespace
@@ -190,7 +191,6 @@ bool SpatialGDKGenerateSchema()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	TArray<UClass*> SchemaGeneratedClasses;
 	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)
 	{
 		SchemaGeneratedClasses = GetAllSupportedClasses();	
