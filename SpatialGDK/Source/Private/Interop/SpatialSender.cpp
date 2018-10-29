@@ -93,26 +93,34 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(Info->SingleClientComponent, ServersOnly);
-	ComponentWriteAcl.Add(Info->MultiClientComponent, ServersOnly);
-	ComponentWriteAcl.Add(Info->HandoverComponent, ServersOnly);
-	ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
-	ComponentWriteAcl.Add(Info->RPCComponents[RPC_Server], ServersOnly);
-	ComponentWriteAcl.Add(Info->RPCComponents[RPC_CrossServer], ServersOnly);
-	ComponentWriteAcl.Add(Info->RPCComponents[RPC_NetMulticast], ServersOnly);
 
-	for (UClass* SubobjectClass : Info->SubobjectClasses)
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		FClassInfo* ClassInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
-		check(ClassInfo);
+		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
+		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return;
+		}
 
-		ComponentWriteAcl.Add(ClassInfo->SingleClientComponent, ServersOnly);
-		ComponentWriteAcl.Add(ClassInfo->MultiClientComponent, ServersOnly);
-		ComponentWriteAcl.Add(ClassInfo->HandoverComponent, ServersOnly);
-		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Client], OwningClientOnly);
-		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_Server], ServersOnly);
-		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_CrossServer], ServersOnly);
-		ComponentWriteAcl.Add(ClassInfo->RPCComponents[RPC_NetMulticast], ServersOnly);
+		WorkerRequirementSet& RequirementSet = Type == SCHEMA_ClientRPC ? OwningClientOnly : ServersOnly;
+		ComponentWriteAcl.Add(ComponentId, RequirementSet);
+	});
+
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
+	{
+		const FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
+
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
+			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
+			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
+			{
+				return;
+			}
+
+			WorkerRequirementSet& RequirementSet = Type == SCHEMA_ClientRPC ? OwningClientOnly : ServersOnly;
+			ComponentWriteAcl.Add(ComponentId, RequirementSet);
+		});
 	}
 
 	TArray<Worker_ComponentData> ComponentDatas;
@@ -121,7 +129,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute).CreateUnrealMetadataData());
 
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
@@ -135,7 +143,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
 
-	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, InitialRepChanges, InitialHandoverChanges);
+	TArray<Worker_ComponentData> DynamicComponentDatas = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 	ComponentDatas.Append(DynamicComponentDatas);
 
 	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
@@ -148,25 +156,19 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		QueueOutgoingUpdate(Channel, Actor, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 	}
 
-	for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
+	for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
 	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Info->RPCComponents[RPCType]));
+		if (Info->SchemaComponents[RPCType] != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Info->SchemaComponents[RPCType]));
+		}
 	}
 
-	TArray<UObject*> DefaultSubobjects;
-	Actor->GetDefaultSubobjects(DefaultSubobjects);
-
-	for (UClass* SubobjectClass : Info->SubobjectClasses)
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		FClassInfo* SubobjectInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
-		check(SubobjectInfo);
+		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
-		{
-			return Obj->GetClass() == SubobjectClass;
-		});
-		check(FoundSubobject);
-		UObject* Subobject = *FoundSubobject;
+		UObject* Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
 
 		FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
@@ -175,7 +177,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		UnresolvedObjectsMap.Empty();
 		HandoverUnresolvedObjectsMap.Empty();
 
-		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectRepChanges, SubobjectHandoverChanges);
+		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 		ComponentDatas.Append(ActorSubobjectDatas);
 
 		for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
@@ -188,9 +190,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 		}
 
-		for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
+		for (int32 RPCType = SCHEMA_ClientRPC; RPCType < SCHEMA_Count; RPCType++)
 		{
-			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo->RPCComponents[RPCType]));
+			if (SubobjectInfo->SchemaComponents[RPCType] != SpatialConstants::INVALID_COMPONENT_ID)
+			{
+				ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo->SchemaComponents[RPCType]));
+			}
 		}
 	}
 
@@ -201,7 +206,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	return CreateEntityRequestId;
 }
 
-void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
+void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo* Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
 {
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
@@ -211,7 +216,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
 	ComponentFactory UpdateFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
 
-	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, RepChanges, HandoverChanges);
+	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, RepChanges, HandoverChanges);
 
 	if (RepChanges)
 	{
@@ -257,11 +262,17 @@ void USpatialSender::SendComponentUpdates(UObject* Object, USpatialActorChannel*
 
 void FillComponentInterests(FClassInfo* Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
 {
-	Worker_InterestOverride SingleClientInterest = { Info->SingleClientComponent, bNetOwned };
-	ComponentInterest.Add(SingleClientInterest);
+	if (Info->SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		Worker_InterestOverride SingleClientInterest = { Info->SchemaComponents[SCHEMA_OwnerOnly], bNetOwned };
+		ComponentInterest.Add(SingleClientInterest);
+	}
 
-	Worker_InterestOverride HandoverInterest = { Info->HandoverComponent, false };
-	ComponentInterest.Add(HandoverInterest);
+	if (Info->SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		Worker_InterestOverride HandoverInterest = { Info->SchemaComponents[SCHEMA_Handover], false };
+		ComponentInterest.Add(HandoverInterest);
+	}
 }
 
 TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* Actor)
@@ -274,9 +285,9 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 	FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	FillComponentInterests(ActorInfo, bNetOwned, ComponentInterest);
 
-	for (UClass* SubobjectClass : ActorInfo->SubobjectClasses)
+	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
 	{
-		FClassInfo* SubobjectInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
+		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 		FillComponentInterests(SubobjectInfo, bNetOwned, ComponentInterest);
 	}
 
@@ -326,9 +337,13 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		return;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Params->TargetObject->GetClass());
+	UObject* TargetObject = Params->TargetObject.Get();
+
+	FClassInfo* Info = TypebindingManager->FindClassInfoByObject(TargetObject);
+
 	if (Info == nullptr)
 	{
+		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send RPC %s on unsupported Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
 		return;
 	}
 
@@ -340,11 +355,11 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 	switch (RPCInfo->Type)
 	{
-	case RPC_Client:
-	case RPC_Server:
-	case RPC_CrossServer:
+	case SCHEMA_ClientRPC:
+	case SCHEMA_ServerRPC:
+	case SCHEMA_CrossServerRPC:
 	{
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(Params->TargetObject.Get(), Params->Function, Params->Parameters.GetData(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), Info->SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -360,9 +375,9 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		}
 		break;
 	}
-	case RPC_NetMulticast:
+	case SCHEMA_NetMulticastRPC:
 	{
-		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(Params->TargetObject.Get(), Params->Function, Params->Parameters.GetData(), Info->RPCComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), Info->SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -607,6 +622,12 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
 		FHandleToUnresolved& HandleToUnresolved = ChannelProperties.Value;
 
+		FClassInfo* Info = TypebindingManager->FindClassInfoByObject(ReplicatingObject);
+		if (Info == nullptr)
+		{
+			continue;
+		}
+
 		TArray<uint16> PropertyHandles;
 
 		for (auto& HandleUnresolvedPair : HandleToUnresolved)
@@ -639,14 +660,14 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 		{
 			if (bIsHandover)
 			{
-				SendComponentUpdates(ReplicatingObject, DependentChannel, nullptr, &PropertyHandles);
+				SendComponentUpdates(ReplicatingObject, Info, DependentChannel, nullptr, &PropertyHandles);
 			}
 			else
 			{
 				// End with zero to indicate the end of the list of handles.
 				PropertyHandles.Add(0);
 				FRepChangeState RepChangeState = { PropertyHandles, DependentChannel->GetObjectRepLayout(ReplicatingObject) };
-				SendComponentUpdates(ReplicatingObject, DependentChannel, &RepChangeState, nullptr);
+				SendComponentUpdates(ReplicatingObject, Info, DependentChannel, &RepChangeState, nullptr);
 			}
 		}
 	}
@@ -706,7 +727,7 @@ FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 
 				FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
 
-				WorkerRequirementSet ClientRPCRequirementSet = EntityACL->ComponentWriteAcl[Info->RPCComponents[RPC_Client]];
+				WorkerRequirementSet ClientRPCRequirementSet = EntityACL->ComponentWriteAcl[Info->SchemaComponents[SCHEMA_ClientRPC]];
 				WorkerAttributeSet ClientRPCAttributeSet = ClientRPCRequirementSet[0];
 				return ClientRPCAttributeSet[0];
 			}
@@ -740,7 +761,17 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	EntityACL->ComponentWriteAcl.Add(Info->RPCComponents[RPC_Client], OwningClientOnly);
+	EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[SCHEMA_ClientRPC], OwningClientOnly);
+
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
+	{
+		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
+
+		if (SubobjectInfo.SchemaComponents[SCHEMA_ClientRPC] != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			EntityACL->ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_ClientRPC], OwningClientOnly);
+		}
+	}
 
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 

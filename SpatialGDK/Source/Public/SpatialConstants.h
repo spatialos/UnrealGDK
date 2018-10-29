@@ -11,6 +11,29 @@
 // These are not a type of key supported by TMap.
 using Worker_EntityId_Key = int64;
 
+enum ESchemaComponentType : int32
+{
+	SCHEMA_Invalid = -1,
+
+	// Properties
+	SCHEMA_Data, // Represents properties being replicated to all workers
+	SCHEMA_OwnerOnly,
+	SCHEMA_Handover,
+
+	// RPCs
+	SCHEMA_ClientRPC,
+	SCHEMA_ServerRPC,
+	SCHEMA_NetMulticastRPC,
+	SCHEMA_CrossServerRPC,
+
+	SCHEMA_Count,
+
+	// Iteration helpers
+	SCHEMA_Begin = SCHEMA_Data,
+	SCHEMA_FirstRPC = SCHEMA_ClientRPC,
+	SCHEMA_LastRPC = SCHEMA_CrossServerRPC,
+};
+
 namespace SpatialConstants
 {
 	enum EntityIds
@@ -21,6 +44,8 @@ namespace SpatialConstants
 		PLACEHOLDER_ENTITY_ID_FIRST = 3,
 		PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
 	};
+
+	const Worker_ComponentId INVALID_COMPONENT_ID				= 0;
 
 	const Worker_ComponentId ENTITY_ACL_COMPONENT_ID			= 50;
 	const Worker_ComponentId METADATA_COMPONENT_ID				= 53;

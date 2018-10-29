@@ -5,6 +5,7 @@
 #include "Math/Vector.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
+#include "UObject/UObjectGlobals.h"
 #include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -161,6 +162,12 @@ struct Metadata : Component
 		AddStringToSchema(ComponentObject, 1, EntityType);
 
 		return Data;
+	}
+
+	FORCEINLINE UClass* GetNativeEntityClass()
+	{
+		UClass* Class = FindObject<UClass>(ANY_PACKAGE, *EntityType);
+		return Class->IsChildOf<AActor>() ? Class : nullptr;
 	}
 
 	FString EntityType;

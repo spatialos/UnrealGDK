@@ -6,13 +6,16 @@
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
 
-void USpatialTypebindingManager::Init()
+void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 {
+	NetDriver = InNetDriver;
+	
 	TSoftObjectPtr<USchemaDatabase> SchemaDatabasePtr(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")));
 	SchemaDatabasePtr.LoadSynchronous();
 	SchemaDatabase = SchemaDatabasePtr.Get();
@@ -34,6 +37,11 @@ void USpatialTypebindingManager::FindSupportedClasses()
 
 void USpatialTypebindingManager::CreateTypebindings()
 {
+	// This will iterate through all supported classes: both Actor and Subobject classes
+	// For subobject classes, an FClassInfo will be created with RPC metadata and handover data
+	// but schema components will be 0 since subobject classes don't have associated components
+	// afterwards, the subobject FClassInfos will be the basis of the FClassInfo for specific subobjects
+	// and have their proper schema components filled in
 	for (UClass* Class : SupportedClasses)
 	{
 		FClassInfo Info;
@@ -45,26 +53,25 @@ void USpatialTypebindingManager::CreateTypebindings()
 				RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
 				RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 			{
-				ERPCType RPCType;
+				ESchemaComponentType RPCType;
 				if (RemoteFunction->FunctionFlags & FUNC_NetClient)
 				{
-					RPCType = RPC_Client;
+					RPCType = SCHEMA_ClientRPC;
 				}
 				else if (RemoteFunction->FunctionFlags & FUNC_NetServer)
 				{
-					RPCType = RPC_Server;
+					RPCType = SCHEMA_ServerRPC;
 				}
 				else if (RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
 				{
-					RPCType = RPC_CrossServer;
+					RPCType = SCHEMA_CrossServerRPC;
 				}
 				else if (RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 				{
-					RPCType = RPC_NetMulticast;
+					RPCType = SCHEMA_NetMulticastRPC;
 				}
 				else
 				{
-					RPCType = RPC_Count;
 					checkNoEntry();
 				}
 
@@ -97,63 +104,57 @@ void USpatialTypebindingManager::CreateTypebindings()
 				}
 			}
 		}
-		
-		Info.SingleClientComponent = SchemaDatabase->ClassToSchema[Class].SingleClientRepData;
-		ComponentToClassMap.Add(Info.SingleClientComponent, Class);
 
-		Info.MultiClientComponent = SchemaDatabase->ClassToSchema[Class].MultiClientRepData;
-		ComponentToClassMap.Add(Info.MultiClientComponent, Class);
-
-		Info.HandoverComponent = SchemaDatabase->ClassToSchema[Class].HandoverData;
-		ComponentToClassMap.Add(Info.HandoverComponent, Class);
-
-		Info.RPCComponents[RPC_Client] = SchemaDatabase->ClassToSchema[Class].ClientRPCs;
-		ComponentToClassMap.Add(Info.RPCComponents[RPC_Client], Class);
-
-		Info.RPCComponents[RPC_Server] = SchemaDatabase->ClassToSchema[Class].ServerRPCs;
-		ComponentToClassMap.Add(Info.RPCComponents[RPC_Server], Class);
-
-		Info.RPCComponents[RPC_NetMulticast] = SchemaDatabase->ClassToSchema[Class].NetMulticastRPCs;
-		ComponentToClassMap.Add(Info.RPCComponents[RPC_NetMulticast], Class);
-
-		Info.RPCComponents[RPC_CrossServer] = SchemaDatabase->ClassToSchema[Class].CrossServerRPCs;
-		ComponentToClassMap.Add(Info.RPCComponents[RPC_CrossServer], Class);
-
-		if (Class->IsChildOf<AActor>())
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
-			if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
+			Worker_ComponentId ComponentId = SchemaDatabase->ClassToSchema[Class].SchemaComponents[Type];
+			if (ComponentId != 0)
 			{
-				// Iterate over all subobjects and add them.
-				TArray<UObject*> DefaultSubobjects;
-				ContainerCDO->GetDefaultSubobjects(DefaultSubobjects);
-				for (auto Subobject : DefaultSubobjects)
-				{
-					AddSubobjectClass(Info, Subobject->GetClass());
-				}
-
-				// Components that are added in a blueprint won't appear in the CDO.
-				UClass* BlueprintClass = Class;
-				while (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(BlueprintClass))
-				{
-					if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
-					{
-						for (USCS_Node* Node : SCS->GetAllNodes())
-						{
-							if (Node->ComponentTemplate == nullptr)
-							{
-								continue;
-							}
-
-							AddSubobjectClass(Info, Node->ComponentTemplate->GetClass());
-						}
-					}
-
-					BlueprintClass = BlueprintClass->GetSuperClass();
-				}
+				Info.SchemaComponents[Type] = ComponentId;
+				ComponentToClassMap.Add(ComponentId, Class);
+				ComponentToOffsetMap.Add(ComponentId, 0);
+				ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
 			}
-		}
+		});
 
-		ClassInfoMap.Add(Class, Info);
+		Info.Class = Class;
+
+		ClassInfoMap.Emplace(Class, Info);
+	}
+
+	for (UClass* Class : SupportedClasses)
+	{
+		for (auto& SubobjectDataPair : SchemaDatabase->ClassToSchema[Class].SubobjectData)
+		{
+			int32 Offset = SubobjectDataPair.Key;
+			FSubobjectSchemaData SubobjectSchemaData = SubobjectDataPair.Value;
+
+			FClassInfo* ActorInfo = FindClassInfoByClass(Class);
+			FClassInfo* SubobjectInfoPtr = FindClassInfoByClass(SubobjectSchemaData.Class);
+			if (SubobjectInfoPtr == nullptr)
+			{
+				continue;
+			}
+
+			// Make a copy of the already made FClassInfo for this specific subobject
+			FClassInfo SubobjectInfo = *SubobjectInfoPtr;
+
+			SubobjectInfo.SubobjectName = SubobjectSchemaData.Name;
+
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+			{
+				Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
+				if (ComponentId != 0)
+				{
+					SubobjectInfo.SchemaComponents[Type] = ComponentId;
+					ComponentToClassMap.Add(ComponentId, SubobjectSchemaData.Class);
+					ComponentToOffsetMap.Add(ComponentId, Offset);
+					ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
+				}
+			});
+
+			ActorInfo->SubobjectInfo.Add(Offset, MakeShared<FClassInfo>(SubobjectInfo));
+		}
 	}
 }
 
@@ -162,10 +163,51 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 	return ClassInfoMap.Find(Class);
 }
 
+FClassInfo* USpatialTypebindingManager::FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset)
+{
+	if (FClassInfo* Info = FindClassInfoByClass(Class))
+	{
+		if (Offset == 0)
+		{
+			return Info;
+		}
+
+		if (TSharedPtr<FClassInfo>* SubobjectInfo = Info->SubobjectInfo.Find(Offset))
+		{
+			return SubobjectInfo->Get();
+		}
+
+		return nullptr;
+	}
+
+	return nullptr;
+}
+
 FClassInfo* USpatialTypebindingManager::FindClassInfoByComponentId(Worker_ComponentId ComponentId)
 {
 	UClass* Class = FindClassByComponentId(ComponentId);
 	return Class != nullptr ? FindClassInfoByClass(Class) : nullptr;
+}
+
+FClassInfo* USpatialTypebindingManager::FindClassInfoByObject(UObject* Object)
+{
+	if (AActor* Actor = Cast<AActor>(Object))
+	{
+		return FindClassInfoByClass(Actor->GetClass());
+	}
+	else
+	{
+		checkSlow(Cast<AActor>(Object->GetOuter()));
+
+		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
+
+		if (ObjectRef != SpatialConstants::NULL_OBJECT_REF)
+		{
+			return FindClassInfoByActorClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
+		}
+	}
+
+	return nullptr;
 }
 
 UClass* USpatialTypebindingManager::FindClassByComponentId(Worker_ComponentId ComponentId)
@@ -179,47 +221,23 @@ bool USpatialTypebindingManager::IsSupportedClass(UClass* Class)
 	return SupportedClasses.Contains(Class);
 }
 
-TArray<UObject*> USpatialTypebindingManager::GetHandoverSubobjects(AActor* Actor)
+bool USpatialTypebindingManager::FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {
-	FClassInfo* Info = FindClassInfoByClass(Actor->GetClass());
-	check(Info);
-
-	TArray<UObject*> DefaultSubobjects;
-	Actor->GetDefaultSubobjects(DefaultSubobjects);
-
-	TArray<UObject*> FoundSubobjects;
-
-	for (UClass* SubobjectClass : Info->SubobjectClasses)
+	if (uint32* Offset = ComponentToOffsetMap.Find(ComponentId))
 	{
-		FClassInfo* SubobjectInfo = FindClassInfoByClass(SubobjectClass);
-		check(SubobjectInfo);
-
-		if (SubobjectInfo->HandoverProperties.Num() == 0)
-		{
-			// Not interested in this component if it has no handover properties
-			continue;
-		}
-
-		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
-		{
-			return Obj->GetClass() == SubobjectClass;
-		});
-		check(FoundSubobject);
-		FoundSubobjects.Add(*FoundSubobject);
+		OutOffset = *Offset;
+		return true;
 	}
 
-	return FoundSubobjects;
+	return false;
 }
 
-void USpatialTypebindingManager::AddSubobjectClass(FClassInfo& ClassInfo, UClass* Class)
+ESchemaComponentType USpatialTypebindingManager::FindCategoryByComponentId(Worker_ComponentId ComponentId)
 {
-	if (IsSupportedClass(Class))
+	if (ESchemaComponentType* Category = ComponentToCategoryMap.Find(ComponentId))
 	{
-		if(ClassInfo.SubobjectClasses.Find(Class) != nullptr)
-		{
-			return;
-		};
-		
-		ClassInfo.SubobjectClasses.Add(Class);
+		return *Category;
 	}
+
+	return ESchemaComponentType::SCHEMA_Invalid;
 }

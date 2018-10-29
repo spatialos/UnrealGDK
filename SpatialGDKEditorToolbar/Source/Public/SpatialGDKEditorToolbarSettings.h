@@ -69,7 +69,7 @@ public:
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
 		return GeneratedSchemaOutputFolder.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/improbable/unreal/generated/"))))
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
 			: GeneratedSchemaOutputFolder.Path;
 	}
 

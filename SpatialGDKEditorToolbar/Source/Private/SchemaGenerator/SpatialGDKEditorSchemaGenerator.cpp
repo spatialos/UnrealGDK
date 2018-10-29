@@ -21,6 +21,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
+TArray<UClass*> SchemaGeneratedClasses;
+TMap<UClass*, FSchemaData> ClassToSchema;
+
 namespace
 {
 
@@ -29,18 +32,22 @@ void OnStatusOutput(FString Message)
 	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("%s"), *Message);
 }
 
-int GenerateCompleteSchemaFromClass(const FString& SchemaPath, int ComponentId, UClass* Class)
+int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, UClass* Class)
 {
-	FCodeWriter OutputSchema;
-
-	FString SchemaFilename = FString::Printf(TEXT("Unreal%s"), *UnrealNameToSchemaTypeName(Class->GetName()));
+	FString SchemaFilename = UnrealNameToSchemaTypeName(Class->GetName());
 
 	// Parent and static array index start at 0 for checksum calculations.
 	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, 0, 0, false);
 
-	// Generate schema.
-	int NumComponents = GenerateTypeBindingSchema(OutputSchema, ComponentId, Class, TypeInfo, SchemaPath);
-	OutputSchema.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *SchemaFilename));
+	int NumComponents = 0;
+	if (Class->IsChildOf<AActor>())
+	{
+		NumComponents = GenerateActorSchema(ComponentId, Class, TypeInfo, SchemaPath);
+	}
+	else
+	{
+		GenerateSubobjectSchema(Class, TypeInfo, SchemaPath + TEXT("Subobjects/"));
+	}
 
 	return NumComponents;
 }
@@ -99,30 +106,14 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
-void CreateSchemaDatabase(TArray<UClass*> Classes)
+void SaveSchemaDatabase()
 {
-	AsyncTask(ENamedThreads::GameThread, [Classes]{
+	AsyncTask(ENamedThreads::GameThread, []{
 		FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-
 		UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
 		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
-
-		Worker_ComponentId ComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
-
-		for (UClass* Class : Classes)
-		{
-			FSchemaData SchemaData;
-			SchemaData.SingleClientRepData = ComponentId++;
-			SchemaData.MultiClientRepData = ComponentId++;
-			SchemaData.HandoverData = ComponentId++;
-			SchemaData.ClientRPCs = ComponentId++;
-			SchemaData.ServerRPCs = ComponentId++;
-			SchemaData.CrossServerRPCs = ComponentId++;
-			SchemaData.NetMulticastRPCs = ComponentId++;
-
-			SchemaDatabase->ClassToSchema.Add(Class, SchemaData);
-		}
+		SchemaDatabase->ClassToSchema = ClassToSchema;
 
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
@@ -180,9 +171,6 @@ TArray<UClass*> GetAllSupportedClasses()
 		// No replicated/handover properties found
 		if (SupportedClass == nullptr) continue;
 
-		// Currently can't support components which have child components
-		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
-
 		// Doesn't let us save the schema database
 		if (SupportedClass->IsChildOf<ALevelScriptActor>()) continue;
 
@@ -203,7 +191,6 @@ bool SpatialGDKGenerateSchema()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	TArray<UClass*> SchemaGeneratedClasses;
 	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)
 	{
 		SchemaGeneratedClasses = GetAllSupportedClasses();	
@@ -239,7 +226,7 @@ bool SpatialGDKGenerateSchema()
 	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
 	GenerateSchemaFromClasses(SchemaGeneratedClasses, SchemaOutputPath);
 
-	CreateSchemaDatabase(SchemaGeneratedClasses);
+	SaveSchemaDatabase();
 
 	return true;
 }

@@ -5,13 +5,14 @@
 #include "GameFramework/Actor.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
+#include "SpatialTypebindingManager.h"
 #include "UObject/UObjectHash.h"
 #include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-using SubobjectToOffsetMap = TMap<FString, uint32>;
+using SubobjectToOffsetMap = TMap<UObject*, uint32>;
 
 namespace improbable
 {
@@ -22,8 +23,8 @@ struct UnrealMetadata : Component
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId, const SubobjectToOffsetMap& InSubobjectNameToOffset)
-		: StaticPath(InStaticPath), OwnerWorkerAttribute(InOwnerWorkerId), SubobjectNameToOffset(InSubobjectNameToOffset) {}
+	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId)
+		: StaticPath(InStaticPath), OwnerWorkerAttribute(InOwnerWorkerId) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
@@ -31,16 +32,6 @@ struct UnrealMetadata : Component
 
 		StaticPath = GetStringFromSchema(ComponentObject, 1);
 		OwnerWorkerAttribute = GetStringFromSchema(ComponentObject, 2);
-
-		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 3);
-		for (uint32 i = 0; i < KVPairCount; i++)
-		{
-			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 3, i);
-			FString Key = GetStringFromSchema(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			uint32 Value = Schema_GetUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
-
-			SubobjectNameToOffset.Add(Key, Value);
-		}
 	}
 
 	Worker_ComponentData CreateUnrealMetadataData()
@@ -53,34 +44,27 @@ struct UnrealMetadata : Component
 		AddStringToSchema(ComponentObject, 1, StaticPath);
 		AddStringToSchema(ComponentObject, 2, OwnerWorkerAttribute);
 
-		for (const auto& KVPair : SubobjectNameToOffset)
-		{
-			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 3);
-			AddStringToSchema(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
-			Schema_AddUint32(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
-		}
-
 		return Data;
 	}
 
 	FString StaticPath;
 	FString OwnerWorkerAttribute;
-	SubobjectToOffsetMap SubobjectNameToOffset;
 };
 
-FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor)
+FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, FClassInfo* Info)
 {
 	SubobjectToOffsetMap SubobjectNameToOffset;
-	uint32 CurrentOffset = 1;
-	ForEachObjectWithOuter(Actor, [&CurrentOffset, &SubobjectNameToOffset](UObject* Object)
+
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		// Objects can only be allocated NetGUIDs if this is true.
-		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
-		{
-			SubobjectNameToOffset.Add(*Object->GetName(), CurrentOffset);
-			CurrentOffset++;
-		}
-	});
+		UObject* Subobject = Actor->GetDefaultSubobjectByName(SubobjectInfoPair.Value->SubobjectName);
+		uint32 Offset = SubobjectInfoPair.Key;
+
+		check(Subobject);
+
+		SubobjectNameToOffset.Add(Subobject, Offset);
+	}
+
 	return SubobjectNameToOffset;
 }
 

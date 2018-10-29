@@ -186,14 +186,14 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 // Set up classes needed for Startup Actor creation
 void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialTypebindingManager*& TypebindingManager, UEntityRegistry*& EntityRegistry, UWorld* World)
 {
-	TypebindingManager = NewObject<USpatialTypebindingManager>();
-	TypebindingManager->Init();
-
 	NetDriver = NewObject<USpatialNetDriver>();
 	NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 	NetDriver->TypebindingManager = TypebindingManager;
 	NetDriver->GuidCache = MakeShareable(new FSpatialNetGUIDCache(NetDriver));
 	NetDriver->World = World;
+
+	TypebindingManager = NewObject<USpatialTypebindingManager>();
+	TypebindingManager->Init(NetDriver);
 
 	EntityRegistry = NewObject<UEntityRegistry>();
 	NetDriver->EntityRegistry = EntityRegistry;
@@ -236,40 +236,38 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
 
 	// Create component data from initial state of Actor (which is the state the Actor is in before running the level)
-	TArray<Worker_ComponentData> ComponentData = DataFactory.CreateComponentDatas(Actor, InitialRepChanges, InitialHandoverChanges);
+	TArray<Worker_ComponentData> ComponentData = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 
 	// Add Actor RPCs to entity
-	for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
+	for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
 	{
-		ComponentData.Add(ComponentFactory::CreateEmptyComponentData(Info->RPCComponents[RPCType]));
+		if (Info->SchemaComponents[RPCType] != 0)
+		{
+			ComponentData.Add(ComponentFactory::CreateEmptyComponentData(Info->SchemaComponents[RPCType]));
+		}
 	}
 
 	// Visit each supported subobject and create component data for initial state of each subobject
-	for (UClass* SubobjectClass : Info->SubobjectClasses)
+	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
-		FClassInfo* ComponentInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
-		check(ComponentInfo);
+		uint32 Offset = SubobjectInfoPair.Key;
+		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		// Find subobject corresponding to supported class
-		TArray<UObject*> DefaultSubobjects;
-		Actor->GetDefaultSubobjects(DefaultSubobjects);
-		UObject** FoundSubobject = DefaultSubobjects.FindByPredicate([SubobjectClass](const UObject* Obj)
-		{
-			return (Obj->GetClass() == SubobjectClass);
-		});
-		check(FoundSubobject);
-		UObject* Subobject = *FoundSubobject;
+		UObject* Subobject = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset));
 
 		FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
-		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(ComponentInfo);
+		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 		// Create component data for initial state of subobject
-		ComponentData.Append(DataFactory.CreateComponentDatas(Subobject, SubobjectRepChanges, SubobjectHandoverChanges));
+		ComponentData.Append(DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges));
 
 		// Add subobject RPCs to entity
-		for (int RPCType = 0; RPCType < RPC_Count; RPCType++)
+		for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
 		{
-			ComponentData.Add(ComponentFactory::CreateEmptyComponentData(ComponentInfo->RPCComponents[RPCType]));
+			if (SubobjectInfo->SchemaComponents[RPCType] != 0)
+			{
+				ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo->SchemaComponents[RPCType]));
+			}
 		}
 	}
 
@@ -287,32 +285,53 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	check(ActorInfo);
 
 	WriteAclMap ComponentWriteAcl;
+
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(ActorInfo->SingleClientComponent, UnrealServerPermission);
-	ComponentWriteAcl.Add(ActorInfo->MultiClientComponent, UnrealServerPermission);
-	ComponentWriteAcl.Add(ActorInfo->HandoverComponent, UnrealServerPermission);
-	// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
-	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_Server], UnrealServerPermission);
-	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_CrossServer], UnrealServerPermission);
-	ComponentWriteAcl.Add(ActorInfo->RPCComponents[RPC_NetMulticast], UnrealServerPermission);
 
-	for (UClass* SubobjectClass : ActorInfo->SubobjectClasses)
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+		Worker_ComponentId ComponentId = ActorInfo->SchemaComponents[Type];
+
+		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return;
+		}
+
+		if (Type == SCHEMA_ClientRPC)
+		{
+			// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
+			return;
+		}
+
+		ComponentWriteAcl.Add(ComponentId, UnrealServerPermission);
+	});
+
+
+	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
 	{
-		FClassInfo* SubobjectInfo = TypebindingManager->FindClassInfoByClass(SubobjectClass);
-		check(SubobjectInfo);
+		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
-		ComponentWriteAcl.Add(SubobjectInfo->SingleClientComponent, UnrealServerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->MultiClientComponent, UnrealServerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->HandoverComponent, UnrealServerPermission);
-		// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
-		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_Server], UnrealServerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_CrossServer], UnrealServerPermission);
-		ComponentWriteAcl.Add(SubobjectInfo->RPCComponents[RPC_NetMulticast], UnrealServerPermission);
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
+			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
+			if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
+			{
+				return;
+			}
+
+			if (Type == SCHEMA_ClientRPC)
+			{
+				// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
+				return;
+			}
+
+			ComponentWriteAcl.Add(ComponentId, UnrealServerPermission);
+		});
 	}
 
 	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(NetConnection->CreateChannel(CHTYPE_Actor, 1));
+	Channel->SetEntityId(EntityId);
 
 	FString StaticPath = Actor->GetPathName(nullptr);
 
@@ -322,7 +341,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	Components.Add(improbable::UnrealMetadata(StaticPath, {}, improbable::CreateOffsetMapFromActor(Actor)).CreateUnrealMetadataData());
+	Components.Add(improbable::UnrealMetadata(StaticPath, {}).CreateUnrealMetadataData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
 
@@ -376,10 +395,11 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	bool bSuccess = true;
 
 	// Need to add all actors in the world to the package map so they have assigned UnrealObjRefs for the ComponentFactory to use
-	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&PackageMap, &EntityRegistry](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&PackageMap, &EntityRegistry, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
 	{
 		EntityRegistry->AddToRegistry(EntityId, Actor);
-		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor));
+		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
 		return true;
 	});
 

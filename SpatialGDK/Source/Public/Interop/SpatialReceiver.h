@@ -128,7 +128,6 @@ private:
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
 	AActor* CreateActor(improbable::Position* Position, struct improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred);
-	UClass* GetNativeEntityClass(improbable::Metadata* Metadata);
 
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
@@ -148,8 +147,6 @@ private:
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingRPCs(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
-
-	UObject* GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class);
 
 	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
 

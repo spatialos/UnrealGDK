@@ -51,7 +51,7 @@ public:
 	void Init(USpatialNetDriver* InNetDriver);
 
 	// Actor Updates
-	void SendComponentUpdates(UObject* Object, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
+	void SendComponentUpdates(UObject* Object, FClassInfo* Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rotation);
