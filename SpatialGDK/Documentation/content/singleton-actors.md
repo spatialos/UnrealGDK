@@ -1,5 +1,3 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
 # Singleton Actors
 
 Singleton Actors allow a single source of truth for both operations and data across a multi-server simulation. They are server-side authoritative [Actors](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors) that are restricted to one instantiation on SpatialOS.
@@ -20,7 +18,7 @@ Due to Unreal server-workers spawning their own instances of each Singleton Acto
 To set up Singleton Actors for your project, you need to:
 
 1. Register Singleton Actors by tagging them with the `SpatialType=Singleton` class attribute.
-1. Add the generated components to the UnrealWorker worker configuration file.
+2. Add the generated components to the UnrealWorker worker configuration file.
 
 ## How to tag classes with Singleton Actor identifiers
 

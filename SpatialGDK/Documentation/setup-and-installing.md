@@ -1,5 +1,3 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
 # Set up and get started with the SpatialOS Unreal GDK
 
 This guide explains how to set up the [SpatialOS Unreal GDK](https://github.com/spatialos/UnrealGDK) and our [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK) for use with the [Unreal GDK Starter Project](https://github.com/spatialos/UnrealGDKStarterProject). If you want to use your own native Unreal project, follow the below steps up to and including [Cloning](#cloning), and then follow the [guide to porting your project from Unreal]({{urlRoot}}/content/porting-unreal-project-to-gdk.md).

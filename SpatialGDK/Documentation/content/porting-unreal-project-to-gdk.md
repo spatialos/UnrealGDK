@@ -1,5 +1,3 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
 # How to port a native Unreal project to the Unreal GDK
 
 > This workflow is very subject to change. We're aware that it's not optimized, and one of our priorities is to improve iteration times.
@@ -13,7 +11,7 @@ Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setti
 
 ## Setting up the project structure
 1. In a terminal window, navigate to the root directory of the SpatialOS Unreal GDK repository you cloned and run `Setup.bat`. This requires authorization with your SpatialOS account.
-1. Open the `StarterProject` repo and copy everything except the `\Game\` folder alongside your `<GameRoot>` folder. 
+2. Open the `StarterProject` repo and copy everything except the `\Game\` folder alongside your `<GameRoot>` folder. 
 Your folder structure should now resemble -
 ```
 \<ProjectRoot>\ci\

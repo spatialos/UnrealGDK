@@ -1,10 +1,8 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
 # GDK for Unreal known issues
 
 Known issue = any major user-facing bug or lack of user-facing feature that:
 1. diverges from vanilla Unreal design or implementation (e.g. ordering of reliable RPCs), **OR**
-1. diverges from user expectations from a SpatialOS project (e.g. interacting across worker boundaries)
+2. diverges from user expectations from a SpatialOS project (e.g. interacting across worker boundaries)
 
 | Issue | Date added | Ticket | Workaround? |
 |-------|-------------------|--------|-------------|
