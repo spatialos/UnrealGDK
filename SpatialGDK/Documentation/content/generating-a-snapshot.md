@@ -41,13 +41,11 @@ This creates a snapshot called `default.snapshot` which you can find in `spatial
 
 If you want your snapshots to be exported to a different path you can specify the output path and file name of the snapshot using the [GDK toolbar settings]({{urlRoot}}/content/toolbars.md).
 
->To ensure Startup Actors are listed in the snapshot, tag them as [SpatialType]({{urlRoot}}/content/spatial-type).
-
 ## When to generate a snapshot
 You need to regenerate a snapshot when:
 1. Generating [schema]({{urlRoot}}/content/glossary#schema) for a new class.
-2. Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
-3. Placing or removing replicated Actors in the Level.
-4. Modifying replicated values on placed replicated Actors.
-5. Adding or removing a [singleton class]({{urlRoot}}/content/singleton-actors).
+1. Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
+1. Placing or removing replicated Actors in the Level.
+1. Modifying replicated values on placed replicated Actors.
+1. Adding or removing a [singleton class]({{urlRoot}}/content/singleton-actors).
 
