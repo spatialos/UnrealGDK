@@ -15,7 +15,7 @@ Startup Actors, critical entities, and placeholder entities.
 
 Startup Actors are [stably named replicated Actors (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/ObjectReferences) that you have placed in a Level. The startup Actors need to be listed in the snapshot so that SpatialOS spawns an entity only once for each Actor. If the startup Actors are not in the snapshot, you may get multiple entities for each Actor when you launch multiple [server-workers]({{urlRoot}}/content/glossary#workers). 
 
-To ensure these Actors are listed in the snapshot, tag them as `[SpatialType]({{urlRoot}}/content/spatial-type)`.
+To ensure these Actors are listed in the snapshot, tag them as [SpatialType]({{urlRoot}}/content/spatial-type).
 
 ### Critical entities
 
@@ -31,7 +31,7 @@ The critical entities are:
 ### Placeholder entities
 Placeholder entities are listed in snapshots by default.
 
-These entities exists only to set up server-worker boundaries in a way that is easy to test with multiple server-workers. These entities do not spawn as Actors when [checked out]({{urlRoot}}/content/glossary/check-out] by a worker and serve no purpose within the GDK. For most intents and purposes, you can safely ignore them.
+These entities exists only to set up server-worker boundaries in a way that is easy to test with multiple server-workers. These entities do not spawn as Actors when [checked out]({{urlRoot}}/content/glossary/check-out) by a worker and serve no purpose within the GDK. For most intents and purposes, you can safely ignore them.
 
 ## How to generate a snapshot
 
@@ -41,7 +41,7 @@ To generate a snapshot, use the **Snapshot** button on the [SpatialOS GDK toolba
 
  This creates a snapshot called `default.snapshot` which you can find in `spatial\snapshots`.
 
->To ensure Startup Actors are listed in the snapshot, tag them as `[SpatialType]({{urlRoot}}/content/spatial-type)`.
+>To ensure Startup Actors are listed in the snapshot, tag them as [SpatialType]({{urlRoot}}/content/spatial-type).
 
 ## When to generate a snapshot
 You need to regenerate a snapshot when:
