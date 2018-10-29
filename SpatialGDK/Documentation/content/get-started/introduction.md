@@ -4,7 +4,7 @@ We recommend you start by following our installation and set up guide to set up 
 
 At this stage, you’ll have the everything set up to be able to run your first SpatialOS deployments - both locally and in the cloud - to get an idea of what the platform provides.
 
-After this, check out the Multi-Server Shooter tutorial, where you can try out the GDK’s development experience by adding a new feature to the Starter Project and test it across two servers.
+After this, check out the Multiserver Shooter tutorial, where you can try out the GDK’s development experience by adding a new feature to the Starter Project and test it across two servers.
 
 Finally, if you have an existing Unreal multiplayer project, you can follow our detailed porting guide to get it onto the GDK!
 

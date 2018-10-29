@@ -115,7 +115,7 @@ etc...
     >
     > If you ever need to run with Unreal networking for workflow or validation reasons, untick `Spatial Networking` in the `Play` drop down menu in the Unreal editor. This flag is maintained in your Unreal config files under `/Script/EngineSettings.GeneralProjectSettings` and is also valid for non-editor builds.
     >
-    > You can easily switch between networking modes using this checkbox. As the SpatialOS Unreal GDK is in pre-alpha, switching back to Unreal's networking may be a viable way to work around some issues you may encounter, and may speed up your iteration. However, in Unreal networking mode you lose access to key multi-server features of the GDK, which may lead to erratic behavior.
+    > You can easily switch between networking modes using this checkbox. As the SpatialOS Unreal GDK is in pre-alpha, switching back to Unreal's networking may be a viable way to work around some issues you may encounter, and may speed up your iteration. However, in Unreal networking mode you lose access to key multiserver features of the GDK, which may lead to erratic behavior.
     >
     > In the future, we expect to achieve parity with Unreal networking in terms of iteration speed and stability, thus removing the need for a networking mode switch.
 1. Open the game's uproject file in the Editor and navigate to *Edit > Project Settings... > SpatialOS Unreal GDK > Toolbar*.
