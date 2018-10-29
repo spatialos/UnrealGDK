@@ -36,7 +36,7 @@ Before porting your project, you need to install and set up the SpatialOS GDK: f
    Open **`\<ProjectRoot>\ProjectPaths.bat`** for editing and:
     - In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.
     - In `set GAME_NAME=StarterProject`, replace `StarterProject` with the name of your game's `.uproject` (which we'll refer to as `<YourProject>`).
-1. Run Setup.bat which is in the root directory of the GDK repository you cloned (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
+1. Run `Setup.bat` which is in the root directory of the GDK repository you cloned (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
     - In a terminal window, navigate to the root directory of the GDK and run: `Setup.bat` or
     - In your file manager, double-click the file.
     > Note: This requires authorization with your SpatialOS account via a web browser. `Setup.bat` will launch the authorization page.
@@ -164,7 +164,7 @@ You can find Spatial log files for your local deployments in `<ProjectRoot>\spat
   1. `<ProjectRoot>\spatial\logs\workers\` contain managed worker logs which are the workers started by SpatialOS, specified in your [launch configuration]({{URLRoot}}/content/glossary#launch-configuration).
   1. `<ProjectRoot>\spatial\logs\runtime.log` contains the logs printed by the SpatialOS runtime. These are the services required for SpatialOS to run a local deployment.  
 
-If you require additional debugging logs you can always run `spatial local launch` with the flag `log_level=debug`.
+If you require additional debugging logs you can always run `spatial local launch` with the flag `--log_level=debug`.
 
 #### How to modify the default behavior
 You can modify some of the GDK settings from the Unreal Editor toolbar at **Edit** > **Project Settings** >**SpatialOS Unreal GDK** > **Toolbar**.
