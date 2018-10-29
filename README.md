@@ -1,16 +1,16 @@
-# The SpatialOS Games Development Kit for Unreal (alpha)
-The SpatialOS Games Development Kit (GDK) for Unreal is an Unreal Engine 4 (UE4) [plugin](https://docs.unrealengine.com/en-us/Programming/Plugins) which allows you to host your game and combine multiple dedicated server instances across one seamless game world, whilst using the Unreal Engine networking API.
+# The SpatialOS Game Development Kit for Unreal (alpha)
+The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine 4 (UE4) [plugin](https://docs.unrealengine.com/en-us/Programming/Plugins) which allows you to host your game and combine multiple dedicated server instances across one seamless game world, whilst using the Unreal Engine networking API.
 
 The GDK offers:
-* **Multi-server support**: leveraging our cloud platform SpatialOS (SpatialOS documentation), the GDK turns Unreal’s single-authority engine into a distributed one,  enabling you to use multiple Unreal servers to make games with more players, Actors, and gameplay systems than previously possible.
-* **An Unreal-native experience**: keeping traditional workflows and networking APIs that Unreal Engine developers are familiar with, the GDK introduces new native-feeling concepts that turn a single-authority engine into a distributed one. This enables the GDK to retain the functionality of the networking features Unreal offers out of the box, including transform synchronization, character movement, client-side prediction.
-* **Easy getting started**: we have made sure it’s easy to get started with the GDK by including a Starter Project which you can use as a tour of SpatialOS and a base for your own game, as well as a guide to porting your current multiplayer Unreal game to run on SpatialOS.
+* **Multi-server support**: leveraging our cloud platform [SpatialOS (SpatialOS documentation)](https://docs.improbable.io/reference/13.3/shared/concepts/spatialos), the GDK turns Unreal’s single-authority engine into a distributed one,  enabling you to use multiple Unreal servers to make games with more players, Actors, and gameplay systems than previously possible.
+* **An Unreal-native experience**: keeping traditional workflows and networking APIs that Unreal Engine developers are familiar with, the GDK introduces new native-feeling concepts that turn a single-authority engine into a distributed one. This enables the GDK to retain the functionality of the networking features Unreal offers out of the box, including transform synchronization, character movement, and client-side prediction.
+* **An easy onboarding experience**: we have made sure it’s easy to get started with the GDK by including a Starter Project which you can use as a tour of SpatialOS and a base for your own game, as well as a guide to porting your current multiplayer Unreal game to run on SpatialOS.
 
->This is an [alpha (SpatialOS website)](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK, pending stability and performance improvements. The API may change as we learn from feedback  - see the guidance on [Recommended use](#recommended-use), below.
+>This is an [alpha (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK, pending stability and performance improvements. The API may change as we learn from feedback  - see the guidance on [Recommended use](#recommended-use), below.
 
 ----
-* [Get started](https://docs.improbable.io/unreal/latest/content/get-started/introduction) (on the documentation website)
-* [Documentation](https://docs.improbable.io/unreal/latest) (on the documentation website)
+* [Get started](https://docs.improbable.io/unreal/latest/content/get-started/introduction) (on the SpatialOS documentation website)
+* [Documentation](https://docs.improbable.io/unreal/latest) (on the SpatialOS documentation website)
 * [Development roadmap](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap) (Trello board)
 * Community: [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368) - [Forums](https://forums.improbable.io/) -  [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
 ----
@@ -40,11 +40,11 @@ We have released the GDK for Unreal this early in development because we want yo
 
 ## Where to get the GDK and starter projects
 The GDK and its starter projects are available on GitHub.
+* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK)
 * [GDK: github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 * [Starter Project](https://github.com/spatialos/UnrealGDKStarterProject)
 * [Third-Person Shooter Game](https://github.com/spatialos/UnrealGDKThirdPersonShooter) (Not actively developed)
-* [The Test Suite](https://github.com/spatialos/UnrealGDKTestSuite)
-* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK) </br>
+* [The Test Suite](https://github.com/spatialos/UnrealGDKTestSuite)</br>
 **NOTE:** This link may give you a 404. 
 In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
