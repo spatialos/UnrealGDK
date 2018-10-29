@@ -17,7 +17,7 @@ We recommend you use the GDK documentation on the SpatialOS documentation websit
 [//]: # (#### Get started)
 [//]: # (* Installation and setup - ./setup-and-installing.md)
 [//]: # (* Feature list - ./features.md)
-[//]: # (* Toolbar - ./content/toolbar.md)
+[//]: # (* Toolbar - ./content/toolbars.md)
 [//]: # (* Glossary - ./content/glossary.md)
 [//]: # (* License - ../LICENSE.md)
 
