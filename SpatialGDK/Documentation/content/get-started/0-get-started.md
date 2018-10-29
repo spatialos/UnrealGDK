@@ -21,4 +21,4 @@ Visit the **feedback** section in our [forums](https://forums.improbable.io/) an
 **GitHub issues**</br>
 Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issues).
 
-#### Next: [Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)
+#### Next: [Get the dependencies]({{urlRoot}}/content/get-started/1-dependencies.md)
