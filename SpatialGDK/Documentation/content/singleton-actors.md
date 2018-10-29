@@ -46,5 +46,5 @@ To tag a Blueprint class as a Public Singleton, open the class in the Blueprint 
 This is an example of what your Blueprint `Class Options` should look like if you've tagged it as a Private Singleton:
 ![Singleton Blueprint]({{assetRoot}}assets/screen-grabs/blueprint_singleton.png)
 
-And that's it! You have successfully specified a Singleton Actor. Make sure you generate schema and create a new snapshot using the [SpatialOS GDK for Unreal toolbar]({{urlRoot}}/content/toolbar).
+And that's it! You have successfully specified a Singleton Actor. Make sure you generate [schema]({{urlRoot}}/content/glossary#schema) and create a new [snapshot]( ({{urlRoot}}/content/generating-a-snapshot) using the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbar).
 
