@@ -42,7 +42,7 @@ To set up a cross-server RPC, follow the same instructions as you would for [mar
 
 ### How to send a cross-server RPC (using Blueprints)
 
-To set up a cross-server RPC in a Blueprint, follow the same instructions as you would for marking up RPCs in Blueprints (Unreal documentation), but from the **Replicates** drop-down list within the **Details** panel of your event, select **Run on authoritative server (sent from server)**:
+To set up a cross-server RPC in a Blueprint, follow the same instructions as you would for [marking up RPCs in Blueprints (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs#blueprints), but from the **Replicates** drop-down list within the **Details** panel of your event, select **Run on authoritative server (sent from server)**:
 
 ![Setting up a cross-server RPC in blueprint]({{assetRoot}}assets/screen-grabs/crossserver-blueprint.png)
 
