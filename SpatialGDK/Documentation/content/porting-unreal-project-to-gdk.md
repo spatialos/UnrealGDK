@@ -69,10 +69,10 @@ Set up your Unreal game project to work with the GDK for Unreal fork of the Unre
 1. Open the generated solution file in Visual Studio and in the Development Editor build configuration, compile and run the project.
 
 ### 4. Modify Unreal classes for GDK compatibility
-<!-- // TODO: Handle this for blueprint projects -->
 It is necessary to modify your games `GameInstance` class(es) to work properly with the GDK.  
 
-1. Make your game's `GameInstance` inherit from `SpatialGameInstance`. If you have not yet made a `GameInstance` for your game you must either create a Blueprint or a native `GameInstance` class now.
+1. Make your game's `GameInstance` inherit from `SpatialGameInstance`. 
+   > If you have not yet made a `GameInstance` for your game and are still using the default, you must either create a Blueprint or a native `GameInstance` class now.
     1. If your game's `GameInstance` is a `.cpp` file, locate its header file and add the following `#include`:
         `"SpatialGameInstance.h"`
 
@@ -114,10 +114,10 @@ The steps below reference and introduce the following SpatialOS terms: [workers]
     >
     > **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to debug and so speed up your development iteration. However, you lose access to the multi-server features of the GDK in Unreal default networking mode which may lead to erratic behavior.
 
-<!-- // TODO: Handle this part below for projects which use default GameMode and GameState -->
 1. Specify Singleton Actors  
-The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these are server-side authoritative Actors which are a single source of truth for both operations and data across a multi-server simulation; `GameState` and `GameMode` are examples of this. To tell SpatialOS how to replicate Singleton Actors, the GDK  has a `UCLASS` [specifier (Unreal docs)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers). You add this to classes you want to be Singleton Actors.  
-   
+The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these are server-side authoritative Actors which are a single source of truth for both operations and data across a multi-server simulation; `GameState` and `GameMode` are examples of this. To tell SpatialOS how to replicate Singleton Actors, the GDK  has a `UCLASS` [specifier (Unreal docs)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers). You add this to classes you want to be Singleton Actors. 
+    > If you have not yet created a `GameState` or `GameMode` for your game and are still using the defaults, you must either create Blueprints or native `GameState` and `GameMode` class(es) now.  
+
     1. If your game's `GameState` is a `.cpp` file, locate it and mark it as a Public Singleton by modifying the `UCLASS` specifier as shown:
         ```
         UCLASS(SpatialType=Singleton)
