@@ -37,6 +37,11 @@ void USpatialTypebindingManager::FindSupportedClasses()
 
 void USpatialTypebindingManager::CreateTypebindings()
 {
+	// This will iterate through all supported classes: both Actor and Subobject classes
+	// For subobject classes, an FClassInfo will be created with RPC metadata and handover data
+	// but schema components will be 0 since subobject classes don't have associated components
+	// afterwards, the subobject FClassInfos will be the basis of the FClassInfo for specific subobjects
+	// and have their proper schema components filled in
 	for (UClass* Class : SupportedClasses)
 	{
 		FClassInfo Info;
@@ -125,42 +130,40 @@ void USpatialTypebindingManager::CreateTypebindings()
 			FSubobjectSchemaData SubobjectSchemaData = SubobjectDataPair.Value;
 
 			FClassInfo* ActorInfo = FindClassInfoByClass(Class);
-			FClassInfo* SubobjectInfo = FindClassInfoByClass(SubobjectSchemaData.Class);
-			if (SubobjectInfo == nullptr)
+			FClassInfo* SubobjectInfoPtr = FindClassInfoByClass(SubobjectSchemaData.Class);
+			if (SubobjectInfoPtr == nullptr)
 			{
 				continue;
 			}
 
-			SubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
+			// Make a copy of the already made FClassInfo for this specific subobject
+			FClassInfo SubobjectInfo = *SubobjectInfoPtr;
+
+			SubobjectInfo.SubobjectName = SubobjectSchemaData.Name;
 
 			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 			{
 				Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
 				if (ComponentId != 0)
 				{
-					SubobjectInfo->SchemaComponents[Type] = ComponentId;
+					SubobjectInfo.SchemaComponents[Type] = ComponentId;
 					ComponentToClassMap.Add(ComponentId, SubobjectSchemaData.Class);
 					ComponentToOffsetMap.Add(ComponentId, Offset);
 					ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
 				}
 			});
 
-			ActorInfo->SubobjectInfo.Add(Offset, MakeShared<FClassInfo>(*SubobjectInfo));
+			ActorInfo->SubobjectInfo.Add(Offset, MakeShared<FClassInfo>(SubobjectInfo));
 		}
 	}
 }
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 {
-	if (FClassInfo* Info = ClassInfoMap.Find(Class))
-	{
-		return Info;
-	}
-
-	return nullptr;
+	return ClassInfoMap.Find(Class);
 }
 
-FClassInfo* USpatialTypebindingManager::FindClassInfoByClassAndOffset(UClass* Class, uint32 Offset)
+FClassInfo* USpatialTypebindingManager::FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset)
 {
 	if (FClassInfo* Info = FindClassInfoByClass(Class))
 	{
@@ -188,10 +191,9 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByComponentId(Worker_Compon
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByObject(UObject* Object)
 {
-	FClassInfo* Info = nullptr;
 	if (AActor* Actor = Cast<AActor>(Object))
 	{
-		Info = FindClassInfoByClass(Actor->GetClass());
+		return FindClassInfoByClass(Actor->GetClass());
 	}
 	else
 	{
@@ -201,11 +203,11 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByObject(UObject* Object)
 
 		if (ObjectRef != SpatialConstants::NULL_OBJECT_REF)
 		{
-			Info = FindClassInfoByClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
+			return FindClassInfoByActorClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
 		}
 	}
 
-	return Info;
+	return nullptr;
 }
 
 UClass* USpatialTypebindingManager::FindClassByComponentId(Worker_ComponentId ComponentId)

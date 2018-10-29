@@ -75,7 +75,7 @@ public:
 	bool IsSupportedClass(UClass* Class);
 
 	FClassInfo* FindClassInfoByClass(UClass* Class);
-	FClassInfo* FindClassInfoByClassAndOffset(UClass* Class, uint32 Offset);
+	FClassInfo* FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset);
 	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
 	FClassInfo* FindClassInfoByObject(UObject* Object);
 
@@ -99,6 +99,7 @@ private:
 	UPROPERTY()
 	TArray<UClass*> SupportedClasses;
 
+	UPROPERTY()
 	TMap<UClass*, FClassInfo> ClassInfoMap;
 
 	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;

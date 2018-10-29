@@ -182,57 +182,6 @@ void WriteSchemaRPCField(TSharedPtr<FCodeWriter> Writer, const TSharedPtr<FUnrea
 	);
 }
 
-// core_types.schema should only be included if any components in the file have
-// 1. An UnrealObjectRef
-// 2. A list of UnrealObjectRefs
-// 3. An RPC
-bool ShouldIncludeCoreTypes(TSharedPtr<FUnrealType>& TypeInfo, bool SubobjectSchema)
-{
-	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
-
-	for (auto& PropertyGroup : RepData)
-	{
-		for (auto& PropertyPair : PropertyGroup.Value)
-		{
-			UProperty* Property = PropertyPair.Value->Property;
-			if(Property->IsA<UObjectPropertyBase>())
-			{
-				return true;
-			}
-
-			if (Property->IsA<UArrayProperty>())
-			{
-				if (Cast<UArrayProperty>(Property)->Inner->IsA<UObjectPropertyBase>())
-				{
-					return true;
-				}
-			}
-		}
-	}
-
-	if (!SubobjectSchema)
-	{
-		if (TypeInfo->RPCs.Num() > 0)
-		{
-			return true;
-		}
-
-		for (auto& PropertyPair : TypeInfo->Properties)
-		{
-			UProperty* Property = PropertyPair.Key;
-			if (Property->IsA<UObjectPropertyBase>() && PropertyPair.Value->Type.IsValid())
-			{
-				if (PropertyPair.Value->Type->RPCs.Num() > 0)
-				{
-					return true;
-				}
-			}
-		}
-	}
-
-	return false;
-}
-
 bool IsReplicatedSubobject(TSharedPtr<FUnrealType> TypeInfo)
 {
 	if (GetFlatRepData(TypeInfo)[REP_MultiClient].Num() > 0 || GetFlatRepData(TypeInfo)[REP_SingleClient].Num() > 0)
@@ -262,13 +211,35 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 		// Note that this file has been generated automatically
 		package unreal.generated;)""");
 
-	if (ShouldIncludeCoreTypes(TypeInfo, true))
+	bool bShouldIncludeCoreTypes = false;
+
+	// Only include core types if the subobject has replicated references to other UObjects
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+	for (auto& PropertyGroup : RepData)
+	{
+		for (auto& PropertyPair : PropertyGroup.Value)
+		{
+			UProperty* Property = PropertyPair.Value->Property;
+			if (Property->IsA<UObjectPropertyBase>())
+			{
+				bShouldIncludeCoreTypes = true;
+			}
+
+			if (Property->IsA<UArrayProperty>())
+			{
+				if (Cast<UArrayProperty>(Property)->Inner->IsA<UObjectPropertyBase>())
+				{
+					bShouldIncludeCoreTypes = true;
+				}
+			}
+		}
+	}
+
+	if (bShouldIncludeCoreTypes)
 	{
 		Writer.PrintNewLine();
 		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
 	}
-
-	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -323,11 +294,9 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		package unreal.generated.{0};)""",
 		*UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
 
-	if (ShouldIncludeCoreTypes(TypeInfo, false))
-	{
-		Writer.PrintNewLine();
-		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
-	}
+	// Will always be included since AActor has replicated pointers to other actors
+	Writer.PrintNewLine();
+	Writer.Printf("import \"unreal/gdk/core_types.schema\";");
 
 	FSchemaData ActorSchemaData;
 
@@ -529,7 +498,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
-		package unreal.generated.{0}.components;)""",
+		package unreal.generated.{0}.subobjects;)""",
 		*UnrealNameToSchemaTypeName(TypeInfo->Type->GetName().ToLower()));
 
 	Writer.PrintNewLine();
@@ -604,11 +573,12 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 
 			if (Value != nullptr && !Value->IsEditorOnly() && IsReplicatedSubobject(PropertyTypeInfo))
 			{
+				// Only include core types if a subobject has any RPCs
 				bImportCoreTypes |= PropertyTypeInfo->RPCs.Num() > 0;
 
 				if (!AlreadyImported.Contains(Value->GetClass()))
 				{
-					Writer.Printf("import \"unreal/generated/ActorComponents/{0}.schema\";", *UnrealNameToSchemaTypeName(Value->GetClass()->GetName()));
+					Writer.Printf("import \"unreal/generated/Subobjects/{0}.schema\";", *UnrealNameToSchemaTypeName(Value->GetClass()->GetName()));
 					AlreadyImported.Add(Value->GetClass());
 				}
 			}

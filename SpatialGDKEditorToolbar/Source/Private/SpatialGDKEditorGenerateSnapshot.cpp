@@ -239,7 +239,7 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	TArray<Worker_ComponentData> ComponentData = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 
 	// Add Actor RPCs to entity
-	for (int32 RPCType = SCHEMA_ClientRPC; RPCType < SCHEMA_Count; RPCType++)
+	for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
 	{
 		if (Info->SchemaComponents[RPCType] != 0)
 		{
@@ -262,7 +262,7 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 		ComponentData.Append(DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges));
 
 		// Add subobject RPCs to entity
-		for (int32 RPCType = SCHEMA_ClientRPC; RPCType < SCHEMA_Count; RPCType++)
+		for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
 		{
 			if (SubobjectInfo->SchemaComponents[RPCType] != 0)
 			{

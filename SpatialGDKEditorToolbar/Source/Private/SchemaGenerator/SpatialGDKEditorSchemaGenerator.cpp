@@ -45,7 +45,7 @@ int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, UClass*
 	}
 	else
 	{
-		GenerateSubobjectSchema(Class, TypeInfo, SchemaPath + TEXT("ActorComponents/"));
+		GenerateSubobjectSchema(Class, TypeInfo, SchemaPath + TEXT("Subobjects/"));
 	}
 
 	return NumComponents;

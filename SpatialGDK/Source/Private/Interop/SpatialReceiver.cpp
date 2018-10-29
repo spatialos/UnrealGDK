@@ -672,7 +672,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	check(Info);
 
 	ESchemaComponentType RPCType = TypebindingManager->FindCategoryByComponentId(Op.request.component_id);
-	check(RPCType >= SCHEMA_ClientRPC && RPCType < SCHEMA_Count);
+	check(RPCType >= SCHEMA_FirstRPC && RPCType <= SCHEMA_LastRPC);
 
 	const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);
 	check(RPCArray);

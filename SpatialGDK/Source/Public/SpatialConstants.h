@@ -16,7 +16,7 @@ enum ESchemaComponentType : int32
 	SCHEMA_Invalid = -1,
 
 	// Properties
-	SCHEMA_Data,
+	SCHEMA_Data, // Represents properties being replicated to all workers
 	SCHEMA_OwnerOnly,
 	SCHEMA_Handover,
 
