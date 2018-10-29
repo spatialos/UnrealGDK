@@ -26,7 +26,7 @@ float MyServerSideVariable;
 
 2. Alternatively, if your property is defined in a blueprint class, mark the property with a `Handover` tag in the blueprint editor, as shown in the image below.
 
-1. Mark the Actor as a `SpatialType`. See SpatialType doc.
+1. Tag the Actor with the `SpatialType` specifier. See [SpatialType]({{urlRoot}}/content/spatial-type).
 
 1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#schema-generator) for your Actor’s class.
 
