@@ -8,15 +8,23 @@ Before porting your project:
 <!-- // TODO: Update the set up link when ready -->
 
 ### Terms used in this guide
-`<ProjectRoot>` - The root folder of your Unreal project.  
-`<GameRoot>` - The folder containing your game project's `.uproject` and source folder (for example, `<ProjectRoot>/ShooterGame/`).  
-`<YourProject>` - Name of your game project's `.uproject` (for example, `StarterProject.uproject`).
+`<GameRoot>` - The folder containing your game project's `.uproject` and source folder.  
+`<ProjectRoot>` - The folder containing your `<GameRoot>`.  
+`<YourProject>` - Name of your game project's `.uproject` (for example, `\<GameRoot>\StarterProject.uproject`).
 
 ## Start porting!
 
 <%(TOC)%>
 
 ### 1. Set up the project structure
+1. Ensure you have a `<ProjectRoot>`. If your `<GameRoot>` lives inside of a self-contained folder already, this is your `<ProjectRoot>`. If not, you should create a new folder to represent your `<ProjectRoot>` and move your `<GameRoot>` inside of it. Your project structure should take the form of:
+    ```
+    \<ProjectRoot>\<GameRoot>\<YourProject>.uproject
+
+    For example:
+    \StarterProject\Game\StarterProject.uproject
+    ```
+    > This step is essential as the `spatial` folder must be located in the directory above your `<GameRoot>`. This is so the GDK scripts work correctly with Unreal.
 1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the StarterProject repository that you cloned earlier.
 
     To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders below to your `<ProjectRoot>`:  
@@ -43,6 +51,7 @@ Before porting your project:
    Open **`\<ProjectRoot>\ProjectPaths.bat`** for editing and:
     - In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.
     - In `set GAME_NAME=StarterProject`, replace `StarterProject` with the name of your game's `.uproject` (which we'll refer to as `<YourProject>`).
+    > Doing this incorrectly will result in the helper scripts `LaunchClient.bat` and `LaunchServer.bat` not working and printing that the path specified does not exist when trying to use them.
 1. Run `Setup.bat` which is in the root directory of the GDK repository you cloned (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
     - In a terminal window, navigate to the root directory of the GDK and run: `Setup.bat` or
     - In your file manager, double-click the file.
@@ -76,9 +85,9 @@ Set up your Unreal game project to work with the GDK for Unreal fork of the Unre
 1. Open the generated solution file in Visual Studio and in the Development Editor build configuration, compile and run the project.
 
 ### 4. Modify Unreal classes for GDK compatibility
-It is necessary to modify your games `GameInstance` class(es) to work properly with the GDK.  
+It is necessary to modify your `GameInstance` class to work properly with the GDK.  
 
-1. Make your game's `GameInstance` inherit from `SpatialGameInstance`. 
+1. Make your `GameInstance` inherit from `SpatialGameInstance`. 
    > If you have not yet made a `GameInstance` for your game and are still using the default, you must either create a Blueprint or a native `GameInstance` class now.
     1. If your game's `GameInstance` is a `.cpp` file, locate its header file and add the following `#include`:
         `"SpatialGameInstance.h"`
@@ -99,7 +108,7 @@ It is necessary to modify your games `GameInstance` class(es) to work properly w
             GENERATED_BODY()
         };
             ```
-    1. If your game's `GameInstance` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** set the **Parent Class** to `SpatialGameInstance`
+    1. If your `GameInstance` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** set the **Parent Class** to `SpatialGameInstance`
 
 ### 5. Add GDK configurations
 The steps below reference and introduce the following SpatialOS terms: [workers]({{URLRoot}}/content/glossary#workers), [schema]({URLRoot}}/content/glossary#schema), [Schema Generator]({{URLRoot}}/content/glossary#schema-generator) [SpatialOS components]({{URLRoot}}/content/glossary#spatialos-component), [checking out]({{URLRoot}}/content/glossary#check-out), [streaming queries]({{URLRoot}}/content/glossary#streaming-queries), [Singleton Actor]({{URLRoot}}/content/glossary#singleton-actor), [deployment]({{URLRoot}}/content/glossary#deployment), [launch configuration]({{URLRoot}}/content/glossary#launch-configuration), [snapshot]({{URLRoot}}/content/glossary#snapshot), [worker configuration]({{URLRoot/content/glossary#worker-configuration).
@@ -129,13 +138,13 @@ The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these ar
         ```
         UCLASS(SpatialType=Singleton)
         ```
-        If your game's `GameState` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the advanced drop down and check **Spatial Type**, in the Spatial Description text box enter `Singleton`.
+        If your game's `GameState` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the Spatial Description text box enter `Singleton`.
 
     1. If your game's `GameMode` is a `.cpp` file, locate it and mark it as a Private Singleton by modifying the `UCLASS` specifier as shown:
         ```
         UCLASS(SpatialType=(Singleton,ServerOnly))
         ```
-       If your game's `GameMode` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the advanced drop down and check **Spatial Type**, in the **Spatial Description** text box enter `Singleton,ServerOnly`.
+       If your game's `GameMode` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the **Spatial Description** text box enter `Singleton,ServerOnly`.
 
    Marking these Singleton Actor classes as `Spatial Type` enables them to work with SpatialOS as [schema]({URLRoot}}/content/glossary#schema) will now be generated for them. 
 
