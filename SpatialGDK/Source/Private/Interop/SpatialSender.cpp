@@ -102,13 +102,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			return;
 		}
 
-		WorkerRequirementSet RequirementSet = ServersOnly;
-
-		if (Type == SCHEMA_ClientRPC)
-		{
-			RequirementSet = OwningClientOnly;
-		}
-
+		WorkerRequirementSet& RequirementSet = Type == SCHEMA_ClientRPC ? OwningClientOnly : ServersOnly;
 		ComponentWriteAcl.Add(ComponentId, RequirementSet);
 	});
 
@@ -124,13 +118,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 				return;
 			}
 
-			WorkerRequirementSet RequirementSet = ServersOnly;
-
-			if (Type == SCHEMA_ClientRPC)
-			{
-				RequirementSet = OwningClientOnly;
-			}
-
+			WorkerRequirementSet& RequirementSet = Type == SCHEMA_ClientRPC ? OwningClientOnly : ServersOnly;
 			ComponentWriteAcl.Add(ComponentId, RequirementSet);
 		});
 	}
