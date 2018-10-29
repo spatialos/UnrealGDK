@@ -338,9 +338,9 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			if (ObjectRef != SpatialConstants::NULL_OBJECT_REF)
 			{
-				FClassInfo& SubobjectInfo = *Info->SubobjectInfo[ObjectRef.Offset];
+				FClassInfo* SubobjectInfo = Info->SubobjectInfo[ObjectRef.Offset].Get();
 
-				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, &SubobjectInfo, RepFlags);
+				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, SubobjectInfo, RepFlags);
 				bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 			}
 		}
@@ -355,6 +355,7 @@ int64 USpatialActorChannel::ReplicateActor()
 			TSharedRef<TArray<uint8>>* SubobjectHandoverShadowData = HandoverShadowDataMap.Find(Subobject);
 			if (SubobjectHandoverShadowData == nullptr)
 			{
+				UE_LOG(LogSpatialActorChannel, Warning, TEXT("EntityId: %lld Actor: %s HandoverShadowData not found for Subobject %s"), EntityId, *Actor->GetName(), *Subobject->GetName());
 				continue;
 			}
 
