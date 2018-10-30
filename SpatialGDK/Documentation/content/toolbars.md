@@ -86,5 +86,5 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 
 | Setting | Description |
 | --- | --- |
-| Generate schema for all supported classes | Use this to generate [schema]({{urlRoot}}/content/glossary#schema) for all network supported UObjects. Classes extended from `USceneComponent` don't generate schemas. **Highly recommended to turn on this option.** |
+| Generate schema for all supported classes | Use this to generate [schema]({{urlRoot}}/content/glossary#schema) for all network supported UObjects. Classes extended from `USceneComponent` don't generate schemas. **Highly recommended leave this option turned on.** |
 | Output path for the generated schemas | Use this to specify the path of the generated [schema]({{urlRoot}}/content/glossary#schema) files.  If you leave this empty, it defaults to `<GameRoot>/../spatial/schema/improbable/unreal/generated/`. |
