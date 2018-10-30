@@ -11,7 +11,7 @@ Before porting your project:
 <!-- // TODO: Update the set up link when ready -->
 
 ### Terms used in this guide
-`<GameRoot>` - The folder containing your game project's `.uproject` and source folder.  
+`<GameRoot>` - The folder containing your game project's `.uproject` file and `Source` folder.  
 `<ProjectRoot>` - The folder containing your `<GameRoot>`.  
 `<YourProject>` - Name of your game project's `.uproject` (for example, `\<GameRoot>\StarterProject.uproject`).
 
