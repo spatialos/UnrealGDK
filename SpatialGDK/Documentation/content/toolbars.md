@@ -36,6 +36,29 @@ You can switch back by unchecking the boxes.
 
 You can launch multiple servers at the same time from within the Unreal Editor in [PIE (Unreal documentation)](https://docs.unrealengine.com/en-us/Engine/UI/LevelEditor/InEditorTesting#playineditor) configuration. To configure the number of servers launched, open the **Play** drop-down menu and use the slider `Number of Servers` within the `Multiplayer Options` section.
 
+To connect multiple servers-workers to SpatialOS, we need to tell SpatialOS how many server-workers we will be connecting. In `<ProjectPath>\spatial\default_launch.json` there is a load balancing section which dictates how many workers will be connected to SpatialOS. 
+
+If you haven't modified your load balancing previously, your load balancing strategy should look like:
+
+```
+"load_balancing": {
+  "layer_configurations": [
+      {
+          "layer": "UnrealWorker",
+          "rectangle_grid": {
+              "cols": 1,
+              "rows": 1
+          },
+          "options": {
+            "manual_worker_connection_only": true
+        }
+      }
+  ]
+}
+```
+
+This uses the [`rectangle_grid`](https://docs.improbable.io/reference/13.3/shared/worker-configuration/load-balancer-config-2#rectangular-grid-rectangle-grid) strategy with 1 column and 1 row. To connect 2 servers, this can be changed to 1 column and 2 rows (or vice-versa). Read more about the different kinds of load balancing strategies [here](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#load-balancing-with-the-new-runtime)
+
 ## SpatialOS GDK for Unreal toolbar
 
 The GDK toolbar provides several functions required for building and launching your client and server-workers from inside the Unreal Editor.
