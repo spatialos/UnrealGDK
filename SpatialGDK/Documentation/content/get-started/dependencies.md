@@ -25,4 +25,4 @@ This installs:<br>
     - Desktop development with C++<br>
     - Game development with C++
 
-#### Next: [Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/2=build-unreal.md)
+#### Next: [Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork.md)
