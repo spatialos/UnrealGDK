@@ -28,7 +28,7 @@ Before porting your project:
     `\StarterProject\Game\StarterProject.uproject`
     
     > This step is essential as the `spatial` folder must be located in the directory above your `<GameRoot>`. This is so the GDK scripts work correctly with Unreal.
-1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the StarterProject repository that you cloned earlier.
+1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the StarterProject repository that you cloned earlier in the [Before you start](#before-you-start) section.
 
     To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders below to your `<ProjectRoot>`:  
 
@@ -54,7 +54,7 @@ Before porting your project:
    Open **`\<ProjectRoot>\ProjectPaths.bat`** for editing and:  
 
     * In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.  
-    * In `set GAME_NAME=StarterProject`, replace `StarterProject` with the name of your game's `.uproject` (which we'll refer to as `<YourProject>`).  
+    * In `set GAME_NAME=StarterProject`, replace `StarterProject` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
     > Doing this incorrectly will result in the helper scripts `LaunchClient.bat` and `LaunchServer.bat` not working and printing that the path specified does not exist when trying to use them.
 
 1. Run `Setup.bat` which is in the root directory of the GDK repository you cloned (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
@@ -141,7 +141,7 @@ The steps below reference and introduce the following SpatialOS terms: [workers]
 
     > These lines ensure that the GDK can override Unreal's network replication.
     >
-    > If you ever need to run with default Unreal networking for workflow or validation reasons, you can switch networking in the Unreal Editor: from the Editor menu, select **Play** and from the drop-down menu un-check `Spatial Networking`. This setting is valid for Editor and command-line builds. It is stored in your game project's Unreal config file; `<GameRoot>\Config\DefaultGame.ini` under `\Script\EngineSettings.GeneralProjectSettings`.
+    > If you ever need to run with default Unreal networking for workflow or validation reasons, you can switch networking in the Unreal Editor: from the Editor menu, click the down arrow on the **Play** button and from the drop-down menu un-check `Spatial Networking`. This setting is valid for Editor and command-line builds. It is stored in your game project's Unreal config file; `<GameRoot>\Config\DefaultGame.ini` under `/Script/EngineSettings.GeneralProjectSettings`.
     >
     > **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to debug and so speed up your development iteration. However, you lose access to the multi-server features of the GDK in Unreal default networking mode which may lead to erratic behavior.
 
@@ -184,6 +184,8 @@ You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a
 **For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{URLRoot}}/content/glossary#deployment)**
 
 **Job done!** You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
+
+If you have encountered any problems please check out our [troubleshooting](Link) and [known-issues](Link).
 
 ## Next steps!
 You can now begin experimenting with the multiserver features offered by the GDK.
