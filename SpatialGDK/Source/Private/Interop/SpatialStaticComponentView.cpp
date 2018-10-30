@@ -1,6 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/SpatialStaticComponentView.h"
+#include "Schema/Component.h"
+#include "Schema/Rotation.h"
+#include "Schema/Singleton.h"
 
 Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
@@ -19,20 +22,6 @@ Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId Entit
 bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
 	return GetAuthority(EntityId, ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
-}
-
-template <typename T>
-T* USpatialStaticComponentView::GetComponentData(Worker_EntityId EntityId)
-{
-	if (TMap<Worker_ComponentId, TUniquePtr<ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
-	{
-		if (TUniquePtr<improbable::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
-		{
-			return &(static_cast<improbable::ComponentStorage<T>*>(Component->Get())->Get());
-		}
-	}
-
-	return nullptr;
 }
 
 void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op)

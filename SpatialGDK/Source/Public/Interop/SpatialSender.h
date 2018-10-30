@@ -14,13 +14,14 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
-class USpatialNetDriver;
-class USpatialDispatcher;
-class USpatialWorkerConnection;
 class USpatialActorChannel;
+class USpatialDispatcher;
+class USpatialNetDriver;
 class USpatialPackageMapClient;
-class USpatialTypebindingManager;
 class USpatialReceiver;
+class USpatialStaticComponentView;
+class USpatialTypebindingManager;
+class USpatialWorkerConnection;
 
 struct FPendingRPCParams
 {
