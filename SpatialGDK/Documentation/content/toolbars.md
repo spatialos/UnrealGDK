@@ -36,7 +36,7 @@ You can switch back by unchecking the boxes.
 
 You can launch multiple servers at the same time from within the Unreal Editor in [PIE (Unreal documentation)](https://docs.unrealengine.com/en-us/Engine/UI/LevelEditor/InEditorTesting#playineditor) configuration. To configure the number of servers launched, open the **Play** drop-down menu and use the slider `Number of Servers` within the `Multiplayer Options` section.
 
-To connect multiple servers-workers to SpatialOS, we need to tell SpatialOS how many server-workers we will be connecting. In `<ProjectPath>\spatial\default_launch.json` there is a load balancing section which dictates how many workers will be connected to SpatialOS. 
+To connect multiple servers-workers to SpatialOS, you need to tell SpatialOS how many server-workers you will be connecting. In `<ProjectPath>\spatial\default_launch.json` there is a load balancing section which dictates how many workers will be connected to SpatialOS. 
 
 If you haven't modified your load balancing previously, your load balancing strategy should look like:
 
