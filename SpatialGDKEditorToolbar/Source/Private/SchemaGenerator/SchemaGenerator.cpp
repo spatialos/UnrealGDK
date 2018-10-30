@@ -579,10 +579,11 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 				// Only include core types if a subobject has any RPCs
 				bImportCoreTypes |= PropertyTypeInfo->RPCs.Num() > 0;
 
-				if (!AlreadyImported.Contains(Value->GetClass()))
+				UClass* Class = Value->GetClass();
+				if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))
 				{
-					Writer.Printf("import \"unreal/generated/Subobjects/{0}.schema\";", *UnrealNameToSchemaTypeName(Value->GetClass()->GetName()));
-					AlreadyImported.Add(Value->GetClass());
+					Writer.Printf("import \"unreal/generated/Subobjects/{0}.schema\";", *UnrealNameToSchemaTypeName(Class->GetName()));
+					AlreadyImported.Add(Class);
 				}
 			}
 		}

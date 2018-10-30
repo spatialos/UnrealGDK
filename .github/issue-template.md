@@ -6,11 +6,11 @@ We are accepting issues and we want your [feedback](../README.md#give-us-feedbac
 ## Description
 Describe your issue.
 
-## Expected behaviour
+## Expected behavior
 Tell us what should happen.
 
-## Current behaviour
-Tell us what happens instead of the expected behaviour.
+## Current behavior
+Tell us what happens instead of the expected behavior.
 
 ## Possible solution
 This is not obligatory but if you have a preference, please suggest a fix for the bug.
