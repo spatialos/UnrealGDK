@@ -160,7 +160,7 @@ void USpatialGameInstance::StartGameInstance()
 				FPlatformMisc::RequestExit(false);
 			}
 
-		return;
+			return;
 		}
 	}
 
