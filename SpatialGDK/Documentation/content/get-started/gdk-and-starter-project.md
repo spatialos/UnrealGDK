@@ -1,8 +1,10 @@
-# Get started: 3 - Set up the Starter Project Respository and the Unreal GDK Repository
+# Get started: Set up the GDK and Starter Project
 
-### Clone the Repositories
+This step has three parts; clone the repositories, build the dependencies and deploy the game. You can deploy locally on your development machine and in the cloud.
 
-In this step, you are going to clone the Starter Project repository and then clone the GDK repository into your copy of the Starter Project. Note that the GDK needs to go into the Starter Project's `Plugins` directory.
+### Clone the repositories
+
+Now, you are going to clone the Starter Project repository and then clone the GDK repository into your copy of the Starter Project. Note that the GDK needs to go into the Starter Project's `Plugins` directory.
 
 1. Clone the [Starter Project](https://github.com/spatialos/UnrealGDKStarterProject/) repository by running either:
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDKStarterProject.git`
@@ -16,7 +18,7 @@ In this step, you are going to clone the Starter Project repository and then clo
 
 [//]: # (TODO: This whole section below deserves some screenshots to show users what to expect. This was done well on the Unity onobarding docs. Example: https://docs.improbable.io/unity/alpha/content/get-started/get-playing)	
 
-### Build Dependencies 
+### Build dependencies 
 
 In this step, you're going to build the Unreal GDK module dependencies, which the Starter Project needs to work with the GDK. You are then going to add the Unreal GDK to the Starter Project.
 
@@ -29,7 +31,9 @@ In this step, you're going to build the Unreal GDK module dependencies, which th
 1. In the Solution Explorer window, right-click on **StarterProject** and select **Build**.
 1. Open **StarterProject.uproject** in the Unreal Editor and click [`Schema` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary) to generate schema and then [`Snapshot` (SpatialOS documentation)]((https://docs.improbable.io/reference/latest/shared/glossary)) to generate a snapshot.
 
-### Deploy the Starter Project locally
+### Deploy the Starter Project 
+
+#### Deploy locally
 
 1. In the Unreal Editor, on the SpatialOS GDK toolbar, click **Launch**. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
@@ -37,7 +41,7 @@ In this step, you're going to build the Unreal GDK module dependencies, which th
 1. On the toolbar, click **Play** to run the game.
 1. When you're done, click **Stop** to stop the client [worker](https://docs.improbable.io/reference/latest/shared/glossary), and click the **Stop** button in the SpatialOS section of the toolbar to stop your local SpatialOS deployment.
 
-### Deploy the Starter Project in the cloud
+#### Deploy in the cloud
 
 To run a cloud deployment, you need to prepare your server-worker and client-worker [assemblies](https://docs.improbable.io/reference/latest/shared/glossary), and upload them to the cloud.
 
@@ -60,4 +64,4 @@ You've successfully set up and launched the Starter Project and the GDK! To star
 
 Finally, if you have an existing Unreal multiplayer project, you can follow our detailed [porting guide]({{urlRoot}}/content/porting-unreal-project-to-gdk.md) to get it onto the GDK! 
 
-#### Next: [Multiserver Shooter Tutorial]({{urlRoot}}/content/get-started/4-tutorial.md)
+#### Next: [Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/4-tutorial.md)

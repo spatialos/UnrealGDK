@@ -1,6 +1,4 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS Unreal GDK is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
-# How to port a native Unreal project to the Unreal GDK
+# Get started: Port your own Unreal project to the GDK
 
 > This workflow is very subject to change. We're aware that it's not optimized, and one of our priorities is to improve iteration times.
 
@@ -8,7 +6,8 @@
 
 <%(TOC)%>
 
-Follow the [setup guide]({{urlRoot}}/setup-and-installing) to the end of **Setting up the Unreal GDK module and Starter Project** > **Cloning**.
+Follow the [setup guide]({{urlRoot}}/content/get-started/dependencies) to the end of **Clone the repositories* in  [Set up the GDK and Starter Project]({{urlRoot}}/content/gdk-and-starter-project). (You only need to clone the GDK repository, not the Starter Project repository.)
+
 > To speed up build times, install IncrediBuild, FastBuild, or another build distributor.
 
 ## Setting up the project structure

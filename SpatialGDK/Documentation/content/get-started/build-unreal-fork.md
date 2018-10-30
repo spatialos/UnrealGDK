@@ -47,4 +47,4 @@ If the environment variable is registered correctly, this returns the path you u
 </br>You have now built Unreal Engine 4 for cross-compilation for Linux.
     > Once you've built Unreal Engine, *don't move it into another directory*: that will break the integration.
 
-#### Next: [Set up the Unreal GDK module and Starter Project]({{urlRoot}}/content/get-started/3-gdk-and-starter-project.md)  
+#### Next: [Choose your project]({{urlRoot}}/content/get-started/choose-your-project)  

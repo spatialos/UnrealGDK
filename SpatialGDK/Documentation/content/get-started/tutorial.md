@@ -1,3 +1,5 @@
-# Get started: 4 - Multiserver Shooter Tutorial
+# Get started: The Multiserver Shooter tutorial
 
-https://docs.google.com/document/d/1GG9V76msjsK8km900965OrJHHKhwJpwZL2KX9JR8ikk/edit#heading=h.13didh8yep1w
+It's on the way.
+
+[//]: # (https://docs.google.com/document/d/1GG9V76msjsK8km900965OrJHHKhwJpwZL2KX9JR8ikk/edit#heading=h.13didh8yep1w)
