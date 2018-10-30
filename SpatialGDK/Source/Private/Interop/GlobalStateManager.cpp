@@ -298,7 +298,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	Worker_ComponentConstraint GSMComponentConstraint{};
 	GSMComponentConstraint.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID;
 
-	Worker_Constraint GSMConstraint;
+	Worker_Constraint GSMConstraint{};
 	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
 	GSMConstraint.component_constraint = GSMComponentConstraint;
 
