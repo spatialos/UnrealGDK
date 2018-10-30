@@ -123,12 +123,12 @@ void FSpatialGDKEditorToolbarModule::RegisterSettings()
 	{
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
-		SettingsContainer->DescribeCategory("SpatialGDKEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS Unreal GDK"),
-			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialGDK Editor toolbar plugin"));
+		SettingsContainer->DescribeCategory("SpatialGDKEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS GDK for Unreal"),
+			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS GDK for Unreal"));
 
-		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditorToolbar", "Toolbar",
-			LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"),
-			LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for the SpatialOS Unreal GDK toolbar plugin."),
+		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditorToolbar", "Settings",
+			LOCTEXT("RuntimeGeneralSettingsName", "Settings"),
+			LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for the SpatialOS GDK for Unreal"),
 			GetMutableDefault<USpatialGDKEditorToolbarSettings>());
 
 		if (SettingsSection.IsValid())
@@ -142,7 +142,7 @@ void FSpatialGDKEditorToolbarModule::UnregisterSettings()
 {
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
-		SettingsModule->UnregisterSettings("Project", "SpatialGDK", "Toolbar");
+		SettingsModule->UnregisterSettings("Project", "SpatialGDK", "Settings");
 	}
 }
 

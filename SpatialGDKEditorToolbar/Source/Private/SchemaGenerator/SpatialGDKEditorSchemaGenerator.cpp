@@ -3,15 +3,17 @@
 #include "SpatialGDKEditorSchemaGenerator.h"
 
 #include "AssetRegistryModule.h"
+#include "Components/SceneComponent.h"
 #include "Engine/LevelScriptActor.h"
 #include "GeneralProjectSettings.h"
 #include "GenericPlatform/GenericPlatformFile.h"
 #include "GenericPlatform/GenericPlatformProcess.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MonitoredProcess.h"
-#include "SchemaGenerator.h"
 #include "SharedPointer.h"
+
 #include "TypeStructure.h"
+#include "SchemaGenerator.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "Utils/CodeWriter.h"
@@ -174,6 +176,8 @@ TArray<UClass*> GetAllSupportedClasses()
 		// Doesn't let us save the schema database
 		if (SupportedClass->IsChildOf<ALevelScriptActor>()) continue;
 
+		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
+
 		// Ensure we don't process skeleton or reinitialized classes
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
@@ -189,6 +193,8 @@ TArray<UClass*> GetAllSupportedClasses()
 
 bool SpatialGDKGenerateSchema()
 {
+	ClassToSchema.Empty();
+
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
 	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)

@@ -28,7 +28,7 @@ These settings are valid for Editor and command-line builds. They’re stored in
 
 You can switch back by unchecking the boxes.
 
-> **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to debug and so speed up your development iteration. However, you lose access to the multi-server features of the GDK in Unreal default networking mode which may lead to erratic behavior.
+> **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to debug and so speed up your development iteration. However, you lose access to the multiserver features of the GDK in Unreal default networking mode which may lead to erratic behavior.
 
 ### Launching multiple PIE server-workers
 
@@ -44,7 +44,7 @@ The GDK toolbar provides several functions required for building and launching y
 
 > Note: If you based your project off the [StarterProject](https://github.com/spatialos/UnrealGDKStarterProject), the toolbar is already enabled.
 
-To enable the GDK toolbar, navigate to **Edit** > **Plugins** inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS Unreal GDK** section and enable the toolbar:
+To enable the GDK toolbar, navigate to **Edit** > **Plugins** inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS** section and enable the toolbar:
 
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/enable-toolbar.png)
 
@@ -68,7 +68,7 @@ You can also access these from the **Window** menu:
 
 #### Settings
 
-The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal GDK** > **Toolbar**.
+The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK for Unreal** > **Settings**.
 
  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbar-settings.png)
 
@@ -86,5 +86,5 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 
 | Setting | Description |
 | --- | --- |
-| Generate schema for all supported classes | **Experimental** Use this to generate [schema]({{urlRoot}}/content/glossary#schema) for all UObjects that have replicated or handover properties. As the GDK does not currently support multiple replicated Actor components of the same type on an Actor, classes extended from `USceneComponent` don't generate schemas. |
+| Generate schema for all supported classes | Use this to generate [schema]({{urlRoot}}/content/glossary#schema) for all network supported UObjects. Classes extended from `USceneComponent` don't generate schemas. **It is highly recommended to leave this option turned on.** |
 | Output path for the generated schemas | Use this to specify the path of the generated [schema]({{urlRoot}}/content/glossary#schema) files.  If you leave this empty, it defaults to `<GameRoot>/../spatial/schema/improbable/unreal/generated/`. |
