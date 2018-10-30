@@ -8,7 +8,7 @@
     - Install and run either:
     - [4: The Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project)
     - [4: The Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
-    - [4: Your own Unreal project (porting guide)]({{urlRoot}}/content/porting-unreal-project-to-gdk)
+    - [4: Your own Unreal project (porting guide)]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
 - <h3>[- Feature list]({{urlRoot}}/features)</h3>
     <!--[//]: # (TODO: Add the following at <h3> level)
     [//]: # (- <h3>[- What's new]({{urlRoot}}/TODO)</h3>) !-->
