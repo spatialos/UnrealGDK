@@ -147,6 +147,21 @@ void USpatialGameInstance::StartGameInstance()
 	{
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialWorkerConnection();
+
+		// Initialize a locator configuration which will parse command line arguments.
+		// If there is a locator token present in the command line arguments then connect to deployment automatically.
+		FLocatorConfig LocatorConfig;
+		if (!LocatorConfig.LoginToken.IsEmpty() && !GIsClient)
+		{
+			FString Error;
+			if (!StartGameInstance_SpatialGDKClient(Error))
+			{
+				UE_LOG(LogSpatialGameInstance, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
+				FPlatformMisc::RequestExit(false);
+			}
+
+		return;
+		}
 	}
 
 	Super::StartGameInstance();
