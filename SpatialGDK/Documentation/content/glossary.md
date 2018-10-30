@@ -197,8 +197,10 @@ The Launcher downloads the client executable from the [SpatialOS assembly](#asse
 
 ### Load balancing
 One of the features of SpatialOS is load balancing: dynamically adjusting how many [components](#spatialos-components) on [entities](#spatialos-entities) in the [world](#spatialos-world) each [worker](#workers) has [write access](#authority) to, so that workers don’t get overloaded.
+
 Load balancing only applies to [server-workers](#workers).
 When an instance of a worker is struggling with a high workload, SpatialOS can start up new instances of the worker, and give them write access to some components on entities.
+
 This means that an [entity](#spatialos-entity) won’t necessarily stay on the same worker instance, even if that entity doesn’t move. SpatialOS may change which components on which entities a worker instance has write access to: so entities move “from” one worker instance to another. Even though the entity may be staying still, the worker instance’s [area of interest](#interest) is moving.
 
 >Related pages:
@@ -221,12 +223,12 @@ To facilitate this continuity in an entity's state between deployments, there is
 >[The persistence component in the standard schema library (SpatialOS documentation](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library#persistence-optional)
 
 ### Project name
-Your project name is a unique identifier for your game project as a deployment. It’s generated for you when you sign up for SpatialOS. It’s usually something like beta_someword_anotherword_000.
+Your project name is a unique identifier for your game project as a deployment. It’s generated for you when you sign up for SpatialOS. It’s usually something like `beta_someword_anotherword_000`.
 You must specify this name when you run a [cloud deployment](#deployment). 
 Note that your project name is (usually) not the same as the name of the directory your project is in.
 
 ### Project definition file
-This is a `spatialos.json` file which lives in your project’s root directory. 
+This is a `spatialos.json` file which lives in your project's spatial directory. 
 It lists the SpatialOS [project name](#project-name) assigned to you by Improbable when you sign up as well as the version of [SpatialOS SDK](#spatialos-sdk) your project uses.
 
 >Related
@@ -262,6 +264,7 @@ The `spatial` command-line tool (also known as the “CLI”) provides a set of 
 > * [An introduction to the `spatial` command-line tool (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/spatial-cli-introduction). Note that the GDK does not support any `spatial worker` commands.
 > * [`spatial` reference (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial)
 
+
 ### SpatialOS component
 > Not to be confused with [Unreal Components (Unreal documentation](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors/Components)
 
@@ -273,6 +276,7 @@ Components can contain:
 * [commands (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#command) that another worker can call to ask the component to do something, optionally returning a value (for example, `Teleport`)
 
 A SpatialOS entity can have as many components as you like, but it must have at least [`Position` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#position) and [`EntityAcl`](#access-control-list-acl). Most entities will have the [`Metadata` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#metadata) component.
+
 SpatialOS components are defined as files in your [schema](#schema).
 [Entity access control lists](#access-control-list-acl) govern which workers can [read from](#read-access) or [write to](#write-access) each component on an entity.
 
@@ -283,7 +287,7 @@ SpatialOS components are defined as files in your [schema](#schema).
 > * [Introduction to schema (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/schema/introduction)
 
 ### SpatialOS entity
-All of the objects inside a [SpatialOS world](#spatialos-world) are SpatialOS entities: they’re the basic building blocks of the world. Examples include players, NPCs, and objects in the world like trees. A SpatialOS entity approximates to an Unreal Actor.
+All of the objects inside a [SpatialOS world](#spatialos-world) are SpatialOS entities: they’re the basic building blocks of the world. Examples include players, NPCs, and objects in the world like trees. A SpatialOS entity approximates to an Unreal Actor.  
 
 SpatialOS entities are made up of [SpatialOS components](#spatialos-component), which store data associated with that entity.
 
@@ -301,7 +305,7 @@ SpatialOS entities are made up of [SpatialOS components](#spatialos-component), 
 
 Also sometimes just called “SpatialOS”. 
 
-A SpatialOS Runtime instance manages the [SpatialOS world](#spatialos-world) of each [deployment](#deployment) by storing all [SpatialOS entities](#spatialos-entity) and the current state of their [SpatialOS components](#spatialos-components). [Workers](#workers) interact with the SpatialOS Runtime to read and modify the components of an entity as well as send messages between workers.
+A SpatialOS Runtime instance manages the [SpatialOS world](#spatialos-world) of each [deployment](#deployment) by storing all [SpatialOS entities](#spatialos-entity) and the current state of their [SpatialOS components](#spatialos-components). [Workers](#workers) interact with the SpatialOS Runtime to read and modify the components of an entity as well as send messages between each other.
 
 ### SpatialOS SDK
 This is a set of low-level tools in several programming languages which you can use to integrate your game project with SpatialOS. It consists of the Worker SDK (or “Worker module”) and Platform SDK (or “Platform module”). 
@@ -339,6 +343,7 @@ You use a snapshot as the starting point (using an an “initial snapshot”) fo
 Streaming queries allow workers to get information about the [world](#spatialos-world) outside the region they’re [interested in](#interest), so that they know about entities that they don’t have checked out (for example, entities that are far away, or that don’t have a physical position).
 
 > Streaming queries are useful if you need to get information about an entity periodically - for example, so that a player can see and interact with it.
+> 
 > If you just need information about an entity at one particular time, use [queries](#queries) instead.
 
 ### Workers
@@ -372,8 +377,10 @@ A server-worker approximates to a server in native Unreal networking but, unlike
 In order to achieve huge scale, SpatialOS divides up the SpatialOS entities in the world between workers, balancing the work so none of them are overloaded. For each SpatialOS entity in the world, it decides which worker should have [write access](#authority) to each SpatialOS component on the SpatialOS entity. To prevent multiple workers writing to a component at the same time, only one worker at a time can have write access to a SpatialOS component.
 
 As the world changes over time, the position of SpatialOS entities and the amount of updates associated with them changes. Server-workers report back to SpatialOS how much load they're under, and SpatialOS adjusts which workers have write access to components on which SpatialOS entities. SpatialOS then starts up new workers when needed. This is [load balancing (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/worker-configuration/loadbalancer-config).
-Around the SpatialOS entities which they have write access to, every worker has an area of the world they are [interested in] (#interest).
+Around the SpatialOS entities which they have write access to, every worker has an area of the world they are [interested in](#interest).
+
 A worker can read the current state of components of the SpatialOS entities within this area, and SpatialOS sends [updates and messages (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#sending-an-update) about these SpatialOS entities to the worker.
+
 If the worker has write access to a SpatialOS component, it can [send updates and messages (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#sending-an-update):
 it can update [properties (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#property), send and handle [commands (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#command) and trigger [events (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#event).
 
