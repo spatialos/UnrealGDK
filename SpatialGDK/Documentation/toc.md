@@ -15,8 +15,7 @@
  ***
 - <h3>Concepts and terminology</h3>
 - <h3>[- SpatialOS concepts]({{urlRoot}}/content/concepts)</h3>
-    <!--[//]: # (TODO: Add the following from Mike at <h3> level)
-    [//]: # (- <h3>[- Spatial Type]({{urlRoot}}/TODO)</h3>) !-->
+- <h3>[- Spatial Type]({{urlRoot}}/content/spatial-type)</h3>)
     <!--[//]: # (TODO: Add the following from Mike at <h3> level)
     [//]: # (- <h3>[- Dynamic type bindings]({{urlRoot}}/TODO)</h3>) !-->
 - <h3>[- Singleton Actors]({{urlRoot}}/content/singleton-actors)
@@ -28,7 +27,7 @@
 
  ***
 - <h3>Reference</h3>
-- <h3>[- Toolbar]({{urlRoot}}/content/toolbar)
+- <h3>[- Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>[- Snapshots]({{urlRoot}}/content/generating-a-snapshot)
 <!--[//]: # (TODO: Add the following from Sahil at <h3> level)
     [//]: # (- <h3>[- Authority]({{urlRoot}}/TODO)</h3>) !-->
@@ -43,10 +42,10 @@
 ***
 - <h3>Get involved</h3>
 - <h3>+ Contributing to the GDK</h3>
-    - [Contribution policy]({{urlRoot}}/contributing)
     - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)
     - Visit our GitHub:
     - [Issue log](https://github.com/spatialos/unrealgdk/issues)
+    - [Contribution policy](https://github.com/spatialos/UnrealGDK/blob/master/CONTRIBUTING.md)
 - <h3>+ GDK community</h3>    
     - [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368)
     - [Forums](https://forums.improbable.io/)

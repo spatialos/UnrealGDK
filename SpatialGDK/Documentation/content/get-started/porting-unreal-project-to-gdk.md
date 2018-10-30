@@ -1,7 +1,6 @@
 # Get started: Port your own Unreal project to the GDK
 
 As an experienced UE4 developer, you likely have a prototype or a game already. The GDK allows you to very easily port it over to SpatialOS. This guide allows you to kickstart your SpatialOS journey - by the end of it your game will run on a *single server-worker* on SpatialOS. You will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
- master
 
 ## Before you start
 
@@ -11,7 +10,7 @@ Before porting your project:
     * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     * [Getting started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 * If you haven't done this already, clone the GDK repository by following:
-    *  [Set up the GDK and Starter Project]({{urlRoot}}/content/gdk-and-starter-project) (You only need to clone the GDK repository, not the Starter Project repository.)  
+    *  [Set up the GDK and Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project) (You only need to clone the GDK repository, not the Starter Project repository.)  
 
 * Make sure your Spatial CLI is up to date: from a terminal window, run the command `spatial update`. 
 <!-- // TODO: Update the set up link when ready -->
@@ -190,13 +189,13 @@ You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a
 
 **Job done!** You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
 
-If you have encountered any problems please check out our [troubleshooting](Link) and [known-issues](Link).
+If you have encountered any problems please check out our [troubleshooting]({{urlRoot}}/content/troubleshooting) and [known-issues]({{urlRoot}}/content/known-issues).
 
 ## Next steps!
 You can now begin experimenting with the multiserver features offered by the GDK.
 
-Check out the tutorial on how to implement [cross-server shooting](Link).  
-Also check out the documentation on [cross-server RPCs](Link), [handover](Link) and [singletons](Link).
+Check out the tutorial on how to implement [cross-server shooting]({{urlRoot}}/content/get-started/tutorial).  
+Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [singletons]({{urlRoot}}/content/singleton-actors).
 
 More tutorials on their way!
 
