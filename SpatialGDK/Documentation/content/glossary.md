@@ -22,6 +22,9 @@ Note that this SpatialOS documentation assumes you are developing a SpatialOS ga
 ### Actor handover
 Handover is a new `UPROPERTY` tag. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor and entity property handover between server-workers]({{urlRoot}}/content/handover-between-server-workers.md).
 
+### Dynamic Typebindings
+To enable the network stacks of Unreal and SpatialOS to interoperate, we've implemented [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings.md). `Dynamic Typebindings` operate at runtime so your that your iteration speed is not affected despite your network code running on a completely different represenetations than Unreal's.
+
 ### Cross-server RPCs
 These handle the scenario where a [server-worker](#workers) needs to execute an operation on an Actor that another server-worker has [authority](#authority) over. When a cross-server RPC is invoked by a non-authoritative server-worker, the execution is routed through SpatialOS to the authoritative server-worker - this authoritative server-worker executes the RPC. (See the documentation on [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)).
 
