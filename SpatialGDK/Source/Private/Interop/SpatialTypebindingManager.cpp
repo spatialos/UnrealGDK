@@ -54,7 +54,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
 				RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 			{
-				ESchemaComponentType RPCType;
+				ESchemaComponentType RPCType = SCHEMA_Invalid;
 				if (RemoteFunction->FunctionFlags & FUNC_NetClient)
 				{
 					RPCType = SCHEMA_ClientRPC;
