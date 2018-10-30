@@ -32,7 +32,7 @@ These handle the scenario where a [server-worker](#workers) needs to execute an 
 The Global State Manager (GSM):
 
 *  Makes sure that [Singleton Actors](#singleton-actors) are replicated properly, by only allowing the [server-worker](#workers) with [authority](#authority) over the GSM to execute the initial replication of these Actors. See documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).
-*  Maintains the configuration of a [deployment’s](#deployment) currently-loaded [game world](#game-world). (Note that this is the Unreal game world not the [SpatialOS world](#spatialos-world).)<br/> 
+*  Maintains the configuration of a [deployment’s](#deployment) currently-loaded [game world](#game-world). (Note that this is the Unreal game world not the [SpatialOS world](#spatialos-world).)<br/>  
 
 The GSM lists both the URL of the [Map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) that the [server-workers](#servers) have loaded and the `AcceptingPlayers` flag. (This flag controls whether or not client-servers can spawn anything in the game world.)
 
@@ -83,8 +83,7 @@ Also known as “write access”.
 * Write access:<br/>
 Many [workers](#workers) can connect to a [SpatialOS world](#spatialos-world). For each [component](#spatialos-component) on a [SpatialOS entity](#spatialos-entity), there can be no more than one worker with write access to it. This worker is the only one able to modify the component’s state and handle commands for it.
 Workers with write access are said to “have authority” and be “authoritative”; workers without write access are said to be “non-authoritative”.
-Which [types of workers](#worker-types) can have write access is governed by each entity’s [access control list (ACL)](#access-control-list-acl). This list specifies which worker actually has write access over an entity. The list is managed by SpatialOS, and can change regularly due to [load balancing (SpatialOS concept documentation)](https://docs.improbable.io/reference/latest/shared/glossary#load-balancing).
-<br/>
+Which [types of workers](#worker-types) can have write access is governed by each entity’s [access control list (ACL)](#access-control-list-acl). A write ACL is specified per component. The write authority is managed by SpatialOS, and can change regularly due to [load balancing (SpatialOS concept documentation)](https://docs.improbable.io/reference/latest/shared/glossary#load-balancing).
 <br/>
 * Read access:<br/>
 Read access allows [workers](#workers) to know the state of a [SpatialOS component](#spatialos-component). The [access control list (ACL)](#access-control-list-acl) also controls which workers have read-access to a [SpatialOS entity](#spatialos-entity). Read access does not allow a worker to change a component. Read access is at the entity level; if a worker can read from an entity, it is allowed to read from all components on that entity. 
@@ -120,7 +119,7 @@ When you want to try out your game, you need to deploy it. This means launching 
 
 There are two types of deployment: local and cloud.
 
-Local deployments allow you to start the SpatialOS [Runtime](#spatialos-runtime) locally to test changes quickly. Find out more about local deployments in the [SpatialOS documentation](https://docs.improbable.io/reference/latest/shared/deploy/deploy-local.
+Local deployments allow you to start the SpatialOS [Runtime](#spatialos-runtime) locally to test changes quickly. Find out more about local deployments in the [SpatialOS documentation](https://docs.improbable.io/reference/latest/shared/deploy/deploy-local).  
 
 As their name suggests, cloud deployments run in the cloud on [nodes](#node). They allow you to share your game with other people and run your game at a scale not possible on one local machine. Once a cloud deployment is running, you can connect [game clients](#game-client) to it using the [Launcher](#launcher).
 
