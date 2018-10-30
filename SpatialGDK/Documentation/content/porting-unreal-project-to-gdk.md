@@ -181,9 +181,17 @@ You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a
 1. On the main Unreal toolbar, click **Play**. 
 1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/13.3/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
   
-Job done! You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
-
 **For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{URLRoot}}/content/glossary#deployment)**
+
+**Job done!** You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
+
+## Next steps!
+You can now begin experimenting with the multiserver features offered by the GDK.
+
+Check out the tutorial on how to implement [cross-server shooting](Link).  
+Also check out the documentation on [cross-server RPCs](Link), [handover](Link) and [singletons](Link).
+
+More tutorials on their way!
 
 #### Logs
 You can find Spatial log files for your local deployments in `<ProjectRoot>\spatial\logs\`.  
