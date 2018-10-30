@@ -44,7 +44,7 @@ The GDK toolbar provides several functions required for building and launching y
 
 > Note: If you based your project off the [StarterProject](https://github.com/spatialos/UnrealGDKStarterProject), the toolbar is already enabled.
 
-To enable the GDK toolbar, navigate to **Edit** > **Plugins** inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS Unreal GDK** section and enable the toolbar:
+To enable the GDK toolbar, navigate to **Edit** > **Plugins** inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS** section and enable the toolbar:
 
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/enable-toolbar.png)
 
@@ -68,7 +68,7 @@ You can also access these from the **Window** menu:
 
 #### Settings
 
-The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal GDK** > **Toolbar**.
+The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK for Unreal** > **Settings**.
 
  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbar-settings.png)
 
@@ -86,5 +86,5 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS Unreal
 
 | Setting | Description |
 | --- | --- |
-| Generate schema for all supported classes | **Experimental** Use this to generate [schema]({{urlRoot}}/content/glossary#schema) for all UObjects that have replicated or handover properties. As the GDK does not currently support multiple replicated Actor components of the same type on an Actor, classes extended from `USceneComponent` don't generate schemas. |
+| Generate schema for all supported classes | Use this to generate [schema]({{urlRoot}}/content/glossary#schema) for all network supported UObjects. Classes extended from `USceneComponent` don't generate schemas. **Highly recommended to turn on this option.** |
 | Output path for the generated schemas | Use this to specify the path of the generated [schema]({{urlRoot}}/content/glossary#schema) files.  If you leave this empty, it defaults to `<GameRoot>/../spatial/schema/improbable/unreal/generated/`. |
