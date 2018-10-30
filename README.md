@@ -42,7 +42,8 @@ We have released the GDK for Unreal this early in development because we want yo
 The GDK and its related projects are available on GitHub.
 * [GDK: github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 * [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK)
-**NOTE:** This link may give you a 404. 
+**NOTE:** This link may give you a 404.
+
 In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 * [Starter Project](https://github.com/spatialos/UnrealGDKStarterProject)
 * [Third-Person Shooter game](https://github.com/spatialos/UnrealGDKThirdPersonShooter) (Not actively developed)
