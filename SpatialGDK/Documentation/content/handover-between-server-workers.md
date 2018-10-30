@@ -17,20 +17,18 @@ Note that server-worker authority over properties is different to server-worker 
 ## How to facilitate Actor handover
 
 To facilitate an Actor’s property handover between server-workers, follow the instructions below:
-1.  In the Actor’s class, mark the property field with a `Handover` tag in the `UPROPERTY` macro, as shown in the example below.
 
-```
-UPROPERTY(Handover)
-float MyServerSideVariable;
-```
+1.  If your property is defined in a native C++ class, mark the property field with a `Handover` tag in the `UPROPERTY` macro, as shown in the example below.
 
-2. In the Actor's `UCLASS` macro, mark the class as a `SpatialType`, as show in the example below.
+    ```
+    UPROPERTY(Handover)
+    float MyServerSideVariable;
+    ```
 
-```
-UCLASS(SpatialType)
-class AMyActor
-{
-```
+1. Alternatively, if your property is defined in a Blueprint class, set the variable's replication setting to `Handover` within the Blueprint Editor. 
+![Example]({{assetRoot}}assets/screen-grabs/handover-blueprint.png)
+
+1. Tag the Actor with the `SpatialType` specifier. See [SpatialType]({{urlRoot}}/content/spatial-type).
 
 1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#schema-generator) for your Actor’s class.
 
@@ -39,10 +37,11 @@ The GDK now ensures that server-workers transfer these tagged Actor’s properti
 ## Native Unreal class properties handover
 To ensure native Unreal classes work with the GDK for Unreal, we are making handover-related changes on a class-by-class basis as we identify appropriate properties for `Handover` tags.
 
-**Classes with properties tagged with `Handover` status (2018-07-31):**
+**Classes with properties tagged with `Handover` status (2018-10-26):**
 
 * `UCharacterMovementComponent`
 * `APlayerController`
+* `MovementComponent`
 
 We will continue to extend our support to more built-in Actor and component types.
 
