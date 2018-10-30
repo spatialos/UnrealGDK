@@ -3,15 +3,17 @@
 #include "SpatialGDKEditorSchemaGenerator.h"
 
 #include "AssetRegistryModule.h"
+#include "Components/SceneComponent.h"
 #include "Engine/LevelScriptActor.h"
 #include "GeneralProjectSettings.h"
 #include "GenericPlatform/GenericPlatformFile.h"
 #include "GenericPlatform/GenericPlatformProcess.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MonitoredProcess.h"
-#include "SchemaGenerator.h"
 #include "SharedPointer.h"
+
 #include "TypeStructure.h"
+#include "SchemaGenerator.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "Utils/CodeWriter.h"
