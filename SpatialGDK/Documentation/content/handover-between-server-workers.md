@@ -24,7 +24,8 @@ UPROPERTY(Handover)
 float MyServerSideVariable;
 ```
 
-2. Alternatively, if your property is defined in a blueprint class, mark the property with a `Handover` tag in the blueprint editor, as shown in the image below.
+2. Alternatively, if your property is defined in a blueprint class, set the variable's replication setting to `Handover` within the Blueprint Editor. 
+![Example]({{assetRoot}}assets/screen-grabs/handover-blueprint.png)
 
 1. Tag the Actor with the `SpatialType` specifier. See [SpatialType]({{urlRoot}}/content/spatial-type).
 
