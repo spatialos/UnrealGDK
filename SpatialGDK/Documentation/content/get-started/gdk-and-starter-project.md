@@ -1,4 +1,8 @@
-# Get started: Set up the GDK and Starter Project
+# Next steps: Set up the GDK with the Starter Project
+
+Before starting this, you need to have followed:
+* [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
+* [Getting started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 
 This step has three parts; clone the repositories, build the dependencies and deploy the game. You can deploy locally on your development machine and in the cloud.
 
@@ -62,6 +66,4 @@ To run a cloud deployment, you need to prepare your server-worker and client-wor
 
 You've successfully set up and launched the Starter Project and the GDK! To start developing, we recommend following our Multiserver Shooter tutorial where you can try out the GDK’s development experience by adding a new feature to the Starter Project and test it across two servers.
 
-Finally, if you have an existing Unreal multiplayer project, you can follow our detailed [porting guide]({{urlRoot}}/content/porting-unreal-project-to-gdk.md) to get it onto the GDK! 
-
-#### Next: [Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/4-tutorial.md)
+If you have an existing Unreal multiplayer project, you can follow our detailed [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk.md) to get it onto the GDK! 

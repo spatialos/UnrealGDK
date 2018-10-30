@@ -4,23 +4,24 @@
     - [Introduction]({{urlRoot}}/content/get-started/introduction)
     - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
     - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-    - [3: Choose your project]({{urlRoot}}/content/get-started/choose-your-project)
-    - Install and run either:
-        - [The Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project)
-        - [The Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
-        - [Your own Unreal project (porting guide)]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
+    - [3: Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
+    - Next steps - either:
+        - [Set up and run the Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project)
+        - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
 - <h3>[- Feature list]({{urlRoot}}/features)</h3>
-    <!--[//]: # (TODO: Add the following at <h3> level)
+    <!--[//]: # (TODO: Add the following from Sam at <h3> level)
     [//]: # (- <h3>[- What's new]({{urlRoot}}/TODO)</h3>) !-->
 
  ***
 - <h3>Concepts and terminology</h3>
 - <h3>[- SpatialOS concepts]({{urlRoot}}/content/concepts)</h3>
-    <!--[//]: # (TODO: Add the following at <h3> level)
+    <!--[//]: # (TODO: Add the following from Mike at <h3> level)
     [//]: # (- <h3>[- Spatial Type]({{urlRoot}}/TODO)</h3>) !-->
+    <!--[//]: # (TODO: Add the following from Mike at <h3> level)
+    [//]: # (- <h3>[- Dynamic type bindings]({{urlRoot}}/TODO)</h3>) !-->
 - <h3>[- Singleton Actors]({{urlRoot}}/content/singleton-actors)
 - <h3>[- Actor property handover]({{urlRoot}}/content/handover-between-server-workers)
-     <!--[//]: # (TODO: Add the following at <h3> level)
+     <!--[//]: # (TODO: Add the following from Josh at <h3> level)
     [//]: # (- <h3>[- Maps]({{urlRoot}}/TODO)</h3>) !-->
 - <h3>[- Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
 - <h3>[- Glossary]({{urlRoot}}/content/glossary)
@@ -29,7 +30,7 @@
 - <h3>Reference</h3>
 - <h3>[- Toolbar]({{urlRoot}}/content/toolbar)
 - <h3>[- Snapshots]({{urlRoot}}/content/generating-a-snapshot)
-<!--[//]: # (TODO: Add the following at <h3> level)
+<!--[//]: # (TODO: Add the following from Sahil at <h3> level)
     [//]: # (- <h3>[- Authority]({{urlRoot}}/TODO)</h3>) !-->
 - <h3>[- Helper scripts]({{urlRoot}}/content/helper-scripts)
 - <h3>[- Directory structure]({{urlRoot}}/content/directory-structure)

@@ -5,9 +5,14 @@ As an experienced UE4 developer, you likely have a prototype or a game already. 
 
 ## Before you start
 
-Before porting your project:  
+Before porting your project: 
+ 
+* If you haven't done this already, install SpatialOS and the GDK's dependencies and clone the SpatialOS Unreal Engine fork by following:
+    * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
+    * [Getting started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+* If you haven't done this already, clone the GDK repository by following:
+    *  [Set up the GDK and Starter Project]({{urlRoot}}/content/gdk-and-starter-project) (You only need to clone the GDK repository, not the Starter Project repository.)  
 
-* Install and set up the SpatialOS GDK: follow the [set up guide]({{urlRoot}}/content/get-started/introduction) to the end of **Clone the repositories** in [Set up the GDK and Starter Project]({{urlRoot}}/content/gdk-and-starter-project). (You only need to clone the GDK repository, not the Starter Project repository.)  
 * Make sure your Spatial CLI is up to date: from a terminal window, run the command `spatial update`. 
 <!-- // TODO: Update the set up link when ready -->
 

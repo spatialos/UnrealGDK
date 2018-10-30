@@ -47,4 +47,4 @@ If the environment variable is registered correctly, this returns the path you u
 </br>You have now built Unreal Engine 4 for cross-compilation for Linux.
     > Once you've built Unreal Engine, *don't move it into another directory*: that will break the integration.
 
-#### Next: [Choose your project]({{urlRoot}}/content/get-started/choose-your-project)  
+#### Next: [Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)  
