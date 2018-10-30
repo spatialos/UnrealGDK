@@ -35,3 +35,17 @@ private:
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TUniquePtr<improbable::ComponentStorageBase>>> EntityComponentMap;
 };
+
+template <typename T>
+T* USpatialStaticComponentView::GetComponentData(Worker_EntityId EntityId)
+{
+	if (TMap<Worker_ComponentId, TUniquePtr<improbable::ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
+	{
+		if (TUniquePtr<improbable::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
+		{
+			return &(static_cast<improbable::ComponentStorage<T>*>(Component->Get())->Get());
+		}
+	}
+
+	return nullptr;
+}
