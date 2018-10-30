@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
+#include "UObject/TextProperty.h"
 #include "Utils/SchemaUtils.h"
 #include "Utils/RepLayoutUtils.h"
 
