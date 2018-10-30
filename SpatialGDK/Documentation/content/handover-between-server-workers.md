@@ -17,7 +17,7 @@ Note that server-worker authority over properties is different to server-worker 
 ## How to facilitate Actor handover
 
 To facilitate an Actor’s property handover between server-workers, follow the instructions below:
-1.  If your property is defined in a native c++ class, mark the property field with a `Handover` tag in the `UPROPERTY` macro, as shown in the example below.
+1.  If your property is defined in a native C++ class, mark the property field with a `Handover` tag in the `UPROPERTY` macro, as shown in the example below.
 
 ```
 UPROPERTY(Handover)
