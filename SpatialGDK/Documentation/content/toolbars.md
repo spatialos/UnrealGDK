@@ -57,7 +57,7 @@ If you haven't modified your load balancing previously, your load balancing stra
 }
 ```
 
-This uses the [`rectangle_grid`](https://docs.improbable.io/reference/13.3/shared/worker-configuration/load-balancer-config-2#rectangular-grid-rectangle-grid) strategy with 1 column and 1 row. To connect 2 servers, this can be changed to 1 column and 2 rows (or vice-versa). Read more about the different kinds of load balancing strategies [here](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#load-balancing-with-the-new-runtime)
+This uses the [`rectangle_grid`](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#rectangular-grid-rectangle-grid) strategy with 1 column and 1 row. To connect 2 servers, this can be changed to 1 column and 2 rows (or vice-versa). Read more about the different kinds of load balancing strategies [here](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#load-balancing-with-the-new-runtime)
 
 ## SpatialOS GDK for Unreal toolbar
 
