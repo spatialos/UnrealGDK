@@ -2,14 +2,14 @@
 
 #include "Utils/ComponentReader.h"
 
+#include "Engine/BlueprintGeneratedClass.h"
 #include "Net/DataReplication.h"
 #include "Net/RepLayout.h"
+#include "UObject/TextProperty.h"
 
-#include "Engine/BlueprintGeneratedClass.h"
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
-#include "UObject/TextProperty.h"
 #include "Utils/SchemaUtils.h"
 #include "Utils/RepLayoutUtils.h"
 

@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/SpatialStaticComponentView.h"
+
 #include "Schema/Component.h"
 #include "Schema/Rotation.h"
 #include "Schema/Singleton.h"
