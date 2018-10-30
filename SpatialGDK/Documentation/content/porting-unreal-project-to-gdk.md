@@ -148,31 +148,32 @@ The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these ar
 
     > If you have not yet created a `GameState` or `GameMode` for your game and are still using the defaults, you must either create Blueprints or native `GameState` and `GameMode` class(es) now.  
 
-    1. If your game's `GameState` is a `.cpp` file, locate it and mark it as a Public Singleton by modifying the `UCLASS` specifier as shown:
+    1. If your game's `GameState` is a `C++` class, locate it's header and mark it as a Public Singleton by modifying the `UCLASS` specifier as shown:
         ```
         UCLASS(SpatialType=Singleton)
         ```
-        If your game's `GameState` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the Spatial Description text box enter `Singleton`.
+        If your game's `GameState` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the Spatial Description text box enter `Singleton`.
 
-    1. If your game's `GameMode` is a `.cpp` file, locate it and mark it as a Private Singleton by modifying the `UCLASS` specifier as shown:
+    1. If your game's `GameMode` is a `C++` class, locate it's header and mark it as a Private Singleton by modifying the `UCLASS` specifier as shown:
         ```
         UCLASS(SpatialType=(Singleton,ServerOnly))
         ```
-       If your game's `GameMode` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the **Spatial Description** text box enter `Singleton,ServerOnly`.
+       If your game's `GameMode` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the **Spatial Description** text box enter `Singleton,ServerOnly`.
 
    Marking these Singleton Actor classes as `Spatial Type` enables them to work with SpatialOS as [schema]({URLRoot}}/content/glossary#schema) will now be generated for them. 
 
 ### 6. Generate schema and a snapshot
 You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a [snapshot]({{URLRoot}}/content/glossary#snapshot) to get your game's deployment started. To do this:
 
-1. In the Unreal Editor, on the GDK toolbar, click  the **Schema** button to run the [Schema Generator]({{URLRoot}}/content/glossary#schema-generator).
+1. In the Unreal Editor, on the GDK toolbar, click the **Schema** button to run the [Schema Generator]({{URLRoot}}/content/glossary#schema-generator).
 1. On the same toolbar, click the **Snapshot** button which will generate a snapshot for the map currently open in the editor.
 
 ### 7. Launch your game
 1. Switch your game project to use the SpatialOS networking. To do this: in the Unreal Editor, from the toolbar, open the **Play** drop-down menu and check two checkboxes:
     * Check the box for **Run Dedicated Server**
     * Check the box for **Spatial Networking**
-    > From this drop-down menu it is possible to increase the number of servers that will be launched. For now leave this at 1.
+
+    > From this drop-down menu it is possible to increase the number of servers that will be launched. For now leave this at 1. This is because there is currently no multiserver logic in your code. This port will be the baseline for you to start building the multiserver game logic.  
 1. Still in the Unreal Editor but this time from the SpatialOS GDK toolbar, select the green **Launch**  button (not the default Launch button from the Unreal Editor toolbar). This builds your [worker configuration]({{URLRoot/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>
 **Launch** opens up a terminal window and runs two SpatialOS command line interface ([CLI]({{URLRoot/content/glossary#cli)) commands: `spatial build build-config` and `spatial local launch`. It is finished when you see `SpatialOS ready` in the terminal window.
 1. On the main Unreal toolbar, click **Play**. 
