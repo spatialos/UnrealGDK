@@ -2,6 +2,7 @@
 
 #include "Interop/GlobalStateManager.h"
 
+#include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
