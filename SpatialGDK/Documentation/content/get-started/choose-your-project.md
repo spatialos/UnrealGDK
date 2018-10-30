@@ -10,5 +10,5 @@ This is a simple project - you can quickly deploy this locally and in the cloud.
 Do some SpatialOS development; add a feature to a multiserver shooter game.<br/>
 **Next:** [Follow the Multiserver tutorial]({{urlRoot}}/content/get-started/tutorial)
 
-* **Your own project** <br/>
-**Next:** [Follow the porting guide]({{urlRoot}}/content/porting-unreal-project-to-gdk)
+* **Your own Unreal project** <br/>
+**Next:** [Follow the porting guide]({{urlRoot}}/content/porting-unreal-project-to-gdk) to get your own Unreal project running on SpatialOS.
