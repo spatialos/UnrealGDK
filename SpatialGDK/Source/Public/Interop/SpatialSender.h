@@ -14,6 +14,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
+class USpatialStaticComponentView;
 class USpatialNetDriver;
 class USpatialDispatcher;
 class USpatialWorkerConnection;

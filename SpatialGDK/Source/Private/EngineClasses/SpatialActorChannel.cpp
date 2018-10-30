@@ -16,6 +16,7 @@
 #include "Interop/SpatialSender.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
+#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
 #include "Utils/RepLayoutUtils.h"

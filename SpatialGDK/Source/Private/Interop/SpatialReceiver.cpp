@@ -2,6 +2,8 @@
 
 #include "Interop/SpatialReceiver.h"
 
+#include "Engine/World.h"
+#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 
@@ -14,6 +16,7 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/Rotation.h"
+#include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
