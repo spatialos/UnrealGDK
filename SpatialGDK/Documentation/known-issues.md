@@ -13,4 +13,7 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 | Server travel does not work in PIE. | 2018-10-24 | | Server travel work must be done with external or managed workers |
 | Server travel does not work in multi-worker configurations.  | 2018-10-24 | [UNR-678](https://improbableio.atlassian.net/projects/UNR/issues/UNR-678)
 | We don't support the `ReplicateYes` policy on GameplayAbilities. | 2018-10-24 | [UNR-675](https://improbableio.atlassian.net/projects/UNR/issues/UNR-675) | Don't use replicated GameplayAbilities. If they need access to replicated data, store it on the AbilityComponent itself. |
-| Non-replicated instanced data on stably-named replicated actors is reset to defaults on world startup. | 2018-10-29 | [UNR-624](https://improbableio.atlassian.net/projects/UNR/issues/UNR-624) | Mark the desired properties as replicated or handover, or change them in a blueprint subclass. |
+| We don't support NetDeltaSerialize or Fast TArray Replication.  | 2018-10-24 |  | Use default serialization |
+| Non-replicated instanced data on stably-named replicated actors is reset to defaults on world startup. | 2018-10-29 | [UNR-624](https://improbableio.atlassian.net/projects/UNR/issues/UNR-624) | Mark the desired properties as replicated, or change them in a blueprint subclass. |
+| Unable to move when spawning | 2018-10-30 | [UNR-691](https://improbableio.atlassian.net/browse/UNR-691) | Reconnect 
+
