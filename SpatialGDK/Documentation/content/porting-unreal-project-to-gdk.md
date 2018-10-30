@@ -1,5 +1,7 @@
 # Port your Unreal project to the GDK
 
+As an experienced UE4 developer, you likely have a prototype or a game already. The GDK allows you to very easily port it over to SpatialOS. This guide allows you to kickstart your SpatialOS journey - by the end of it your game will run on a *single server-worker* on SpatialOS. You will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
+
 ## Before you start
 
 Before porting your project:  
