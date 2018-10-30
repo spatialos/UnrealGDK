@@ -1,3 +1,5 @@
+<%(TOC)%>
+
 # Glossary
 This glossary covers:
 * Terms used in this documentation
@@ -5,26 +7,27 @@ This glossary covers:
 * SpatialOS terms used in the GDK for Unreal documentation
 
 **SpatialOS documentation**<br/>
-Many SpatialOS term definitions link to further information in the [SpatialOS documentation](https://docs.improbable.io/reference/latest/index). This documentation covers the SpatialOS SDK - a software development kit for SpatialOS which underpins the GDK for Unreal, as well some GDK-relevant tools; the [Console](#console), [schema](#schema), [snapshots](#snapshots), and [configuration files](#configuration-files) in particular.
+Many SpatialOS term definitions link to further information in the [SpatialOS documentation](https://docs.improbable.io/reference/latest/index). This documentation covers the SpatialOS Worker SDK and Platform SDK as well some GDK-relevant tools; the [Console](#console), [schema](#schema), [snapshots](#snapshots), and [configuration files](#configuration-files) in particular.
 
-Note that this SpatialOS documentation assumes you are developing a SpatialOS game using the SpatialOS SDKs ([The Worker SDK and Platform SDK](#https://docs.improbable.io/reference/latest/shared/get-started/working-with-spatialos)), so it may reference content relevant to that workflow only. While the SpatialOS SDK underpins the GDK for Unreal, the two workflows are not always the same.
+Note that this SpatialOS documentation assumes you are developing a SpatialOS game using the [Worker SDK and Platform SDK](#https://docs.improbable.io/reference/latest/shared/get-started/working-with-spatialos), so it may reference content relevant to that workflow only. While some of the concepts underpin the GDK for Unreal, the two workflows are not always the same.
 
 ## GDK for Unreal documentation terms
-* `<GameRoot>` - The folder containing your game project's `.uproject` and source folder.  
-* `<ProjectRoot>` - The folder containing your `<GameRoot>`.  
-* `<YourProject>` - Name of your game project's `.uproject` (for example, `\<GameRoot>\StarterProject.uproject`).
+* `<GameRoot>` - The folder containing your project's `.uproject` and source folder.
+* `<ProjectRoot>` - The folder containing your `<GameRoot>`.
+* `<YourProject>` - Name of your project's `.uproject` (for example, `\<GameRoot>\StarterProject.uproject`).
 
 ## GDK for Unreal terms
 
 ### Actor handover
-Handover is a new `UPROPERTY` tag. It allows games built in Unreal which uses single-server architecture to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor and entity property handover between server-workers]({{urlRoot}}/content/handover-between-server-workers.md).
+Handover is a new `UPROPERTY` tag. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor and entity property handover between server-workers]({{urlRoot}}/content/handover-between-server-workers.md).
 
 ### Cross-server RPCs
-This handles the scenario where a [server-worker](#workers) needs to execute an operation on an Actor that another server-worker has [authority](#authority) over. When a cross-server RPC is invoked by a non-authoritative server-worker, the execution is routed through SpatialOS to the authoritative server-worker - this authoritative server-worker executes the RPC. (See the documentation on [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)).
+These handle the scenario where a [server-worker](#workers) needs to execute an operation on an Actor that another server-worker has [authority](#authority) over. When a cross-server RPC is invoked by a non-authoritative server-worker, the execution is routed through SpatialOS to the authoritative server-worker - this authoritative server-worker executes the RPC. (See the documentation on [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)).
 
 ### Global State Manager
 The Global State Manager (GSM):
 *  Makes sure that [Singleton Actors](#singleton-actors) are replicated properly, by only allowing the [server-worker](#workers) with [authority](#authority) over the GSM to execute the initial replication of these Actors. See documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).
+
 *  Maintains the configuration of a [deployment’s](#deployment) currently-loaded [game world](#game-world). (Note that this is the Unreal game world not the [SpatialOS world](#spatialos-world).)<br/> 
 The GSM lists both the URL of the [Map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) that the [server-workers](#servers) have loaded and the `AcceptingPlayers` flag. (This flag controls whether or not client-servers can spawn anything in the game world.)
 
@@ -35,17 +38,18 @@ The GSM lists both the URL of the [Map (or Level - see Unreal documentation)](ht
 ### GSM
 Short for [Global State Manager](#global-state-manager).
 
-### Schema Generator
-An Unreal Editor toolbar command which takes a set of Unreal classes and generates SpatialOS [schema](#schema) that enables automatic communication between Unreal and SpatialOS. 
+### Schema Generation
+A SpatialOS GDK for Unreal toolbar command (within the Unreal Editor) which takes a set of Unreal classes and generates SpatialOS [schema](#schema) that enables automatic communication between Unreal and SpatialOS. 
 
 >Related:
->[The toolbar]({{urlRoot}}/content/toolbar)
+>[SpatialOS GDK for Unreal toolbar]({{urlRoot}}/content/toolbars#spatialos-gdk-for-unreal-toolbar)
 
 ### Singleton Actor
 A server-side authoritative Actor that is restricted to one instantiation on SpatialOS. See documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).
 
 ### Spatial Type
-Unreal classes have unique properties when running in SpatialOS. Spatial Type (`SpatialType`) is a SpatialOS-specific [class specifier (Unreal documentation)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers) which reflects this information. There are different categories of Spatial Type, depending on the Actor’s function in your game.
+Spatial Type (`SpatialType`) is a SpatialOS-specific [class specifier (Unreal documentation)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers) which is used to expose network-relevant class information to SpatialOS. There are different categories of Spatial Type, depending on the Actor’s function in your game.
+
 See the documentation on [Spatial Type](#{{urlRoot}}/content/spatial-type). 
 
 ### SpatialType
@@ -54,7 +58,7 @@ See [Spatial Type](#spatial-type).
 ## SpatialOS terms
 Below is a subset of SpatialOS terms most relevant to the GDK for Unreal. See the [SpatialOS documentation glossary](https://docs.improbable.io/reference/latest/shared/glossary) for a full list of terms specific to SpatialOS.
 
-Note that this SpatialOS documentation glossary assumes you are developing a SpatialOS game using the SpatialOS SDKs ([The Worker SDK and Platform SDK](#https://docs.improbable.io/reference/latest/shared/get-started/working-with-spatialos)),  so it may reference content relevant to that workflow only. While the SpatialOS SDK underpins the GDK for Unreal, the two workflows are not always the same.)
+Note that this SpatialOS documentation glossary assumes you are developing a SpatialOS game using the [Worker SDK and Platform SDK](#https://docs.improbable.io/reference/latest/shared/get-started/working-with-spatialos),  so it may reference content relevant to that workflow only. While some of the concepts underpin the GDK for Unreal, the two workflows are not always the same.
 
 ### Access control list (ACL)
 In order to read from a [component](#spatialos-component), or make changes to a component, [workers](#workers) need to have [access](#authority), which they get through an access control list. 
@@ -77,7 +81,7 @@ Which [types of workers](#worker-types) can have write access is governed by eac
 <br/>
 <br/>
 Read access:<br/>
-Read access allows [workers](#workers) to know the state of a [SpatialOS component](#spatialos-component)  The [access control list (ACL)](#access-control-list-acl) also controls which workers have read-access to a [SpatialOS entity](#spatialos-entity). Read access does not allow a worker to change a component. Read access is at the entity level; if a worker can read from an entity, it is allowed to read from all components on that entity. 
+Read access allows [workers](#workers) to know the state of a [SpatialOS component](#spatialos-component). The [access control list (ACL)](#access-control-list-acl) also controls which workers have read-access to a [SpatialOS entity](#spatialos-entity). Read access does not allow a worker to change a component. Read access is at the entity level; if a worker can read from an entity, it is allowed to read from all components on that entity. 
 
 ### Check out
 Each individual [worker](#workers) checks out only part of the [SpatialOS world](#spatialos-world). This happens on a [chunk](#chunk)-by-chunk basis. A worker “checking out a chunk” means that: 
