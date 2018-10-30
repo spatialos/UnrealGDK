@@ -3,7 +3,7 @@
   "Version": 1,
   "VersionName": "1.0",
   "FriendlyName": "SpatialOS GDK for Unreal Toolbar",
-  "Description": "The SpatialOS game development kit (GDK) for Unreal Engine allows you to host your game and combine multiple dedicated server instances across one seamless game world whilst using the Unreal Engine networking API.",
+  "Description": "The SpatialOS Game Development Kit (GDK) for Unreal Engine allows you to host your game and combine multiple dedicated server instances across one seamless game world whilst using the Unreal Engine networking API.",
   "Category": "SpatialOS",
   "CreatedBy": "Improbable Worlds, Ltd.",
   "CreatedByURL": "https://improbable.io",
