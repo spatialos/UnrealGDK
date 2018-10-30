@@ -114,8 +114,11 @@ See [Spatial command-line tool (CLI)](#spatial-command-line-tool-cli).
 
 ### Deployment
 When you want to try out your game, you need to deploy it. This means launching SpatialOS itself. SpatialOS sets up the [world](#spatialos-world) based on a [snapshot](#snapshot), then starts up the [server-workers](#server-workers) needed to run the world. 
+
 There are two types of deployment: local and cloud.
+
 Local deployments allow you to start the SpatialOS [Runtime](#spatialos-runtime) locally to test changes quickly. Find out more about local deployments in the [SpatialOS documentation](https://docs.improbable.io/reference/latest/shared/deploy/deploy-local.
+
 As their name suggests, cloud deployments run in the cloud on [nodes](#node). They allow you to share your game with other people and run your game at a scale not possible on one local machine. Once a cloud deployment is running, you can connect [game clients](#game-client) to it using the [Launcher](#launcher).
 
 ### Entity
@@ -123,9 +126,11 @@ See [SpatialOS entity](#spatialos-entity).
 
 ### Game client
 Not to be confused with [client-worker](#workers).
-A game client is a binary file;  it’s an executable computer program that runs on a player’s computer. A player uses a game client to play your game.  A client-worker is an object instantiated by this executable program when it runs.
+
+A game client is a binary file;  it’s an executable computer program that runs on a player’s computer. A player uses a game client to play your game. A client-worker is an object instantiated by this executable program when it runs.
 
 ### Game world
+
 >Not to be confused with [SpatialOS world](#spatialos-world).
 
 Everything in your Unreal game that a player can see or interact with. 
@@ -135,7 +140,7 @@ The Inspector is a web-based tool that you use to explore the internal state of 
 
 * which [workers](#workers) are connected to the deployment.
 * how much [load (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#load-balancing) the workers are under.
-* which [SpatialOS entitie](#spatialos-entities) are in the SpatialOS world.
+* which [SpatialOS entities](#spatialos-entities) are in the SpatialOS world.
 * what their [SpatialOS components](#spatialos-components)’ [properties (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#property) are.
 * which workers are authoritative over each SpatialOS component.
 
@@ -151,7 +156,7 @@ A [worker](#workers) is interested in all [chunks](#chunk) that contain [entitie
 [write access](#authority) to a [component](spatialos-componet) on. It's *also* interested in chunks within a configurable
 radius of those entities: this makes sure that workers are aware of entities nearby. You can set this radius
 in the [worker configuration file](#worker-configuration-file).
-If a worker is interested in a chunk, it will [check out](#check-out)all the entities in that chunk.
+If a worker is interested in a chunk, it will [check out](#check-out) all the entities in that chunk.
 
 #### Component interest
 Each [worker](#workers), in its [worker configuration file](#worker-configuration-file), specifies which [components](#components) it is
@@ -164,7 +169,9 @@ interested in. SpatialOS only sends updates about components to a worker which i
 
 
 ### Launch
->Not to be confused with [the launcher](#launcher).
+
+>Not to be confused with [the Launcher](#launcher).
+
 In SpatialOS, “launch” means start a game [deployment](#deployment). See also [launch configuration file](#launch-configuration-file).
 
 ### Launch configuration
@@ -172,7 +179,7 @@ The launch configuration is how you set up the start of your game’s [deploymen
 See [workers](#workers) and [launch configuration file](#launch-configuration-file).
 
 ### Launch configuration file
-The  [launch configuration file](#launch-configuration-file) is a `.json` file containing the information that the “launch a deployment” commands use to use to start a [deployment](#deployment).
+The [launch configuration file](#launch-configuration-file) is a `.json` file containing the information that the “launch a deployment” commands use to start a [deployment](#deployment).
 
 >Related:
 >
@@ -184,7 +191,7 @@ The Launcher downloads the client executable from the [SpatialOS assembly](#asse
 
 > Related:
 >
-> * [The Launcher (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/operate/launcher)
+> [The Launcher (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/operate/launcher)
 
 ### Load balancing
 One of the features of SpatialOS is load balancing: dynamically adjusting how many [components](#spatialos-components) on [entities](#spatialos-entities) in the [world](#spatialos-world) each [worker](#workers) has [write access](#authority) to, so that workers don’t get overloaded.
@@ -197,6 +204,7 @@ This means that an [entity](#spatialos-entity) won’t necessarily stay on the s
 > [Configuring load balancing (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/worker-configuration/loadbalancer-config)
 
 ### Node
+
 >Not to be confused with [worker](#workers).
 
 A node refers to a single machine used by a [cloud deployment](#deployment). Its name indicates the role it plays in your deployment. You can see these on the advanced tab of your deployment details in the [Console](#console).
