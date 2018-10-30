@@ -211,11 +211,12 @@ A node refers to a single machine used by a [cloud deployment](#deployment). Its
 
 ### Persistence
 Most [entities](#spatialos-entities) in your [game world](#game-world) need to keep existing if you stop a game [deployment](#deployment) and start a new one. However,  some entities don’t need to keep existing from one deployment to another; you may want per-deployment player abilities and a per-deployment score, for example.
-To facilitate this continuation an entity’s state between deployments, there is a `persistence` component in the standard [schema](#schema) library. It’s optional, but all entities that you want to persist in the world must have this component. Persistence means that entities are saved into [snapshots](#snapshots).
+
+To facilitate this continuity in an entity's state between deployments, there is a `persistence` component in the standard [schema](#schema) library. It’s optional, but all entities that you want to persist in the world must have this component. Persistence means that entities are saved into [snapshots](#snapshots).
 
 >Related:
 >
->[The persistence component in the standard schema library](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library#persistence-optional)
+>[The persistence component in the standard schema library (SpatialOS documentation](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library#persistence-optional)
 
 ### Project name
 Your project name is a unique identifier for your game project as a deployment. It’s generated for you when you sign up for SpatialOS. It’s usually something like beta_someword_anotherword_000.
@@ -241,7 +242,9 @@ See [authority](#authority).
 
 ### Schema
 The schema is where you define all the [SpatialOS components](#spatialos-component) in your [SpatialOS world](#spatialos-world).
+
 You define your schema in `.schema` files that are written in [schemalang (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#schemalang). Schema files are stored in the `schema` folder in the root directory of your SpatialOS project.
+
 SpatialOS uses the schema to generate code. You can use this generated code in your [workers](#workers) to interact with [SpatialOS entities](#spatialos-entity) in the SpatialOS world.
 
 > Related:
