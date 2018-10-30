@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 
+#include "Engine/World.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"

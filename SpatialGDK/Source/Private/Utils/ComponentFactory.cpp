@@ -2,6 +2,7 @@
 
 #include "Utils/ComponentFactory.h"
 
+#include "Engine/World.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetDriver.h"
