@@ -189,6 +189,8 @@ TArray<UClass*> GetAllSupportedClasses()
 
 bool SpatialGDKGenerateSchema()
 {
+	ClassToSchema.Empty();
+
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
 	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)
