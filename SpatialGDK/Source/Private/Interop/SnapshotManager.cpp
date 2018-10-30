@@ -84,7 +84,7 @@ void USnapshotManager::DeleteEntities(const Worker_EntityQueryResponseOp& Op)
 	}
 }
 
-// GetSnapshotPath will take a snapshot (with or the .snapshot extension) name and convert it to a relative path in the Game/Content folder.
+// GetSnapshotPath will take a snapshot (with or without the .snapshot extension) name and convert it to a relative path in the Game/Content folder.
 FString GetSnapshotPath(const FString& SnapshotName)
 {
 	FString SnapshotsDirectory = FPaths::ProjectContentDir() + TEXT("Spatial/Snapshots/");

@@ -87,5 +87,5 @@ namespace SpatialConstants
 	const FString LOCAL_HOST = TEXT("127.0.0.1");
 	const uint16 DEFAULT_PORT = 7777;
 
-	const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.f;
+	const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
 }
