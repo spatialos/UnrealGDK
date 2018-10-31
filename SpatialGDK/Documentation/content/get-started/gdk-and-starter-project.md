@@ -43,7 +43,7 @@ In this step, you're going to build the Unreal GDK module dependencies, which th
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2** and check the box next to **Run Dedicated Server**. Then, under Modes, select **New Editor Window (PIE)**.
 1. On the toolbar, click **Play** to run the game.
-1. When you're done, click **Stop** to stop the client [worker](https://docs.improbable.io/reference/latest/shared/glossary), and click the **Stop** button in the SpatialOS section of the toolbar to stop your local SpatialOS deployment.
+1. When you're done, click **Stop** to stop the [client-workers and server-workers](({{urlRoot}}/content/glossary#workers)), and click the **Stop** button in the SpatialOS section of the toolbar to stop your local SpatialOS deployment.
 
 #### Deploy in the cloud
 
@@ -64,6 +64,11 @@ To run a cloud deployment, you need to prepare your server-worker and client-wor
 
 ### Congratulations!
 
-You've successfully set up and launched the Starter Project and the GDK! To start developing, we recommend following our Multiserver Shooter tutorial where you can try out the GDK’s development experience by adding a new feature to the Starter Project and test it across two servers.
+You've successfully set up and launched the Starter Project and the GDK! If you haven't already, we recommend following our Multiserver Shooter tutorial where you can try out the GDK’s development experience by adding a new feature to a project, and test it across two servers.
 
-If you have an existing Unreal multiplayer project, you can follow our detailed [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk.md) to get it onto the GDK! 
+If you have an existing Unreal multiplayer project, you can follow our detailed [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk.md) to get it onto the GDK.
+
+You are now ready to add multiserver functionality on top of the Starter Project. Check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
+
+We will be releasing more tutorials and examples as the GDK matures. Stay tuned!
+
