@@ -175,7 +175,7 @@ The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these ar
 ### 6. Generate schema and a snapshot
 You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate a [snapshot]({{urlRoot}}/content/glossary#snapshot) to get your game's deployment started. To do this:
 
-1. In the Unreal Editor, on the GDK toolbar, click the **Schema** button to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
+1. In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars), click the **Schema** button to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
 1. On the same toolbar, click the **Snapshot** button which will generate a snapshot for the map currently open in the editor.
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars-basic.png)
 
@@ -184,13 +184,13 @@ You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate 
     * Check the box for **Run Dedicated Server**
     * Check the box for **Spatial Networking**
 
-    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/multi-player-options.png)
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbar-checkboxes.png)
 
     > From this drop-down menu it is possible to increase the number of servers that will be launched. For now leave this at 1. This is because there is currently no multiserver logic in your code. This port will be the baseline for you to start building the multiserver game logic.  
-1. Still in the Unreal Editor but this time from the SpatialOS GDK toolbar, select the green **Launch**  button (not the default Launch button from the Unreal Editor toolbar). This builds your [worker configuration]({{urlRoot}}/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>
+1. Still in the Unreal Editor but this time from the [GDK toolbar]({{urlRoot}}/content/toolbars), select the green **Launch**  button (not the default Launch button from the Unreal Editor toolbar). This builds your [worker configuration]({{urlRoot}}/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>
 **Launch** opens up a terminal window and runs two SpatialOS command line interface ([CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) commands: `spatial build build-config` and `spatial local launch`. It is finished when you see `SpatialOS ready` in the terminal window.
 1. On the main Unreal toolbar, click **Play**. 
-1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
+1. From the SpatialOS [GDK toolbar]({{urlRoot}}/content/toolbars) click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars-basic.png)
 
 **For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{urlRoot}}/content/glossary#deployment)**
