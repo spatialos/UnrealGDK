@@ -58,6 +58,7 @@ Before porting your project:
 
     * In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.  
     * In `set GAME_NAME=StarterProject`, replace `StarterProject` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
+    
     > Doing this incorrectly will result in the helper scripts `LaunchClient.bat` and `LaunchServer.bat` not working and printing that the path specified does not exist when trying to use them.
 
 1. Run `Setup.bat` which is in the root directory of the GDK repository you cloned (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
@@ -126,6 +127,8 @@ It is necessary to modify your `GameInstance` class to work properly with the GD
 
 * If your `GameInstance` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** set the **Parent Class** to `SpatialGameInstance`
 
+    ![spatial game instance reparent]({{assetRoot}}assets/screen-grabs/spatial-game-instance-reparent.png)
+
 
 ### 5. Add GDK configurations
 The steps below reference and introduce the following SpatialOS terms: [workers]({{urlRoot}}/content/glossary#workers), [schema]({{urlRoot}}/content/glossary#schema), [Schema Generation]({{urlRoot}}/content/glossary#schema-generation) [SpatialOS components]({{urlRoot}}/content/glossary#spatialos-component), [checking out]({{urlRoot}}/content/glossary#check-out), [streaming queries]({{urlRoot}}/content/glossary#streaming-queries), [Singleton Actor]({{urlRoot}}/content/glossary#singleton-actor), [deployment]({{urlRoot}}/content/glossary#deployment), [launch configuration]({{urlRoot}}/content/glossary#launch-configuration), [snapshot]({{urlRoot}}/content/glossary#snapshot), [worker configuration]({{urlRoot}}/content/glossary#worker-configuration).
@@ -158,32 +161,38 @@ The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these ar
         UCLASS(SpatialType=Singleton)
         ```
         If your game's `GameState` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the Spatial Description text box enter `Singleton`.
+        ![blueprint-gamestate-singleton]({{assetRoot}}assets/screen-grabs/blueprint-gamestate-singleton.png)
 
     1. If your game's `GameMode` is a `C++` class, locate it's header and mark it as a Private Singleton by modifying the `UCLASS` specifier as shown:
         ```
         UCLASS(SpatialType=(Singleton,ServerOnly))
         ```
        If your game's `GameMode` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the **Spatial Description** text box enter `Singleton,ServerOnly`.
+       ![blueprint-gamemode-singleton-serveronly]({{assetRoot}}assets/screen-grabs/blueprint-gamemode-singleton-serveronly.png)
 
-   Marking these Singleton Actor classes as `Spatial Type` enables them to work with SpatialOS as [schema]({{urlRoot}}/content/glossary#schema) will now be generated for them. 
+   Marking these Singleton Actor classes as [Spatial Type]({{urlRoot}}/content/glossary#spatial-type) enables them to work with SpatialOS as [schema]({{urlRoot}}/content/glossary#schema) will now be generated for them. 
 
 ### 6. Generate schema and a snapshot
 You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate a [snapshot]({{urlRoot}}/content/glossary#snapshot) to get your game's deployment started. To do this:
 
 1. In the Unreal Editor, on the GDK toolbar, click the **Schema** button to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
 1. On the same toolbar, click the **Snapshot** button which will generate a snapshot for the map currently open in the editor.
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars-basic.png)
 
 ### 7. Launch your game
 1. Switch your game project to use the SpatialOS networking. To do this: in the Unreal Editor, from the toolbar, open the **Play** drop-down menu and check two checkboxes:
     * Check the box for **Run Dedicated Server**
     * Check the box for **Spatial Networking**
 
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/multi-player-options.png)
+
     > From this drop-down menu it is possible to increase the number of servers that will be launched. For now leave this at 1. This is because there is currently no multiserver logic in your code. This port will be the baseline for you to start building the multiserver game logic.  
 1. Still in the Unreal Editor but this time from the SpatialOS GDK toolbar, select the green **Launch**  button (not the default Launch button from the Unreal Editor toolbar). This builds your [worker configuration]({{urlRoot}}/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>
 **Launch** opens up a terminal window and runs two SpatialOS command line interface ([CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) commands: `spatial build build-config` and `spatial local launch`. It is finished when you see `SpatialOS ready` in the terminal window.
 1. On the main Unreal toolbar, click **Play**. 
 1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
-  
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars-basic.png)
+
 **For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{urlRoot}}/content/glossary#deployment)**
 
 **Job done!** You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
@@ -203,8 +212,9 @@ If you require additional debugging logs you can always run `spatial local launc
 #### How to modify the default behavior
 You can modify some of the GDK settings from the Unreal Editor toolbar at **Edit** > **Project Settings** >**SpatialOS Unreal GDK** > **Toolbar**.
 You can change:
-*  the snapshot file's filename and location
-*  the launch configuration
+
+* the snapshot file's filename and location
+* the launch configuration
 
 ## Next steps
 You can now begin experimenting with the multiserver features offered by the GDK.
