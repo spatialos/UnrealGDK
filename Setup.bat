@@ -43,6 +43,7 @@ call :MarkStartOfBlock "Setup variables"
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
     set WORKER_SDK_DIR=%~dp0\SpatialGDK\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0\SpatialGDK\Binaries\ThirdParty\Improbable
+    set UNREAL_SCHEMA_DIR=%~dp0..\..\..\spatial\schema
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
 call :MarkEndOfBlock "Setup variables"
@@ -51,7 +52,7 @@ call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
     rd /s /q "%BINARIES_DIR%"           2>nul
-    rd /s /q "%SCHEMA_COPY_DIR%"        2>nul
+    rd /s /q "%UNREAL_SCHEMA_DIR%"      2>nul
     rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
 call :MarkEndOfBlock "Clean folders"
 
