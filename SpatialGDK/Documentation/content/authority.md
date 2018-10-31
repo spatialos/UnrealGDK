@@ -42,7 +42,7 @@ Actor on **non-owning client**:
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
 
-`ROLE_AutonomousProxy` indicates that this Actor is owned by a client and can receive client RPCs called on the Actor, as well as trigger server RPCs which are handled by the server. For more information on owning connection see the [Unreal doccumentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections)
+`ROLE_AutonomousProxy` indicates that this Actor is owned by a client and can receive client RPCs called on the Actor, as well as trigger server RPCs which are handled by the server. For more information on owning connections see the [Unreal documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections).
 
 For more information about Actor roles, see [Unreal’s Actor Role documentation](https://wiki.unrealengine.com/Replication#A_Guide_To_Network_Roles).
 
