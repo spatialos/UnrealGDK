@@ -144,7 +144,7 @@ Notice that health now decrements when you are shot.
 1. Access the inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
 1. In the **View** tab, click the checkboxes next to both of the **UnrealWorkers**. This will cause the Inspector to display the areas that the server-workers have authority over as two coloured zones.
 1. Back in your two Unreal game clients, run around and shoot.
-1. Using the Inspector to track the location of your two players, notice that if you position them in the area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
+1. Using the Inspector to track the location of your two players, notice that if you position them in the same area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
 
 ### Enable cross server RPCs
 
