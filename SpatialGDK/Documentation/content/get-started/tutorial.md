@@ -62,7 +62,7 @@ Notice that when players shoot each other, their health does not go down. It's n
 
 ### Replicate health changes
 
-In this ThirdPersonShooter project each `TPSCharacter` contains a variable called `CurrentHealth`, which keeps track of that charachter's health. On your servers, `CurrentHealth` is reduced whenever a character is shot, but this reduction is not replicated on the clients connected to the game. This is because the `CurrentHealth` variable is not setup for replication.
+In this ThirdPersonShooter project each `TPSCharacter` contains a variable called `CurrentHealth`, which keeps track of that character's health. On your servers, `CurrentHealth` is reduced whenever a character is shot, but this reduction is not replicated on the clients connected to the game. This is because the `CurrentHealth` variable is not setup for replication.
 
 To resolve this you need to mark the `CurrentHealth` property for replication, just as you would in the native [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1) workflow. To do this:
 
