@@ -8,19 +8,18 @@
 `ClientTravel` is the process of changing which [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) a client currently has loaded.
 
 ### User guide
-In the GDK you can use `ClientTravel` to move a client-worker from an offline state to a connected state, whether that be connected to a local deployment or a cloud deployment. Alternatively, you can move a connected client-worker to an offline state. You can also change which SpatialOS deployment the client-worker is connected to. 
+In the GDK you can use `ClientTravel` to move a client-worker from an offline state to a connected state, where that connection is to a local deployment or a cloud deployment. Alternatively, you can move a connected client-worker to an offline state. You can also change which SpatialOS deployment the client-worker is connected to.  
 
-Always make sure your client-worker(s) have the same map loaded as the one which the server-worker(s) are running in your deployment. 
+**Note:** Always make sure your client-worker(s) have the same map loaded as the one which the server-worker(s) are running in your deployment. 
 
 #### Using Receptionist
-The Receptionist is a SpatialOS service which allows you to connect to a deployment via a host and port.
+The Receptionist is a SpatialOS service which allows you to connect to a deployment via a host and port. You can specify these parameters in command line arguments like in native Unreal and you will connect automatically via receptionist.
 
-To connect to a deployment using `ClientTravel` and the [receptionist flow](LINK), simply call `APlayerController::ClientTravel` with the receptionist IP and port, and the `receptionist` option in your travel URL. Make sure to also specify the map that is loaded in the deployment you are connecting to. For example:
+To connect to a deployment using `ClientTravel` and the [receptionist flow](LINK), simply call `APlayerController::ClientTravel` with the receptionist IP and port. Make sure to also specify the map that is loaded in the deployment you are connecting to. For example:
 
 ```
-FString TravelURL = TEXT("127.0.0.1:7777/DestinationMap?receptionist");
-// false is for non-seamless travel
-PlayerController->ClientTravel(TravelURL, TRAVEL_Absolute, false);
+FString TravelURL = TEXT("127.0.0.1:7777/DestinationMap");
+PlayerController->ClientTravel(TravelURL, TRAVEL_Absolute, false /*bSeamless*/);
 ```
 **Note:** The receptionist connection flow is intended to be used for development only. A released game should use the `Locator` flow.
 
@@ -40,8 +39,7 @@ TravelURL.AddOption(TEXT("project=MY_PROJECT_NAME"));
 TravelURL.AddOption(TEXT("deployment=MY_DEPLOYMENT_NAME"));
 TravelURL.AddOption(TEXT("token=MY_LOGIN_TOKEN"));
 
-// false is for non-seamless travel
-PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false);
+PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bSeamless*/);
 ```
 
 ### ClientTravel - technical details
@@ -49,10 +47,10 @@ We have made changes to the Unreal Engine to detect if you have SpatialOS networ
 
 ## `UWorld::ServerTravel`
 > Warning: `ServerTravel` is in an experimental state and we currently only support it in single server-worker configurations.   
-> We don’t support `ServerTravel` in [PIE](https://docs.unrealengine.com/en-us/GettingStarted/HowTo/PIE#playineditor(pie)).
+> We don’t support `ServerTravel` in [PIE](https://docs.unrealengine.com/en-us/GettingStarted/HowTo/PIE#playineditor).
 
 ### In native Unreal
-`ServerTravel` in Unreal is the concept of changing the [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) for the server and all connected clients. A common use case is starting a server in a Lobby level. Clients connect to this lobby level and choose loadout, character etc. When ready, the server triggers a `ServerTravel`, which transitions the deployment and all clients into the main game level.
+`ServerTravel` in Unreal is the concept of changing the [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) for the server and all connected clients. A common use case is starting a server in a lobby level. Clients connect to this lobby level and choose loadout, character etc. When ready, the server triggers a `ServerTravel`, which transitions the deployment and all clients into the main game level.
 
 When `ServerTravel` is triggered, the server tells all clients to begin to [`ClientTravel`](LINK) to the map specified. If the `ServerTravel` is [seamless](LINK) then the client maintains its connection to the server. If it’s not seamless then all the clients disconnect from the server and reconnect once they have loaded the map. Internally, the server does a similar process: it loads in the new level, usually a game world for all the clients to play on, and begins accepting player spawn requests once ready.
 
@@ -76,19 +74,18 @@ Pass the snapshot to load as part of the map URL when calling `ServerTravel`. Fo
 ```
 FString ServerTravelURL = TEXT("ExampleMap?snapshot=ExampleMap.snapshot");
 UWorld* World = GetWorld();
-// true is for bAbsolute
-World->ServerTravel(ServerTravelURL, true);
+World->ServerTravel(ServerTravelURL, true /*bAbsolute*/);
 ```
 
 The GDK has also added the `clientsStayConnected` URL parameter.  
 Adding this URL parameter to your `ServerTravel` URL prevents client-workers from disconnecting from SpatialOS during the `ServerTravel` process. We recommend doing this to prevent extra load when client-workers attempt to re-connect to SpatialOS. For example: 
 
 ```
-FString ServerTravelURL = TEXT("ExampleMap?snapshot=ExampleMap.snapshot?clientsStayConnected)"
+FString ServerTravelURL = TEXT("ExampleMap?snapshot=ExampleMap.snapshot?clientsStayConnected");
 ```
 
 ### ServerTravel - technical details
-There are a few things to consider when using `ServerTravel` with SpatialOS. It’s not normal for a SpatialOS deployment to ‘load a new world’, since SpatialOS was made for very large persistent worlds. This means you need to perform extra steps on the deployment to support `ServerTravel`. 
+There are a few things to consider when using `ServerTravel` with SpatialOS. It’s not normal for a SpatialOS deployment to ‘load a new world’, since SpatialOS was made for very large persistent worlds. This means you need to perform extra steps to support `ServerTravel`. 
 
 > Note that `ServerTravel` is only supported in non-PIE configurations. Launching a server-worker in PIE has a dependency on the `Use dedicated server` network configuration available in PIE. Unfortunately this setting has a dependency on `Use single process` which doesn’t support `ServerTravel`. To test and develop `ServerTravel` for your game with the SpatialOS GDK for Unreal, you need to launch workers outside of the editor, either via using the the `LaunchServer.bat` or by using a launch configuration which loads [managed workers](https://docs.improbable.io/reference/13.0/shared/concepts/workers#managed-and-external-workers).
 
@@ -100,21 +97,21 @@ The world wiping is handled at the start of `ServerTravel`, after client-workers
 
 The snapshot loading is again handled by the server-worker which _was_ authoritative over the GSM (since the GSM entity has now been deleted). The process of loading the snapshot starts once the server-worker with authority has loaded the world (`SpatialNetDriver::OnMapLoaded`). Using the `SnapshotManager`, this server-worker reads the snapshot specified in the map URL from the `Game\Content\Spatial\Snapshots` directory. Iterating through all entities in the snapshot, the worker sends a spawn request for all of them. Once the GSM has been spawned and the spawning process for the rest of the entities has completed, the server-worker which gains authority over the GSM sets the `AcceptingPlayers` field to true. This tells client-workers that they can now send player spawn requests. Client-workers know about the `AcceptingPlayers` state by sending entity queries on a timer for its existence and state.
 
-
 ## Default connection flows
 #### In PIE
-Launching a PIE client-worker from the editor will automatically connect it to a local SpatialOS deployment. This is for quick editing and debugging purposes.
+Launching a [PIE](https://docs.unrealengine.com/en-us/GettingStarted/HowTo/PIE#playineditor) client-worker from the editor will automatically connect it to a local SpatialOS deployment. This is for quick editing and debugging purposes.
 
 #### With built clients
 By default, outside of PIE, clients do not connect to a SpatialOS deployment. This is so you can implement your own connection flow, whether that be through an offline login screen, a connected lobby, etc.
 
-To connect a client-worker to a deployment from an offline state, you must [`ClientTravel`](#user-guide) ....
+To connect a client-worker to a deployment from an offline state, you must use [`ClientTravel`](#user-guide).
 
 The `LaunchClient.bat` (which we have provided) already includes the local host IP `127.0.0.1` which means client-workers launched this way will attempt to connect automatically using the [receptionist](#using-receptionist) flow.  
 
 
 #### With the Launcher
 When launching a client-worker from the SpatialOS Console using the [Launcher](LINK), the client-worker will connect to SpatialOS by default. It has the `Locator` information required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client-workers will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.  
+
 > Connecting by default when using the launcher is subject to change.
 
 
