@@ -2,9 +2,9 @@
 
 ### What will be covered?
 
-In this tutorial you’ll implement cross server remote procedure calls (RPCs) in a simple third person shooter. The end result will be a multiplayer, cloud-hosted Unreal game running across multiple [server-workers]({{urlRoot}}/content/glossary#inspector) that players can seamlessly move between and shoot across.
+In this tutorial you’ll implement cross server remote procedure calls (RPCs) in a simple third person shooter. The end result will be a multiplayer, cloud-hosted Unreal game running across multiple [server-workers]({{urlRoot}}/content/glossary#inspector) that players can seamlessly move between and shoot across. It will look something like this:
 
-The exercise demonstrates that the workflows and iteration speed you’re used to as an Unreal developer are almost entirely unaltered by the GDK: it’s just like regular Unreal!
+![]({{assetRoot}}assets/tutorial/cross-server.gif)
 
 Let’s get started.
 
@@ -24,7 +24,7 @@ This repository contains a version of Unreal’s Third Person template that has 
 
 
 1. Navigate to `UnrealGDKThirdPersonShooter\Game` and create a `Plugins` directory.
-1. In a terminal window,  change directory to the  `Plugins` directory and clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository using one of the following commands:
+2. In a terminal window,  change directory to the  `Plugins` directory and clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository using one of the following commands:
 
 **SSH:**  `git clone git@github.com:spatialos/UnrealGDK.git`
 
@@ -42,7 +42,7 @@ In this step, you're going to build the Unreal GDK's dependencies.
 1. In the same directory, open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
 1. Open **ThirdPersonShooter.uproject** in the Unreal Editor.
-2. In the SpatialOS GDK toolbar, click [`Schema` (SpatialOS documentation)]({{urlRoot}}/content/glossary#schema) to generate schema and then [`Snapshot` (SpatialOS documentation)]({{urlRoot}}/content/glossary#snapshot) to generate a snapshot.
+2. In the [GDK toolbar (SpatialOS documentation)]({{urlRoot}}/content/toolbars), click [`Schema` (SpatialOS documentation)]({{urlRoot}}/content/glossary#schema) to generate schema and then [`Snapshot` (SpatialOS documentation)]({{urlRoot}}/content/glossary#snapshot) to generate a snapshot.
 
 ### Deploy the project locally
 
@@ -58,6 +58,8 @@ In this section you’ll run a [local deployment](https://docs.improbable.io/ref
 
 ### View your SpatialOS world in the Inspector
 
+![]({{assetRoot}}assets/tutorial/inspector.png)
+
 [The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s learn the use the Inspector to visualise the areas that each of our server-workers have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
 
 1. Access the inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
@@ -72,12 +74,12 @@ To damage a player on a different server, the actor shooting the bullet must sen
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
 1. On line 74, add this snippet:
 
-```
-UFUNCTION(CrossServer, Reliable)
-void TakeGunDamageCrossServer(float Damage, const struct FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
-```
+    ```
+    UFUNCTION(CrossServer, Reliable)
+    void TakeGunDamageCrossServer(float Damage, const struct FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
+    ```
 
-This snippet creates a new `UFUNCTION` marked with the function tags [CrossServer]({{urlRoot}}/content/cross-server-rpcs) and [Reliable (Unreal documentation)](https://wiki.unrealengine.com/Replication#Reliable_vs_Unreliable_Function_Call_Replication). The CrossServer tag forces this function to be executed as as cross-server RPC.
+    This snippet creates a new `UFUNCTION` marked with the function tags [CrossServer]({{urlRoot}}/content/cross-server-rpcs) and [Reliable (Unreal documentation)](https://wiki.unrealengine.com/Replication#Reliable_vs_Unreliable_Function_Call_Replication). The CrossServer tag forces this function to be executed as as cross-server RPC.
 
 3. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp`.
 4. Replace the TakeDamage function (lines 514-548) with this snippet:
@@ -157,7 +159,8 @@ An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip f
 
 1. In File Explorer, navigate to `UnrealGDKThirdPersonShooter\spatial` and open `spatialos.json` in a text editor.
 1. Change the `name` field to the name of your project. You can find this in the [Console](https://console.improbable.io). It’ll be something like `beta_someword_anotherword_000`.
-1. In a terminal window, change directory to `UnrealGDKThirdPersonShooter\spatial\` and run `spatial cloud upload <assembly_name>`, where `<assembly_name>` is a name of your choice (for example `myassembly`). A valid upload command looks like this:
+![]({{assetRoot}}assets/tutorial/project-name.png)
+2. In a terminal window, change directory to `UnrealGDKThirdPersonShooter\spatial\` and run `spatial cloud upload <assembly_name>`, where `<assembly_name>` is a name of your choice (for example `myassembly`). A valid upload command looks like this:
 
 ```
 spatial cloud upload myassembly
@@ -186,16 +189,18 @@ spatial cloud launch --snapshot=snapshots/default.snapshot myassembly two_worker
 
 ### Play your game
 
+![]({{assetRoot}}assets/tutorial/console.png)
+
 When your deployment has launched, SpatialOS automatically opens the [Console](https://console.improbable.io) in your browser.
 
-1. In the Console, Select the **Play** button on the left of the page, and then launch (you can skip Step 1 - you installed the SpatialOS Launcher during setup). When you select **Play** the SpatialOS Launcher downloads the game client for this deployment and starts it.
-1. Once the client has launched, enter the game and fire a few celebratory shots - you are now playing in your first SpatialOS cloud deployment!
+1. In the Console, Select the **Launch** button on the left of the page, and then click the **Launch** button that appears in the centre of the page. The SpatialOS Launcher, which was installed along with SpatialOS, downloads the game client for this deployment and runs it on your local machine.
+![]({{assetRoot}}assets/tutorial/launch.png)
+2. Once the client has launched, enter the game and fire a few celebratory shots - you are now playing in your first SpatialOS cloud deployment!
 
 ### Invite your friends
 
 1. To invite other players to this game, head back to the Deployment Overview page in your [Console](https://console.improbable.io), and select the **Share button**.
-
-This generates a link to share with anyone who wants to join in for the duration of the deployment, providing them with Launcher download instructions and a button to join the deployment.
+2. Share the generated link with your friends.
 
 When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to halt your deployment.
 
