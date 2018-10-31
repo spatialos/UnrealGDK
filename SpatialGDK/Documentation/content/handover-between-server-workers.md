@@ -30,7 +30,7 @@ To facilitate an Actor’s property handover between server-workers, follow the 
 
 1. Tag the Actor with the `SpatialType` specifier. See [SpatialType]({{urlRoot}}/content/spatial-type).
 
-1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#schema-generator) for your Actor’s class.
+1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#schema-generation) for your Actor’s class.
 
 The GDK now ensures that server-workers transfer these tagged Actor’s properties between them.
 

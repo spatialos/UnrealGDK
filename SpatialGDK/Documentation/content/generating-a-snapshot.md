@@ -8,7 +8,7 @@ You can find out more about snapshots in the [SpatialOS snapshot documentation](
 
 ## What’s listed in snapshots
 
-The GDK snapshots contain three kinds of [SpatialOS entities]({{urlRoot}}/content/glossary#spatialos-entities): 
+The GDK snapshots contain three kinds of [SpatialOS entities]({{urlRoot}}/content/glossary#spatialos-entity): 
 Startup Actors, critical entities, and placeholder entities.
 
 ### Startup Actors
@@ -29,7 +29,7 @@ The critical entities are:
 ### Placeholder entities
 Placeholder entities are listed in snapshots by default.
 
-These entities exists only to set up server-worker boundaries in a way that is easy to test with multiple server-workers. These entities do not spawn as Actors when [checked out]({{urlRoot}}/content/glossary/check-out) by a worker and serve no purpose within the GDK. For most intents and purposes, you can safely ignore them.
+These entities exists only to set up server-worker boundaries in a way that is easy to test with multiple server-workers. These entities do not spawn as Actors when [checked out]({{urlRoot}}/content/glossary#check-out) by a worker and serve no purpose within the GDK. For most intents and purposes, you can safely ignore them.
 
 ## How to generate a snapshot
 
