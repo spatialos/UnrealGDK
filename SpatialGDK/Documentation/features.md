@@ -50,7 +50,7 @@ Actors are able to be specified as "Server only", meaning replication of these A
 
 ## Singleton Actors
 
-`Singleton Actors` is a new term that describes Actors which contain global state and logic. Only one of these Actors exists in a game world. The SpatialOS Unreal GDK supports both client accessible and server only singletons. For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
+`Singleton Actors` is a new term that describes Actors which contain global state and logic. Only one of these Actors exists in a game world. The SpatialOS GDK for Unreal supports both client accessible and server only singletons. For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 ## Cross-server RPCs
 
