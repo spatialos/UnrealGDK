@@ -4,7 +4,8 @@ Before reading this topic, make sure you are familiar with the Unreal documentat
 
 > Note: This topic is intended for advanced users only.
 
-## `APlayerController::ClientTravel`
+## ClientTravel
+`APlayerController::ClientTravel`
 
 ### In native Unreal
 `ClientTravel` is the process of changing which [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) a client currently has loaded.
@@ -106,13 +107,13 @@ Launching a [PIE](https://docs.unrealengine.com/en-us/GettingStarted/HowTo/PIE#p
 #### With built clients
 By default, outside of PIE, clients do not connect to a SpatialOS deployment. This is so you can implement your own connection flow, whether that be through an offline login screen, a connected lobby, etc.
 
-To connect a client-worker to a deployment from an offline state, you must use [`ClientTravel`](#user-guide).
+To connect a client-worker to a deployment from an offline state, you must use [`ClientTravel`](#clienttravel).
 
 The `LaunchClient.bat` (which we have provided) already includes the local host IP `127.0.0.1` which means client-workers launched this way will attempt to connect automatically using the [receptionist](#using-receptionist) flow.  
 
 
 #### With the Launcher
-When launching a client-worker from the SpatialOS Console using the [Launcher](https://docs.improbable.io/reference/13.3/shared/operate/launcher#the-launcher), the client-worker will connect to SpatialOS by default. It has the `Locator` information required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client-workers will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.  
+When launching a client-worker from the SpatialOS Console using the [Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher#the-launcher), the client-worker will connect to SpatialOS by default. It has the `Locator` information required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client-workers will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.  
 
 > Connecting by default when using the launcher is subject to change.
 

@@ -18,3 +18,5 @@ Visit the **feedback** section in our [forums](https://forums.improbable.io/) an
 Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issues).
 
 #### Next: [Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)
+
+<%(Callout type="warn" message="This is an [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal, pending stability, performance and documentation improvements. The API may change as we learn from feedback  - see the guidance on [Recommended use]({{urlRoot}}/content/recommended-use).")%>

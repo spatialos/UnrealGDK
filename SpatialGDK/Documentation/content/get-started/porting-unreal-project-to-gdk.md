@@ -9,8 +9,7 @@ Before porting your project:
 * If you haven't done this already, install SpatialOS and the GDK's dependencies and clone the SpatialOS Unreal Engine fork by following:
     * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     * [Getting started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-* If you haven't done this already, clone the GDK repository by following:
-    *  [Set up the GDK and Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project) (You only need to clone the GDK repository, not the Starter Project repository.)  
+* If you haven't done this already, clone the GDK repository by following [our setup guide]({{urlRoot}}/content/get-started/gdk-and-starter-project). Later in this guide, you will copy some necessary files from Starter Project over to yours.
 
 * Make sure your Spatial CLI is up to date: from a terminal window, run the command `spatial update`. 
 <!-- // TODO: Update the set up link when ready -->
@@ -31,8 +30,8 @@ Before porting your project:
     For example:
     `\StarterProject\Game\StarterProject.uproject`
     
-    > This step is essential as the `spatial` folder must be located in the directory above your `<GameRoot>`. This is so the GDK scripts work correctly with Unreal.
-1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the StarterProject repository that you cloned earlier in the [Before you start](#before-you-start) section.
+    > This step is essential as the `spatial` folder must be located in the directory above your `<GameRoot>`. This is so that the GDK scripts work correctly with Unreal.
+1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the `StarterProject` repository that you cloned earlier in the [Before you start](#before-you-start) section.
 
     To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders below to your `<ProjectRoot>`:  
 
@@ -104,7 +103,7 @@ It is necessary to modify your `GameInstance` class to work properly with the GD
    > If you have not yet made a `GameInstance` for your game and are still using the default, you must either create a Blueprint or a native `GameInstance` class now. <br/>
 
 
-* If your game's `GameInstance` is a `.cpp` file, locate its header file and add the following `#include`:
+* If your game's `GameInstance` is a C++ class, locate its header file and add the following `#include`:
     `"SpatialGameInstance.h"`
 
     For example:
@@ -113,7 +112,7 @@ It is necessary to modify your `GameInstance` class to work properly with the GD
     #include "SpatialGameInstance.h"
     #include "YourProjectGameInstance.generated.h"
     ```
-    Then, under `UCLASS()`, change `UGameInstance` to `USpatialGameInstance`:
+    Then, under `UCLASS()`, change the parent class from `UGameInstance` to `USpatialGameInstance`:
 
     For example:  
 
@@ -125,7 +124,7 @@ It is necessary to modify your `GameInstance` class to work properly with the GD
     };
     ```
 
-* If your `GameInstance` is a Blueprint, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** set the **Parent Class** to `SpatialGameInstance`
+* If your `GameInstance` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** set the **Parent Class** to `SpatialGameInstance`
 
 
 ### 5. Add GDK configurations
@@ -147,10 +146,10 @@ The steps below reference and introduce the following SpatialOS terms: [workers]
     >
     > If you ever need to run with default Unreal networking for workflow or validation reasons, you can switch networking in the Unreal Editor: from the Editor menu, click the down arrow on the **Play** button and from the drop-down menu un-check `Spatial Networking`. This setting is valid for Editor and command-line builds. It is stored in your game project's Unreal config file; `<GameRoot>\Config\DefaultGame.ini` under `/Script/EngineSettings.GeneralProjectSettings`.
     >
-    > **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to debug and so speed up your development iteration. However, you lose access to the multi-server features of the GDK in Unreal default networking mode which may lead to erratic behavior.
+    > **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to check for any divergence between GDK behavior and the default Unreal behavior. This can be helpful in isolating the root cause of issues you see while debugging. However, you lose access to the multiserver features of the GDK in Unreal default networking mode which may lead to erratic behavior.
 
 1. Specify Singleton Actors  
-The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these are server-side authoritative Actors which are a single source of truth for both operations and data across a multi-server simulation; `GameState` and `GameMode` are examples of this. To tell SpatialOS how to replicate Singleton Actors, the GDK  has a `UCLASS` [specifier (Unreal docs)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers). You add this to classes you want to be Singleton Actors.  
+The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these are server-side authoritative Actors which are a single source of truth for both operations and data across a multiserver simulation; `GameState` and `GameMode` are examples of this. To tell SpatialOS how to replicate Singleton Actors, the GDK  has a `UCLASS` [specifier (Unreal docs)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers). You add this to classes you want to be Singleton Actors.  
 
     > If you have not yet created a `GameState` or `GameMode` for your game and are still using the defaults, you must either create Blueprints or native `GameState` and `GameMode` class(es) now.  
 
@@ -183,21 +182,13 @@ You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate 
 1. Still in the Unreal Editor but this time from the SpatialOS GDK toolbar, select the green **Launch**  button (not the default Launch button from the Unreal Editor toolbar). This builds your [worker configuration]({{urlRoot}}/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>
 **Launch** opens up a terminal window and runs two SpatialOS command line interface ([CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) commands: `spatial build build-config` and `spatial local launch`. It is finished when you see `SpatialOS ready` in the terminal window.
 1. On the main Unreal toolbar, click **Play**. 
-1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/13.3/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
+1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
   
 **For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{urlRoot}}/content/glossary#deployment)**
 
 **Job done!** You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
 
 If you have encountered any problems please check out our [troubleshooting]({{urlRoot}}/content/troubleshooting) and [known-issues]({{urlRoot}}/known-issues).
-
-## Next steps!
-You can now begin experimenting with the multiserver features offered by the GDK.
-
-Check out the tutorial on how to implement [cross-server shooting]({{urlRoot}}/content/get-started/tutorial).  
-Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [singletons]({{urlRoot}}/content/singleton-actors).
-
-More tutorials on their way!
 
 #### Logs
 You can find Spatial log files for your local deployments in `<ProjectRoot>\spatial\logs\`.  
@@ -214,3 +205,11 @@ You can modify some of the GDK settings from the Unreal Editor toolbar at **Edit
 You can change:
 *  the snapshot file's filename and location
 *  the launch configuration
+
+## Next steps
+You can now begin experimenting with the multiserver features offered by the GDK.
+
+If you haven't already, check out the tutorial on how to implement [cross-server shooting]({{urlRoot}}/content/get-started/tutorial).  
+Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
+
+We will be releasing more tutorials and examples as the GDK matures. Stay tuned.
