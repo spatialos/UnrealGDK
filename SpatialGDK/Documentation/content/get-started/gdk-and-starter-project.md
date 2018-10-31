@@ -14,12 +14,12 @@ Now, you are going to clone the Starter Project repository and then clone the GD
 1. Clone the [Starter Project](https://github.com/spatialos/UnrealGDKStarterProject/) repository by running either:
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDKStarterProject.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDKStarterProject.git`
-1. Navigate into `<StarterProjectRepoRoot>\Game\Plugins`. You may need to create the Plugins folder if you don't have any plugins installed yet.
-1.  In a Git Bash terminal window, clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
+1. Navigate into `<StarterProjectRepoRoot>\Game\` and create a `Plugins` folder.
+1.  In a Git Bash terminal window, navigate to `<StarterProjectRepoRoot>\Game\Plugins` and clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`
 
-**Note** You need to ensure that the root folder of the GDK for Unreal repository is called `UnrealGDK` so its path is something like: `<StarterProjectRepoRoot>\Game\Plugins\UnrealGDK\...`
+**Note** You need to ensure that the root folder of the GDK for Unreal repository is called `UnrealGDK` so its path is: `<StarterProjectRepoRoot>\Game\Plugins\UnrealGDK\...`
 
 [//]: # (TODO: This whole section below deserves some screenshots to show users what to expect. This was done well on the Unity onobarding docs. Example: https://docs.improbable.io/unity/alpha/content/get-started/get-playing)	
 
@@ -34,7 +34,14 @@ In this step, you're going to build the GDK for Unreal module dependencies, whic
     1. Select the path to the Unreal Engine fork you cloned earlier.
 1. In the same directory, open **StarterProject.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **StarterProject** and select **Build**.
-1. Open **StarterProject.uproject** in the Unreal Editor and click [`Schema` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary) to generate schema and then [`Snapshot` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary) to generate a snapshot.
+1. Open **StarterProject.uproject** in the Unreal Editor 
+    * Click [`Schema` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary) to generate schema 
+    
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)
+
+    * Click [`Snapshot` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary) to generate a snapshot.
+
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)
 
 ### Deploy the Starter Project 
 
@@ -45,6 +52,8 @@ In this step, you're going to build the GDK for Unreal module dependencies, whic
 1. Under **Multiplayer Options**, enter the number of players as **2** and check the box next to **Run Dedicated Server**. Then, under Modes, select **New Editor Window (PIE)**.
 1. On the toolbar, click **Play** to run the game.
 1. When you're done, click **Stop** to stop the [client-workers and server-workers]({{urlRoot}}/content/glossary#workers), and click the **Stop** button in the SpatialOS section of the toolbar to stop your local SpatialOS deployment.
+
+If you would like to run multiple server-workers in editor, see the [Toolbar documentation]({{urlRoot}}/content/toolbars#launching-multiple-pie-server-workers) regarding launching multiple PIE server-workers
 
 #### Deploy in the cloud
 
