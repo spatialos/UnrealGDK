@@ -128,8 +128,8 @@ It is necessary to modify your `GameInstance` class to work properly with the GD
 
 
 ### 5. Add GDK configurations
-The steps below reference and introduce the following SpatialOS terms: [workers]({{URLRoot}}/content/glossary#workers), [schema]({URLRoot}}/content/glossary#schema), [Schema Generator]({{URLRoot}}/content/glossary#schema-generator) [SpatialOS components]({{URLRoot}}/content/glossary#spatialos-component), [checking out]({{URLRoot}}/content/glossary#check-out), [streaming queries]({{URLRoot}}/content/glossary#streaming-queries), [Singleton Actor]({{URLRoot}}/content/glossary#singleton-actor), [deployment]({{URLRoot}}/content/glossary#deployment), [launch configuration]({{URLRoot}}/content/glossary#launch-configuration), [snapshot]({{URLRoot}}/content/glossary#snapshot), [worker configuration]({{URLRoot/content/glossary#worker-configuration).
-<br/>You can find out about them in the [glossary]({URLRoot}}/content/glossary) but you don't need to know about them in detail to complete the port.
+The steps below reference and introduce the following SpatialOS terms: [workers]({{urlRoot}}/content/glossary#workers), [schema]({{urlRoot}}/content/glossary#schema), [Schema Generation]({{urlRoot}}/content/glossary#schema-generation) [SpatialOS components]({{urlRoot}}/content/glossary#spatialos-component), [checking out]({{urlRoot}}/content/glossary#check-out), [streaming queries]({{urlRoot}}/content/glossary#streaming-queries), [Singleton Actor]({{urlRoot}}/content/glossary#singleton-actor), [deployment]({{urlRoot}}/content/glossary#deployment), [launch configuration]({{urlRoot}}/content/glossary#launch-configuration), [snapshot]({{urlRoot}}/content/glossary#snapshot), [worker configuration]({{urlRoot}}/content/glossary#worker-configuration).
+<br/>You can find out about them in the [glossary]({{urlRoot}}/content/glossary) but you don't need to know about them in detail to complete the port.
 
 1. In `<GameRoot>\Config`, open `DefaultEngine.ini` and add:
 
@@ -165,12 +165,12 @@ The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these ar
         ```
        If your game's `GameMode` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the **Spatial Description** text box enter `Singleton,ServerOnly`.
 
-   Marking these Singleton Actor classes as `Spatial Type` enables them to work with SpatialOS as [schema]({URLRoot}}/content/glossary#schema) will now be generated for them. 
+   Marking these Singleton Actor classes as `Spatial Type` enables them to work with SpatialOS as [schema]({{urlRoot}}/content/glossary#schema) will now be generated for them. 
 
 ### 6. Generate schema and a snapshot
-You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a [snapshot]({{URLRoot}}/content/glossary#snapshot) to get your game's deployment started. To do this:
+You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate a [snapshot]({{urlRoot}}/content/glossary#snapshot) to get your game's deployment started. To do this:
 
-1. In the Unreal Editor, on the GDK toolbar, click the **Schema** button to run the [Schema Generator]({{URLRoot}}/content/glossary#schema-generator).
+1. In the Unreal Editor, on the GDK toolbar, click the **Schema** button to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
 1. On the same toolbar, click the **Snapshot** button which will generate a snapshot for the map currently open in the editor.
 
 ### 7. Launch your game
@@ -179,23 +179,23 @@ You need to generate [schema]({URLRoot}}/content/glossary#schema) and generate a
     * Check the box for **Spatial Networking**
 
     > From this drop-down menu it is possible to increase the number of servers that will be launched. For now leave this at 1. This is because there is currently no multiserver logic in your code. This port will be the baseline for you to start building the multiserver game logic.  
-1. Still in the Unreal Editor but this time from the SpatialOS GDK toolbar, select the green **Launch**  button (not the default Launch button from the Unreal Editor toolbar). This builds your [worker configuration]({{URLRoot/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>
-**Launch** opens up a terminal window and runs two SpatialOS command line interface ([CLI]({{URLRoot/content/glossary#cli)) commands: `spatial build build-config` and `spatial local launch`. It is finished when you see `SpatialOS ready` in the terminal window.
+1. Still in the Unreal Editor but this time from the SpatialOS GDK toolbar, select the green **Launch**  button (not the default Launch button from the Unreal Editor toolbar). This builds your [worker configuration]({{urlRoot}}/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>
+**Launch** opens up a terminal window and runs two SpatialOS command line interface ([CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) commands: `spatial build build-config` and `spatial local launch`. It is finished when you see `SpatialOS ready` in the terminal window.
 1. On the main Unreal toolbar, click **Play**. 
 1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/13.3/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
   
-**For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{URLRoot}}/content/glossary#deployment)**
+**For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{urlRoot}}/content/glossary#deployment)**
 
 **Job done!** You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
 
-If you have encountered any problems please check out our [troubleshooting]({{urlRoot}}/content/troubleshooting) and [known-issues]({{urlRoot}}/content/known-issues).
+If you have encountered any problems please check out our [troubleshooting]({{urlRoot}}/content/troubleshooting) and [known-issues]({{urlRoot}}/known-issues).
 
 #### Logs
 You can find Spatial log files for your local deployments in `<ProjectRoot>\spatial\logs\`.  
 
 * `spatial_<datetime>.log` contains all of the logs printed to your terminal during the local deployment.  
 * There are also timestamped folders here which contain additional logs:
-  1. `<ProjectRoot>\spatial\logs\workers\` contain managed worker logs which are the workers started by SpatialOS, specified in your [launch configuration]({{URLRoot}}/content/glossary#launch-configuration).
+  1. `<ProjectRoot>\spatial\logs\workers\` contain managed worker logs which are the workers started by SpatialOS, specified in your [launch configuration]({{urlRoot}}/content/glossary#launch-configuration).
   1. `<ProjectRoot>\spatial\logs\runtime.log` contains the logs printed by the SpatialOS runtime. These are the services required for SpatialOS to run a local deployment.  
 
 If you require additional debugging logs you can always run `spatial local launch` with the flag `--log_level=debug`.

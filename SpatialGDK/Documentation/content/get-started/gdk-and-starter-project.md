@@ -33,7 +33,7 @@ In this step, you're going to build the Unreal GDK module dependencies, which th
     1. Select the path to the Unreal Engine fork you cloned earlier.
 1. In the same directory, open **StarterProject.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **StarterProject** and select **Build**.
-1. Open **StarterProject.uproject** in the Unreal Editor and click [`Schema` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary) to generate schema and then [`Snapshot` (SpatialOS documentation)]((https://docs.improbable.io/reference/latest/shared/glossary)) to generate a snapshot.
+1. Open **StarterProject.uproject** in the Unreal Editor and click [`Schema` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary) to generate schema and then [`Snapshot` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary) to generate a snapshot.
 
 ### Deploy the Starter Project 
 
