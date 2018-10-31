@@ -65,6 +65,71 @@ In this section you’ll run a [local deployment](https://docs.improbable.io/ref
 3. Back in your two Unreal game clients, run around and shoot.
 4. Using the Inspector to track the location of your two players, notice that if you position them in the area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
 
+### Replicate health changes
+
+In the ThirdPersonShooter project each `TPSCharacter` has a variable tracking health called `CurrentHealth`. The health deducted on the server when the character is being shot, however as the variable is not setup for replication it does not replicate to the client. Therefore the characters health meter does not update on the client even though the health variable is being depleted on the server. 
+
+To resolve this we need to mark the `CurrentHealth` property for replication as you would with normal [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1):
+
+Navigate to the declaration of the `CurrentHealth` variable in the `TPSCharacter.h`(line 175) and change the line:
+```
+UPROPERTY()
+int32 CurrentHealth;
+```
+To
+```
+UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
+int32 CurrentHealth; 
+```
+
+We have now marked this property for replication using the `OnRep_CurrentHealth` function which we’ll implement in a moment.
+
+Next we need to update the [GetLifetimeReplicatedProps](https://wiki.unrealengine.com/Replication#Actor_Property_Replication) implementation of the TPSCharacter to specify the [replication conditions](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/Conditions) for the `CurrentHealth` variable:
+
+Navigate to `TPSCharacter.cpp` line 194 and add the following lines:
+
+```
+// Only replicate health to the owning client.
+DOREPLIFETIME_CONDITION(ATPSCharacter, CurrentHealth, COND_AutonomousOnly);
+```
+
+**NOTE:** We only want to replicate the `CurrentHealth` variable to the client that owns this Actor, thus we specify the `COND_AutonomousOnly` flag.
+
+Finally, we need to implement the `OnRep_CurentHealth` function so that we can update the player health UI when the `CurrentHealth` variable is replicated:
+
+
+At line 146 in `TPSCharacter.h` add:
+
+```	
+UFUNCTION()
+void OnRep_CurrentHealth();
+```
+
+At line 461 int `TPSCharacter.cpp`, add the following function:
+
+
+```
+void ATPSCharacter::OnRep_CurrentHealth()
+{
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		ATPSPlayerController* PC = Cast<ATPSPlayerController>(GetController());
+		if (PC)
+		{
+			PC->UpdateHealthUI(CurrentHealth, MaxHealth);
+		}
+		else
+		{
+			UE_LOG(LogTPS, Warning, TEXT("Couldn't find a player controller for character: %s"), *this->GetName());
+		}
+	}
+}
+```
+
+As you probably have noticed, we have just added code exactly as you would in native Unreal Actor replication. The only extra thing we need to do to enable replication is to generate the [schemas]({{urlRoot}}/content/glossary#schema) and the [snapshot]({{urlRoot}}/content/glossary#snapshot) using the Unreal GDK toolbar. 
+
+Now you can build your game and run. The `CurrentHealth` and the health UI of the actor being shot should go down as intended. 
+
 ### Enable cross server RPCs
 
 To damage a player on a different server, the actor shooting the bullet must send a cross-server RPC to the actor getting hit by the bullet. You will implement this by overriding the [TakeDamage (Unreal documentation)](https://api.unrealengine.com/INT/API/Runtime/Engine/GameFramework/APawn/TakeDamage/index.html) function in the TPSCharcter class.
