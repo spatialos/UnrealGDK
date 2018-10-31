@@ -183,7 +183,7 @@ You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate 
 1. Still in the Unreal Editor but this time from the SpatialOS GDK toolbar, select the green **Launch**  button (not the default Launch button from the Unreal Editor toolbar). This builds your [worker configuration]({{urlRoot}}/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>
 **Launch** opens up a terminal window and runs two SpatialOS command line interface ([CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) commands: `spatial build build-config` and `spatial local launch`. It is finished when you see `SpatialOS ready` in the terminal window.
 1. On the main Unreal toolbar, click **Play**. 
-1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/13.3/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
+1. From the SpatialOS GDK toolbar click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
   
 **For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{urlRoot}}/content/glossary#deployment)**
 

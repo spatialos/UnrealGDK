@@ -1,5 +1,5 @@
 # Welcome to the SpatialOS GDK for Unreal
-<!-- <img src="{{assetRoot}}assets/unrealgdk-headline-image.png" style=" margin: 0 auto; display: block; width: 60%" /> !-->
+<img src="{{assetRoot}}assets/unrealgdk-headline-image.png" style=" margin: 0 auto; display: block; width: 60%" />
 
 <br/>
 
