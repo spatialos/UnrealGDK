@@ -52,7 +52,7 @@ As the GDK works with multiple [server-workers]({{urlRoot}}/content/glossary#wor
 
 > We use the term “authoritative” when a server-worker has authority over an Actor and “non-authoritative” when it doesn’t.
 
-In the GDK, a server-worker is authoritative over an Actor if it has authority over the [schema]({{urlRoot}}/content/glossary#schema) [component]({{urlRoot}}/content/glossary#spatialos-component) `Position`). 
+In the GDK, a server-worker is authoritative over an Actor if it has authority over the [schema]({{urlRoot}}/content/glossary#schema) [component]({{urlRoot}}/content/glossary#spatialos-component) `Position`. 
 
 So, in the SpatialOS GDK multiserver scenario, authority looks like this:
 
