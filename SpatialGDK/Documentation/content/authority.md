@@ -3,7 +3,7 @@ To work with authority in the GDK, it’s useful to refresh on authority in Unre
 
 ## Unreal networking authority
 
-In native-Unreal networking, the single server has absolute authority over all replicated Actors,  while clients have only proxies of Actors. Unreal models this using the `Role` and `RemoteRole` fields within an Actor.
+In native-Unreal networking, the single server has absolute authority over all replicated Actors, while clients have only proxies of Actors. Unreal models this using the `Role` and `RemoteRole` fields within an Actor.
 
 There are 3 main types of networking Roles in Unreal:
 
@@ -28,7 +28,7 @@ Actor on **client**:
 Actors that have an [owning connection (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections) are slightly different. An Actor can have an owning connection if:
 
 * It is a `PlayerController` with an associated `NetConnection`.
-* It is a `Pawn` which is possessed by a `PlayerController` that has an associated `NetConnection`
+* It is a `Pawn` which is possessed by a `PlayerController` that has an associated `NetConnection`.
 * Its `Owner` is set to an Actor that has an owning connection.
 
 For example, if a client has a `PlayerController` which possesses a `Character` which is holding a gun (whose `Owner` is the `Character`), all three (the gun, `Character` and `PlayerController`) have an owning connection.
@@ -58,7 +58,7 @@ As the GDK works with multiple [server-workers]({{urlRoot}}/content/glossary#wor
 
 > We use the term “authoritative” when a server-worker has authority over an Actor and “non-authoritative” when it doesn’t.
 
-In the GDK, a server-worker is authoritative over an Actor if it has authority over the [schema]({{urlRoot}}/content/glossary#schema) [component]({{urlRoot}}/content/glossary#spatialos-component) `Position`). 
+In the GDK, a server-worker is authoritative over an Actor if it has authority over the [schema]({{urlRoot}}/content/glossary#schema) [component]({{urlRoot}}/content/glossary#spatialos-component) `Position`. 
 
 So, in the SpatialOS GDK multiserver scenario, authority looks like this:
 
@@ -101,4 +101,4 @@ Actor on **non-owning client-worker**:
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
 
-A `PlayerController` possessing different Pawns would change authority as expected; the client would gain authority over the newly-possessed Pawn while losing authority over the older Pawn.
+A `PlayerController` possessing different `Pawn`s would change their role as expected; the newly-possessed Pawn would become an autonomous proxy on the client-worker while older `Pawn` will become a simulated proxy.
