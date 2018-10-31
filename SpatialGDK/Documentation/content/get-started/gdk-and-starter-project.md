@@ -1,6 +1,7 @@
 # Next steps: Set up the GDK with the Starter Project
 
 Before starting this, you need to have followed:
+
 * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
 * [Getting started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 
