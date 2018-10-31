@@ -3,9 +3,9 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
+#include "Interop/SpatialTypebindingManager.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
-#include "SpatialTypebindingManager.h"
 #include "UObject/UObjectHash.h"
 #include "Utils/SchemaUtils.h"
 

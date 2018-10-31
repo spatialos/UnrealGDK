@@ -2,6 +2,10 @@
 
 #include "Utils/ComponentFactory.h"
 
+#include "Engine/BlueprintGeneratedClass.h"
+#include "Engine/World.h"
+#include "UObject/TextProperty.h"
+
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetDriver.h"

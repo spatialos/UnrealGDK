@@ -2,6 +2,9 @@
 
 #include "Interop/SpatialSender.h"
 
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
+
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetConnection.h"
