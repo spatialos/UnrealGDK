@@ -20,7 +20,7 @@ Actor on **client**:
 Actors that have an [owning connection (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections) are slightly different. An Actor can have an owning connection if:
 
 * It is a `PlayerController` with an associated `NetConnection`.
-* It is a `Pawn` which is possessed by a `PlayerController` that has an associated `NetConnection`
+* It is a `Pawn` which is possessed by a `PlayerController` that has an associated `NetConnection`.
 * Its `Owner` is set to an Actor that has an owning connection.
 
 For example, if a client has a `PlayerController` which possesses a `Character` which is holding a gun, all three (the gun, `Character` and `PlayerController`) have an owning connection.
