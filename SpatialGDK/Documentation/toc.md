@@ -15,9 +15,8 @@
  ***
 - <h3>Concepts and terminology</h3>
 - <h3>[- SpatialOS concepts]({{urlRoot}}/content/concepts)</h3>
-- <h3>[- Spatial Type]({{urlRoot}}/content/spatial-type)</h3>)
-    <!--[//]: # (TODO: Add the following from Mike at <h3> level)
-    [//]: # (- <h3>[- Dynamic type bindings]({{urlRoot}}/TODO)</h3>) !-->
+- <h3>[- Spatial Type]({{urlRoot}}/content/spatial-type)</h3>
+- <h3>[- Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
 - <h3>[- Singleton Actors]({{urlRoot}}/content/singleton-actors)
 - <h3>[- Actor property handover]({{urlRoot}}/content/handover-between-server-workers)
      <!--[//]: # (TODO: Add the following from Josh at <h3> level)
@@ -29,27 +28,26 @@
 - <h3>Reference</h3>
 - <h3>[- Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>[- Snapshots]({{urlRoot}}/content/generating-a-snapshot)
-<!--[//]: # (TODO: Add the following from Sahil at <h3> level)
-    [//]: # (- <h3>[- Authority]({{urlRoot}}/TODO)</h3>) !-->
+- <h3>[- Authority]({{urlRoot}}/content/authority)
 - <h3>[- Helper scripts]({{urlRoot}}/content/helper-scripts)
 - <h3>[- Directory structure]({{urlRoot}}/content/directory-structure)
 
  ***
 - <h3>[- Troubleshooting]({{urlRoot}}/content/troubleshooting)</h3>
 - <h3>[- Known issues]({{urlRoot}}/known-issues)</h3>
-- <h3>[- License]({{urlRoot}}/license)
+- <h3>[- License]({{urlRoot}}/license)</h3>
 
 ***
 - <h3>Get involved</h3>
 - <h3>+ Contributing to the GDK</h3>
     - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)
     - Visit our GitHub:
-    - [Issue log](https://github.com/spatialos/unrealgdk/issues)
-    - [Contribution policy](https://github.com/spatialos/UnrealGDK/blob/master/CONTRIBUTING.md)
+        - [Issue log](https://github.com/spatialos/unrealgdk/issues)
+        - [Contribution policy](https://github.com/spatialos/UnrealGDK/blob/master/CONTRIBUTING.md)
 - <h3>+ GDK community</h3>    
     - [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368)
     - [Forums](https://forums.improbable.io/)
     - [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
 - <h3>+ Development roadmap</h3>
-    - [Trello](https://trello.com/b/29tMKyQC/spatialos-gdk-for-unity-roadmap)
+    - [Trello](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap)
 
