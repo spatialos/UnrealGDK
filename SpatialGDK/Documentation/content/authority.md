@@ -3,7 +3,7 @@ To work with authority in the GDK, it’s useful to refresh on authority in Unre
 
 ## Unreal networking authority
 
-In native-Unreal networking, the single server has absolute authority over all replicated Actors,  while clients have only proxies of Actors. Unreal models this using the `Role` and `RemoteRole` fields within an Actor.
+In native-Unreal networking, the single server has absolute authority over all replicated Actors, while clients have only proxies of Actors. Unreal models this using the `Role` and `RemoteRole` fields within an Actor.
 
 For the majority of use-cases, these fields have the values:
 
