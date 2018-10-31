@@ -121,8 +121,8 @@ The workflow you just used mirrors that of native Unreal.
 Because you’ve changed code in a function you now need build **ThirdPersonShooter.sln**, generate schema and a new snapshot. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.
-2. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
-3. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
+1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
+1. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
 
 Now let’s test our health replication in another local deployment.
 
@@ -140,16 +140,16 @@ Notice that health now decrements when you are shot.
 [The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s learn the use the Inspector to visualise the areas that each of our server-workers have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
 
 1. Access the inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
-2. In the **View** tab, click the checkboxes next to both of the **UnrealWorkers**. This will cause the Inspector to display the areas that the server-workers have authority over as two coloured zones.
-3. Back in your two Unreal game clients, run around and shoot.
-4. Using the Inspector to track the location of your two players, notice that if you position them in the area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
+1. In the **View** tab, click the checkboxes next to both of the **UnrealWorkers**. This will cause the Inspector to display the areas that the server-workers have authority over as two coloured zones.
+1. Back in your two Unreal game clients, run around and shoot.
+1. Using the Inspector to track the location of your two players, notice that if you position them in the area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
 
 ### Enable cross server RPCs
 
 To damage a player on a different server, the actor shooting the bullet must send a cross-server RPC to the actor getting hit by the bullet. You will implement this by overriding the [TakeDamage (Unreal documentation)](https://api.unrealengine.com/INT/API/Runtime/Engine/GameFramework/APawn/TakeDamage/index.html) function in the TPSCharcter class.
 
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
-2. On line 74, add this snippet:
+1. On line 74, add this snippet:
 
     ```
     UFUNCTION(CrossServer, Reliable)
@@ -158,8 +158,8 @@ To damage a player on a different server, the actor shooting the bullet must sen
 
     This snippet creates a new `UFUNCTION` marked with the function tags [CrossServer]({{urlRoot}}/content/cross-server-rpcs) and [Reliable (Unreal documentation)](https://wiki.unrealengine.com/Replication#Reliable_vs_Unreliable_Function_Call_Replication). The CrossServer tag forces this function to be executed as as cross-server RPC.
 
-3. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp`.
-4. Replace the TakeDamage function (lines 514-548) with this snippet:
+1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp`.
+1. Replace the TakeDamage function (lines 514-548) with this snippet:
 
 ```
 float ATPSCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -277,7 +277,7 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 ### Invite your friends
 
 1. To invite other players to this game, head back to the Deployment Overview page in your [Console](https://console.improbable.io), and select the **Share button**.
-1. Share the generated link with your friends.
+1. Share the generated link with your friends!
 
 When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to halt your deployment.
 
