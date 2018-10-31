@@ -210,6 +210,6 @@ You can change:
 You can now begin experimenting with the multiserver features offered by the GDK.
 
 If you haven't already, check out the tutorial on how to implement [cross-server shooting]({{urlRoot}}/content/get-started/tutorial).  
-Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [singletons]({{urlRoot}}/content/singleton-actors).
+Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 We will be releasing more tutorials and examples as the GDK matures. Stay tuned.
