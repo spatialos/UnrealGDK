@@ -105,7 +105,7 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
     {
     	if (GetNetMode() != NM_DedicatedServer)
     	{
-		    ATPSPlayerController* PC = Cast<ATPSPlayerController>(GetController());
+		ATPSPlayerController* PC = Cast<ATPSPlayerController>(GetController());
     		if (PC)
     		{
     			PC->UpdateHealthUI(CurrentHealth, MaxHealth);
