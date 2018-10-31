@@ -48,12 +48,12 @@ In this step, you're going to build the Unreal GDK's dependencies.
 
 In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will [cloud deploy](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
 
-1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and set `rows` to `2`.
+1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and set `rows` to `2`. This instructs SpatialOS to launch two server-workers.
 1. In the Unreal Editor, in the Unreal toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2**
 1. Enter the number of servers as **2**
 1. Check the box next to **Run Dedicated Server**
-1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Launch**. This is the green play icon, not to be confused with Unreal’s Launch button, the icon for which is a gamepad in front of a monitor. This will open a terminal window and run the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime). It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
+1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Launch**. This is the green play icon, not to be confused with Unreal’s Launch button. This will open a terminal window and run the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime). It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
 1. From the Unreal Editor toolbar, click **Play** to run the game. This starts two headless server-workers and two [client-workers](https://docs.improbable.io/reference/latest/shared/glossary#client-worker).
 
 ### View your SpatialOS world in the Inspector
