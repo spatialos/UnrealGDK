@@ -161,7 +161,7 @@ To damage a player on a different server, the actor shooting the bullet must sen
     This snippet creates a new `UFUNCTION` marked with the function tags [CrossServer]({{urlRoot}}/content/cross-server-rpcs) and [Reliable (Unreal documentation)](https://wiki.unrealengine.com/Replication#Reliable_vs_Unreliable_Function_Call_Replication). The CrossServer tag forces this function to be executed as a cross-server RPC.
 
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp`.
-1. Replace the TakeDamage function (lines 514-548) with this snippet:
+1. Replace the `TakeDamage` function (lines 514-548) with this snippet:
 
 ```
 float ATPSCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
