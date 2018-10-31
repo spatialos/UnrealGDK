@@ -64,11 +64,11 @@ Generate a snapshot for the map you intend to server transition to using the [sn
 
 The snapshot is read from `<GameRoot>\Content\Spatial\Snapshots\` when you call the `UWorld::ServerTravel`. To ensure this works in a cloud deployment, add the `Spatial\Snapshots` folder to your  **Additional Non-Asset Directories To Copy for dedicated server only** found at **File** > **Package Project** > **Packaging settings**. For example:
 
-[IMAGE HERE]()
+![snapshot asset cooking]({{assetRoot}}assets/screen-grabs/snapshot-asset-cooking.png)
 
 Remember to package the map you intend to travel to: from the **Package Settings**, add your map(s) to **List of maps to include in a packaged build**.
 
-[IMAGE HERE]()
+![map cooking]({{assetRoot}}assets/screen-grabs/cooking-maps.png)
 
 #### Specify URL parameters
 Pass the snapshot to load as part of the map URL when calling `ServerTravel`. For example:
