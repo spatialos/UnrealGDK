@@ -4,6 +4,8 @@ Before reading this topic, make sure you are familiar with the Unreal documentat
 
 > Note: This topic is intended for advanced users only.
 
+<%(Callout type="warn" message="ServerTravel support has not yet been merged but will be coming very soon.")%>
+
 ## ClientTravel
 `APlayerController::ClientTravel`
 
@@ -65,11 +67,11 @@ Generate a snapshot for the map you intend to server transition to using the [sn
 
 The snapshot is read from `<GameRoot>\Content\Spatial\Snapshots\` when you call the `UWorld::ServerTravel`. To ensure this works in a cloud deployment, add the `Spatial\Snapshots` folder to your  **Additional Non-Asset Directories To Copy for dedicated server only** found at **File** > **Package Project** > **Packaging settings**. For example:
 
-[IMAGE HERE]()
+![snapshot asset cooking]({{assetRoot}}assets/screen-grabs/snapshot-asset-cooking.png)
 
 Remember to package the map you intend to travel to: from the **Package Settings**, add your map(s) to **List of maps to include in a packaged build**.
 
-[IMAGE HERE]()
+![map cooking]({{assetRoot}}assets/screen-grabs/cooking-maps.png)
 
 #### Specify URL parameters
 Pass the snapshot to load as part of the map URL when calling `ServerTravel`. For example:
@@ -116,5 +118,3 @@ The `LaunchClient.bat` (which we have provided) already includes the local host 
 When launching a client-worker from the SpatialOS Console using the [Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher#the-launcher), the client-worker will connect to SpatialOS by default. It has the `Locator` information required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client-workers will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.  
 
 > Connecting by default when using the launcher is subject to change.
-
-
