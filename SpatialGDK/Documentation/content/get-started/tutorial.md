@@ -107,7 +107,6 @@ void OnRep_CurrentHealth();
 
 At line 461 int `TPSCharacter.cpp`, add the following function:
 
-
 ```
 void ATPSCharacter::OnRep_CurrentHealth()
 {
