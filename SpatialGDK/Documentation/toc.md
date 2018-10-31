@@ -16,8 +16,7 @@
 - <h3>Concepts and terminology</h3>
 - <h3>[- SpatialOS concepts]({{urlRoot}}/content/concepts)</h3>
 - <h3>[- Spatial Type]({{urlRoot}}/content/spatial-type)</h3>
-    <!--[//]: # (TODO: Add the following from Mike at <h3> level)
-    [//]: # (- <h3>[- Dynamic Type Bindings]({{urlRoot}}/TODO)</h3>) !-->
+- <h3>[- Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
 - <h3>[- Singleton Actors]({{urlRoot}}/content/singleton-actors)
 - <h3>[- Actor property handover]({{urlRoot}}/content/handover-between-server-workers)
      <!--[//]: # (TODO: Add the following from Josh at <h3> level)
@@ -29,8 +28,7 @@
 - <h3>Reference</h3>
 - <h3>[- Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>[- Snapshots]({{urlRoot}}/content/generating-a-snapshot)
-    <!--[//]: # (TODO: Add the following from Sahil at <h3> level)
-    [//]: # (- <h3>[- Authority]({{urlRoot}}/TODO)</h3>) !-->
+- <h3>[- Authority]({{urlRoot}}/content/authority)
 - <h3>[- Helper scripts]({{urlRoot}}/content/helper-scripts)
 - <h3>[- Directory structure]({{urlRoot}}/content/directory-structure)
 
