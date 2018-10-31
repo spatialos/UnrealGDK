@@ -34,17 +34,23 @@ The SpatialOS GDK for Unreal also supports:
 
 ## Static subobject replication
 
-The GDK currently supports replication of static components owned by an actor. Support for dynamic subobjects is in development.
+The GDK currently supports replication of static subobjects owned by an actor. Scene Component replication is not yet supported but will be soon.
 
 Properties and RPCs within subobjects have the same support as an Actor’s properties and RPCs.
+
+Support for dynamic subobjects is in development.
 
 ## Property handover
 
 Actor property handover is a new feature we’re introducing with the GDK. It replicates server-side properties between servers so Unreal games can take advantage of the SpatialOS cloud server architecture. For more information, see [the Actor property handover]({{urlRoot}}/content/handover-between-server-workers) documentation.
 
+## Server only Actors
+
+Actors are able to be specified as "Server only", meaning replication of these Actors will only happen between server-workers. For more information, see [the Spatial Type]({{urlRoot}}/content/spatial-type#spatialtype-descriptors) documentation
+
 ## Singleton Actors
 
-`Singleton Actors` is a new term that describes Actors which contain global state and logic.  Only one of these Actors exists in a game world. The SpatialOS GDK for Unreal supports both client accessible and server only singletons (respectively known as public and private singletons). For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
+`Singleton Actors` is a new term that describes Actors which contain global state and logic. Only one of these Actors exists in a game world. The SpatialOS GDK for Unreal supports both client accessible and server only singletons. For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 ## Cross-server RPCs
 
