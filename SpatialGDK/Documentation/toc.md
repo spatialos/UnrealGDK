@@ -9,7 +9,7 @@
         - [Set up and run the Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project)
         - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
 - <h3>[- Feature list]({{urlRoot}}/features)</h3>
-- <h3>[- What's new]({{urlRoot}}/content/whatsnew)</h3>
+- <h3>[- What's new in alpha]({{urlRoot}}/content/whatsnew)</h3>
 
  ***
 - <h3>Concepts and terminology</h3>
