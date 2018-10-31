@@ -1,11 +1,11 @@
 # Feature list
 
-The SpatialOS GDK for Unreal Engine works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
+The SpatialOS GDK for Unreal works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
 
 The GDK alpha release (2018-10-31) has the following features:
 
 ## Replicated properties, conditions and notifications
-The SpatialOS Unreal GDK supports:
+The SpatialOS GDK for Unreal supports:
 
 * All types that native Unreal replicates.
 * All replication conditions (such as `COND_InitialOnly` and `COND_OwnerOnly`, for example) but note that these are not optimized.
@@ -14,7 +14,7 @@ The SpatialOS Unreal GDK supports:
 
 ## RPCs
 
-The SpatialOS Unreal GDK supports the following RPCs:
+The SpatialOS GDK for Unreal supports the following RPCs:
 
 * Reliable Client/Server
 * Unreliable Client/Server
@@ -22,23 +22,23 @@ The SpatialOS Unreal GDK supports the following RPCs:
 
 In addition, there is also support for a new RPC type called [Cross-server]({{urlRoot}}/features#cross-server-rpcs).
 
-The SpatialOS Unreal GDK does **not** support the following RPC:
+The SpatialOS GDK for Unreal does **not** support the following RPC:
 
 * Reliable NetMulticast
     > If you use a reliable NetMulticast RPC, the GDK downgrades it to unreliable.
 
-The SpatialOS Unreal GDK also supports:
+The SpatialOS GDK for Unreal also supports:
 
 * Replicated Blueprint events
 * RPC validation
 
 ## Static subobject replication
 
-The GDK supports static subobject replication. Scene Component replication is not yet supported but will be soon.
+The GDK currently supports replication of static subobjects owned by an actor. Scene Component replication is not yet supported but will be soon.
 
 Properties and RPCs within subobjects have the same support as an Actor’s properties and RPCs.
 
-The GDK does not yet support dynamic subobject replication.
+Support for dynamic subobjects is in development.
 
 ## Property handover
 
@@ -50,7 +50,7 @@ Actors are able to be specified as "Server only", meaning replication of these A
 
 ## Singleton Actors
 
-`Singleton Actors` is a new term that describes Actors which contain global state and logic.  Only one of these Actors exists in a game world. The SpatialOS Unreal GDK supports both client accessible and server only singletons. For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
+`Singleton Actors` is a new term that describes Actors which contain global state and logic. Only one of these Actors exists in a game world. The SpatialOS Unreal GDK supports both client accessible and server only singletons. For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 ## Cross-server RPCs
 

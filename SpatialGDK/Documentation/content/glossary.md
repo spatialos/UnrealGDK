@@ -242,7 +242,7 @@ It lists the SpatialOS [project name](#project-name) assigned to you by Improbab
 
 >Related
 >
->[Project defnition file - `spatialos.json`](https://docs.improbable.io/reference/13.3/shared/reference/file-formats/spatialos-json)
+>[Project defnition file - `spatialos.json`](https://docs.improbable.io/reference/latest/shared/reference/file-formats/spatialos-json)
 
 ### Queries
 Queries allow [workers](#workers) to get information about the [world](#spatialos-world) outside the region they’re [interested in](#interest). For more information, see [queries (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#queries).
@@ -266,7 +266,7 @@ SpatialOS uses the schema to generate code. You can use this generated code in y
 > * [Schema reference (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/schema/reference)
 
 ### `spatial` command-line tool (CLI)
-The `spatial` command-line tool (also known as the “CLI”) provides a set of commands that you use to interact with a [SpatialOS project (SpatialOS documentation)](https://docs.improbable.io/reference/13.3/shared/reference/project-structure#structure-of-a-spatialos-project). Among other things, you use it to [deploy](#deployment) your game (using [`spatial local launch` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch) or [`spatial cloud launch` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-cloud-launch)). You can run the CLI commands `spatial build` and `spatial local launch` from the [GDK toolbar]({{urlRoot}}/content/toolbars.md#spatialos-gdk-for-unreal-toolbar) in the Unreal Editor.
+The `spatial` command-line tool (also known as the “CLI”) provides a set of commands that you use to interact with a [SpatialOS project (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/reference/project-structure#structure-of-a-spatialos-project). Among other things, you use it to [deploy](#deployment) your game (using [`spatial local launch` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch) or [`spatial cloud launch` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-cloud-launch)). You can run the CLI commands `spatial build` and `spatial local launch` from the [GDK toolbar]({{urlRoot}}/content/toolbars.md#spatialos-gdk-for-unreal-toolbar) in the Unreal Editor.
 
 > Related:
 > 
@@ -323,7 +323,7 @@ If you are using the GDK for Unreal, you do not need to use the Worker SDK or Pl
 > Related:
 >
 > Worker SDK: [Game development tools overview](https://docs.improbable.io/reference/latest/shared/dev-tools-intro)
-> [Platform SDK overview](https://docs.improbable.io/reference/13.3/platform-sdk/introduction)
+> [Platform SDK overview](https://docs.improbable.io/reference/latest/platform-sdk/introduction)
 
 ### SpatialOS world
 
