@@ -71,12 +71,8 @@ In the ThirdPersonShooter project each `TPSCharacter` has a variable tracking he
 
 To resolve this we need to mark the `CurrentHealth` property for replication as you would with normal [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1):
 
-Navigate to the declaration of the `CurrentHealth` variable in the `TPSCharacter.h`(line 175) and change the line:
-```
-UPROPERTY()
-int32 CurrentHealth;
-```
-To
+Navigate to the declaration of the `CurrentHealth` variable in the `TPSCharacter.h` - line 175 and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`:
+
 ```
 UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
 int32 CurrentHealth; 
