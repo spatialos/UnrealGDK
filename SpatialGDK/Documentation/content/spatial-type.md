@@ -19,13 +19,14 @@ Although automatic tagging is enabled by default, you can disable it. As the GDK
 
 
 ## Classes which need manual SpatialType tagging
-You need to manually tag as `SpatialType` any classes which are [Singleton Actors]({{urlRoot}}/content/singleton-actors). These Singleton Actor classes also need `SpatialType` descriptors. 
+You need to manually tag as `SpatialType` any classes which are [Singleton Actors]({{urlRoot}}/content/singleton-actors) or only accessible to [server-workers]({{urlRoot}}/content/glossary#workers). These classes also need `SpatialType` descriptors. 
 
 ### SpatialType descriptors
 You can add descriptors to the `SpatialType` tag to define additional information SpatialOS needs to know about your Unreal class.
 These are:
-`Singleton` - this indicates this class should be treated as a Singleton.
-`ServerOnly` - this indicates this class is only relevant to [server-workers]({{urlRoot}}/content/glossary#workers). You only use this descriptor in conjunction with the Singleton descriptor; it indicates that this class is a Private Singleton.
+
+* `Singleton`: this indicates this class should be treated as a Singleton.
+* `ServerOnly`: this indicates this class is only relevant to [server-workers]({{urlRoot}}/content/glossary#workers). You can use this descriptor in conjunction with the `Singleton` descriptor to indicate that this class is a Private Singleton.
 
 ## How to manually tag classes as SpatialType
 
