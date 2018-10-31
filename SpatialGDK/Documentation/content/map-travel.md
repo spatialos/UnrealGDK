@@ -1,6 +1,8 @@
-# [Map travel](https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling)
+# Map travel
 
-> Note: This doc is intended for advanced users only.
+Before reading this topic, make sure you are familiar with the Unreal documentation on [Map travel](https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling).
+
+> Note: This topic is intended for advanced users only.
 
 ## `APlayerController::ClientTravel`
 
