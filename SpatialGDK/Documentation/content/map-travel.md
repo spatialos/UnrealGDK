@@ -5,7 +5,7 @@ This topic is intended for advanced users only. Before reading this page, make s
 
 <%(Callout type="warn" message="ServerTravel support has not yet been merged but will be coming very soon.")%>
 
-## `APlayerController::ClientTravel`
+## APlayerController::ClientTravel
 
 ### In native Unreal
 `ClientTravel` is the process of changing which [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) a client currently has loaded.
@@ -48,7 +48,7 @@ PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bS
 ### ClientTravel - technical details
 We have made changes to the Unreal Engine to detect if you have SpatialOS networking enabled. If you do, when you specify a ClientTravel URL containing a host to connect to, we create a `SpatialPendingNetGame` instead of a default Unreal `PendingNetGame`. This internally creates a `SpatialNetConnection` which connects you to the specified host. 
 
-## `UWorld::ServerTravel`
+## UWorld::ServerTravel
 > Warning: `ServerTravel` is in an experimental state and we currently only support it in single server-worker configurations.   
 > We don’t support `ServerTravel` in [PIE](https://docs.unrealengine.com/en-us/GettingStarted/HowTo/PIE#playineditor).
 
