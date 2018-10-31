@@ -1,8 +1,8 @@
 # Feature list
 
-The SpatialOS GDK for Unreal Engine works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
+The SpatialOS GDK for Unreal works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
 
-The GDK alpha release (2018-10-25) has the following features:
+The GDK alpha release (2018-10-31) has the following features:
 
 ## Replicated properties, conditions and notifications
 The SpatialOS GDK for Unreal supports:
@@ -34,11 +34,9 @@ The SpatialOS GDK for Unreal also supports:
 
 ## Static subobject replication
 
-The GDK currently supports only one instance of each static subobject type when replicating objects owned by an Actor. This includes Actor's components. For example, multiple Actors can have a `FooComponent` but no Actor can have two `FooComponent`s.
+The GDK currently supports replication of static components owned by an actor. Support for dynamic subobjects is in development.
 
 Properties and RPCs within subobjects have the same support as an Actor’s properties and RPCs.
-
-The GDK does not yet support dynamic subobject replication.
 
 ## Property handover
 
