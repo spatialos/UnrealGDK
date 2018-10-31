@@ -19,7 +19,7 @@ Although automatic tagging is enabled by default, you can disable it. As the GDK
 
 
 ## Classes which need manual SpatialType tagging
-You need to manually tag as `SpatialType` any classes which are [Singleton Actors]({{urlRoot}}/content/singleton-actors) or only accessible to `server-workers`. These classes also need `SpatialType` descriptors. 
+You need to manually tag as `SpatialType` any classes which are [Singleton Actors]({{urlRoot}}/content/singleton-actors) or only accessible to [server-workers]({{urlRoot}}/content/glossary#workers). These classes also need `SpatialType` descriptors. 
 
 ### SpatialType descriptors
 You can add descriptors to the `SpatialType` tag to define additional information SpatialOS needs to know about your Unreal class.
