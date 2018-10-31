@@ -15,7 +15,7 @@ In the GDK you can use `ClientTravel` to move a client-worker from an offline st
 #### Using Receptionist
 The Receptionist is a SpatialOS service which allows you to connect to a deployment via a host and port. You can specify these parameters in command line arguments like in native Unreal and you will connect automatically via receptionist.
 
-To connect to a deployment using `ClientTravel` and the [receptionist flow](LINK), simply call `APlayerController::ClientTravel` with the receptionist IP and port. Make sure to also specify the map that is loaded in the deployment you are connecting to. For example:
+To connect to a deployment using `ClientTravel` and the receptionist flow, simply call `APlayerController::ClientTravel` with the receptionist IP and port. Make sure to also specify the map that is loaded in the deployment you are connecting to. For example:
 
 ```
 FString TravelURL = TEXT("127.0.0.1:7777/DestinationMap");
@@ -52,7 +52,7 @@ We have made changes to the Unreal Engine to detect if you have SpatialOS networ
 ### In native Unreal
 `ServerTravel` in Unreal is the concept of changing the [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) for the server and all connected clients. A common use case is starting a server in a lobby level. Clients connect to this lobby level and choose loadout, character etc. When ready, the server triggers a `ServerTravel`, which transitions the deployment and all clients into the main game level.
 
-When `ServerTravel` is triggered, the server tells all clients to begin to [`ClientTravel`](LINK) to the map specified. If the `ServerTravel` is [seamless](LINK) then the client maintains its connection to the server. If it’s not seamless then all the clients disconnect from the server and reconnect once they have loaded the map. Internally, the server does a similar process: it loads in the new level, usually a game world for all the clients to play on, and begins accepting player spawn requests once ready.
+When `ServerTravel` is triggered, the server tells all clients to begin to [`ClientTravel`](https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling) to the map specified. If the `ServerTravel` is seamless then the client maintains its connection to the server. If it’s not seamless then all the clients disconnect from the server and reconnect once they have loaded the map. Internally, the server does a similar process: it loads in the new level, usually a game world for all the clients to play on, and begins accepting player spawn requests once ready.
 
 ### User guide
 To use `ServerTravel` with the GDK there are a couple of extra steps to ensure the SpatialOS deployment is in the correct state when transitioning maps. 
@@ -110,7 +110,7 @@ The `LaunchClient.bat` (which we have provided) already includes the local host 
 
 
 #### With the Launcher
-When launching a client-worker from the SpatialOS Console using the [Launcher](LINK), the client-worker will connect to SpatialOS by default. It has the `Locator` information required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client-workers will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.  
+When launching a client-worker from the SpatialOS Console using the [Launcher](https://docs.improbable.io/reference/13.3/shared/operate/launcher#the-launcher), the client-worker will connect to SpatialOS by default. It has the `Locator` information required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client-workers will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.  
 
 > Connecting by default when using the launcher is subject to change.
 
