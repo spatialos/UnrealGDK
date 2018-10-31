@@ -43,7 +43,7 @@ In this step, you're going to build the Unreal GDK module dependencies, which th
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2** and check the box next to **Run Dedicated Server**. Then, under Modes, select **New Editor Window (PIE)**.
 1. On the toolbar, click **Play** to run the game.
-1. When you're done, click **Stop** to stop the client and server [workers](({{urlRoot}}/content/glossary#workers)), and click the **Stop** button in the SpatialOS section of the toolbar to stop your local SpatialOS deployment.
+1. When you're done, click **Stop** to stop the [client-workers and server-workers](({{urlRoot}}/content/glossary#workers)), and click the **Stop** button in the SpatialOS section of the toolbar to stop your local SpatialOS deployment.
 
 #### Deploy in the cloud
 
