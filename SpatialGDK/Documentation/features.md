@@ -34,7 +34,7 @@ The SpatialOS Unreal GDK also supports:
 
 ## Static subobject replication
 
-The GDK supports aribtrary subobject replication and multiple subobjects of the same type. Scene Component replication is not yet supported but will be soon.
+The GDK supports static subobject replication. Scene Component replication is not yet supported but will be soon.
 
 Properties and RPCs within subobjects have the same support as an Actor’s properties and RPCs.
 
