@@ -1,13 +1,11 @@
 # Map travel
+<%(TOC)%>
 
-Before reading this topic, make sure you are familiar with the Unreal documentation on [Map travel](https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling).
-
-> Note: This topic is intended for advanced users only.
+This topic is intended for advanced users only. Before reading this page, make sure you are familiar with the Unreal documentation on [Map travel](https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling).
 
 <%(Callout type="warn" message="ServerTravel support has not yet been merged but will be coming very soon.")%>
 
-## ClientTravel
-`APlayerController::ClientTravel`
+## APlayerController::ClientTravel
 
 ### In native Unreal
 `ClientTravel` is the process of changing which [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) a client currently has loaded.
@@ -50,12 +48,12 @@ PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bS
 ### ClientTravel - technical details
 We have made changes to the Unreal Engine to detect if you have SpatialOS networking enabled. If you do, when you specify a ClientTravel URL containing a host to connect to, we create a `SpatialPendingNetGame` instead of a default Unreal `PendingNetGame`. This internally creates a `SpatialNetConnection` which connects you to the specified host. 
 
-## `UWorld::ServerTravel`
+## UWorld::ServerTravel
 > Warning: `ServerTravel` is in an experimental state and we currently only support it in single server-worker configurations.   
 > We don’t support `ServerTravel` in [PIE](https://docs.unrealengine.com/en-us/GettingStarted/HowTo/PIE#playineditor).
 
 ### In native Unreal
-`ServerTravel` in Unreal is the concept of changing the [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) for the server and all connected clients. A common use case is starting a server in a lobby level. Clients connect to this lobby level and choose loadout, character etc. When ready, the server triggers a `ServerTravel`, which transitions the deployment and all clients into the main game level.
+`ServerTravel` in Unreal is the concept of changing the [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) for the server and all connected clients. A common use case is starting a server in a lobby level. Clients connect to this lobby level and choose loadout and character, for example. When ready, the server triggers a `ServerTravel`, which transitions the deployment and all clients into the main game level.
 
 When `ServerTravel` is triggered, the server tells all clients to begin to [`ClientTravel`](https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling) to the map specified. If the `ServerTravel` is seamless then the client maintains its connection to the server. If it’s not seamless then all the clients disconnect from the server and reconnect once they have loaded the map. Internally, the server does a similar process: it loads in the new level, usually a game world for all the clients to play on, and begins accepting player spawn requests once ready.
 
@@ -109,7 +107,7 @@ Launching a [PIE](https://docs.unrealengine.com/en-us/GettingStarted/HowTo/PIE#p
 #### With built clients
 By default, outside of PIE, clients do not connect to a SpatialOS deployment. This is so you can implement your own connection flow, whether that be through an offline login screen, a connected lobby, etc.
 
-To connect a client-worker to a deployment from an offline state, you must use [`ClientTravel`](#clienttravel).
+To connect a client-worker to a deployment from an offline state, you must use [`ClientTravel`](#aplayercontroller-clienttravel).
 
 The `LaunchClient.bat` (which we have provided) already includes the local host IP `127.0.0.1` which means client-workers launched this way will attempt to connect automatically using the [receptionist](#using-receptionist) flow.  
 
