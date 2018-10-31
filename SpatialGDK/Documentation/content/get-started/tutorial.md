@@ -120,7 +120,7 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 
 Notice that the workflow you just used mirrors that of native Unreal.
 
-Because you’ve changed code in a function you now need build your project, generate schema and a new snapshot. To do this:
+Because you’ve changed code in a function you now need to build your project, generate schema and a new snapshot. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
