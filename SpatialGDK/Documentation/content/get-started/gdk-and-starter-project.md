@@ -64,7 +64,7 @@ To run a cloud deployment, you need to prepare your server-worker and client-wor
 
 ### Congratulations!
 
-You've successfully set up and launched the Starter Project and the GDK! If you haven't already, we recommend following our Multiserver Shooter tutorial where you can try out the GDK’s development experience by adding a new feature to a project and test it across two servers.
+You've successfully set up and launched the Starter Project and the GDK! If you haven't already, we recommend following our Multiserver Shooter tutorial where you can try out the GDK’s development experience by adding a new feature to a project, and test it across two servers.
 
 If you have an existing Unreal multiplayer project, you can follow our detailed [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk.md) to get it onto the GDK.
 
