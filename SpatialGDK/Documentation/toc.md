@@ -18,8 +18,7 @@
 - <h3>[- Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
 - <h3>[- Singleton Actors]({{urlRoot}}/content/singleton-actors)
 - <h3>[- Actor property handover]({{urlRoot}}/content/handover-between-server-workers)
-     <!--[//]: # (TODO: Add the following from Josh at <h3> level)
-    [//]: # (- <h3>[- Maps]({{urlRoot}}/TODO)</h3>) !-->
+- <h3>[- Map travel]({{urlRoot}}/content/map-travel)</h3>
 - <h3>[- Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
 - <h3>[- Glossary]({{urlRoot}}/content/glossary)
 
