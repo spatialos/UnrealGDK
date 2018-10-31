@@ -161,6 +161,7 @@ The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these ar
         UCLASS(SpatialType=Singleton)
         ```
         If your game's `GameState` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the Spatial Description text box enter `Singleton`.
+
         ![blueprint-gamestate-singleton]({{assetRoot}}assets/screen-grabs/blueprint-gamestate-singleton.png)
 
     1. If your game's `GameMode` is a `C++` class, locate it's header and mark it as a Private Singleton by modifying the `UCLASS` specifier as shown:
@@ -168,7 +169,8 @@ The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these ar
         UCLASS(SpatialType=(Singleton,ServerOnly))
         ```
        If your game's `GameMode` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the **Spatial Description** text box enter `Singleton,ServerOnly`.
-       ![blueprint-gamemode-singleton-serveronly]({{assetRoot}}assets/screen-grabs/blueprint-gamemode-singleton-serveronly.png)
+
+        ![blueprint-gamemode-singleton-serveronly]({{assetRoot}}assets/screen-grabs/blueprint-gamemode-singleton-serveronly.png)
 
    Marking these Singleton Actor classes as [Spatial Type]({{urlRoot}}/content/glossary#spatial-type) enables them to work with SpatialOS as [schema]({{urlRoot}}/content/glossary#schema) will now be generated for them. 
 
@@ -177,6 +179,7 @@ You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate 
 
 1. In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars), click the **Schema** button to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
 1. On the same toolbar, click the **Snapshot** button which will generate a snapshot for the map currently open in the editor.
+
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars-basic.png)
 
 ### 7. Launch your game
@@ -191,6 +194,7 @@ You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate 
 **Launch** opens up a terminal window and runs two SpatialOS command line interface ([CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) commands: `spatial build build-config` and `spatial local launch`. It is finished when you see `SpatialOS ready` in the terminal window.
 1. On the main Unreal toolbar, click **Play**. 
 1. From the SpatialOS [GDK toolbar]({{urlRoot}}/content/toolbars) click **Inspector** which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your web browser. Here you can see the entities and their components present in your deployment, updates are in real-time.
+
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars-basic.png)
 
 **For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{urlRoot}}/content/glossary#deployment)**
