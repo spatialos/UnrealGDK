@@ -6,6 +6,8 @@ In this tutorial you’ll implement cross server remote procedure calls (RPCs) i
 
 ![]({{assetRoot}}assets/tutorial/cross-server.gif)
 
+The exercise demonstrates that the workflows and iteration speed you’re used to as an Unreal developer are almost entirely unaltered by the GDK: it’s just like regular Unreal!
+
 Let’s get started.
 
 ### Clone the Unreal GDK Third Person Shooter repository
@@ -48,7 +50,7 @@ In this step, you're going to build the Unreal GDK's dependencies.
 
 In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will [cloud deploy](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
 
-1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and set `rows` to `2`. This instructs SpatialOS that you will be launching two server-workers.
+1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and in the `layer_configurations` section set `rows` to `2`. This instructs SpatialOS that you will be launching two server-workers.
 1. In the Unreal Editor, in the Unreal toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2**
 1. Enter the number of servers as **2**
@@ -118,7 +120,7 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 
 Notice that the workflow you just used mirrors that of native Unreal.
 
-Because you’ve changed code in a function you now need build **ThirdPersonShooter.sln**, generate schema and a new snapshot. To do this:
+Because you’ve changed code in a function you now need build your project, generate schema and a new snapshot. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
@@ -137,7 +139,7 @@ Notice that health now decrements when you are shot.
 
 ![]({{assetRoot}}assets/tutorial/inspector.png)
 
-[The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s learn the use the Inspector to visualise the areas that each of our server-workers have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
+[The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s use the Inspector to visualise the areas that each of our server-workers have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
 
 1. Access the inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
 1. In the **View** tab, click the checkboxes next to both of the **UnrealWorkers**. This will cause the Inspector to display the areas that the server-workers have authority over as two coloured zones.
