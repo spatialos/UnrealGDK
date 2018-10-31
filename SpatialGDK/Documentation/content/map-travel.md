@@ -9,7 +9,7 @@ Before reading this topic, make sure you are familiar with the Unreal documentat
 ### In native Unreal
 `ClientTravel` is the process of changing which [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) a client currently has loaded.
 
-### User guide
+### In the GDK
 In the GDK you can use `ClientTravel` to move a client-worker from an offline state to a connected state, where that connection is to a local deployment or a cloud deployment. Alternatively, you can move a connected client-worker to an offline state. You can also change which SpatialOS deployment the client-worker is connected to.  
 
 **Note:** Always make sure your client-worker(s) have the same map loaded as the one which the server-worker(s) are running in your deployment. 
@@ -56,7 +56,7 @@ We have made changes to the Unreal Engine to detect if you have SpatialOS networ
 
 When `ServerTravel` is triggered, the server tells all clients to begin to [`ClientTravel`](https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling) to the map specified. If the `ServerTravel` is seamless then the client maintains its connection to the server. If it’s not seamless then all the clients disconnect from the server and reconnect once they have loaded the map. Internally, the server does a similar process: it loads in the new level, usually a game world for all the clients to play on, and begins accepting player spawn requests once ready.
 
-### User guide
+### In the GDK
 To use `ServerTravel` with the GDK there are a couple of extra steps to ensure the SpatialOS deployment is in the correct state when transitioning maps. 
 
 #### Generate snapshot 
