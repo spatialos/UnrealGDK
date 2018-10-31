@@ -6,6 +6,7 @@
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
+#include "UObject/Package.h"
 #include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>

@@ -2,13 +2,15 @@
 
 #include "Interop/GlobalStateManager.h"
 
+#include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
+
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialSender.h"
-#include "Kismet/GameplayStatics.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
