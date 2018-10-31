@@ -48,7 +48,7 @@ For more information about Actor roles, see [Unreal’s Actor Role documentation
 
 ## GDK authority
 
-As the GDK works with multiple [server-workers]({{urlRoot}}/content/glossary#workers), rather than a single server, authority needs to be dictated by SpatialOS so that authority is shared between server-workers. This means server-workers have authority over some Actors but don’t have authority over other Actors, depending on how SpatialOS assigns authority. **This is a key difference between the GDK and traditional Unreal networking!**
+As the GDK works with multiple [server-workers]({{urlRoot}}/content/glossary#workers), rather than a single server, authority needs to be dictated by SpatialOS so that it is shared between server-workers. This means server-workers have authority over some Actors but don’t have authority over other Actors, depending on how SpatialOS assigns authority. **This is a key difference between the GDK and traditional Unreal networking!**
 
 > We use the term “authoritative” when a server-worker has authority over an Actor and “non-authoritative” when it doesn’t.
 
