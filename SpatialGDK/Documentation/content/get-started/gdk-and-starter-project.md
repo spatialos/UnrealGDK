@@ -14,21 +14,21 @@ Now, you are going to clone the Starter Project repository and then clone the GD
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDKStarterProject.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDKStarterProject.git`
 1. Navigate into `<StarterProjectRepoRoot>\Game\Plugins`. You may need to create the Plugins folder if you don't have any plugins installed yet.
-1.  In a Git Bash terminal window, clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository by running either:
+1.  In a Git Bash terminal window, clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`
 
-**Note** You need to ensure that the root folder of the Unreal GDK repository is called `UnrealGDK` so its path is something like: `<StarterProjectRepoRoot>\Game\Plugins\UnrealGDK\...`
+**Note** You need to ensure that the root folder of the GDK for Unreal repository is called `UnrealGDK` so its path is something like: `<StarterProjectRepoRoot>\Game\Plugins\UnrealGDK\...`
 
 [//]: # (TODO: This whole section below deserves some screenshots to show users what to expect. This was done well on the Unity onobarding docs. Example: https://docs.improbable.io/unity/alpha/content/get-started/get-playing)	
 
 ### Build dependencies 
 
-In this step, you're going to build the Unreal GDK module dependencies, which the Starter Project needs to work with the GDK. You are then going to add the Unreal GDK to the Starter Project.
+In this step, you're going to build the GDK for Unreal module dependencies, which the Starter Project needs to work with the GDK. You are then going to add the GDK for Unreal to the Starter Project.
 
-1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and double-click **`Setup.bat`**. You may be prompted to sign into your SpatialOS account if you have not already.
+1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository, and double-click **`Setup.bat`**. You may be prompted to sign into your SpatialOS account if you have not already.
 1. Set the Starter Project to work with the Unreal Engine fork you cloned and installed earlier. To do this:
-    1. In File Explorer, navigate to the root directory of the Unreal GDK Starter Project repository, and then to the **Game** directory within it.
+    1. In File Explorer, navigate to the root directory of the GDK for Unreal Starter Project repository, and then to the **Game** directory within it.
     1. Right-click **StarterProject.uproject** and select **Switch Unreal Engine version**.
     1. Select the path to the Unreal Engine fork you cloned earlier.
 1. In the same directory, open **StarterProject.sln** with Visual Studio.

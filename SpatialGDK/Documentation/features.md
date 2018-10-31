@@ -5,7 +5,7 @@ The SpatialOS GDK for Unreal works by approximating SpatialOS entities to Unreal
 The GDK alpha release (2018-10-31) has the following features:
 
 ## Replicated properties, conditions and notifications
-The SpatialOS Unreal GDK supports:
+The SpatialOS GDK for Unreal supports:
 
 * All types that native Unreal replicates.
 * All replication conditions (such as `COND_InitialOnly` and `COND_OwnerOnly`, for example) but note that these are not optimized.
@@ -22,12 +22,12 @@ The SpatialOS GDK for Unreal supports the following RPCs:
 
 In addition, there is also support for a new RPC type called [Cross-server]({{urlRoot}}/features#cross-server-rpcs).
 
-The SpatialOS Unreal GDK does **not** support the following RPC:
+The SpatialOS GDK for Unreal does **not** support the following RPC:
 
 * Reliable NetMulticast
     > If you use a reliable NetMulticast RPC, the GDK downgrades it to unreliable.
 
-The SpatialOS Unreal GDK also supports:
+The SpatialOS GDK for Unreal also supports:
 
 * Replicated Blueprint events
 * RPC validation
@@ -44,7 +44,7 @@ Actor property handover is a new feature we’re introducing with the GDK. It re
 
 ## Singleton Actors
 
-`Singleton Actors` is a new term that describes Actors which contain global state and logic.  Only one of these Actors exists in a game world. The SpatialOS Unreal GDK supports both client accessible and server only singletons (respectively known as public and private singletons). For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
+`Singleton Actors` is a new term that describes Actors which contain global state and logic.  Only one of these Actors exists in a game world. The SpatialOS GDK for Unreal supports both client accessible and server only singletons (respectively known as public and private singletons). For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 ## Cross-server RPCs
 
