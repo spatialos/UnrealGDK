@@ -14,21 +14,21 @@ Now, you are going to clone the Starter Project repository and then clone the GD
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDKStarterProject.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDKStarterProject.git`
 1. Navigate into `<StarterProjectRepoRoot>\Game\Plugins`. You may need to create the Plugins folder if you don't have any plugins installed yet.
-1.  In a Git Bash terminal window, clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository by running either:
+1.  In a Git Bash terminal window, clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`
 
-**Note** You need to ensure that the root folder of the Unreal GDK repository is called `UnrealGDK` so its path is something like: `<StarterProjectRepoRoot>\Game\Plugins\UnrealGDK\...`
+**Note** You need to ensure that the root folder of the GDK for Unreal repository is called `UnrealGDK` so its path is something like: `<StarterProjectRepoRoot>\Game\Plugins\UnrealGDK\...`
 
 [//]: # (TODO: This whole section below deserves some screenshots to show users what to expect. This was done well on the Unity onobarding docs. Example: https://docs.improbable.io/unity/alpha/content/get-started/get-playing)	
 
 ### Build dependencies 
 
-In this step, you're going to build the Unreal GDK module dependencies, which the Starter Project needs to work with the GDK. You are then going to add the Unreal GDK to the Starter Project.
+In this step, you're going to build the GDK for Unreal module dependencies, which the Starter Project needs to work with the GDK. You are then going to add the GDK for Unreal to the Starter Project.
 
-1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and double-click **`Setup.bat`**. You may be prompted to sign into your SpatialOS account if you have not already.
+1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository, and double-click **`Setup.bat`**. You may be prompted to sign into your SpatialOS account if you have not already.
 1. Set the Starter Project to work with the Unreal Engine fork you cloned and installed earlier. To do this:
-    1. In File Explorer, navigate to the root directory of the Unreal GDK Starter Project repository, and then to the **Game** directory within it.
+    1. In File Explorer, navigate to the root directory of the GDK for Unreal Starter Project repository, and then to the **Game** directory within it.
     1. Right-click **StarterProject.uproject** and select **Switch Unreal Engine version**.
     1. Select the path to the Unreal Engine fork you cloned earlier.
 1. In the same directory, open **StarterProject.sln** with Visual Studio.
@@ -43,7 +43,7 @@ In this step, you're going to build the Unreal GDK module dependencies, which th
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2** and check the box next to **Run Dedicated Server**. Then, under Modes, select **New Editor Window (PIE)**.
 1. On the toolbar, click **Play** to run the game.
-1. When you're done, click **Stop** to stop the client [worker](https://docs.improbable.io/reference/latest/shared/glossary), and click the **Stop** button in the SpatialOS section of the toolbar to stop your local SpatialOS deployment.
+1. When you're done, click **Stop** to stop the [client-workers and server-workers](({{urlRoot}}/content/glossary#workers)), and click the **Stop** button in the SpatialOS section of the toolbar to stop your local SpatialOS deployment.
 
 #### Deploy in the cloud
 
@@ -64,6 +64,11 @@ To run a cloud deployment, you need to prepare your server-worker and client-wor
 
 ### Congratulations!
 
-You've successfully set up and launched the Starter Project and the GDK! To start developing, we recommend following our Multiserver Shooter tutorial where you can try out the GDK’s development experience by adding a new feature to the Starter Project and test it across two servers.
+You've successfully set up and launched the Starter Project and the GDK! If you haven't already, we recommend following our Multiserver Shooter tutorial where you can try out the GDK’s development experience by adding a new feature to a project, and test it across two servers.
 
-If you have an existing Unreal multiplayer project, you can follow our detailed [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk.md) to get it onto the GDK! 
+If you have an existing Unreal multiplayer project, you can follow our detailed [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk.md) to get it onto the GDK.
+
+You are now ready to add multiserver functionality on top of the Starter Project. Check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
+
+We will be releasing more tutorials and examples as the GDK matures. Stay tuned!
+

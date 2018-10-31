@@ -1,10 +1,10 @@
 # GDK for Unreal directory structure
-The table below lists the contents of the Unreal GDK repository after running `Setup.bat`.
+The table below lists the contents of the GDK for Unreal repository after running `Setup.bat`.
 
 | Directory | Purpose
 |-----------|---------
 | `SpatialGDK/Binaries/ThirdParty/Improbable/` | Not tracked in git. This directory contains the required binaries for your Unreal project to work with the SpatialOS UnrealGDK. These files are generated when running `Setup.bat`.
-| `SpatialGDK/Build/core_sdk/` | Not tracked in git. Contains the [C API worker SDK](https://docs.improbable.io/reference/latest/capi/introduction) dependencies used by the Unreal GDK to serialize data to and from SpatialOS.
+| `SpatialGDK/Build/core_sdk/` | Not tracked in git. Contains the [C API worker SDK](https://docs.improbable.io/reference/latest/capi/introduction) dependencies used by the GDK to serialize data to and from SpatialOS.
 | `SpatialGDK/Build/Programs/` | Contains the source and project files for the executables used when building the GDK.
 | `SpatialGDK/Build/Scripts/` | Contains the helper scripts that allow you to build either a server-worker or a client-worker.
 | `SpatialGDK/Documentation` | Contains the documentation for the GDK.

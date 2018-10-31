@@ -1,8 +1,6 @@
 # Actor property handover between SpatialOS servers
 ## Overview
 
-<%(TOC)%>
-
 In Unreal’s native client-server architecture, your game server holds the canonical state of the whole game world. As there is a single game server, there are Actor properties that the server doesn’t need to share with any other server or clients. These properties only need to exist in the game server’s local process space.
 
 In SpatialOS games, the work of the server is spread across several servers (known as “server-workers” in SpatialOS). (Note that in SpatialOS, game clients are “client-workers” - there’s more information on [workers](https://docs.improbable.io/reference/latest/shared/concepts/workers) in the SpatialOS documentation.)
