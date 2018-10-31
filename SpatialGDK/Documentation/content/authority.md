@@ -101,4 +101,4 @@ Actor on **non-owning client-worker**:
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
 
-A `PlayerController` possessing different `Pawn`s would change their role as expected; the newly-possessed Pawn would become an autonomous proxy on the client-worker while older `Pawn` will become a simulated proxy.
+A `PlayerController` possessing different `Pawn`s would change their role as expected; the newly-possessed Pawn will become an autonomous proxy on the client-worker while the older `Pawn` will become a simulated proxy.
