@@ -16,11 +16,11 @@ In addition, Unreal Actors also generate (where relevant):
 
 * Client/Server/CrossServer RPC schema components (for example, _MyActorClientRPCS_)- Each RPC category has its own SpatialOS component containing all the Actor’s RPCs for that category converted into SpatialOS commands.
 * NetMulticast RPC schema component (for example, _MyActorNetMulticastRPCS_)- Contains all the multicast RPCs callable on this Actor, converted into SpatialOS [events (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#event).
-* Static subobject schema components - For each static subobject present on this Actor, additional components are generated which wrap the replicated and handover properties defined in the common components mentioned above.
+* Static sub-object schema components - For each static sub-object present on this Actor, additional schema components are generated which wrap the replicated and handover properties defined in the components above.
 
-> Note: We don’t currently support dynamic components.
+> Note: The GDK doesn't currently support dynamic components.
 
-When comparing the two network stacks, it’s useful to keep the following mappings in mind:
+When comparing the two network stacks, it’s useful to keep the following mappings between Unreal terms and SpaitalOS terms in mind:
 
 * Unreal Actor <-> SpatialOS entity
 * Unreal Replicating Property <-> SpatialOS field
