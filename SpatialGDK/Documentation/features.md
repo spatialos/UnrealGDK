@@ -2,7 +2,7 @@
 
 The SpatialOS GDK for Unreal Engine works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
 
-The GDK alpha release (2018-10-25) has the following features:
+The GDK alpha release (2018-10-31) has the following features:
 
 ## Replicated properties, conditions and notifications
 The SpatialOS Unreal GDK supports:
@@ -34,7 +34,7 @@ The SpatialOS Unreal GDK also supports:
 
 ## Static subobject replication
 
-The GDK currently supports only one instance of each static subobject type when replicating objects owned by an Actor. This includes Actor's components. For example, multiple Actors can have a `FooComponent` but no Actor can have two `FooComponent`s.
+The GDK supports aribtrary subobject replication and multiple subobjects of the same type. Scene Component replication is not yet supported but will be soon.
 
 Properties and RPCs within subobjects have the same support as an Actor’s properties and RPCs.
 
@@ -44,9 +44,13 @@ The GDK does not yet support dynamic subobject replication.
 
 Actor property handover is a new feature we’re introducing with the GDK. It replicates server-side properties between servers so Unreal games can take advantage of the SpatialOS cloud server architecture. For more information, see [the Actor property handover]({{urlRoot}}/content/handover-between-server-workers) documentation.
 
+## Server only Actors
+
+Actors are able to be specified as "Server only", meaning replication of these Actors will only happen between server-workers. For more information, see [the Spatial Type]({{urlRoot}}/content/spatial-type#spatialtype-descriptors) documentation
+
 ## Singleton Actors
 
-`Singleton Actors` is a new term that describes Actors which contain global state and logic.  Only one of these Actors exists in a game world. The SpatialOS Unreal GDK supports both client accessible and server only singletons (respectively known as public and private singletons). For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
+`Singleton Actors` is a new term that describes Actors which contain global state and logic.  Only one of these Actors exists in a game world. The SpatialOS Unreal GDK supports both client accessible and server only singletons. For more information see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 ## Cross-server RPCs
 
