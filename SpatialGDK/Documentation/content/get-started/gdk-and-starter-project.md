@@ -68,7 +68,7 @@ You've successfully set up and launched the Starter Project and the GDK! If you 
 
 If you have an existing Unreal multiplayer project, you can follow our detailed [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk.md) to get it onto the GDK.
 
-You are now ready to add multiserver functionality on top of the Starter Project. Check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [singletons]({{urlRoot}}/content/singleton-actors).
+You are now ready to add multiserver functionality on top of the Starter Project. Check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 We will be releasing more tutorials and examples as the GDK matures. Stay tuned!
 
