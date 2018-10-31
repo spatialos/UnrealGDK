@@ -95,4 +95,4 @@ Actor on **non-owning client-worker**:
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
 
-A `PlayerController` possessing different Pawns would change authority as expected; the client would gain authority over the newly-possessed Pawn while losing authority over the older Pawn.
+A `PlayerController` possessing different Pawns would change authority as expected; the client-worker would gain authority over the newly-possessed Pawn while losing authority over the older Pawn.
