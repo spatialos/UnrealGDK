@@ -9,8 +9,7 @@ Before porting your project:
 * If you haven't done this already, install SpatialOS and the GDK's dependencies and clone the SpatialOS Unreal Engine fork by following:
     * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     * [Getting started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-* If you haven't done this already, clone the GDK repository into your `Plugins` folder by following the steps for cloning the GDK in:
-    *  [Set up the GDK and Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project) (You only need to clone the GDK repository, not the `StarterProject` repository.)  
+* If you haven't done this already, clone the GDK repository by following [our setup guide]({{urlRoot}}/content/get-started/gdk-and-starter-project). You will copy some necessary files from Starter Project over to yours.
 
 * Make sure your Spatial CLI is up to date: from a terminal window, run the command `spatial update`. 
 <!-- // TODO: Update the set up link when ready -->
