@@ -31,7 +31,7 @@ Before porting your project:
     `\StarterProject\Game\StarterProject.uproject`
     
     > This step is essential as the `spatial` folder must be located in the directory above your `<GameRoot>`. This is so that the GDK scripts work correctly with Unreal.
-1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the `StarterProject` [repository](https://github.com/spatialos/UnrealGDKStarterProject). 
+1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the `StarterProject` repository that you cloned earlier in the [Before you start](#before-you-start) section.
 
     To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders below to your `<ProjectRoot>`:  
 
