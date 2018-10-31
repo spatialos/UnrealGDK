@@ -6,11 +6,13 @@
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
+
+#include "EngineClasses/SpatialNetDriver.h"
+#include "EngineClasses/SpatialPackageMapClient.h"
 
 void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 {
