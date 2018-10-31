@@ -7,7 +7,7 @@ If you’ve used the pre-alpha GDK you may be interested in these latest changes
 - Upgraded to the new SpatialOS load balancer, providing fast multi-worker iteration.
 - Removed the incremental build time overhead of using the GDK by implementing dynamic type bindings, avoiding the need to generate certain interop code. You can find more info [here]({{urlRoot}}/content/dynamic-typebindings)
 - Schema generation for all classes is now the default.
-- Clients no longer automatically connect to a deployment, unless you pass it a commandline argument. For example: 
+- Clients no longer automatically connect to a deployment when not in PIE, unless you pass it a commandline argument. For example: 
 `"%UNREAL_HOME%\Engine\Binaries\Win64\UE4Editor-Win64-Debug.exe" "%~dp0%PROJECT_PATH%\%GAME_NAME%.uproject" 127.0.0.1`
 - Startup actors are now saved into the snapshot.
 - Various stability fixes.
