@@ -3,6 +3,7 @@ The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine 4 (UE4) 
 
 The GDK offers:
 * **Multiserver support**: leveraging our cloud platform [SpatialOS (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/concepts/spatialos), the GDK allows you to run multiple game servers in a single game instance so your Unreal-developed games can have more players, more Actors, and better gameplay systems than previously possible.
+
 * **An Unreal-native experience:** keeping traditional workflows and networking APIs that Unreal Engine developers are familiar with, the GDK introduces new native-feeling concepts that turn a single-server engine into a distributed one. This enables the GDK to retain the functionality of the networking features which Unreal offers out of the box, including transform synchronization, character movement, and map travel.
 * **An easy onboarding experience**: we have made sure it’s easy to get started with the GDK by including a Starter Project which you can use as a tour of SpatialOS and a base for your own game, as well as a guide to porting your current multiplayer Unreal game to run on SpatialOS.
 
@@ -20,7 +21,7 @@ We are releasing the GDK in [alpha](https://docs.improbable.io/reference/latest/
 
 Given this, for now we recommend using the GDK in projects in the early production or prototype stage. This ensures that your project's requirements are in line with the GDK's timeline.
 
-Although the GDK is not fully ready in terms of performance and stability yet, this is a great time to get involved and shape it with us. We are committed to improving the GDK rapidly, aiming for a beta release in Q1 2019.
+Although the GDK is not fully ready in terms of performance, stability and documentation yet, this is a great time to get involved and shape it with us. We are committed to improving the GDK rapidly, aiming for a beta release in Q1 2019.
 
 See the [full feature list](https://docs.improbable.io/unreal/latest/features) on the documentation website.
 

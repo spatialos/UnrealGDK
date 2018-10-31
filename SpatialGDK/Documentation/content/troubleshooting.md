@@ -40,4 +40,10 @@ Validate that the SpatialOS entity that represents your Actor appears in the Ins
 
 **Q:** When I build my project, I get the following error: `Unknown class specifier 'SpatialType'`.
 
-**A:** `SpatialType` is a new class specifier for tagging of classes to replicate to SpatialOS. To stop the error message, rebuild the `Unreal Header Tool` using the `Development` configuration.
+**A:** `SpatialType` is a new class specifier for tagging of classes to replicate to SpatialOS. This message likely means that you have not built our UE4 fork, or pointed your project to use it. Follow the steps [here]({{urlRoot}}/content/get-started/introduction) to ensure the GDK is set up correctly.
+
+------
+
+**Q:** When I launch my SpatialOS deployment, I receive error messages similar to: `uses component ID 100005 which conflicts with components defined elsewhere.`
+
+**A:** This means you were using the GDK since pre-alpha. To fix the issue, delete the contents of your `spatial/schema` folder, run `Setup.bat` again in the GDK folder, and generate the schemas again. You may also need to update your streaming queries in `spatialos.json`. Refer to our [StarterProject repo](https://github.com/spatialos/UnrealGDKStarterProject) to see an example.
