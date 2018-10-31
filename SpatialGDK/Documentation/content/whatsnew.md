@@ -1,4 +1,4 @@
-# What's New in Alpha?
+# What's new in alpha?
 
 If you’ve used the pre-alpha GDK you may be interested in these latest changes.
 
@@ -20,6 +20,6 @@ If you’ve used the pre-alpha GDK you may be interested in these latest changes
 - Facilitated communication with actors for which another server is authoritative, using cross-server RPCs. For more info: <link goes here>
 - Implemented `ClientTravel`, allowing clients to be moved between deployments, regardless of whether they are local or cloud.
 - Implemented `ServerTravel`, allowing managed servers and external servers (run outside of Unreal Editor) to move between maps and take clients with them.
-- Singletons can [now be defined](({{urlRoot}}/content/singleton-actors)) as “server only”.
+- Singletons can [now be defined]({{urlRoot}}/content/singleton-actors) as “server only”.
 - Initial limited support for Ability System Component on single server only.
 
