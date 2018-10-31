@@ -28,8 +28,7 @@
 - <h3>Reference</h3>
 - <h3>[- Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>[- Snapshots]({{urlRoot}}/content/generating-a-snapshot)
-<!--[//]: # (TODO: Add the following from Sahil at <h3> level)
-    [//]: # (- <h3>[- Authority]({{urlRoot}}/TODO)</h3>) !-->
+- <h3>[- Authority]({{urlRoot}}/content/authority)
 - <h3>[- Helper scripts]({{urlRoot}}/content/helper-scripts)
 - <h3>[- Directory structure]({{urlRoot}}/content/directory-structure)
 
