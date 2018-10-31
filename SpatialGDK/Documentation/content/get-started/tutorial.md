@@ -80,7 +80,7 @@ int32 CurrentHealth;
 
 We have now marked this property for replication using the `OnRep_CurrentHealth` function which we’ll implement in a moment.
 
-Next we need to update the [GetLifetimeReplicatedProps](https://wiki.unrealengine.com/Replication#Actor_Property_Replication) implementation of the TPSCharacter to specify the [replication conditions](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/Conditions) for the `CurrentHealth` variable:
+Next we need to update the [GetLifetimeReplicatedProps](https://wiki.unrealengine.com/Replication#Actor_Property_Replication) implementation of the `TPSCharacter` to specify the [replication conditions](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/Conditions) for the `CurrentHealth` variable:
 
 Navigate to `TPSCharacter.cpp` line 194 and add the following lines:
 
