@@ -122,7 +122,7 @@ void ATPSCharacter::OnRep_CurrentHealth()
 
 As you probably have noticed, we have just added code exactly as you would in native Unreal Actor replication. The only extra thing we need to do to enable replication is to generate the [schemas]({{urlRoot}}/content/glossary#schema) and the [snapshot]({{urlRoot}}/content/glossary#snapshot) using the Unreal GDK toolbar. 
 
-Now you can build your game and run. The `CurrentHealth` and the health UI of the actor being shot should go down as intended. 
+Now you can build your game and run. The `CurrentHealth` and the health UI of the Actor being shot should go down as intended. 
 
 ### Enable cross server RPCs
 
