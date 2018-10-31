@@ -2,6 +2,7 @@
 
 #include "Interop/SpatialReceiver.h"
 
+#include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 
