@@ -67,7 +67,7 @@ In this section you’ll run a [local deployment](https://docs.improbable.io/ref
 
 ### Replicate health changes
 
-In the ThirdPersonShooter project each `TPSCharacter` has a variable tracking health called `CurrentHealth`. The health deducted on the server when the character is being shot, however as the variable is not setup for replication it does not replicate to the client. Therefore the characters health meter does not update on the client even though the health variable is being depleted on the server. 
+In the ThirdPersonShooter project each `TPSCharacter` has a variable tracking health called `CurrentHealth`. The health is deducted on the server when the character is being shot, however as the variable is not setup for replication it does not replicate to the client. Therefore the characters health meter does not update on the client even though the health variable is being depleted on the server. 
 
 To resolve this we need to mark the `CurrentHealth` property for replication as you would with normal [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1):
 
