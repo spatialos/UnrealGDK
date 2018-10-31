@@ -93,14 +93,14 @@ DOREPLIFETIME_CONDITION(ATPSCharacter, CurrentHealth, COND_AutonomousOnly);
 
 Finally, we need to implement the `OnRep_CurentHealth` function so that we can update the player health UI when the `CurrentHealth` variable is replicated:
 
-Add the public UFUNCTIONvoid OnRep_CurrentHealth() to `TPSCharacter.h`:
+Add the public `UFUNCTION` `void OnRep_CurrentHealth()` to `TPSCharacter.h`:
 
 ```	
 UFUNCTION()
 void OnRep_CurrentHealth();
 ```
 
-At line 461 int `TPSCharacter.cpp`, add the following function:
+In your `TPSCharacter.cpp` add the public function definition:
 
 ```
 void ATPSCharacter::OnRep_CurrentHealth()
