@@ -116,7 +116,7 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
     }
     ```
 
-The workflow you just used mirrors that of native Unreal.
+Notice that the workflow you just used mirrors that of native Unreal.
 
 Because you’ve changed code in a function you now need build **ThirdPersonShooter.sln**, generate schema and a new snapshot. To do this:
 
