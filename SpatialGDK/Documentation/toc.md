@@ -10,7 +10,7 @@
         - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
 - <h3>[- Feature list]({{urlRoot}}/features)</h3>
     <!--[//]: # (TODO: Add the following from Sam at <h3> level)
-    [//]: # (- <h3>[- What's new]({{urlRoot}}/TODO)</h3>) !-->
+    [//]: # (- <h3>[- What's new]({{urlRoot}}/content/whatsnew)</h3>) !-->
 
  ***
 - <h3>Concepts and terminology</h3>
