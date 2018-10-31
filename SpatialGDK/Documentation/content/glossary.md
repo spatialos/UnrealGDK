@@ -266,7 +266,7 @@ The `spatial` command-line tool (also known as the “CLI”) provides a set of 
 
 
 ### SpatialOS component
-> Not to be confused with [Unreal Components (Unreal documentation](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors/Components)
+> Not to be confused with [Unreal Actor Components (Unreal documentation](https://docs.unrealengine.com/en-us/Programming/UnrealArchitecture/Actors/Components)
 
 A [SpatialOS entity](#spatialos-entity) is defined by a set of components. Common components in a game might be things like `Health`, `Position`, or `PlayerControls`. They're the storage mechanism for data about the [world](#spatialos-world) that you want to be shared between [workers](#worker).
 Components can contain:
