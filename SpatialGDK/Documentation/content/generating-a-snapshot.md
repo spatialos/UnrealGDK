@@ -1,4 +1,7 @@
 # Snapshots
+
+<%(TOC)%>
+
 A snapshot is a representation of the state of a [SpatialOS world]({{urlRoot}}/content/glossary#spatialos-world) at a given point in time. It stores each [persistent]({{urlRoot}}/content/glossary##persistence) [SpatialOS entity]({{urlRoot}}/content/glossary##spatialos-entity) and the values of their [SpatialOS components]({{urlRoot}}/content/glossary#spatialos-component)' [properties (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#property).
 
 You need a snapshot as the starting point (using an “initial snapshot”) for your [SpatialOS world]({{urlRoot}}/content/glossary##spatialos-world) when you [deploy your game]({{urlRoot}}/content/glossary##deployment) either locally or to the cloud. In the GDK, you need to generate a snapshot when you make certain changes to your project configuration; see [How to generate a snapshot](#how-to-generate-a-snapshot), below.
