@@ -10,7 +10,7 @@ To get going with the GDK, you need the right hardware and software.
 * Refer to the [SpatialOS network settings (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/get-started/requirements#network-settings). 
 
 ### Software
-To build the SpatialOS Unreal GDK module you need the following installed:
+To build the SpatialOS GDK for Unreal module you need the following installed:
 
 * Windows 10, with Command Prompt or PowerShell as your terminal
 * <a href="https://gitforwindows.org" data-track-link="Clicked GIT for Windows|product=Docs|platform=Win|label=Win" target="_blank">Git for Windows</a>
