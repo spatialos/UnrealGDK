@@ -5,7 +5,15 @@ To work with authority in the GDK, it’s useful to refresh on authority in Unre
 
 In native-Unreal networking, the single server has absolute authority over all replicated Actors,  while clients have only proxies of Actors. Unreal models this using the `Role` and `RemoteRole` fields within an Actor.
 
-For the majority of use-cases, these fields have the values:
+There are 3 main types of networking Roles in Unreal:
+
+* `ROLE_Authority` - The authoritative version of the Actor.
+* `ROLE_SimulatedProxy` - Locally simulates the state of the Actor from the server.
+* `ROLE_AutonomousProxy` - Locally simulates the state of the Actor but with the ability to execute RPCs on the Actor. This is usually reserved for Actors that are "owned" by a client
+
+For more information about network roles, see [Unreal’s Network Role documentation](https://wiki.unrealengine.com/Replication#A_Guide_To_Network_Roles).
+
+For the majority of use cases in native Unreal, these fields have the values:
 
 Actor on **server**:
 
@@ -23,7 +31,7 @@ Actors that have an [owning connection (Unreal documentation)](https://docs.unre
 * It is a `Pawn` which is possessed by a `PlayerController` that has an associated `NetConnection`
 * Its `Owner` is set to an Actor that has an owning connection.
 
-For example, if a client has a `PlayerController` which possesses a `Character` which is holding a gun, all three (the gun, `Character` and `PlayerController`) have an owning connection.
+For example, if a client has a `PlayerController` which possesses a `Character` which is holding a gun (whose `Owner` is the `Character`), all three (the gun, `Character` and `PlayerController`) have an owning connection.
 
 In any of these cases, Unreal authority looks like:
 
@@ -42,15 +50,13 @@ Actor on **non-owning client**:
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
 
-`ROLE_AutonomousProxy` indicates that this Actor is owned by a client and can receive client RPCs called on the Actor, as well as trigger server RPCs which are handled by the server. For more information on owning connection see the [Unreal doccumentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections)
-
-For more information about Actor roles, see [Unreal’s Actor Role documentation](https://wiki.unrealengine.com/Replication#A_Guide_To_Network_Roles).
+For more information on owning connection see the [Unreal documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections)
 
 ## GDK authority
 
-As the GDK works with multiple [server-workers]({{urlRoot}}/content/glossary#workers), rather than a single server, authority needs to be dictated by SpatialOS so that authority is shared between server-workers. This means server-workers have authority over some Actors but don’t have authority over other Actors, depending on how SpatialOS assigns authority. **This is a key difference between the GDK and traditional Unreal networking!**
+As the GDK works with multiple [server-workers]({{urlRoot}}/content/glossary#workers), rather than a single server, authority needs to be dictated by SpatialOS so that authority is shared between server-workers. This means server-workers have authority over some Actors but don’t have authority over other Actors, depending on how SpatialOS assigns authority. **This is a key difference between the GDK and native Unreal networking!**
 
-> We use the term “authoritative” when a server-worker has authority over and Actor and “non-authoritative” when it doesn’t.
+> We use the term “authoritative” when a server-worker has authority over an Actor and “non-authoritative” when it doesn’t.
 
 In the GDK, a server-worker is authoritative over an Actor if it has authority over the [schema]({{urlRoot}}/content/glossary#schema) [component]({{urlRoot}}/content/glossary#spatialos-component) `Position`). 
 
