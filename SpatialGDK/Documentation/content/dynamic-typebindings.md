@@ -8,14 +8,14 @@ The [schema]({{urlRoot}}/content/glossary#schema) used in `Dynamic Typebindings`
 
 For Unreal Actors and sub-objects:
 
-* Replicated property schema component (for example, _MyActor_): Contains all the replicated properties (including inherited) present on the object, except those tagged with the `COND_OwnerOnly` or `COND_AutonomousOnly` replication condition.
-* Owner-only schema component (for example, _MyActorOwnerOnly_): Contains all the `COND_OwnerOnly` or `COND_AutonomousOnly` replicated properties excluded from the replicated property schema component.
-* Handover schema component (for example, _MyActorHandover_): Contains all handover properties (including inherited) present on the object.
+* Replicated property schema component (for example, `_MyActor_`): Contains all the replicated properties (including inherited) present on the object, except those tagged with the `COND_OwnerOnly` or `COND_AutonomousOnly` replication condition.
+* Owner-only schema component (for example, `_MyActorOwnerOnly_`): Contains all the `COND_OwnerOnly` or `COND_AutonomousOnly` replicated properties excluded from the replicated property schema component.
+* Handover schema component (for example, `_MyActorHandover_`): Contains all handover properties (including inherited) present on the object.
 
 In addition, Unreal Actors also generate (where relevant):
 
-* Client/Server/CrossServer RPC schema components (for example, _MyActorClientRPCS_)- Each RPC category has its own SpatialOS component containing all the Actor’s RPCs for that category converted into SpatialOS commands.
-* NetMulticast RPC schema component (for example, _MyActorNetMulticastRPCS_)- Contains all the multicast RPCs callable on this Actor, converted into SpatialOS [events (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#event).
+* Client/Server/CrossServer RPC schema components (for example, `_MyActorClientRPCS_`)- Each RPC category has its own SpatialOS component containing all the Actor’s RPCs for that category converted into SpatialOS commands.
+* NetMulticast RPC schema component (for example, `_MyActorNetMulticastRPCS_`)- Contains all the multicast RPCs callable on this Actor, converted into SpatialOS [events (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#event).
 * Static sub-object schema components - For each static sub-object present on this Actor, additional schema components are generated which wrap the replicated and handover properties defined in the components above.
 
 > Note: The GDK doesn't currently support dynamic components.
