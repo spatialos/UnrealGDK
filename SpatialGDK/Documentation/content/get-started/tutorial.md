@@ -18,19 +18,19 @@ Clone the Unreal GDK Third Person Shooter repository and checkout the tutorial b
 
 This repository contains a version of Unreal’s Third Person template that has been ported to the SpatialOS GDK. It includes a character model with a gun and hit detection logic.
 
-> A completed version of this tutorial is available in the `tutorial-complete` branch.
+> **Note:**  A completed version of this tutorial is available in the `tutorial-complete` branch.
 
 ### Move the GDK into the `Plugins` directory
 
 
 1. Navigate to `UnrealGDKThirdPersonShooter\Game` and create a `Plugins` directory.
-2. In a terminal window,  change directory to the  `Plugins` directory and clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository using one of the following commands:
+1. In a terminal window,  change directory to the  `Plugins` directory and clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository using one of the following commands:
 
 **SSH:**  `git clone git@github.com:spatialos/UnrealGDK.git`
 
 **HTTPS:** `git clone https://github.com/spatialos/UnrealGDK.git`
 
-> You need to ensure that the root folder of the Unreal GDK repository is called `UnrealGDK` so its path is: `UnrealGDKThirdPersonShooter\Game\Plugins\UnrealGDK\`.
+> **Note:**  You need to ensure that the root folder of the Unreal GDK repository is called `UnrealGDK` so its path is: `UnrealGDKThirdPersonShooter\Game\Plugins\UnrealGDK\`.
 
 ### Build Dependencies 
 
@@ -42,19 +42,96 @@ In this step, you're going to build the Unreal GDK's dependencies.
 1. In the same directory, open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
 1. Open **ThirdPersonShooter.uproject** in the Unreal Editor.
-2. In the [GDK toolbar (SpatialOS documentation)]({{urlRoot}}/content/toolbars), click [`Schema` (SpatialOS documentation)]({{urlRoot}}/content/glossary#schema) to generate schema and then [`Snapshot` (SpatialOS documentation)]({{urlRoot}}/content/glossary#snapshot) to generate a snapshot.
+1. In the [GDK toolbar (SpatialOS documentation)]({{urlRoot}}/content/toolbars), click [`Schema` (SpatialOS documentation)]({{urlRoot}}/content/glossary#schema) to generate schema and then [`Snapshot` (SpatialOS documentation)]({{urlRoot}}/content/glossary#snapshot) to generate a snapshot.
 
 ### Deploy the project locally
 
 In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will [cloud deploy](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
 
-1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and set `rows` to `2`. This instructs SpatialOS that we will be launching two server-workers.
+1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and set `rows` to `2`. This instructs SpatialOS that you will be launching two server-workers.
 1. In the Unreal Editor, in the Unreal toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2**
 1. Enter the number of servers as **2**
 1. Check the box next to **Run Dedicated Server**
 1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Launch**. This is the green play icon, not to be confused with Unreal’s Launch button. This will open a terminal window and run the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime). It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
 1. From the Unreal Editor toolbar, click **Play** to run the game. This starts two headless server-workers and two [client-workers](https://docs.improbable.io/reference/latest/shared/glossary#client-worker).
+
+Notice that when players shoot each other, their health does not go down. It's not much fun with no skin in the game is it? Let’s fix the health system.
+
+### Replicate health changes
+
+In this ThirdPersonShooter project each `TPSCharacter` contains a variable called `CurrentHealth`, which keeps track of that charachter's health. On your servers, `CurrentHealth` is reduced whenever a character is shot, but this reduction is not replicated on the clients connected to the game. This is because the `CurrentHealth` variable is not setup for replication.
+
+To resolve this you need to mark the `CurrentHealth` property for replication, just as you would in the native [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1) workflow. To do this:
+
+1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
+1. Navigate to the declaration of the `CurrentHealth` variable (line 175), and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`. The UProperty should now look like this:
+
+    ```
+    UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
+    int32 CurrentHealth; 
+    ```
+
+    You have now marked this property for replication using the `OnRep_CurrentHealth` function that you’ll implement in the next section.
+    
+    Next you need to update the [GetLifetimeReplicatedProps](https://wiki.unrealengine.com/Replication#Actor_Property_Replication) implementation of the `TPSCharacter` to specify the [replication conditions](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/Conditions) for the `CurrentHealth` variable:
+    
+1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp`.
+1. Navigate to the `GetLifetimeReplicatedProps` function (which is implementd around line 182), and insert the following snippet:
+
+    ```
+    // Only replicate health to the owning client.
+    DOREPLIFETIME_CONDITION(ATPSCharacter, CurrentHealth, COND_AutonomousOnly);
+    ```
+
+    > **Note:** You only want to replicate the `CurrentHealth` variable to the client that owns this Actor, thus you specify the `COND_AutonomousOnly` flag.
+
+    Finally, you need to implement the `OnRep_CurentHealth` function so that the player health UI gets updated when the `CurrentHealth` variable is replicated:
+
+1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
+1. In the public scope of the class, insert the following snippet:
+    
+    ```	
+    UFUNCTION()
+    void OnRep_CurrentHealth();
+    ```
+
+1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp` and insert the following snippet:
+
+    ```
+    void ATPSCharacter::OnRep_CurrentHealth()
+    {
+    	if (GetNetMode() != NM_DedicatedServer)
+    	{
+		    ATPSPlayerController* PC = Cast<ATPSPlayerController>(GetController());
+    		if (PC)
+    		{
+    			PC->UpdateHealthUI(CurrentHealth, MaxHealth);
+    		}
+    		else
+    		{
+    			UE_LOG(LogTPS, Warning, TEXT("Couldn't find a player controller for character: %s"), *this->GetName());
+    		}
+    	}
+    }
+    ```
+
+The workflow you just used mirrors that of native Unreal.
+
+Because you’ve changed code in a function you now need build **ThirdPersonShooter.sln**, generate schema and a new snapshot. To do this:
+
+1. Open **ThirdPersonShooter.sln** with Visual Studio.
+2. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
+3. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
+
+Now let’s test our health replication in another local deployment.
+
+### Deploy the project locally (again)
+
+1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Launch**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
+1. From the Unreal Editor toolbar, click **Play** to run the game.
+
+Notice that health now decrements when you are shot.
 
 ### View your SpatialOS world in the Inspector
 
@@ -67,71 +144,12 @@ In this section you’ll run a [local deployment](https://docs.improbable.io/ref
 3. Back in your two Unreal game clients, run around and shoot.
 4. Using the Inspector to track the location of your two players, notice that if you position them in the area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
 
-### Replicate health changes
-
-In the ThirdPersonShooter project each `TPSCharacter` has a variable tracking health called `CurrentHealth`. The health is deducted on the server when the character is shot, however as the variable is not setup for replication it does not replicate to the client. Therefore the character's health meter does not update on the client even though the health variable is being modified on the server. 
-
-To resolve this we need to mark the `CurrentHealth` property for replication as you would with normal [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1):
-
-Navigate to the declaration of the `CurrentHealth` variable in the `TPSCharacter.h` - line 175 and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`:
-
-```
-UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
-int32 CurrentHealth; 
-```
-
-We have now marked this property for replication using the `OnRep_CurrentHealth` function which we’ll implement in a moment.
-
-Next we need to update the [GetLifetimeReplicatedProps](https://wiki.unrealengine.com/Replication#Actor_Property_Replication) implementation of the `TPSCharacter` to specify the [replication conditions](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/Conditions) for the `CurrentHealth` variable:
-
-Navigate to `TPSCharacter.cpp` line 194 and add the following lines:
-
-```
-// Only replicate health to the owning client.
-DOREPLIFETIME_CONDITION(ATPSCharacter, CurrentHealth, COND_AutonomousOnly);
-```
-
-**NOTE:** We only want to replicate the `CurrentHealth` variable to the client that owns this Actor, thus we specify the `COND_AutonomousOnly` flag.
-
-Finally, we need to implement the `OnRep_CurentHealth` function so that we can update the player health UI when the `CurrentHealth` variable is replicated:
-
-Add the public `UFUNCTION` `void OnRep_CurrentHealth()` to `TPSCharacter.h`:
-
-```	
-UFUNCTION()
-void OnRep_CurrentHealth();
-```
-
-In your `TPSCharacter.cpp` add the public function definition:
-
-```
-void ATPSCharacter::OnRep_CurrentHealth()
-{
-	if (GetNetMode() != NM_DedicatedServer)
-	{
-		ATPSPlayerController* PC = Cast<ATPSPlayerController>(GetController());
-		if (PC)
-		{
-			PC->UpdateHealthUI(CurrentHealth, MaxHealth);
-		}
-		else
-		{
-			UE_LOG(LogTPS, Warning, TEXT("Couldn't find a player controller for character: %s"), *this->GetName());
-		}
-	}
-}
-```
-
-As you probably have noticed, we have just added code exactly as you would in native Unreal. The only extra thing we need to do to enable replication with the GDK is to generate the [schemas]({{urlRoot}}/content/glossary#schema) and the [snapshot]({{urlRoot}}/content/glossary#snapshot) using the Unreal GDK toolbar. 
-
-Now you can build your game and run. The `CurrentHealth` and the health UI of the Actor being shot should go down as intended. 
-
 ### Enable cross server RPCs
 
 To damage a player on a different server, the actor shooting the bullet must send a cross-server RPC to the actor getting hit by the bullet. You will implement this by overriding the [TakeDamage (Unreal documentation)](https://api.unrealengine.com/INT/API/Runtime/Engine/GameFramework/APawn/TakeDamage/index.html) function in the TPSCharcter class.
 
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
-1. On line 74, add this snippet:
+2. On line 74, add this snippet:
 
     ```
     UFUNCTION(CrossServer, Reliable)
@@ -196,11 +214,11 @@ Because you’ve changed code in a function you now need build **ThirdPersonShoo
 
 Now let’s test our new cross-server functionality in another local deployment.
 
-### Deploy the project locally (again)
+### Deploy the project locally (last time)
 
 1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Launch**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
-2. From the Unreal Editor toolbar, click **Play** to run the game.
-3. Using the Inspector to track the location of your two players, notice that you can now shoot across servers and cause damage.
+1. From the Unreal Editor toolbar, click **Play** to run the game.
+1. Using the Inspector to track the location of your two players, notice that you can now shoot across servers and cause damage.
 
 Now that you're free of the single-server paradigm, have a think about the huge, seamless multiplayer worlds you can build and host using the Unreal GDK.
 
@@ -211,21 +229,21 @@ Speaking of hosting, let’s upload your game.
 An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip files that contains all the files that your game uses when running in the cloud.
 
 1. In a terminal window, change directory to the root directory of the Third Person Shooter repository.
-2. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`
-3. Build a client-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooter Win64 Development ThirdPersonShooter.uproject`
+1. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`
+1. Build a client-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooter Win64 Development ThirdPersonShooter.uproject`
 
 ### Upload your game
 
 1. In File Explorer, navigate to `UnrealGDKThirdPersonShooter\spatial` and open `spatialos.json` in a text editor.
 1. Change the `name` field to the name of your project. You can find this in the [Console](https://console.improbable.io). It’ll be something like `beta_someword_anotherword_000`.
 ![]({{assetRoot}}assets/tutorial/project-name.png)
-2. In a terminal window, change directory to `UnrealGDKThirdPersonShooter\spatial\` and run `spatial cloud upload <assembly_name>`, where `<assembly_name>` is a name of your choice (for example `myassembly`). A valid upload command looks like this:
+1. In a terminal window, change directory to `UnrealGDKThirdPersonShooter\spatial\` and run `spatial cloud upload <assembly_name>`, where `<assembly_name>` is a name of your choice (for example `myassembly`). A valid upload command looks like this:
 
 ```
 spatial cloud upload myassembly
 ```
 
-> Based on your network speed it may take a little while (1-10 minutes) to upload your assembly.
+> **Note:** Based on your network speed it may take a little while (1-10 minutes) to upload your assembly.
 
 ### Launch a cloud deployment
 
@@ -244,7 +262,7 @@ When launching a cloud deployment you must provide three parameters:
 spatial cloud launch --snapshot=snapshots/default.snapshot myassembly two_worker_test.json mydeployment
 ```
 
-> This command defaults to deploying to clusters located in the US. If you’re in Europe, add the `--cluster_region=eu` flag for lower latency.
+> **Note:** This command defaults to deploying to clusters located in the US. If you’re in Europe, add the `--cluster_region=eu` flag for lower latency.
 
 ### Play your game
 
@@ -254,12 +272,12 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 
 1. In the Console, Select the **Launch** button on the left of the page, and then click the **Launch** button that appears in the centre of the page. The SpatialOS Launcher, which was installed along with SpatialOS, downloads the game client for this deployment and runs it on your local machine.
 ![]({{assetRoot}}assets/tutorial/launch.png)
-2. Once the client has launched, enter the game and fire a few celebratory shots - you are now playing in your first SpatialOS cloud deployment!
+1. Once the client has launched, enter the game and fire a few celebratory shots - you are now playing in your first SpatialOS cloud deployment!
 
 ### Invite your friends
 
 1. To invite other players to this game, head back to the Deployment Overview page in your [Console](https://console.improbable.io), and select the **Share button**.
-2. Share the generated link with your friends.
+1. Share the generated link with your friends.
 
 When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to halt your deployment.
 
