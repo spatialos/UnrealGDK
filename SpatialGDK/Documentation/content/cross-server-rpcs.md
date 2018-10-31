@@ -1,7 +1,5 @@
 ## Cross-server RPCs
-
-### Overview
-
+<%(TOC)%>
 In Unreal’s native client-server architecture, your game server holds the canonical state of the whole game world. As there is a single game server, it has authority over all server Actors and so it is able to invoke and execute functions on Actors unhindered. 
 
 In SpatialOS games, there can be more than one server; these multiple servers are known as “server-workers”. (Find out more about server-workers as well as “client-workers” in the [glossary]({{urlRoot}}/content/glossary#workers).) As a SpatialOS game runs across many server-workers, SpatialOS server-workers have the concept of “worker authority” - where only one server-worker at a time is able to invoke and execute functions on Actors. (Find out more about authority in the [glossary]({{urlRoot}}/content/glossary#authority).)
