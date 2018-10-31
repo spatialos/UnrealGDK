@@ -16,7 +16,7 @@
 - <h3>Concepts and terminology</h3>
 - <h3>[- SpatialOS concepts]({{urlRoot}}/content/concepts)</h3>
 - <h3>[- Spatial Type]({{urlRoot}}/content/spatial-type)</h3>
-- <h3>[- Dynamic Typebindings]({{urlRoot}}/dynamic-typebindings)</h3>
+- <h3>[- Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
 - <h3>[- Singleton Actors]({{urlRoot}}/content/singleton-actors)
 - <h3>[- Actor property handover]({{urlRoot}}/content/handover-between-server-workers)
      <!--[//]: # (TODO: Add the following from Josh at <h3> level)
