@@ -12,6 +12,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
