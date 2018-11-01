@@ -9,7 +9,7 @@ class FCodeWriter;
 struct FComponentIdGenerator;
 
 extern TArray<UClass*> SchemaGeneratedClasses;
-extern TMap<UClass*, FSchemaData> ClassToSchema;
+extern TMap<FString, FSchemaData> ClassPathToSchema;
 
 // Generates a schema file, given an output code writer, component ID, Unreal type and type info.
 int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
