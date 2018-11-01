@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
 
@@ -43,15 +44,47 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(FString URLString, const c
 
 void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 {
-	FURL DummyURL;
+	// Send an entity query for the SpatialSpawner and bind a delegate so that once it's found, we send a spawn command.
+	Worker_Constraint SpatialSpawnerConstraint;
+	SpatialSpawnerConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
+	SpatialSpawnerConstraint.component_constraint.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 
-	Worker_CommandRequest CommandRequest = {};
-	CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
-	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
-	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-	AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
+	Worker_EntityQuery SpatialSpawnerQuery{};
+	SpatialSpawnerQuery.constraint = SpatialSpawnerConstraint;
+	SpatialSpawnerQuery.result_type = WORKER_RESULT_TYPE_SNAPSHOT;
 
-	NetDriver->Connection->SendCommandRequest(SpatialConstants::SPAWNER_ENTITY_ID, &CommandRequest, 1);
+	Worker_RequestId RequestID;
+	RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery);
+
+	EntityQueryDelegate SpatialSpawnerQueryDelegate;
+	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID](Worker_EntityQueryResponseOp& Op)
+	{
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+		{
+			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Entity query for SpatialSpawner failed: %s"), UTF8_TO_TCHAR(Op.message));
+		}
+		else if (Op.result_count == 0)
+		{
+			UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Could not find SpatialSpawner via entity query: %s"), UTF8_TO_TCHAR(Op.message));
+		}
+		else
+		{
+			checkf(Op.result_count == 1, TEXT("There should never be more than one SpatialSpawner entity."));
+
+			// Construct and send the player spawn request.
+			FURL DummyURL;
+			Worker_CommandRequest CommandRequest = {};
+			CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
+			CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
+			Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+			AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
+
+			NetDriver->Connection->SendCommandRequest(Op.results[0].entity_id, &CommandRequest, 1);
+		}
+	});
+
+	UE_LOG(LogSpatialPlayerSpawner, Log, TEXT("Sending player spawn request"));
+	NetDriver->Receiver->AddEntityQueryDelegate(RequestID, SpatialSpawnerQueryDelegate);
 
 	++NumberOfAttempts;
 }

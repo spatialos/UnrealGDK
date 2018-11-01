@@ -70,13 +70,15 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			Receiver->OnReserveEntityIdResponse(Op->reserve_entity_id_response);
 			break;
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
+			Receiver->OnReserveEntityIdsResponse(Op->reserve_entity_ids_response);
 			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
-			Receiver->OnCreateEntityIdResponse(Op->create_entity_response);
+			Receiver->OnCreateEntityResponse(Op->create_entity_response);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			break;
 		case WORKER_OP_TYPE_ENTITY_QUERY_RESPONSE:
+			Receiver->OnEntityQueryResponse(Op->entity_query_response);
 			break;
 
 		case WORKER_OP_TYPE_FLAG_UPDATE:

@@ -5,3 +5,9 @@ component GlobalStateManager {
     id = 100005;
     map<string, EntityId> singleton_name_to_entity_id = 1;
 }
+
+component DeploymentMap {
+    id = 100006;
+    string map_url = 1;
+    bool accepting_players = 2;
+}
