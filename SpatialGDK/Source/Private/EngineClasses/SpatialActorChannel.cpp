@@ -261,7 +261,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	// Update SpatialOS position.
-	if (!PlayerController && !Cast<APlayerState>(Actor))
+	if (!bCreatingNewEntity && !PlayerController && !Cast<APlayerState>(Actor))
 	{
 		UpdateSpatialPosition();
 		UpdateSpatialRotation();
@@ -706,12 +706,15 @@ void USpatialActorChannel::UpdateSpatialPosition()
 		if (AController* Controller = Pawn->GetController())
 		{
 			USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller));
-			if (ControllerActorChannel)
+			bool bHasControllerAuthority = NetDriver->StaticComponentView->HasAuthority(ControllerActorChannel->GetEntityId(), SpatialConstants::POSITION_COMPONENT_ID);
+			if (ControllerActorChannel && bHasControllerAuthority)
 			{
 				Sender->SendPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
 			}
+
 			USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller->PlayerState));
-			if (PlayerStateActorChannel)
+			bool bHasPlayerStateAuthority = NetDriver->StaticComponentView->HasAuthority(PlayerStateActorChannel->GetEntityId(), SpatialConstants::POSITION_COMPONENT_ID);
+			if (PlayerStateActorChannel && bHasPlayerStateAuthority)
 			{
 				Sender->SendPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
 			}
