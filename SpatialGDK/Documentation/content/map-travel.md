@@ -3,8 +3,6 @@
 
 This topic is intended for advanced users only. Before reading this page, make sure you are familiar with the Unreal documentation on [Map travel](https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling).
 
-<%(Callout type="warn" message="ServerTravel support has not yet been merged but will be coming very soon.")%>
-
 ## APlayerController::ClientTravel
 
 ### In native Unreal
