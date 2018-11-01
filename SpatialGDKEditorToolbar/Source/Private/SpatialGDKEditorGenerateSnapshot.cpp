@@ -41,7 +41,7 @@ const improbable::Coordinates Origin{ 0, 0, 0 };
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity SpawnerEntity;
-	SpawnerEntity.entity_id = SpatialConstants::SPAWNER_ENTITY_ID;
+	SpawnerEntity.entity_id = SpatialConstants::INITIAL_SPAWNER_ENTITY_ID;
 
 	Worker_ComponentData PlayerSpawnerData = {};
 	PlayerSpawnerData.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
@@ -105,10 +105,28 @@ Worker_ComponentData CreateGlobalStateManagerData()
 	return Data;
 }
 
+Worker_ComponentData CreateDeploymentData()
+{
+	// Construct the Deployment component data object.
+	Worker_ComponentData DeploymentData;
+	DeploymentData.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID;
+	DeploymentData.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID);
+	Schema_Object* DeploymentDataObject = Schema_GetComponentDataFields(DeploymentData.schema_type);
+
+	// Add the MapURL schema field.
+	Schema_Object* MapURLObject = Schema_AddObject(DeploymentDataObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID);
+	AddStringToSchema(MapURLObject, 1, TEXT("default")); // TODO: Fill this with the map name of the map the snapshot is being generated for.
+
+	// Add the accepting players schema field.
+	Schema_AddBool(DeploymentDataObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, false);
+
+	return DeploymentData;
+}
+
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity GSM;
-	GSM.entity_id = SpatialConstants::GLOBAL_STATE_MANAGER;
+	GSM.entity_id = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 	TArray<Worker_ComponentData> Components;
 
@@ -119,12 +137,14 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::UNREAL_METADATA_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID, UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::UnrealMetadata().CreateUnrealMetadataData());
 	Components.Add(CreateGlobalStateManagerData());
+	Components.Add(CreateDeploymentData());
 	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();

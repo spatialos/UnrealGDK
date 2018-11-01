@@ -9,6 +9,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
+class USpatialWorkerConnection;
+
 UCLASS()
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 {
@@ -19,6 +21,15 @@ public:
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
 	virtual void StartGameInstance() override;
+
+	// bResponsibleForSnapshotLoading exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
+	bool bResponsibleForSnapshotLoading = false;
+
+	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
+	void CreateNewSpatialWorkerConnection();
+
+	UPROPERTY()
+	USpatialWorkerConnection* SpatialConnection;
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.

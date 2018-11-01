@@ -12,6 +12,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
@@ -50,6 +51,11 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 	}
 
 	return bHasSpatialNetDriver;
+}
+
+void USpatialGameInstance::CreateNewSpatialWorkerConnection()
+{
+	SpatialConnection = NewObject<USpatialWorkerConnection>();
 }
 
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
@@ -104,14 +110,17 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 	}
 
+	// If we are using spatial networking then prepare a spatial connection.
+	CreateNewSpatialWorkerConnection();
+
 	// This is sadly hacky to avoid a larger engine change. It borrows code from UGameInstance::StartPlayInEditorGameInstance() and 
-	//  UEngine::Browse().
+	// UEngine::Browse().
 	check(WorldContext);
 
 	ULevelEditorPlaySettings const* PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
 	const EPlayNetMode PlayNetMode = [&PlayInSettings] { EPlayNetMode NetMode(PIE_Standalone); return (PlayInSettings->GetPlayNetMode(NetMode) ? NetMode : PIE_Standalone); }();
 
-	// for clients, just connect to the server
+	// For clients, just connect to the server
 	bool bOk = true;
 
 	if (PlayNetMode != PIE_Client)
@@ -135,18 +144,26 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 
 void USpatialGameInstance::StartGameInstance()
 {
-	if (!GIsClient || !HasSpatialNetDriver())
+	if (HasSpatialNetDriver())
 	{
-		Super::StartGameInstance();
-	}
-	else
-	{
-		FString Error;
+		// If we are using spatial networking then prepare a spatial connection.
+		CreateNewSpatialWorkerConnection();
 
-		if (!StartGameInstance_SpatialGDKClient(Error))
+		// Initialize a locator configuration which will parse command line arguments.
+		// If there is a locator token present in the command line arguments then connect to deployment automatically.
+		FLocatorConfig LocatorConfig;
+		if (!LocatorConfig.LoginToken.IsEmpty() && GIsClient)
 		{
-			UE_LOG(LogSpatialGameInstance, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
-			FPlatformMisc::RequestExit(false);
+			FString Error;
+			if (!StartGameInstance_SpatialGDKClient(Error))
+			{
+				UE_LOG(LogSpatialGameInstance, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
+				FPlatformMisc::RequestExit(false);
+			}
+
+			return;
 		}
 	}
+
+	Super::StartGameInstance();
 }

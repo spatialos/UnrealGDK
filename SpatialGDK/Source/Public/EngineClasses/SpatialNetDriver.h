@@ -27,6 +27,7 @@ class USpatialTypebindingManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
+class USnapshotManager;
 
 class UEntityRegistry;
 
@@ -82,6 +83,9 @@ public:
 
 	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
 
+	// When the AcceptingPlayers state on the GSM has changed this method will be called.
+	void OnAcceptingPlayersChanged(bool bAcceptingPlayers);
+
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
 
@@ -89,6 +93,10 @@ public:
 	void RemoveActorChannel(Worker_EntityId EntityId);
 
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
+
+	DECLARE_DELEGATE(PostWorldWipeDelegate);
+
+	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -110,10 +118,10 @@ public:
 	USpatialStaticComponentView* StaticComponentView;
 	UPROPERTY()
 	UEntityRegistry* EntityRegistry;
+	UPROPERTY()
+	USnapshotManager* SnapshotManager;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
-
-	bool bConnectAsClient;
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
@@ -128,6 +136,10 @@ private:
 	FTimerManager* TimerManager;
 
 	bool bAuthoritativeDestruction;
+	bool bConnectAsClient;
+	bool bPersistSpatialConnection;
+	bool bWaitingForAcceptingPlayersToSpawn;
+	FString SnapshotToLoad;
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
@@ -135,10 +147,12 @@ private:
 	void Connect();
 
 	UFUNCTION()
-	void OnConnected();
+	void OnMapLoadedAndConnected();
 
 	UFUNCTION()
 	void OnConnectFailed(const FString& Reason);
+
+	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 		
 #if WITH_SERVER_CODE
 	//SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.

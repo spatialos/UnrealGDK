@@ -91,6 +91,9 @@ struct FPendingIncomingRPC
 
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
+DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
+DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
+
 UCLASS()
 class USpatialReceiver : public UObject
 {
@@ -111,10 +114,16 @@ public:
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
 	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
-	void OnCreateEntityIdResponse(Worker_CreateEntityResponseOp& Op);
+	void OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op);
+	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
 
 	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
 	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FPendingRPCParams> Params);
+
+	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
+	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
+
+	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
@@ -192,4 +201,7 @@ private:
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
+
+	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
+	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 };
