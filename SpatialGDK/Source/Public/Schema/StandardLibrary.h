@@ -165,12 +165,6 @@ struct Metadata : Component
 		return Data;
 	}
 
-	FORCEINLINE UClass* GetNativeEntityClass()
-	{
-		UClass* Class = FindObject<UClass>(ANY_PACKAGE, *EntityType);
-		return Class->IsChildOf<AActor>() ? Class : nullptr;
-	}
-
 	FString EntityType;
 };
 
