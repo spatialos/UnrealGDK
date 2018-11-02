@@ -122,6 +122,12 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance());
 
+	if (!GameInstance)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("A SpatialGameInstance is required. Make sure your game's GameInstance inherits from SpatialGameInstance"));
+		return;
+	}
+
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
@@ -132,7 +138,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	// Grab the SpatialWorkerConnection from the SpatialGameInstance (stored there for persistence in server travel). 
-	Connection = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->SpatialConnection;
+	Connection = GameInstance->SpatialConnection;
 
 	if (LoadedWorld->URL.HasOption(TEXT("locator")))
 	{

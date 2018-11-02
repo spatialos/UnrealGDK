@@ -101,7 +101,7 @@ It is necessary to modify your `GameInstance` class to work properly with the GD
 
 1. Make your `GameInstance` inherit from `SpatialGameInstance`.  <br/>
 
-   > If you have not yet made a `GameInstance` for your game and are still using the default, you must either create a Blueprint or a native `GameInstance` class now. <br/>
+   > If you have not yet made a `GameInstance` for your game and are still using the default, you must either create a Blueprint or a native `GameInstance` class now. Remember to configure your `Project Settings` to use this new `GameInstance` as default, under **Project Settings > Project Maps and Modes > Game Instance > Game Instance Class**. <br/>
 
 
 * If your game's `GameInstance` is a C++ class, locate its header file and add the following `#include`:
