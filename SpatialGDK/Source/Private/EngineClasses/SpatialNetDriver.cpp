@@ -124,7 +124,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	if (!GameInstance)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("A SpatialGameInstance is required. Have you made your game's GameInstance inherit from SpatialGameInstance?"));
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("A SpatialGameInstance is required. Make sure your game's GameInstance inherits from SpatialGameInstance"));
 		return;
 	}
 
