@@ -24,7 +24,7 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
 TArray<UClass*> SchemaGeneratedClasses;
-TMap<UClass*, FSchemaData> ClassToSchema;
+TMap<FString, FSchemaData> ClassPathToSchema;
 
 namespace
 {
@@ -115,7 +115,7 @@ void SaveSchemaDatabase()
 		UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
 		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
-		SchemaDatabase->ClassToSchema = ClassToSchema;
+		SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
 
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
@@ -173,9 +173,6 @@ TArray<UClass*> GetAllSupportedClasses()
 		// No replicated/handover properties found
 		if (SupportedClass == nullptr) continue;
 
-		// Doesn't let us save the schema database
-		if (SupportedClass->IsChildOf<ALevelScriptActor>()) continue;
-
 		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
 
 		// Ensure we don't process skeleton or reinitialized classes
@@ -193,7 +190,7 @@ TArray<UClass*> GetAllSupportedClasses()
 
 bool SpatialGDKGenerateSchema()
 {
-	ClassToSchema.Empty();
+	ClassPathToSchema.Empty();
 
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
