@@ -164,10 +164,24 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
 				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 				{
-					if (Parent.RepNotifyCondition == REPNOTIFY_Always || !Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data))
+					bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data);
+
+					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
+					if (bIsInitialData)
 					{
-						RepNotifies.AddUnique(Parent.Property);
+						if (!bIsIdentical)
+						{
+							RepNotifies.AddUnique(Parent.Property);
+						}
 					}
+					else
+					{
+						if (Parent.RepNotifyCondition == REPNOTIFY_Always || !bIsIdentical)
+						{
+							RepNotifies.AddUnique(Parent.Property);
+						}
+					}
+
 				}
 			}
 		}
