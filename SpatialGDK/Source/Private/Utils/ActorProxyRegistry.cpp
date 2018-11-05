@@ -7,6 +7,7 @@
 #include "Schema/StandardLibrary.h"
 #include "SpatialTypebindingManager.h"
 #include "SpatialNetDriver.h"
+#include "SpatialWorkerConnection.h"
 
 DEFINE_LOG_CATEGORY(LogActorProxyRegistry);
 
@@ -32,10 +33,10 @@ void UActorProxyRegistry::AddToRegistry(const FUnrealObjectRef& ActorProxyObject
 	check(Info);
 
 	// TODO: Determine more accurately which components we should have access to
-	InterestComponent.ComponentInterest.Add(Info->RPCComponents[RPC_Client], NewCompnentInterest);
-	InterestComponent.ComponentInterest.Add(Info->RPCComponents[RPC_Server], NewCompnentInterest);
-	InterestComponent.ComponentInterest.Add(Info->RPCComponents[RPC_CrossServer], NewCompnentInterest);
-	InterestComponent.ComponentInterest.Add(Info->RPCComponents[RPC_NetMulticast], NewCompnentInterest);
+	//InterestComponent.ComponentInterest.Add(Info->RPCComponents[RPC_Client], NewCompnentInterest);
+	//InterestComponent.ComponentInterest.Add(Info->RPCComponents[RPC_Server], NewCompnentInterest);
+	//InterestComponent.ComponentInterest.Add(Info->RPCComponents[RPC_CrossServer], NewCompnentInterest);
+	//InterestComponent.ComponentInterest.Add(Info->RPCComponents[RPC_NetMulticast], NewCompnentInterest);
 
 	Worker_ComponentUpdate NewInterestQueryUpdate = InterestComponent.CreateInterestUpdate();
 	NetDriver->Connection->SendComponentUpdate(OwnerActor->UnrealObjectRef.Entity, &NewInterestQueryUpdate);
