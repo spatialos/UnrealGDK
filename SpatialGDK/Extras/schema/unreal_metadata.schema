@@ -5,4 +5,5 @@ component UnrealMetadata {
     id = 100004;
     option<string> static_path = 1;
     option<string> owner_worker_attribute = 2;
+    string class_path = 3;
 }
