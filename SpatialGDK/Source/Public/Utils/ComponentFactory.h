@@ -19,6 +19,7 @@ class UProperty;
 enum EReplicatedPropertyGroup : uint32;
 
 using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
+using FResolvedActorProxyMap = TMap<Schema_FieldId, TSet<const UObject*>>;
 
 namespace improbable
 {
@@ -29,7 +30,7 @@ public:
 	ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver);
 
 	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, FClassInfo* Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState);
-	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, FClassInfo* Info, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState);
+	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, FClassInfo* Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState);
 
 	static Worker_ComponentData CreateEmptyComponentData(Worker_ComponentId ComponentId);
 
@@ -44,7 +45,10 @@ private:
 
 	bool FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
+	Worker_ComponentData CreateInterestComponentData(UObject* Object, bool& bWroteSomething, Worker_EntityId EntityId);
+	Worker_ComponentUpdate CreateInterestComponentUpdate(UObject* Object, bool& bWroteSomething, Worker_EntityId EntityId);
+
+	bool FillInterestSchemaObject(Schema_Object* ComponentObject, Worker_EntityId EntityId);
 
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
@@ -52,6 +56,8 @@ private:
 
 	FUnresolvedObjectsMap& PendingRepUnresolvedObjectsMap;
 	FUnresolvedObjectsMap& PendingHandoverUnresolvedObjectsMap;
+
+	FResolvedActorProxyMap ResolvedChangedActorProxyMap;
 };
 
 }

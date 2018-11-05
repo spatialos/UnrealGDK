@@ -51,6 +51,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		Data = MakeUnique<improbable::ComponentStorage<improbable::UnrealMetadata>>(Op.data);
 		break;
+	case SpatialConstants::INTEREST_COMPONENT_ID:
+		Data = MakeUnique<improbable::ComponentStorage<improbable::Interest>>(Op.data);
+		break;
 	default:
 		return;
 	}

@@ -240,7 +240,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo* Info, USp
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
 	ComponentFactory UpdateFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
 
-	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, RepChanges, HandoverChanges);
+	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges);
 
 	if (RepChanges)
 	{

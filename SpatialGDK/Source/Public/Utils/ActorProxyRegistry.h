@@ -23,7 +23,7 @@ public:
 	* @param ObjectRef the FUnrealObjectRef for the AActor that is added to the registry.
 	* @param Actor the AActor instance to be added to the registry.
 	**/
-	void AddToRegistry(const FUnrealObjectRef& ObjectRef, AActor* Actor);
+	void AddToRegistry(const FUnrealObjectRef& ActorProxyObjectRef, AActor* OwnerActor);
 
 	/**
 	* Removes the entry for an AActor in the registry if present in the registry.
