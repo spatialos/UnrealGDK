@@ -6,7 +6,7 @@
 #include "Interop/SpatialTypebindingManager.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
-#include "UObject/ObjectMacros.h"
+#include "UObject/Package.h"
 #include "UObject/UObjectHash.h"
 #include "Utils/SchemaUtils.h"
 
