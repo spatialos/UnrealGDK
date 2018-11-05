@@ -238,8 +238,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	check(EntityRegistry);
 
 	improbable::Position* Position = StaticComponentView->GetComponentData<improbable::Position>(EntityId);
-	improbable::Metadata* Metadata = StaticComponentView->GetComponentData<improbable::Metadata>(EntityId);
 	improbable::Rotation* Rotation = StaticComponentView->GetComponentData<improbable::Rotation>(EntityId);
+	improbable::UnrealMetadata* Metadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
 	check(Position && Metadata);
 

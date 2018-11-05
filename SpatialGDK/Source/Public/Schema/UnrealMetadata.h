@@ -6,6 +6,7 @@
 #include "Interop/SpatialTypebindingManager.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
+#include "UObject/Package.h"
 #include "UObject/UObjectHash.h"
 #include "Utils/SchemaUtils.h"
 
@@ -23,8 +24,8 @@ struct UnrealMetadata : Component
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId)
-		: StaticPath(InStaticPath), OwnerWorkerAttribute(InOwnerWorkerId) {}
+	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId, const FString& InClassPath)
+		: StaticPath(InStaticPath), OwnerWorkerAttribute(InOwnerWorkerId), ClassPath(InClassPath) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
@@ -32,6 +33,7 @@ struct UnrealMetadata : Component
 
 		StaticPath = GetStringFromSchema(ComponentObject, 1);
 		OwnerWorkerAttribute = GetStringFromSchema(ComponentObject, 2);
+		ClassPath = GetStringFromSchema(ComponentObject, 3);
 	}
 
 	Worker_ComponentData CreateUnrealMetadataData()
@@ -43,12 +45,27 @@ struct UnrealMetadata : Component
 
 		AddStringToSchema(ComponentObject, 1, StaticPath);
 		AddStringToSchema(ComponentObject, 2, OwnerWorkerAttribute);
+		AddStringToSchema(ComponentObject, 3, ClassPath);
 
 		return Data;
 	}
 
+	FORCEINLINE UClass* GetNativeEntityClass()
+	{
+		if (UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassPath))
+		{
+			if (Class->IsChildOf<AActor>())
+			{
+				return Class;
+			}
+		}
+
+		return nullptr;
+	}
+
 	FString StaticPath;
 	FString OwnerWorkerAttribute;
+	FString ClassPath;
 };
 
 FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, FClassInfo* Info)
