@@ -14,7 +14,7 @@ To build the SpatialOS GDK for Unreal module you need the following installed:
 
 * Windows 10, with Command Prompt or PowerShell as your terminal
 * <a href="https://gitforwindows.org" data-track-link="Clicked GIT for Windows|product=Docs|platform=Win|label=Win" target="_blank">Git for Windows</a>
-* <a href="https://console.improbable.io/installer/download/stable/latest/win" data-track-link="Clicked Download SpatialOS|product=Docs|platform=Win|label=Win target="_blank">SpatialOS version 13.2</a>.
+* <a href="https://console.improbable.io/installer/download/stable/latest/win" data-track-link="Clicked Download SpatialOS|product=Docs|platform=Win|label=Win" target="_blank">SpatialOS version 13.2</a>.
 This installs:<br>
     - the [`spatial` CLI](https://docs.improbable.io/reference/latest/shared/spatial-cli-introduction)<br>
     - the SpatialOS [Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher)<br>
