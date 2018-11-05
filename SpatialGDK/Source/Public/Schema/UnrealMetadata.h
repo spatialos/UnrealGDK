@@ -51,8 +51,15 @@ struct UnrealMetadata : Component
 
 	FORCEINLINE UClass* GetNativeEntityClass()
 	{
-		UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassPath);
-		return Class->IsChildOf<AActor>() ? Class : nullptr;
+		if (UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassPath))
+		{
+			if (Class->IsChildOf<AActor>())
+			{
+				return Class;
+			}
+		}
+
+		return nullptr;
 	}
 
 	FString StaticPath;
