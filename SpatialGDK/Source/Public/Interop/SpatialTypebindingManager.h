@@ -5,40 +5,33 @@
 #include "CoreMinimal.h"
 #include "Utils/SchemaDatabase.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialTypebindingManager.generated.h"
 
-enum ERPCType
+FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)> Callback)
 {
-	RPC_Client = 0,
-	RPC_Server,
-	RPC_CrossServer,
-	RPC_NetMulticast,
-	RPC_Count
-};
+	for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
+	{
+		Callback(ESchemaComponentType(Type));
+	}
+}
 
-enum EReplicatedPropertyGroup : uint32
-{
-	GROUP_SingleClient,
-	GROUP_MultiClient
-};
-
-FORCEINLINE EReplicatedPropertyGroup GetGroupFromCondition(ELifetimeCondition Condition)
+FORCEINLINE ESchemaComponentType GetGroupFromCondition(ELifetimeCondition Condition)
 {
 	switch (Condition)
 	{
 	case COND_AutonomousOnly:
 	case COND_OwnerOnly:
-		return GROUP_SingleClient;
+		return SCHEMA_OwnerOnly;
 	default:
-		return GROUP_MultiClient;
+		return SCHEMA_Data;
 	}
 }
 
 struct FRPCInfo
 {
-	ERPCType Type;
+	ESchemaComponentType Type;
 	uint32 Index;
 };
 
@@ -55,18 +48,21 @@ struct FClassInfo
 {
 	GENERATED_BODY()
 
-	TMap<ERPCType, TArray<UFunction*>> RPCs;
+	UClass* Class;
+
+	TMap<ESchemaComponentType, TArray<UFunction*>> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
 
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 
-	Worker_ComponentId SingleClientComponent;
-	Worker_ComponentId MultiClientComponent;
-	Worker_ComponentId HandoverComponent;
-	Worker_ComponentId RPCComponents[RPC_Count];
+	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 
-	TSet<UClass*> SubobjectClasses;
+	FName SubobjectName;
+
+	TMap<uint32, TSharedPtr<FClassInfo>> SubobjectInfo;
 };
+
+class USpatialNetDriver;
 
 UCLASS()
 class SPATIALGDK_API USpatialTypebindingManager : public UObject
@@ -74,21 +70,29 @@ class SPATIALGDK_API USpatialTypebindingManager : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init();
+	void Init(USpatialNetDriver* NetDriver);
 
 	bool IsSupportedClass(UClass* Class);
+
 	FClassInfo* FindClassInfoByClass(UClass* Class);
+	FClassInfo* FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset);
 	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
+	FClassInfo* FindClassInfoByObject(UObject* Object);
+
 	UClass* FindClassByComponentId(Worker_ComponentId ComponentId);
 
-	TArray<UObject*> GetHandoverSubobjects(AActor* Actor);
+	bool FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
+
+	ESchemaComponentType FindCategoryByComponentId(Worker_ComponentId ComponentId);
 
 private:
 	void FindSupportedClasses();
 	void CreateTypebindings();
-	void AddSubobjectClass(FClassInfo& ClassInfo, UClass* Class);
 
 private:
+	UPROPERTY()
+	USpatialNetDriver* NetDriver;
+
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
 
@@ -99,4 +103,6 @@ private:
 	TMap<UClass*, FClassInfo> ClassInfoMap;
 
 	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
+	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
+	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
 };

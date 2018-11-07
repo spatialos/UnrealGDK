@@ -10,10 +10,10 @@
 #include "Interop/SpatialTypebindingManager.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/Rotation.h"
-#include "improbable/UnrealObjectRef.h"
+#include "UObject/improbable/UnrealObjectRef.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialReceiver.generated.h"
 
@@ -91,6 +91,9 @@ struct FPendingIncomingRPC
 
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
+DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
+DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
+
 UCLASS()
 class USpatialReceiver : public UObject
 {
@@ -111,10 +114,16 @@ public:
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
 	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
-	void OnCreateEntityIdResponse(Worker_CreateEntityResponseOp& Op);
+	void OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op);
+	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
 
 	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
 	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FPendingRPCParams> Params);
+
+	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
+	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
+
+	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
@@ -128,7 +137,6 @@ private:
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
 	AActor* CreateActor(improbable::Position* Position, struct improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred);
-	UClass* GetNativeEntityClass(improbable::Metadata* Metadata);
 
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
@@ -148,8 +156,6 @@ private:
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingRPCs(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
-
-	UObject* GetTargetObjectFromChannelAndClass(USpatialActorChannel* Channel, UClass* Class);
 
 	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
 
@@ -195,4 +201,7 @@ private:
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
+
+	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
+	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 };

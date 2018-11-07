@@ -9,7 +9,7 @@
 #include "Interop/SpatialTypebindingManager.h"
 #include "Utils/RepDataUtils.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialActorChannel.generated.h"
 
@@ -57,7 +57,7 @@ public:
 		FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 		check(Info);
 
-		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info->RPCComponents[RPC_Client]);
+		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_ClientRPC]);
 	}
 
 	FORCEINLINE bool IsAuthoritativeServer()
@@ -84,11 +84,13 @@ public:
 	virtual void SetChannelActor(AActor* InActor) override;
 
 	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
-	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
+	bool ReplicateSubobject(UObject* Obj, FClassInfo* Info, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 
+	TMap<UObject*, FClassInfo*> GetHandoverSubobjects();
+
 	FRepChangeState CreateInitialRepChangeState(UObject* Object);
-	FHandoverChangeState CreateInitialHandoverChangeState(FClassInfo* ClassInfo);
+	FHandoverChangeState CreateInitialHandoverChangeState(const FClassInfo* ClassInfo);
 
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);

@@ -1,5 +1,3 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
 # GDK for Unreal Troubleshooting/FAQ
 
 
@@ -30,7 +28,7 @@ Validate that the SpatialOS entity that represents your Actor appears in the Ins
 
 **Q:** I’m getting the following compilation error when building the GDK: `Error C2248: FRepLayout::Cmds': cannot access private member declared in class 'FRepLayout`.
 
-**A:** You're building against an unsupported version of Unreal Engine. Make sure you're targeting the fork of Unreal Engine that the GDK requires. See the [setup guide]({{urlRoot}}/setup-and-installing#building) for more details.
+**A:** You're building against an unsupported version of Unreal Engine. Make sure you're targeting the fork of Unreal Engine that the GDK requires. See the [setup guide]({{urlRoot}}/content/get-started/dependencies) for more details.
 
 ------
 
@@ -42,4 +40,10 @@ Validate that the SpatialOS entity that represents your Actor appears in the Ins
 
 **Q:** When I build my project, I get the following error: `Unknown class specifier 'SpatialType'`.
 
-**A:** `SpatialType` is a new class specifier for tagging of classes to replicate to SpatialOS. To stop the error message, rebuild the `Unreal Header Tool` using the `Development` configuration.
+**A:** `SpatialType` is a new class specifier for tagging of classes to replicate to SpatialOS. This message likely means that you have not built our UE4 fork, or pointed your project to use it. Follow the steps [here]({{urlRoot}}/content/get-started/introduction) to ensure the GDK is set up correctly.
+
+------
+
+**Q:** When I launch my SpatialOS deployment, I receive error messages similar to: `uses component ID 100005 which conflicts with components defined elsewhere.`
+
+**A:** This means you were using the GDK since pre-alpha. To fix the issue, delete the contents of your `spatial/schema` folder, run `Setup.bat` again in the GDK folder, and generate the schemas again. You may also need to update your streaming queries in `spatialos.json`. Refer to our [StarterProject repo](https://github.com/spatialos/UnrealGDKStarterProject) to see an example.

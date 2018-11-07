@@ -1,6 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "ComponentFactory.h"
+#include "Utils/ComponentFactory.h"
+
+#include "Engine/BlueprintGeneratedClass.h"
+#include "Engine/World.h"
+#include "UObject/TextProperty.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
@@ -20,7 +24,7 @@ ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMa
 	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
 { }
 
-bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
+bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
 {
 	bool bWroteSomething = false;
 
@@ -71,12 +75,9 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 	return bWroteSomething;
 }
 
-bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
+bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
 {
 	bool bWroteSomething = false;
-
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	check(Info);
 
 	for (uint16 ChangedHandle : Changes)
 	{
@@ -187,19 +188,24 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
 		if (ObjectValue != nullptr)
 		{
-			FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
-			if (!NetGUID.IsValid())
+			FNetworkGUID NetGUID;
+			if (ObjectValue->IsFullNameStableForNetworking() || ObjectValue->IsSupportedForNetworking())
 			{
-				// IsFullNameStableForNetworking for Actors relies on AActor::bNetStartup being set to true.
-				// This is set to true in InitalizeNetworkActors, which doesn't happen till the game starts
-				// So we can safely say that if we are in the editor, every Actor can be referred to.
-				if (NetDriver->World->WorldType == EWorldType::Editor)
+				NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
+
+				if (!NetGUID.IsValid())
 				{
-					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
-				}
-				else if (ObjectValue->IsFullNameStableForNetworking())
-				{
-					NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
+					// IsFullNameStableForNetworking for Actors relies on AActor::bNetStartup being set to true.
+					// This is set to true in InitalizeNetworkActors, which doesn't happen till the game starts
+					// So we can safely say that if we are in the editor, every Actor can be referred to.
+					if (NetDriver->World->WorldType == EWorldType::Editor)
+					{
+						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
+					}
+					else if (ObjectValue->IsFullNameStableForNetworking())
+					{
+						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
+					}
 				}
 			}
 
@@ -263,21 +269,29 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 }
 
-TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState)
+TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, FClassInfo* Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState)
 {
 	TArray<Worker_ComponentData> ComponentDatas;
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	check(Info);
+	if (Info->SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		ComponentDatas.Add(CreateComponentData(Info->SchemaComponents[SCHEMA_Data], Object, RepChangeState, SCHEMA_Data));
+	}
 
-	ComponentDatas.Add(CreateComponentData(Info->SingleClientComponent, Object, RepChangeState, GROUP_SingleClient));
-	ComponentDatas.Add(CreateComponentData(Info->MultiClientComponent, Object, RepChangeState, GROUP_MultiClient));
-	ComponentDatas.Add(CreateHandoverComponentData(Info->HandoverComponent, Object, HandoverChangeState));
+	if (Info->SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		ComponentDatas.Add(CreateComponentData(Info->SchemaComponents[SCHEMA_OwnerOnly], Object, RepChangeState, SCHEMA_OwnerOnly));
+	}
+
+	if (Info->SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
+	{
+		ComponentDatas.Add(CreateHandoverComponentData(Info->SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState));
+	}
 
 	return ComponentDatas;
 }
 
-Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup)
+Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = ComponentId;
@@ -298,53 +312,60 @@ Worker_ComponentData ComponentFactory::CreateEmptyComponentData(Worker_Component
 	return ComponentData;
 }
 
-Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FHandoverChangeState& Changes)
+Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes)
 {
 	Worker_ComponentData ComponentData = CreateEmptyComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	FillHandoverSchemaObject(ComponentObject, Object, Changes, true);
+	FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, true);
 
 	return ComponentData;
 }
 
-TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState)
+TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, FClassInfo* Info, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState)
 {
 	TArray<Worker_ComponentUpdate> ComponentUpdates;
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	check(Info);
-
 	if (RepChangeState)
 	{
-		bool bWroteSomething = false;
-		Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info->SingleClientComponent, Object, *RepChangeState, GROUP_SingleClient, bWroteSomething);
-		if (bWroteSomething)
+		if (Info->SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			ComponentUpdates.Add(SingleClientUpdate);
+			bool bWroteSomething = false;
+			Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info->SchemaComponents[SCHEMA_Data], Object, *RepChangeState, SCHEMA_Data, bWroteSomething);
+			if (bWroteSomething)
+			{
+				ComponentUpdates.Add(MultiClientUpdate);
+			}
 		}
-		bWroteSomething = false;
-		Worker_ComponentUpdate MultiClientUpdate = CreateComponentUpdate(Info->MultiClientComponent, Object, *RepChangeState, GROUP_MultiClient, bWroteSomething);
-		if (bWroteSomething)
+
+		if (Info->SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			ComponentUpdates.Add(MultiClientUpdate);
+			bool bWroteSomething = false;
+			Worker_ComponentUpdate SingleClientUpdate = CreateComponentUpdate(Info->SchemaComponents[SCHEMA_OwnerOnly], Object, *RepChangeState, SCHEMA_OwnerOnly, bWroteSomething);
+			if (bWroteSomething)
+			{
+				ComponentUpdates.Add(SingleClientUpdate);
+			}
 		}
 	}
 
 	if (HandoverChangeState)
 	{
-		bool bWroteSomething = false;
-		Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info->HandoverComponent, Object, *HandoverChangeState, bWroteSomething);
-		if (bWroteSomething)
+		if (Info->SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			ComponentUpdates.Add(HandoverUpdate);
+			bool bWroteSomething = false;
+			Worker_ComponentUpdate HandoverUpdate = CreateHandoverComponentUpdate(Info->SchemaComponents[SCHEMA_Handover], Object, Info, *HandoverChangeState, bWroteSomething);
+			if (bWroteSomething)
+			{
+				ComponentUpdates.Add(HandoverUpdate);
+			}
 		}
 	}
 
 	return ComponentUpdates;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, EReplicatedPropertyGroup PropertyGroup, bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -369,7 +390,7 @@ Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	return ComponentUpdate;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FHandoverChangeState& Changes, bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -379,7 +400,7 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 
 	TArray<Schema_FieldId> ClearedIds;
 
-	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Changes, false, &ClearedIds);
+	bWroteSomething = FillHandoverSchemaObject(ComponentObject, Object, Info, Changes, false, &ClearedIds);
 
 	for (Schema_FieldId Id : ClearedIds)
 	{

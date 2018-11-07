@@ -1,20 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-package improbable.unreal;
+package unreal;
 
-type SpawnPlayerRequest
-{
+type SpawnPlayerRequest {
     string url = 1;
 }
 
-type SpawnPlayerResponse
-{
+type SpawnPlayerResponse {
     bool success = 1;
     string error_message = 2;
     EntityId created_entity_id = 3;
 }
 
-component PlayerSpawner
-{
+component PlayerSpawner {
     id = 100002;
     command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
 }

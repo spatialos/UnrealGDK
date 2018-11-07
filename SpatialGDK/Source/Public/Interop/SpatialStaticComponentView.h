@@ -9,8 +9,8 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialStaticComponentView.generated.h"
 
@@ -24,7 +24,18 @@ public:
 	bool HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	template <typename T>
-	T* GetComponentData(Worker_EntityId EntityId);
+	T* GetComponentData(Worker_EntityId EntityId)
+	{
+		if (TMap<Worker_ComponentId, TUniquePtr<improbable::ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
+		{
+			if (TUniquePtr<improbable::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
+			{
+				return &(static_cast<improbable::ComponentStorage<T>*>(Component->Get())->Get());
+			}
+		}
+
+		return nullptr;
+	}
 
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);

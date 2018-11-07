@@ -3,10 +3,10 @@
 #pragma once
 
 #include "EngineClasses/SpatialNetBitWriter.h"
-#include "improbable/UnrealObjectRef.h"
+#include "UObject/improbable/UnrealObjectRef.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 using WorkerAttributeSet = TArray<FString>;
 using WorkerRequirementSet = TArray<WorkerAttributeSet>;
@@ -165,6 +165,22 @@ inline StringToEntityMap GetStringToEntityMapFromSchema(Schema_Object* Object, S
 	}
 
 	return Map;
+}
+
+inline void DeepCopySchemaObject(Schema_Object* Source, Schema_Object* Target)
+{
+	uint32_t Length = Schema_GetWriteBufferLength(Source);
+	uint8_t* Buffer = Schema_AllocateBuffer(Target, Length);
+	Schema_WriteToBuffer(Source, Buffer);
+	Schema_Clear(Target);
+	Schema_MergeFromBuffer(Target, Buffer, Length);
+}
+
+inline Schema_ComponentData* DeepCopyComponentData(Schema_ComponentData* Source)
+{
+	Schema_ComponentData* Copy = Schema_CreateComponentData(Schema_GetComponentDataComponentId(Source));
+	DeepCopySchemaObject(Schema_GetComponentDataFields(Source), Schema_GetComponentDataFields(Copy));
+	return Copy;
 }
 
 // Generates the full path from an ObjectRef, if it has paths. Writes the result to OutPath.

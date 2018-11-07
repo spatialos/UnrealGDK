@@ -2,8 +2,8 @@
 
 #include "TypeStructure.h"
 
+#include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
-
 #include "SpatialGDKEditorSchemaGenerator.h"
 
 namespace Errors
@@ -48,13 +48,13 @@ FString GetRepNotifyLifetimeConditionAsString(ELifetimeRepNotifyCondition Condit
 
 TArray<EReplicatedPropertyGroup> GetAllReplicatedPropertyGroups()
 {
-	static TArray<EReplicatedPropertyGroup> Groups = {REP_SingleClient, REP_MultiClient};
+	static TArray<EReplicatedPropertyGroup> Groups = {REP_MultiClient, REP_SingleClient};
 	return Groups;
 }
 
 FString GetReplicatedPropertyGroupName(EReplicatedPropertyGroup Group)
 {
-	return Group == REP_SingleClient ? TEXT("SingleClient") : TEXT("MultiClient");
+	return Group == REP_SingleClient ? TEXT("OwnerOnly") : TEXT("");
 }
 
 TArray<ERPCType> GetRPCTypes()
@@ -271,7 +271,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			// If this is an editor-only property, skip it. As we've already added to the property list at this stage, just remove it.
 			if (Value->IsEditorOnly())
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s - editor only, skipping"), *Property->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("%s - editor only, skipping"), *Property->GetName());
 				TypeNode->Properties.Remove(Property);
 				continue;
 			}
@@ -279,11 +279,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			// Check whether the owner of this value is the CDO itself.
 			if (Value->GetOuter() == ContainerCDO)
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
 				// This property is definitely a strong reference, recurse into it.
 				PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, 0, bIsRPC);
 				PropertyNode->Type->ParentProperty = PropertyNode;
+				PropertyNode->Type->Object = Value;
+				PropertyNode->Type->Name = Value->GetFName();
 
 				if (!bIsRPC)
 				{
@@ -302,13 +304,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			else
 			{
 				// The values outer is not us, store as weak reference.
-				UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("%s - %s weak reference (outer not this)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 			}
 		}
 		else
 		{
 			// If value is just nullptr, then we clearly don't own it.
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("%s - %s weak reference (null init)"), *Property->GetName(), *ObjectProperty->PropertyClass->GetName());
 		}
 
 		// Weak reference static arrays are handled as a single UObjectRef per static array member.
@@ -320,6 +322,40 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			}
 		}
 	} // END TFieldIterator<UProperty>
+
+	// Blueprint components don't exist on the CDO so we need to iterate over the
+	// BlueprintGeneratedClass (and all of its blueprint parents) to find all blueprint components
+	UClass* BlueprintClass = Class;
+	while (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(BlueprintClass))
+	{
+		if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
+		{
+			for (USCS_Node* Node : SCS->GetAllNodes())
+			{
+				if (Node->ComponentTemplate == nullptr)
+				{
+					continue;
+				}
+
+				for (auto& PropertyPair : TypeNode->Properties)
+				{
+					UObjectProperty* ObjectProperty = Cast<UObjectProperty>(PropertyPair.Key);
+					if (ObjectProperty == nullptr) continue;
+					TSharedPtr<FUnrealProperty> PropertyNode = PropertyPair.Value;
+
+					if (ObjectProperty->GetName().Equals(Node->GetVariableName().ToString()))
+					{
+						PropertyNode->Type = CreateUnrealTypeInfo(ObjectProperty->PropertyClass, ParentChecksum, 0, bIsRPC);
+						PropertyNode->Type->ParentProperty = PropertyNode;
+						PropertyNode->Type->Object = Node->ComponentTemplate;
+						PropertyNode->Type->Name = ObjectProperty->GetFName();
+					}
+				}
+			}
+		}
+
+		BlueprintClass = BlueprintClass->GetSuperClass();
+	}
 
 	// If this is not a class, exit now, as structs cannot have RPCs or replicated properties.
 	if (!Class)

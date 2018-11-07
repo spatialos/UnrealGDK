@@ -1,0 +1,6 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+component Singleton {
+    id = 100003;
+}

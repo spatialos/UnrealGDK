@@ -1,10 +1,5 @@
-<%(Callout type="warn" message="This [pre-alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal is for evaluation and feedback purposes only, with limited documentation - see the guidance on [Recommended use]({{urlRoot}}/index#recommended-use)")%>
-
 # Actor property handover between SpatialOS servers
-## Overview
-
 <%(TOC)%>
-
 In Unreal’s native client-server architecture, your game server holds the canonical state of the whole game world. As there is a single game server, there are Actor properties that the server doesn’t need to share with any other server or clients. These properties only need to exist in the game server’s local process space.
 
 In SpatialOS games, the work of the server is spread across several servers (known as “server-workers” in SpatialOS). (Note that in SpatialOS, game clients are “client-workers” - there’s more information on [workers](https://docs.improbable.io/reference/latest/shared/concepts/workers) in the SpatialOS documentation.)
@@ -19,32 +14,31 @@ Note that server-worker authority over properties is different to server-worker 
 ## How to facilitate Actor handover
 
 To facilitate an Actor’s property handover between server-workers, follow the instructions below:
-1.  In the Actor’s class, mark the property field with a `Handover` tag in the `UPROPERTY` macro, as shown in the example below.
 
-```
-UPROPERTY(Handover)
-float MyServerSideVariable;
-```
+1.  If your property is defined in a native C++ class, mark the property field with a `Handover` tag in the `UPROPERTY` macro, as shown in the example below.
 
-2. In the Actor's `UCLASS` macro, mark the class as a `SpatialType`, as show in the example below.
+    ```
+    UPROPERTY(Handover)
+    float MyServerSideVariable;
+    ```
 
-```
-UCLASS(SpatialType)
-class AMyActor
-{
-```
+1. Alternatively, if your property is defined in a Blueprint class, set the variable's replication setting to `Handover` within the Blueprint Editor. 
+![Example]({{assetRoot}}assets/screen-grabs/handover-blueprint.png)
 
-1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#schema-generator) for your Actor’s class.
+1. Tag the Actor with the `SpatialType` specifier. See [SpatialType]({{urlRoot}}/content/spatial-type).
+
+1. Run the Schema Generator. This generates the [schema]({{urlRoot}}/content/glossary#schema-generation) for your Actor’s class.
 
 The GDK now ensures that server-workers transfer these tagged Actor’s properties between them.
 
 ## Native Unreal class properties handover
 To ensure native Unreal classes work with the GDK for Unreal, we are making handover-related changes on a class-by-class basis as we identify appropriate properties for `Handover` tags.
 
-**Classes with properties tagged with `Handover` status (2018-07-31):**
+**Classes with properties tagged with `Handover` status (2018-10-26):**
 
 * `UCharacterMovementComponent`
 * `APlayerController`
+* `MovementComponent`
 
 We will continue to extend our support to more built-in Actor and component types.
 

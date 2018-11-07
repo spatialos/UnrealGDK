@@ -123,12 +123,12 @@ void FSpatialGDKEditorToolbarModule::RegisterSettings()
 	{
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
-		SettingsContainer->DescribeCategory("SpatialGDKEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS Unreal GDK"),
-			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialGDK Editor toolbar plugin"));
+		SettingsContainer->DescribeCategory("SpatialGDKEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS GDK for Unreal"),
+			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS GDK for Unreal"));
 
-		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditorToolbar", "Toolbar",
-			LOCTEXT("RuntimeGeneralSettingsName", "Toolbar"),
-			LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for the SpatialOS Unreal GDK toolbar plugin."),
+		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditorToolbar", "Settings",
+			LOCTEXT("RuntimeGeneralSettingsName", "Settings"),
+			LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for the SpatialOS GDK for Unreal"),
 			GetMutableDefault<USpatialGDKEditorToolbarSettings>());
 
 		if (SettingsSection.IsValid())
@@ -142,7 +142,7 @@ void FSpatialGDKEditorToolbarModule::UnregisterSettings()
 {
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
-		SettingsModule->UnregisterSettings("Project", "SpatialGDK", "Toolbar");
+		SettingsModule->UnregisterSettings("Project", "SpatialGDK", "Settings");
 	}
 }
 
@@ -357,11 +357,11 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	const FString ExecuteAbsolutePath = SpatialGDKToolbarSettings->GetProjectRoot();
+	const FString ExecuteAbsolutePath = SpatialGDKToolbarSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c spatial.exe worker build build-config & spatial.exe local launch %s"), *SpatialGDKToolbarSettings->SpatialOSLaunchConfig);
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *SpatialGDKToolbarSettings->SpatialOSLaunchConfig);
 
 	UE_LOG(LogSpatialGDKEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
@@ -382,7 +382,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	{
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 		const FString SpatialLogPath =
-			SpatialGDKToolbarSettings->GetProjectRoot() + FString(TEXT("/logs/spatial.log"));
+			SpatialGDKToolbarSettings->GetSpatialOSDirectory() + FString(TEXT("/logs/spatial.log"));
 		UE_LOG(LogSpatialGDKEditor, Error,
 				TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."),
 				*SpatialLogPath);

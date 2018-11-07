@@ -2,10 +2,8 @@
 
 #pragma once
 
-#include "Paths.h"
-#include "PlatformProcess.h"
-
-#include "IPluginManager.h"
+#include "HAL/PlatformProcess.h"
+#include "Interfaces/IPluginManager.h"
 
 /**
  * This class ensures that the C API worker library is loaded before it is needed by code.

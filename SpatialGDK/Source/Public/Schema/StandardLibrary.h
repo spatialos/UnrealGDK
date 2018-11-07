@@ -2,14 +2,15 @@
 
 #pragma once
 
-#include "Platform.h"
-
+#include "Math/Vector.h"
 #include "Schema/Component.h"
 #include "SpatialConstants.h"
+#include "UObject/UObjectGlobals.h"
+#include "UObject/Package.h"
 #include "Utils/SchemaUtils.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 

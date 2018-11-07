@@ -3,8 +3,8 @@
 
 #include "Interop/Connection/ConnectionConfig.h"
 
-#include <improbable/c_schema.h>
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialWorkerConnection.generated.h"
 
@@ -21,6 +21,7 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject
 
 public:
 	virtual void FinishDestroy() override;
+	void DestroyConnection();
 
 	void Connect(bool bConnectAsClient);
 
@@ -29,6 +30,7 @@ public:
 	// Worker Connection Interface
 	Worker_OpList* GetOpList();
 	Worker_RequestId SendReserveEntityIdRequest();
+	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
 	Worker_RequestId SendCreateEntityRequest(uint32_t ComponentCount, const Worker_ComponentData* Components, const Worker_EntityId* EntityId);
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
 	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate);
@@ -37,6 +39,7 @@ public:
 	void SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message);
 	void SendComponentInterest(Worker_EntityId EntityId, const TArray<Worker_InterestOverride>& ComponentInterest);
 	FString GetWorkerId() const;
+	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntiyQuery);
 
 	FOnConnectedDelegate OnConnected;
 	FOnConnectFailedDelegate OnConnectFailed;

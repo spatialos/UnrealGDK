@@ -6,13 +6,15 @@
 #include "Engine/PackageMapClient.h"
 
 #include "Schema/UnrealMetadata.h"
-#include "improbable/UnrealObjectRef.h"
+#include "UObject/improbable/UnrealObjectRef.h"
 
-#include <improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialPackageMapClient.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSPackageMap, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
+
+class USpatialTypebindingManager;
 
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
@@ -28,7 +30,14 @@ public:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const;
 
+	UObject* GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
+	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
+
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
+
+private:
+	UPROPERTY()
+	USpatialTypebindingManager* TypebindingManager;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
