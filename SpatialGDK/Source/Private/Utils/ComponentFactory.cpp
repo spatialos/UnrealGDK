@@ -458,11 +458,24 @@ bool ComponentFactory::FillInterestSchemaObject(Schema_Object* ComponentObject, 
 	// Get the previous state of the component
 	improbable::Interest* InterestData = NetDriver->StaticComponentView->GetComponentData<improbable::Interest>(EntityId);
 
-	for (auto& ComponentInterestEntry : InterestData->ComponentInterest)
+	improbable::ComponentInterest MetaDataComponentInterest;
+	if (improbable::ComponentInterest* MetaDataComponentInterestPtr = InterestData->ComponentInterest.Find(SpatialConstants::UNREAL_METADATA_COMPONENT_ID))
 	{
-
-
+		MetaDataComponentInterest = *MetaDataComponentInterestPtr;
 	}
+
+	//if (improbable::ComponentInterest::Query* ExistingQuery = MetaDataComponentInterest.Queries.FindByPredicate([](const improbable::ComponentInterest::Query& Element) {
+	//	if (Element.ResultComponentId.Contains(
+	//	}))
+	//	{
+	//		return true;
+	//	}
+
+	//	return false;
+	//}))
+	//{
+
+	//}
 	// Iterate over each resolved actorproxy and assign interest for it.
 
 	return true;
