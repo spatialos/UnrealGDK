@@ -11,13 +11,13 @@ struct FSubobjectSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(VisibleAnywhere)
-	FString ClassPath;
+	UPROPERTY()
+	UClass* Class = nullptr;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY()
 	FName Name;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY()
 	uint32 SchemaComponents[SCHEMA_Count] = {};
 };
 
@@ -26,10 +26,10 @@ struct FSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY()
 	uint32 SchemaComponents[SCHEMA_Count] = {};
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY()
 	TMap<uint32, FSubobjectSchemaData> SubobjectData;
 };
 
@@ -39,6 +39,6 @@ class SPATIALGDK_API USchemaDatabase : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(VisibleAnywhere)
-	TMap<FString, FSchemaData> ClassPathToSchema;
+	UPROPERTY()
+	TMap<UClass*, FSchemaData> ClassToSchema;
 };
