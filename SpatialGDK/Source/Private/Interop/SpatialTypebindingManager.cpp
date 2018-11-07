@@ -34,17 +34,7 @@ void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 
 void USpatialTypebindingManager::FindSupportedClasses()
 {
-	TArray<FString> SupportedClassPaths;
-	SchemaDatabase->ClassPathToSchema.GetKeys(SupportedClassPaths);
-
-	for (auto& ClassPath : SupportedClassPaths)
-	{
-		UClass* Class = FSoftClassPath(ClassPath).ResolveClass();
-		if (Class != nullptr)
-		{
-			SupportedClasses.Add(Class);
-		}
-	}
+	SchemaDatabase->ClassToSchema.GetKeys(SupportedClasses);
 }
 
 void USpatialTypebindingManager::CreateTypebindings()
@@ -119,7 +109,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
-			Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SchemaComponents[Type];
+			Worker_ComponentId ComponentId = SchemaDatabase->ClassToSchema[Class].SchemaComponents[Type];
 			if (ComponentId != 0)
 			{
 				Info.SchemaComponents[Type] = ComponentId;
@@ -136,20 +126,13 @@ void USpatialTypebindingManager::CreateTypebindings()
 
 	for (UClass* Class : SupportedClasses)
 	{
-		for (auto& SubobjectDataPair : SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SubobjectData)
+		for (auto& SubobjectDataPair : SchemaDatabase->ClassToSchema[Class].SubobjectData)
 		{
 			int32 Offset = SubobjectDataPair.Key;
 			FSubobjectSchemaData SubobjectSchemaData = SubobjectDataPair.Value;
 
 			FClassInfo* ActorInfo = FindClassInfoByClass(Class);
-
-			UClass* SubobjectClass = FSoftClassPath(SubobjectSchemaData.ClassPath).ResolveClass();
-			if (SubobjectClass == nullptr)
-			{
-				continue;
-			}
-
-			FClassInfo* SubobjectInfoPtr = FindClassInfoByClass(SubobjectClass);
+			FClassInfo* SubobjectInfoPtr = FindClassInfoByClass(SubobjectSchemaData.Class);
 			if (SubobjectInfoPtr == nullptr)
 			{
 				continue;
@@ -166,7 +149,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				if (ComponentId != 0)
 				{
 					SubobjectInfo.SchemaComponents[Type] = ComponentId;
-					ComponentToClassMap.Add(ComponentId, SubobjectClass);
+					ComponentToClassMap.Add(ComponentId, SubobjectSchemaData.Class);
 					ComponentToOffsetMap.Add(ComponentId, Offset);
 					ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
 				}
