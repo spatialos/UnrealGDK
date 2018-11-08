@@ -40,11 +40,7 @@ void USpatialTypebindingManager::FindSupportedClasses()
 	for (auto& ClassPath : SupportedClassPaths)
 	{
 		FSoftClassPath SoftClassPath(ClassPath);
-		UClass* Class = SoftClassPath.ResolveClass();
-		if (Class == nullptr)
-		{
-			Class = SoftClassPath.TryLoadClass<UObject>();
-		}
+		UClass* Class = SoftClassPath.TryLoadClass<UObject>();
 
 		if (Class != nullptr)
 		{
@@ -150,11 +146,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 			FClassInfo* ActorInfo = FindClassInfoByClass(Class);
 
 			FSoftClassPath SubobjectClassPath(SubobjectSchemaData.ClassPath);
-			UClass* SubobjectClass = SubobjectClassPath.ResolveClass();
-			if (SubobjectClass == nullptr)
-			{
-				SubobjectClass = SubobjectClassPath.TryLoadClass<UObject>();
-			}
+			UClass* SubobjectClass = SubobjectClassPath.TryLoadClass<UObject>();
 			if (SubobjectClass == nullptr)
 			{
 				continue;
