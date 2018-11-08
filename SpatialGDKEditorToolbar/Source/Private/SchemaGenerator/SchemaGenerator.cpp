@@ -410,7 +410,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		UE_LOG(LogTemp, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
 	}
 
-	ClassToSchema.Add(Class, ActorSchemaData);
+	ClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
 
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *UnrealNameToSchemaTypeName(Class->GetName())));
 
@@ -422,7 +422,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
 	FSubobjectSchemaData SubobjectData;
-	SubobjectData.Class = ComponentClass;
+	SubobjectData.ClassPath = ComponentClass->GetPathName();
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -538,12 +538,12 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 					}
 					else
 					{
-						SubobjectData.Class = Value->GetClass();
+						SubobjectData.ClassPath = Value->GetClass()->GetPathName();
 					}
 
 					SubobjectData.Name = PropertyTypeInfo->Name;
 					ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
-					ClassToSchema.Add(Value->GetClass(), FSchemaData());
+					ClassPathToSchema.Add(Value->GetClass()->GetPathName(), FSchemaData());
 				}
 
 				CurrentOffset++;
