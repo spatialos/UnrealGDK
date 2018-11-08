@@ -35,15 +35,16 @@ void UEntityRegistry::RemoveFromRegistryImpl(const AActor* Actor, const Worker_E
 		}
 		else
 		{
-			UE_LOG(LogEntityRegistry, Warning, TEXT("Tried to remove actor %s from registry but it wasn't there"), *Actor->GetFullName());
+			UE_LOG(LogEntityRegistry, Warning, TEXT("Tried to remove actor %s (entity %lld) from registry but it wasn't there"),
+				*Actor->GetFullName(), EntityId);
 		}
 	}
 	else
 	{
-		UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove Actor from registry: Actor == nullptr"));
+		UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove actor (entity %lld) from registry: Actor == nullptr"), EntityId);
 	}
 
-	if (EntityId != -1)
+	if (EntityId > 0)
 	{
 		if (EntityIdToActor.Contains(EntityId))
 		{
@@ -56,7 +57,7 @@ void UEntityRegistry::RemoveFromRegistryImpl(const AActor* Actor, const Worker_E
 	}
 	else
 	{
-		UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove Actor from registry: EntityId == -1"));
+		UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove Actor from registry: EntityId < 1"));
 	}
 }
 
