@@ -2,7 +2,7 @@ param (
     [switch]$service=$false
 )
 
-$rootPath=[System.Io.Path]::GetFullPath("$env:HOMEDRIVE:\tools\fastbuild")
+$rootPath=[System.IO.Path]::GetFullPath("$env:HOMEDRIVE:\tools\fastbuild")
 $version="v0.96"
 
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -36,13 +36,18 @@ if ($service) {
     Stop-Process -Name "FBuildWorker.exe.copy" -ErrorAction SilentlyContinue
 }
 
+# Manually remove marker file from the brokerage, since it's not possible to cleanly exit FBuildWorker.exe
+$brokerageFile = [System.IO.Path]::Combine($env:FASTBUILD_BROKERAGE_PATH, "main", "17", [System.Net.Dns]::GetHostName())
+if (Test-Path $brokerageFile) {
+    Write-Host "Removing from brokerage..."
+    [System.IO.File]::Delete($brokerageFile)
+}
+
 Write-Host "Cleaning environment..."
 [System.Environment]::SetEnvironmentVariable("FASTBUILD_EXE_PATH", $null, [System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable("FASTBUILD_CACHE_PATH", $null, [System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable("FASTBUILD_BROKERAGE_PATH", $null, [System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable("FASTBUILD_CACHE_MODE", $null, [System.EnvironmentVariableTarget]::Machine)
-
-refreshenv
 
 if (Test-Path $rootPath) {
     Write-Host "Removing $rootPath..."

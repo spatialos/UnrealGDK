@@ -83,3 +83,5 @@ Scripts/spatialos.*.build.json
 
 # Don't ignore the Build util
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Build/
+
+_ReSharper.caches
