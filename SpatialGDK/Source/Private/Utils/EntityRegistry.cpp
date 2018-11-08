@@ -27,15 +27,37 @@ void UEntityRegistry::RemoveFromRegistry(const Worker_EntityId& EntityId)
 
 void UEntityRegistry::RemoveFromRegistryImpl(const AActor* Actor, const Worker_EntityId& EntityId)
 {
-	ActorToEntityId.Remove(Actor);
-
-	if (EntityId != -1)
+	if (Actor)
 	{
-		EntityIdToActor.Remove(EntityId);
+		if (ActorToEntityId.Contains(Actor))
+		{
+			ActorToEntityId.Remove(Actor);
+		}
+		else
+		{
+			UE_LOG(LogEntityRegistry, Warning, TEXT("Tried to remove actor %s (entity %lld) from registry but it wasn't there."),
+				*Actor->GetFullName(), EntityId);
+		}
 	}
 	else
 	{
-		UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove Actor from registry: EntityId == -1"));
+		UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove actor (entity %lld) from registry: Actor == nullptr"), EntityId);
+	}
+
+	if (EntityId > 0)
+	{
+		if (EntityIdToActor.Contains(EntityId))
+		{
+			EntityIdToActor.Remove(EntityId);
+		}
+		else
+		{
+			UE_LOG(LogEntityRegistry, Warning, TEXT("Tried to remove entity ID %lld from registry but it wasn't there."), EntityId);
+		}
+	}
+	else
+	{
+		UE_LOG(LogEntityRegistry, Warning, TEXT("Couldn't remove Actor from registry: EntityId %lld < 1"), EntityId);
 	}
 }
 
