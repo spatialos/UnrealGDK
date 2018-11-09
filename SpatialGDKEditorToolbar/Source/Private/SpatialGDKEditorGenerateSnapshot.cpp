@@ -273,20 +273,21 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 		uint32 Offset = SubobjectInfoPair.Key;
 		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		UObject* Subobject = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset));
-
-		FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
-		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
-
-		// Create component data for initial state of subobject
-		ComponentData.Append(DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges));
-
-		// Add subobject RPCs to entity
-		for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
+		if (UObject* Subobject = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset)))
 		{
-			if (SubobjectInfo->SchemaComponents[RPCType] != 0)
+			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
+			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+
+			// Create component data for initial state of subobject
+			ComponentData.Append(DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges));
+
+			// Add subobject RPCs to entity
+			for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
 			{
-				ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo->SchemaComponents[RPCType]));
+				if (SubobjectInfo->SchemaComponents[RPCType] != 0)
+				{
+					ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo->SchemaComponents[RPCType]));
+				}
 			}
 		}
 	}
