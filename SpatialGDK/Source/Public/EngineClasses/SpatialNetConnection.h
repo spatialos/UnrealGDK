@@ -29,4 +29,7 @@ public:
 
 	UPROPERTY()
 	bool bReliableSpatialConnection;
+
+	UPROPERTY()
+	FString WorkerAttribute;
 };

@@ -14,7 +14,7 @@ struct FConnectionConfig
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_RAKNET)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
@@ -24,7 +24,23 @@ struct FConnectionConfig
 
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
-		LinkProtocol = LinkProtocolString == TEXT("Tcp") ? WORKER_NETWORK_CONNECTION_TYPE_TCP : WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
+		if (LinkProtocolString == TEXT("Tcp"))
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_TCP;
+		}
+		if (LinkProtocolString == TEXT("RakNet"))
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
+		}
+		if (LinkProtocolString == TEXT("Kcp"))
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+		}
+
+#if PLATFORM_PS4 == 1 || PLATFORM_XBOXONE == 1
+		// Use KCP in all cases on console.
+		LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+#endif
 	}
 
 	FString WorkerId;
@@ -67,5 +83,18 @@ struct FLocatorConfig : public FConnectionConfig
 	FString ProjectName;
 	FString DeploymentName;
 	FString LocatorHost;
+	FString LoginToken;
+};
+
+struct FLocatorV2Config : public FConnectionConfig
+{
+	FLocatorV2Config()
+		: LocatorHost(TEXT("locator.improbable.io")) {
+		const TCHAR* CommandLine = FCommandLine::Get();
+		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+	}
+
+	FString LocatorHost;
+	FString PlayerIdentityToken;
 	FString LoginToken;
 };

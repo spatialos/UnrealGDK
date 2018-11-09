@@ -13,6 +13,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 DECLARE_DELEGATE(FOnConnectedDelegate);
 DECLARE_DELEGATE_OneParam(FOnConnectFailedDelegate, const FString&);
 
+enum class SpatialConnectionType
+{
+	Receptionist,
+	Locator,
+	LocatorV2
+};
+
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject
 {
@@ -46,18 +53,21 @@ public:
 
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
+	FLocatorV2Config LocatorV2Config;
 
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);
 	void ConnectToLocator();
+	void ConnectToLocatorV2();
 
 	Worker_ConnectionParameters CreateConnectionParameters(FConnectionConfig& Config);
-	bool ShouldConnectWithLocator();
+	SpatialConnectionType GetConnectionType() const;
 
 	void GetAndPrintConnectionFailureMessage();
 
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLocator;
+	Worker_Alpha_Locator* WorkerLocatorV2;
 
 	bool bIsConnected;
 };

@@ -36,7 +36,7 @@ inline FString GetStringFromSchema(const Schema_Object* Object, Schema_FieldId I
 	return IndexStringFromSchema(Object, Id, 0);
 }
 
-inline void AddPayloadToSchema(Schema_Object* Object, Schema_FieldId Id, FSpatialNetBitWriter& Writer)
+inline void AddBytesToSchema(Schema_Object* Object, Schema_FieldId Id, const FBitWriter& Writer)
 {
 	uint32 PayloadSize = Writer.GetNumBytes();
 	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(char) * PayloadSize);
@@ -44,15 +44,15 @@ inline void AddPayloadToSchema(Schema_Object* Object, Schema_FieldId Id, FSpatia
 	Schema_AddBytes(Object, Id, PayloadBuffer, sizeof(char) * PayloadSize);
 }
 
-inline TArray<uint8> IndexPayloadFromSchema(const Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline TArray<uint8> IndexBytesFromSchema(const Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
 	int32 PayloadSize = (int32)Schema_IndexBytesLength(Object, Id, Index);
 	return TArray<uint8>((const uint8*)Schema_IndexBytes(Object, Id, Index), PayloadSize);
 }
 
-inline TArray<uint8> GetPayloadFromSchema(const Schema_Object* Object, Schema_FieldId Id)
+inline TArray<uint8> GetBytesFromSchema(const Schema_Object* Object, Schema_FieldId Id)
 {
-	return IndexPayloadFromSchema(Object, Id, 0);
+	return IndexBytesFromSchema(Object, Id, 0);
 }
 
 inline void AddWorkerRequirementSetToSchema(Schema_Object* Object, Schema_FieldId Id, const WorkerRequirementSet& Value)

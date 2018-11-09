@@ -15,7 +15,8 @@ FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMa
 
 void FSpatialNetBitWriter::SerializeObjectRef(FUnrealObjectRef& ObjectRef)
 {
-	*this << ObjectRef.Entity;
+	int64 entity_id = ObjectRef.Entity;
+	*this << entity_id;
 	*this << ObjectRef.Offset;
 
 	uint8 HasPath = ObjectRef.Path.IsSet();

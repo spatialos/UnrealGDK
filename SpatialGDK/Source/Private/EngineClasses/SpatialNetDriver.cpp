@@ -7,6 +7,7 @@
 #include "Engine/ChildConnection.h"
 #include "Engine/Engine.h"
 #include "Engine/NetworkObjectList.h"
+#include "Engine/LocalPlayer.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
 #include "Net/DataReplication.h"
@@ -137,7 +138,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		GameInstance->CreateNewSpatialWorkerConnection();
 	}
 
-	// Grab the SpatialWorkerConnection from the SpatialGameInstance (stored there for persistence in server travel). 
+	// Grab the SpatialWorkerConnection from the SpatialGameInstance (stored there for persistence in server travel).
 	Connection = GameInstance->SpatialConnection;
 
 	if (LoadedWorld->URL.HasOption(TEXT("locator")))
@@ -147,6 +148,13 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
 	}
+	else if (LoadedWorld->URL.HasOption(TEXT("locatorv2")))
+	{
+		// Obtain PIT and LT.
+		Connection->LocatorV2Config.PlayerIdentityToken = LoadedWorld->URL.GetOption(TEXT("playeridentity="), TEXT(""));
+		Connection->LocatorV2Config.LoginToken = LoadedWorld->URL.GetOption(TEXT("login="), TEXT(""));
+		Connection->LocatorV2Config.UseExternalIp = true;
+	}
 	else
 	{
 		// Check for overrides in the travel URL.
@@ -155,18 +163,17 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			Connection->ReceptionistConfig.ReceptionistHost = LoadedWorld->URL.Host;
 			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
 		}
-
 		Connection->ReceptionistConfig.UseExternalIp = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
 	}
 
-	Connect();
+	Connect(LoadedWorld);
 }
 
-void USpatialNetDriver::Connect()
+void USpatialNetDriver::Connect(UWorld* LoadedWorld)
 {
-	Connection->OnConnected.BindLambda([this]
+	Connection->OnConnected.BindLambda([this, LoadedWorld]
 	{
-		OnMapLoadedAndConnected();
+		OnMapLoadedAndConnected(LoadedWorld);
 	});
 	Connection->OnConnectFailed.BindLambda([this](const FString& Reason)
 	{
@@ -176,7 +183,40 @@ void USpatialNetDriver::Connect()
 	Connection->Connect(bConnectAsClient);
 }
 
-void USpatialNetDriver::OnMapLoadedAndConnected()
+void USpatialNetDriver::ObtainPlayerId(UWorld* World, FUniqueNetIdRepl& UniqueId, FName& OnlinePlatformName)
+{
+	const FWorldContext* const WorldContext = GEngine->GetWorldContextFromWorld(World);
+	check(WorldContext->OwningGameInstance);
+
+	// This code is adapted from PendingNetGame.cpp:242
+	ULocalPlayer* LocalPlayer = WorldContext->OwningGameInstance->GetFirstGamePlayer();
+	if (LocalPlayer)
+	{
+		// TODO: Pass these along.
+		/*
+		// Send the player nickname if available
+		FString OverrideName = LocalPlayer->GetNickname();
+		if (OverrideName.Len() > 0)
+		{
+		PartialURL.AddOption(*FString::Printf(TEXT("Name=%s"), *OverrideName));
+		}
+
+		// Send any game-specific url options for this player
+		FString GameUrlOptions = LocalPlayer->GetGameLoginOptions();
+		if (GameUrlOptions.Len() > 0)
+		{
+		PartialURL.AddOption(*FString::Printf(TEXT("%s"), *GameUrlOptions));
+		}
+		*/
+
+		// Send the player unique Id at login
+		UniqueId = LocalPlayer->GetPreferredUniqueNetId();
+	}
+
+	OnlinePlatformName = WorldContext->OwningGameInstance->GetOnlinePlatformName();
+}
+
+void USpatialNetDriver::OnMapLoadedAndConnected(UWorld* LoadedWorld)
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS and map has been loaded."));
 
@@ -229,7 +269,10 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 		// If we know the GSM is already accepting players, simply spawn.
 		if (GlobalStateManager->bAcceptingPlayers)
 		{
-			PlayerSpawner->SendPlayerSpawnRequest();
+			FUniqueNetIdRepl UniqueId;
+			FName OnlinePlatformName;
+			ObtainPlayerId(LoadedWorld, UniqueId, OnlinePlatformName);
+			PlayerSpawner->SendPlayerSpawnRequest(UniqueId, OnlinePlatformName);
 		}
 		else
 		{
@@ -262,7 +305,10 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingForAcceptingPlayersToSpawn && bAcceptingPlayers)
 	{
-		PlayerSpawner->SendPlayerSpawnRequest();
+		FUniqueNetIdRepl UniqueId;
+		FName OnlinePlatformName;
+		ObtainPlayerId(GetWorld(), UniqueId, OnlinePlatformName);
+		PlayerSpawner->SendPlayerSpawnRequest(UniqueId, OnlinePlatformName);
 
 		// Unregister our interest in spawning on accepting players changing again.
 		bWaitingForAcceptingPlayersToSpawn = false;
@@ -352,7 +398,7 @@ bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const 
 
 void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessTravel /*= false*/)
 {
-	// Intentionally does not call Super::NotifyActorDestroyed, but most of the functionality is copied here 
+	// Intentionally does not call Super::NotifyActorDestroyed, but most of the functionality is copied here
 	// The native UNetDriver would normally store destruction info here for "StartupActors" - replicated actors
 	// placed in the level, but we handle this flow differently in the GDK
 
@@ -1050,7 +1096,7 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	}
 }
 
-USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer)
+USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, FUniqueNetIdRepl UniqueId, FName OnlineSubsystemType, bool bExistingPlayer)
 {
 	bool bOk = true;
 
@@ -1066,11 +1112,14 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	Notify->NotifyAcceptedConnection(SpatialConnection);
 	AddClientConnection(SpatialConnection);
 
-	// Set up the net ID for this player.
+	// Set the unique net ID for this player. This and the code below is adapted from World.cpp:4498
+	SpatialConnection->PlayerId = UniqueId;
+	SpatialConnection->SetPlayerOnlinePlatformName(OnlineSubsystemType);
+
+	// Get the worker attribute.
 	const TCHAR* WorkerAttributeOption = InUrl.GetOption(TEXT("workerAttribute"), nullptr);
 	check(WorkerAttributeOption);
-	FString WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
-	FUniqueNetIdRepl WorkerAttributeId(TSharedPtr<FSpatialWorkerUniqueNetId>(new FSpatialWorkerUniqueNetId(WorkerAttribute)));
+	SpatialConnection->WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
@@ -1086,7 +1135,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
 	if (GameMode)
 	{
-		GameMode->PreLogin(Tmp, SpatialConnection->LowLevelGetRemoteAddress(), WorkerAttributeId, ErrorMsg);
+		GameMode->PreLogin(Tmp, SpatialConnection->LowLevelGetRemoteAddress(), SpatialConnection->PlayerId, ErrorMsg);
 	}
 
 	if (!ErrorMsg.IsEmpty())
@@ -1110,7 +1159,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 		if (!bExistingPlayer)
 		{
-			SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, WorkerAttributeId, ErrorMsg);
+			SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, SpatialConnection->PlayerId, ErrorMsg);
 		}
 		else
 		{

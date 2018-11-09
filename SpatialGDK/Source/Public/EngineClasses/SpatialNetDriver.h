@@ -33,23 +33,6 @@ class UEntityRegistry;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
-class FSpatialWorkerUniqueNetId : public FUniqueNetId
-{
-public:
-	FSpatialWorkerUniqueNetId(const FString& WorkerId) : WorkerId{WorkerId} {}
-	~FSpatialWorkerUniqueNetId() override = default;
-
-	const uint8* GetBytes() const override { return reinterpret_cast<const uint8*>(*WorkerId); }
-	int32 GetSize() const override { return WorkerId.Len() * sizeof(TCHAR); }
-	bool IsValid() const override { return true; }
-	FString ToString() const override { return WorkerId; }
-	FString ToDebugString() const override { return TEXT("workerId:") + WorkerId; }
-	virtual FName GetType() const override { return NULL_SUBSYSTEM; };
-
-private:
-	FString WorkerId;
-};
-
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 {
@@ -87,7 +70,7 @@ public:
 	void OnAcceptingPlayersChanged(bool bAcceptingPlayers);
 
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
-	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer);
+	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, FUniqueNetIdRepl UniqueId, FName OnlineSubsystemType, bool bExistingPlayer);
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId);
@@ -144,16 +127,17 @@ private:
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
-	void Connect();
+	void Connect(UWorld* LoadedWorld);
+	void ObtainPlayerId(UWorld* World, FUniqueNetIdRepl& UniqueId, FName& OnlinePlatformName);
 
 	UFUNCTION()
-	void OnMapLoadedAndConnected();
+	void OnMapLoadedAndConnected(UWorld* LoadedWorld);
 
 	UFUNCTION()
 	void OnConnectFailed(const FString& Reason);
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
-		
+
 #if WITH_SERVER_CODE
 	//SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.
 	// Could have marked them virtual in base class but that's a pointless source change as these functions are not meant to be called from anywhere except USpatialNetDriver::ServerReplicateActors.

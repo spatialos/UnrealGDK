@@ -27,12 +27,25 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* 
 	NumberOfAttempts = 0;
 }
 
-void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(FString URLString, const char* CallerAttribute, Worker_RequestId RequestId )
+void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId )
 {
+	// Extract spawn parameters.
+	FString URLString = GetStringFromSchema(Payload, 1);
+
+	FUniqueNetIdRepl UniqueId;
+	TArray<uint8> UniqueIdBytes = GetBytesFromSchema(Payload, 2);
+	TSet<FUnrealObjectRef> UnresolvedRefs;
+	FNetBitReader UniqueIdReader(nullptr, UniqueIdBytes.GetData(), UniqueIdBytes.Num());
+	UniqueIdReader << UniqueId;
+
+	FName OnlineSubsystemType = FName(*GetStringFromSchema(Payload, 3));
+
+	// Accept new player.
 	URLString.Append(TEXT("?workerAttribute=")).Append(UTF8_TO_TCHAR(CallerAttribute));
 
-	NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
+	NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlineSubsystemType, false);
 
+	// Send response.
 	Worker_CommandResponse CommandResponse = {};
 	CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
@@ -42,7 +55,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(FString URLString, const c
 	NetDriver->Connection->SendCommandResponse(RequestId, &CommandResponse);
 }
 
-void USpatialPlayerSpawner::SendPlayerSpawnRequest()
+void USpatialPlayerSpawner::SendPlayerSpawnRequest(FUniqueNetIdRepl& UniqueId, FName OnlineSubsystemType)
 {
 	// Send an entity query for the SpatialSpawner and bind a delegate so that once it's found, we send a spawn command.
 	Worker_Constraint SpatialSpawnerConstraint;
@@ -57,7 +70,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery);
 
 	EntityQueryDelegate SpatialSpawnerQueryDelegate;
-	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID](Worker_EntityQueryResponseOp& Op)
+	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID, UniqueId, OnlineSubsystemType](Worker_EntityQueryResponseOp& Op) mutable
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -78,6 +91,12 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 			CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
 			Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 			AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
+
+			// Write player identity information.
+			FNetBitWriter UniqueIdWriter(0);
+			UniqueIdWriter << UniqueId;
+			AddBytesToSchema(RequestObject, 2, UniqueIdWriter);
+			AddStringToSchema(RequestObject, 3, OnlineSubsystemType.ToString());
 
 			NetDriver->Connection->SendCommandRequest(Op.results[0].entity_id, &CommandRequest, 1);
 		}
@@ -100,11 +119,13 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp&
 		UE_LOG(LogSpatialPlayerSpawner, Warning, TEXT("Player spawn request failed: \"%s\""),
 			UTF8_TO_TCHAR(Op.message));
 
+		/*
 		FTimerHandle RetryTimer;
 		TimerManager->SetTimer(RetryTimer, [this]()
 		{
 			SendPlayerSpawnRequest();
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
+		*/
 	}
 	else
 	{

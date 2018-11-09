@@ -3,6 +3,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 #include "Async/Async.h"
+#include "Misc/Paths.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -36,15 +37,20 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 		return;
 	}
 
-	if (ShouldConnectWithLocator())
+	switch (GetConnectionType())
 	{
-		ConnectToLocator();
-	}
-	else
-	{
+	case SpatialConnectionType::Receptionist:
 		ConnectToReceptionist(bInitAsClient);
-	}
+		break;
 
+	case SpatialConnectionType::Locator:
+		ConnectToLocator();
+		break;
+
+	case SpatialConnectionType::LocatorV2:
+		ConnectToLocatorV2();
+		break;
+	}
 }
 
 void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
@@ -71,6 +77,17 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
+
+	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
+#if PLATFORM_WINDOWS == 1 || PLATFORM_XBOXONE == 1
+	ConnectionParams.enable_protocol_logging_at_startup = true;
+#if PLATFORM_XBOXONE == 1
+	ConnectionParams.protocol_logging.log_prefix = "T:\\protocol-log-";
+#else
+	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
+#endif
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Protocol log prefix: %s"), UTF8_TO_TCHAR(ConnectionParams.protocol_logging.log_prefix));
+#endif
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
@@ -120,6 +137,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	LocatorParams.credentials_type = WORKER_LOCATOR_LOGIN_TOKEN_CREDENTIALS;
 	LocatorParams.project_name = ProjectNameCStr.Get();
 	LocatorParams.login_token = Credentials;
+	LocatorParams.enable_logging = true;
 
 	WorkerLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), &LocatorParams);
 
@@ -207,9 +225,99 @@ void USpatialWorkerConnection::ConnectToLocator()
 	});
 }
 
-bool USpatialWorkerConnection::ShouldConnectWithLocator()
+
+void USpatialWorkerConnection::ConnectToLocatorV2()
 {
-	return !LocatorConfig.LoginToken.IsEmpty();
+	if (LocatorV2Config.WorkerType.IsEmpty())
+	{
+		LocatorV2Config.WorkerType = SpatialConstants::ClientWorkerType;
+	}
+
+	if (LocatorV2Config.WorkerId.IsEmpty())
+	{
+		LocatorV2Config.WorkerId = LocatorConfig.WorkerType + FGuid::NewGuid().ToString();
+	}
+
+	FTCHARToUTF8 PlayerIdentityTokenCStr(*LocatorV2Config.PlayerIdentityToken);
+	FTCHARToUTF8 LoginTokenCStr(*LocatorV2Config.LoginToken);
+
+	Worker_Alpha_LocatorParameters LocatorParams = {};
+	LocatorParams.player_identity.player_identity_token = PlayerIdentityTokenCStr.Get();
+	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
+
+	WorkerLocatorV2 = Worker_Alpha_Locator_Create(TCHAR_TO_UTF8(*LocatorV2Config.LocatorHost), 0, &LocatorParams);
+
+	// TODO: Move creation of connection parameters into a function somehow
+	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
+	FTCHARToUTF8 WorkerTypeCStr(*LocatorV2Config.WorkerType);
+	ConnectionParams.worker_type = WorkerTypeCStr.Get();
+	ConnectionParams.enable_protocol_logging_at_startup = LocatorV2Config.EnableProtocolLoggingAtStartup;
+
+	Worker_ComponentVtable DefaultVtable = {};
+	ConnectionParams.component_vtable_count = 0;
+	ConnectionParams.default_component_vtable = &DefaultVtable;
+
+	ConnectionParams.network.connection_type = LocatorV2Config.LinkProtocol;
+	ConnectionParams.network.use_external_ip = LocatorV2Config.UseExternalIp;
+
+	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
+#if PLATFORM_WINDOWS == 1 || PLATFORM_XBOXONE == 1
+	ConnectionParams.enable_protocol_logging_at_startup = true;
+#if PLATFORM_XBOXONE == 1
+	ConnectionParams.protocol_logging.log_prefix = "T:\\protocol-log-";
+#else
+	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
+#endif
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Protocol log prefix: %s"), UTF8_TO_TCHAR(ConnectionParams.protocol_logging.log_prefix));
+#endif
+	// end TODO
+
+	Worker_ConnectionFuture* ConnectionFuture = Worker_Alpha_Locator_ConnectAsync(WorkerLocatorV2, &ConnectionParams);
+
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, this]
+	{
+		WorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+
+		Worker_ConnectionFuture_Destroy(ConnectionFuture);
+		if (Worker_Connection_IsConnected(WorkerConnection))
+		{
+			AsyncTask(ENamedThreads::GameThread, [this]
+			{
+				this->bIsConnected = true;
+				this->OnConnected.ExecuteIfBound();
+			});
+		}
+		else
+		{
+			Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
+			for (int i = 0; i < (int)OpList->op_count; i++)
+			{
+				if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
+				{
+					UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Couldn't connect to SpatialOS: %s"), UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
+					GEngine->AddOnScreenDebugMessage(-1, 200.0f, FColor::Red, FString::Printf(TEXT("Couldn't connect to SpatialOS: %s"), UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason)));
+				}
+			}
+
+			// TODO: Try to reconnect - UNR-576
+		}
+	});
+}
+
+SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
+{
+	if (!LocatorV2Config.LoginToken.IsEmpty())
+	{
+		return SpatialConnectionType::LocatorV2;
+	}
+	else if (!LocatorConfig.LoginToken.IsEmpty())
+	{
+		return SpatialConnectionType::Locator;
+	}
+	else
+	{
+		return SpatialConnectionType::Receptionist;
+	}
 }
 
 void USpatialWorkerConnection::GetAndPrintConnectionFailureMessage()
