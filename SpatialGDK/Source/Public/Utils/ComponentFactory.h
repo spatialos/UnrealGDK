@@ -46,8 +46,6 @@ private:
 
 	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
 
-	void AssignUnrealObjectRefToContext(UProperty* Property, const uint8* Data, FUnrealObjectRef ObjectRef);
-
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
 	USpatialTypebindingManager* TypebindingManager;
