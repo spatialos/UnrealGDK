@@ -194,36 +194,18 @@ void SaveSchemaDatabase()
 	});
 }
 
-TArray<UClass*> GetAllSpatialTypeClasses()
-{
-	TSet<UClass*> Classes;
-
-	for (TObjectIterator<UClass> It; It; ++It)
-	{
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings) == false)
-		{
-			continue;
-		}
-
-		// Ensure we don't process skeleton or reinitialized classes
-		if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			|| It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
-		{
-			continue;
-		}
-
-		Classes.Add(*It);
-	}
-
-	return Classes.Array();
-}
-
 TArray<UClass*> GetAllSupportedClasses()
 {
 	TSet<UClass*> Classes;
 
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
+		// Spatial told to ignore this class
+		if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+		{
+			continue;
+		}
+
 		UClass* SupportedClass = nullptr;
 		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt; ++PropertyIt)
 		{
@@ -259,16 +241,7 @@ bool SpatialGDKGenerateSchema()
 {
 	ClassPathToSchema.Empty();
 
-	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-
-	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)
-	{
-		SchemaGeneratedClasses = GetAllSupportedClasses();	
-	}
-	else
-	{
-		SchemaGeneratedClasses = GetAllSpatialTypeClasses();
-	}
+	SchemaGeneratedClasses = GetAllSupportedClasses();
 
 	SchemaGeneratedClasses.Sort();
 

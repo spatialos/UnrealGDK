@@ -71,7 +71,6 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 Worker_ComponentData CreateGlobalStateManagerData()
 {
 	StringToEntityMap SingletonNameToEntityId;
-	StringToEntityMap StablyNamedPathToEntityId;
 
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
@@ -98,7 +97,6 @@ Worker_ComponentData CreateGlobalStateManagerData()
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	AddStringToEntityMapToSchema(ComponentObject, 1, SingletonNameToEntityId);
-	AddStringToEntityMapToSchema(ComponentObject, 2, StablyNamedPathToEntityId);
 
 	return Data;
 }
@@ -388,7 +386,7 @@ bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialTypebindingMana
 			continue;
 		}
 
-		if (Actor->IsEditorOnly() || !TypebindingManager->IsSupportedClass(ActorClass) || !Actor->GetIsReplicated())
+		if (Actor->IsEditorOnly() || Actor->IsPendingKill() || !TypebindingManager->IsSupportedClass(ActorClass) || !Actor->GetIsReplicated())
 		{
 			continue;
 		}
