@@ -123,7 +123,7 @@ To use, override `void OnAuthorityGained()` in your Actor or use the blueprint e
         // ...
     }
 
-![OnAuthorityGained](../assets/screen-grabs/OnAuthorityGained.jpg)
+![OnAuthorityGained]({{assetRoot}}assets/screen-grabs/on-authority-gained.jpg)
 
 ### `OnAuthorityLost`
 
@@ -139,7 +139,7 @@ To use, override `void OnAuthorityLost()` in your Actor or use the blueprint eve
         // ...
     }
 
-![OnAuthorityLost](../assets/screen-grabs/OnAuthorityLost.jpg)
+![OnAuthorityLost]({{assetRoot}}assets/screen-grabs/on-authority-lost.jpg)
 
 These events have the same calling order as `BeginPlay` or `Tick`.
 
