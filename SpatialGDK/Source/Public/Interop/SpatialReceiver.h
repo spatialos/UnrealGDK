@@ -127,7 +127,6 @@ public:
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
-	void ProcessQueuedResolvedObjects();
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
 private:
@@ -156,6 +155,8 @@ private:
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingRPCs(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
+
+	void ProcessQueuedResolvedObjects();
 
 	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
 
