@@ -311,7 +311,8 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type) {
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+	{
 		Worker_ComponentId ComponentId = ActorInfo->SchemaComponents[Type];
 
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
@@ -332,6 +333,13 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
 	{
 		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
+
+		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
+		UObject* Subobject = Actor->GetDefaultSubobjectByName(SubobjectInfo.SubobjectName);
+		if (Subobject == nullptr)
+		{
+			continue;
+		}
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
@@ -372,13 +380,12 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &Entity) != 0;
 }
 
-bool ProcessSupportedActors(UWorld* World, USpatialTypebindingManager* TypebindingManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
+bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialTypebindingManager* TypebindingManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
 {
 	Worker_EntityId CurrentEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
 
-	for (TActorIterator<AActor> It(World); It; ++It)
+	for (AActor* Actor : Actors)
 	{
-		AActor* Actor = *It;
 		UClass* ActorClass = Actor->GetClass();
 
 		// If Actor is critical to the level, skip
@@ -413,10 +420,17 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 
 	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, TypebindingManager, EntityRegistry, World);
 
+	// Create set of world actors (World actor iterator returns same actor multiple times in some circumstances)
+	TSet<AActor*> WorldActors;
+	for (TActorIterator<AActor> It(World); It; ++It)
+	{
+		WorldActors.Add(*It);
+	}
+
 	bool bSuccess = true;
 
 	// Need to add all actors in the world to the package map so they have assigned UnrealObjRefs for the ComponentFactory to use
-	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&PackageMap, &EntityRegistry, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(WorldActors, TypebindingManager, [&PackageMap, &EntityRegistry, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
 	{
 		EntityRegistry->AddToRegistry(EntityId, Actor);
 		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
@@ -424,7 +438,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 		return true;
 	});
 
-	bSuccess &= ProcessSupportedActors(World, TypebindingManager, [&NetConnection, &OutputStream, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(WorldActors, TypebindingManager, [&NetConnection, &OutputStream, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
 	{
 		return CreateStartupActor(OutputStream, Actor, EntityId, NetConnection, TypebindingManager);
 	});

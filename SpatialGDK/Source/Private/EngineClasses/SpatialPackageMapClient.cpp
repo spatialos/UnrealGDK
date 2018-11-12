@@ -187,6 +187,12 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Object)
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Object);
+	FUnrealObjectRef ExistingObjRef = GetUnrealObjectRefFromNetGUID(NetGUID);
+	if (ExistingObjRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
+	{
+		return NetGUID;
+	}
+
 	FNetworkGUID OuterGUID;
 	UObject* OuterObject = Object->GetOuter();
 
