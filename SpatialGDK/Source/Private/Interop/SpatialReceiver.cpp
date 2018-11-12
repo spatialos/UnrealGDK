@@ -96,6 +96,8 @@ void USpatialReceiver::LeaveCriticalSection()
 	PendingAddComponents.Empty();
 	PendingAuthorityChanges.Empty();
 	PendingRemoveEntities.Empty();
+
+	ProcessQueuedResolvedObjects();
 }
 
 void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
