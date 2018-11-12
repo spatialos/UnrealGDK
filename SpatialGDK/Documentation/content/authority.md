@@ -107,9 +107,9 @@ A `PlayerController` possessing different `Pawn`s would change their role as exp
 
 Due to authority being dynamic in the GDK, we've added events that can trigger behavior when authority changes. These events will only ever trigger on server-workers.
 
-There are 2 kinds of authority events:
+There are two kinds of authority events:
 
-### `OnAuthorityGained`
+### OnAuthorityGained
 
 Triggered when authority is gained over an Actor.
 
@@ -125,7 +125,7 @@ To use, override `void OnAuthorityGained()` in your Actor or use the blueprint e
 
 ![OnAuthorityGained]({{assetRoot}}assets/screen-grabs/on-authority-gained.jpg)
 
-### `OnAuthorityLost`
+### OnAuthorityLost
 
 Triggered when authority is lost over an Actor.
 
