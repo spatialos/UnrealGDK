@@ -5,26 +5,27 @@ param (
 Import-Module BitsTransfer
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-$fileshare="\\lonv-file-01.corp.improbable.io"
+$fileshare="\\lonv-file-01"
 $version="v0.96"
 $rootPath=[System.Io.Path]::GetFullPath("$env:HOMEDRIVE:\tools\fastbuild")
 
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    Write-Host "Please run from an Adminstrator command prompt."
+    Write-Host "Please run from an Adminstrator command prompt." -ForegroundColor Red
     exit 1
 }
 
 if (Test-Path $rootPath) {
-    Write-Host "FASTBuild is already installed at $rootPath. Please uninstall it first."
+    Write-Host "FASTBuild is already installed at $rootPath. Please uninstall it first." -ForegroundColor Yellow
     exit 1
 }
-[System.IO.Directory]::CreateDirectory($rootPath)
+[System.IO.Directory]::CreateDirectory($rootPath) | Out-Null
 
 $fbuildPath=[System.IO.Path]::GetFullPath("$rootPath\FBuild.exe")
 $fbuildWorkerPath=[System.IO.Path]::GetFullPath("$rootPath\FBuildWorker.exe")
 
+Write-Host "Downloading FASTBuild..."
 if (-not (Test-Path "$rootPath\fastbuild-$version.zip")) {
-    Start-BitsTransfer -Source "http://www.fastbuild.org/downloads/$version/FASTBuild-Windows-x64-$version.zip" -Destination "$rootPath\fastbuild-$version.zip" -ErrorAction Stop
+    Start-BitsTransfer -Source "http://www.fastbuild.org/downloads/$version/FASTBuild-Windows-x64-$version.zip" -Destination "$rootPath\fastbuild-$version.zip" -ErrorAction Stop | Out-Null
 
     [System.IO.Compression.ZipFile]::ExtractToDirectory("$rootPath\fastbuild-$version.zip", $rootPath)
 }
@@ -112,8 +113,6 @@ Write-Host "Setting environment variables..."
 [System.Environment]::SetEnvironmentVariable("FASTBUILD_BROKERAGE_PATH", "$fileshare\fastbuild\Brokerage", [System.EnvironmentVariableTarget]::Machine)
 [System.Environment]::SetEnvironmentVariable("FASTBUILD_CACHE_MODE", "rw", [System.EnvironmentVariableTarget]::Machine)
 
-refreshenv
-
 Write-Host "Setting up FASTBuild to startup on login..."
 
 if ($service) {
@@ -144,7 +143,7 @@ if ($service) {
     New-ItemProperty `
         -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run\ `
         -Name "FBuildWorker" `
-        -Value """$fbuildWorkerPath""" -Force
+        -Value """$fbuildWorkerPath""" -Force | Out-Null
 
     Start-Process "$fbuildWorkerPath" -ErrorAction Stop
 }

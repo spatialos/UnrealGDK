@@ -4,7 +4,6 @@
 Improbable have integrated with the Unreal Build Tool, using [Unreal_FASTBuild](https://github.com/liamkf/Unreal_FASTBuild)
 as the foundation.
 
-
 # Installation
 
 FASTBuild can be installed in two different ways:
@@ -14,13 +13,26 @@ FASTBuild can be installed in two different ways:
 > All of these must be run from an **administrator** `powershell` or `cmd` prompt.
 
 ## As a service
+FASTBuild can be installed as a service, for build agents and other non-interactive scenarios.
 
-* To install: `powershell -NoProfile -ExecutionPolicy Bypass -File "\\filesharing2\files\fastbuild\install.ps1" -service`
-* To uninstall: `powershell -NoProfile -ExecutionPolicy Bypass -File "\\filesharing2\files\fastbuild\uninstall.ps1" -service`
+**To install**
+
+  `powershell -NoProfile -ExecutionPolicy Bypass -File "\\lonv-file-01\Fastbuild\install.ps1" -service`
+
+**To uninstall**
+
+  `powershell -NoProfile -ExecutionPolicy Bypass -File "\\lonv-file-01\Fastbuild\uninstall.ps1" -service`
 
 # As a GUI
-* To install: `powershell -NoProfile -ExecutionPolicy Bypass -File "\\filesharing2\files\fastbuild\install.ps1"`
-* To uninstall: `powershell -NoProfile -ExecutionPolicy Bypass -File "\\filesharing2\files\fastbuild\uninstall.ps1"`
+If you're installing on your workstation, it's recommended to install it in interactive mode.
+
+**To install**
+
+  `powershell -NoProfile -ExecutionPolicy Bypass -File "\\lonv-file-01\Fastbuild\install.ps1"`
+
+**To uninstall**
+
+  `powershell -NoProfile -ExecutionPolicy Bypass -File "\\lonv-file-01\Fastbuild\uninstall.ps1"`
 
 # Useful tools
 

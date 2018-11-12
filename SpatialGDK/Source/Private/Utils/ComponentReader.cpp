@@ -335,19 +335,6 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			}
 		}
 
-		UObject* Outer = Property->GetOuter();
-		// TODO: Second check will be removed once arrays contexts are supported UNR-633
-		// TODO: Third check will be removed once we support blueprint classes UNR-635
-		if (Outer->IsA<UStruct>() && Property->ArrayDim == 1 && Cast<UBlueprintGeneratedClass>(Outer) == nullptr)
-		{
-			UStruct* Owner = Cast<UStruct>(Outer);
-			const FString ContextName = Property->GetName() + TEXT("_SpatialOSContext");
-			UProperty* ContextProperty = Owner->FindPropertyByName(*ContextName);
-			const int32 PropertyOffsetDiff = ContextProperty->GetOffset_ForInternal() - Property->GetOffset_ForInternal();
-			FUnrealObjectRef& Context = *(reinterpret_cast<FUnrealObjectRef*>(const_cast<uint8*>(Data) + PropertyOffsetDiff));
-			Context = ObjectRef;
-		}
-
 		if (!bUnresolved && InObjectReferencesMap.Find(Offset))
 		{
 			InObjectReferencesMap.Remove(Offset);
