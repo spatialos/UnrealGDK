@@ -105,7 +105,7 @@ A `PlayerController` possessing different `Pawn`s would change their role as exp
 
 ## Authority Callbacks
 
-Due to authority now being dynamic in the GDK, we've added events that can trigger behavior when authority changes. These events will only ever trigger on server-workers.
+Due to authority being dynamic in the GDK, we've added events that can trigger behavior when authority changes. These events will only ever trigger on server-workers.
 
 There are 2 kinds of authority events:
 
