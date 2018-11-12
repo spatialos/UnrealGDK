@@ -107,6 +107,8 @@ A `PlayerController` possessing different `Pawn`s would change their role as exp
 
 Due to authority being dynamic in the GDK, we've added events that can trigger behavior when authority changes. These events will only ever trigger on server-workers.
 
+`Role` and `RemoteRole` will be properly set to their correct values within these events.
+
 There are two kinds of authority events:
 
 ### OnAuthorityGained
