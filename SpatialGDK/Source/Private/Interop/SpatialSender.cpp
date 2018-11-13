@@ -115,7 +115,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
 		UObject* Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
-		if (Subobject == false)
+		if (Subobject == nullptr)
 		{
 			continue;
 		}
