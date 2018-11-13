@@ -6,7 +6,7 @@ pushd "%~dp0..\"
 
 set LINTER_EXE="Binaries\ThirdParty\Improbable\Programs\Linter.exe"
 if not exist %LINTER_EXE% (
-    echo Error: Could not find %LINTER_EXE%. Please run BuildGDK.bat to generate it.
+    echo Error: Could not find %LINTER_EXE%. Please run Setup.bat in your UnrealGDK root to generate it.
     pause
     exit /b 1
 )
