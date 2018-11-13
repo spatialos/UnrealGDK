@@ -257,6 +257,10 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, UnresolvedObjects, ClearedIds);
 		}
 	}
+	else if (Property->IsA<UDelegateProperty>() || Property->IsA<UMulticastDelegateProperty>())
+	{
+		// Delegates can be set to replicate, but won't serialize across the network.
+	}
 	else
 	{
 		checkf(false, TEXT("Tried to add unknown property in field %d"), FieldId);
