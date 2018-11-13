@@ -179,7 +179,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 
 		UObject* Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
-		if (Subobject == false)
+		if (Subobject == nullptr)
 		{
 			continue;
 		}
