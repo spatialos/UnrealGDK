@@ -143,6 +143,6 @@ To use, override `void OnAuthorityLost()` in your Actor or use the blueprint eve
 
 ![OnAuthorityLost]({{assetRoot}}assets/screen-grabs/on-authority-lost.jpg)
 
-These events have the same calling order as `BeginPlay` or `Tick`.
+These events have the same calling order as `BeginPlay()` or `Tick()`.
 
 Behavior that is triggered when authority is gained over an Actor Component or Subobject should be fired through the owning Actor.
