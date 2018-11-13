@@ -352,6 +352,12 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 
 	UObject* TargetObject = Params->TargetObject.Get();
+	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	{
+		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send RPC %s on unresolved Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
+		QueueOutgoingRPC(TargetObject, Params);
+		return;
+	}
 
 	FClassInfo* Info = TypebindingManager->FindClassInfoByObject(TargetObject);
 
