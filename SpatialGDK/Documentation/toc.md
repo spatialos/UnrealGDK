@@ -16,6 +16,7 @@
 - <h3>[- SpatialOS concepts]({{urlRoot}}/content/concepts)</h3>
 - <h3>[- Spatial Type]({{urlRoot}}/content/spatial-type)</h3>
 - <h3>[- Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
+- <h3>[- Authority]({{urlRoot}}/content/authority)
 - <h3>[- Singleton Actors]({{urlRoot}}/content/singleton-actors)
 - <h3>[- Actor property handover]({{urlRoot}}/content/handover-between-server-workers)
 - <h3>[- Map travel]({{urlRoot}}/content/map-travel)</h3>
@@ -26,7 +27,6 @@
 - <h3>Reference</h3>
 - <h3>[- Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>[- Snapshots]({{urlRoot}}/content/generating-a-snapshot)
-- <h3>[- Authority]({{urlRoot}}/content/authority)
 - <h3>[- Helper scripts]({{urlRoot}}/content/helper-scripts)
 - <h3>[- Directory structure]({{urlRoot}}/content/directory-structure)
 
