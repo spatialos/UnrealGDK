@@ -102,3 +102,47 @@ Actor on **non-owning client-worker**:
 * `RemoteRole = ROLE_Authority`
 
 A `PlayerController` possessing different `Pawn`s would change their role as expected; the newly-possessed Pawn will become an autonomous proxy on the client-worker while the older `Pawn` will become a simulated proxy.
+
+## Authority Callbacks
+
+Due to authority being dynamic in the GDK, we've added events that can trigger behavior when authority changes. These events will only ever trigger on server-workers.
+
+`Role` and `RemoteRole` will be properly set to their correct values within these events.
+
+There are two kinds of authority events:
+
+### OnAuthorityGained
+
+Triggered when authority is gained over an Actor.
+
+To use, override `void OnAuthorityGained()` in your Actor or use the blueprint event. 
+
+    void AMyActor::OnAuthorityGained()
+    {
+        Super::OnAuthorityGained(); // Mandatory
+
+        // Custom behavior when authority is gained.
+        // ...
+    }
+
+![OnAuthorityGained]({{assetRoot}}assets/screen-grabs/on-authority-gained.jpg)
+
+### OnAuthorityLost
+
+Triggered when authority is lost over an Actor.
+
+To use, override `void OnAuthorityLost()` in your Actor or use the blueprint event. 
+
+    void AMyActor::OnAuthorityLost()
+    {
+        Super::OnAuthorityLost(); // Mandatory
+
+        // Custom behavior when authority is lost.
+        // ...
+    }
+
+![OnAuthorityLost]({{assetRoot}}assets/screen-grabs/on-authority-lost.jpg)
+
+These events have the same calling order as `BeginPlay()` or `Tick()`.
+
+Behavior that is triggered when authority is gained over an Actor Component or Subobject should be fired through the owning Actor.
