@@ -142,13 +142,16 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
 	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Actor->GetClass()->GetPathName()).CreateUnrealMetadataData());
 
-	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && !Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
-		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
-	}
-	else if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
-	{
-		ComponentDatas.Add(improbable::ServerOnlySingleton().CreateServerOnlySingletonData());
+		if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		{
+			ComponentDatas.Add(improbable::ServerOnlySingleton().CreateServerOnlySingletonData());
+		}
+		else
+		{
+			ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
+		}
 	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
