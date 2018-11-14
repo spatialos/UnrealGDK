@@ -61,6 +61,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
+	UClass* Class = Actor->GetClass();
 
 	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
@@ -141,9 +142,13 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
 	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Actor->GetClass()->GetPathName()).CreateUnrealMetadataData());
 
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && !Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
 		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
+	}
+	else if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton) && Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+	{
+		ComponentDatas.Add(improbable::ServerOnlySingleton().CreateServerOnlySingletonData());
 	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
