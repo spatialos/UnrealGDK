@@ -424,6 +424,9 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 	FSubobjectSchemaData SubobjectData;
 	SubobjectData.ClassPath = ComponentClass->GetPathName();
 
+	// First letter of schema component must be uppercase
+	PropertyName[0] = FChar::ToUpper(PropertyName[0]);
+
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
 		if (RepData[Group].Num() == 0)
