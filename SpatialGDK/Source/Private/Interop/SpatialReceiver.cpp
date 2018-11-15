@@ -210,7 +210,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				}
 				else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 				{
-					//Actor->OnAuthorityLossImminent();
+					Actor->OnAuthorityLossImminent();
 				}
 				else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 				{
