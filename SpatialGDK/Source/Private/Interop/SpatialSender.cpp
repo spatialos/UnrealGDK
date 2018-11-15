@@ -61,6 +61,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
+	UClass* Class = Actor->GetClass();
 
 	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
@@ -76,7 +77,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	WorkerRequirementSet AnyUnrealServerOrOwningClient = { ServerAttribute, OwningClientAttribute };
 
 	WorkerRequirementSet ReadAcl;
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
 		ReadAcl = ServersOnly;
 	}
@@ -89,7 +90,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ReadAcl = AnyUnrealServerOrClient;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Class);
 	check(Info);
 
 	WriteAclMap ComponentWriteAcl;
@@ -135,15 +136,22 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
-	ComponentDatas.Add(improbable::Metadata(Actor->GetClass()->GetName()).CreateMetadataData());
+	ComponentDatas.Add(improbable::Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Actor->GetClass()->GetPathName()).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
 
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
-		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
+		if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		{
+			ComponentDatas.Add(improbable::ServerOnlySingleton().CreateServerOnlySingletonData());
+		}
+		else
+		{
+			ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
+		}
 	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
