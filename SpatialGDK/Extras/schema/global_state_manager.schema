@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-component GlobalStateManager {
+component SingletonManager {
     id = 100005;
     map<string, EntityId> singleton_name_to_entity_id = 1;
 }
