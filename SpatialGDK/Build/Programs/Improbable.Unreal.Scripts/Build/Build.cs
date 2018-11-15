@@ -160,7 +160,7 @@ exit /b !ERRORLEVEL!
                 bool isLinux = platform == "Linux";
                 var assemblyPlatform = isLinux ? "Linux" : "Windows";
 
-                if(isLinux)
+                if (isLinux)
                 {
                     // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                     // Also ensure script uses Linux line endings
