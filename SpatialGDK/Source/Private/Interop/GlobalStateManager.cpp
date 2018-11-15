@@ -161,6 +161,12 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 			continue;
 		}
 
+		if (SingletonActor->GetIsReplicated() == false)
+		{
+			UE_LOG(LogGlobalStateManager, Warning, TEXT("Singleton Actor %s isn't replicated! No entity will be created."), *SingletonActor->GetClass()->GetName());
+			continue;
+		}
+
 		SingletonActor->Role = ROLE_Authority;
 		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
 
