@@ -28,8 +28,10 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 
 FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 {
-	// Note: Removing underscores and spaces to avoid naming mismatch between how schema compiler and interop generator process schema identifiers.
-	return UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
+	// Note: Removing underscores, spaces, and capiatlizing first letter to avoid naming to satisfy schema compiler.
+	FString SchemaTypeName = UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
+	SchemaTypeName[0] = FChar::ToUpper(SchemaTypeName[0]);
+	return SchemaTypeName;
 }
 
 FString UnrealNameToCppName(const FString& UnrealName)
@@ -51,16 +53,6 @@ FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace /*= false*/
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace /*= false*/)
 {
 	return FString::Printf(TEXT("%s%s%sRPCs"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetRPCTypeName(RpcType));
-}
-
-FString SchemaRPCRequestType(UFunction* Function, bool bPrependNamespace /*= false*/)
-{
-	return FString::Printf(TEXT("%s%sRequest"), bPrependNamespace ? *GetNamespace(Function->GetOwnerClass()) : TEXT(""), *UnrealNameToSchemaTypeName(Function->GetName()));
-}
-
-FString SchemaRPCResponseType(UFunction* Function)
-{
-	return FString::Printf(TEXT("%sResponse"), *UnrealNameToSchemaTypeName(Function->GetName()));
 }
 
 FString SchemaRPCName(UClass* Class, UFunction* Function)

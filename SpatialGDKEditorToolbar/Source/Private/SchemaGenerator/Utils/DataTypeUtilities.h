@@ -27,14 +27,6 @@ FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace = false);
 // For example: UnrealCharacterClientRPCs
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace = false);
 
-// Given a UFunction, generates the command request data type.
-// For example: ServerMove() -> UnrealServerMoveRequest.
-FString SchemaRPCRequestType(UFunction* Function, bool bPrependNamespace = false);
-
-// Given a UFunction, generates the command request data type.
-// For example: ServerMove() -> UnrealServerMoveResponse.
-FString SchemaRPCResponseType(UFunction* Function);
-
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
 FString SchemaRPCName(UClass* Class, UFunction* Function);
 
