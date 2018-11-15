@@ -217,7 +217,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 					Actor->Role = ROLE_SimulatedProxy;
 					Actor->RemoteRole = ROLE_Authority;
 
-					//Actor->OnAuthorityLost();
+					Actor->OnAuthorityLost();
 				}
 			}
 		}
