@@ -415,6 +415,12 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			continue;
 		}
 
+		// Jump over invalid replicated property types
+		if (Cmd.Property->IsA<UDelegateProperty>() || Cmd.Property->IsA<UMulticastDelegateProperty>())
+		{
+			continue;
+		}
+
 		FRepParentCmd& Parent = RepLayout.Parents[Cmd.ParentIndex];
 
 		// In a FRepLayout, all the root level replicated properties in a class are stored in the Parents array.

@@ -117,6 +117,7 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 		// Singleton wasn't found or channel is already set up
 		if (Channel == nullptr || Channel->Actor != nullptr)
 		{
+			check(Channel->Actor == SingletonActor);
 			continue;
 		}
 
@@ -155,9 +156,10 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 		USpatialActorChannel* Channel = nullptr;
 		GetSingletonActorAndChannel(Pair.Key, SingletonActor, Channel);
 
-		// Class couldn't be found
-		if (Channel == nullptr)
+		// Class couldn't be found or channel already exists
+		if (Channel == nullptr || Channel->Actor != nullptr)
 		{
+			check(Channel->Actor == SingletonActor);
 			continue;
 		}
 
@@ -237,6 +239,16 @@ void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*
 	}
 
 	OutActor = SingletonActorList[0];
+
+	// Check if actor is already processed
+	for (auto ClassChannelPair : NetDriver->SingletonActorChannels)
+	{
+		if (ClassChannelPair.Value.Key == OutActor)
+		{
+			OutChannel = ClassChannelPair.Value.Value;
+			return;
+		}
+	}
 
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 
