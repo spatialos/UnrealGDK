@@ -161,7 +161,7 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 			continue;
 		}
 
-		if (SingletonActor->GetIsReplicated() == false)
+		if (!SingletonActor->GetIsReplicated())
 		{
 			UE_LOG(LogGlobalStateManager, Warning, TEXT("Singleton Actor %s isn't replicated! No entity will be created."), *SingletonActor->GetClass()->GetName());
 			continue;
