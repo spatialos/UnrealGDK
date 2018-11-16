@@ -12,6 +12,9 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty);
 // Given a class or function name, generates the name used for naming schema components and types. Currently, this removes underscores and spaces.
 FString UnrealNameToSchemaTypeName(const FString& UnrealName);
 
+// Given an object name, generates the name used for naming schema components. Currently, removes underscores, spaces and capitalizes the first letter.
+FString UnrealNameToSchemaComponentName(const FString& UnrealName);
+
 // Given a class or function name, generates the name used for cpp functions and types. Currently, this removes spaces.
 FString UnrealNameToCppName(const FString& UnrealName);
 

@@ -425,7 +425,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 	SubobjectData.ClassPath = ComponentClass->GetPathName();
 
 	// First letter of schema component must be uppercase
-	PropertyName = UnrealNameToSchemaTypeName(PropertyName);
+	PropertyName = UnrealNameToSchemaComponentName(PropertyName);
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
