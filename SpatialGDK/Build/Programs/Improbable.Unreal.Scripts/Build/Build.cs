@@ -155,12 +155,11 @@ exit /b !ERRORLEVEL!
                     "-noclient",
                 });
 
-                var serverPath = Path.Combine(stagingDir, platform + "Server");
-
                 bool isLinux = platform == "Linux";
                 var assemblyPlatform = isLinux ? "Linux" : "Windows";
+                var serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
 
-                if(isLinux)
+                if (isLinux)
                 {
                     // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                     // Also ensure script uses Linux line endings
