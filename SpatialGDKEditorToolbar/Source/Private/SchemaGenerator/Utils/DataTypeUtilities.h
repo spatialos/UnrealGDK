@@ -12,6 +12,9 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty);
 // Given a class or function name, generates the name used for naming schema components and types. Currently, this removes underscores and spaces.
 FString UnrealNameToSchemaTypeName(const FString& UnrealName);
 
+// Given an object name, generates the name used for naming schema components. Currently, removes underscores, spaces and capitalizes the first letter.
+FString UnrealNameToSchemaComponentName(const FString& UnrealName);
+
 // Given a class or function name, generates the name used for cpp functions and types. Currently, this removes spaces.
 FString UnrealNameToCppName(const FString& UnrealName);
 
@@ -26,14 +29,6 @@ FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace = false);
 // Given an RPC type and Unreal type, generates the name of the corresponding RPC container component.
 // For example: UnrealCharacterClientRPCs
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace = false);
-
-// Given a UFunction, generates the command request data type.
-// For example: ServerMove() -> UnrealServerMoveRequest.
-FString SchemaRPCRequestType(UFunction* Function, bool bPrependNamespace = false);
-
-// Given a UFunction, generates the command request data type.
-// For example: ServerMove() -> UnrealServerMoveResponse.
-FString SchemaRPCResponseType(UFunction* Function);
 
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
 FString SchemaRPCName(UClass* Class, UFunction* Function);
