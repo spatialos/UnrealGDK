@@ -28,7 +28,7 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 
 FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 {
-	// Note: Removing underscores, spaces, and capiatlizing first letter to avoid naming to satisfy schema compiler.
+	// Note: Removing underscores, spaces, and capitalizing first letter to avoid naming issues to satisfy schema compiler.
 	FString SchemaTypeName = UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
 	SchemaTypeName[0] = FChar::ToUpper(SchemaTypeName[0]);
 	return SchemaTypeName;
