@@ -201,6 +201,8 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
+	SchemaGeneratedClasses.Sort();
+
 	FString SchemaOutputPath = SpatialGDKToolbarSettings->GetGeneratedSchemaOutputFolder();
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
