@@ -59,6 +59,7 @@ namespace SpatialConstants
 	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 100004;
 	const Worker_ComponentId GLOBAL_STATE_MANAGER_COMPONENT_ID				= 100005;
 	const Worker_ComponentId GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID	= 100006;
+	const Worker_ComponentId SERVER_ONLY_SINGLETON_COMPONENT_ID				= 100007;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 100010;
 
 	const Schema_FieldId GLOBAL_STATE_MANAGER_MAP_URL_ID			= 1;
