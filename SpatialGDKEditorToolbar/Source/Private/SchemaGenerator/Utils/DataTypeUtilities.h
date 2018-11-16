@@ -15,9 +15,6 @@ FString UnrealNameToSchemaTypeName(const FString& UnrealName);
 // Given an object name, generates the name used for naming schema components. Currently, removes underscores, spaces and capitalizes the first letter.
 FString UnrealNameToSchemaComponentName(const FString& UnrealName);
 
-// Given a class or function name, generates the name used for cpp functions and types. Currently, this removes spaces.
-FString UnrealNameToCppName(const FString& UnrealName);
-
 // Given a replicated property group and Unreal type, generates the name of the corresponding schema component.
 // For example: UnrealCharacterMultiClientRepData
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, bool bPrependNamespace = false);
@@ -32,9 +29,6 @@ FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNam
 
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
 FString SchemaRPCName(UClass* Class, UFunction* Function);
-
-// Given a UFunction, generates the c++ command name. Identical to the schema name with the first letter being uppercase.
-FString CPPCommandClassName(UClass* Class, UFunction* Function);
 
 // Given a property node, generates the schema field name.
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property);
