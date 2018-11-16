@@ -424,9 +424,6 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 	FSubobjectSchemaData SubobjectData;
 	SubobjectData.ClassPath = ComponentClass->GetPathName();
 
-	// First letter of schema component must be uppercase
-	PropertyName = UnrealNameToSchemaComponentName(PropertyName);
-
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
 		if (RepData[Group].Num() == 0)
@@ -537,7 +534,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 					if (IsReplicatedSubobject(PropertyTypeInfo) && SchemaGeneratedClasses.Contains(Value->GetClass()))
 					{
 						bHasComponents = true;
-						SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaTypeName(PropertyTypeInfo->Name.ToString()), PropertyTypeInfo, Value->GetClass());
+						SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(PropertyTypeInfo->Name.ToString()), PropertyTypeInfo, Value->GetClass());
 					}
 					else
 					{

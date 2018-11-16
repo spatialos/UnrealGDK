@@ -38,37 +38,24 @@ FString UnrealNameToSchemaComponentName(const FString& UnrealName)
 	return SchemaTypeName;
 }
 
-FString UnrealNameToCppName(const FString& UnrealName)
-{
-	// Note: Blueprints can have functions with spaces
-	return UnrealName.Replace(TEXT(" "), TEXT(""));
-}
-
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%s%s%s"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
+	return FString::Printf(TEXT("%s%s%s"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaComponentName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
 }
 
 FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%s%sHandover"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()));
+	return FString::Printf(TEXT("%s%sHandover"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaComponentName(Type->GetName()));
 }
 
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%s%s%sRPCs"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaTypeName(Type->GetName()), *GetRPCTypeName(RpcType));
+	return FString::Printf(TEXT("%s%s%sRPCs"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaComponentName(Type->GetName()), *GetRPCTypeName(RpcType));
 }
 
 FString SchemaRPCName(UClass* Class, UFunction* Function)
 {
 	return UnrealNameToSchemaTypeName(Function->GetName().ToLower());
-}
-
-FString CPPCommandClassName(UClass* Class, UFunction* Function)
-{
-	FString SchemaName = SchemaRPCName(Class, Function);
-	SchemaName[0] = FChar::ToUpper(SchemaName[0]);
-	return SchemaName;
 }
 
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
