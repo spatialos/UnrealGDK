@@ -70,6 +70,9 @@ public class SpatialGDK : ModuleRules
                 ImportLibSuffix = ".lib";
                 SharedLibSuffix = ".dll";
                 break;
+            case UnrealTargetPlatform.Android:
+                throw new System.Exception(System.String.Format("Android platform {0}", Target.Platform.ToString()));
+                break;
             default:
                 throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
         }

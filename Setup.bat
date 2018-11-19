@@ -72,6 +72,10 @@ call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32            %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32         %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"
+    spatial package retrieve worker_sdk      c-dynamic-armeabi_v7a-clang_libcpp-android   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armeabi_v7a-clang_libcpp-android.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86-android-clang_libcpp-android   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-android-clang_libcpp-android.zip"
+    spatial package retrieve worker_sdk      c-dynamic-arm64-clang_libcpp-android   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64-clang_libcpp-android.zip"
+
 call :MarkEndOfBlock "Retrieve dependencies"
 
 call :MarkStartOfBlock "Unpack dependencies"
@@ -107,7 +111,7 @@ echo UnrealGDK build completed successfully^!
 if not defined NO_PAUSE (
     if not defined TEAMCITY_CAPTURE_ENV (
         pause
-    ) 
+    )
 )
 
 exit /b %ERRORLEVEL%
