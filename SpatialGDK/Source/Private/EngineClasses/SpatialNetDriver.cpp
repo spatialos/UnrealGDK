@@ -227,7 +227,7 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 	if (ServerConnection)
 	{
 		// If we know the GSM is already accepting players, simply spawn.
-		if (GlobalStateManager->bAcceptingPlayers)
+		if (GlobalStateManager->bAcceptingPlayers && GlobalStateManager->DeploymentMapURL == GetWorld()->URL.Map)
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 		}
@@ -262,10 +262,28 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingForAcceptingPlayersToSpawn && bAcceptingPlayers)
 	{
-		PlayerSpawner->SendPlayerSpawnRequest();
+		// If we have the correct map loaded then ask to spawn.
+		if (GlobalStateManager->DeploymentMapURL == GetWorld()->URL.Map)
+		{
+			PlayerSpawner->SendPlayerSpawnRequest();
 
-		// Unregister our interest in spawning on accepting players changing again.
-		bWaitingForAcceptingPlayersToSpawn = false;
+			// Unregister our interest in spawning on accepting players changing again.
+			bWaitingForAcceptingPlayersToSpawn = false;
+		}
+		else // Load the correct map based on the GSM URL
+		{
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Welcomed by server (Level: %s)"), *GlobalStateManager->DeploymentMapURL);
+
+			// Extract map name and options
+			FWorldContext* WorldContext = GEngine->GetWorldContextFromWorld(GetWorld());
+			check(WorldContext);
+			
+			FURL RedirectURL = FURL(&WorldContext->LastURL, *GlobalStateManager->DeploymentMapURL, (ETravelType)WorldContext->TravelType);
+			RedirectURL.Host = WorldContext->LastURL.Host;
+			RedirectURL.Port = WorldContext->LastURL.Port;
+
+			WorldContext->TravelURL = RedirectURL.ToString();
+		}
 	}
 }
 

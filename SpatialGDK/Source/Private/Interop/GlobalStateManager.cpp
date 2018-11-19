@@ -287,7 +287,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	// Set the map URL on the GSM.
-	AddStringToSchema(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID, NetDriver->GetWorld()->URL.ToString());
+	AddStringToSchema(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID, NetDriver->GetWorld()->URL.Map);
 
 	// Set the AcceptingPlayers state on the GSM
 	Schema_AddBool(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(bInAcceptingPlayers));
@@ -349,7 +349,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 			}
 			else
 			{
-				ApplyAcceptingPlayersUpdate(bNewAcceptingPlayers);
+				ApplyDeploymentMapDataFromQueryResponse(Op);
 			}
 
 			return;
@@ -362,6 +362,18 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	});
 
 	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
+}
+
+void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQueryResponseOp& Op)
+{
+	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
+	{
+		Worker_ComponentData Data = Op.results[0].components[i];
+		if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID)
+		{
+			ApplyDeploymentMapURLData(Data);
+		}
+	}
 }
 
 bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(Worker_EntityQueryResponseOp& Op)
