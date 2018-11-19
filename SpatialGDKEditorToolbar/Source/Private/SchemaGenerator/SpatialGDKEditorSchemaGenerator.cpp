@@ -75,16 +75,6 @@ bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 		}
 	}
 
-	// Ensure class conforms to schema uppercase letter check
-	for (const auto& Class : Classes)
-	{
-		FString ClassName = Class->GetName();
-		if (FChar::IsLower(ClassName[0]))
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("SpatialType class begins with lowercase letter: %s. Schema not generated"), *ClassName);
-			return false;
-		}
-	}
 	return true;
 }
 }// ::
@@ -132,7 +122,7 @@ void SaveSchemaDatabase()
 
 TArray<UClass*> GetAllSpatialTypeClasses()
 {
-	TArray<UClass*> Classes;
+	TSet<UClass*> Classes;
 
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
@@ -151,12 +141,12 @@ TArray<UClass*> GetAllSpatialTypeClasses()
 		Classes.Add(*It);
 	}
 
-	return Classes;
+	return Classes.Array();
 }
 
 TArray<UClass*> GetAllSupportedClasses()
 {
-	TArray<UClass*> Classes;
+	TSet<UClass*> Classes;
 
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
@@ -190,7 +180,7 @@ TArray<UClass*> GetAllSupportedClasses()
 		Classes.Add(SupportedClass);
 	}
 
-	return Classes;
+	return Classes.Array();
 }
 
 bool SpatialGDKGenerateSchema()
@@ -212,6 +202,8 @@ bool SpatialGDKGenerateSchema()
 	{
 		return false;
 	}
+
+	SchemaGeneratedClasses.Sort();
 
 	FString SchemaOutputPath = SpatialGDKToolbarSettings->GetGeneratedSchemaOutputFolder();
 

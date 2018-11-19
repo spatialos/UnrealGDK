@@ -117,6 +117,7 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 		// Singleton wasn't found or channel is already set up
 		if (Channel == nullptr || Channel->Actor != nullptr)
 		{
+			check(Channel->Actor == SingletonActor);
 			continue;
 		}
 
@@ -155,9 +156,16 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 		USpatialActorChannel* Channel = nullptr;
 		GetSingletonActorAndChannel(Pair.Key, SingletonActor, Channel);
 
-		// Class couldn't be found
-		if (Channel == nullptr)
+		// Class couldn't be found or channel already exists
+		if (Channel == nullptr || Channel->Actor != nullptr)
 		{
+			check(Channel->Actor == SingletonActor);
+			continue;
+		}
+
+		if (!SingletonActor->GetIsReplicated())
+		{
+			UE_LOG(LogGlobalStateManager, Warning, TEXT("Singleton Actor %s isn't replicated! No entity will be created."), *SingletonActor->GetClass()->GetName());
 			continue;
 		}
 
@@ -232,6 +240,16 @@ void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*
 
 	OutActor = SingletonActorList[0];
 
+	// Check if actor is already processed
+	for (auto ClassChannelPair : NetDriver->SingletonActorChannels)
+	{
+		if (ClassChannelPair.Value.Key == OutActor)
+		{
+			OutChannel = ClassChannelPair.Value.Value;
+			return;
+		}
+	}
+
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 
 	OutChannel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
@@ -269,7 +287,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	// Set the map URL on the GSM.
-	AddStringToSchema(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID, NetDriver->GetWorld()->URL.ToString());
+	AddStringToSchema(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID, NetDriver->GetWorld()->URL.Map);
 
 	// Set the AcceptingPlayers state on the GSM
 	Schema_AddBool(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(bInAcceptingPlayers));
@@ -331,7 +349,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 			}
 			else
 			{
-				ApplyAcceptingPlayersUpdate(bNewAcceptingPlayers);
+				ApplyDeploymentMapDataFromQueryResponse(Op);
 			}
 
 			return;
@@ -344,6 +362,18 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	});
 
 	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
+}
+
+void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQueryResponseOp& Op)
+{
+	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
+	{
+		Worker_ComponentData Data = Op.results[0].components[i];
+		if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID)
+		{
+			ApplyDeploymentMapURLData(Data);
+		}
+	}
 }
 
 bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(Worker_EntityQueryResponseOp& Op)

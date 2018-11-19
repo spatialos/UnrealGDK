@@ -249,9 +249,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	improbable::Position* Position = StaticComponentView->GetComponentData<improbable::Position>(EntityId);
 	improbable::Rotation* Rotation = StaticComponentView->GetComponentData<improbable::Rotation>(EntityId);
-	improbable::UnrealMetadata* Metadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
+	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
-	check(Position && Metadata);
+	if (UnrealMetadata == nullptr)
+	{
+		// Not an Unreal entity
+		return;
+	}
 
 	if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId))
 	{
@@ -273,7 +277,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
-		UClass* ActorClass = Metadata->GetNativeEntityClass();
+		UClass* ActorClass = UnrealMetadata->GetNativeEntityClass();
 
 		if (ActorClass == nullptr)
 		{
