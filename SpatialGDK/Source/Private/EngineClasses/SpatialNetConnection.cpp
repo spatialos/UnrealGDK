@@ -54,7 +54,7 @@ void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 Co
 void USpatialNetConnection::Tick()
 {
 	// Since we're not receiving actual Unreal packets, Unreal may time out the connection. Timeouts are handled by SpatialOS, so we're setting these values here to keep Unreal happy.
-	// Note that in the case of InternalAck (UnrealWorker) the engine does this (and more) in Super.
+	// Note that in the case of InternalAck (UnrealServer) the engine does this (and more) in Super.
 	if (!InternalAck)
 	{
 		LastReceiveTime = Driver->Time;

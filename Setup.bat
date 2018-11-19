@@ -7,7 +7,7 @@ pushd "%~dp0"
 call :MarkStartOfBlock "%~0"
 
 call :MarkStartOfBlock "Check dependencies"
-    set /p UNREAL_VERSION=<./SpatialGDK/Extras/unreal-engine.version
+    set /p UNREAL_VERSION=<./SpatialGDK/Extras/UnrealEngine.version
     if defined TEAMCITY_CAPTURE_ENV (
         set UNREAL_HOME=C:\Unreal\UnrealEngine-%UNREAL_VERSION%
     )
@@ -37,15 +37,13 @@ call :MarkStartOfBlock "Check dependencies"
 call :MarkEndOfBlock "Check dependencies"
 
 call :MarkStartOfBlock "Setup variables"
-    set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
+    set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\CoreSDK.version
 
-    set BUILD_DIR=%~dp0\SpatialGDK\Build
-    set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
+    set BUILD_DIR=%~dp0\SpatialArtifacts\Build
+    set CORE_SDK_DIR=%BUILD_DIR%\CoreSDK
     set WORKER_SDK_DIR=%~dp0\SpatialGDK\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0\SpatialGDK\Binaries\ThirdParty\Improbable
-    set UNREAL_SCHEMA_DIR=%~dp0..\..\..\spatial\schema
-    set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
-    set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
+    set SCHEMA_STD_COPY_DIR=%~dp0\SpatialArtifacts\Schema\StandardLibrary
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
@@ -58,41 +56,31 @@ call :MarkEndOfBlock "Clean folders"
 
 call :MarkStartOfBlock "Create folders"
     md "%WORKER_SDK_DIR%"            >nul 2>nul
-    md "%CORE_SDK_DIR%\schema"       >nul 2>nul
-    md "%CORE_SDK_DIR%\tools"        >nul 2>nul
-    md "%CORE_SDK_DIR%\worker_sdk"   >nul 2>nul
+    md "%CORE_SDK_DIR%\Schema"       >nul 2>nul
+    md "%CORE_SDK_DIR%\Tools"        >nul 2>nul
+    md "%CORE_SDK_DIR%\WorkerSDK"    >nul 2>nul
     md "%BINARIES_DIR%"              >nul 2>nul
     md "%SCHEMA_COPY_DIR%"           >nul 2>nul
     md "%SCHEMA_STD_COPY_DIR%"       >nul 2>nul
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
-    spatial package retrieve tools           schema_compiler-x86_64-win32           %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
-    spatial package retrieve schema          standard_library                       %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\schema\standard_library.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32            %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32         %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"
+    spatial package retrieve tools           schema_compiler-x86_64-win32           %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\Tools\schema_compiler-x86_64-win32.zip"
+    spatial package retrieve schema          standard_library                       %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\Schema\standard_library.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32            %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\WorkerSDK\c-dynamic-x86-msvc_md-win32.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32         %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\WorkerSDK\c-dynamic-x86_64-msvc_md-win32.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\WorkerSDK\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 call :MarkStartOfBlock "Unpack dependencies"
-    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\"          -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip\"    -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                 -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                            -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
+    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\WorkerSDK\c-dynamic-x86-msvc_md-win32.zip\"          -DestinationPath \"%BINARIES_DIR%\Win32\"    -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\WorkerSDK\c-dynamic-x86_64-msvc_md-win32.zip\"       -DestinationPath \"%BINARIES_DIR%\Win64\"    -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\WorkerSDK\c-dynamic-x86_64-gcc_libstdcpp-linux.zip\" -DestinationPath \"%BINARIES_DIR%\Linux\"    -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\Tools\schema_compiler-x86_64-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\Schema\standard_library.zip\"                        -DestinationPath \"%SCHEMA_STD_COPY_DIR%\"   -Force;"
 
     xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
-
-call :MarkStartOfBlock "Copy schema"
-    if exist %SCHEMA_COPY_DIR% (
-        echo Copying schemas to "%SCHEMA_COPY_DIR%".
-        xcopy /s /i /q "%~dp0\SpatialGDK\Extras\schema" "%SCHEMA_COPY_DIR%"
-
-        echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
-        xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
-    )
-call :MarkEndOfBlock "Copy schema"
 
 call :MarkStartOfBlock "Build C# utilities"
     %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release

@@ -1,0 +1,11 @@
+{
+    "configurationVersion": "0.1",
+    "projectName": "unreal_gdk",
+    "schemaDescriptor": "../SpatialArtifacts/Schema.descriptor",
+    "clientWorkers": [
+        "./WorkerConfigs/UnrealClient.json"
+    ],
+    "serverWorkers": [
+        "./WorkerConfigs/UnrealServer.json"
+    ]
+}

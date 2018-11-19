@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Engine/EngineTypes.h"
+#include "Interfaces/IPluginManager.h"
 
 #include "SpatialGDKEditorToolbarSettings.generated.h"
 
@@ -25,10 +26,6 @@ class USpatialGDKEditorToolbarSettings : public UObject
 public:
 	USpatialGDKEditorToolbarSettings(const FObjectInitializer& ObjectInitializer);
 
-private:
-	/** Path to the directory containing the SpatialOS-related files. */
-	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
-	FDirectoryPath SpatialOSDirectory;
 public:
 	/** Launch configuration file used for `spatial local launch`. */
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Launch configuration"))
@@ -58,18 +55,10 @@ private:
 public:
 
 	UFUNCTION()
-	FORCEINLINE FString GetSpatialOSDirectory() const
-	{
-		return SpatialOSDirectory.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")))
-			: SpatialOSDirectory.Path;
-	}
-
-	UFUNCTION()
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
 		return GeneratedSchemaOutputFolder.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(IPluginManager::Get().FindPlugin(TEXT("SpatialGDK"))->GetBaseDir(), FString(TEXT("../SpatialArtifacts/Schema/Unreal/"))))
 			: GeneratedSchemaOutputFolder.Path;
 	}
 
@@ -77,7 +66,7 @@ public:
 	FORCEINLINE FString GetSpatialOSSnapshotPath() const
 	{
 		return SpatialOSSnapshotPath.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("../spatial/snapshots/"))))
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectContentDir(), FString(TEXT("Spatial/Snapshots/"))))
 			: SpatialOSSnapshotPath.Path;
 	}
 
@@ -85,7 +74,7 @@ public:
 	FORCEINLINE FString GetSpatialOSSnapshotFile() const
 	{
 		return SpatialOSSnapshotFile.IsEmpty()
-			? FString(TEXT("default.snapshot"))
+			? FString(TEXT("Default.snapshot"))
 			: SpatialOSSnapshotFile;
 	}
 

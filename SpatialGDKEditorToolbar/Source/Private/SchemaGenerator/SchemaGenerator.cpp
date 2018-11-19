@@ -241,7 +241,7 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 	if (bShouldIncludeCoreTypes)
 	{
 		Writer.PrintNewLine();
-		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
+		Writer.Printf("import \"CoreTypes.schema\";");
 	}
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
@@ -299,7 +299,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 
 	// Will always be included since AActor has replicated pointers to other actors
 	Writer.PrintNewLine();
-	Writer.Printf("import \"unreal/gdk/core_types.schema\";");
+	Writer.Printf("import \"CoreTypes.schema\";");
 
 	FSchemaData ActorSchemaData;
 
@@ -582,7 +582,7 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 				UClass* Class = Value->GetClass();
 				if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))
 				{
-					Writer.Printf("import \"unreal/generated/Subobjects/{0}.schema\";", *UnrealNameToSchemaTypeName(Class->GetName()));
+					Writer.Printf("import \"Unreal/Subobjects/{0}.schema\";", *UnrealNameToSchemaTypeName(Class->GetName()));
 					AlreadyImported.Add(Class);
 				}
 			}
@@ -591,6 +591,6 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 
 	if (bImportCoreTypes)
 	{
-		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
+		Writer.Printf("import \"CoreTypes.schema\";");
 	}
 }

@@ -8,7 +8,6 @@ USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObject
 	, SpatialOSSnapshotFile(GetSpatialOSSnapshotFile())
 	, bGenerateSchemaForAllSupportedClasses(true)
 {
-	SpatialOSDirectory.Path = TEXT("");
 	SpatialOSSnapshotPath.Path = TEXT("");
 	GeneratedSchemaOutputFolder.Path = TEXT("");
 }
@@ -16,7 +15,6 @@ USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObject
 FString USpatialGDKEditorToolbarSettings::ToString()
 {
 	TArray<FStringFormatArg> Args;
-	Args.Add(SpatialOSDirectory.Path);
 	Args.Add(SpatialOSLaunchConfig);
 	Args.Add(bStopSpatialOnExit);
 	Args.Add(SpatialOSSnapshotPath.Path);
@@ -24,9 +22,8 @@ FString USpatialGDKEditorToolbarSettings::ToString()
 	Args.Add(GeneratedSchemaOutputFolder.Path);
 	Args.Add(bGenerateSchemaForAllSupportedClasses);
 
-	return FString::Format(TEXT("ProjectRootFolder={0}, SpatialOSLaunchArgument={1}, "
-								"bStopSpatialOnExit={2}, SpatialOSSnapshotPath={3}, "
-								"SpatialOSSnapshotFile={4}, GeneratedSchemaOutputFolder={5}, "
-								"bGenerateSchemaForAllSupportedClasses={6}"),
+	return FString::Format(TEXT("SpatialOSLaunchArgument={0}, bStopSpatialOnExit={1}, "
+								"SpatialOSSnapshotPath={2}, SpatialOSSnapshotFile={3}, "
+								"GeneratedSchemaOutputFolder={4}, bGenerateSchemaForAllSupportedClasses={5}"),
 						   Args);
 }

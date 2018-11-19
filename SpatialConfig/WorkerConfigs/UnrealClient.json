@@ -1,0 +1,32 @@
+{
+    "workerType": "UnrealClient",
+    "attributeSet": {
+        "attributes": [
+            "UnrealClient"
+        ]
+    },
+    "entityInterest": {
+        "rangeEntityInterest": {
+            "radius": 5
+        }
+    },
+    "componentDelivery": {
+        "default": "RELIABLE_ORDERED",
+        "checkoutAllInitially": true
+    },
+    "permissions": {
+        "all": {}
+    },
+    "streamingQuery": [
+        {
+            "globalComponentStreamingQuery": {
+                "componentName": "unreal.GlobalStateManager"
+            }
+        },
+        {
+            "globalComponentStreamingQuery": {
+                "componentName": "unreal.Singleton"
+            }
+        }
+    ]
+}

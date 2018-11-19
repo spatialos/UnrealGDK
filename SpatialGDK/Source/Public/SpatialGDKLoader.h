@@ -25,7 +25,7 @@ public:
 		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(*Path);
 		if (WorkerLibraryHandle == nullptr)
 		{
-			UE_LOG(LogTemp, Fatal, TEXT("Failed to load %s. Have you run `UnrealGDK/Setup.bat`?"), *Path);
+			UE_LOG(LogTemp, Fatal, TEXT("Failed to load %s. Have you run `Setup.bat` in your UnrealGDK root?"), *Path);
 		}
 #elif PLATFORM_PS4
 		WorkerLibraryHandle = FPlatformProcess::GetDllHandle(TEXT("libworker.prx"));

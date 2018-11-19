@@ -1,0 +1,24 @@
+{
+    "dimensionsInWorldUnits": {
+        "x": 200,
+        "z": 200
+    },
+    "loadBalancing": {
+        "layerConfigurations": [
+            {
+                "layer": "UnrealServer",
+                "rectangleGrid": {
+                    "cols": 1,
+                    "rows": 1
+                },
+                "options": {
+                    "manualWorkerConnectionOnly": true
+                }
+            }
+        ]
+    },
+    "snapshot": {
+        "takeSnapshotIntervalSeconds": 0,
+        "startDeploymentFromSnapshotFile": "../../../Content/Spatial/Snapshots/Default.snapshot"
+    }
+}

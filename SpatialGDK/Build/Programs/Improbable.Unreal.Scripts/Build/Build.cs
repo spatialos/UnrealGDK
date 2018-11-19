@@ -50,10 +50,10 @@ exit /b !ERRORLEVEL!
             var gameName = args[0];
             var platform = args[1];
             var configuration = args[2];
-            var projectFile = Path.GetFullPath(args[3]);
+            var projectFile = Path.GetFullPath(Path.Combine("../..", args[3]));
 
-            var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
-            var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));
+            var stagingDir = Path.GetFullPath(Path.Combine("SpatialArtifacts", "Build"));
+            var outputDir = Path.GetFullPath(Path.Combine("SpatialArtifacts", "Temp"));
             var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
 
             if (gameName == baseGameName + "Editor")

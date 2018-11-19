@@ -1,0 +1,90 @@
+{
+    "workerType": "UnrealServer",
+    "attributeSet": {
+        "attributes": [
+            "UnrealServer"
+        ]
+    },
+    "entityInterest": {
+        "rangeEntityInterest": {
+            "radius": 50
+        }
+    },
+    "componentDelivery": {
+        "default": "RELIABLE_ORDERED",
+        "checkoutAllInitially": true
+    },
+    "permissions": {
+        "all": {}
+    },
+    "streamingQuery": [
+        {
+            "globalComponentStreamingQuery": {
+                "componentName": "unreal.GlobalStateManager"
+            }
+        },
+        {
+            "globalComponentStreamingQuery": {
+                "componentName": "unreal.Singleton"
+            }
+        }
+    ],
+    "launchConfiguration": {
+        "localDeployment": {
+            "windows": {
+                "localBuildDirectory": "../../SpatialArtifacts/Build/WindowsEditor",
+                "command": "StartEditor.bat",
+                "arguments": [
+                    "-server",
+                    "-stdout",
+                    "-nowrite",
+                    "-unattended",
+                    "-nologtimes",
+                    "-nopause",
+                    "-messaging",
+                    "-SaveToUserDir",
+                    "+workerType",
+                    "UnrealServer",
+                    "+appName",
+                    "${IMPROBABLE_PROJECT_NAME}",
+                    "+receptionistHost",
+                    "${IMPROBABLE_RECEPTIONIST_HOST}",
+                    "+receptionistPort",
+                    "${IMPROBABLE_RECEPTIONIST_PORT}",
+                    "+workerType",
+                    "${IMPROBABLE_WORKER_NAME}",
+                    "+workerId",
+                    "${IMPROBABLE_WORKER_ID}",
+                    "+linkProtocol",
+                    "RakNet",
+                    "-abslog=${IMPROBABLE_LOG_FILE}",
+                    "-NoVerifyGC"
+                ]
+            }
+        },
+        "cloudDeployment": {
+            "linux": {
+                "localBuildDirectory": "../../SpatialArtifactors/Build/LinuxServer",
+                "command": "StartWorker.sh",
+                "arguments": [
+                    "${IMPROBABLE_WORKER_ID}",
+                    "StarterProject",
+                    "+appName",
+                    "${IMPROBABLE_PROJECT_NAME}",
+                    "+receptionistHost",
+                    "${IMPROBABLE_RECEPTIONIST_HOST}",
+                    "+receptionistPort",
+                    "${IMPROBABLE_RECEPTIONIST_PORT}",
+                    "+workerType",
+                    "${IMPROBABLE_WORKER_NAME}",
+                    "+workerId",
+                    "${IMPROBABLE_WORKER_ID}",
+                    "+linkProtocol",
+                    "RakNet",
+                    "-abslog=${IMPROBABLE_LOG_FILE}",
+                    "-NoVerifyGC"
+                ]
+            }
+        }
+    }
+}

@@ -3,6 +3,7 @@
 #include "Async.h"
 #include "EditorStyleSet.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "Interfaces/IPluginManager.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
@@ -357,11 +358,12 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	const FString ExecuteAbsolutePath = SpatialGDKToolbarSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
+	const FString LaunchSpatialScript = FPaths::ConvertRelativePathToFull(FPaths::Combine(IPluginManager::Get().FindPlugin(TEXT("SpatialGDK"))->GetBaseDir(), TEXT(".."), TEXT("LaunchSpatial.bat")));
+
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *SpatialGDKToolbarSettings->SpatialOSLaunchConfig);
+		TEXT("/c cmd.exe /c \"%s\""), *LaunchSpatialScript);
 
 	UE_LOG(LogSpatialGDKEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
@@ -369,7 +371,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	// spatial.exe.
 	SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
 		*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
-		*ExecuteAbsolutePath, nullptr, nullptr);
+		nullptr, nullptr, nullptr);
 
 	FNotificationInfo Info(SpatialOSStackProcHandle.IsValid() == true
 							 ? FText::FromString(TEXT("SpatialOS Starting..."))
@@ -381,8 +383,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	if (!SpatialOSStackProcHandle.IsValid())
 	{
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
-		const FString SpatialLogPath =
-			SpatialGDKToolbarSettings->GetSpatialOSDirectory() + FString(TEXT("/logs/spatial.log"));
+		const FString SpatialLogPath = FString(TEXT("SpatialArtifacts\\Logs\\spatial.log"));
 		UE_LOG(LogSpatialGDKEditor, Error,
 				TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."),
 				*SpatialLogPath);

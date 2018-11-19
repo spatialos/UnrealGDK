@@ -1,0 +1,21 @@
+{
+    "template": "small_loadbalancer_v2",
+    "runtimeFlags": [
+        {
+            "name": "streaming_query_diff",
+            "value": "true"
+        },
+        {
+            "name": "bridge_qos_max_timeout",
+            "value": "0"
+        },
+        {
+            "name": "qos_max_unacked_pings_rate",
+            "value": "10"
+        },
+        {
+            "name": "game_chunk_size",
+            "value": "5"
+        }
+    ]
+}

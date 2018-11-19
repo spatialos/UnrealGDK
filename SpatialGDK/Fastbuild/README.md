@@ -17,22 +17,22 @@ FASTBuild can be installed as a service, for build agents and other non-interact
 
 **To install**
 
-  `powershell -NoProfile -ExecutionPolicy Bypass -File "\\lonv-file-01\Fastbuild\install.ps1" -service`
+  `powershell -NoProfile -ExecutionPolicy Bypass -File Install.ps1 -service`
 
 **To uninstall**
 
-  `powershell -NoProfile -ExecutionPolicy Bypass -File "\\lonv-file-01\Fastbuild\uninstall.ps1" -service`
+  `powershell -NoProfile -ExecutionPolicy Bypass -File Uninstall.ps1 -service`
 
 # As a GUI
 If you're installing on your workstation, it's recommended to install it in interactive mode.
 
 **To install**
 
-  `powershell -NoProfile -ExecutionPolicy Bypass -File "\\lonv-file-01\Fastbuild\install.ps1"`
+  `powershell -NoProfile -ExecutionPolicy Bypass -File Install.ps1`
 
 **To uninstall**
 
-  `powershell -NoProfile -ExecutionPolicy Bypass -File "\\lonv-file-01\Fastbuild\uninstall.ps1"`
+  `powershell -NoProfile -ExecutionPolicy Bypass -File Uninstall.ps1`
 
 # Useful tools
 

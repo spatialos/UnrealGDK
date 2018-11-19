@@ -72,7 +72,7 @@ namespace SpatialConstants
 	const FUnrealObjectRef UNRESOLVED_OBJECT_REF(0, 1);
 
 	static const FString ClientWorkerType = TEXT("UnrealClient");
-	static const FString ServerWorkerType = TEXT("UnrealWorker");
+	static const FString ServerWorkerType = TEXT("UnrealServer");
 
 	static const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 	static const FString SnapshotURLOption = TEXT("snapshot=");

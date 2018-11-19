@@ -178,6 +178,8 @@ TArray<UClass*> GetAllSupportedClasses()
 
 		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
 
+		if (SupportedClass->GetName() == TEXT("GameplayDebuggerCategoryReplicator")) continue;
+
 		// Ensure we don't process skeleton or reinitialized classes
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))

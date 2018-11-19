@@ -58,7 +58,7 @@ Build/*/**
 !Build/**/*.ico
 
 # Build artifacts
-SpatialGDK/Build/core_sdk/
+SpatialArtifacts
 
 # Built data for maps
 #*_BuiltData.uasset
@@ -75,9 +75,8 @@ Generated/
 **/obj/
 
 .spatialos/
+.improbable/
 logs/
-
-Scripts/spatialos.*.build.json
 
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln
 
