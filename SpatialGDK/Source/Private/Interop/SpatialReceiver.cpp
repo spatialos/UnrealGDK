@@ -249,9 +249,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	improbable::Position* Position = StaticComponentView->GetComponentData<improbable::Position>(EntityId);
 	improbable::Rotation* Rotation = StaticComponentView->GetComponentData<improbable::Rotation>(EntityId);
-	improbable::UnrealMetadata* Metadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
+	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
-	check(Position && Metadata);
+	if (UnrealMetadata == nullptr)
+	{
+		// Not an Unreal entity
+		return;
+	}
 
 	if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId))
 	{
@@ -273,7 +277,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
-		UClass* ActorClass = Metadata->GetNativeEntityClass();
+		UClass* ActorClass = UnrealMetadata->GetNativeEntityClass();
 
 		if (ActorClass == nullptr)
 		{
@@ -588,7 +592,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 	if (Channel == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Worker: %s Entity: %d Component: %d - No actor channel for update"), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker: %s Entity: %d Component: %d - No actor channel for update. This most likely occured due to the component updates that are sent when authority is lost during entity deletion."), *NetDriver->Connection->GetWorkerId(), Op.entity_id, Op.update.component_id);
 		return;
 	}
 
@@ -874,12 +878,12 @@ void USpatialReceiver::OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op)
 		auto RequestDelegate = EntityQueryDelegates.Find(Op.request_id);
 		if (RequestDelegate)
 		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Executing EntityQueryResponse with delegate, request id: %d, number of entities: %lld, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialReceiver, Log, TEXT("Executing EntityQueryResponse with delegate, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
 			RequestDelegate->ExecuteIfBound(Op);
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved EntityQueryResponse but with no delegate set, request id: %d, number of entities: %lld, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
 		}
 	}
 	else

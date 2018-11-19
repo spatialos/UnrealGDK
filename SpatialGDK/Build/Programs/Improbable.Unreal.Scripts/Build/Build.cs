@@ -155,16 +155,22 @@ exit /b !ERRORLEVEL!
                     "-noclient",
                 });
 
-                // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
-                // Also ensure script uses Linux line endings
-                var linuxServerPath = Path.Combine(stagingDir, "LinuxServer");
-                File.WriteAllText(Path.Combine(linuxServerPath, "StartWorker.sh"), UnrealWorkerShellScript.Replace("\r\n", "\n"), new UTF8Encoding(false));
+                bool isLinux = platform == "Linux";
+                var assemblyPlatform = isLinux ? "Linux" : "Windows";
+                var serverPath = Path.Combine(stagingDir, assemblyPlatform + "Server");
+
+                if (isLinux)
+                {
+                    // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
+                    // Also ensure script uses Linux line endings
+                    File.WriteAllText(Path.Combine(serverPath, "StartWorker.sh"), UnrealWorkerShellScript.Replace("\r\n", "\n"), new UTF8Encoding(false));
+                }
 
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
-                    "-add=" + Quote(linuxServerPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealWorker@Linux.zip"))
+                    "-add=" + Quote(serverPath),
+                    "-archive=" + Quote(Path.Combine(outputDir, $"UnrealWorker@{assemblyPlatform}.zip"))
                 });
             }
             else

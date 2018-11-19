@@ -223,7 +223,7 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByObject(UObject* Object)
 
 		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
 
-		if (ObjectRef != SpatialConstants::NULL_OBJECT_REF)
+		if (ObjectRef != SpatialConstants::NULL_OBJECT_REF && ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
 		{
 			return FindClassInfoByActorClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
 		}
