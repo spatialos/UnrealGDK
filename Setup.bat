@@ -67,23 +67,26 @@ call :MarkStartOfBlock "Create folders"
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
-    spatial package retrieve tools           schema_compiler-x86_64-win32           %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
-    spatial package retrieve schema          standard_library                       %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\schema\standard_library.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32            %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32         %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip"
-    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"
+    spatial package retrieve tools           schema_compiler-x86_64-win32                 %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
+    spatial package retrieve schema          standard_library                             %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\schema\standard_library.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32                  %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32               %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip"
+    spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux         %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"
     spatial package retrieve worker_sdk      c-dynamic-armeabi_v7a-clang_libcpp-android   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-armeabi_v7a-clang_libcpp-android.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86-android-clang_libcpp-android   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-android-clang_libcpp-android.zip"
-    spatial package retrieve worker_sdk      c-dynamic-arm64-clang_libcpp-android   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64-clang_libcpp-android.zip"
+    spatial package retrieve worker_sdk      c-dynamic-arm64-clang_libcpp-android         %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64-clang_libcpp-android.zip"
 
 call :MarkEndOfBlock "Retrieve dependencies"
 
 call :MarkStartOfBlock "Unpack dependencies"
-    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\"          -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip\"    -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                 -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
-                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                            -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
+    powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip\"                 -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\"              -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip\"        -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-armeabi_v7a-clang_libcpp-android.zip\"  -DestinationPath \"%BINARIES_DIR%\Android\ARM\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-android-clang_libcpp-android.zip\"  -DestinationPath \"%BINARIES_DIR%\Android\ARMx86\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64-clang_libcpp-android.zip\"        -DestinationPath \"%BINARIES_DIR%\Android\ARM64\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                     -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                                -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
 
     xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
