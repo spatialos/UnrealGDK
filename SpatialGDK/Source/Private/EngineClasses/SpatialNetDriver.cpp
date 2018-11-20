@@ -720,24 +720,25 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				// or it's an editor placed actor and the client hasn't initialized the level it's in
 				if (Channel == NULL && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
-					// Create a new channel for this actor.
-					Channel = (USpatialActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
-					if (Channel)
+					// If we're a singleton, and don't have a channel, defer to GSM
+					if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 					{
-						if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-						{
-							SingletonActorChannels.Add(Actor->GetClass(), TPair<AActor*, USpatialActorChannel*>(Actor, Channel));
-						}
-						else
+						Channel = GlobalStateManager->AddSingleton(Actor);
+					}
+					else
+					{
+						// Create a new channel for this actor.
+						Channel = (USpatialActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
+						if (Channel)
 						{
 							Channel->SetChannelActor(Actor);
 						}
-					}
-					// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
-					else if (Actor->NetUpdateFrequency < 1.0f)
-					{
-						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
-						PriorityActors[j]->ActorInfo->NextUpdateTime = Actor->GetWorld()->TimeSeconds + 0.2f * FMath::FRand();
+						// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
+						else if (Actor->NetUpdateFrequency < 1.0f)
+						{
+							UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
+							PriorityActors[j]->ActorInfo->NextUpdateTime = Actor->GetWorld()->TimeSeconds + 0.2f * FMath::FRand();
+						}
 					}
 				}
 

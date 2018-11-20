@@ -184,7 +184,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		}
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
-		// and set our RemoteRole to be ROLE_AutonomousProxy iff the actor has an owning connection.
+		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
 			if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))

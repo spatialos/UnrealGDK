@@ -49,13 +49,15 @@ public:
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
 
+	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
+
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers = false;
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
 private:
-	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
+	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
 
 private:

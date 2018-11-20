@@ -198,24 +198,24 @@ TArray<UClass*> GetAllSupportedClasses()
 {
 	TSet<UClass*> Classes;
 
-	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("MCS: Class: %s %d"), *ClassIt->GetName(), (int)ClassIt->GetSpatialClassFlags());
+	//for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("MCS: Class: %s %d"), *ClassIt->GetName(), (int)ClassIt->GetSpatialClassFlags());
 
-		if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_None))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("MCS: Spatial class none: %s"), *ClassIt->GetName());
-		}
-		if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("MCS: Not spatial type: %s"), *ClassIt->GetName());
-		}
-		if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("MCS: Singleton type: %s"), *ClassIt->GetName());
-		}
-	}
-	return Classes;
+	//	if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_None))
+	//	{
+	//		UE_LOG(LogTemp, Warning, TEXT("MCS: Spatial class none: %s"), *ClassIt->GetName());
+	//	}
+	//	if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+	//	{
+	//		UE_LOG(LogTemp, Warning, TEXT("MCS: Not spatial type: %s"), *ClassIt->GetName());
+	//	}
+	//	if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	//	{
+	//		UE_LOG(LogTemp, Warning, TEXT("MCS: Singleton type: %s"), *ClassIt->GetName());
+	//	}
+	//}
+	//return Classes.Array();
 
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
@@ -245,7 +245,9 @@ TArray<UClass*> GetAllSupportedClasses()
 
 		// Ensure we don't process skeleton or reinitialized classes
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
+			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
+			|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
+			|| SupportedClass->GetName().StartsWith(TEXT("HOTRELOADED_"), ESearchCase::CaseSensitive))
 		{
 			continue;
 		}
@@ -278,7 +280,7 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
-	FString SchemaOutputPath = SpatialGDKToolbarSettings->GetGeneratedSchemaOutputFolder();
+	FString SchemaOutputPath = GetDefault<USpatialGDKEditorToolbarSettings>()->GetGeneratedSchemaOutputFolder();
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
 
