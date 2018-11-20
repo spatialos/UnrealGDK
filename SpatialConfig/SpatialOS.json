@@ -6,6 +6,6 @@
         "./WorkerConfigs/UnrealClient.json"
     ],
     "serverWorkers": [
-        "./WorkerConfigs/UnrealServer.json"
+        "./WorkerConfigs/UnrealWorker.json"
     ]
 }

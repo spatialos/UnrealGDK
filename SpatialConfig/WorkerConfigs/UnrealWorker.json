@@ -1,8 +1,8 @@
 {
-    "workerType": "UnrealServer",
+    "workerType": "UnrealWorker",
     "attributeSet": {
         "attributes": [
-            "UnrealServer"
+            "UnrealWorker"
         ]
     },
     "entityInterest": {
@@ -44,7 +44,7 @@
                     "-messaging",
                     "-SaveToUserDir",
                     "+workerType",
-                    "UnrealServer",
+                    "UnrealWorker",
                     "+appName",
                     "${IMPROBABLE_PROJECT_NAME}",
                     "+receptionistHost",
