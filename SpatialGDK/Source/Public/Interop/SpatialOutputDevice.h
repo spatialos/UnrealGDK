@@ -27,4 +27,5 @@ protected:
 	TSet<FName> CategoriesToRedirect;
 	USpatialWorkerConnection* Connection;
 	FString Name;
+	FString WorkerLogFile;
 };

@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/SpatialOutputDevice.h"
+#include "Misc/FileHelper.h"
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
@@ -9,6 +10,9 @@ FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnectio
 	Connection = InConnection;
 	Name = LoggerName;
 	FilterLevel = ELogVerbosity::Warning;
+
+	const TCHAR* CommandLine = FCommandLine::Get();
+	FParse::Value(CommandLine, TEXT("workerLogFile"), WorkerLogFile);
 
 	FOutputDeviceRedirector::Get()->AddOutputDevice(this);
 }
@@ -20,6 +24,11 @@ FSpatialOutputDevice::~FSpatialOutputDevice()
 
 void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Verbosity, const class FName& Category)
 {
+	if (!WorkerLogFile.IsEmpty())
+	{
+		FFileHelper::SaveStringToFile(InData, *WorkerLogFile, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), EFileWrite::FILEWRITE_Append);
+	}
+
 	if (Verbosity > FilterLevel)
 	{
 		return;
