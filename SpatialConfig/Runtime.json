@@ -14,6 +14,10 @@
             "value": "10"
         },
         {
+            "name": "worker_start_connection_timeout_ms",
+            "value": "60000"
+        },
+        {
             "name": "game_chunk_size",
             "value": "5"
         }

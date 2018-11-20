@@ -32,7 +32,7 @@
     "launchConfiguration": {
         "localDeployment": {
             "windows": {
-                "localBuildDirectory": "../../SpatialArtifacts/Build/WindowsEditor",
+                "localBuildDirectory": "../../../../Intermediate/SpatialWorkers/WindowsEditor",
                 "command": "StartEditor.bat",
                 "arguments": [
                     "-server",
@@ -64,11 +64,10 @@
         },
         "cloudDeployment": {
             "linux": {
-                "localBuildDirectory": "../../SpatialArtifactors/Build/LinuxServer",
+                "localBuildDirectory": "../../../../Intermediate/SpatialWorkers/LinuxServer",
                 "command": "StartWorker.sh",
                 "arguments": [
                     "${IMPROBABLE_WORKER_ID}",
-                    "StarterProject",
                     "+appName",
                     "${IMPROBABLE_PROJECT_NAME}",
                     "+receptionistHost",
