@@ -259,7 +259,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId))
 	{
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it or is a singleton previously created on this worker"), \
+			*EntityActor->GetName());
 
 		// Assume SimulatedProxy until we've been delegated Authority
 		bool bAuthority = StaticComponentView->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
@@ -272,6 +273,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				EntityActor->RemoteRole = ROLE_AutonomousProxy;
 			}
 		}
+
+		// If we're a singleton, apply the data, regardless of authority - JIRA: 736
 
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Received create entity response op for %lld"), EntityId);
 	}
@@ -287,6 +290,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
 		if (NetDriver->IsServer() && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 		{
+			// If GSM doesn't know of this entity id, queue up data for that entity id, and resolve it when the actor is created - JIRA: 734
+			// If the GSM does know of this entity id, we could just create the actor instead - JIRA: 735
 			return;
 		}
 

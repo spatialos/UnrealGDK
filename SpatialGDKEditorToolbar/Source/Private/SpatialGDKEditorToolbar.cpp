@@ -265,9 +265,6 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
 	GeneralProjectSettings->bSpatialNetworking = true;
 
-	// Ensure all our spatial classes are loaded into memory before running
-	//CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings);
-
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema, [this, bCachedSpatialNetworking]()
 	{
 		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)

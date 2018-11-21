@@ -99,7 +99,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (SingletonEntityIdPtr == nullptr)
 	{
 		// No entry in SingletonNameToEntityId for this singleton class type
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("UGlobalStateManager::LinkExistingSingletonActor %s failed to find entry"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor %s failed to find entry"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -107,15 +107,17 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (SingletonEntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		// Singleton Entity hasn't been created yet
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("UGlobalStateManager::LinkExistingSingletonActor %s entity id is invalid"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor %s entity id is invalid"), *SingletonActorClass->GetName());
 		return;
 	}
 
 	auto* ActorChannelPair = NetDriver->SingletonActorChannels.Find(SingletonActorClass);
 	if (ActorChannelPair == nullptr)
 	{
+		// Dynamically spawn singleton actor if we have queued up data - ala USpatialReceiver::ReceiveActor - JIRA: 735
+
 		// No local actor has registered itself as replicatible on this worker
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("UGlobalStateManager::LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Warning, TEXT("LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -128,6 +130,8 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		UE_LOG(LogGlobalStateManager, Warning, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
 		return;
 	}
+
+	// If we have previously queued up data for this entity, apply it - JIRA: 734
 
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 	Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
