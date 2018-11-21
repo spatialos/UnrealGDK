@@ -309,7 +309,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	GameMode->StartToLeaveMap();
 
 	// Force an old style load screen if the server has been up for a long time so that TimeSeconds doesn't overflow and break everything
-	bool bSeamless = (GameMode->bUseSeamlessTravel && GameMode->GetWorld()->TimeSeconds < 172800.0f); // 172800 seconds == 48 hours
+	bool bSeamless = (GameMode->bUseSeamlessTravel && World->TimeSeconds < 172800.0f); // 172800 seconds == 48 hours
 
 	FString NextMap;
 	if (URL.ToUpper().Contains(TEXT("?RESTART")))
@@ -329,7 +329,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		}
 	}
 
-	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), GameMode->GetWorld()->IsPlayInEditor());
+	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), World->IsPlayInEditor());
 
 	FString NewURL = URL;
 
@@ -347,6 +347,12 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	// Notify clients we're switching level and give them time to receive.
 	FString URLMod = NewURL;
 	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, NextMapGuid, bSeamless, bAbsolute);
+
+	// We can't have the NextURL set this early when using SpatialProcessServerTravel so empty the string here.
+	// The reason for this is, on the next WorldTick the current World and NetDriver will be unloaded.
+	// During the deployment wipe we are waiting for an entity query response of all entities in the deployment.
+	// If the NetDriver has been unloaded in that time, the delegate to delete all these entities will be lost and server travel will fail.
+	World->NextURL.Empty();
 
 	ENetMode NetMode = GameMode->GetNetMode();
 
