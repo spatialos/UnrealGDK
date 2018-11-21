@@ -227,7 +227,7 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 	if (ServerConnection)
 	{
 		// If we know the GSM is already accepting players, simply spawn.
-		if (GlobalStateManager->bAcceptingPlayers && GlobalStateManager->DeploymentMapURL == GetWorld()->URL.Map)
+		if (GlobalStateManager->bAcceptingPlayers && GetWorld()->RemovePIEPrefix(GlobalStateManager->DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 		}
@@ -263,7 +263,7 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 	if (bWaitingForAcceptingPlayersToSpawn && bAcceptingPlayers)
 	{
 		// If we have the correct map loaded then ask to spawn.
-		if (GlobalStateManager->DeploymentMapURL == GetWorld()->URL.Map)
+		if (GetWorld()->RemovePIEPrefix(GlobalStateManager->DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 
