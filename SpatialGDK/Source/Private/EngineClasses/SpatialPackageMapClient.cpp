@@ -20,17 +20,17 @@ DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 {
 	InSubobjects.Empty();
-	ForEachObjectWithOuter(Object, [&InSubobjects](UObject* Object)
+	ForEachObjectWithOuter(Object, [&InSubobjects](UObject* InObject)
 	{
 		// Objects can only be allocated NetGUIDs if this is true.
-		if (Object->IsSupportedForNetworking() && !Object->IsPendingKill() && !Object->IsEditorOnly())
+		if (InObject->IsSupportedForNetworking() && !InObject->IsPendingKill() && !InObject->IsEditorOnly())
 		{
 			// Walk up the outer chain and ensure that no object is PendingKill. This is required because although
 			// EInternalObjectFlags::PendingKill prevents objects that are PendingKill themselves from getting added
 			// to the list, it'll still add children of PendingKill objects. This then causes an assertion within 
 			// FNetGUIDCache::RegisterNetGUID_Server where it again iterates up the object's owner chain, assigning
 			// ids and ensuring that no object is set to PendingKill in the process.
-			UObject* Outer = Object->GetOuter();
+			UObject* Outer = InObject->GetOuter();
 			while (Outer != nullptr)
 			{
 				if (Outer->IsPendingKill())
@@ -39,7 +39,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 				}
 				Outer = Outer->GetOuter();
 			}
-			InSubobjects.Add(Object);
+			InSubobjects.Add(InObject);
 		}
 	}, true, RF_NoFlags, EInternalObjectFlags::PendingKill);
 

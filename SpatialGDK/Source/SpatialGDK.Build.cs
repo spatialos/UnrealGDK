@@ -71,7 +71,11 @@ public class SpatialGDK : ModuleRules
                 SharedLibSuffix = ".dll";
                 break;
             case UnrealTargetPlatform.Android:
-                throw new System.Exception(System.String.Format("Android platform {0}", Target.Platform.ToString()));
+                LibPrefix = "lib";
+                ImportLibSuffix = SharedLibSuffix = ".so";
+                AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(ModuleDirectory, "My_APL.xml"));
+              //  string BuildPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
+               // throw new System.Exception(System.String.Format("shjafkas platform {0}", BuildPath));
                 break;
             default:
                 throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
@@ -80,7 +84,16 @@ public class SpatialGDK : ModuleRules
         string CoreSdkImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
         string CoreSdkSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
 
-        PublicAdditionalLibraries.AddRange(new[] { Path.Combine(CoreSdkLibraryDir, CoreSdkImportLib) });
+        string libPath = Path.Combine(CoreSdkLibraryDir, CoreSdkImportLib);
+        if(Target.Platform == UnrealTargetPlatform.Android)
+        {
+            PublicAdditionalLibraries.AddRange(new[] { "worker" });
+        }
+        else
+        {
+            PublicAdditionalLibraries.AddRange(new[] { libPath });
+        }
+
         RuntimeDependencies.Add(Path.Combine(CoreSdkLibraryDir, CoreSdkSharedLib), StagedFileType.NonUFS);
         PublicLibraryPaths.Add(CoreSdkLibraryDir);
         if (bAddDelayLoad)

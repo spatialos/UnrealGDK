@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <utility>
 #include <WorkerSDK/improbable/c_worker.h>
 
 namespace improbable
@@ -26,22 +27,22 @@ template <typename T>
 class ComponentStorage : public ComponentStorageBase
 {
 public:
-	explicit ComponentStorage(const T& data) : data{data} {}
-	explicit ComponentStorage(T&& data) : data{std::move(data)} {}
+	explicit ComponentStorage(const T& InData) : Data{ InData } {}
+	explicit ComponentStorage(T&& InData) : Data{std::move(InData)} {}
 	~ComponentStorage() override {}
 
 	TUniquePtr<ComponentStorageBase> Copy() const override
 	{
-		return TUniquePtr<ComponentStorageBase>{new ComponentStorage{data}};
+		return TUniquePtr<ComponentStorageBase>{new ComponentStorage{ Data }};
 	}
 
 	T& Get()
 	{
-		return data;
+		return Data;
 	}
 
 private:
-	T data;
+	T Data;
 };
 
 }
