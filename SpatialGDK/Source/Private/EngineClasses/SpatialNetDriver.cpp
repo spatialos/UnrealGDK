@@ -108,9 +108,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		return;
 	}
 
-	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and Spatial networking is enabled, we can travel properly.
-	LoadedWorld->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
-
 	// Handle Spatial connection configurations.
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
 
@@ -223,6 +220,9 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 	GlobalStateManager->Init(this, TimerManager);
 	SnapshotManager->Init(this);
 
+	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and Spatial networking is enabled, we can travel properly.
+	GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
+
 	// If we're the client, we can now ask the server to spawn our controller.
 	if (ServerConnection)
 	{
@@ -309,7 +309,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	GameMode->StartToLeaveMap();
 
 	// Force an old style load screen if the server has been up for a long time so that TimeSeconds doesn't overflow and break everything
-	bool bSeamless = (GameMode->bUseSeamlessTravel && GameMode->GetWorld()->TimeSeconds < 172800.0f); // 172800 seconds == 48 hours
+	bool bSeamless = (GameMode->bUseSeamlessTravel && World->TimeSeconds < 172800.0f); // 172800 seconds == 48 hours
 
 	FString NextMap;
 	if (URL.ToUpper().Contains(TEXT("?RESTART")))
@@ -329,21 +329,40 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		}
 	}
 
-	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), GameMode->GetWorld()->IsPlayInEditor());
+	FGuid NextMapGuid = UEngine::GetPackageGuid(FName(*NextMap), World->IsPlayInEditor());
+
+	FString NewURL = URL;
+
+	bool SnapshotOption = NewURL.Contains(TEXT("snapshot="));
+	if (!SnapshotOption)
+	{
+		// In the case that we don't have a snapshot option, we assume the map name will be the snapshot name.
+		// Remove any leading path before the map name.
+		FString Path;
+		FString MapName;
+		NextMap.Split(TEXT("/"), &Path, &MapName, ESearchCase::IgnoreCase, ESearchDir::FromEnd);
+		NewURL.Append(FString::Printf(TEXT("?snapshot=%s"), *MapName));
+	}
 
 	// Notify clients we're switching level and give them time to receive.
-	FString URLMod = URL;
+	FString URLMod = NewURL;
 	APlayerController* LocalPlayer = GameMode->ProcessClientTravel(URLMod, NextMapGuid, bSeamless, bAbsolute);
+
+	// We can't have the NextURL set this early when using SpatialProcessServerTravel so empty the string here.
+	// The reason for this is, on the next WorldTick the current World and NetDriver will be unloaded.
+	// During the deployment wipe we are waiting for an entity query response of all entities in the deployment.
+	// If the NetDriver has been unloaded in that time, the delegate to delete all these entities will be lost and server travel will fail.
+	World->NextURL.Empty();
 
 	ENetMode NetMode = GameMode->GetNetMode();
 
 	// FinishServerTravel - Allows Unreal to finish it's normal server travel.
 	USpatialNetDriver::PostWorldWipeDelegate FinishServerTravel;
-	FinishServerTravel.BindLambda([World, NetDriver, URL, NetMode, bSeamless, bAbsolute]
+	FinishServerTravel.BindLambda([World, NetDriver, NewURL, NetMode, bSeamless, bAbsolute]
 	{
-		UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Finishing Server Travel : %s"), *URL);
+		UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Finishing Server Travel : %s"), *NewURL);
 		check(World);
-		World->NextURL = URL;
+		World->NextURL = NewURL;
 
 		if (bSeamless)
 		{
@@ -357,7 +376,7 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 		}
 	});
 
-	UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Wiping the world"), *URL);
+	UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Wiping the world"), *NewURL);
 	NetDriver->WipeWorld(FinishServerTravel);
 #endif // WITH_SERVER_CODE
 }
