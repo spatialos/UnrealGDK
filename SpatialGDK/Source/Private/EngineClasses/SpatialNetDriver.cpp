@@ -718,7 +718,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				// we can't create the channel if the client is in a different world than we are
 				// or the package map doesn't support the actor's class/archetype (or the actor itself in the case of serializable actors)
 				// or it's an editor placed actor and the client hasn't initialized the level it's in
-				if (Channel == NULL && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
+				if (Channel == nullptr && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
 					// If we're a singleton, and don't have a channel, defer to GSM
 					if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
