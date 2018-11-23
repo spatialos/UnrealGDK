@@ -86,10 +86,6 @@ call :MarkStartOfBlock "Unpack dependencies"
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                     -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                                -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
 
-                        REM "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-android-clang_libcpp-android.zip\"  -DestinationPath \"%BINARIES_DIR%\Android\ARMx86\" -Force; "^
-                        REM "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-arm64-clang_libcpp-android.zip\"        -DestinationPath \"%BINARIES_DIR%\Android\ARM64\" -Force; "^
-
-
     xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 

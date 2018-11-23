@@ -19,7 +19,7 @@
       "Name": "SpatialGDK",
       "Type": "Runtime",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64", "Linux", "XboxOne", "PS4" ]
+      "WhitelistPlatforms": [ "Win64", "Linux", "XboxOne", "PS4", "Android" ]
     }
   ],
   "Plugins": [
