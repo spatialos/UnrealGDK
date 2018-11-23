@@ -4,7 +4,3 @@ package unreal;
 component Singleton {
     id = 100003;
 }
-
-component ServerOnlySingleton {
-    id = 100007;
-}

@@ -117,7 +117,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		// Dynamically spawn singleton actor if we have queued up data - ala USpatialReceiver::ReceiveActor - JIRA: 735
 
 		// No local actor has registered itself as replicatible on this worker
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -127,12 +127,13 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (Channel != nullptr)
 	{
 		// Channel has already been setup
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Log, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
 		return;
 	}
 
 	// If we have previously queued up data for this entity, apply it - JIRA: 734
 
+	// We're now ready to start replicating this actor, create a channel
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 	Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
 
@@ -154,15 +155,13 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
 }
 
-void UGlobalStateManager::LinkExistingSingletonActors()
+void UGlobalStateManager::LinkAllExistingSingletonActors()
 {
 	// Client receive Singleton Actors via the normal Unreal replicated actor flow
 	if (!NetDriver->IsServer())
 	{
 		return;
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("0x%x UGlobalStateManager::LinkExistingSingletonActors %d"), this, SingletonNameToEntityId.Num());
 
 	for (const auto& Pair : SingletonNameToEntityId)
 	{
@@ -179,7 +178,6 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 
 USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 {
-	UE_LOG(LogTemp, Warning, TEXT("0x%x UGlobalStateManager::AddSingleton %s"), this, *SingletonActor->GetName());
 	check(SingletonActor->GetIsReplicated());
 
 	UClass* SingletonActorClass = SingletonActor->GetClass();
@@ -192,6 +190,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	// Just return the channel if it's already been setup
 	if (Channel != nullptr)
 	{
+		UE_LOG(LogGlobalStateManager, Log, TEXT("AddSingleton called when channel already setup: %s"), *SingletonActor->GetName());
 		return Channel;
 	}
 
@@ -213,11 +212,11 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		}
 
 		Channel->SetChannelActor(SingletonActor);
-		UE_LOG(LogGlobalStateManager, Log, TEXT("0x%x Started replication of Singleton Actor %s"), this, *SingletonActor->GetClass()->GetName());
+		UE_LOG(LogGlobalStateManager, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActorClass->GetName());
 	}
 	else
 	{
-		// We don't have control over the GSM, but we may have received the entityid for this singleton already
+		// We don't have control over the GSM, but we may have received the entity id for this singleton already
 		LinkExistingSingletonActor(SingletonActorClass);
 	}
 
@@ -226,8 +225,6 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 
 void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 {
-	UE_LOG(LogTemp, Warning, TEXT("0x%x UGlobalStateManager::ExecuteInitialSingletonActorReplication %d"), this, NetDriver->SingletonActorChannels.Num());
-
 	for (auto& ClassToActorChannel : NetDriver->SingletonActorChannels)
 	{
 		auto& ActorChannelPair = ClassToActorChannel.Value;
@@ -242,11 +239,10 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 
 	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID))
 	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("0x%x UGlobalStateManager::UpdateSingletonEntityId: no authority over the GSM! Update will not be sent. Singleton class: %s, entity: %lld"), this, *ClassName, SingletonEntityId);
+		UE_LOG(LogGlobalStateManager, Warning, TEXT("UpdateSingletonEntityId: no authority over the GSM! Update will not be sent. Singleton class: %s, entity: %lld"), *ClassName, SingletonEntityId);
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("0x%x UGlobalStateManager::UpdateSingletonEntityId %d"), this, SingletonNameToEntityId.Num());
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
@@ -257,7 +253,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId)
+bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId) const
 {
 	for (const auto& Pair : SingletonNameToEntityId)
 	{

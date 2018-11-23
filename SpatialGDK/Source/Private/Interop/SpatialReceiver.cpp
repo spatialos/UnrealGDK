@@ -137,7 +137,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyData(Op.data);
-		GlobalStateManager->LinkExistingSingletonActors();
+		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
  		GlobalStateManager->ApplyDeploymentMapURLData(Op.data);
@@ -597,7 +597,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyUpdate(Op.update);
-		GlobalStateManager->LinkExistingSingletonActors();
+		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
