@@ -57,7 +57,7 @@ namespace SpatialConstants
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 100002;
 	const Worker_ComponentId SINGLETON_COMPONENT_ID							= 100003;
 	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 100004;
-	const Worker_ComponentId SINGLETONS_COMPONENT_ID						= 100005;
+	const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 100005;
 	const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 100006;
 	const Worker_ComponentId SERVER_ONLY_SINGLETON_COMPONENT_ID				= 100007;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 100010;

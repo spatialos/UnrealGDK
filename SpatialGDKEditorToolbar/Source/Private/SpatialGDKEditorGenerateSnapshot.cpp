@@ -93,8 +93,8 @@ Worker_ComponentData CreateGlobalStateManagerData()
 	}
 
 	Worker_ComponentData Data;
-	Data.component_id = SpatialConstants::SINGLETONS_COMPONENT_ID;
-	Data.schema_type = Schema_CreateComponentData(SpatialConstants::SINGLETONS_COMPONENT_ID);
+	Data.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
+	Data.schema_type = Schema_CreateComponentData(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	AddStringToEntityMapToSchema(ComponentObject, 1, SingletonNameToEntityId);
@@ -133,7 +133,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::SINGLETONS_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());

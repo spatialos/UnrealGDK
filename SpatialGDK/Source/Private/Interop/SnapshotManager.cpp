@@ -178,7 +178,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			// Check if this is the GSM
 			for (auto& ComponentData : EntityToSpawn)
 			{
-				if (ComponentData.component_id == SpatialConstants::SINGLETONS_COMPONENT_ID)
+				if (ComponentData.component_id == SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID)
 				{
 					// Save the new GSM Entity ID.
 					GlobalStateManager->GlobalStateManagerEntityId = ReservedEntityID;
