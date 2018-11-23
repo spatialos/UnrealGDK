@@ -641,12 +641,7 @@ struct Interest : Component
 		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		for (const auto& KVPair : ComponentInterest)
-		{
-			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 1);
-			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
-			AddComponentInterestToSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
-		}
+		FillComponentData(ComponentObject);
 
 		return Data;
 	}
@@ -658,14 +653,19 @@ struct Interest : Component
 		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
+		FillComponentData(ComponentObject);
+
+		return ComponentUpdate;
+	}
+
+	void FillComponentData(Schema_Object* ComponentObject)
+	{
 		for (const auto& KVPair : ComponentInterest)
 		{
-			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 2);
+			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 1);
 			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
 			AddComponentInterestToSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
 		}
-
-		return ComponentUpdate;
 	}
 
 	TMap<uint32, ComponentInterest> ComponentInterest;

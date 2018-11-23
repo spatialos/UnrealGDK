@@ -19,7 +19,7 @@ class UProperty;
 enum EReplicatedPropertyGroup : uint32;
 
 using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
-using FResolvedActorProxyMap = TMap<Schema_FieldId, TSet<const UObject*>>;
+using FResolvedActorProxySet = TSet<const UObject*>;
 
 namespace improbable
 {
@@ -45,10 +45,10 @@ private:
 
 	bool FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	Worker_ComponentData CreateInterestComponentData(UObject* Object, bool& bWroteSomething, Worker_EntityId EntityId);
-	Worker_ComponentUpdate CreateInterestComponentUpdate(UObject* Object, bool& bWroteSomething, Worker_EntityId EntityId);
+	Worker_ComponentData CreateInterestComponentData(bool& bWroteSomething);
+	Worker_ComponentUpdate CreateInterestComponentUpdate(bool& bWroteSomething);
 
-	bool FillInterestSchemaObject(Schema_Object* ComponentObject, Worker_EntityId EntityId);
+	bool FillInterestSchemaObject(Schema_Object* ComponentObject);
 
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
@@ -57,7 +57,7 @@ private:
 	FUnresolvedObjectsMap& PendingRepUnresolvedObjectsMap;
 	FUnresolvedObjectsMap& PendingHandoverUnresolvedObjectsMap;
 
-	FResolvedActorProxyMap ResolvedChangedActorProxyMap;
+	FResolvedActorProxySet ResolvedChangedActorProxyMap;
 };
 
 }

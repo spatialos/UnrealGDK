@@ -368,7 +368,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	if (ResolvedChangedActorProxyMap.Num() > 0)
 	{
 		bool bWroteSomething = false;
-		Worker_ComponentUpdate ActorProxyInterestUpdate = CreateHandoverComponentUpdate(SpatialConstants::INTEREST_COMPONENT_ID, Object, Info, *HandoverChangeState, bWroteSomething);
+		Worker_ComponentUpdate ActorProxyInterestUpdate = CreateInterestComponentUpdate(bWroteSomething);
 		if (bWroteSomething)
 		{
 			ComponentUpdates.Add(ActorProxyInterestUpdate);
@@ -428,19 +428,19 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	return ComponentUpdate;
 }
 
-Worker_ComponentData ComponentFactory::CreateInterestComponentData(UObject* Object, bool& bWroteSomething, Worker_EntityId EntityId)
+Worker_ComponentData ComponentFactory::CreateInterestComponentData(bool& bWroteSomething)
 {
 	Worker_ComponentData ComponentData = {};
 	ComponentData.component_id = SpatialConstants::INTEREST_COMPONENT_ID;
 	ComponentData.schema_type = Schema_CreateComponentData(SpatialConstants::INTEREST_COMPONENT_ID);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	bWroteSomething = FillInterestSchemaObject(ComponentObject, EntityId);
+	bWroteSomething = FillInterestSchemaObject(ComponentObject);
 
 	return ComponentData;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(UObject* Object, bool& bWroteSomething, Worker_EntityId EntityId)
+Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -448,35 +448,32 @@ Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(UObject* 
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(SpatialConstants::INTEREST_COMPONENT_ID);
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
-	bWroteSomething = FillInterestSchemaObject(ComponentObject, EntityId);
+	bWroteSomething = FillInterestSchemaObject(ComponentObject);
 
 	return ComponentUpdate;
 }
 
-bool ComponentFactory::FillInterestSchemaObject(Schema_Object* ComponentObject, Worker_EntityId EntityId)
+bool ComponentFactory::FillInterestSchemaObject(Schema_Object* ComponentObject)
 {
-	// Get the previous state of the component
-	improbable::Interest* InterestData = NetDriver->StaticComponentView->GetComponentData<improbable::Interest>(EntityId);
+	//Create a new component interest containing a query for every actor proxy.
+	improbable::ComponentInterest NewComponentInterest;
 
-	improbable::ComponentInterest MetaDataComponentInterest;
-	if (improbable::ComponentInterest* MetaDataComponentInterestPtr = InterestData->ComponentInterest.Find(SpatialConstants::UNREAL_METADATA_COMPONENT_ID))
+	for (auto Entry : ResolvedChangedActorProxyMap)
 	{
-		MetaDataComponentInterest = *MetaDataComponentInterestPtr;
+		improbable::ComponentInterest::Query NewQuery;
+
+		NewQuery.Constraint.EntityIdConstraint = Entry->UnrealObjectRef.Entity;
+		NewQuery.Frequency = 5.0f;
+		NewQuery.ResultComponentId.Add(SpatialConstants::POSITION_COMPONENT_ID);
+		NewQuery.ResultComponentId.Add(SpatialConstants::METADATA_COMPONENT_ID);
+
+		NewComponentInterest.Queries.Add(NewQuery);
 	}
 
-	//if (improbable::ComponentInterest::Query* ExistingQuery = MetaDataComponentInterest.Queries.FindByPredicate([](const improbable::ComponentInterest::Query& Element) {
-	//	if (Element.ResultComponentId.Contains(
-	//	}))
-	//	{
-	//		return true;
-	//	}
-
-	//	return false;
-	//}))
-	//{
-
-	//}
-	// Iterate over each resolved actorproxy and assign interest for it.
+	improbable::Interest NewInterest;
+	NewInterest.ComponentInterest.Add(SpatialConstants::METADATA_COMPONENT_ID, NewComponentInterest);
+	
+	NewInterest.FillComponentData(ComponentObject);
 
 	return true;
 }
