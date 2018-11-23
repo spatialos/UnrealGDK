@@ -194,7 +194,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		return Channel;
 	}
 
-	bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID);
+	bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 	if (bHasGSMAuthority)
 	{
 		// We have control over the GSM, so can safely setup a new channel and let it allocate an entity id
