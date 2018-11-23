@@ -73,9 +73,7 @@ public class SpatialGDK : ModuleRules
             case UnrealTargetPlatform.Android:
                 LibPrefix = "lib";
                 ImportLibSuffix = SharedLibSuffix = ".so";
-                AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(ModuleDirectory, "My_APL.xml"));
-              //  string BuildPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
-               // throw new System.Exception(System.String.Format("shjafkas platform {0}", BuildPath));
+                AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(ModuleDirectory, "../Extras/android/APL.xml"));
                 break;
             default:
                 throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
