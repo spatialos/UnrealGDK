@@ -369,7 +369,7 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQ
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
 	{
 		Worker_ComponentData Data = Op.results[0].components[i];
-		if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID)
+		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 		{
 			ApplyDeploymentMapURLData(Data);
 		}
