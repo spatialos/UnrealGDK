@@ -117,7 +117,7 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 		// Singleton wasn't found or channel is already set up
 		if (Channel == nullptr || Channel->Actor != nullptr)
 		{
-			check(Channel->Actor == SingletonActor);
+			check(Channel == nullptr || Channel->Actor == SingletonActor);
 			continue;
 		}
 
@@ -159,7 +159,7 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 		// Class couldn't be found or channel already exists
 		if (Channel == nullptr || Channel->Actor != nullptr)
 		{
-			check(Channel->Actor == SingletonActor);
+			check(Channel == nullptr || Channel->Actor == SingletonActor);
 			continue;
 		}
 
