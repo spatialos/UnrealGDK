@@ -33,7 +33,4 @@ FString SchemaRPCName(UClass* Class, UFunction* Function);
 // Given a property node, generates the schema field name.
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property);
 
-FString AlphaNumericSanitization(const FString& InString);
-
-// Regex pattern matcher to match alphanumeric characters.
-const FRegexPattern AlphaNumericPatern(TEXT("[A-Z,a-z,0-9]"));
+FString AlphanumericSanitization(const FString& InString);

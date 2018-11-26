@@ -4,6 +4,9 @@
 
 #include "Algo/Transform.h"
 
+// Regex pattern matcher to match alphanumeric characters.
+const FRegexPattern AlphanumericPattern(TEXT("[A-Z,a-z,0-9]"));
+
 FString GetNamespace(UStruct* Struct)
 {
 	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *UnrealNameToSchemaTypeName(Struct->GetName().ToLower()));
@@ -28,22 +31,22 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 
 FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 {
-	return AlphaNumericSanitization(UnrealName);
+	return AlphanumericSanitization(UnrealName);
 }
 
-FString AlphaNumericSanitization(const FString& InString)
+FString AlphanumericSanitization(const FString& InString)
 {
-	FRegexMatcher AlphaNumericPaternmatcher(AlphaNumericPatern, InString);
+	FRegexMatcher AlphanumericPatternMatcher(AlphanumericPattern, InString);
 
-	FString SanitzedString;
+	FString SanitizedString;
 
-	while (AlphaNumericPaternmatcher.FindNext())
+	while (AlphanumericPatternMatcher.FindNext())
 	{
-		int32 NextCharacter = AlphaNumericPaternmatcher.GetMatchBeginning();
-		SanitzedString += InString[NextCharacter];
+		int32 NextCharacter = AlphanumericPatternMatcher.GetMatchBeginning();
+		SanitizedString += InString[NextCharacter];
 	}
 
-	return SanitzedString;
+	return SanitizedString;
 }
 
 FString UnrealNameToSchemaComponentName(const FString& UnrealName)

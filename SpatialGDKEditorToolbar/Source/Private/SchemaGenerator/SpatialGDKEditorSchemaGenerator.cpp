@@ -69,7 +69,7 @@ bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Class name collision after removing underscores: '%s' and '%s' - schema not generated"), *ClassA, *ClassB);
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Class name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ClassA, *ClassB);
 				return false;
 			}
 		}
