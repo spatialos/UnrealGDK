@@ -166,7 +166,7 @@ TArray<UClass*> GetAllSupportedClasses()
 		// Doesn't let us save the schema database
 		if (SupportedClass->IsChildOf<ALevelScriptActor>()) continue;
 
-		if (SupportedClass->IsChildOf<USceneComponent>() && !SupportedClass->IsChildOf<UCapsuleComponent>()) continue;
+		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
 
 		// Ensure we don't process skeleton or reinitialized classes
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
