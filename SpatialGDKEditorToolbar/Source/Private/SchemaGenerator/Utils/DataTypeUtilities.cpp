@@ -28,12 +28,27 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 
 FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 {
-	return UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
+	return AlphaNumericSanitization(UnrealName);
+}
+
+FString AlphaNumericSanitization(const FString& InString)
+{
+	FRegexMatcher AlphaNumericPaternmatcher(AlphaNumericPatern, InString);
+
+	FString SanitzedString;
+
+	while (AlphaNumericPaternmatcher.FindNext())
+	{
+		int32 NextCharacter = AlphaNumericPaternmatcher.GetMatchBeginning();
+		SanitzedString += InString[NextCharacter];
+	}
+
+	return SanitzedString;
 }
 
 FString UnrealNameToSchemaComponentName(const FString& UnrealName)
 {
-	FString SchemaTypeName = UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
+	FString SchemaTypeName = UnrealNameToSchemaTypeName(UnrealName);
 	SchemaTypeName[0] = FChar::ToUpper(SchemaTypeName[0]);
 	return SchemaTypeName;
 }
@@ -55,12 +70,7 @@ FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNam
 
 FString SchemaRPCName(UClass* Class, UFunction* Function)
 {
-	FString SchemaTypeName = UnrealNameToSchemaTypeName(Function->GetName().ToLower());
-	return SchemaTypeName.Replace(TEXT("("), TEXT(""))
-						.Replace(TEXT(")"), TEXT(""))
-						.Replace(TEXT("/"), TEXT(""))
-						.Replace(TEXT("\\"), TEXT(""))
-						.Replace(TEXT("!"), TEXT(""));
+	return UnrealNameToSchemaTypeName(Function->GetName().ToLower());
 }
 
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)

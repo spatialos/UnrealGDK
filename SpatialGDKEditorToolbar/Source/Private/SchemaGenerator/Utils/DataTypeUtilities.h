@@ -9,10 +9,10 @@
 // Return the string representation of the underlying data type of an enum property
 FString GetEnumDataType(const UEnumProperty* EnumProperty);
 
-// Given a class or function name, generates the name used for naming schema components and types. Currently, this removes underscores and spaces.
+// Given a class or function name, generates the name used for naming schema components and types. Removes all non-alphanumeric characters.
 FString UnrealNameToSchemaTypeName(const FString& UnrealName);
 
-// Given an object name, generates the name used for naming schema components. Currently, removes underscores, spaces and capitalizes the first letter.
+// Given an object name, generates the name used for naming schema components. Removes all non-alphanumeric characters and capitalizes the first letter.
 FString UnrealNameToSchemaComponentName(const FString& UnrealName);
 
 // Given a replicated property group and Unreal type, generates the name of the corresponding schema component.
@@ -32,3 +32,8 @@ FString SchemaRPCName(UClass* Class, UFunction* Function);
 
 // Given a property node, generates the schema field name.
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property);
+
+FString AlphaNumericSanitization(const FString& InString);
+
+// Regex pattern matcher to match alphanumeric characters.
+const FRegexPattern AlphaNumericPatern(TEXT("[A-Z,a-z,0-9]"));
