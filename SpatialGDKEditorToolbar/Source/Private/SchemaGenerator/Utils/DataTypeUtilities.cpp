@@ -55,7 +55,12 @@ FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNam
 
 FString SchemaRPCName(UClass* Class, UFunction* Function)
 {
-	return UnrealNameToSchemaTypeName(Function->GetName().ToLower());
+	FString SchemaTypeName = UnrealNameToSchemaTypeName(Function->GetName().ToLower());
+	return SchemaTypeName.Replace(TEXT("("), TEXT(""))
+						.Replace(TEXT(")"), TEXT(""))
+						.Replace(TEXT("/"), TEXT(""))
+						.Replace(TEXT("\\"), TEXT(""))
+						.Replace(TEXT("!"), TEXT(""));
 }
 
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
