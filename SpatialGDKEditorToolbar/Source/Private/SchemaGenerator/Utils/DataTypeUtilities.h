@@ -28,7 +28,7 @@ FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace = false);
 FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace = false);
 
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
-FString SchemaRPCName(UClass* Class, UFunction* Function);
+FString SchemaRPCName(UFunction* Function);
 
 // Given a property node, generates the schema field name.
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property);

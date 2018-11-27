@@ -386,12 +386,12 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 				}
 
 				Writer.Printf("event UnrealRPCCommandRequest {0};",
-					*SchemaRPCName(Class, RPC->Function));
+					*SchemaRPCName(RPC->Function));
 			}
 			else
 			{
 				Writer.Printf("command UnrealRPCCommandResponse {0}(UnrealRPCCommandRequest);",
-					*SchemaRPCName(Class, RPC->Function));
+					*SchemaRPCName(RPC->Function));
 			}
 		}
 		Writer.Outdent().Print("}");
@@ -478,12 +478,12 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 			if (Group == ERPCType::RPC_NetMulticast)
 			{
 				Writer.Printf("event UnrealRPCCommandRequest {0};",
-					*SchemaRPCName(Cast<UClass>(ComponentClass), RPC->Function));
+					*SchemaRPCName(RPC->Function));
 			}
 			else
 			{
 				Writer.Printf("command UnrealRPCCommandResponse {0}(UnrealRPCCommandRequest);",
-					*SchemaRPCName(Cast<UClass>(ComponentClass), RPC->Function));
+					*SchemaRPCName(RPC->Function));
 			}
 		}
 		Writer.Outdent().Print("}");

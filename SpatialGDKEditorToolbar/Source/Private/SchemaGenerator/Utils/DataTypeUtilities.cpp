@@ -71,7 +71,7 @@ FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNam
 	return FString::Printf(TEXT("%s%s%sRPCs"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaComponentName(Type->GetName()), *GetRPCTypeName(RpcType));
 }
 
-FString SchemaRPCName(UClass* Class, UFunction* Function)
+FString SchemaRPCName(UFunction* Function)
 {
 	return UnrealNameToSchemaTypeName(Function->GetName().ToLower());
 }
