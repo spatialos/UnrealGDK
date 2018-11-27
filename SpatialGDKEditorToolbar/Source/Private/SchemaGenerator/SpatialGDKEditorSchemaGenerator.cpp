@@ -34,12 +34,10 @@ void OnStatusOutput(FString Message)
 	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("%s"), *Message);
 }
 
-int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, UClass* Class)
+int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, TSharedPtr<FUnrealType> TypeInfo)
 {
+	UClass* Class = Cast<UClass>(TypeInfo->Type);
 	FString SchemaFilename = UnrealNameToSchemaTypeName(Class->GetName());
-
-	// Parent and static array index start at 0 for checksum calculations.
-	TSharedPtr<FUnrealType> TypeInfo = CreateUnrealTypeInfo(Class, 0, 0, false);
 
 	int NumComponents = 0;
 	if (Class->IsChildOf<AActor>())
@@ -54,7 +52,69 @@ int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, UClass*
 	return NumComponents;
 }
 
-bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
+bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
+{
+	// Check Replicated Data
+	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
+	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+	{
+		TMap<FString, TSharedPtr<FUnrealProperty>> SchemaReplicatedDataNames;
+		for (auto& RepProp : RepData[Group])
+		{
+			FString NextSchemaReplicatedDataName = SchemaFieldName(RepProp.Value);
+			TSharedPtr<FUnrealProperty>* ExistingReplicatedProperty = SchemaReplicatedDataNames.Find(NextSchemaReplicatedDataName);
+
+			if (ExistingReplicatedProperty != nullptr)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated property name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ExistingReplicatedProperty->Get()->Property->GetName(), *RepProp.Value->Property->GetName());
+				return false;
+			}
+
+			SchemaReplicatedDataNames.Add(NextSchemaReplicatedDataName, RepProp.Value);
+		}
+	}
+
+	// Check Handover data
+	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
+	TMap<FString, TSharedPtr<FUnrealProperty>> SchemaHandoverDataNames;
+	for (auto& Prop : HandoverData)
+	{
+		FString NextSchemaHandoverDataName = SchemaFieldName(Prop.Value);
+		TSharedPtr<FUnrealProperty>* ExistingHandoverData = SchemaHandoverDataNames.Find(NextSchemaHandoverDataName);
+
+		if (ExistingHandoverData != nullptr)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Handover data name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ExistingHandoverData->Get()->Property->GetName(), *Prop.Value->Property->GetName());
+			return false;
+		}
+
+		SchemaHandoverDataNames.Add(NextSchemaHandoverDataName, Prop.Value);
+	}
+
+	// Check RPC name validity
+	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
+	for (auto Group : GetRPCTypes())
+	{
+		TMap<FString, TSharedPtr<FUnrealRPC>> SchemaRPCNames;
+		for (auto& RPC : RPCsByType[Group])
+		{
+			FString NextSchemaRPCName = SchemaRPCName(RPC->Function);
+			TSharedPtr<FUnrealRPC>* ExistingRPC = SchemaRPCNames.Find(NextSchemaRPCName);
+
+			if (ExistingRPC != nullptr)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("RPC name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ExistingRPC->Get()->Function->GetName(), *RPC->Function->GetName());
+				return false;
+			}
+
+			SchemaRPCNames.Add(NextSchemaRPCName, RPC);
+		}
+	}
+
+	return true;
+}
+
+bool ValidateIdentifierNames(const TArray<UClass*>& Classes, TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 {
 	// Remove all underscores from the class names, check for duplicates.
 	for (int i = 0; i < Classes.Num() - 1; ++i)
@@ -75,17 +135,27 @@ bool CheckClassNameListValidity(const TArray<UClass*>& Classes)
 		}
 	}
 
+	// Check for duplicate names in the generated type info
+	for (auto& TypeInfo : TypeInfos)
+	{
+		if (!CheckIdentifierNameValidity(TypeInfo))
+		{
+			return false;
+		}
+	}
+
 	return true;
 }
 }// ::
 
-void GenerateSchemaFromClasses(const TArray<UClass*>& Classes, const FString& CombinedSchemaPath)
+void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
 {
 	Worker_ComponentId ComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 
-	for (const auto& Class : Classes)
+	// Generate the actual schema
+	for (auto& TypeInfo : TypeInfos)
 	{
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, ComponentId, Class);
+		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, ComponentId, TypeInfo);
 	}
 }
 
@@ -196,12 +266,21 @@ bool SpatialGDKGenerateSchema()
 		SchemaGeneratedClasses = GetAllSpatialTypeClasses();
 	}
 
-	if (!CheckClassNameListValidity(SchemaGeneratedClasses))
+	SchemaGeneratedClasses.Sort();
+
+	// Generate Type Info structs for all classes
+	TArray<TSharedPtr<FUnrealType>> TypeInfos;
+
+	for (const auto& Class : SchemaGeneratedClasses)
+	{
+		// Parent and static array index start at 0 for checksum calculations.
+		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0, false));
+	}
+
+	if (!ValidateIdentifierNames(SchemaGeneratedClasses, TypeInfos))
 	{
 		return false;
 	}
-
-	SchemaGeneratedClasses.Sort();
 
 	FString SchemaOutputPath = SpatialGDKToolbarSettings->GetGeneratedSchemaOutputFolder();
 
@@ -222,7 +301,7 @@ bool SpatialGDKGenerateSchema()
 	}
 
 	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
-	GenerateSchemaFromClasses(SchemaGeneratedClasses, SchemaOutputPath);
+	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath);
 
 	SaveSchemaDatabase();
 
