@@ -308,6 +308,8 @@ FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPath(const FString& PathNa
 	FNetGuidCacheObject CacheObject;
 	CacheObject.PathName = FName(*PathName);
 	CacheObject.OuterGUID = OuterGUID;
+	CacheObject.bNoLoad = true;
+	CacheObject.bIgnoreWhenMissing = true;
 	FNetworkGUID NetGUID = GenerateNewNetGUID(0);
 	RegisterNetGUID_Internal(NetGUID, CacheObject);
 	return NetGUID;
