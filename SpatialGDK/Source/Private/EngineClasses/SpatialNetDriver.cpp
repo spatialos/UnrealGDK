@@ -32,7 +32,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "SpatialConstants.h"
-#include "Utils/ActorProxyRegistry.h"
 #include "Utils/EntityRegistry.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);

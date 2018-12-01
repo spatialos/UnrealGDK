@@ -10,6 +10,7 @@
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Schema/Interest.h"
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"
 

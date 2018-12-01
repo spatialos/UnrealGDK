@@ -3,6 +3,7 @@
 #include "SpatialGDKEditorGenerateSnapshot.h"
 
 #include "Engine/LevelScriptActor.h"
+#include "Schema/Interest.h"
 #include "Schema/Rotation.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"

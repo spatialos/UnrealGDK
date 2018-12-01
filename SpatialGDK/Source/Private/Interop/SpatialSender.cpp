@@ -13,6 +13,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialDispatcher.h"
+#include "Schema/Interest.h"
 #include "Schema/Rotation.h"
 #include "Schema/Singleton.h"
 #include "Schema/StandardLibrary.h"
