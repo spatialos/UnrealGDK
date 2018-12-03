@@ -379,6 +379,11 @@ struct Interest : Component
 		}
 	}
 
+	bool IsEmpty()
+	{
+		return ComponentInterest.Num() == 0;
+	}
+
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);

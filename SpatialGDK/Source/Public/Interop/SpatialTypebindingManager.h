@@ -43,6 +43,14 @@ struct FHandoverPropertyInfo
 	UProperty* Property;
 };
 
+struct FInterestPropertyInfo
+{
+	uint16 Handle;
+	int32 Offset;
+	int32 ArrayIdx;
+	UProperty* Property;
+};
+
 USTRUCT()
 struct FClassInfo
 {
@@ -54,6 +62,7 @@ struct FClassInfo
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
 
 	TArray<FHandoverPropertyInfo> HandoverProperties;
+	TArray<FInterestPropertyInfo> InterestProperties;
 
 	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 

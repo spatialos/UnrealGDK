@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interop/SpatialTypebindingManager.h"
+#include "Schema/Interest.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -45,10 +46,9 @@ private:
 
 	bool FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	Worker_ComponentData CreateInterestComponentData(bool& bWroteSomething);
-	Worker_ComponentUpdate CreateInterestComponentUpdate(bool& bWroteSomething);
-
-	bool FillInterestSchemaObject(Schema_Object* ComponentObject);
+	Worker_ComponentData CreateInterestComponentData(UObject* Object, FClassInfo* Info);
+	Worker_ComponentUpdate CreateInterestComponentUpdate(UObject* Object, FClassInfo* Info, bool& bWroteSomething);
+	improbable::Interest CreateInterestComponent(UObject* Object, FClassInfo* Info);
 
 	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
 
@@ -59,7 +59,7 @@ private:
 	FUnresolvedObjectsMap& PendingRepUnresolvedObjectsMap;
 	FUnresolvedObjectsMap& PendingHandoverUnresolvedObjectsMap;
 
-	FResolvedActorProxySet ResolvedChangedActorProxyMap;
+	bool bInterestHasChanged;
 };
 
 }

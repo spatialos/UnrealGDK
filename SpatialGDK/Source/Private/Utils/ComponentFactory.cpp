@@ -23,6 +23,7 @@ ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMa
 	, TypebindingManager(InNetDriver->TypebindingManager)
 	, PendingRepUnresolvedObjectsMap(RepUnresolvedObjectsMap)
 	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
+	, bInterestHasChanged(false)
 { }
 
 bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
@@ -221,6 +222,11 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			}
 		}
 
+		if (ObjectProperty->PropertyFlags & CPF_ActorProxy)
+		{
+			bInterestHasChanged = true;
+		}
+
 		AddObjectRefToSchema(Object, FieldId, ObjectRef);
 	}
 	else if (UNameProperty* NameProperty = Cast<UNameProperty>(Property))
@@ -287,6 +293,8 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 	{
 		ComponentDatas.Add(CreateHandoverComponentData(Info->SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState));
 	}
+
+	ComponentDatas.Add(CreateInterestComponentData(Object, Info));
 
 	return ComponentDatas;
 }
@@ -362,14 +370,14 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 		}
 	}
 
-	// Update the actor proxy interest
-	if (ResolvedChangedActorProxyMap.Num() > 0)
+	// Only support Interest for Actors for now.
+	if (bInterestHasChanged && Object->IsA<AActor>())
 	{
 		bool bWroteSomething = false;
-		Worker_ComponentUpdate ActorProxyInterestUpdate = CreateInterestComponentUpdate(bWroteSomething);
+		Worker_ComponentUpdate InterestUpdate = CreateInterestComponentUpdate(Object, Info, bWroteSomething);
 		if (bWroteSomething)
 		{
-			ComponentUpdates.Add(ActorProxyInterestUpdate);
+			ComponentUpdates.Add(InterestUpdate);
 		}
 	}
 
@@ -426,54 +434,51 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	return ComponentUpdate;
 }
 
-Worker_ComponentData ComponentFactory::CreateInterestComponentData(bool& bWroteSomething)
+Worker_ComponentData ComponentFactory::CreateInterestComponentData(UObject* Object, FClassInfo* Info)
 {
-	Worker_ComponentData ComponentData = {};
-	ComponentData.component_id = SpatialConstants::INTEREST_COMPONENT_ID;
-	ComponentData.schema_type = Schema_CreateComponentData(SpatialConstants::INTEREST_COMPONENT_ID);
-	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
-
-	bWroteSomething = FillInterestSchemaObject(ComponentObject);
-
-	return ComponentData;
+	return CreateInterestComponent(Object, Info).CreateInterestData();
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(UObject* Object, FClassInfo* Info, bool& bWroteSomething)
 {
-	Worker_ComponentUpdate ComponentUpdate = {};
+	improbable::Interest Interest = CreateInterestComponent(Object, Info);
 
-	ComponentUpdate.component_id = SpatialConstants::INTEREST_COMPONENT_ID;
-	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(SpatialConstants::INTEREST_COMPONENT_ID);
-	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+	bWroteSomething = Interest.IsEmpty();
 
-	bWroteSomething = FillInterestSchemaObject(ComponentObject);
-
-	return ComponentUpdate;
+	return Interest.CreateInterestUpdate();
 }
 
-bool ComponentFactory::FillInterestSchemaObject(Schema_Object* ComponentObject)
+improbable::Interest ComponentFactory::CreateInterestComponent(UObject* Object, FClassInfo* Info)
 {
-	//Create a new component interest containing a query for every actor proxy.
-	improbable::ComponentInterest NewComponentInterest;
+	//Create a new component interest containing a query for every interested Object
+	improbable::ComponentInterest ComponentInterest;;
 
-	for (auto Entry : ResolvedChangedActorProxyMap)
+	for (FInterestPropertyInfo& PropertyInfo : Info->InterestProperties)
 	{
+		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
+
+		UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(PropertyInfo.Property);
+		check(ObjectProperty);
+
+		UObject* ObjectOfInterest = ObjectProperty->GetObjectPropertyValue(Data);
+
+		if (ObjectProperty == nullptr)
+		{
+			continue;
+		}
+
 		improbable::ComponentInterest::Query NewQuery;
 
-		NewQuery.Constraint.EntityIdConstraint = Entry->UnrealObjectRef.Entity;
-		NewQuery.Frequency = 5.0f;
-		NewQuery.ResultComponentId.Add(SpatialConstants::POSITION_COMPONENT_ID);
-		NewQuery.ResultComponentId.Add(SpatialConstants::METADATA_COMPONENT_ID);
+		NewQuery.Constraint.EntityIdConstraint = PackageMap->GetUnrealObjectRefFromObject(Object).Entity;
+		NewQuery.FullSnapshotResult = true;
 
-		NewComponentInterest.Queries.Add(NewQuery);
+		ComponentInterest.Queries.Add(NewQuery);
 	}
 
-	improbable::Interest NewInterest;
-	NewInterest.ComponentInterest.Add(SpatialConstants::METADATA_COMPONENT_ID, NewComponentInterest);
-	
-	NewInterest.FillComponentData(ComponentObject);
+	improbable::Interest Interest;
+	Interest.ComponentInterest.Add(improbable::Position::ComponentId, ComponentInterest);
 
-	return true;
+	return Interest;
 }
 
 }
