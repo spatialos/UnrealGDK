@@ -746,21 +746,26 @@ void USpatialActorChannel::UpdateSpatialRotation()
 
 FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 {
+	FVector Location;
+
 	// If the Actor has an Owner, use its position.
 	// Otherwise if the Actor has a well defined location then use that
 	// Otherwise use the origin
 	if (InActor->GetOwner())
 	{
-		return GetActorSpatialPosition(InActor->GetOwner());
+		Location = GetActorSpatialPosition(InActor->GetOwner());
 	}
 	else if (InActor->GetRootComponent())
 	{
-		return InActor->GetRootComponent()->GetComponentLocation();
+		Location = InActor->GetRootComponent()->GetComponentLocation();
 	}
 	else
 	{
-		return FVector::ZeroVector;
+		Location = FVector::ZeroVector;
 	}
+
+	// Rebase location onto zero origin so actor is positioned correctly in SpatialOS.
+	return FRepMovement::RebaseOntoZeroOrigin(Location, InActor);
 }
 
 void USpatialActorChannel::SpatialViewTick()
