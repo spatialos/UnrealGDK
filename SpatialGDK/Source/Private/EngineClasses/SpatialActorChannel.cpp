@@ -753,7 +753,7 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	// Otherwise use the origin
 	if (InActor->GetOwner())
 	{
-		Location = GetActorSpatialPosition(InActor->GetOwner());
+		return GetActorSpatialPosition(InActor->GetOwner());
 	}
 	else if (InActor->GetRootComponent())
 	{
