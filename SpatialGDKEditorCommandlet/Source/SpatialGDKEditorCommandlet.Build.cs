@@ -13,6 +13,7 @@ public class SpatialGDKEditorCommandlet : ModuleRules
 			    "Core",
 			    "CoreUObject",
 			    "Engine",
+				"SpatialGDKEditor",
 			});
 
 		PrivateIncludePaths.AddRange(
