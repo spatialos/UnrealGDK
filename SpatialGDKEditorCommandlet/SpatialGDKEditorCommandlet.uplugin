@@ -1,0 +1,26 @@
+{
+	"FileVersion" : 3,
+	"Version" : 1,
+	"VersionName" : "1.0",
+	"FriendlyName" : "SpatialOS GDK for Unreal Commandlet Plugin",
+	"Description" : "Allows execution of the SpatialOS Game Development Kit (GDK) for Unreal Engine actions from the command line.",
+	"Category" : "SpatialOS",
+	"CreatedBy" : "Improbable Worlds, Ltd.",
+	"CreatedByURL" : "https://improbable.io",
+	"DocsURL" : "https://docs.improbable.io/unreal/",
+	"MarketplaceURL" : "",
+	"SupportURL" : "https://forums.improbable.io/",
+	"EnabledByDefault" : true,
+	"CanContainContent" : false,
+	"IsBetaVersion" : false,
+	"Installed" : true,
+  "Modules": [
+    {
+      "Name": "SpatialGDKEditorCommandlet",
+      "Type": "Editor",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "Plugins": [
+  ]
+}
