@@ -15,7 +15,7 @@ USpatialGDKEditor::USpatialGDKEditor()
 
 }
 
-void USpatialGDKEditor::GenerateSchema()
+void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
 	bSchemaGeneratorRunning = true;
 
@@ -28,15 +28,18 @@ void USpatialGDKEditor::GenerateSchema()
 	// Ensure all our spatial classes are loaded into memory before running
 	CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings);
 
-	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema, [this, bCachedSpatialNetworking]()
+	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
+		[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()
 	{
 		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
 		{
-			//ShowFailedNotification("Schema Generation Failed");
+			FailureCallback.Execute();
+			bSchemaGeneratorRunning = false;
 		}
 		else
 		{
-			//ShowSuccessNotification("Schema Generation Completed!");
+			SuccessCallback.Execute();
+			bSchemaGeneratorRunning = false;
 		}
 		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
 		bSchemaGeneratorRunning = false;

@@ -9,7 +9,7 @@ class SPATIALGDKEDITOR_API USpatialGDKEditor
 public:
 	USpatialGDKEditor();
 
-	void GenerateSchema();
+	void GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 	void CacheSpatialObjects(uint32 SpatialFlags);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
