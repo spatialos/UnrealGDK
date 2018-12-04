@@ -17,6 +17,12 @@ USpatialGDKEditor::USpatialGDKEditor()
 
 void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
 {
+	if (bSchemaGeneratorRunning)
+	{
+		UE_LOG(LogSpatialGDKEditor, Warning, TEXT("Schema generation is already running"));
+		return;
+	}
+
 	bSchemaGeneratorRunning = true;
 
 	// Force spatial networking so schema layouts are correct
