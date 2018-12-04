@@ -1,0 +1,30 @@
+{
+	"FileVersion" : 3,
+	"Version" : 1,
+	"VersionName" : "1.0",
+	"FriendlyName" : "SpatialOS GDK for Unreal Editor Core",
+	"Description" : "Core editor-functionality of the SpatialOS Game Development Kit (GDK) for Unreal Engine.",
+	"Category" : "SpatialOS",
+	"CreatedBy" : "Improbable Worlds, Ltd.",
+	"CreatedByURL" : "https://improbable.io",
+	"DocsURL" : "https://docs.improbable.io/unreal/",
+	"MarketplaceURL" : "",
+	"SupportURL" : "https://forums.improbable.io/",
+	"EnabledByDefault" : true,
+	"CanContainContent" : false,
+	"IsBetaVersion" : false,
+	"Installed" : true,
+  "Modules": [
+    {
+      "Name": "SpatialGDKEditor",
+      "Type": "Editor",
+      "LoadingPhase": "Default",
+      "WhitelistPlatforms": [ "Win64" ]
+    }
+  ],
+  "Plugins": [
+    {
+      "Name": "SpatialGDK",
+      "Enabled":  true
+    }]
+}
