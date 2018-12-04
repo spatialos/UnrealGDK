@@ -118,7 +118,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				}
 			}
 
-			if (Property->PropertyFlags & CPF_ActorProxy)
+			if (Property->PropertyFlags & CPF_AlwaysInterested)
 			{
 				for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
 				{

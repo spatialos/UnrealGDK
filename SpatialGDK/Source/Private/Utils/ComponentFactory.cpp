@@ -222,7 +222,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			}
 		}
 
-		if (ObjectProperty->PropertyFlags & CPF_ActorProxy)
+		if (ObjectProperty->PropertyFlags & CPF_AlwaysInterested)
 		{
 			bInterestHasChanged = true;
 		}
@@ -469,7 +469,15 @@ improbable::Interest ComponentFactory::CreateInterestComponent(UObject* Object, 
 
 		improbable::ComponentInterest::Query NewQuery;
 
-		NewQuery.Constraint.EntityIdConstraint = PackageMap->GetUnrealObjectRefFromObject(Object).Entity;
+		FUnrealObjectRef UnrealObjectRef = PackageMap->GetUnrealObjectRefFromObject(Object);
+
+		check(UnrealObjectRef != SpatialConstants::NULL_OBJECT_REF);
+		if (UnrealObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+		{
+			continue;
+		}
+
+		NewQuery.Constraint.EntityIdConstraint = UnrealObjectRef.Entity;
 		NewQuery.FullSnapshotResult = true;
 
 		ComponentInterest.Queries.Add(NewQuery);
