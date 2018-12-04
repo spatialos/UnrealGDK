@@ -117,7 +117,7 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 		// Singleton wasn't found or channel is already set up
 		if (Channel == nullptr || Channel->Actor != nullptr)
 		{
-			check(Channel->Actor == SingletonActor);
+			check(Channel == nullptr || Channel->Actor == SingletonActor);
 			continue;
 		}
 
@@ -159,7 +159,7 @@ void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 		// Class couldn't be found or channel already exists
 		if (Channel == nullptr || Channel->Actor != nullptr)
 		{
-			check(Channel->Actor == SingletonActor);
+			check(Channel == nullptr || Channel->Actor == SingletonActor);
 			continue;
 		}
 
@@ -185,15 +185,15 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 {
 	SingletonNameToEntityId[ClassName] = SingletonEntityId;
 
-	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID))
+	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID))
 	{
 		UE_LOG(LogGlobalStateManager, Warning, TEXT("UpdateSingletonEntityId: no authority over the GSM! Update will not be sent. Singleton class: %s, entity: %lld"), *ClassName, SingletonEntityId);
 		return;
 	}
 
 	Worker_ComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID);
+	Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	AddStringToEntityMapToSchema(UpdateObject, 1, SingletonNameToEntityId);
@@ -273,7 +273,7 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId)
 
 void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 {
-	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID))
+	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
 	{
 		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to set AcceptingPlayers on the GSM but this worker does not have authority."));
 		return;
@@ -282,8 +282,8 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
 	Worker_ComponentUpdate Update = {};
-	Update.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID;
-	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID);
+	Update.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	// Set the map URL on the GSM.
@@ -314,7 +314,7 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 {
 	Worker_ComponentConstraint GSMComponentConstraint{};
-	GSMComponentConstraint.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID;
+	GSMComponentConstraint.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 
 	Worker_Constraint GSMConstraint{};
 	GSMConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_COMPONENT;
@@ -369,7 +369,7 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQ
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
 	{
 		Worker_ComponentData Data = Op.results[0].components[i];
-		if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID)
+		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 		{
 			ApplyDeploymentMapURLData(Data);
 		}
@@ -384,7 +384,7 @@ bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(Worker_EntityQuer
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
 	{
 		Worker_ComponentData Data = Op.results[0].components[i];
-		if (Data.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID)
+		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 

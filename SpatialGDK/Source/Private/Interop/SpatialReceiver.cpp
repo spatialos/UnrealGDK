@@ -136,11 +136,11 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
-	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
+	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyData(Op.data);
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
-	case SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID:
+	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
  		GlobalStateManager->ApplyDeploymentMapURLData(Op.data);
 		return;
 	default:
@@ -172,12 +172,12 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 {
 	if (NetDriver->IsServer())
 	{
-		if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID)
+		if (Op.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 		{
 			GlobalStateManager->AuthorityChanged(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE, Op.entity_id);
 		}
 
-		if (Op.component_id == SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID
+		if (Op.component_id == SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID
 			&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			GlobalStateManager->ExecuteInitialSingletonActorReplication();
@@ -581,11 +581,11 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
-	case SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID:
+	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyUpdate(Op.update);
 		GlobalStateManager->LinkExistingSingletonActors();
 		return;
-	case SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID:
+	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
 		return;
 	}

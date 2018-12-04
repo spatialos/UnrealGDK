@@ -4,6 +4,9 @@
 
 #include "Algo/Transform.h"
 
+// Regex pattern matcher to match alphanumeric characters.
+const FRegexPattern AlphanumericPattern(TEXT("[A-Z,a-z,0-9]"));
+
 FString GetNamespace(UStruct* Struct)
 {
 	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *UnrealNameToSchemaTypeName(Struct->GetName().ToLower()));
@@ -28,12 +31,27 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 
 FString UnrealNameToSchemaTypeName(const FString& UnrealName)
 {
-	return UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
+	return AlphanumericSanitization(UnrealName);
+}
+
+FString AlphanumericSanitization(const FString& InString)
+{
+	FRegexMatcher AlphanumericPatternMatcher(AlphanumericPattern, InString);
+
+	FString SanitizedString;
+
+	while (AlphanumericPatternMatcher.FindNext())
+	{
+		int32 NextCharacter = AlphanumericPatternMatcher.GetMatchBeginning();
+		SanitizedString += InString[NextCharacter];
+	}
+
+	return SanitizedString;
 }
 
 FString UnrealNameToSchemaComponentName(const FString& UnrealName)
 {
-	FString SchemaTypeName = UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
+	FString SchemaTypeName = UnrealNameToSchemaTypeName(UnrealName);
 	SchemaTypeName[0] = FChar::ToUpper(SchemaTypeName[0]);
 	return SchemaTypeName;
 }
@@ -53,7 +71,7 @@ FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNam
 	return FString::Printf(TEXT("%s%s%sRPCs"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaComponentName(Type->GetName()), *GetRPCTypeName(RpcType));
 }
 
-FString SchemaRPCName(UClass* Class, UFunction* Function)
+FString SchemaRPCName(UFunction* Function)
 {
 	return UnrealNameToSchemaTypeName(Function->GetName().ToLower());
 }

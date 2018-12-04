@@ -94,8 +94,8 @@ Worker_ComponentData CreateGlobalStateManagerData()
 	}
 
 	Worker_ComponentData Data;
-	Data.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID;
-	Data.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID);
+	Data.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
+	Data.schema_type = Schema_CreateComponentData(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	AddStringToEntityMapToSchema(ComponentObject, 1, SingletonNameToEntityId);
@@ -108,8 +108,8 @@ Worker_ComponentData CreateDeploymentData()
 {
 	// Construct the Deployment component data object.
 	Worker_ComponentData DeploymentData;
-	DeploymentData.component_id = SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID;
-	DeploymentData.schema_type = Schema_CreateComponentData(SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID);
+	DeploymentData.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
+	DeploymentData.schema_type = Schema_CreateComponentData(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
 	Schema_Object* DeploymentDataObject = Schema_GetComponentDataFields(DeploymentData.schema_type);
 
 	// Add the MapURL schema field.
@@ -134,8 +134,8 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::GLOBAL_STATE_MANAGER_DEPLOYMENT_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
