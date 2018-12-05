@@ -66,7 +66,8 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 
 			if (ExistingReplicatedProperty != nullptr)
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated property name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ExistingReplicatedProperty->Get()->Property->GetName(), *RepProp.Value->Property->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated property name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
+					*NextSchemaReplicatedDataName, *ExistingReplicatedProperty->Get()->Property->GetPathName(), *RepProp.Value->Property->GetPathName());
 				return false;
 			}
 
@@ -84,7 +85,8 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 
 		if (ExistingHandoverData != nullptr)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Handover data name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ExistingHandoverData->Get()->Property->GetName(), *Prop.Value->Property->GetName());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Handover data name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
+				*NextSchemaHandoverDataName, *ExistingHandoverData->Get()->Property->GetPathName(), *Prop.Value->Property->GetPathName());
 			return false;
 		}
 
@@ -103,7 +105,8 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 
 			if (ExistingRPC != nullptr)
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("RPC name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ExistingRPC->Get()->Function->GetName(), *RPC->Function->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("RPC name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
+					*NextSchemaRPCName, *ExistingRPC->Get()->Function->GetPathName(), *RPC->Function->GetPathName());
 				return false;
 			}
 
@@ -129,7 +132,8 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Class name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ClassA, *ClassB);
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Class name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for types '%s' and '%s'"),
+					*SchemaTypeA, *TypeInfos[i]->Type->GetPathName(), *TypeInfos[j]->Type->GetPathName());
 				return false;
 			}
 		}
