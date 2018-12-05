@@ -37,7 +37,7 @@ void OnStatusOutput(FString Message)
 int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, TSharedPtr<FUnrealType> TypeInfo)
 {
 	UClass* Class = Cast<UClass>(TypeInfo->Type);
-	FString SchemaFilename = UnrealNameToSchemaTypeName(Class->GetName());
+	FString SchemaFilename = UnrealNameToSchemaName(Class->GetName());
 
 	int NumComponents = 0;
 	if (Class->IsChildOf<AActor>())
@@ -114,18 +114,18 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 	return true;
 }
 
-bool ValidateIdentifierNames(const TArray<UClass*>& Classes, TArray<TSharedPtr<FUnrealType>>& TypeInfos)
+bool ValidateIdentifierNames(/*const TArray<UClass*>& Classes,*/ TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 {
 	// Remove all underscores from the class names, check for duplicates.
-	for (int i = 0; i < Classes.Num() - 1; ++i)
+	for (int i = 0; i < TypeInfos.Num() - 1; ++i)
 	{
-		const FString& ClassA = Classes[i]->GetName();
-		const FString SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
+		const FString& ClassA = TypeInfos[i]->Type->GetName();
+		const FString SchemaTypeA = UnrealNameToSchemaName(ClassA);
 
-		for (int j = i + 1; j < Classes.Num(); ++j)
+		for (int j = i + 1; j < TypeInfos.Num(); ++j)
 		{
-			const FString& ClassB = Classes[j]->GetName();
-			const FString SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
+			const FString& ClassB = TypeInfos[j]->Type->GetName();
+			const FString SchemaTypeB = UnrealNameToSchemaName(ClassB);
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
 			{
@@ -277,7 +277,7 @@ bool SpatialGDKGenerateSchema()
 		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0, false));
 	}
 
-	if (!ValidateIdentifierNames(SchemaGeneratedClasses, TypeInfos))
+	if (!ValidateIdentifierNames(/*SchemaGeneratedClasses,*/ TypeInfos))
 	{
 		return false;
 	}
