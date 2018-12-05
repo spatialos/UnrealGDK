@@ -1,0 +1,17 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+import "improbable/vector3.schema";
+
+type Rotator {
+    float pitch = 1;
+    float yaw = 2;
+    float roll = 3;
+}
+
+component SpawnData {
+    id = 100001;
+    Rotator rotation = 1;
+    improbable.Vector3f scale = 2;
+    improbable.Vector3f velocity = 3;
+}

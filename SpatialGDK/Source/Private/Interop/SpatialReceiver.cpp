@@ -14,7 +14,7 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
-#include "Schema/Rotation.h"
+#include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
@@ -129,7 +129,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::METADATA_COMPONENT_ID:
 	case SpatialConstants::POSITION_COMPONENT_ID:
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-	case SpatialConstants::ROTATION_COMPONENT_ID:
+	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
@@ -248,7 +248,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	check(EntityRegistry);
 
 	improbable::Position* Position = StaticComponentView->GetComponentData<improbable::Position>(EntityId);
-	improbable::Rotation* Rotation = StaticComponentView->GetComponentData<improbable::Rotation>(EntityId);
+	improbable::SpawnData* SpawnData = StaticComponentView->GetComponentData<improbable::SpawnData>(EntityId);
 	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
 	if (UnrealMetadata == nullptr)
@@ -312,7 +312,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			EntityActor = CreateActor(Position, Rotation, ActorClass, true);
+			EntityActor = CreateActor(Position, SpawnData, ActorClass, true);
 
 			// Don't have authority over Actor until SpatialOS delegates authority
 			EntityActor->Role = ROLE_SimulatedProxy;
@@ -352,7 +352,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
-			EntityActor->FinishSpawning(FTransform(Rotation->ToFRotator(), SpawnLocation));
+			EntityActor->FinishSpawning(FTransform(SpawnData->Rotation, SpawnLocation));
+
+			if (!SpawnData->Velocity.Equals(FVector::ZeroVector, KINDA_SMALL_NUMBER))
+			{
+				EntityActor->PostNetReceiveVelocity(SpawnData->Velocity);
+			}
+			if (!SpawnData->Scale.Equals(FVector::OneVector, KINDA_SMALL_NUMBER))
+			{
+				EntityActor->SetActorScale3D(SpawnData->Scale);
+			}
 		}
 
 		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(ActorClass);
@@ -486,10 +495,9 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred)
 {
 	FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
-	FRotator InitialRotation = Rotation->ToFRotator();
 	AActor* NewActor = nullptr;
 	if (ActorClass)
 	{
@@ -503,7 +511,7 @@ AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable
 
 		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 
-		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(InitialRotation, SpawnLocation), SpawnInfo);
+		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
 		check(NewActor);
 	}
 
@@ -574,7 +582,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::METADATA_COMPONENT_ID:
 	case SpatialConstants::POSITION_COMPONENT_ID:
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-	case SpatialConstants::ROTATION_COMPONENT_ID:
+	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
