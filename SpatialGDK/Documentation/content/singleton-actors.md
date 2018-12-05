@@ -7,7 +7,12 @@ There are two kinds of Singleton Actors:
 * **Public Singleton Actors** - Singleton Actors which are replicated to [server-workers and client-workers]({{urlRoot}}/content/glossary#workers). [AGameState](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) is a Public Singleton Actor.
 * **Private Singleton Actors** - Singleton Actors which are replicated to [server-workers]({{urlRoot}}/content/glossary#workers), but not accessible to [client-workers]({{urlRoot}}/content/glossary#workers). [AGameMode](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) is a Private Singleton Actor.
 
-You can define any class as a Singleton Actor.
+You can define any class as a Singleton Actor. Unreal engine classes we have explicitaly tagged as Singleton Actors are -
+
+1. AGameModeBase
+1. AGameStateBase
+
+* As `SpatialType` is inheritable, all classes that derive off these classes are also considered Singleton Actors. You can opt out using the `NotSpatialType` tag.
 
 Each server-worker should instantiate their own local version of each Singleton Actor. For `AGameMode` and `AGameState`, Unreal Engine does this automatically. Client-workers receive Public Singletons Actors from the server-workers via the normal Actor replication lifecycle.
 
