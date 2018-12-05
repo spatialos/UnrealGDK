@@ -373,12 +373,8 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	// Only support Interest for Actors for now.
 	if (bInterestHasChanged && Object->IsA<AActor>())
 	{
-		bool bWroteSomething = false;
-		Worker_ComponentUpdate InterestUpdate = CreateInterestComponentUpdate(Object, Info, bWroteSomething);
-		if (bWroteSomething)
-		{
-			ComponentUpdates.Add(InterestUpdate);
-		}
+		Worker_ComponentUpdate InterestUpdate = CreateInterestComponentUpdate(Object, Info);
+		ComponentUpdates.Add(InterestUpdate);
 	}
 
 	return ComponentUpdates;
@@ -439,48 +435,35 @@ Worker_ComponentData ComponentFactory::CreateInterestComponentData(UObject* Obje
 	return CreateInterestComponent(Object, Info).CreateInterestData();
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(UObject* Object, FClassInfo* Info, bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(UObject* Object, FClassInfo* Info)
 {
-	improbable::Interest Interest = CreateInterestComponent(Object, Info);
-
-	bWroteSomething = Interest.IsEmpty();
-
-	return Interest.CreateInterestUpdate();
+	return CreateInterestComponent(Object, Info).CreateInterestUpdate();
 }
 
 improbable::Interest ComponentFactory::CreateInterestComponent(UObject* Object, FClassInfo* Info)
 {
 	//Create a new component interest containing a query for every interested Object
-	improbable::ComponentInterest ComponentInterest;;
+	improbable::ComponentInterest ComponentInterest;
 
 	for (FInterestPropertyInfo& PropertyInfo : Info->InterestProperties)
 	{
-		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
-
-		UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(PropertyInfo.Property);
-		check(ObjectProperty);
-
-		UObject* ObjectOfInterest = ObjectProperty->GetObjectPropertyValue(Data);
-
-		if (ObjectProperty == nullptr)
+		uint8* Data = (uint8*)Object + PropertyInfo.Offset;
+		if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(PropertyInfo.Property))
 		{
-			continue;
+			AddObjectToComponentInterest(Object, ObjectProperty, Data, ComponentInterest);
 		}
-
-		improbable::ComponentInterest::Query NewQuery;
-
-		FUnrealObjectRef UnrealObjectRef = PackageMap->GetUnrealObjectRefFromObject(Object);
-
-		check(UnrealObjectRef != SpatialConstants::NULL_OBJECT_REF);
-		if (UnrealObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+		else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
 		{
-			continue;
+			FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
+			for (int i = 0; i < ArrayHelper.Num(); i++)
+			{
+				AddObjectToComponentInterest(Object, Cast<UObjectPropertyBase>(ArrayProperty->Inner), ArrayHelper.GetRawPtr(i), ComponentInterest);
+			}
 		}
-
-		NewQuery.Constraint.EntityIdConstraint = UnrealObjectRef.Entity;
-		NewQuery.FullSnapshotResult = true;
-
-		ComponentInterest.Queries.Add(NewQuery);
+		else
+		{
+			checkNoEntry();
+		}
 	}
 
 	improbable::Interest Interest;
@@ -489,4 +472,28 @@ improbable::Interest ComponentFactory::CreateInterestComponent(UObject* Object, 
 	return Interest;
 }
 
+void ComponentFactory::AddObjectToComponentInterest(UObject* Object, UObjectPropertyBase* Property, uint8* Data, improbable::ComponentInterest& ComponentInterest)
+{
+	UObject* ObjectOfInterest = Property->GetObjectPropertyValue(Data);
+
+	if (ObjectOfInterest == nullptr)
+	{
+		return;
+	}
+
+	improbable::ComponentInterest::Query NewQuery;
+
+	FUnrealObjectRef UnrealObjectRef = PackageMap->GetUnrealObjectRefFromObject(ObjectOfInterest);
+
+	check(UnrealObjectRef != SpatialConstants::NULL_OBJECT_REF);
+	if (UnrealObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	{
+		return;
+	}
+
+	NewQuery.Constraint.EntityIdConstraint = UnrealObjectRef.Entity;
+	NewQuery.FullSnapshotResult = true;
+
+	ComponentInterest.Queries.Add(NewQuery);
+}
 }

@@ -140,15 +140,13 @@ inline void AddQueryConstraintToSchema(Schema_Object* Object, Schema_FieldId Id,
 	//option<int64> entity_id_constraint = 7;
 	if (Constraint.EntityIdConstraint.IsSet())
 	{
-		Schema_Object* EntityIdConstraintObject = Schema_AddObject(QueryConstraintObject, 7);
-		Schema_AddInt64(EntityIdConstraintObject, 1, *Constraint.EntityIdConstraint);
+		Schema_AddInt64(QueryConstraintObject, 7, *Constraint.EntityIdConstraint);
 	}
 
 	//option<uint32> component_constraint = 8;
 	if (Constraint.ComponentConstraint)
 	{
-		Schema_Object* ComponentConstraintObject = Schema_AddObject(QueryConstraintObject, 8);
-		Schema_AddUint32(ComponentConstraintObject, 1, *Constraint.ComponentConstraint);
+		Schema_AddUint32(QueryConstraintObject, 8, *Constraint.ComponentConstraint);
 	}
 
 	//list<QueryConstraint> and_constraint = 9;
@@ -174,44 +172,37 @@ inline void AddQueryConstraintToSchema(Schema_Object* Object, Schema_FieldId Id,
 	}
 }
 
-inline void AddQueryToSchema(Schema_Object* Object, Schema_FieldId Id, const ComponentInterest::Query& Query)
+inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestObject, Schema_FieldId Id, const ComponentInterest::Query& Query)
 {
 	checkf(!(Query.FullSnapshotResult.IsSet() && Query.ResultComponentId.Num() > 0), TEXT("Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid."));
 
-	Schema_Object* QueryObject = Schema_AddObject(Object, Id);
+	Schema_Object* QueryObject = Schema_AddObject(ComponentInterestObject, Id);
 
-	// Write the query constraint
 	AddQueryConstraintToSchema(QueryObject, 1, Query.Constraint);
 
-	//write the snapshot option
 	if (Query.FullSnapshotResult.IsSet())
 	{
-		Schema_Object* FullSnapshotResultObject = Schema_AddObject(QueryObject, 2);
-		Schema_AddBool(FullSnapshotResultObject, 1, *Query.FullSnapshotResult);
+		Schema_AddBool(QueryObject, 2, *Query.FullSnapshotResult);
 	}
-
-	// write the resulting component if
-	Schema_Object* ResultComponentIdObject = Schema_AddObject(QueryObject, 3);
 
 	for (uint32 ComponentId : Query.ResultComponentId)
 	{
-		Schema_AddUint32(ResultComponentIdObject, 1, ComponentId);
+		Schema_AddUint32(QueryObject, 3, ComponentId);
 	}
-	// write option for frequency
-	if (Query.Frequency)
+
+	if (Query.Frequency.IsSet())
 	{
-		Schema_Object* FrequencyObject = Schema_AddObject(QueryObject, 4);
-		Schema_AddFloat(FrequencyObject, 1, *Query.Frequency);
+		Schema_AddFloat(QueryObject, 4, *Query.Frequency);
 	}
 }
 
-inline void AddComponentInterestToSchema(Schema_Object* Object, Schema_FieldId Id, const ComponentInterest& Value)
+inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, Schema_FieldId Id, const ComponentInterest& Value)
 {
-	Schema_Object* ComponentInterestObject = Schema_AddObject(Object, Id);
+	Schema_Object* ComponentInterestObject = Schema_AddObject(InterestObject, Id);
 
 	for (const ComponentInterest::Query& QueryEntry : Value.Queries)
 	{
-		AddQueryToSchema(ComponentInterestObject, 1, QueryEntry);
+		AddQueryToComponentInterestSchema(ComponentInterestObject, 1, QueryEntry);
 	}
 }
 
@@ -428,13 +419,13 @@ struct Interest : Component
 		return ComponentUpdate;
 	}
 
-	void FillComponentData(Schema_Object* ComponentObject)
+	void FillComponentData(Schema_Object* InterestComponentObject)
 	{
 		for (const auto& KVPair : ComponentInterest)
 		{
-			Schema_Object* KVPairObject = Schema_AddObject(ComponentObject, 1);
+			Schema_Object* KVPairObject = Schema_AddObject(InterestComponentObject, 1);
 			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
-			AddComponentInterestToSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
+			AddComponentInterestToInterestSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID, KVPair.Value);
 		}
 	}
 

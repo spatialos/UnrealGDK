@@ -47,8 +47,9 @@ private:
 	bool FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
 	Worker_ComponentData CreateInterestComponentData(UObject* Object, FClassInfo* Info);
-	Worker_ComponentUpdate CreateInterestComponentUpdate(UObject* Object, FClassInfo* Info, bool& bWroteSomething);
+	Worker_ComponentUpdate CreateInterestComponentUpdate(UObject* Object, FClassInfo* Info);
 	improbable::Interest CreateInterestComponent(UObject* Object, FClassInfo* Info);
+	void AddObjectToComponentInterest(UObject* Object, UObjectPropertyBase* Property, uint8* Data, improbable::ComponentInterest& ComponentInterest);
 
 	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
 
