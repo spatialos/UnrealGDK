@@ -11,16 +11,15 @@ namespace Improbable
             @"#!/bin/bash
 NEW_USER=unrealworker
 WORKER_ID=$1
-WORKER_NAME=$2
-shift 2
+shift 1
 
 # 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
 useradd $NEW_USER -m -d /improbable/logs/UnrealWorker/Logs 2>/dev/null
 chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null
 chmod -R o+rw /improbable/logs 2>/dev/null
-SCRIPT=""$(pwd)/${WORKER_NAME}Server.sh""
+SCRIPT=""$(pwd)/{0}Server.sh""
 chmod +x $SCRIPT
-gosu $NEW_USER ""${SCRIPT}"" ""$@"" 2> >(grep -v xdg-user-dir >&2)";
+gosu $NEW_USER ""${{SCRIPT}}"" ""$@"" 2> >(grep -v xdg-user-dir >&2)";
 
         private const string RunEditorScript =
             @"setlocal ENABLEDELAYEDEXPANSION
@@ -163,7 +162,7 @@ exit /b !ERRORLEVEL!
                 {
                     // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                     // Also ensure script uses Linux line endings
-                    File.WriteAllText(Path.Combine(serverPath, "StartWorker.sh"), UnrealWorkerShellScript.Replace("\r\n", "\n"), new UTF8Encoding(false));
+                    File.WriteAllText(Path.Combine(serverPath, "StartWorker.sh"), string.Format(UnrealWorkerShellScript, baseGameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
                 }
 
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
