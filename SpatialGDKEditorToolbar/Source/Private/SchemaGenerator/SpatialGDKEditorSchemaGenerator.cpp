@@ -114,7 +114,7 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 	return true;
 }
 
-bool ValidateIdentifierNames(/*const TArray<UClass*>& Classes,*/ TArray<TSharedPtr<FUnrealType>>& TypeInfos)
+bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 {
 	// Remove all underscores from the class names, check for duplicates.
 	for (int i = 0; i < TypeInfos.Num() - 1; ++i)
@@ -277,7 +277,7 @@ bool SpatialGDKGenerateSchema()
 		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0, false));
 	}
 
-	if (!ValidateIdentifierNames(/*SchemaGeneratedClasses,*/ TypeInfos))
+	if (!ValidateIdentifierNames(TypeInfos))
 	{
 		return false;
 	}
