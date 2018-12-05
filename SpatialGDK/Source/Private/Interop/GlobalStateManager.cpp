@@ -131,7 +131,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		return;
 	}
 
-	// If we have previously queued up data for this entity, apply it - JIRA: 734
+	// If we have previously queued up data for this entity, apply it - UNR-734
 
 	// We're now ready to start replicating this actor, create a channel
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
