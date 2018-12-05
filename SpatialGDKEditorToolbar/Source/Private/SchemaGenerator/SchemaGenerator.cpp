@@ -281,7 +281,7 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 		Writer.Outdent().Print("}");
 	}
 
-	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *UnrealNameToSchemaTypeName(Class->GetName())));
+	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *UnrealNameToSchemaName(Class->GetName())));
 }
 
 
@@ -295,7 +295,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
 		package unreal.generated.{0};)""",
-		*UnrealNameToSchemaTypeName(Class->GetName().ToLower()));
+		*UnrealNameToSchemaName(Class->GetName().ToLower()));
 
 	// Will always be included since AActor has replicated pointers to other actors
 	Writer.PrintNewLine();
@@ -412,7 +412,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 
 	ClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
 
-	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *UnrealNameToSchemaTypeName(Class->GetName())));
+	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *UnrealNameToSchemaName(Class->GetName())));
 
 	return IdGenerator.GetNumUsedIds();
 }
@@ -502,7 +502,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
 		package unreal.generated.{0}.subobjects;)""",
-		*UnrealNameToSchemaTypeName(TypeInfo->Type->GetName().ToLower()));
+		*UnrealNameToSchemaName(TypeInfo->Type->GetName().ToLower()));
 
 	Writer.PrintNewLine();
 
@@ -553,7 +553,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 	if (bHasComponents)
 	{
-		Writer.WriteToFile(FString::Printf(TEXT("%s%sComponents.schema"), *SchemaPath, *UnrealNameToSchemaTypeName(ActorClass->GetName())));
+		Writer.WriteToFile(FString::Printf(TEXT("%s%sComponents.schema"), *SchemaPath, *UnrealNameToSchemaName(ActorClass->GetName())));
 	}
 }
 
@@ -582,7 +582,7 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 				UClass* Class = Value->GetClass();
 				if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))
 				{
-					Writer.Printf("import \"unreal/generated/Subobjects/{0}.schema\";", *UnrealNameToSchemaTypeName(Class->GetName()));
+					Writer.Printf("import \"unreal/generated/Subobjects/{0}.schema\";", *UnrealNameToSchemaName(Class->GetName()));
 					AlreadyImported.Add(Class);
 				}
 			}
