@@ -9,7 +9,7 @@ const FRegexPattern AlphanumericPattern(TEXT("[A-Z,a-z,0-9]"));
 
 FString GetNamespace(UStruct* Struct)
 {
-	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *UnrealNameToSchemaName(Struct->GetName().ToLower()));
+	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *UnrealFunctionNameToSchemaName(Struct->GetName().ToLower()));
 }
 
 FString GetEnumDataType(const UEnumProperty* EnumProperty)
@@ -29,15 +29,21 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 	return DataType;
 }
 
-FString UnrealNameToSchemaName(const FString& UnrealName)
+FString UnrealFunctionNameToSchemaName(const FString& UnrealName)
 {
-	return AlphanumericSanitization(UnrealName);
+	return NonAlphanumericAsciiCharacterConverter(UnrealName);
 }
 
-FString ASCIICharacterConverter(const FString& InString)
+FString UnrealClassNameToSchemaName(const FString& UnrealName)
 {
-	FRegexMatcher AlphanumericPatternMatcher(AlphanumericPattern, InString);
+	// Class names cannot have underscores so remove them.
+	// This is a limitation from schema where component names do not support underscores. We use the class name as part of the components name.
+	FString SchemaClassName = UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
+	return NonAlphanumericAsciiCharacterConverter(SchemaClassName);
+}
 
+FString NonAlphanumericAsciiCharacterConverter(const FString& InString)
+{
 	FString ConvertedString;
 
 	const int AsciiZero = int('0');
@@ -46,8 +52,8 @@ FString ASCIICharacterConverter(const FString& InString)
 	const int AsciiUpperA = int('A');
 	const int AsciiUpperZ = int('Z');
 
-	const int AsciiLowerA = int('A');
-	const int AsciiLowerZ = int('Z');
+	const int AsciiLowerA = int('a');
+	const int AsciiLowerZ = int('z');
 
 	for (auto& Char : InString)
 	{
@@ -55,81 +61,24 @@ FString ASCIICharacterConverter(const FString& InString)
 
 		// If we have an alphanumeric character then use it.
 		if((CharAscii >= AsciiZero && CharAscii <= AsciiNine)
-			|| (CharAscii >= AsciiUpperA && CharAscii <= AsciiUpperZ)
-			|| (CharAscii >= AsciiLowerA && CharAscii <= AsciiLowerZ))
+		|| (CharAscii >= AsciiUpperA && CharAscii <= AsciiUpperZ)
+		|| (CharAscii >= AsciiLowerA && CharAscii <= AsciiLowerZ))
 		{
 			ConvertedString += Char;
 		}
 		else
 		{
 			// If this is a non-alphanumeric character then use the string converted ASCII code.
-			ConvertedString += ConvertASCIICodeToFString(CharAscii);
+			ConvertedString += ConvertAsciiCodeToHexString(CharAscii);
 		}
 	}
 
-
-
-
-	for (int CurrentCharacter = 0; CurrentCharacter < InString.Len(); CurrentCharacter++)
-	{
-		// Find the next alphanumeric character in this string.
-		if(AlphanumericPatternMatcher.FindNext())
-		{
-			int32 NextAlphanumericCharacter = AlphanumericPatternMatcher.GetMatchBeginning();
-
-			// If the current character is the next alphanumeric character we have matched so we can safely add this character.
-			if (NextAlphanumericCharacter == CurrentCharacter)
-			{
-				ConvertedString += InString[CurrentCharacter];
-			}
-			else
-			{
-				// Convert all the next non-alphanumeric characters.
-				for (int NextNonAlphanumericChar = NextAlphanumericCharacter - CurrentCharacter; NextNonAlphanumericChar < NextAlphanumericCharacter; NextNonAlphanumericChar++)
-				{
-					// If we did not match, the current character is non-alphanumeric so convert it
-					ConvertedString.Append(ConvertASCIICodeToFString(int(InString[NextNonAlphanumericChar])));
-				}
-
-				// The outer for loop will increment.
-				CurrentCharacter = NextAlphanumericCharacter - 1;
-			}
-		}
-		else
-		{
-			// If we didn't match then all the next characters are non-alphanumeric
-			//..
-		}
-	}
-
-
-
-	//
-	for (int CurrentCharacter = 0; CurrentCharacter < InString.Len(); CurrentCharacter++)
-	{
-		int32 NextAlphanumericCharacter = AlphanumericPatternMatcher.GetMatchBeginning();
-
-		// If the current character is alphanumeric then add it.
-		if (CurrentCharacter == NextAlphanumericCharacter)
-		{
-			ConvertedString += InString[CurrentCharacter];
-		}
-		else
-		{
-			for (;CurrentCharacter < NextAlphanumericCharacter - 1; CurrentCharacter++)
-			{
-				// If the current character is non-alphanumeric then convert it to an ascii code.
-				ConvertedString.Append(ConvertASCIICodeToFString(int(InString[CurrentCharacter])));
-			}
-		}
-	}
-
-
+	return ConvertedString;
 }
 
-FString ConvertASCIICodeToFString(int ASCIICode)
+FString ConvertAsciiCodeToHexString(int ASCIICode)
 {
-	return FString::Printf(TEXT("0x%s"), *FString::FromInt(ASCIICode));
+	return FString::Printf(TEXT("0x%x"), ASCIICode);
 }
 
 FString AlphanumericSanitization(const FString& InString)
@@ -149,7 +98,7 @@ FString AlphanumericSanitization(const FString& InString)
 
 FString UnrealNameToSchemaComponentName(const FString& UnrealName)
 {
-	FString SchemaTypeName = UnrealNameToSchemaName(UnrealName);
+	FString SchemaTypeName = UnrealClassNameToSchemaName(UnrealName);
 	SchemaTypeName[0] = FChar::ToUpper(SchemaTypeName[0]);
 	return SchemaTypeName;
 }
@@ -171,7 +120,7 @@ FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNam
 
 FString SchemaRPCName(UFunction* Function)
 {
-	return UnrealNameToSchemaName(Function->GetName().ToLower());
+	return UnrealFunctionNameToSchemaName(Function->GetName().ToLower());
 }
 
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
@@ -185,7 +134,7 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 		{
 			PropName.Append(FString::FromInt(Property->StaticArrayIndex));
 		}
-		return UnrealNameToSchemaName(PropName);
+		return UnrealFunctionNameToSchemaName(PropName);
 	});
 
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties

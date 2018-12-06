@@ -37,7 +37,7 @@ void OnStatusOutput(FString Message)
 int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, TSharedPtr<FUnrealType> TypeInfo)
 {
 	UClass* Class = Cast<UClass>(TypeInfo->Type);
-	FString SchemaFilename = UnrealNameToSchemaName(Class->GetName());
+	FString SchemaFilename = UnrealClassNameToSchemaName(Class->GetName());
 
 	int NumComponents = 0;
 	if (Class->IsChildOf<AActor>())
@@ -120,12 +120,12 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	for (int i = 0; i < TypeInfos.Num() - 1; ++i)
 	{
 		const FString& ClassA = TypeInfos[i]->Type->GetName();
-		const FString SchemaTypeA = UnrealNameToSchemaName(ClassA);
+		const FString SchemaTypeA = UnrealClassNameToSchemaName(ClassA);
 
 		for (int j = i + 1; j < TypeInfos.Num(); ++j)
 		{
 			const FString& ClassB = TypeInfos[j]->Type->GetName();
-			const FString SchemaTypeB = UnrealNameToSchemaName(ClassB);
+			const FString SchemaTypeB = UnrealClassNameToSchemaName(ClassB);
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
 			{
