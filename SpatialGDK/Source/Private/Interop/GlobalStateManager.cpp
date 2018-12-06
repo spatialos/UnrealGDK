@@ -157,7 +157,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 
 void UGlobalStateManager::LinkAllExistingSingletonActors()
 {
-	// Client receive Singleton Actors via the normal Unreal replicated actor flow
+	// Early out for clients as they receive Singleton Actors via the normal Unreal replicated actor flow
 	if (!NetDriver->IsServer())
 	{
 		return;
