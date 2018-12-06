@@ -26,6 +26,10 @@
     {
       "Name": "SpatialGDK",
       "Enabled": true
+    },
+    {
+      "Name": "SpatialGDKEditor",
+      "Enabled": true
     }
   ]
 }

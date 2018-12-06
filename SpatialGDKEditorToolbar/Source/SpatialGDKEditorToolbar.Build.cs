@@ -40,6 +40,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
                 "EditorStyle",
                 "MessageLog",
                 "SpatialGDK",
+                "SpatialGDKEditor",
                 "UnrealEd"
             }
         );
