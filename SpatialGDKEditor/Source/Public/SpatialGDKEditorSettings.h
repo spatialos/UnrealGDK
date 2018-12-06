@@ -43,4 +43,7 @@ public:
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
 			: GeneratedSchemaOutputFolder.Path;
 	}
+
+	UFUNCTION()
+	FString ToString();
 };
