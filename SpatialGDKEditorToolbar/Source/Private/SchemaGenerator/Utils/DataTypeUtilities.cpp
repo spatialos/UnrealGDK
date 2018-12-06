@@ -9,7 +9,7 @@ const FRegexPattern AlphanumericPattern(TEXT("[A-Z,a-z,0-9]"));
 
 FString GetNamespace(UStruct* Struct)
 {
-	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *UnrealNameToSchemaTypeName(Struct->GetName().ToLower()));
+	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *UnrealNameToSchemaName(Struct->GetName().ToLower()));
 }
 
 FString GetEnumDataType(const UEnumProperty* EnumProperty)
@@ -29,7 +29,7 @@ FString GetEnumDataType(const UEnumProperty* EnumProperty)
 	return DataType;
 }
 
-FString UnrealNameToSchemaTypeName(const FString& UnrealName)
+FString UnrealNameToSchemaName(const FString& UnrealName)
 {
 	return AlphanumericSanitization(UnrealName);
 }
@@ -51,7 +51,7 @@ FString AlphanumericSanitization(const FString& InString)
 
 FString UnrealNameToSchemaComponentName(const FString& UnrealName)
 {
-	FString SchemaTypeName = UnrealNameToSchemaTypeName(UnrealName);
+	FString SchemaTypeName = UnrealNameToSchemaName(UnrealName);
 	SchemaTypeName[0] = FChar::ToUpper(SchemaTypeName[0]);
 	return SchemaTypeName;
 }
@@ -73,7 +73,7 @@ FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNam
 
 FString SchemaRPCName(UFunction* Function)
 {
-	return UnrealNameToSchemaTypeName(Function->GetName().ToLower());
+	return UnrealNameToSchemaName(Function->GetName().ToLower());
 }
 
 FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
@@ -87,7 +87,7 @@ FString SchemaFieldName(const TSharedPtr<FUnrealProperty> Property)
 		{
 			PropName.Append(FString::FromInt(Property->StaticArrayIndex));
 		}
-		return UnrealNameToSchemaTypeName(PropName);
+		return UnrealNameToSchemaName(PropName);
 	});
 
 	// Prefix is required to disambiguate between properties in the generated code and UActorComponent/UObject properties
