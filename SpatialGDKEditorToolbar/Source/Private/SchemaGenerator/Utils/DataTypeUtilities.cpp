@@ -34,6 +34,104 @@ FString UnrealNameToSchemaName(const FString& UnrealName)
 	return AlphanumericSanitization(UnrealName);
 }
 
+FString ASCIICharacterConverter(const FString& InString)
+{
+	FRegexMatcher AlphanumericPatternMatcher(AlphanumericPattern, InString);
+
+	FString ConvertedString;
+
+	const int AsciiZero = int('0');
+	const int AsciiNine = int('9');
+
+	const int AsciiUpperA = int('A');
+	const int AsciiUpperZ = int('Z');
+
+	const int AsciiLowerA = int('A');
+	const int AsciiLowerZ = int('Z');
+
+	for (auto& Char : InString)
+	{
+		int CharAscii = int(Char);
+
+		// If we have an alphanumeric character then use it.
+		if((CharAscii >= AsciiZero && CharAscii <= AsciiNine)
+			|| (CharAscii >= AsciiUpperA && CharAscii <= AsciiUpperZ)
+			|| (CharAscii >= AsciiLowerA && CharAscii <= AsciiLowerZ))
+		{
+			ConvertedString += Char;
+		}
+		else
+		{
+			// If this is a non-alphanumeric character then use the string converted ASCII code.
+			ConvertedString += ConvertASCIICodeToFString(CharAscii);
+		}
+	}
+
+
+
+
+	for (int CurrentCharacter = 0; CurrentCharacter < InString.Len(); CurrentCharacter++)
+	{
+		// Find the next alphanumeric character in this string.
+		if(AlphanumericPatternMatcher.FindNext())
+		{
+			int32 NextAlphanumericCharacter = AlphanumericPatternMatcher.GetMatchBeginning();
+
+			// If the current character is the next alphanumeric character we have matched so we can safely add this character.
+			if (NextAlphanumericCharacter == CurrentCharacter)
+			{
+				ConvertedString += InString[CurrentCharacter];
+			}
+			else
+			{
+				// Convert all the next non-alphanumeric characters.
+				for (int NextNonAlphanumericChar = NextAlphanumericCharacter - CurrentCharacter; NextNonAlphanumericChar < NextAlphanumericCharacter; NextNonAlphanumericChar++)
+				{
+					// If we did not match, the current character is non-alphanumeric so convert it
+					ConvertedString.Append(ConvertASCIICodeToFString(int(InString[NextNonAlphanumericChar])));
+				}
+
+				// The outer for loop will increment.
+				CurrentCharacter = NextAlphanumericCharacter - 1;
+			}
+		}
+		else
+		{
+			// If we didn't match then all the next characters are non-alphanumeric
+			//..
+		}
+	}
+
+
+
+	//
+	for (int CurrentCharacter = 0; CurrentCharacter < InString.Len(); CurrentCharacter++)
+	{
+		int32 NextAlphanumericCharacter = AlphanumericPatternMatcher.GetMatchBeginning();
+
+		// If the current character is alphanumeric then add it.
+		if (CurrentCharacter == NextAlphanumericCharacter)
+		{
+			ConvertedString += InString[CurrentCharacter];
+		}
+		else
+		{
+			for (;CurrentCharacter < NextAlphanumericCharacter - 1; CurrentCharacter++)
+			{
+				// If the current character is non-alphanumeric then convert it to an ascii code.
+				ConvertedString.Append(ConvertASCIICodeToFString(int(InString[CurrentCharacter])));
+			}
+		}
+	}
+
+
+}
+
+FString ConvertASCIICodeToFString(int ASCIICode)
+{
+	return FString::Printf(TEXT("0x%s"), *FString::FromInt(ASCIICode));
+}
+
 FString AlphanumericSanitization(const FString& InString)
 {
 	FRegexMatcher AlphanumericPatternMatcher(AlphanumericPattern, InString);
