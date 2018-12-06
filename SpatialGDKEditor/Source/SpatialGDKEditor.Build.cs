@@ -15,6 +15,7 @@ public class SpatialGDKEditor : ModuleRules
 			    "Engine",
                 "EngineSettings",
                 "SpatialGDK",
+                "UnrealEd"
 			});
 
 		PrivateIncludePaths.AddRange(

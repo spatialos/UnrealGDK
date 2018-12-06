@@ -6,6 +6,8 @@
 #include "Async.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 
+#include "Editor.h"
+
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
 
@@ -50,6 +52,23 @@ void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
 		bSchemaGeneratorRunning = false;
 	});
+}
+
+void USpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
+{
+	// Ensure all our singletons are loaded into memory before running
+	CacheSpatialObjects(SPATIALCLASS_Singleton, ErrorCallback);
+
+	const bool bSuccess = SpatialGDKGenerateSnapshot(World, SnapshotFilename);
+
+	if (bSuccess)
+	{
+		SuccessCallback.Execute();
+	}
+	else
+	{
+		FailureCallback.Execute();
+	}
 }
 
 void USpatialGDKEditor::CacheSpatialObjects(uint32 SpatialFlags, FSpatialGDKEditorErrorHandler ErrorCallback)

@@ -13,12 +13,15 @@ FString USpatialGDKEditorSettings::ToString()
 {
 	TArray<FStringFormatArg> Args;
 	Args.Add(SpatialOSDirectory.Path);
+	Args.Add(SpatialOSSnapshotPath.Path);
 	Args.Add(GeneratedSchemaOutputFolder.Path);
 	Args.Add(bGenerateSchemaForAllSupportedClasses);
+
 	return FString::Format(TEXT(
 		"SpatialOSLaunchArgument={0}, "
-		"GeneratedSchemaOutputFolder={1}, "
-		"bGenerateSchemaForAllSupportedClasses={2}")
+		"SpatialOSSnapshotPath={1}, "
+		"GeneratedSchemaOutputFolder={2}, "
+		"bGenerateSchemaForAllSupportedClasses={3}")
 		, Args);
 }
 

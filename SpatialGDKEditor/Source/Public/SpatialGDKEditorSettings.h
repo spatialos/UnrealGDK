@@ -4,7 +4,7 @@
 #include "SpatialGDKEditorSettings.generated.h"
 
 UCLASS(config = EditorPerProjectUserSettings, defaultconfig)
-class USpatialGDKEditorSettings : public UObject
+class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
 	GENERATED_BODY()
 
@@ -22,14 +22,17 @@ public:
 	bool bGenerateSchemaForAllSupportedClasses;
 
 private:
+	/** Path to your SpatialOS snapshot. */
+	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
+		FDirectoryPath SpatialOSSnapshotPath;
+
 	/** Generated schema output path */
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
 		FDirectoryPath GeneratedSchemaOutputFolder;
 
 public:
-
 	UFUNCTION()
-		FORCEINLINE FString GetSpatialOSDirectory() const
+	FORCEINLINE FString GetSpatialOSDirectory() const
 	{
 		return SpatialOSDirectory.Path.IsEmpty()
 			? FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")))
@@ -37,11 +40,19 @@ public:
 	}
 
 	UFUNCTION()
-		FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
+	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
 		return GeneratedSchemaOutputFolder.Path.IsEmpty()
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
 			: GeneratedSchemaOutputFolder.Path;
+	}
+
+	UFUNCTION()
+	FORCEINLINE FString GetSpatialOSSnapshotPath() const
+	{
+		return SpatialOSSnapshotPath.Path.IsEmpty()
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("../spatial/snapshots/"))))
+			: SpatialOSSnapshotPath.Path;
 	}
 
 	UFUNCTION()
