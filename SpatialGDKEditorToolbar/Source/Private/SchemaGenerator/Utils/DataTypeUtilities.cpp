@@ -39,7 +39,7 @@ FString UnrealClassNameToSchemaName(const FString& UnrealName)
 	// Class names cannot have underscores so remove them.
 	// This is a limitation from schema where component names do not support underscores. We use the class name as part of the components name.
 	FString SchemaClassName = UnrealName.Replace(TEXT("_"), TEXT("")).Replace(TEXT(" "), TEXT(""));
-	return NonAlphanumericAsciiCharacterConverter(SchemaClassName);
+	return UnrealNameToSchemaName(SchemaClassName);
 }
 
 FString NonAlphanumericAsciiCharacterConverter(const FString& InString)
