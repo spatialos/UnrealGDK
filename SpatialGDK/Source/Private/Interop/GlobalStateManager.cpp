@@ -111,7 +111,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		return;
 	}
 
-	auto* ActorChannelPair = NetDriver->SingletonActorChannels.Find(SingletonActorClass);
+	TPair<AActor*, USpatialActorChannel*>* ActorChannelPair = NetDriver->SingletonActorChannels.Find(SingletonActorClass);
 	if (ActorChannelPair == nullptr)
 	{
 		// Dynamically spawn singleton actor if we have queued up data - ala USpatialReceiver::ReceiveActor - JIRA: 735
@@ -121,7 +121,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		return;
 	}
 
-	AActor*& SingletonActor = ActorChannelPair->Key;
+	AActor* SingletonActor = ActorChannelPair->Key;
 	USpatialActorChannel*& Channel = ActorChannelPair->Value;
 
 	if (Channel != nullptr)
@@ -168,7 +168,7 @@ void UGlobalStateManager::LinkAllExistingSingletonActors()
 		UClass* SingletonActorClass = LoadObject<UClass>(nullptr, *Pair.Key);
 		if (SingletonActorClass == nullptr)
 		{
-			UE_LOG(LogGlobalStateManager, Error, TEXT("Failed to find Singleton Actor Class."));
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Failed to find Singleton Actor Class: %s"), *Pair.Key);
 			continue;
 		}
 
@@ -182,7 +182,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 
 	UClass* SingletonActorClass = SingletonActor->GetClass();
 
-	auto& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActorClass);
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActorClass);
 	USpatialActorChannel*& Channel = ActorChannelPair.Value;
 	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
 	ActorChannelPair.Key = SingletonActor;

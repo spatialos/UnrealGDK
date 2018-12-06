@@ -224,7 +224,7 @@ TArray<UClass*> GetAllSupportedClasses()
 
 		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
 
-		// Ensure we don't process skeleton or reinitialized classes
+		// Ensure we don't process skeleton, reinitialized or classes that have since been hot reloaded
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
