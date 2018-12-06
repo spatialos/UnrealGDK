@@ -15,7 +15,7 @@ USpatialGDKEditor::USpatialGDKEditor()
 
 }
 
-void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
+void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
 {
 	if (bSchemaGeneratorRunning)
 	{
@@ -32,7 +32,7 @@ void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 
 	// Ensure all our spatial classes are loaded into memory before running
-	CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings);
+	CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings, ErrorCallback);
 
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
 		[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()
@@ -52,7 +52,7 @@ void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	});
 }
 
-void USpatialGDKEditor::CacheSpatialObjects(uint32 SpatialFlags)
+void USpatialGDKEditor::CacheSpatialObjects(uint32 SpatialFlags, FSpatialGDKEditorErrorHandler ErrorCallback)
 {
 	// Load the asset registry module
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
@@ -73,8 +73,7 @@ void USpatialGDKEditor::CacheSpatialObjects(uint32 SpatialFlags)
 				UE_LOG(LogSpatialGDKEditor, Log, TEXT("Found spatial blueprint class `%s`."), *ObjectPath);
 				if (LoadedClass == nullptr)
 				{
-					UE_LOG(LogSpatialGDKEditor, Log, TEXT("Error: Failed to load blueprint %s."), *ObjectPath);
-	//				FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath)));
+					ErrorCallback.Execute(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath));
 				}
 			}
 		}

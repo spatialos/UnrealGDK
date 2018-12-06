@@ -4,13 +4,16 @@
 
 #include "CoreMinimal.h"
 
+DECLARE_DELEGATE_OneParam(FSpatialGDKEditorErrorHandler, FString);
+
 class SPATIALGDKEDITOR_API USpatialGDKEditor
 {
 public:
 	USpatialGDKEditor();
 
-	void GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
-	void CacheSpatialObjects(uint32 SpatialFlags);
+	void GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
+
+	void CacheSpatialObjects(uint32 SpatialFlags, FSpatialGDKEditorErrorHandler ErrorCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 
