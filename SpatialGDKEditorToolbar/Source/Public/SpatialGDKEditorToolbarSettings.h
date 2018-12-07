@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
+#include "SpatialGDKEditorSettings.h"
+
 #include "Engine/EngineTypes.h"
 
 #include "SpatialGDKEditorToolbarSettings.generated.h"
@@ -18,7 +20,7 @@ struct FInteropTypebindingInfo
 };
 
 UCLASS(config = EditorPerProjectUserSettings, defaultconfig)
-class USpatialGDKEditorToolbarSettings : public UObject
+class USpatialGDKEditorToolbarSettings : public USpatialGDKEditorSettings
 {
 	GENERATED_BODY()
 
@@ -48,7 +50,6 @@ public:
 			: SpatialOSSnapshotFile;
 	}
 
-	UFUNCTION()
-	FString ToString();
+	FString ToString() override;
 };
 

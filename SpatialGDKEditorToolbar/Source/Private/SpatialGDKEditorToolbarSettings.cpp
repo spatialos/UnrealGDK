@@ -11,14 +11,18 @@ USpatialGDKEditorToolbarSettings::USpatialGDKEditorToolbarSettings(const FObject
 
 FString USpatialGDKEditorToolbarSettings::ToString()
 {
+	FString BaseString = Super::ToString();
+
 	TArray<FStringFormatArg> Args;
 	Args.Add(SpatialOSLaunchConfig);
 	Args.Add(bStopSpatialOnExit);
 	Args.Add(SpatialOSSnapshotFile);
 
-	return FString::Format(TEXT(
+	FString ToolbarString = FString::Format(TEXT(
 		"ProjectRootFolder={0}, "
 		"bStopSpatialOnExit={1}, "
 		"SpatialOSSnapshotFile={2}"),
 		Args);
+
+	return BaseString + TEXT(", ") + ToolbarString;
 }

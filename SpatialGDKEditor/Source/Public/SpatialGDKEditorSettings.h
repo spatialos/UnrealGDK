@@ -56,5 +56,5 @@ public:
 	}
 
 	UFUNCTION()
-	FString ToString();
+	virtual FString ToString();
 };
