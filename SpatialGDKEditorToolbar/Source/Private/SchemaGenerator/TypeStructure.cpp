@@ -372,9 +372,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			RemoteFunction->FunctionFlags & FUNC_NetMulticast)
 		{
 			// Check if this function is an override.
-			UFunction* OverridenFunction = RemoteFunction->GetSuperFunction();
-
-			if (OverridenFunction)
+			if (RemoteFunction->GetSuperFunction())
 			{
 				// Don't duplicate the schema for an overridden function.
 				continue;
