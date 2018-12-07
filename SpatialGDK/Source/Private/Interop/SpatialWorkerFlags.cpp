@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialWorkerFlags.h"
+#include "Interop/SpatialWorkerFlags.h"
 #include <WorkerSDK/improbable/c_worker.h>
 
 TMap<FString, FString> USpatialWorkerFlags::WorkerFlags;
