@@ -45,10 +45,8 @@ struct FHandoverPropertyInfo
 
 struct FInterestPropertyInfo
 {
-	uint16 Handle;
-	int32 Offset;
-	int32 ArrayIdx;
 	UProperty* Property;
+	int32 Offset;
 };
 
 USTRUCT()

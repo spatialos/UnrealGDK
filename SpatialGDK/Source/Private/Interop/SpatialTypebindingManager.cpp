@@ -123,9 +123,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 				for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
 				{
 					FInterestPropertyInfo InterestInfo;
-					InterestInfo.Handle = Info.InterestProperties.Num() + 1; // 1-based index
 					InterestInfo.Offset = Property->GetOffset_ForGC() + Property->ElementSize * ArrayIdx;
-					InterestInfo.ArrayIdx = ArrayIdx;
 					InterestInfo.Property = Property;
 
 					Info.InterestProperties.Add(InterestInfo);

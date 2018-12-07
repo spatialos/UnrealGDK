@@ -47,8 +47,6 @@ struct Coordinates
 	}
 };
 
-using EdgeLength = Coordinates;
-
 inline void AddCoordinateToSchema(Schema_Object* Object, Schema_FieldId Id, const Coordinates& Coordinate)
 {
 	Schema_Object* CoordsObject = Schema_AddObject(Object, Id);

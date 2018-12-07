@@ -294,7 +294,11 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 		ComponentDatas.Add(CreateHandoverComponentData(Info->SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState));
 	}
 
-	ComponentDatas.Add(CreateInterestComponentData(Object, Info));
+	// Only support Interest for Actors for now.
+	if (Object->IsA<AActor>())
+	{
+		ComponentDatas.Add(CreateInterestComponentData(Object, Info));
+	}
 
 	return ComponentDatas;
 }

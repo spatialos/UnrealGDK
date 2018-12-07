@@ -7,6 +7,8 @@
 namespace improbable
 {
 
+using EdgeLength = Coordinates;
+
 struct ComponentInterest
 {
 	struct SphereConstraint
@@ -85,9 +87,9 @@ struct ComponentInterest
 	TArray<Query> Queries;
 };
 
-inline void AddQueryConstraintToSchema(Schema_Object* Object, Schema_FieldId Id, const ComponentInterest::QueryConstraint& Constraint)
+inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_FieldId Id, const ComponentInterest::QueryConstraint& Constraint)
 {
-	Schema_Object* QueryConstraintObject = Schema_AddObject(Object, Id);
+	Schema_Object* QueryConstraintObject = Schema_AddObject(QueryObject, Id);
 
 	//option<SphereConstraint> sphere_constraint = 1;
 	if (Constraint.SphereConstraint.IsSet())
@@ -156,7 +158,7 @@ inline void AddQueryConstraintToSchema(Schema_Object* Object, Schema_FieldId Id,
 
 		for (const ComponentInterest::QueryConstraint& AndConstraintEntry : Constraint.AndConstraint)
 		{
-			AddQueryConstraintToSchema(AndConstraintObject, 1, AndConstraintEntry);
+			AddQueryConstraintToQuerySchema(AndConstraintObject, 1, AndConstraintEntry);
 		}
 	}
 
@@ -167,7 +169,7 @@ inline void AddQueryConstraintToSchema(Schema_Object* Object, Schema_FieldId Id,
 
 		for (const ComponentInterest::QueryConstraint& OrConstraintEntry : Constraint.OrConstraint)
 		{
-			AddQueryConstraintToSchema(OrConstraintObject, 1, OrConstraintEntry);
+			AddQueryConstraintToQuerySchema(OrConstraintObject, 1, OrConstraintEntry);
 		}
 	}
 }
@@ -178,7 +180,7 @@ inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestOb
 
 	Schema_Object* QueryObject = Schema_AddObject(ComponentInterestObject, Id);
 
-	AddQueryConstraintToSchema(QueryObject, 1, Query.Constraint);
+	AddQueryConstraintToQuerySchema(QueryObject, 1, Query.Constraint);
 
 	if (Query.FullSnapshotResult.IsSet())
 	{
