@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKEditor.h"
-#include "SpatialGDKEditorPrivate.h"
 
 #include "Async.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
@@ -10,6 +9,8 @@
 
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
+
+DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 USpatialGDKEditor::USpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)

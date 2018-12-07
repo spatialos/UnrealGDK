@@ -1,22 +1,22 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialGDKEditorPrivate.h"
+#include "SpatialGDKEditorModule.h"
 
-#include "Modules/ModuleInterface.h"
-#include "Modules/ModuleManager.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
-class FSpatialGDKEditorModule : public IModuleInterface
+#define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
+
+void FSpatialGDKEditorModule::StartupModule()
 {
-public:
-	virtual void StartupModule() override { }
-	virtual void ShutdownModule() override { }
+}
 
-	virtual bool SupportsDynamicReloading() override
+void FSpatialGDKEditorModule::ShutdownModule()
+{
 	{
-		return true;
 	}
-};
+}
+
+
+#undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FSpatialGDKEditorModule, SpatialGDKEditor);

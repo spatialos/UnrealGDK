@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
+
 DECLARE_DELEGATE_OneParam(FSpatialGDKEditorErrorHandler, FString);
 
 class SPATIALGDKEDITOR_API USpatialGDKEditor
