@@ -6,6 +6,18 @@ pushd "%~dp0"
 
 call :MarkStartOfBlock "%~0"
 
+call :MarkStartOfBlock "Setup the git hooks"
+    if not defined TEAMCITY_CAPTURE_ENV goto SkipGitHooks
+    if not exist .git\hooks goto SkipGitHooks
+
+    echo #!/bin/sh >.git\hooks\post-checkout
+    echo Setup.bat >>.git\hooks\post-checkout
+    echo #!/bin/sh >.git\hooks\post-merge
+    echo Setup.bat >>.git\hooks\post-merge
+
+    :SkipGitHooks
+call :MarkEndOfBlock "Setup the git hooks"
+
 call :MarkStartOfBlock "Check dependencies"
     set /p UNREAL_VERSION=<./SpatialGDK/Extras/unreal-engine.version
     if defined TEAMCITY_CAPTURE_ENV (
@@ -43,7 +55,6 @@ call :MarkStartOfBlock "Setup variables"
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
     set WORKER_SDK_DIR=%~dp0\SpatialGDK\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0\SpatialGDK\Binaries\ThirdParty\Improbable
-    set UNREAL_SCHEMA_DIR=%~dp0..\..\..\spatial\schema
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
 call :MarkEndOfBlock "Setup variables"
@@ -52,7 +63,7 @@ call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
     rd /s /q "%BINARIES_DIR%"           2>nul
-    rd /s /q "%UNREAL_SCHEMA_DIR%"      2>nul
+    rd /s /q "%SCHEMA_COPY_DIR%"        2>nul
     rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
 call :MarkEndOfBlock "Clean folders"
 
@@ -107,7 +118,7 @@ echo UnrealGDK build completed successfully^!
 if not defined NO_PAUSE (
     if not defined TEAMCITY_CAPTURE_ENV (
         pause
-    ) 
+    )
 )
 
 exit /b %ERRORLEVEL%
