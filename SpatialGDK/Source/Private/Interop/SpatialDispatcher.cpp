@@ -6,6 +6,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "Interop/SpatialWorkerFlags.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
@@ -82,12 +83,14 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 
 		case WORKER_OP_TYPE_FLAG_UPDATE:
+			USpatialWorkerFlags::ApplyWorkerFlagUpdate(Op->flag_update);
 			break;
 		case WORKER_OP_TYPE_LOG_MESSAGE:
 			UE_LOG(LogSpatialView, Log, TEXT("SpatialOS Worker Log: %s"), UTF8_TO_TCHAR(Op->log_message.message));
 			break;
 		case WORKER_OP_TYPE_METRICS:
 			break;
+
 		case WORKER_OP_TYPE_DISCONNECT:
 			UE_LOG(LogSpatialView, Warning, TEXT("Disconnecting from SpatialOS: %s"), UTF8_TO_TCHAR(Op->disconnect.reason));
 			break;
