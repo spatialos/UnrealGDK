@@ -5,11 +5,11 @@
 
 TMap<FString, FString> USpatialWorkerFlags::WorkerFlags;
 
-bool USpatialWorkerFlags::GetWorkerFlag(const FString& Name, FString& Value)
+bool USpatialWorkerFlags::GetWorkerFlag(const FString& Name, FString& OutValue)
 {
 	if (FString* ValuePtr = WorkerFlags.Find(Name))
 	{
-		Value = *ValuePtr;
+		OutValue = *ValuePtr;
 		return true;
 	}
 
