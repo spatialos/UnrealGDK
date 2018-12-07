@@ -442,7 +442,7 @@ Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(UObject* 
 
 improbable::Interest ComponentFactory::CreateInterestComponent(UObject* Object, FClassInfo* Info)
 {
-	//Create a new component interest containing a query for every interested Object
+	// Create a new component interest containing a query for every interested Object
 	improbable::ComponentInterest ComponentInterest;
 
 	for (FInterestPropertyInfo& PropertyInfo : Info->InterestProperties)
