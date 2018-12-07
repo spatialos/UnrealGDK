@@ -64,7 +64,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bFirstTick(true)
 	, NetDriver(nullptr)
 	, LastSpatialPosition(FVector::ZeroVector)
-	, LastSpatialRotation(FRotator::ZeroRotator)
 	, bCreatingNewEntity(false)
 {
 }
@@ -265,7 +264,6 @@ int64 USpatialActorChannel::ReplicateActor()
 	if (!bCreatingNewEntity && !PlayerController && !Cast<APlayerState>(Actor))
 	{
 		UpdateSpatialPosition();
-		UpdateSpatialRotation();
 	}
 	
 	// Update the replicated property change list.
@@ -725,23 +723,6 @@ void USpatialActorChannel::UpdateSpatialPosition()
 			}
 		}
 	}
-}
-
-void USpatialActorChannel::UpdateSpatialRotation()
-{
-	FRotator ActorSpatialRotation = Actor->GetActorRotation();
-
-	// Only update the Actor's rotation if it has rotated far enough
-	const float SpatialRotationThreshold = 0.1f;  // 0.1 radian (~5.7 degrees)
-	FQuat RotationDelta = (ActorSpatialRotation - LastSpatialRotation).Quaternion();
-	RotationDelta.Normalize();
-	if (RotationDelta.GetAngle() < SpatialRotationThreshold)
-	{
-		return;
-	}
-
-	LastSpatialRotation = ActorSpatialRotation;
-	Sender->SendRotationUpdate(EntityId, Actor->GetActorRotation());
 }
 
 FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)

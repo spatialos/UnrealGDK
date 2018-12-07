@@ -13,8 +13,8 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialDispatcher.h"
-#include "Schema/Rotation.h"
 #include "Schema/Singleton.h"
+#include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -95,7 +95,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
@@ -139,7 +139,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
-	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
+	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
@@ -334,20 +334,6 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 #endif
 
 	Worker_ComponentUpdate Update = improbable::Position::CreatePositionUpdate(improbable::Coordinates::FromFVector(Location));
-	Connection->SendComponentUpdate(EntityId, &Update);
-}
-
-void USpatialSender::SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rotation)
-{
-#if !UE_BUILD_SHIPPING
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ROTATION_COMPONENT_ID))
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send Rotation component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
-		return;
-	}
-#endif
-
-	Worker_ComponentUpdate Update = improbable::Rotation(Rotation).CreateRotationUpdate();
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 

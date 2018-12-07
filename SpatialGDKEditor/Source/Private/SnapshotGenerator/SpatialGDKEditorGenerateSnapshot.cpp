@@ -3,8 +3,8 @@
 #include "SpatialGDKEditorGenerateSnapshot.h"
 
 #include "Engine/LevelScriptActor.h"
-#include "Schema/Rotation.h"
 #include "Schema/StandardLibrary.h"
+#include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialActorChannel.h"
 #include "SpatialConstants.h"
@@ -302,7 +302,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	WriteAclMap ComponentWriteAcl;
 
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
@@ -363,7 +363,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::Metadata(ActorClass->GetName()).CreateMetadataData());
 	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
-	Components.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
+	Components.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
 	Components.Add(improbable::UnrealMetadata(StaticPath, {}, ActorClass->GetPathName()).CreateUnrealMetadataData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
