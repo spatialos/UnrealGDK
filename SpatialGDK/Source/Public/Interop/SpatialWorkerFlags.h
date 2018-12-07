@@ -1,10 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "UObject/ObjectMacros.h"
-#include "UObject/Object.h"
 #include "SpatialWorkerFlags.generated.h"
-
 
 UCLASS()
 class SPATIALGDK_API USpatialWorkerFlags : public UBlueprintFunctionLibrary
