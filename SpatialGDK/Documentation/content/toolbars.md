@@ -1,4 +1,4 @@
-# Toolbars in the Unreal Editor
+# Toolbars
 
 There are two toolbars you can use in the Unreal Editor: the main Unreal toolbar, and the SpatialOS GDK toolbar. Once enabled, the GDK toolbar sits alongside the main Unreal toolbar:
 
