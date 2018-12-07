@@ -22,6 +22,7 @@ struct FConnectionConfig
 		FParse::Value(CommandLine, TEXT("workerId"), WorkerId);
 		FParse::Bool(CommandLine, TEXT("useExternalIpForBridge"), UseExternalIp);
 		FParse::Bool(CommandLine, TEXT("enableProtocolLogging"), EnableProtocolLoggingAtStartup);
+		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
 
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
@@ -32,6 +33,7 @@ struct FConnectionConfig
 	FString WorkerType;
 	bool UseExternalIp;
 	bool EnableProtocolLoggingAtStartup;
+	FString ProtocolLoggingPrefix;
 	Worker_NetworkConnectionType LinkProtocol;
 	Worker_ConnectionParameters ConnectionParams;
 };
