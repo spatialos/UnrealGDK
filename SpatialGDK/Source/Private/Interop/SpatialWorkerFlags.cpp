@@ -9,7 +9,7 @@ bool USpatialWorkerFlags::GetWorkerFlag(const FString& Name, FString& Value)
 {
 	if (FString* ValuePtr = WorkerFlags.Find(Name))
 	{
-		Value = *ValuePtr;
+		OutValue = *ValuePtr;
 		return true;
 	}
 
