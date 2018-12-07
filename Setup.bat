@@ -6,6 +6,18 @@ pushd "%~dp0"
 
 call :MarkStartOfBlock "%~0"
 
+call :MarkStartOfBlock "Setup the git hooks"
+    if defined TEAMCITY_CAPTURE_ENV goto SkipGitHooks
+    if not exist .git\hooks goto SkipGitHooks
+
+    echo #!/bin/sh>.git\hooks\post-checkout
+    echo cmd.exe /c Setup.bat>>.git\hooks\post-checkout
+    echo #!/bin/sh>.git\hooks\post-merge
+    echo cmd.exe /c Setup.bat>>.git\hooks\post-merge
+
+    :SkipGitHooks
+call :MarkEndOfBlock "Setup the git hooks"
+
 call :MarkStartOfBlock "Check dependencies"
     set /p UNREAL_VERSION=<./SpatialGDK/Extras/unreal-engine.version
     if defined TEAMCITY_CAPTURE_ENV (
@@ -39,20 +51,31 @@ call :MarkEndOfBlock "Check dependencies"
 call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
 
-    set BUILD_DIR=%~dp0\SpatialGDK\Build
+    set BUILD_DIR=%~dp0SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
-    set WORKER_SDK_DIR=%~dp0\SpatialGDK\Source\Public\WorkerSdk
-    set BINARIES_DIR=%~dp0\SpatialGDK\Binaries\ThirdParty\Improbable
-    set UNREAL_SCHEMA_DIR=%~dp0..\..\..\spatial\schema
+    set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\Public\WorkerSdk
+    set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
 call :MarkEndOfBlock "Setup variables"
+
+if not exist "%CORE_SDK_DIR%\core-sdk.version" goto NoCachedCoreSDK
+
+set /p CACHED_CORE_SDK_VERSION=<"%CORE_SDK_DIR%\core-sdk.version"
+if "%PINNED_CORE_SDK_VERSION%" == "%CACHED_CORE_SDK_VERSION%" (
+    echo.
+    echo CoreSDK version has not changed since the last run of Setup.bat. CoreSDK dependencies will be skipped.
+    echo If you wish to re-download them, please delete %CORE_SDK_DIR% folder and run Setup.bat again.
+    echo.
+    goto SkipCoreSDKDependencies
+)
+
+:NoCachedCoreSDK
 
 call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
     rd /s /q "%BINARIES_DIR%"           2>nul
-    rd /s /q "%UNREAL_SCHEMA_DIR%"      2>nul
     rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
 call :MarkEndOfBlock "Clean folders"
 
@@ -62,7 +85,6 @@ call :MarkStartOfBlock "Create folders"
     md "%CORE_SDK_DIR%\tools"        >nul 2>nul
     md "%CORE_SDK_DIR%\worker_sdk"   >nul 2>nul
     md "%BINARIES_DIR%"              >nul 2>nul
-    md "%SCHEMA_COPY_DIR%"           >nul 2>nul
     md "%SCHEMA_STD_COPY_DIR%"       >nul 2>nul
 call :MarkEndOfBlock "Create folders"
 
@@ -84,15 +106,24 @@ call :MarkStartOfBlock "Unpack dependencies"
     xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 
-call :MarkStartOfBlock "Copy schema"
-    if exist %SCHEMA_COPY_DIR% (
-        echo Copying schemas to "%SCHEMA_COPY_DIR%".
-        xcopy /s /i /q "%~dp0\SpatialGDK\Extras\schema" "%SCHEMA_COPY_DIR%"
+call :MarkStartOfBlock "Copy standard library schema"
+    echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
+    xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
+call :MarkEndOfBlock "Copy standard library schema"
 
-        echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
-        xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
-    )
-call :MarkEndOfBlock "Copy schema"
+call :MarkStartOfBlock "Update cached CoreSDK version"
+    echo %PINNED_CORE_SDK_VERSION%>%CORE_SDK_DIR%\core-sdk.version
+call :MarkEndOfBlock "Update cached CoreSDK version"
+
+:SkipCoreSDKDependencies
+
+call :MarkStartOfBlock "Copy GDK schema"
+    rd /s /q "%SCHEMA_COPY_DIR%"      2>nul
+    md "%SCHEMA_COPY_DIR%"       >nul 2>nul
+
+    echo Copying schemas to "%SCHEMA_COPY_DIR%".
+    xcopy /s /i /q "%~dp0\SpatialGDK\Extras\schema" "%SCHEMA_COPY_DIR%"
+call :MarkEndOfBlock "Copy GDK schema"
 
 call :MarkStartOfBlock "Build C# utilities"
     %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
@@ -107,7 +138,7 @@ echo UnrealGDK build completed successfully^!
 if not defined NO_PAUSE (
     if not defined TEAMCITY_CAPTURE_ENV (
         pause
-    ) 
+    )
 )
 
 exit /b %ERRORLEVEL%
