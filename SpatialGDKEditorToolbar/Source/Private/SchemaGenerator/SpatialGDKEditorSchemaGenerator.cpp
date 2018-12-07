@@ -37,7 +37,7 @@ void OnStatusOutput(FString Message)
 int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, TSharedPtr<FUnrealType> TypeInfo)
 {
 	UClass* Class = Cast<UClass>(TypeInfo->Type);
-	FString SchemaFilename = UnrealNameToSchemaTypeName(Class->GetName());
+	FString SchemaFilename = UnrealNameToSchemaName(Class->GetName());
 
 	int NumComponents = 0;
 	if (Class->IsChildOf<AActor>())
@@ -66,7 +66,8 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 
 			if (ExistingReplicatedProperty != nullptr)
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated property name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ExistingReplicatedProperty->Get()->Property->GetName(), *RepProp.Value->Property->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated property name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
+					*NextSchemaReplicatedDataName, *ExistingReplicatedProperty->Get()->Property->GetPathName(), *RepProp.Value->Property->GetPathName());
 				return false;
 			}
 
@@ -84,7 +85,8 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 
 		if (ExistingHandoverData != nullptr)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Handover data name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ExistingHandoverData->Get()->Property->GetName(), *Prop.Value->Property->GetName());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Handover data name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
+				*NextSchemaHandoverDataName, *ExistingHandoverData->Get()->Property->GetPathName(), *Prop.Value->Property->GetPathName());
 			return false;
 		}
 
@@ -103,7 +105,8 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 
 			if (ExistingRPC != nullptr)
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("RPC name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ExistingRPC->Get()->Function->GetName(), *RPC->Function->GetName());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("RPC name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
+					*NextSchemaRPCName, *ExistingRPC->Get()->Function->GetPathName(), *RPC->Function->GetPathName());
 				return false;
 			}
 
@@ -114,22 +117,23 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 	return true;
 }
 
-bool ValidateIdentifierNames(const TArray<UClass*>& Classes, TArray<TSharedPtr<FUnrealType>>& TypeInfos)
+bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 {
 	// Remove all underscores from the class names, check for duplicates.
-	for (int i = 0; i < Classes.Num() - 1; ++i)
+	for (int i = 0; i < TypeInfos.Num() - 1; ++i)
 	{
-		const FString& ClassA = Classes[i]->GetName();
-		const FString SchemaTypeA = UnrealNameToSchemaTypeName(ClassA);
+		const FString& ClassA = TypeInfos[i]->Type->GetName();
+		const FString SchemaTypeA = UnrealNameToSchemaName(ClassA);
 
-		for (int j = i + 1; j < Classes.Num(); ++j)
+		for (int j = i + 1; j < TypeInfos.Num(); ++j)
 		{
-			const FString& ClassB = Classes[j]->GetName();
-			const FString SchemaTypeB = UnrealNameToSchemaTypeName(ClassB);
+			const FString& ClassB = TypeInfos[j]->Type->GetName();
+			const FString SchemaTypeB = UnrealNameToSchemaName(ClassB);
 
 			if (SchemaTypeA.Equals(SchemaTypeB))
 			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Class name collision after removing non-alphanumeric characters: '%s' and '%s' - schema not generated"), *ClassA, *ClassB);
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Class name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for types '%s' and '%s'"),
+					*SchemaTypeA, *TypeInfos[i]->Type->GetPathName(), *TypeInfos[j]->Type->GetPathName());
 				return false;
 			}
 		}
@@ -277,7 +281,7 @@ bool SpatialGDKGenerateSchema()
 		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0, false));
 	}
 
-	if (!ValidateIdentifierNames(SchemaGeneratedClasses, TypeInfos))
+	if (!ValidateIdentifierNames(TypeInfos))
 	{
 		return false;
 	}
