@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Math/Vector.h"
-#include "Platform.h"
 
 #include "improbable/UnrealObjectRef.h"
 #include "Schema/Component.h"
