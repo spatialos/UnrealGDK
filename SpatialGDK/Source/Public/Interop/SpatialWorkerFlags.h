@@ -14,7 +14,7 @@ class SPATIALGDK_API USpatialWorkerFlags : public UBlueprintFunctionLibrary
 	 * @return - If worker flag was found.
 	 */
 	UFUNCTION(BlueprintCallable, Category="SpatialOS")
-	static bool GetWorkerFlag(const FString& Name, FString& Value);
+	static bool GetWorkerFlag(const FString& Name, FString& OutValue);
 
 private:
 	static void ApplyWorkerFlagUpdate(const struct Worker_FlagUpdateOp& Op);
