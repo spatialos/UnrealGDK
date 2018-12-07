@@ -354,11 +354,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 			EntityActor->FinishSpawning(FTransform(SpawnData->Rotation, SpawnLocation));
 
-			if (!SpawnData->Velocity.Equals(FVector::ZeroVector, KINDA_SMALL_NUMBER))
+			// Imitate the behavior in UPackageMapClient::SerializeNewActor.
+			const float Epsilon = 0.001f;
+			if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
 			{
 				EntityActor->PostNetReceiveVelocity(SpawnData->Velocity);
 			}
-			if (!SpawnData->Scale.Equals(FVector::OneVector, KINDA_SMALL_NUMBER))
+			if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
 			{
 				EntityActor->SetActorScale3D(SpawnData->Scale);
 			}
