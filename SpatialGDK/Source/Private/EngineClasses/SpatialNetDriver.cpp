@@ -160,7 +160,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			{
 				Connection->ReceptionistConfig.UseExternalIp = true;
 			}
-			else if (UseExternalIpOption.ToLower().Equals(TEXT("false")))
+			else if (UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase))
 			{
 				Connection->ReceptionistConfig.UseExternalIp = false;
 			}
