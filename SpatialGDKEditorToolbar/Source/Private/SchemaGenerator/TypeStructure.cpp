@@ -364,7 +364,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		return TypeNode;
 	}
 
-	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassFunctions(Class);
+	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
 
 	// Iterate through each RPC in the class.
 	for (UFunction* RemoteFunction : RelevantClassFunctions)

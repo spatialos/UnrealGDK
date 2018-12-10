@@ -61,7 +61,7 @@ void USpatialTypebindingManager::CreateTypebindings()
 	{
 		FClassInfo Info;
 
-		TArray<UFunction*> RelevantClassFunctions = improbable::GetClassFunctions(Class);
+		TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
 
 		for (UFunction* RemoteFunction : RelevantClassFunctions)
 		{
