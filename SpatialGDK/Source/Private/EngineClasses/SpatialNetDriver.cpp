@@ -14,10 +14,6 @@
 #include "SocketSubsystem.h"
 #include "UObject/UObjectIterator.h"
 
-#include "EngineClasses/SpatialActorChannel.h"
-#include "EngineClasses/SpatialNetConnection.h"
-#include "EngineClasses/SpatialPackageMapClient.h"
-#include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SnapshotManager.h"
