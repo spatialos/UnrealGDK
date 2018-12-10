@@ -9,6 +9,9 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 
+namespace improbable
+{
+
 void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd, void* Data, bool& bHasUnmapped);
 
 inline void RepLayout_SerializeProperties_DynamicArray(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdIndex, uint8* Data, bool& bHasUnmapped)
@@ -146,4 +149,43 @@ inline void ReadStructProperty(FSpatialNetBitReader& Reader, UStructProperty* Pr
 
 		RepLayout_SerializePropertiesForStruct(*RepLayout, Reader, NetDriver->PackageMap, Data, bOutHasUnmapped);
 	}
+}
+
+inline TArray<UFunction*> GetClassFunctions(const UClass* Class)
+{
+	// Get all remote functions from the class. This includes parents super functions and child override functions.
+	TArray<UFunction*> AllClassFunctions;
+
+	for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
+	{
+		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
+			RemoteFunction->FunctionFlags & FUNC_NetServer ||
+			RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
+			RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+		{
+			AllClassFunctions.Add(*RemoteFunction);
+		}
+	}
+
+	TArray<UFunction*> RelevantClassFunctions = AllClassFunctions;
+
+	// Remove parent super functions from the class RPC list so we only use the overridden functions in this class.
+	for (int i = 0; i < AllClassFunctions.Num(); i++)
+	{
+		UFunction* CurrentFunction = AllClassFunctions[i];
+
+		for (int j = 0; j < AllClassFunctions.Num(); j++)
+		{
+			UFunction* PotentialParentFunction = AllClassFunctions[j];
+			if (CurrentFunction->GetSuperFunction() == PotentialParentFunction)
+			{
+				// Remove the parent function.
+				RelevantClassFunctions.Remove(PotentialParentFunction);
+			}
+		}
+	}
+
+	return RelevantClassFunctions;
+}
+
 }

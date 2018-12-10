@@ -5,6 +5,7 @@
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
+#include "Utils/RepLayoutUtils.h"
 
 namespace Errors
 {
@@ -363,50 +364,40 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		return TypeNode;
 	}
 
+	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassFunctions(Class);
+
 	// Iterate through each RPC in the class.
-	for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
+	for(UFunction* RemoteFunction : RelevantClassFunctions)
 	{
-		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
-			RemoteFunction->FunctionFlags & FUNC_NetServer ||
-			RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
-			RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+		TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
+		RPCNode->CallerType = Class;
+		RPCNode->Function = RemoteFunction;
+		RPCNode->Type = GetRPCTypeFromFunction(RemoteFunction);
+		RPCNode->bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
+		TypeNode->RPCs.Add(RemoteFunction, RPCNode);
+
+		// Fill out parameters.
+		for (TFieldIterator<UProperty> It(RemoteFunction); It; ++It)
 		{
-			// Check if this function is an override.
-			if (RemoteFunction->GetSuperFunction())
+			UProperty* Parameter = *It;
+
+			TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
+			PropertyNode->Property = Parameter;
+
+			// RPCs can't have static arrays as parameters so we don't have to special case for them here, however struct parameters can have static arrays in them.
+			RPCNode->Parameters.Add(Parameter, PropertyNode);
+
+			// If this RPC parameter is a struct, recurse into it.
+			if (UStructProperty* StructParameter = Cast<UStructProperty>(Parameter))
 			{
-				// Don't duplicate the schema for an overridden function.
-				continue;
-			}
-
-			TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
-			RPCNode->CallerType = Class;
-			RPCNode->Function = *RemoteFunction;
-			RPCNode->Type = GetRPCTypeFromFunction(*RemoteFunction);
-			RPCNode->bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
-			TypeNode->RPCs.Add(*RemoteFunction, RPCNode);
-
-			// Fill out parameters.
-			for (TFieldIterator<UProperty> It(*RemoteFunction); It; ++It)
-			{
-				UProperty* Parameter = *It;
-
-				TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
-				PropertyNode->Property = Parameter;
-
-				// RPCs can't have static arrays as parameters so we don't have to special case for them here, however struct parameters can have static arrays in them.
-				RPCNode->Parameters.Add(Parameter, PropertyNode);
-
-				// If this RPC parameter is a struct, recurse into it.
-				if (UStructProperty* StructParameter = Cast<UStructProperty>(Parameter))
-				{
-					uint32 StructChecksum = GenerateChecksum(Parameter, ParentChecksum, 0);
-					PropertyNode->CompatibleChecksum = StructChecksum;
-					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, StructChecksum, 0 , true);
-					PropertyNode->Type->ParentProperty = PropertyNode;
-				}
+				uint32 StructChecksum = GenerateChecksum(Parameter, ParentChecksum, 0);
+				PropertyNode->CompatibleChecksum = StructChecksum;
+				PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, StructChecksum, 0 , true);
+				PropertyNode->Type->ParentProperty = PropertyNode;
 			}
 		}
 	}
+
 
 	// Set up replicated properties by reading the rep layout and matching the properties with the ones in the type node.
 	// Based on inspection in InitFromObjectClass, the RepLayout will always replicate object properties using NetGUIDs, regardless of

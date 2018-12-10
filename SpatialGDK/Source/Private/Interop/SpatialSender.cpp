@@ -375,7 +375,23 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		return;
 	}
 
-	FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Params->Function);
+	const FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Params->Function);
+
+	// We potentially have a parent function and need to find the child function.
+	// This exists as it's possible in blueprints to explicitly call the parent function.
+	if (RPCInfo == nullptr)
+	{
+		for (auto It = Info->RPCInfoMap.CreateConstIterator(); It; ++It)
+		{
+			if(It.Key()->GetName() == Params->Function->GetName())
+			{
+				// Matching child function found. Use this for the remote function call.
+				RPCInfo = &It.Value();
+				break;
+			}
+		}
+	}
+
 	check(RPCInfo);
 
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;

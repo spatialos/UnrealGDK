@@ -13,6 +13,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Utils/RepLayoutUtils.h"
 
 void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 {
@@ -60,44 +61,40 @@ void USpatialTypebindingManager::CreateTypebindings()
 	{
 		FClassInfo Info;
 
-		for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
+		TArray<UFunction*> RelevantClassFunctions = improbable::GetClassFunctions(Class);
+
+		for (UFunction* RemoteFunction : RelevantClassFunctions)
 		{
-			if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
-				RemoteFunction->FunctionFlags & FUNC_NetServer ||
-				RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
-				RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+			ESchemaComponentType RPCType = SCHEMA_Invalid;
+			if (RemoteFunction->FunctionFlags & FUNC_NetClient)
 			{
-				ESchemaComponentType RPCType = SCHEMA_Invalid;
-				if (RemoteFunction->FunctionFlags & FUNC_NetClient)
-				{
-					RPCType = SCHEMA_ClientRPC;
-				}
-				else if (RemoteFunction->FunctionFlags & FUNC_NetServer)
-				{
-					RPCType = SCHEMA_ServerRPC;
-				}
-				else if (RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
-				{
-					RPCType = SCHEMA_CrossServerRPC;
-				}
-				else if (RemoteFunction->FunctionFlags & FUNC_NetMulticast)
-				{
-					RPCType = SCHEMA_NetMulticastRPC;
-				}
-				else
-				{
-					checkNoEntry();
-				}
-
-				TArray<UFunction*>& RPCArray = Info.RPCs.FindOrAdd(RPCType);
-
-				FRPCInfo RPCInfo;
-				RPCInfo.Type = RPCType;
-				RPCInfo.Index = RPCArray.Num();
-
-				RPCArray.Add(*RemoteFunction);
-				Info.RPCInfoMap.Add(*RemoteFunction, RPCInfo);
+				RPCType = SCHEMA_ClientRPC;
 			}
+			else if (RemoteFunction->FunctionFlags & FUNC_NetServer)
+			{
+				RPCType = SCHEMA_ServerRPC;
+			}
+			else if (RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
+			{
+				RPCType = SCHEMA_CrossServerRPC;
+			}
+			else if (RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+			{
+				RPCType = SCHEMA_NetMulticastRPC;
+			}
+			else
+			{
+				checkNoEntry();
+			}
+
+			TArray<UFunction*>& RPCArray = Info.RPCs.FindOrAdd(RPCType);
+
+			FRPCInfo RPCInfo;
+			RPCInfo.Type = RPCType;
+			RPCInfo.Index = RPCArray.Num();
+
+			RPCArray.Add(RemoteFunction);
+			Info.RPCInfoMap.Add(RemoteFunction, RPCInfo);
 		}
 
 		for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
