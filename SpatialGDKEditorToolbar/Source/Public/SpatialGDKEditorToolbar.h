@@ -83,5 +83,5 @@ private:
 	USoundBase* ExecutionFailSound;
 
 	TFuture<bool> SchemaGeneratorResult;
-	TSharedPtr<USpatialGDKEditor> SpatialGDKEditorInst;
+	TSharedPtr<USpatialGDKEditor> SpatialGDKEditorInstance;
 };

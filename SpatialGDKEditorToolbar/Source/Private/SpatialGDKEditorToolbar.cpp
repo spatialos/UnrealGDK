@@ -55,7 +55,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionSuccessSound->AddToRoot();
 	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
-	SpatialGDKEditorInst = MakeShareable(new USpatialGDKEditor());
+	SpatialGDKEditorInstance = MakeShareable(new USpatialGDKEditor());
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = GetDefault<USpatialGDKEditorToolbarSettings>()->bStopSpatialOnExit;
@@ -153,12 +153,12 @@ bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator() const
 {
-	return SpatialGDKEditorInst.IsValid() && !SpatialGDKEditorInst.Get()->IsSchemaGeneratorRunning();
+	return SpatialGDKEditorInstance.IsValid() && !SpatialGDKEditorInstance.Get()->IsSchemaGeneratorRunning();
 }
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator() const
 {
-	return SpatialGDKEditorInst.IsValid() && !SpatialGDKEditorInst.Get()->IsSchemaGeneratorRunning();
+	return SpatialGDKEditorInstance.IsValid() && !SpatialGDKEditorInstance.Get()->IsSchemaGeneratorRunning();
 }
 
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -243,7 +243,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	SpatialGDKEditorInst->GenerateSnapshot(
+	SpatialGDKEditorInstance->GenerateSnapshot(
 		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotFile(),
 		FSimpleDelegate::CreateLambda([this]() { ShowSuccessNotification("Snapshot successfully generated!"); }),
 		FSimpleDelegate::CreateLambda([this]() { ShowFailedNotification("Snapshot generation failed!"); }),
@@ -253,7 +253,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 {
 	ShowTaskStartNotification("Generating Schema");
-	SpatialGDKEditorInst->GenerateSchema(
+	SpatialGDKEditorInstance->GenerateSchema(
 		FSimpleDelegate::CreateLambda([this]() { ShowSuccessNotification("Schema Generation Completed!"); }),
 		FSimpleDelegate::CreateLambda([this]() { ShowFailedNotification("Schema Generation Failed"); }),
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
