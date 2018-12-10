@@ -2,6 +2,7 @@
 
 #include "Interop/SpatialReceiver.h"
 
+#include "Components/PrimitiveComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
@@ -206,6 +207,8 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 						Actor->RemoteRole = ROLE_SimulatedProxy;
 					}
 
+					ApplyRepMovement(Actor);
+
 					Actor->OnAuthorityGained();
 				}
 				else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
@@ -234,6 +237,49 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			if (Op.component_id == Info->SchemaComponents[SCHEMA_ClientRPC])
 			{
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+			}
+		}
+	}
+}
+
+void USpatialReceiver::ApplyRepMovement(AActor* Actor)
+{
+	// The following will convert from RepMovement to the root component's movement.
+	// It is meant to be the opposite of what happens in AActor::GatherCurrentMovement.
+	// This is necessary because non-authoritative servers interpolate movement as if
+	// they are clients, but they should have the last server's movement values when
+	// they gain authority.
+	if (Actor->bReplicateMovement)
+	{
+		if (USceneComponent* RootComponent = Actor->GetRootComponent())
+		{
+			if (Actor->ReplicatedMovement.bRepPhysics)
+			{
+				UPrimitiveComponent* RootPrimComp = Cast<UPrimitiveComponent>(RootComponent);
+				if (RootPrimComp && !RootPrimComp->IsWelded())
+				{
+					// Hack physics state
+					FBodyInstance* BodyInstance = RootPrimComp->GetBodyInstance();
+					BodyInstance->SetBodyTransform(FTransform(Actor->ReplicatedMovement.Rotation, FRepMovement::RebaseOntoLocalOrigin(Actor->ReplicatedMovement.Location, Actor)), ETeleportType::TeleportPhysics);
+					RootPrimComp->SetPhysicsLinearVelocity(Actor->ReplicatedMovement.LinearVelocity);
+					RootPrimComp->SetPhysicsAngularVelocityInDegrees(Actor->ReplicatedMovement.AngularVelocity);
+					if (BodyInstance->IsInstanceAwake() != Actor->ReplicatedMovement.bSimulatedPhysicSleep)
+					{
+						if (Actor->ReplicatedMovement.bSimulatedPhysicSleep)
+						{
+							BodyInstance->PutInstanceToSleep();
+						}
+						else
+						{
+							BodyInstance->WakeInstance();
+						}
+					}
+				}
+			}
+			else if (RootComponent->GetAttachParent() == nullptr)
+			{
+				RootComponent->SetComponentToWorld(FTransform(Actor->ReplicatedMovement.Rotation, FRepMovement::RebaseOntoLocalOrigin(Actor->ReplicatedMovement.Location, Actor), RootComponent->GetComponentTransform().GetScale3D()));
+				RootComponent->ComponentVelocity = Actor->ReplicatedMovement.LinearVelocity;
 			}
 		}
 	}

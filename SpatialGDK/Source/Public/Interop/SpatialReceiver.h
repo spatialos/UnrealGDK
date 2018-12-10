@@ -138,6 +138,7 @@ private:
 	AActor* CreateActor(improbable::Position* Position, improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
 
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
+	void ApplyRepMovement(AActor* Actor);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
