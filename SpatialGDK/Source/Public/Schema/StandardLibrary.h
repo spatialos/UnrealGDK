@@ -4,8 +4,8 @@
 
 #include "Math/Vector.h"
 
-#include "improbable/UnrealObjectRef.h"
 #include "Schema/Component.h"
+#include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/Package.h"
