@@ -11,9 +11,6 @@
 
 USnapshotCommandlet::USnapshotCommandlet()
 {
-	//TODO: HelpDescription
-	//TODO: HelpParamNames
-	//TODO: HelpUsage
 	IsClient = false;
 	IsEditor = true;
 	IsServer = false;

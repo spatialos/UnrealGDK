@@ -6,9 +6,6 @@
 
 USchemaCommandlet::USchemaCommandlet()
 {
-	//TODO: HelpDescription = TEXT("Generate Schema and/or Snapshots");
-	//TODO: HelpParamNames
-	//TODO: HelpUsage
 	IsClient = false;
 	IsEditor = false;
 	IsServer = false;
