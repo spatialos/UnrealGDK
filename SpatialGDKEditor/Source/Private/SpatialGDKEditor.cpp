@@ -40,11 +40,17 @@ void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	{
 		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
 		{
-			FailureCallback.Execute();
+			if (FailureCallback.IsBound())
+			{
+				FailureCallback.Execute();
+			}
 		}
 		else
 		{
-			SuccessCallback.Execute();
+			if (SuccessCallback.IsBound())
+			{
+				SuccessCallback.Execute();
+			}
 		}
 		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
 		bSchemaGeneratorRunning = false;
@@ -60,11 +66,17 @@ void USpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 
 	if (bSuccess)
 	{
-		SuccessCallback.Execute();
+		if (SuccessCallback.IsBound())
+		{
+			SuccessCallback.Execute();
+		}
 	}
 	else
 	{
-		FailureCallback.Execute();
+		if (FailureCallback.IsBound())
+		{
+			FailureCallback.Execute();
+		}
 	}
 }
 
@@ -89,7 +101,10 @@ void USpatialGDKEditor::CacheSpatialObjects(uint32 SpatialFlags, FSpatialGDKEdit
 				UE_LOG(LogSpatialGDKEditor, Log, TEXT("Found spatial blueprint class `%s`."), *ObjectPath);
 				if (LoadedClass == nullptr)
 				{
-					ErrorCallback.Execute(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath));
+					if (ErrorCallback.IsBound())
+					{
+						ErrorCallback.Execute(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath));
+					}
 				}
 			}
 		}
