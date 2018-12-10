@@ -8,8 +8,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialTypebindingManager.h"
+#include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
-#include "Schema/Rotation.h"
 #include "UObject/improbable/UnrealObjectRef.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -135,7 +135,7 @@ private:
 
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
-	AActor* CreateActor(improbable::Position* Position, struct improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred);
+	AActor* CreateActor(improbable::Position* Position, improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
 
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 

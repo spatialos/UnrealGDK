@@ -1,5 +1,8 @@
-# Authority in the GDK
-To work with authority in the GDK, it’s useful to refresh on authority in Unreal’s native networking.
+# Authority
+To work with authority in the GDK, it’s useful to refresh on authority in Unreal’s native networking. See:
+
+* [Unreal’s Network Role documentation](https://wiki.unrealengine.com/Replication#A_Guide_To_Network_Roles)
+* [Unreal's Owning Connection documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections)
 
 ## Unreal networking authority
 
@@ -49,8 +52,6 @@ Actor on **non-owning client**:
 
 * `Role = ROLE_SimulatedProxy`
 * `RemoteRole = ROLE_Authority`
-
-For more information on owning connection see the [Unreal documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections)
 
 ## GDK authority
 
