@@ -383,7 +383,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	{
 		for (auto It = Info->RPCInfoMap.CreateConstIterator(); It; ++It)
 		{
-			if(It.Key()->GetName() == Params->Function->GetName())
+			if (It.Key()->GetName() == Params->Function->GetName())
 			{
 				// Matching child function found. Use this for the remote function call.
 				RPCInfo = &It.Value();
