@@ -14,17 +14,17 @@
 	"CanContainContent" : false,
 	"IsBetaVersion" : false,
 	"Installed" : true,
-  "Modules": [
-    {
-      "Name": "SpatialGDKEditorCommandlet",
-      "Type": "Editor",
-      "LoadingPhase": "Default"
-    }
-  ],
-  "Plugins": [
-    {
-      "Name": "SpatialGDKEditor",
-      "Enabled": true
-    }
-  ]
+	"Modules": [
+		{
+			"Name": "SpatialGDKEditorCommandlet",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "SpatialGDKEditor",
+			"Enabled": true
+		}
+	]
 }

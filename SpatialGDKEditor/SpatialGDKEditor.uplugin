@@ -15,16 +15,16 @@
 	"IsBetaVersion" : false,
 	"Installed" : true,
 	"Modules": [
-    {
-      "Name": "SpatialGDKEditor",
-      "Type": "Editor",
-      "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64" ]
-    }
-  ],
-  "Plugins": [
-    {
-      "Name": "SpatialGDK",
-      "Enabled":  true
-    }]
+		{
+			"Name": "SpatialGDKEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default",
+			"WhitelistPlatforms": [ "Win64" ]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "SpatialGDK",
+			"Enabled":  true
+		}]
 }

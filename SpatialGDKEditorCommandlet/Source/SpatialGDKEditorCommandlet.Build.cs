@@ -10,11 +10,11 @@ public class SpatialGDKEditorCommandlet : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
-			    "Core",
-			    "CoreUObject",
-			    "Engine",
+				"Core",
+				"CoreUObject",
+				"Engine",
 				"SpatialGDKEditor",
-                "UnrealEd"
+				"UnrealEd"
 			});
 
 		PrivateIncludePaths.AddRange(
