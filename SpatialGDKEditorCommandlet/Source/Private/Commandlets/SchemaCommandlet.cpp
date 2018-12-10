@@ -28,8 +28,8 @@ int32 USchemaCommandlet::Main(const FString& Args)
 	//Generate Schema!
 	USpatialGDKEditor SpatialGDKEditor;
 	SpatialGDKEditor.GenerateSchema(
-		FExecuteAction::CreateLambda([]() {UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!")); }),
-		FExecuteAction::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Failed")); }),
+		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!")); }),
+		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Failed")); }),
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s"), *ErrorText); }));
 	while (SpatialGDKEditor.IsSchemaGeneratorRunning())
 		FPlatformProcess::Sleep(0.1f);

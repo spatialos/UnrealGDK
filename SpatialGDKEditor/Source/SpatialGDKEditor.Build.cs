@@ -10,7 +10,7 @@ public class SpatialGDKEditor : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
-			    "Core",
+				"Core",
 			    "CoreUObject",
 			    "Engine",
                 "EngineSettings",

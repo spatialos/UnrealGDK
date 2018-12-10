@@ -43,9 +43,8 @@ void USnapshotCommandlet::GenerateSnapshots()
 	FString MapDir = TEXT("/Game");
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Searching %s for maps"), *MapDir);
 	TArray<FString> MapFilePaths = GetAllMapPaths(MapDir);
-	for (int32 i = 0; i < MapFilePaths.Num(); ++i)
+	for (FString MapFilePath : MapFilePaths)
 	{
-		FString MapFilePath = MapFilePaths[i];
 		GenerateSnapshotForWorld(MapFilePath);
 	}
 }
@@ -64,23 +63,22 @@ void USnapshotCommandlet::GenerateSnapshotForWorld(FString WorldPath)
 	USpatialGDKEditor SpatialGDKEditor;
 	SpatialGDKEditor.GenerateSnapshot(
 		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(WorldPath), TEXT(".snapshot")),
-		FExecuteAction::CreateLambda([]() {UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Success!")); }),
-		FExecuteAction::CreateLambda([]() {UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed")); }),
+		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Success!")); }),
+		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed")); }),
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s"), *ErrorText); }));
 }
 
 TArray<FString> USnapshotCommandlet::GetAllMapPaths(FString InMapsPath)
 {
 	UObjectLibrary* ObjectLibrary = UObjectLibrary::CreateLibrary(UWorld::StaticClass(), false, true);
-	ObjectLibrary->LoadAssetDataFromPath(*(InMapsPath));
+	ObjectLibrary->LoadAssetDataFromPath(InMapsPath);
 	TArray<FAssetData> AssetDatas;
 	ObjectLibrary->GetAssetDataList(AssetDatas);
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Found %d maps:"), AssetDatas.Num());
 
 	TArray<FString> Paths = TArray<FString>();
-	for (int32 i = 0; i < AssetDatas.Num(); ++i)
+	for (FAssetData& AssetData : AssetDatas)
 	{
-		FAssetData& AssetData = AssetDatas[i];
 
 		FString Path = AssetData.PackageName.ToString();
 		Paths.Add(Path);

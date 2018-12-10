@@ -15,7 +15,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 USpatialGDKEditor::USpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
 {
-
 }
 
 void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
@@ -33,7 +32,6 @@ void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
 	GeneralProjectSettings->bSpatialNetworking = true;
 
-
 	// Ensure all our spatial classes are loaded into memory before running
 	CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings, ErrorCallback);
 
@@ -43,12 +41,10 @@ void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
 		{
 			FailureCallback.Execute();
-			bSchemaGeneratorRunning = false;
 		}
 		else
 		{
 			SuccessCallback.Execute();
-			bSchemaGeneratorRunning = false;
 		}
 		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
 		bSchemaGeneratorRunning = false;

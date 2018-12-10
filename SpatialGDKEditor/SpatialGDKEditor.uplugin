@@ -14,7 +14,7 @@
 	"CanContainContent" : false,
 	"IsBetaVersion" : false,
 	"Installed" : true,
-  "Modules": [
+	"Modules": [
     {
       "Name": "SpatialGDKEditor",
       "Type": "Editor",

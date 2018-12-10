@@ -14,7 +14,7 @@ public:
 private:
 	/** Path to the directory containing the SpatialOS-related files. */
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
-		FDirectoryPath SpatialOSDirectory;
+	FDirectoryPath SpatialOSDirectory;
 
 public:
 	/** Generate schema for all classes supported by the GDK */
@@ -24,11 +24,11 @@ public:
 private:
 	/** Path to your SpatialOS snapshot. */
 	UPROPERTY(EditAnywhere, config, Category = "Configuration", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
-		FDirectoryPath SpatialOSSnapshotPath;
+	FDirectoryPath SpatialOSSnapshotPath;
 
 	/** Generated schema output path */
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
-		FDirectoryPath GeneratedSchemaOutputFolder;
+	FDirectoryPath GeneratedSchemaOutputFolder;
 
 public:
 	UFUNCTION()

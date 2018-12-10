@@ -245,18 +245,18 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 	SpatialGDKEditorInst->GenerateSnapshot(
 		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotFile(),
-		FExecuteAction::CreateLambda([this]() {ShowSuccessNotification("Snapshot successfully generated!"); }),
-		FExecuteAction::CreateLambda([this]() {ShowFailedNotification("Snapshot generation failed!"); }),
-		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) {FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
+		FSimpleDelegate::CreateLambda([this]() { ShowSuccessNotification("Snapshot successfully generated!"); }),
+		FSimpleDelegate::CreateLambda([this]() { ShowFailedNotification("Snapshot generation failed!"); }),
+		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
 }
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 {
 	ShowTaskStartNotification("Generating Schema");
 	SpatialGDKEditorInst->GenerateSchema(
-		FExecuteAction::CreateLambda([this]() {ShowSuccessNotification("Schema Generation Completed!"); }),
-		FExecuteAction::CreateLambda([this]() {ShowFailedNotification("Schema Generation Failed"); }),
-		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) {FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
+		FSimpleDelegate::CreateLambda([this]() { ShowSuccessNotification("Schema Generation Completed!"); }),
+		FSimpleDelegate::CreateLambda([this]() { ShowFailedNotification("Schema Generation Failed"); }),
+		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
 }
 		
 
