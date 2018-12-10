@@ -151,7 +151,7 @@ inline void ReadStructProperty(FSpatialNetBitReader& Reader, UStructProperty* Pr
 	}
 }
 
-inline TArray<UFunction*> GetClassFunctions(const UClass* Class)
+inline TArray<UFunction*> GetClassRPCFunctions(const UClass* Class)
 {
 	// Get all remote functions from the class. This includes parents super functions and child override functions.
 	TArray<UFunction*> AllClassFunctions;
