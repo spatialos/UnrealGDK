@@ -1,7 +1,7 @@
 # Map travel
 <%(TOC)%>
 
-This topic is intended for advanced users only. Before reading this page, make sure you are familiar with the Unreal documentation on [Map travel](https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling).
+This topic is for advanced users only. Before reading this page, make sure you are familiar with the Unreal documentation on [Map travel](https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling).
 
 ## APlayerController::ClientTravel
 
