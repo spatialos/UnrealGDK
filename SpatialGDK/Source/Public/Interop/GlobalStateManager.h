@@ -34,11 +34,11 @@ public:
 	void ApplyDeploymentMapURLData(const Worker_ComponentData& Data);
 	void ApplyUpdate(const Worker_ComponentUpdate& Update);
 	void ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update);
-	void LinkExistingSingletonActors();
+	void LinkAllExistingSingletonActors();
 	void ExecuteInitialSingletonActorReplication();
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
 
-	bool IsSingletonEntity(Worker_EntityId EntityId);
+	bool IsSingletonEntity(Worker_EntityId EntityId) const;
 
 	void QueryGSM(bool bRetryUntilAcceptingPlayers);
 	void RetryQueryGSM(bool bRetryUntilAcceptingPlayers);
@@ -49,13 +49,15 @@ public:
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
 
+	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
+
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers = false;
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
 private:
-	void GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel);
+	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
 
 private:

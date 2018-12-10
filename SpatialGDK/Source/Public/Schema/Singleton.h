@@ -29,23 +29,4 @@ namespace improbable
 			return Data;
 		}
 	};
-
-	struct ServerOnlySingleton : Component
-	{
-		static const Worker_ComponentId ComponentId = SpatialConstants::SERVER_ONLY_SINGLETON_COMPONENT_ID;
-
-		ServerOnlySingleton() = default;
-		ServerOnlySingleton(const Worker_ComponentData& Data)
-		{
-		}
-
-		FORCEINLINE Worker_ComponentData CreateServerOnlySingletonData()
-		{
-			Worker_ComponentData Data = {};
-			Data.component_id = ComponentId;
-			Data.schema_type = Schema_CreateComponentData(ComponentId);
-
-			return Data;
-		}
-	};
 }
