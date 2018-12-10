@@ -71,26 +71,6 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 Worker_ComponentData CreateGlobalStateManagerData()
 {
 	StringToEntityMap SingletonNameToEntityId;
-	StringToEntityMap StablyNamedPathToEntityId;
-
-	for (TObjectIterator<UClass> It; It; ++It)
-	{
-		// Find all singleton classes
-		if (!It->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-		{
-			continue;
-		}
-
-		// Ensure we don't process skeleton or reinitialized classes
-		if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive) || It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
-		{
-			continue;
-		}
-
-		// Id is initially 0 to indicate that this Singleton entity has not been created yet.
-		// When the worker authoritative over the GSM sees 0, it knows it is safe to create it.
-		SingletonNameToEntityId.Add(*It->GetPathName(), 0);
-	}
 
 	Worker_ComponentData Data;
 	Data.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
@@ -98,7 +78,6 @@ Worker_ComponentData CreateGlobalStateManagerData()
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
 	AddStringToEntityMapToSchema(ComponentObject, 1, SingletonNameToEntityId);
-	AddStringToEntityMapToSchema(ComponentObject, 2, StablyNamedPathToEntityId);
 
 	return Data;
 }
@@ -388,7 +367,7 @@ bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialTypebindingMana
 			continue;
 		}
 
-		if (Actor->IsEditorOnly() || !TypebindingManager->IsSupportedClass(ActorClass) || !Actor->GetIsReplicated())
+		if (Actor->IsEditorOnly() || Actor->IsPendingKill() || !TypebindingManager->IsSupportedClass(ActorClass) || !Actor->GetIsReplicated())
 		{
 			continue;
 		}

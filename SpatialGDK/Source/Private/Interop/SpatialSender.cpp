@@ -144,14 +144,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
-		if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
-		{
-			ComponentDatas.Add(improbable::ServerOnlySingleton().CreateServerOnlySingletonData());
-		}
-		else
-		{
-			ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
-		}
+		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
 	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;

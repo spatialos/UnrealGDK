@@ -93,8 +93,71 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 	}
 }
 
-void UGlobalStateManager::LinkExistingSingletonActors()
+void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
 {
+	const Worker_EntityId* SingletonEntityIdPtr = SingletonNameToEntityId.Find(SingletonActorClass->GetPathName());
+	if (SingletonEntityIdPtr == nullptr)
+	{
+		// No entry in SingletonNameToEntityId for this singleton class type
+		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor %s failed to find entry"), *SingletonActorClass->GetName());
+		return;
+	}
+
+	const Worker_EntityId SingletonEntityId = *SingletonEntityIdPtr;
+	if (SingletonEntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		// Singleton Entity hasn't been created yet
+		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor %s entity id is invalid"), *SingletonActorClass->GetName());
+		return;
+	}
+
+	TPair<AActor*, USpatialActorChannel*>* ActorChannelPair = NetDriver->SingletonActorChannels.Find(SingletonActorClass);
+	if (ActorChannelPair == nullptr)
+	{
+		// Dynamically spawn singleton actor if we have queued up data - ala USpatialReceiver::ReceiveActor - JIRA: 735
+
+		// No local actor has registered itself as replicatible on this worker
+		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
+		return;
+	}
+
+	AActor* SingletonActor = ActorChannelPair->Key;
+	USpatialActorChannel*& Channel = ActorChannelPair->Value;
+
+	if (Channel != nullptr)
+	{
+		// Channel has already been setup
+		UE_LOG(LogGlobalStateManager, Log, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
+		return;
+	}
+
+	// If we have previously queued up data for this entity, apply it - UNR-734
+
+	// We're now ready to start replicating this actor, create a channel
+	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+	Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
+
+	SingletonActor->Role = ROLE_SimulatedProxy;
+	SingletonActor->RemoteRole = ROLE_Authority;
+
+	// Add to entity registry
+	// This indirectly causes SetChannelActor to not create a new entity for this actor
+	NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
+
+	Channel->SetChannelActor(SingletonActor);
+
+	// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
+	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(SingletonActor->GetClass());
+	check(Info);
+
+	NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, improbable::CreateOffsetMapFromActor(SingletonActor, Info));
+
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
+}
+
+void UGlobalStateManager::LinkAllExistingSingletonActors()
+{
+	// Early out for clients as they receive Singleton Actors via the normal Unreal replicated actor flow
 	if (!NetDriver->IsServer())
 	{
 		return;
@@ -102,88 +165,77 @@ void UGlobalStateManager::LinkExistingSingletonActors()
 
 	for (const auto& Pair : SingletonNameToEntityId)
 	{
-		Worker_EntityId SingletonEntityId = Pair.Value;
-
-		// Singleton Entity hasn't been created yet
-		if (SingletonEntityId == SpatialConstants::INVALID_ENTITY_ID)
+		UClass* SingletonActorClass = LoadObject<UClass>(nullptr, *Pair.Key);
+		if (SingletonActorClass == nullptr)
 		{
+			UE_LOG(LogGlobalStateManager, Error, TEXT("Failed to find Singleton Actor Class: %s"), *Pair.Key);
 			continue;
 		}
 
-		AActor* SingletonActor = nullptr;
-		USpatialActorChannel* Channel = nullptr;
-		GetSingletonActorAndChannel(Pair.Key, SingletonActor, Channel);
-
-		// Singleton wasn't found or channel is already set up
-		if (Channel == nullptr || Channel->Actor != nullptr)
-		{
-			check(Channel == nullptr || Channel->Actor == SingletonActor);
-			continue;
-		}
-
-		SingletonActor->Role = ROLE_SimulatedProxy;
-		SingletonActor->RemoteRole = ROLE_Authority;
-
-		// Add to entity registry
-		// This indirectly causes SetChannelActor to not create a new entity for this actor
-		NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
-
-		Channel->SetChannelActor(SingletonActor);
-
-		// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
-		FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(SingletonActor->GetClass());
-		check(Info);
-
-		NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, improbable::CreateOffsetMapFromActor(SingletonActor, Info));
-
-		UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
+		LinkExistingSingletonActor(SingletonActorClass);
 	}
 }
 
-void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
+USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 {
-	for (const auto& Pair : SingletonNameToEntityId)
+	check(SingletonActor->GetIsReplicated());
+
+	UClass* SingletonActorClass = SingletonActor->GetClass();
+
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActorClass);
+	USpatialActorChannel*& Channel = ActorChannelPair.Value;
+	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
+	ActorChannelPair.Key = SingletonActor;
+
+	// Just return the channel if it's already been setup
+	if (Channel != nullptr)
 	{
-		Worker_EntityId SingletonEntityId = Pair.Value;
+		UE_LOG(LogGlobalStateManager, Log, TEXT("AddSingleton called when channel already setup: %s"), *SingletonActor->GetName());
+		return Channel;
+	}
 
-		// Entity has already been created on another server
-		if (SingletonEntityId != SpatialConstants::INVALID_ENTITY_ID)
-		{
-			continue;
-		}
-
-		AActor* SingletonActor = nullptr;
-		USpatialActorChannel* Channel = nullptr;
-		GetSingletonActorAndChannel(Pair.Key, SingletonActor, Channel);
-
-		// Class couldn't be found or channel already exists
-		if (Channel == nullptr || Channel->Actor != nullptr)
-		{
-			check(Channel == nullptr || Channel->Actor == SingletonActor);
-			continue;
-		}
-
-		if (!SingletonActor->GetIsReplicated())
-		{
-			UE_LOG(LogGlobalStateManager, Warning, TEXT("Singleton Actor %s isn't replicated! No entity will be created."), *SingletonActor->GetClass()->GetName());
-			continue;
-		}
+	bool bHasGSMAuthority = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
+	if (bHasGSMAuthority)
+	{
+		// We have control over the GSM, so can safely setup a new channel and let it allocate an entity id
+		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+		Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
 
 		SingletonActor->Role = ROLE_Authority;
 		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
 
-		// Set entity id of channel from the GlobalStateManager.
-		// If the id was 0, SetChannelActor will create the entity.
-		// If the id is not 0, it will start replicating to that entity.
-		Channel->SetChannelActor(SingletonActor);
+		// If entity id already exists for this singleton, set the actor to it
+		// Otherwise SetChannelActor will issue a new entity id request
+		if (const Worker_EntityId* SingletonEntityId = SingletonNameToEntityId.Find(SingletonActorClass->GetPathName()))
+		{
+			NetDriver->GetEntityRegistry()->AddToRegistry(*SingletonEntityId, SingletonActor);
+		}
 
-		UE_LOG(LogGlobalStateManager, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActor->GetClass()->GetName());
+		Channel->SetChannelActor(SingletonActor);
+		UE_LOG(LogGlobalStateManager, Log, TEXT("Started replication of Singleton Actor %s"), *SingletonActorClass->GetName());
+	}
+	else
+	{
+		// We don't have control over the GSM, but we may have received the entity id for this singleton already
+		LinkExistingSingletonActor(SingletonActorClass);
+	}
+
+	return Channel;
+}
+
+void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
+{
+	for (auto& ClassToActorChannel : NetDriver->SingletonActorChannels)
+	{
+		auto& ActorChannelPair = ClassToActorChannel.Value;
+		AddSingleton(ActorChannelPair.Key);
 	}
 }
 
 void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId)
 {
-	SingletonNameToEntityId[ClassName] = SingletonEntityId;
+	Worker_EntityId& EntityId = SingletonNameToEntityId.FindOrAdd(ClassName);
+	EntityId = SingletonEntityId;
 
 	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID))
 	{
@@ -201,65 +253,7 @@ void UGlobalStateManager::UpdateSingletonEntityId(const FString& ClassName, cons
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::GetSingletonActorAndChannel(FString ClassName, AActor*& OutActor, USpatialActorChannel*& OutChannel)
-{
-	OutActor = nullptr;
-	OutChannel = nullptr;
-
-	UClass* SingletonActorClass = LoadObject<UClass>(nullptr, *ClassName);
-
-	if (SingletonActorClass == nullptr)
-	{
-		UE_LOG(LogGlobalStateManager, Error, TEXT("Failed to find Singleton Actor Class."));
-		return;
-	}
-
-	if (TPair<AActor*, USpatialActorChannel*>* Pair = NetDriver->SingletonActorChannels.Find(SingletonActorClass))
-	{
-		OutActor = Pair->Key;
-		OutChannel = Pair->Value;
-		return;
-	}
-
-	// Class doesn't exist in our map, have to find actor and create channel
-	// Get Singleton Actor in world
-	TArray<AActor*> SingletonActorList;
-	UGameplayStatics::GetAllActorsOfClass(NetDriver->GetWorld(), SingletonActorClass, SingletonActorList);
-
-	if (SingletonActorList.Num() == 0)
-	{
-		UE_LOG(LogGlobalStateManager, Error, TEXT("No Singletons of type %s exist!"), *ClassName);
-		return;
-	}
-
-	if (SingletonActorList.Num() > 1)
-	{
-		UE_LOG(LogGlobalStateManager, Error, TEXT("More than one Singleton Actor exists of type %s"), *ClassName);
-		return;
-	}
-
-	OutActor = SingletonActorList[0];
-
-	// Check if actor is already processed
-	for (auto ClassChannelPair : NetDriver->SingletonActorChannels)
-	{
-		if (ClassChannelPair.Value.Key == OutActor)
-		{
-			OutChannel = ClassChannelPair.Value.Value;
-			return;
-		}
-	}
-
-	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
-
-	OutChannel = (USpatialActorChannel*)Connection->CreateChannel(CHTYPE_Actor, 1);
-	if (OutChannel)
-	{
-		NetDriver->SingletonActorChannels.Add(SingletonActorClass, TPair<AActor*, USpatialActorChannel*>(OutActor, OutChannel));
-	}
-}
-
-bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId)
+bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId) const
 {
 	for (const auto& Pair : SingletonNameToEntityId)
 	{

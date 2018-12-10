@@ -2,21 +2,10 @@
 
 To run Unreal-developed games in SpatialOS, we need to expose network-relevant class information to SpatialOS. Spatial Type (`SpatialType`) is a SpatialOS-specific [class specifier (Unreal documentation)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers) which the GDK uses to reflect this information. `SpatialType` is similar to other Unreal class specifiers, but implemented in parallel with [EClassFlags (Unreal documentation)](https://api.unrealengine.com/INT/API/Runtime/CoreUObject/UObject/EClassFlags/index.html) to minimize the possibility of conflicting changes between the standard Unreal Engine and the GDK’s Unreal Engine fork.
 
-The `SpatialType` tag allows the GDK to interoperate between the network stacks of native Unreal and SpatialOS. The tag is not inherited down class hierarchies.
-
-**Note:** For your Actor to replicate across SpatialOS it needs to have the `SpatialType` tag. 
+The `SpatialType` tag allows the GDK to interoperate between the network stacks of native Unreal and SpatialOS. The tag is inherited down class hierarchies.
 
 ## Classes with automatic SpatialType tagging
-You don’t need to **manually** tag all classes as a `SpatialType` because the GDK automatically detects and tags classes that are likely to be replicated. The auto-detection and tagging is a setting in the GDK toolbar, checked by default. This setting ensures the GDK inspects all loaded classes and tags them with `SpatialType` if they have any properties tagged with `Replicated` or `Handover`. 
-
-
-### How to disable automatic tagging
-Although automatic tagging is enabled by default, you can disable it. As the GDK is in alpha, there is a small chance that the schema won’t function correctly for a specific class. Being able to disable automatic tagging and manually specifying all your `SpatialType` classes allows you to work around this.
-<br/>To do this: 
-
-1. From the Unreal Editor menu, go to: **Edit** > **Project Settings** > **SpatialOS Unreal GDK** and click on  **Toolbar** to bring up the **SpatialOS Unreal GDK - Toolbar** configuration dialog box.
-1. In the dialogue box, under **Schema Generation**, uncheck the box against **Generate schema for all supported classes**.
-
+By default all classes are tagged with `SpatialType`. This ensures the GDK inspects all loaded classes and generates schema for them if they have any properties tagged with `Replicated` or `Handover`, or they have RPC functions. If you don't wish your class to be considered a `SpatialType` you can opt out using the `NotSpatialType` tag.
 
 ## Classes which need manual SpatialType tagging
 You need to manually tag as `SpatialType` any classes which are [Singleton Actors]({{urlRoot}}/content/singleton-actors) or only accessible to [server-workers]({{urlRoot}}/content/glossary#workers). These classes also need `SpatialType` descriptors. 
