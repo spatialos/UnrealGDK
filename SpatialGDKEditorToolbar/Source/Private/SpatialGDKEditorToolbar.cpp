@@ -446,34 +446,6 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 	}
 }
 
-void FSpatialGDKEditorToolbarModule::CacheSpatialObjects(uint32 SpatialFlags)
-{
-	// Load the asset registry module
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
-	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
-
-	// Before running the schema generator, ensure all blueprint classes that have been tagged with 'spatial' are loaded
-	TArray<FAssetData> AssetData;
-	uint32 SpatialClassFlags = 0;
-	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetFName(), AssetData, true);
-	for (auto& It : AssetData)
-	{
-		if (It.GetTagValue("SpatialClassFlags", SpatialClassFlags))
-		{
-			if (SpatialClassFlags & SpatialFlags)
-			{
-				FString ObjectPath = It.ObjectPath.ToString() + TEXT("_C");
-				UClass* LoadedClass = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
-				UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Found spatial blueprint class `%s`."), *ObjectPath);
-				if (LoadedClass == nullptr)
-				{
-					FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath)));
-				}
-			}
-		}
-	}
-}
-
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FSpatialGDKEditorToolbarModule, SpatialGDKEditorToolbar)

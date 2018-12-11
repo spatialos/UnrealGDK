@@ -73,34 +73,3 @@ void USpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 		}
 	}
 }
-
-void USpatialGDKEditor::CacheSpatialObjects(uint32 SpatialFlags, FSpatialGDKEditorErrorHandler ErrorCallback)
-{
-	// Load the asset registry module
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
-	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
-
-	// Before running the schema generator, ensure all blueprint classes that have been tagged with 'spatial' are loaded
-	TArray<FAssetData> AssetData;
-	uint32 SpatialClassFlags = 0;
-	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetFName(), AssetData, true);
-	for (auto& It : AssetData)
-	{
-		if (It.GetTagValue("SpatialClassFlags", SpatialClassFlags))
-		{
-			if (SpatialClassFlags & SpatialFlags)
-			{
-				FString ObjectPath = It.ObjectPath.ToString() + TEXT("_C");
-				UClass* LoadedClass = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
-				UE_LOG(LogSpatialGDKEditor, Log, TEXT("Found spatial blueprint class `%s`."), *ObjectPath);
-				if (LoadedClass == nullptr)
-				{
-					if (ErrorCallback.IsBound())
-					{
-						ErrorCallback.Execute(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath));
-					}
-				}
-			}
-		}
-	}
-}
