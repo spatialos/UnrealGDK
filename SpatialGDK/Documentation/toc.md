@@ -14,21 +14,21 @@
  ***
 - <h3>Concepts and terminology</h3>
 - <h3>[- SpatialOS concepts]({{urlRoot}}/content/concepts)</h3>
-- <h3>[- Spatial Type]({{urlRoot}}/content/spatial-type)</h3>
-- <h3>[- Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
-- <h3>[- Authority]({{urlRoot}}/content/authority)
-- <h3>[- Singleton Actors]({{urlRoot}}/content/singleton-actors)
-- <h3>[- Actor property handover]({{urlRoot}}/content/handover-between-server-workers)
-- <h3>[- Map travel]({{urlRoot}}/content/map-travel)</h3>
-- <h3>[- Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
-- <h3>[- Glossary]({{urlRoot}}/content/glossary)
+- <h3>[- Glossary]({{urlRoot}}/content/glossary)</h3>
+- <h3>[- Toolbar]({{urlRoot}}/content/toolbars)</h3>
 
  ***
 - <h3>Reference</h3>
-- <h3>[- Toolbar]({{urlRoot}}/content/toolbars)
-- <h3>[- Snapshots]({{urlRoot}}/content/generating-a-snapshot)
-- <h3>[- Helper scripts]({{urlRoot}}/content/helper-scripts)
-- <h3>[- Directory structure]({{urlRoot}}/content/directory-structure)
+- <h3>[- Spatial Type]({{urlRoot}}/content/spatial-type)</h3>
+- <h3>[- Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)</h3>
+- <h3>[- Authority]({{urlRoot}}/content/authority)</h3>
+- <h3>[- Singleton Actors]({{urlRoot}}/content/singleton-actors)</h3>
+- <h3>[- Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)</h3>
+- <h3>[- Map travel]({{urlRoot}}/content/map-travel)</h3>
+- <h3>[- Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)</h3>
+- <h3>[- Snapshots]({{urlRoot}}/content/generating-a-snapshot)</h3>
+- <h3>[- Helper scripts]({{urlRoot}}/content/helper-scripts)</h3>
+- <h3>[- Directory structure]({{urlRoot}}/content/directory-structure)</h3>
 
  ***
 - <h3>[- Troubleshooting]({{urlRoot}}/content/troubleshooting)</h3>
@@ -48,4 +48,3 @@
     - [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
 - <h3>+ Development roadmap</h3>
     - [Trello](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap)
-

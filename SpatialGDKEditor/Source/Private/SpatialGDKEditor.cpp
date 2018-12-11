@@ -32,9 +32,6 @@ void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
 	GeneralProjectSettings->bSpatialNetworking = true;
 
-	// Ensure all our spatial classes are loaded into memory before running
-	CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings, ErrorCallback);
-
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
 		[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()
 	{
@@ -59,9 +56,6 @@ void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 void USpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
 {
-	// Ensure all our singletons are loaded into memory before running
-	CacheSpatialObjects(SPATIALCLASS_Singleton, ErrorCallback);
-
 	const bool bSuccess = SpatialGDKGenerateSnapshot(World, SnapshotFilename);
 
 	if (bSuccess)

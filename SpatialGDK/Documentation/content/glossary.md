@@ -20,7 +20,7 @@ Note that this SpatialOS documentation assumes you are developing a SpatialOS ga
 ## GDK for Unreal terms
 
 ### Actor handover
-Handover is a new `UPROPERTY` tag. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor and entity property handover between server-workers]({{urlRoot}}/content/handover-between-server-workers.md).
+Actor handover (`handover`) is a new `UPROPERTY` tag. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor property handover between server-workers]({{urlRoot}}/content/handover-between-server-workers.md).
 
 ### Dynamic Typebindings
 To enable the network stacks of Unreal and SpatialOS to interoperate, we've implemented [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings.md). `Dynamic Typebindings` operate at runtime so your that your iteration speed is not affected despite your network code running on a completely different represenetations than Unreal's.

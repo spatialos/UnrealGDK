@@ -5,6 +5,7 @@
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
+#include "Utils/RepLayoutUtils.h"
 
 namespace Errors
 {
@@ -363,40 +364,36 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		return TypeNode;
 	}
 
+	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
+
 	// Iterate through each RPC in the class.
-	for (TFieldIterator<UFunction> RemoteFunction(Class); RemoteFunction; ++RemoteFunction)
+	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
-		if (RemoteFunction->FunctionFlags & FUNC_NetClient ||
-			RemoteFunction->FunctionFlags & FUNC_NetServer ||
-			RemoteFunction->FunctionFlags & FUNC_NetCrossServer ||
-			RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+		TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
+		RPCNode->CallerType = Class;
+		RPCNode->Function = RemoteFunction;
+		RPCNode->Type = GetRPCTypeFromFunction(RemoteFunction);
+		RPCNode->bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
+		TypeNode->RPCs.Add(RemoteFunction, RPCNode);
+
+		// Fill out parameters.
+		for (TFieldIterator<UProperty> It(RemoteFunction); It; ++It)
 		{
-			TSharedPtr<FUnrealRPC> RPCNode = MakeShared<FUnrealRPC>();
-			RPCNode->CallerType = Class;
-			RPCNode->Function = *RemoteFunction;
-			RPCNode->Type = GetRPCTypeFromFunction(*RemoteFunction);
-			RPCNode->bReliable = (RemoteFunction->FunctionFlags & FUNC_NetReliable) != 0;
-			TypeNode->RPCs.Add(*RemoteFunction, RPCNode);
+			UProperty* Parameter = *It;
 
-			// Fill out parameters.
-			for (TFieldIterator<UProperty> It(*RemoteFunction); It; ++It)
+			TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
+			PropertyNode->Property = Parameter;
+
+			// RPCs can't have static arrays as parameters so we don't have to special case for them here, however struct parameters can have static arrays in them.
+			RPCNode->Parameters.Add(Parameter, PropertyNode);
+
+			// If this RPC parameter is a struct, recurse into it.
+			if (UStructProperty* StructParameter = Cast<UStructProperty>(Parameter))
 			{
-				UProperty* Parameter = *It;
-
-				TSharedPtr<FUnrealProperty> PropertyNode = MakeShared<FUnrealProperty>();
-				PropertyNode->Property = Parameter;
-
-				// RPCs can't have static arrays as parameters so we don't have to special case for them here, however struct parameters can have static arrays in them.
-				RPCNode->Parameters.Add(Parameter, PropertyNode);
-
-				// If this RPC parameter is a struct, recurse into it.
-				if (UStructProperty* StructParameter = Cast<UStructProperty>(Parameter))
-				{
-					uint32 StructChecksum = GenerateChecksum(Parameter, ParentChecksum, 0);
-					PropertyNode->CompatibleChecksum = StructChecksum;
-					PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, StructChecksum, 0 , true);
-					PropertyNode->Type->ParentProperty = PropertyNode;
-				}
+				uint32 StructChecksum = GenerateChecksum(Parameter, ParentChecksum, 0);
+				PropertyNode->CompatibleChecksum = StructChecksum;
+				PropertyNode->Type = CreateUnrealTypeInfo(StructParameter->Struct, StructChecksum, 0 , true);
+				PropertyNode->Type->ParentProperty = PropertyNode;
 			}
 		}
 	}
@@ -609,92 +606,6 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo)
 		return true;
 	}, false);
 	return RPCsByType;
-}
-
-TArray<UClass*> GetAllSupportedComponents(UClass* Class)
-{
-	TSet<UClass*> ComponentClasses;
-
-	if (AActor* ContainerCDO = Cast<AActor>(Class->GetDefaultObject()))
-	{
-		TInlineComponentArray<UActorComponent*> NativeComponents;
-		ContainerCDO->GetComponents(NativeComponents);
-
-		for (UActorComponent* Component : NativeComponents)
-		{
-			AddComponentClassToSet(Component->GetClass(), ComponentClasses, Class);
-		}
-
-		// Components that are added in a blueprint won't appear in the CDO.
-		if (UBlueprintGeneratedClass* BGC = Cast<UBlueprintGeneratedClass>(Class))
-		{
-			if (USimpleConstructionScript* SCS = BGC->SimpleConstructionScript)
-			{
-				for (USCS_Node* Node : SCS->GetAllNodes())
-				{
-					if (Node->ComponentTemplate == nullptr)
-					{
-						continue;
-					}
-
-					AddComponentClassToSet(Node->ComponentTemplate->GetClass(), ComponentClasses, Class);
-				}
-			}
-		}
-	}
-
-	return ComponentClasses.Array();
-}
-
-void AddComponentClassToSet(UClass* ComponentClass, TSet<UClass*>& ComponentClasses, UClass* ActorClass)
-{
-	if (ComponentClass->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings))
-	{
-		if (ComponentClasses.Find(ComponentClass) == nullptr)
-		{
-			ComponentClasses.Add(ComponentClass);
-		}
-		else
-		{
-			FMessageDialog::Debugf(FText::FromString(FString::Format(*Errors::DuplicateComponentError,
-				{ *ActorClass->GetName(), *ComponentClass->GetName(), *ComponentClass->GetName() })));
-		}
-	}
-}
-
-TArray<TSharedPtr<FUnrealProperty>> GetFlatRPCParameters(TSharedPtr<FUnrealRPC> RPCNode)
-{
-	TArray<TSharedPtr<FUnrealProperty>> ParamList;
-	VisitAllProperties(RPCNode, [&ParamList](TSharedPtr<FUnrealProperty> Property)
-	{
-		// If the property is a generic struct without NetSerialize, recurse further.
-		if (Property->Property->IsA<UStructProperty>())
-		{
-			if (Cast<UStructProperty>(Property->Property)->Struct->StructFlags & STRUCT_NetSerializeNative)
-			{
-				// We want to skip recursing into structs which have NetSerialize implemented.
-				// This is to prevent flattening their internal structure, they will be represented as 'bytes'.
-				ParamList.Add(Property);
-				return false;
-			}
-
-			// For static arrays we want to stop recursion and serialize the property.
-			// Note: This will use NetSerialize or SerializeBin which is currently known to not recursively call NetSerialize on inner structs. UNR-333
-			if (Property->Property->ArrayDim > 1)
-			{
-				ParamList.Add(Property);
-				return false;
-			}
-
-			// Generic struct. Recurse further.
-			return true;
-		}
-
-		// If the RepType is not a generic struct, such as Vector3f or Plane, add to ParamList and stop recursion.
-		ParamList.Add(Property);
-		return false;
-	}, false);
-	return ParamList;
 }
 
 TArray<TSharedPtr<FUnrealProperty>> GetPropertyChain(TSharedPtr<FUnrealProperty> LeafProperty)

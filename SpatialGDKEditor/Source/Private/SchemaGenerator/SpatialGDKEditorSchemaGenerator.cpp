@@ -185,9 +185,9 @@ void SaveSchemaDatabase()
 		SchemaDatabase->MarkPackageDirty();
 
 		//NOTE: UPackage::GetMetaData() has some code where it will auto-create the metadata if it's missing
-		//		UPackage::SavePackage() calls UPackage::GetMetaData() at some point, and will cause an exception to get thrown
-		//		if the metadata auto-creation branch needs to be taken. This is the case when generating the schema from the
-		//		command line, so we just pre-empt it here.
+		// UPackage::SavePackage() calls UPackage::GetMetaData() at some point, and will cause an exception to get thrown
+		// if the metadata auto-creation branch needs to be taken. This is the case when generating the schema from the
+		// command line, so we just pre-empt it here.
 		Package->GetMetaData();
 
 		FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
@@ -200,36 +200,18 @@ void SaveSchemaDatabase()
 	});
 }
 
-TArray<UClass*> GetAllSpatialTypeClasses()
-{
-	TSet<UClass*> Classes;
-
-	for (TObjectIterator<UClass> It; It; ++It)
-	{
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings) == false)
-		{
-			continue;
-		}
-
-		// Ensure we don't process skeleton or reinitialized classes
-		if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			|| It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
-		{
-			continue;
-		}
-
-		Classes.Add(*It);
-	}
-
-	return Classes.Array();
-}
-
 TArray<UClass*> GetAllSupportedClasses()
 {
 	TSet<UClass*> Classes;
 
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
+		// User told us to ignore this class
+		if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+		{
+			continue;
+		}
+
 		UClass* SupportedClass = nullptr;
 		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt; ++PropertyIt)
 		{
@@ -248,9 +230,11 @@ TArray<UClass*> GetAllSupportedClasses()
 
 		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
 
-		// Ensure we don't process skeleton or reinitialized classes
+		// Ensure we don't process skeleton, reinitialized or classes that have since been hot reloaded
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
+			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
+			|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
+			|| SupportedClass->GetName().StartsWith(TEXT("HOTRELOADED_"), ESearchCase::CaseSensitive))
 		{
 			continue;
 		}
@@ -265,16 +249,7 @@ bool SpatialGDKGenerateSchema()
 {
 	ClassPathToSchema.Empty();
 
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
-	if(SpatialGDKSettings->bGenerateSchemaForAllSupportedClasses)
-	{
-		SchemaGeneratedClasses = GetAllSupportedClasses();	
-	}
-	else
-	{
-		SchemaGeneratedClasses = GetAllSpatialTypeClasses();
-	}
+	SchemaGeneratedClasses = GetAllSupportedClasses();
 
 	SchemaGeneratedClasses.Sort();
 
@@ -292,7 +267,7 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
-	FString SchemaOutputPath = SpatialGDKSettings->GetGeneratedSchemaOutputFolder();
+	FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
 
