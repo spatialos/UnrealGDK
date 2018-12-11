@@ -21,7 +21,7 @@ public class SpatialGDKEditor : ModuleRules
 		PrivateIncludePaths.AddRange(
 			new string[]
 			{
-				"Private"
+				"SpatialGDKEditor/Private",
 			});
 	}
 }

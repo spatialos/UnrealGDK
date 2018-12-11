@@ -4,6 +4,7 @@
 
 #include "Async.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
 
 #include "Editor.h"
 

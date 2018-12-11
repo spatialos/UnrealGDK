@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialGDKEditorGenerateSnapshot.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
 
 #include "Engine/LevelScriptActor.h"
 #include "Schema/StandardLibrary.h"
