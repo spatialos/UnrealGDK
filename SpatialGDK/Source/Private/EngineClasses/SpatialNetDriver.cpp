@@ -289,8 +289,10 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 			FWorldContext* WorldContext = GEngine->GetWorldContextFromWorld(GetWorld());
 			check(WorldContext);
 
-			FURL RedirectURL = WorldContext->LastURL;
-			RedirectURL.Map = GlobalStateManager->DeploymentMapURL;
+			FURL RedirectURL = FURL(&WorldContext->LastURL, *GlobalStateManager->DeploymentMapURL, (ETravelType)WorldContext->TravelType);
+			RedirectURL.Host = WorldContext->LastURL.Host;
+			RedirectURL.Port = WorldContext->LastURL.Port;
+			RedirectURL.Op.Append(WorldContext->LastURL.Op);
 
 			WorldContext->TravelURL = RedirectURL.ToString();
 		}
