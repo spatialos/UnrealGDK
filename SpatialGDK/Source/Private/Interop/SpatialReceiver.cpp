@@ -259,19 +259,21 @@ void USpatialReceiver::ApplyRepMovement(AActor* Actor)
 				if (RootPrimComp && !RootPrimComp->IsWelded())
 				{
 					// Hack physics state
-					FBodyInstance* BodyInstance = RootPrimComp->GetBodyInstance();
-					BodyInstance->SetBodyTransform(FTransform(Actor->ReplicatedMovement.Rotation, FRepMovement::RebaseOntoLocalOrigin(Actor->ReplicatedMovement.Location, Actor)), ETeleportType::TeleportPhysics);
-					RootPrimComp->SetPhysicsLinearVelocity(Actor->ReplicatedMovement.LinearVelocity);
-					RootPrimComp->SetPhysicsAngularVelocityInDegrees(Actor->ReplicatedMovement.AngularVelocity);
-					if (BodyInstance->IsInstanceAwake() != Actor->ReplicatedMovement.bSimulatedPhysicSleep)
+					if (FBodyInstance* BodyInstance = RootPrimComp->GetBodyInstance())
 					{
-						if (Actor->ReplicatedMovement.bSimulatedPhysicSleep)
+						BodyInstance->SetBodyTransform(FTransform(Actor->ReplicatedMovement.Rotation, FRepMovement::RebaseOntoLocalOrigin(Actor->ReplicatedMovement.Location, Actor)), ETeleportType::TeleportPhysics);
+						RootPrimComp->SetPhysicsLinearVelocity(Actor->ReplicatedMovement.LinearVelocity);
+						RootPrimComp->SetPhysicsAngularVelocityInDegrees(Actor->ReplicatedMovement.AngularVelocity);
+						if (BodyInstance->IsInstanceAwake() != (Actor->ReplicatedMovement.bSimulatedPhysicSleep != 0))
 						{
-							BodyInstance->PutInstanceToSleep();
-						}
-						else
-						{
-							BodyInstance->WakeInstance();
+							if (Actor->ReplicatedMovement.bSimulatedPhysicSleep)
+							{
+								BodyInstance->PutInstanceToSleep();
+							}
+							else
+							{
+								BodyInstance->WakeInstance();
+							}
 						}
 					}
 				}
