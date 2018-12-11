@@ -19,6 +19,6 @@ public:
 
 private:
 	void GenerateSnapshots();
-	void GenerateSnapshotForWorld(FString WorldPath);
+	void GenerateSnapshotForMap(FString WorldPath);
 	TArray<FString> GetAllMapPaths(FString InMapsPath);
 };

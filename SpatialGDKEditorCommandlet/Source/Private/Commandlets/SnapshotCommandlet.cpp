@@ -42,24 +42,24 @@ void USnapshotCommandlet::GenerateSnapshots()
 	TArray<FString> MapFilePaths = GetAllMapPaths(MapDir);
 	for (FString MapFilePath : MapFilePaths)
 	{
-		GenerateSnapshotForWorld(MapFilePath);
+		GenerateSnapshotForMap(MapFilePath);
 	}
 }
 
-void USnapshotCommandlet::GenerateSnapshotForWorld(FString WorldPath)
+void USnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
 {
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generating Snapshot for %s"), *WorldPath);
+	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generating Snapshot for %s"), *MapPath);
 
 	//Load the World
-	if (!FEditorFileUtils::LoadMap(WorldPath))
+	if (!FEditorFileUtils::LoadMap(MapPath))
 	{
-		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to load map %s"), *WorldPath);
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to load map %s"), *MapPath);
 	}
 
 	//Generate the Snapshot!
 	USpatialGDKEditor SpatialGDKEditor;
 	SpatialGDKEditor.GenerateSnapshot(
-		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(WorldPath), TEXT(".snapshot")),
+		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(MapPath), TEXT(".snapshot")),
 		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Success!")); }),
 		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed")); }),
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s"), *ErrorText); }));
