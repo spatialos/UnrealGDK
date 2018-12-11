@@ -243,9 +243,6 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
 	ShowTaskStartNotification("Started snapshot generation");
 
-	// Ensure all our singletons are loaded into memory before running
-	CacheSpatialObjects(SPATIALCLASS_Singleton);
-
 	const bool bSuccess = SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World());
 
 	if (bSuccess)
@@ -267,10 +264,6 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
 	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
 	GeneralProjectSettings->bSpatialNetworking = true;
-
-
-	// Ensure all our spatial classes are loaded into memory before running
-	CacheSpatialObjects(SPATIALCLASS_GenerateTypeBindings);
 
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema, [this, bCachedSpatialNetworking]()
 	{

@@ -194,36 +194,18 @@ void SaveSchemaDatabase()
 	});
 }
 
-TArray<UClass*> GetAllSpatialTypeClasses()
-{
-	TSet<UClass*> Classes;
-
-	for (TObjectIterator<UClass> It; It; ++It)
-	{
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_GenerateTypeBindings) == false)
-		{
-			continue;
-		}
-
-		// Ensure we don't process skeleton or reinitialized classes
-		if (It->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			|| It->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
-		{
-			continue;
-		}
-
-		Classes.Add(*It);
-	}
-
-	return Classes.Array();
-}
-
 TArray<UClass*> GetAllSupportedClasses()
 {
 	TSet<UClass*> Classes;
 
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
+		// User told us to ignore this class
+		if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+		{
+			continue;
+		}
+
 		UClass* SupportedClass = nullptr;
 		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt; ++PropertyIt)
 		{
@@ -242,9 +224,11 @@ TArray<UClass*> GetAllSupportedClasses()
 
 		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
 
-		// Ensure we don't process skeleton or reinitialized classes
+		// Ensure we don't process skeleton, reinitialized or classes that have since been hot reloaded
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive))
+			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
+			|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
+			|| SupportedClass->GetName().StartsWith(TEXT("HOTRELOADED_"), ESearchCase::CaseSensitive))
 		{
 			continue;
 		}
@@ -259,16 +243,7 @@ bool SpatialGDKGenerateSchema()
 {
 	ClassPathToSchema.Empty();
 
-	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
-
-	if(SpatialGDKToolbarSettings->bGenerateSchemaForAllSupportedClasses)
-	{
-		SchemaGeneratedClasses = GetAllSupportedClasses();	
-	}
-	else
-	{
-		SchemaGeneratedClasses = GetAllSpatialTypeClasses();
-	}
+	SchemaGeneratedClasses = GetAllSupportedClasses();
 
 	SchemaGeneratedClasses.Sort();
 
@@ -286,7 +261,7 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
-	FString SchemaOutputPath = SpatialGDKToolbarSettings->GetGeneratedSchemaOutputFolder();
+	FString SchemaOutputPath = GetDefault<USpatialGDKEditorToolbarSettings>()->GetGeneratedSchemaOutputFolder();
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
 

@@ -1,10 +1,15 @@
-## Cross-server RPCs
+# Cross-server RPCs
 <%(TOC)%>
-In Unreal’s native client-server architecture, your game server holds the canonical state of the whole game world. As there is a single game server, it has authority over all server Actors and so it is able to invoke and execute functions on Actors unhindered. 
+
+In native-Unreal networking, [RPCs (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs) are functions which either the client or the server use to send messages to each other over a network connection. 
+
+Cross-server RPCs are a custom solution to take advantage of the SpatialOS distributed server architecture.
+
+In Unreal’s native single-client architecture, your game server holds the canonical state of the whole game world. As there is a single game server, it has complete authority over all server Actors and so it is able to invoke and execute functions on Actors unhindered. 
 
 In SpatialOS games, there can be more than one server; these multiple servers are known as “server-workers”. (Find out more about server-workers as well as “client-workers” in the [glossary]({{urlRoot}}/content/glossary#workers).) As a SpatialOS game runs across many server-workers, SpatialOS server-workers have the concept of “worker authority” - where only one server-worker at a time is able to invoke and execute functions on Actors. (Find out more about authority in the [glossary]({{urlRoot}}/content/glossary#authority).)
 
-As Unreal expects there to be only one server, rather than several servers, the GDK has a custom solution to take advantage of the SpatialOS distributed server architecture. This involves handling the scenario where a server-worker attempts to invoke an RPC on an Actor that another server-worker has authority over. This custom solution is the cross-server RPC. The GDK offers cross-server RPC in addition to support for the [native RPC types that Unreal provides (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs).
+As Unreal expects there to be only one server, rather than several servers, the GDK has a custom solution to take advantage of the SpatialOS distributed server architecture. This involves handling the scenario where a server-worker attempts to invoke an RPC on an Actor that another server-worker has [authority]({{urlRoot}}/content/glossary#workers) over. This custom solution is the cross-server RPC. The GDK offers cross-server RPC in addition to support for the [native RPC types that Unreal provides (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs).
 
 When a cross-server RPC is invoked by a non-authoritative server-worker, SpatialOS routes the execution through the SpatialOS [Runtime]({{urlRoot}}/content/glossary#spatialos-runtime) to the authoritative server-worker - this authoritative server-worker executes the RPC.
 

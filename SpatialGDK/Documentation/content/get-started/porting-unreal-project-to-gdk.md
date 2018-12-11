@@ -151,29 +151,6 @@ The steps below reference and introduce the following SpatialOS terms: [workers]
     >
     > **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to check for any divergence between GDK behavior and the default Unreal behavior. This can be helpful in isolating the root cause of issues you see while debugging. However, you lose access to the multiserver features of the GDK in Unreal default networking mode which may lead to erratic behavior.
 
-1. Specify Singleton Actors  
-The GDK uses [Singleton Actors]({{urlRoot}}/content/singleton-actors) - these are server-side authoritative Actors which are a single source of truth for both operations and data across a multiserver simulation; `GameState` and `GameMode` are examples of this. To tell SpatialOS how to replicate Singleton Actors, the GDK  has a `UCLASS` [specifier (Unreal docs)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers). You add this to classes you want to be Singleton Actors.  
-
-    > If you have not yet created a `GameState` or `GameMode` for your game and are still using the defaults, you must either create Blueprints or native `GameState` and `GameMode` class(es) now.  
-
-    1. If your game's `GameState` is a `C++` class, locate it's header and mark it as a Public Singleton by modifying the `UCLASS` specifier as shown:
-        ```
-        UCLASS(SpatialType=Singleton)
-        ```
-        If your game's `GameState` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the Spatial Description text box enter `Singleton`.
-
-        ![blueprint-gamestate-singleton]({{assetRoot}}assets/screen-grabs/blueprint-gamestate-singleton.png)
-
-    1. If your game's `GameMode` is a `C++` class, locate it's header and mark it as a Private Singleton by modifying the `UCLASS` specifier as shown:
-        ```
-        UCLASS(SpatialType=(Singleton,ServerOnly))
-        ```
-       If your game's `GameMode` is a Blueprint class, you need to open and edit it in the Blueprint Editor: from the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options**, click the **Advanced** drop down and check **Spatial Type**, in the **Spatial Description** text box enter `Singleton,ServerOnly`.
-
-        ![blueprint-gamemode-singleton-serveronly]({{assetRoot}}assets/screen-grabs/blueprint-gamemode-singleton-serveronly.png)
-
-   Marking these Singleton Actor classes as [Spatial Type]({{urlRoot}}/content/glossary#spatial-type) enables them to work with SpatialOS as [schema]({{urlRoot}}/content/glossary#schema) will now be generated for them. 
-
 ### 6. Generate schema and a snapshot
 You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate a [snapshot]({{urlRoot}}/content/glossary#snapshot) to get your game's deployment started. To do this:
 
