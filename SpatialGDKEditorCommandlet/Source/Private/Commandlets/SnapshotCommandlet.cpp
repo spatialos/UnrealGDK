@@ -22,11 +22,11 @@ int32 USnapshotCommandlet::Main(const FString& Args)
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Snapshot Generation Commandlet Started"));
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Incoming Arguments: %s"), *Args);
 
-	//NOTE: For future use, if snapshot generation configuration at the command line is desired
-	//TArray<FString> Tokens;
-	//TArray<FString> Switches;
-	//TMap<FString, FString> Params;
-	//ParseCommandLine(*Args, Tokens, Switches, Params);
+	// NOTE: For future use, if snapshot generation configuration at the command line is desired
+	// TArray<FString> Tokens;
+	// TArray<FString> Switches;
+	// TMap<FString, FString> Params;
+	// ParseCommandLine(*Args, Tokens, Switches, Params);
 
 	GenerateSnapshots();
 
