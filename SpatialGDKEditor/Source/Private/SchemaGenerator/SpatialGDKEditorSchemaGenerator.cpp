@@ -184,7 +184,7 @@ void SaveSchemaDatabase()
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
 
-		//NOTE: UPackage::GetMetaData() has some code where it will auto-create the metadata if it's missing
+		// NOTE: UPackage::GetMetaData() has some code where it will auto-create the metadata if it's missing
 		// UPackage::SavePackage() calls UPackage::GetMetaData() at some point, and will cause an exception to get thrown
 		// if the metadata auto-creation branch needs to be taken. This is the case when generating the schema from the
 		// command line, so we just pre-empt it here.
