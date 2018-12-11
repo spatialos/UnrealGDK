@@ -14,7 +14,7 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
-#include "Schema/Rotation.h"
+#include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
@@ -129,7 +129,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::METADATA_COMPONENT_ID:
 	case SpatialConstants::POSITION_COMPONENT_ID:
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-	case SpatialConstants::ROTATION_COMPONENT_ID:
+	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
@@ -138,7 +138,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyData(Op.data);
-		GlobalStateManager->LinkExistingSingletonActors();
+		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
  		GlobalStateManager->ApplyDeploymentMapURLData(Op.data);
@@ -185,7 +185,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		}
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
-		// and set our RemoteRole to be ROLE_AutonomousProxy iff the actor has an owning connection.
+		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
 			if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
@@ -249,7 +249,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	check(EntityRegistry);
 
 	improbable::Position* Position = StaticComponentView->GetComponentData<improbable::Position>(EntityId);
-	improbable::Rotation* Rotation = StaticComponentView->GetComponentData<improbable::Rotation>(EntityId);
+	improbable::SpawnData* SpawnData = StaticComponentView->GetComponentData<improbable::SpawnData>(EntityId);
 	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
 	if (UnrealMetadata == nullptr)
@@ -260,7 +260,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId))
 	{
-		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it."), *EntityActor->GetName());
+		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker"), \
+			*EntityActor->GetName());
 
 		// Assume SimulatedProxy until we've been delegated Authority
 		bool bAuthority = StaticComponentView->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
@@ -273,6 +274,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				EntityActor->RemoteRole = ROLE_AutonomousProxy;
 			}
 		}
+
+		// If we're a singleton, apply the data, regardless of authority - JIRA: 736
 
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Received create entity response op for %lld"), EntityId);
 	}
@@ -288,6 +291,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
 		if (NetDriver->IsServer() && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 		{
+			// If GSM doesn't know of this entity id, queue up data for that entity id, and resolve it when the actor is created - UNR-734
+			// If the GSM does know of this entity id, we could just create the actor instead - UNR-735
 			return;
 		}
 
@@ -313,7 +318,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			EntityActor = CreateActor(Position, Rotation, ActorClass, true);
+			EntityActor = CreateActor(Position, SpawnData, ActorClass, true);
 
 			// Don't have authority over Actor until SpatialOS delegates authority
 			EntityActor->Role = ROLE_SimulatedProxy;
@@ -352,7 +357,18 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
-			EntityActor->FinishSpawning(FTransform(Rotation->ToFRotator(), SpawnLocation));
+			EntityActor->FinishSpawning(FTransform(SpawnData->Rotation, SpawnLocation));
+
+			// Imitate the behavior in UPackageMapClient::SerializeNewActor.
+			const float Epsilon = 0.001f;
+			if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
+			{
+				EntityActor->PostNetReceiveVelocity(SpawnData->Velocity);
+			}
+			if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
+			{
+				EntityActor->SetActorScale3D(SpawnData->Scale);
+			}
 		}
 
 		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(ActorClass);
@@ -487,10 +503,9 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable::Rotation* Rotation, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred)
 {
 	FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
-	FRotator InitialRotation = Rotation->ToFRotator();
 	AActor* NewActor = nullptr;
 	if (ActorClass)
 	{
@@ -504,7 +519,7 @@ AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable
 
 		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 
-		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(InitialRotation, SpawnLocation), SpawnInfo);
+		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
 		check(NewActor);
 	}
 
@@ -575,7 +590,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::METADATA_COMPONENT_ID:
 	case SpatialConstants::POSITION_COMPONENT_ID:
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-	case SpatialConstants::ROTATION_COMPONENT_ID:
+	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
@@ -583,7 +598,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyUpdate(Op.update);
-		GlobalStateManager->LinkExistingSingletonActors();
+		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);

@@ -65,6 +65,18 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	ConnectionParams.worker_type = WorkerTypeCStr.Get();
 	ConnectionParams.enable_protocol_logging_at_startup = ReceptionistConfig.EnableProtocolLoggingAtStartup;
 
+	FString FinalProtocolLoggingPrefix;
+	if (!ReceptionistConfig.ProtocolLoggingPrefix.IsEmpty())
+	{
+		FinalProtocolLoggingPrefix = ReceptionistConfig.ProtocolLoggingPrefix;
+	}
+	else
+	{
+		FinalProtocolLoggingPrefix = ReceptionistConfig.WorkerId;
+	}
+	FTCHARToUTF8 ProtocolLoggingPrefixCStr(*FinalProtocolLoggingPrefix);
+	ConnectionParams.protocol_logging.log_prefix = ProtocolLoggingPrefixCStr.Get();
+
 	Worker_ComponentVtable DefaultVtable = {};
 	ConnectionParams.component_vtable_count = 0;
 	ConnectionParams.default_component_vtable = &DefaultVtable;

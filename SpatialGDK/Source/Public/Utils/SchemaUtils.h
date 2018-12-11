@@ -167,6 +167,50 @@ inline StringToEntityMap GetStringToEntityMapFromSchema(Schema_Object* Object, S
 	return Map;
 }
 
+inline void AddRotatorToSchema(Schema_Object* Object, Schema_FieldId Id, FRotator Rotator)
+{
+	Schema_Object* RotatorObject = Schema_AddObject(Object, Id);
+
+	Schema_AddFloat(RotatorObject, 1, Rotator.Pitch);
+	Schema_AddFloat(RotatorObject, 2, Rotator.Yaw);
+	Schema_AddFloat(RotatorObject, 3, Rotator.Roll);
+}
+
+inline FRotator GetRotatorFromSchema(Schema_Object* Object, Schema_FieldId Id)
+{
+	FRotator Rotator;
+
+	Schema_Object* RotatorObject = Schema_GetObject(Object, Id);
+
+	Rotator.Pitch = Schema_GetFloat(RotatorObject, 1);
+	Rotator.Yaw = Schema_GetFloat(RotatorObject, 2);
+	Rotator.Roll = Schema_GetFloat(RotatorObject, 3);
+
+	return Rotator;
+}
+
+inline void AddVectorToSchema(Schema_Object* Object, Schema_FieldId Id, FVector Vector)
+{
+	Schema_Object* VectorObject = Schema_AddObject(Object, Id);
+
+	Schema_AddFloat(VectorObject, 1, Vector.X);
+	Schema_AddFloat(VectorObject, 2, Vector.Y);
+	Schema_AddFloat(VectorObject, 3, Vector.Z);
+}
+
+inline FVector GetVectorFromSchema(Schema_Object* Object, Schema_FieldId Id)
+{
+	FVector Vector;
+
+	Schema_Object* VectorObject = Schema_GetObject(Object, Id);
+
+	Vector.X = Schema_GetFloat(VectorObject, 1);
+	Vector.Y = Schema_GetFloat(VectorObject, 2);
+	Vector.Z = Schema_GetFloat(VectorObject, 3);
+
+	return Vector;
+}
+
 inline void DeepCopySchemaObject(Schema_Object* Source, Schema_Object* Target)
 {
 	uint32_t Length = Schema_GetWriteBufferLength(Source);

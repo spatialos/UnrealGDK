@@ -14,8 +14,8 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Schema/Interest.h"
-#include "Schema/Rotation.h"
 #include "Schema/Singleton.h"
+#include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -96,8 +96,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::ROTATION_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
@@ -141,20 +141,13 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
-	ComponentDatas.Add(improbable::Rotation(Actor->GetActorRotation()).CreateRotationData());
+	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
 	ComponentDatas.Add(improbable::Interest().CreateInterestData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
-		if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
-		{
-			ComponentDatas.Add(improbable::ServerOnlySingleton().CreateServerOnlySingletonData());
-		}
-		else
-		{
-			ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
-		}
+		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
 	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
@@ -340,20 +333,6 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::SendRotationUpdate(Worker_EntityId EntityId, const FRotator& Rotation)
-{
-#if !UE_BUILD_SHIPPING
-	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::ROTATION_COMPONENT_ID))
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send Rotation component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
-		return;
-	}
-#endif
-
-	Worker_ComponentUpdate Update = improbable::Rotation(Rotation).CreateRotationUpdate();
-	Connection->SendComponentUpdate(EntityId, &Update);
-}
-
 void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 {
 	if (!Params->TargetObject.IsValid())
@@ -378,7 +357,23 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		return;
 	}
 
-	FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Params->Function);
+	const FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Params->Function);
+
+	// We potentially have a parent function and need to find the child function.
+	// This exists as it's possible in blueprints to explicitly call the parent function.
+	if (RPCInfo == nullptr)
+	{
+		for (auto It = Info->RPCInfoMap.CreateConstIterator(); It; ++It)
+		{
+			if (It.Key()->GetName() == Params->Function->GetName())
+			{
+				// Matching child function found. Use this for the remote function call.
+				RPCInfo = &It.Value();
+				break;
+			}
+		}
+	}
+
 	check(RPCInfo);
 
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;

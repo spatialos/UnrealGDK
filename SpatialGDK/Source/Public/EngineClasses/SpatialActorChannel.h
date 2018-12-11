@@ -114,7 +114,6 @@ private:
 	bool IsStablyNamedEntity();
 
 	void UpdateSpatialPosition();
-	void UpdateSpatialRotation();
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
@@ -134,7 +133,6 @@ private:
 	class USpatialReceiver* Receiver;
 
 	FVector LastSpatialPosition;
-	FRotator LastSpatialRotation;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains

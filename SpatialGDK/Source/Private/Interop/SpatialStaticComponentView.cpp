@@ -4,8 +4,8 @@
 
 #include "Schema/Component.h"
 #include "Schema/Interest.h"
-#include "Schema/Rotation.h"
 #include "Schema/Singleton.h"
+#include "Schema/SpawnData.h"
 
 Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
@@ -43,8 +43,8 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
 		Data = MakeUnique<improbable::ComponentStorage<improbable::Persistence>>(Op.data);
 		break;
-	case SpatialConstants::ROTATION_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::Rotation>>(Op.data);
+	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
+		Data = MakeUnique<improbable::ComponentStorage<improbable::SpawnData>>(Op.data);
 		break;
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 		Data = MakeUnique<improbable::ComponentStorage<improbable::Singleton>>(Op.data);
@@ -78,9 +78,6 @@ void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdate
 		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
 		Component = GetComponentData<improbable::Position>(Op.entity_id);
-		break;
-	case SpatialConstants::ROTATION_COMPONENT_ID:
-		Component = GetComponentData<improbable::Rotation>(Op.entity_id);
 		break;
 	default:
 		return;
