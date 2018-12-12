@@ -153,16 +153,17 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
 		}
 
-		FString UseExternalIpOption = FString(LoadedWorld->URL.GetOption(TEXT("useExternalIpForBridge"), TEXT("")));
-		if(!UseExternalIpOption.IsEmpty())
+		bool bHasUseExternalIpOption = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
+		if (bHasUseExternalIpOption)
 		{
-			if (UseExternalIpOption.Equals(TEXT("true"), ESearchCase::IgnoreCase))
-			{
-				Connection->ReceptionistConfig.UseExternalIp = true;
-			}
-			else if (UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase))
+			FString UseExternalIpOption = LoadedWorld->URL.GetOption(TEXT("useExternalIpForBridge"), TEXT(""));
+			if (UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase))
 			{
 				Connection->ReceptionistConfig.UseExternalIp = false;
+			}
+			else
+			{
+				Connection->ReceptionistConfig.UseExternalIp = true;
 			}
 		}
 	}
