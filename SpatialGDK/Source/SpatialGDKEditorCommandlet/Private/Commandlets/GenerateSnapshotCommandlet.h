@@ -4,15 +4,15 @@
 
 #include "Commandlets/Commandlet.h"
 
-#include "SnapshotCommandlet.generated.h"
+#include "GenerateSnapshotCommandlet.generated.h"
 
 UCLASS()
-class USnapshotCommandlet : public UCommandlet
+class UGenerateSnapshotCommandlet : public UCommandlet
 {
 	GENERATED_BODY()
 
 public:
-	USnapshotCommandlet();
+	UGenerateSnapshotCommandlet();
 
 public:
 	virtual int32 Main(const FString& Params) override;

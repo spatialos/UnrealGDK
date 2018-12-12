@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SchemaCommandlet.h"
+#include "GenerateSchemaCommandlet.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
 
-USchemaCommandlet::USchemaCommandlet()
+UGenerateSchemaCommandlet::UGenerateSchemaCommandlet()
 {
 	IsClient = false;
 	IsEditor = false;
@@ -12,7 +12,7 @@ USchemaCommandlet::USchemaCommandlet()
 	LogToConsole = true;
 }
 
-int32 USchemaCommandlet::Main(const FString& Args)
+int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Commandlet Started"));
 

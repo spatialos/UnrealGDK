@@ -4,15 +4,15 @@
 
 #include "Commandlets/Commandlet.h"
 
-#include "SchemaCommandlet.generated.h"
+#include "GenerateSchemaCommandlet.generated.h"
 
 UCLASS()
-class USchemaCommandlet : public UCommandlet
+class UGenerateSchemaCommandlet : public UCommandlet
 {
 	GENERATED_BODY()
 
 public:
-	USchemaCommandlet();
+	UGenerateSchemaCommandlet();
 
 public:
 	virtual int32 Main(const FString& Params) override;

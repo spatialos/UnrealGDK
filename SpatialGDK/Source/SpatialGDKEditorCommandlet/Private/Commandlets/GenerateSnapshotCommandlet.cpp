@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SnapshotCommandlet.h"
+#include "GenerateSnapshotCommandlet.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
 
@@ -9,7 +9,7 @@
 #include "Engine/World.h"
 #include "FileHelpers.h"
 
-USnapshotCommandlet::USnapshotCommandlet()
+UGenerateSnapshotCommandlet::UGenerateSnapshotCommandlet()
 {
 	IsClient = false;
 	IsEditor = true;
@@ -17,7 +17,7 @@ USnapshotCommandlet::USnapshotCommandlet()
 	LogToConsole = true;
 }
 
-int32 USnapshotCommandlet::Main(const FString& Args)
+int32 UGenerateSnapshotCommandlet::Main(const FString& Args)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Snapshot Generation Commandlet Started"));
 
@@ -34,7 +34,7 @@ int32 USnapshotCommandlet::Main(const FString& Args)
 	return 0;
 }
 
-void USnapshotCommandlet::GenerateSnapshots()
+void UGenerateSnapshotCommandlet::GenerateSnapshots()
 {
 	FString MapDir = TEXT("/Game");
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Searching %s for maps"), *MapDir);
@@ -45,7 +45,7 @@ void USnapshotCommandlet::GenerateSnapshots()
 	}
 }
 
-void USnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
+void UGenerateSnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generating Snapshot for %s"), *MapPath);
 
@@ -64,7 +64,7 @@ void USnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s"), *ErrorText); }));
 }
 
-TArray<FString> USnapshotCommandlet::GetAllMapPaths(FString InMapsPath)
+TArray<FString> UGenerateSnapshotCommandlet::GetAllMapPaths(FString InMapsPath)
 {
 	UObjectLibrary* ObjectLibrary = UObjectLibrary::CreateLibrary(UWorld::StaticClass(), false, true);
 	ObjectLibrary->LoadAssetDataFromPath(InMapsPath);
