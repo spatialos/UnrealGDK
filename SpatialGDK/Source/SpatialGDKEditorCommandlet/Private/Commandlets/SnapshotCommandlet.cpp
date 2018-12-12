@@ -49,13 +49,13 @@ void USnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generating Snapshot for %s"), *MapPath);
 
-	//Load the World
+	// Load the World
 	if (!FEditorFileUtils::LoadMap(MapPath))
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to load map %s"), *MapPath);
 	}
 
-	//Generate the Snapshot!
+	// Generate the Snapshot!
 	USpatialGDKEditor SpatialGDKEditor;
 	SpatialGDKEditor.GenerateSnapshot(
 		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(MapPath), TEXT(".snapshot")),
