@@ -75,7 +75,6 @@ TArray<FString> USnapshotCommandlet::GetAllMapPaths(FString InMapsPath)
 	TArray<FString> Paths = TArray<FString>();
 	for (FAssetData& AssetData : AssetDatas)
 	{
-
 		FString Path = AssetData.PackageName.ToString();
 		Paths.Add(Path);
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("\t%s"), *Path);
