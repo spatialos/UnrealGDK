@@ -3,10 +3,10 @@
 #include "SnapshotCommandlet.h"
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
-#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 
-#include "Runtime/Engine/Classes/Engine/ObjectLibrary.h"
-#include "Runtime/Engine/Classes/Engine/World.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/ObjectLibrary.h"
+#include "Engine/World.h"
 #include "FileHelpers.h"
 
 USnapshotCommandlet::USnapshotCommandlet()
