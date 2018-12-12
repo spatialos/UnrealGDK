@@ -27,4 +27,6 @@ protected:
 	TSet<FName> CategoriesToRedirect;
 	USpatialWorkerConnection* Connection;
 	FString Name;
+
+	bool bLogToSpatial;
 };
