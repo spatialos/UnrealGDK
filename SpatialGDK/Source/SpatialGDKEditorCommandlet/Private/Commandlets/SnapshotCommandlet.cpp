@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SnapshotCommandlet.h"
-#include "SpatialGDKEditorCommandletPluginPrivate.h"
+#include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 

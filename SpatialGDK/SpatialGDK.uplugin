@@ -20,6 +20,11 @@
       "Type": "Runtime",
       "LoadingPhase": "Default",
       "WhitelistPlatforms": [ "Win64", "Linux", "XboxOne", "PS4" ]
+    },
+    {
+      "Name": "SpatialGDKEditorCommandlet",
+      "Type": "Editor",
+      "LoadingPhase": "Default"
     }
   ],
   "Plugins": [

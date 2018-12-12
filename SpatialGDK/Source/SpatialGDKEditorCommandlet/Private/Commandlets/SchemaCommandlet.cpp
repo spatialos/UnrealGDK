@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SchemaCommandlet.h"
-#include "SpatialGDKEditorCommandletPluginPrivate.h"
+#include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
 
 USchemaCommandlet::USchemaCommandlet()
