@@ -153,7 +153,19 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
 		}
 
-		Connection->ReceptionistConfig.UseExternalIp = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
+		bool bHasUseExternalIpOption = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
+		if (bHasUseExternalIpOption)
+		{
+			FString UseExternalIpOption = LoadedWorld->URL.GetOption(TEXT("useExternalIpForBridge"), TEXT(""));
+			if (UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase))
+			{
+				Connection->ReceptionistConfig.UseExternalIp = false;
+			}
+			else
+			{
+				Connection->ReceptionistConfig.UseExternalIp = true;
+			}
+		}
 	}
 
 	Connect();
@@ -277,10 +289,11 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 			// Extract map name and options
 			FWorldContext* WorldContext = GEngine->GetWorldContextFromWorld(GetWorld());
 			check(WorldContext);
-			
+
 			FURL RedirectURL = FURL(&WorldContext->LastURL, *GlobalStateManager->DeploymentMapURL, (ETravelType)WorldContext->TravelType);
 			RedirectURL.Host = WorldContext->LastURL.Host;
 			RedirectURL.Port = WorldContext->LastURL.Port;
+			RedirectURL.Op.Append(WorldContext->LastURL.Op);
 
 			WorldContext->TravelURL = RedirectURL.ToString();
 		}
