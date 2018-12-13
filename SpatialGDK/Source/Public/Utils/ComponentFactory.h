@@ -18,7 +18,7 @@ class UProperty;
 
 enum EReplicatedPropertyGroup : uint32;
 
-using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
+using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<TWeakObjectPtr<const UObject>>>;
 
 namespace improbable
 {
@@ -44,7 +44,7 @@ private:
 
 	bool FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, FClassInfo* Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
+	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
 
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;

@@ -11,7 +11,7 @@ class USpatialPackageMapClient;
 class SPATIALGDK_API FSpatialNetBitWriter : public FNetBitWriter
 {
 public:
-	FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<const UObject*>& InUnresolvedObjects);
+	FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects);
 
 	using FArchive::operator<<; // For visibility of the overloads we don't override
 
@@ -22,5 +22,5 @@ public:
 protected:
 	void SerializeObjectRef(FUnrealObjectRef& ObjectRef);
 
-	TSet<const UObject*>& UnresolvedObjects;
+	TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects;
 };

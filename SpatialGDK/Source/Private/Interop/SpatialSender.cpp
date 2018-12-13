@@ -241,7 +241,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo* Info, USp
 			{
 				ResetOutgoingUpdate(Channel, Object, Handle, /* bIsHandover */ false);
 
-				if (TSet<const UObject*>* UnresolvedObjects = UnresolvedObjectsMap.Find(Handle))
+				if (TSet<TWeakObjectPtr<const UObject>>* UnresolvedObjects = UnresolvedObjectsMap.Find(Handle))
 				{
 					QueueOutgoingUpdate(Channel, Object, Handle, *UnresolvedObjects, /* bIsHandover */ false);
 				}
@@ -255,7 +255,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo* Info, USp
 		{
 			ResetOutgoingUpdate(Channel, Object, Handle, /* bIsHandover */ true);
 
-			if (TSet<const UObject*>* UnresolvedObjects = HandoverUnresolvedObjectsMap.Find(Handle))
+			if (TSet<TWeakObjectPtr<const UObject>>* UnresolvedObjects = HandoverUnresolvedObjectsMap.Find(Handle))
 			{
 				QueueOutgoingUpdate(Channel, Object, Handle, *UnresolvedObjects, /* bIsHandover */ true);
 			}
@@ -478,7 +478,7 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	UE_LOG(LogSpatialSender, Log, TEXT("Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
-	for (const UObject* UnresolvedObject : *Unresolved)
+	for (TWeakObjectPtr<const UObject>& UnresolvedObject : *Unresolved)
 	{
 		FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
 		FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
@@ -501,7 +501,7 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	}
 }
 
-void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects, bool bIsHandover)
+void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, bool bIsHandover)
 {
 	check(DependentChannel);
 	check(ReplicatedObject);
@@ -514,7 +514,7 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	FChannelToHandleToUnresolved& PropertyToUnresolved = bIsHandover ? HandoverPropertyToUnresolved : RepPropertyToUnresolved;
 	FOutgoingRepUpdates& ObjectToUnresolved = bIsHandover ? HandoverObjectToUnresolved : RepObjectToUnresolved;
 
-	FUnresolvedEntry Unresolved = MakeShared<TSet<const UObject*>>();
+	FUnresolvedEntry Unresolved = MakeShared<TSet<TWeakObjectPtr<const UObject>>>();
 	*Unresolved = UnresolvedObjects;
 
 	FHandleToUnresolved& HandleToUnresolved = PropertyToUnresolved.FindOrAdd(ChannelObjectPair);
@@ -524,7 +524,7 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	}
 	HandleToUnresolved.Add(Handle, Unresolved);
 
-	for (const UObject* UnresolvedObject : UnresolvedObjects)
+	for (const TWeakObjectPtr<const UObject>& UnresolvedObject : UnresolvedObjects)
 	{
 		FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
 		check(!AnotherHandleToUnresolved.Find(Handle));
@@ -559,16 +559,16 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 
 	OutEntityId = TargetObjectRef.Entity;
 
-	TSet<const UObject*> UnresolvedObjects;
+	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
 
-	for (const UObject* Object : UnresolvedObjects)
+	for (TWeakObjectPtr<const UObject> Object : UnresolvedObjects)
 	{
 		// Take the first unresolved object
-		OutUnresolvedObject = Object;
+		OutUnresolvedObject = Object.Get();
 		Schema_DestroyCommandRequest(CommandRequest.schema_type);
 		return CommandRequest;
 	}
@@ -597,16 +597,16 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 
 	OutEntityId = TargetObjectRef.Entity;
 
-	TSet<const UObject*> UnresolvedObjects;
+	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
 
-	for (const UObject* Object : UnresolvedObjects)
+	for (TWeakObjectPtr<const UObject> Object : UnresolvedObjects)
 	{
 		// Take the first unresolved object
-		OutUnresolvedObject = Object;
+		OutUnresolvedObject = Object.Get();
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 		return ComponentUpdate;
 	}

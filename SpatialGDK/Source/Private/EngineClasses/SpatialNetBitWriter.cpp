@@ -8,7 +8,7 @@
 #include "UObject/improbable/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 
-FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<const UObject*>& InUnresolvedObjects)
+FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects)
 	: FNetBitWriter(InPackageMap, 0)
 	, UnresolvedObjects(InUnresolvedObjects)
 {}
