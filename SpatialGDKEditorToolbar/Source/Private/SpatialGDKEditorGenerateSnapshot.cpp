@@ -442,6 +442,35 @@ bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 	return true;
 }
 
+bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
+{
+	if (!CreateSpawnerEntity(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Spawner in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		return false;
+	}
+
+	if (!CreateGlobalStateManager(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		return false;
+	}
+
+	if (!CreatePlaceholders(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		return false;
+	}
+
+	if (!CreateStartupActors(OutputStream, World))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Startup Actors in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		return false;
+	}
+
+	return true;
+}
+
 bool SpatialGDKGenerateSnapshot(UWorld* World)
 {
 	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
@@ -456,43 +485,20 @@ bool SpatialGDKGenerateSnapshot(UWorld* World)
 	Worker_ComponentVtable DefaultVtable{};
 	Worker_SnapshotParameters Parameters{};
 	Parameters.default_component_vtable = &DefaultVtable;
+
+	bool bSuccess = true;
 	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*SavePath), &Parameters);
 	if (const char* SchemaError = Worker_SnapshotOutputStream_GetError(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error creating SnapshotOutputStream: %s"), UTF8_TO_TCHAR(SchemaError));
-		Worker_SnapshotOutputStream_Destroy(OutputStream);
-		return false;
+		bSuccess = false;
 	}
-
-	if (!CreateSpawnerEntity(OutputStream))
+	else
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Spawner in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		Worker_SnapshotOutputStream_Destroy(OutputStream);
-		return false;
-	}
-
-	if (!CreateGlobalStateManager(OutputStream))
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating GlobalStateManager in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		Worker_SnapshotOutputStream_Destroy(OutputStream);
-		return false;
-	}
-
-	if (!CreatePlaceholders(OutputStream))
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		Worker_SnapshotOutputStream_Destroy(OutputStream);
-		return false;
-	}
-
-	if (!CreateStartupActors(OutputStream, World))
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Startup Actors in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		Worker_SnapshotOutputStream_Destroy(OutputStream);
-		return false;
+		bSuccess = FillSnapshot(OutputStream, World);
 	}
 
 	Worker_SnapshotOutputStream_Destroy(OutputStream);
 
-	return true;
+	return bSuccess;
 }
