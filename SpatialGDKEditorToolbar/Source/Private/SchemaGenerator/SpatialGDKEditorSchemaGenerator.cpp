@@ -184,12 +184,14 @@ void SaveSchemaDatabase()
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
 
-		FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
-		bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
+		FString FilePath = FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension());
+		bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FilePath, GLog);
 
 		if (!bSuccess)
 		{
-			FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to %s!"), *PackagePath)));
+			FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
+			FPaths::MakePlatformFilename(FullPath);
+			FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to '%s'! Please make sure the file is writeable."), *FullPath)));
 		}
 	});
 }
@@ -275,7 +277,11 @@ bool SpatialGDKGenerateSchema()
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
 	{
-		PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath);
+		if (!PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not clean the generated schema directory '%s'! Please make sure the directory and the files inside are writeable."), *SchemaOutputPath);
+			return false;
+		}
 		PlatformFile.CreateDirectory(*SchemaOutputPath);
 	}
 
