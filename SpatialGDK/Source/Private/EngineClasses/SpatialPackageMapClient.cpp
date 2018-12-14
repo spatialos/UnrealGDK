@@ -97,7 +97,7 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const Worker_Entit
 	return GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
-UObject* USpatialPackageMapClient::GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)
+TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)
 {
 	FNetworkGUID NetGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef);
 	if (NetGUID.IsValid() && !NetGUID.IsDefault())

@@ -115,8 +115,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		const FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
 		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
-		UObject* Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
-		if (Subobject == nullptr)
+		TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
+		if (!Subobject.IsValid())
 		{
 			continue;
 		}
@@ -186,9 +186,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	{
 		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		UObject* Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
-		if (Subobject == nullptr)
+		TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
+		if (!Subobject.IsValid())
 		{
+			UE_LOG(LogSpatialSender, Error, TEXT("Tried to generate initial replication state for an invalid sub-object. Object may have been deleted or is PendingKill."));
 			continue;
 		}
 
@@ -199,17 +200,17 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		UnresolvedObjectsMap.Empty();
 		HandoverUnresolvedObjectsMap.Empty();
 
-		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 		ComponentDatas.Append(ActorSubobjectDatas);
 
 		for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
 		{
-			QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
+			QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
 		}
 
 		for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
 		{
-			QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
+			QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 		}
 
 		for (int32 RPCType = SCHEMA_ClientRPC; RPCType < SCHEMA_Count; RPCType++)
