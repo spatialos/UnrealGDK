@@ -300,6 +300,48 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 		// Make sure we update our known entity id for the GSM when we receive authority.
 		GlobalStateManagerEntityId = CurrentEntityID;
 		SetAcceptingPlayers(true);
+
+		SetCanBeginPlay(true);
+		BecomeAuthoritativeOverAllActors();
+	}
+}
+
+void UGlobalStateManager::SetCanBeginPlay(bool bCanBeginPlay)
+{
+
+}
+
+void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
+{
+	UWorld* World = NetDriver->World;
+	for (ULevel* Level : World->Levels)
+	{
+		for (int32 ActorIndex = 0; ActorIndex < Actors.Num(); ActorIndex++)
+		{
+			AActor* Actor = Actors[ActorIndex];
+			if (Actor != nullptr && Actor->IsPendingKill())
+			{
+				if (Actor->IsNetStartupActor())
+				{
+					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
+				}
+			}
+		}
+	}
+}
+
+void UGlobalStateManager::TriggerBeginPlay()
+{
+	UWorld* World = NetDriver->World;
+	AGameModeBase* const GameMode = World->GetAuthGameMode();
+	if (GameMode)
+	{
+		GameMode->StartPlay();
+		if (World->GetAISystem())
+		{
+			World->GetAISystem()->StartPlay();
+		}
 	}
 }
 

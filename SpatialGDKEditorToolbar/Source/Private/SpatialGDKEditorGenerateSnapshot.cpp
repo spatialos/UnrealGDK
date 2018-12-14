@@ -462,11 +462,11 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 		return false;
 	}
 
-	if (!CreateStartupActors(OutputStream, World))
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Startup Actors in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		return false;
-	}
+	//if (!CreateStartupActors(OutputStream, World))
+	//{
+	//	UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Startup Actors in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+	//	return false;
+	//}
 
 	return true;
 }
