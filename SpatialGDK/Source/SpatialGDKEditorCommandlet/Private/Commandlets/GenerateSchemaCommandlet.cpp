@@ -23,7 +23,7 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 	//ParseCommandLine(*Args, Tokens, Switches, Params);
 
 	//Generate Schema!
-	USpatialGDKEditor SpatialGDKEditor;
+	FSpatialGDKEditor SpatialGDKEditor;
 	SpatialGDKEditor.GenerateSchema(
 		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!")); }),
 		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Failed")); }),

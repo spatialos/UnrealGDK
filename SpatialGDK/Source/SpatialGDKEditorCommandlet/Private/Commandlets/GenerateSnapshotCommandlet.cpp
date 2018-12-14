@@ -56,7 +56,7 @@ void UGenerateSnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
 	}
 
 	// Generate the Snapshot!
-	USpatialGDKEditor SpatialGDKEditor;
+	FSpatialGDKEditor SpatialGDKEditor;
 	SpatialGDKEditor.GenerateSnapshot(
 		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(MapPath), TEXT(".snapshot")),
 		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Success!")); }),

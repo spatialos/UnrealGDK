@@ -13,12 +13,12 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
-USpatialGDKEditor::USpatialGDKEditor()
+FSpatialGDKEditor::FSpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
 {
 }
 
-void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
+void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
 {
 	if (bSchemaGeneratorRunning)
 	{
@@ -55,7 +55,7 @@ void USpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	});
 }
 
-void USpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
+void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
 {
 	const bool bSuccess = SpatialGDKGenerateSnapshot(World, SnapshotFilename);
 

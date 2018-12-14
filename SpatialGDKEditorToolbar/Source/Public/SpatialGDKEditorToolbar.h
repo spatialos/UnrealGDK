@@ -9,7 +9,7 @@ class FToolBarBuilder;
 class FMenuBuilder;
 class FUICommandList;
 class USoundBase;
-class USpatialGDKEditor;
+class FSpatialGDKEditor;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
 
@@ -81,5 +81,5 @@ private:
 	USoundBase* ExecutionFailSound;
 
 	TFuture<bool> SchemaGeneratorResult;
-	TSharedPtr<USpatialGDKEditor> SpatialGDKEditorInstance;
+	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 };

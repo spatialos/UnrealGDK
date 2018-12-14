@@ -27,7 +27,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 	//TMap<FString, FString> Params;
 	//ParseCommandLine(*Args, Tokens, Switches, Params);
 
-	USpatialGDKEditor SpatialGDKEditor;
+	FSpatialGDKEditor SpatialGDKEditor;
 	GenerateSchema(SpatialGDKEditor);
 	GenerateSnapshots(SpatialGDKEditor);
 
@@ -36,7 +36,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 	return 0;
 }
 
-void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchema(USpatialGDKEditor& SpatialGDKEditor)
+void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchema(FSpatialGDKEditor& SpatialGDKEditor)
 {
 	SpatialGDKEditor.GenerateSchema(
 		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!")); }),
@@ -46,7 +46,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchema(USpatialGDKEditor& Sp
 		FPlatformProcess::Sleep(0.1f);
 }
 
-void UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshots(USpatialGDKEditor& SpatialGDKEditor)
+void UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshots(FSpatialGDKEditor& SpatialGDKEditor)
 {
 	FString MapDir = TEXT("/Game");
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Searching %s for maps"), *MapDir);
@@ -76,7 +76,7 @@ TArray<FString> UGenerateSchemaAndSnapshotsCommandlet::GetAllMapPaths(FString In
 	return Paths;
 }
 
-void UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshotForMap(USpatialGDKEditor& SpatialGDKEditor, FString MapPath)
+void UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshotForMap(FSpatialGDKEditor& SpatialGDKEditor, FString MapPath)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generating Snapshot for %s"), *MapPath);
 

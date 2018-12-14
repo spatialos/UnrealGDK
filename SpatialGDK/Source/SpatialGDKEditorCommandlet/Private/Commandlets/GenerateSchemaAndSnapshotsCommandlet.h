@@ -6,7 +6,7 @@
 
 #include "GenerateSchemaAndSnapshotsCommandlet.generated.h"
 
-class USpatialGDKEditor;
+class FSpatialGDKEditor;
 
 UCLASS()
 class UGenerateSchemaAndSnapshotsCommandlet : public UCommandlet
@@ -20,8 +20,8 @@ public:
 	virtual int32 Main(const FString& Params) override;
 
 private:
-	void GenerateSchema(USpatialGDKEditor& SpatialGDKEditor);
-	void GenerateSnapshots(USpatialGDKEditor& SpatialGDKEditor);
+	void GenerateSchema(FSpatialGDKEditor& SpatialGDKEditor);
+	void GenerateSnapshots(FSpatialGDKEditor& SpatialGDKEditor);
 	TArray<FString> GetAllMapPaths(FString InMapsPath);
-	void GenerateSnapshotForMap(USpatialGDKEditor& SpatialGDKEditor, FString WorldPath);
+	void GenerateSnapshotForMap(FSpatialGDKEditor& SpatialGDKEditor, FString WorldPath);
 };

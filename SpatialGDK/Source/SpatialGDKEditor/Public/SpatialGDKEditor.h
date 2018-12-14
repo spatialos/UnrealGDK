@@ -8,10 +8,10 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
 
 DECLARE_DELEGATE_OneParam(FSpatialGDKEditorErrorHandler, FString);
 
-class SPATIALGDKEDITOR_API USpatialGDKEditor
+class SPATIALGDKEDITOR_API FSpatialGDKEditor
 {
 public:
-	USpatialGDKEditor();
+	FSpatialGDKEditor();
 
 	void GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
