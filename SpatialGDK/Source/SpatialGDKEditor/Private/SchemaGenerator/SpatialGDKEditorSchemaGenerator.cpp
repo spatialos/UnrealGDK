@@ -227,9 +227,6 @@ TArray<UClass*> GetAllSupportedClasses()
 		// No replicated/handover properties found
 		if (SupportedClass == nullptr) continue;
 
-		// Doesn't let us save the schema database
-		if (SupportedClass->IsChildOf<ALevelScriptActor>()) continue;
-
 		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
 
 		// Ensure we don't process skeleton, reinitialized or classes that have since been hot reloaded
