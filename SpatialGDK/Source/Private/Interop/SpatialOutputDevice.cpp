@@ -10,6 +10,9 @@ FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnectio
 	Name = LoggerName;
 	FilterLevel = ELogVerbosity::Warning;
 
+	const TCHAR* CommandLine = FCommandLine::Get();
+	bLogToSpatial = !FParse::Param(CommandLine, TEXT("NoLogToSpatial"));
+
 	FOutputDeviceRedirector::Get()->AddOutputDevice(this);
 }
 
@@ -25,7 +28,7 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 		return;
 	}
 
-	if (Connection->IsConnected())
+	if (bLogToSpatial && Connection->IsConnected())
 	{
 		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), TCHAR_TO_UTF8(*Name), TCHAR_TO_UTF8(InData));
 	}
