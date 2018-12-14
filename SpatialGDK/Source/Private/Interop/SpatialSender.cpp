@@ -480,17 +480,26 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 
 	for (TWeakObjectPtr<const UObject>& UnresolvedObject : *Unresolved)
 	{
-		FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
-		FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
-
-		OtherHandleToUnresolved.Remove(Handle);
-		if (OtherHandleToUnresolved.Num() == 0)
+		if (UnresolvedObject.IsValid())
 		{
-			ChannelToUnresolved.Remove(ChannelObjectPair);
-			if (ChannelToUnresolved.Num() == 0)
+			FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
+			FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
+
+			OtherHandleToUnresolved.Remove(Handle);
+			if (OtherHandleToUnresolved.Num() == 0)
 			{
-				ObjectToUnresolved.Remove(UnresolvedObject);
+				ChannelToUnresolved.Remove(ChannelObjectPair);
+				if (ChannelToUnresolved.Num() == 0)
+				{
+					ObjectToUnresolved.Remove(UnresolvedObject);
+				}
 			}
+		}
+		else
+		{
+			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
+			Unresolved->Remove(UnresolvedObject);
+			// TODO: Also remove it from other maps which reference the object by handle etc.
 		}
 	}
 
@@ -526,12 +535,21 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 
 	for (const TWeakObjectPtr<const UObject>& UnresolvedObject : UnresolvedObjects)
 	{
-		FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
-		check(!AnotherHandleToUnresolved.Find(Handle));
-		AnotherHandleToUnresolved.Add(Handle, Unresolved);
+		if (UnresolvedObject.IsValid())
+		{
+			FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
+			check(!AnotherHandleToUnresolved.Find(Handle));
+			AnotherHandleToUnresolved.Add(Handle, Unresolved);
 
-		// Following up on the previous log: listing the unresolved objects
-		UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
+			// Following up on the previous log: listing the unresolved objects
+			UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
+		}
+		else
+		{
+			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
+			Unresolved->Remove(UnresolvedObject);
+			// TODO: Also remove it from other maps which reference the object by handle etc.
+		}
 	}
 }
 
@@ -567,10 +585,19 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 
 	for (TWeakObjectPtr<const UObject> Object : UnresolvedObjects)
 	{
-		// Take the first unresolved object
-		OutUnresolvedObject = Object.Get();
-		Schema_DestroyCommandRequest(CommandRequest.schema_type);
-		return CommandRequest;
+		if (Object.IsValid())
+		{
+			// Take the first unresolved object
+			OutUnresolvedObject = Object.Get();
+			Schema_DestroyCommandRequest(CommandRequest.schema_type);
+			return CommandRequest;
+		}
+		else
+		{
+			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
+			UnresolvedObjects.Remove(Object);
+			// TODO: Also remove it from other maps which reference the object by handle etc.
+		}
 	}
 
 	AddPayloadToSchema(RequestObject, 1, PayloadWriter);
@@ -605,10 +632,19 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 
 	for (TWeakObjectPtr<const UObject> Object : UnresolvedObjects)
 	{
-		// Take the first unresolved object
-		OutUnresolvedObject = Object.Get();
-		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
-		return ComponentUpdate;
+		if (Object.IsValid())
+		{
+			// Take the first unresolved object
+			OutUnresolvedObject = Object.Get();
+			Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
+			return ComponentUpdate;
+		}
+		else
+		{
+			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
+			UnresolvedObjects.Remove(Object);
+			// TODO: Also remove it from other maps which reference the object by handle etc.
+		}
 	}
 
 	AddPayloadToSchema(EventData, 1, PayloadWriter);
