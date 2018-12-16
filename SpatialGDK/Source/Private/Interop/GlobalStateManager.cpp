@@ -16,6 +16,9 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
+#include "GameFramework/GameModeBase.h"
+#include "EngineUtils.h"
+#include "Engine/Classes/AI/AISystemBase.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
@@ -29,33 +32,40 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 	Receiver = InNetDriver->Receiver;
 	TimerManager = InTimerManager;
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
+
+	bAcceptingPlayers = false;
+
+	bCanBeginPlay = false;
+	bTriggeredBeginPlay = false;
 }
 
-void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
+void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 	SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, 1);
 }
 
-void UGlobalStateManager::ApplyDeploymentMapURLData(const Worker_ComponentData& Data)
+void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 	
 	// Set the Deployment Map URL.
-	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID) == 1)
-	{
-		SetDeploymentMapURL(GetStringFromSchema(ComponentObject, 1));
-	}
+	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, 1));
 
 	// Set the AcceptingPlayers state.
-	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
-	{
-		bool bDataAcceptingPlayers = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
-		ApplyAcceptingPlayersUpdate(bDataAcceptingPlayers);
-	}
+	bool bDataAcceptingPlayers = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+	ApplyAcceptingPlayersUpdate(bDataAcceptingPlayers);
 }
 
-void UGlobalStateManager::ApplyUpdate(const Worker_ComponentUpdate& Update)
+void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentData& Data)
+{
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+	bool bCanBeginPlayData = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID);
+	ApplyCanBeginPlayUpdate(bCanBeginPlayData);
+}
+
+void UGlobalStateManager::ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
@@ -90,6 +100,28 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 
 		// Tell the SpatialNetDriver that AcceptingPlayers has changed.
 		NetDriver->OnAcceptingPlayersChanged(bAcceptingPlayersUpdate);
+	}
+}
+
+void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update)
+{
+	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID) == 1)
+	{
+		bool bCanBeginPlayUpdate = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID);
+		ApplyCanBeginPlayUpdate(bCanBeginPlayUpdate);
+	}
+}
+
+void UGlobalStateManager::ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate)
+{
+	bCanBeginPlay = bCanBeginPlayUpdate;
+
+	// For now, this will only be called on non-authoritative workers.
+	if (bCanBeginPlay)
+	{
+		TriggerBeginPlay();
 	}
 }
 
@@ -291,6 +323,26 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
+void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
+{
+	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
+	{
+		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to set CanBeginPlay on the GSM but this worker does not have authority."));
+		return;
+	}
+
+	Worker_ComponentUpdate Update = {};
+	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
+	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+	// Set CanBeginPlay on GSM
+	Schema_AddBool(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID, (uint8_t)bInCanBeginPlay);
+
+	bCanBeginPlay = bInCanBeginPlay;
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+}
+
 void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM has changed. This worker %s authority."),  bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
@@ -299,33 +351,27 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 	{
 		// Make sure we update our known entity id for the GSM when we receive authority.
 		GlobalStateManagerEntityId = CurrentEntityID;
-		SetAcceptingPlayers(true);
 
 		SetCanBeginPlay(true);
 		BecomeAuthoritativeOverAllActors();
+		TriggerBeginPlay();
+
+		// Start accepting players only AFTER we've triggered BeginPlay
+		SetAcceptingPlayers(true);
 	}
-}
-
-void UGlobalStateManager::SetCanBeginPlay(bool bCanBeginPlay)
-{
-
 }
 
 void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 {
-	UWorld* World = NetDriver->World;
-	for (ULevel* Level : World->Levels)
+	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
 	{
-		for (int32 ActorIndex = 0; ActorIndex < Actors.Num(); ActorIndex++)
+		AActor* Actor = *It;
+		if (Actor != nullptr && Actor->IsPendingKill())
 		{
-			AActor* Actor = Actors[ActorIndex];
-			if (Actor != nullptr && Actor->IsPendingKill())
+			if (Actor->IsNetStartupActor())
 			{
-				if (Actor->IsNetStartupActor())
-				{
-					Actor->Role = ROLE_Authority;
-					Actor->RemoteRole = ROLE_SimulatedProxy;
-				}
+				Actor->Role = ROLE_Authority;
+				Actor->RemoteRole = ROLE_SimulatedProxy;
 			}
 		}
 	}
@@ -333,6 +379,13 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
+	if (bTriggeredBeginPlay)
+	{
+		UE_LOG(LogGlobalStateManager, Error, TEXT("Tried to trigger BeginPlay twice! This should never happen"));
+		return;
+	}
+
+	// Copied from UWorld::BeginPlay
 	UWorld* World = NetDriver->World;
 	AGameModeBase* const GameMode = World->GetAuthGameMode();
 	if (GameMode)
@@ -343,6 +396,8 @@ void UGlobalStateManager::TriggerBeginPlay()
 			World->GetAISystem()->StartPlay();
 		}
 	}
+
+	bTriggeredBeginPlay = true;
 }
 
 // Queries for the GlobalStateManager in the deployment.
@@ -407,7 +462,7 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQ
 		Worker_ComponentData Data = Op.results[0].components[i];
 		if (Data.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 		{
-			ApplyDeploymentMapURLData(Data);
+			ApplyDeploymentMapData(Data);
 		}
 	}
 }

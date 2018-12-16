@@ -27,13 +27,16 @@ class SPATIALGDK_API UGlobalStateManager : public UObject
 	GENERATED_BODY()
 
 public:
-
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
 
-	void ApplyData(const Worker_ComponentData& Data);
-	void ApplyDeploymentMapURLData(const Worker_ComponentData& Data);
-	void ApplyUpdate(const Worker_ComponentUpdate& Update);
+	void ApplySingletonManagerData(const Worker_ComponentData& Data);
+	void ApplyDeploymentMapData(const Worker_ComponentData& Data);
+	void ApplyStartupActorManagerData(const Worker_ComponentData& Data);
+
+	void ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update);
 	void ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update);
+	void ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update);
+
 	void LinkAllExistingSingletonActors();
 	void ExecuteInitialSingletonActorReplication();
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
@@ -47,20 +50,27 @@ public:
 	void SetDeploymentMapURL(const FString& MapURL);
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
+	void SetCanBeginPlay(bool bInCanBeginPlay);
+
 	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
+
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 
-	FString DeploymentMapURL;
-	bool bAcceptingPlayers = false;
-
 	Worker_EntityId GlobalStateManagerEntityId;
+
+	// Deployment Map Component
+	FString DeploymentMapURL;
+	bool bAcceptingPlayers;
 
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
+	void ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate);
 
-private:
+	void BecomeAuthoritativeOverAllActors();
+	void TriggerBeginPlay();
+
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
@@ -76,4 +86,9 @@ private:
 	StringToEntityMap SingletonNameToEntityId;
 
 	FTimerManager* TimerManager;
+
+	// Startup Actor Manager Component
+	bool bCanBeginPlay;
+
+	bool bTriggeredBeginPlay;
 };

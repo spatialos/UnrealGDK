@@ -136,11 +136,14 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyData(Op.data);
+		GlobalStateManager->ApplySingletonManagerData(Op.data);
 		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
- 		GlobalStateManager->ApplyDeploymentMapURLData(Op.data);
+ 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
+		return;
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+ 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
 		return;
 	default:
 		Data = MakeShared<improbable::DynamicComponent>(Op.data);
@@ -166,7 +169,6 @@ void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 	HandleActorAuthority(Op);
 }
 
-// TODO UNR-640 - This function needs a pass once we introduce soft handover (AUTHORITY_LOSS_IMMINENT)
 void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 {
 	if (NetDriver->IsServer())
@@ -596,11 +598,13 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyUpdate(Op.update);
+		GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
 		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		NetDriver->GlobalStateManager->ApplyStartupActorManagerUpdate(Op.update);
 		return;
 	}
 

@@ -68,7 +68,7 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &SpawnerEntity) != 0;
 }
 
-Worker_ComponentData CreateGlobalStateManagerData()
+Worker_ComponentData CreateSingletonManagerData()
 {
 	StringToEntityMap SingletonNameToEntityId;
 
@@ -84,20 +84,29 @@ Worker_ComponentData CreateGlobalStateManagerData()
 
 Worker_ComponentData CreateDeploymentData()
 {
-	// Construct the Deployment component data object.
 	Worker_ComponentData DeploymentData;
 	DeploymentData.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	DeploymentData.schema_type = Schema_CreateComponentData(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
 	Schema_Object* DeploymentDataObject = Schema_GetComponentDataFields(DeploymentData.schema_type);
 
-	// Add the MapURL schema field.
 	Schema_Object* MapURLObject = Schema_AddObject(DeploymentDataObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID);
 	AddStringToSchema(MapURLObject, 1, TEXT("default")); // TODO: Fill this with the map name of the map the snapshot is being generated for.
 
-	// Add the accepting players schema field.
 	Schema_AddBool(DeploymentDataObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, false);
 
 	return DeploymentData;
+}
+
+Worker_ComponentData CreateStartupActorManagerData()
+{
+	Worker_ComponentData StartupActorManagerData;
+	StartupActorManagerData.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
+	StartupActorManagerData.schema_type = Schema_CreateComponentData(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	Schema_Object* StartupActorManagerObject = Schema_GetComponentDataFields(StartupActorManagerData.schema_type);
+
+	Schema_AddBool(StartupActorManagerObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID, false);
+
+	return StartupActorManagerData;
 }
 
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
@@ -114,12 +123,14 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
-	Components.Add(CreateGlobalStateManagerData());
+	Components.Add(CreateSingletonManagerData());
 	Components.Add(CreateDeploymentData());
+	Components.Add(CreateStartupActorManagerData());
 	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
