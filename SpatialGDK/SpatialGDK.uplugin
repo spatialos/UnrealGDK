@@ -22,7 +22,7 @@
       "WhitelistPlatforms": [ "Win64", "Linux", "XboxOne", "PS4" ]
     },
     {
-      "Name": "SpatialGDKEditorCommandlet",
+      "Name": "SpatialGDKEditorToolbar",
       "Type": "Editor",
       "LoadingPhase": "Default"
     }

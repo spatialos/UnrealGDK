@@ -9,21 +9,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
         bFasterWithoutUnity = true;
 
-        PrivateIncludePaths.AddRange(
-            new string[]
-            {
-                "Private",
-            }
-        );
-
-        PublicDependencyModuleNames.AddRange(
-            new string[]
-            {
-                "Core",
-                "Json",
-                "JsonUtilities"
-            }
-        );
+        PrivateIncludePaths.Add("SpatialGDKEditorToolbar/Private");
 
         PrivateDependencyModuleNames.AddRange(
             new string[]

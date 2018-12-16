@@ -45,7 +45,7 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 {
 	TSharedRef<FSlateStyleSet> Style =
 		MakeShareable(new FSlateStyleSet("SpatialGDKEditorToolbarStyle"));
-	Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialGDKEditorToolbar")->GetBaseDir() /
+	Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialGDK")->GetBaseDir() /
 		TEXT("Resources"));
 
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot",

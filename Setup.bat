@@ -53,7 +53,7 @@ call :MarkStartOfBlock "Setup variables"
 
     set BUILD_DIR=%~dp0SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
-    set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\Public\WorkerSdk
+    set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
     set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library

@@ -26,7 +26,6 @@ private:
 	FDirectoryPath GeneratedSchemaOutputFolder;
 
 public:
-	UFUNCTION()
 	FORCEINLINE FString GetSpatialOSDirectory() const
 	{
 		return SpatialOSDirectory.Path.IsEmpty()
@@ -34,7 +33,6 @@ public:
 			: SpatialOSDirectory.Path;
 	}
 
-	UFUNCTION()
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
 		return GeneratedSchemaOutputFolder.Path.IsEmpty()
@@ -42,7 +40,6 @@ public:
 			: GeneratedSchemaOutputFolder.Path;
 	}
 
-	UFUNCTION()
 	FORCEINLINE FString GetSpatialOSSnapshotPath() const
 	{
 		return SpatialOSSnapshotPath.Path.IsEmpty()
@@ -50,6 +47,5 @@ public:
 			: SpatialOSSnapshotPath.Path;
 	}
 
-	UFUNCTION()
 	virtual FString ToString();
 };
