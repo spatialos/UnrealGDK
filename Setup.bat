@@ -54,6 +54,7 @@ call :MarkStartOfBlock "Setup variables"
     set BUILD_DIR=%~dp0SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
     set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
+    set WORKER_SDK_DIR_OLD=%~dp0SpatialGDK\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
@@ -75,6 +76,7 @@ if "%PINNED_CORE_SDK_VERSION%" == "%CACHED_CORE_SDK_VERSION%" (
 call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
+    rd /s /q "%WORKER_SDK_DIR_OLD%"     2>nul
     rd /s /q "%BINARIES_DIR%"           2>nul
     rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
 call :MarkEndOfBlock "Clean folders"
