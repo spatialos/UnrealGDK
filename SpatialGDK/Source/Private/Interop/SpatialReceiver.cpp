@@ -319,13 +319,19 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			EntityActor = CreateActor(Position, SpawnData, ActorClass, true);
+			if (UnrealMetadata->StaticPath.IsEmpty())
+			{
+				EntityActor = CreateActor(Position, SpawnData, ActorClass, true);
+				bDoingDeferredSpawn = true;
+			}
+			else
+			{
+				EntityActor = Cast<AActor>(StaticLoadObject(ActorClass, World, *UnrealMetadata->StaticPath));
+			}
 
 			// Don't have authority over Actor until SpatialOS delegates authority
 			EntityActor->Role = ROLE_SimulatedProxy;
 			EntityActor->RemoteRole = ROLE_Authority;
-
-			bDoingDeferredSpawn = true;
 
 			// Get the net connection for this actor.
 			if (NetDriver->IsServer())
@@ -355,22 +361,26 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Add to entity registry.
 		EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
+		FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
+		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 		if (bDoingDeferredSpawn)
 		{
-			FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
-			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
 			EntityActor->FinishSpawning(FTransform(SpawnData->Rotation, SpawnLocation));
+		}
+		else
+		{
+			EntityActor->SetActorTransform(FTransform(SpawnData->Rotation, SpawnLocation));
+		}
 
-			// Imitate the behavior in UPackageMapClient::SerializeNewActor.
-			const float Epsilon = 0.001f;
-			if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
-			{
-				EntityActor->PostNetReceiveVelocity(SpawnData->Velocity);
-			}
-			if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
-			{
-				EntityActor->SetActorScale3D(SpawnData->Scale);
-			}
+		// Imitate the behavior in UPackageMapClient::SerializeNewActor.
+		const float Epsilon = 0.001f;
+		if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
+		{
+			EntityActor->PostNetReceiveVelocity(SpawnData->Velocity);
+		}
+		if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
+		{
+			EntityActor->SetActorScale3D(SpawnData->Scale);
 		}
 
 		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(ActorClass);

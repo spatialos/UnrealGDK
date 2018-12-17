@@ -366,7 +366,7 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
 	{
 		AActor* Actor = *It;
-		if (Actor != nullptr && Actor->IsPendingKill())
+		if (Actor != nullptr && !Actor->IsPendingKill())
 		{
 			if (Actor->IsNetStartupActor())
 			{

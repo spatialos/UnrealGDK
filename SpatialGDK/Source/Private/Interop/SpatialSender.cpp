@@ -134,13 +134,23 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		});
 	}
 
+	// Only want to have a static path if this Actor is stably named.
+	// We use this to tell if we should create an Actor or link a pre-existing Actor
+	// when receiving the AddEntityOp.
+	FString StaticPath;
+	if (Actor->IsFullNameStableForNetworking())
+	{
+		StaticPath = Actor->GetPathName(nullptr);
+		GEngine->NetworkRemapPath(NetDriver, StaticPath, true);
+	}
+
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(improbable::Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata(StaticPath, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{

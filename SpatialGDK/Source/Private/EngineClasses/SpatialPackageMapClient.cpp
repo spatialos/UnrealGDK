@@ -286,7 +286,6 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 		}
 		Iterator = &Iterator->Outer.GetValue();
 	}
-
 }
 
 FUnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
