@@ -195,7 +195,9 @@ void SaveSchemaDatabase()
 
 		if (!bSuccess)
 		{
-			FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to %s!"), *PackagePath)));
+			FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
+			FPaths::MakePlatformFilename(FullPath);
+			FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to '%s'! Please make sure the file is writeable."), *FullPath)));
 		}
 	});
 }
@@ -281,7 +283,11 @@ bool SpatialGDKGenerateSchema()
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
 	{
-		PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath);
+		if (!PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not clean the generated schema directory '%s'! Please make sure the directory and the files inside are writeable."), *SchemaOutputPath);
+			return false;
+		}
 		PlatformFile.CreateDirectory(*SchemaOutputPath);
 	}
 

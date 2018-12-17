@@ -442,22 +442,8 @@ bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 	return true;
 }
 
-bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
+bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 {
-	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), SnapshotFilename);
-	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
-	{
-		return false;
-	}
-
-	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *SavePath);
-
-	Worker_ComponentVtable DefaultVtable{};
-	Worker_SnapshotParameters Parameters{};
-	Parameters.default_component_vtable = &DefaultVtable;
-	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*SavePath), &Parameters);
-
 	if (!CreateSpawnerEntity(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Spawner in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
@@ -485,4 +471,36 @@ bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
 	Worker_SnapshotOutputStream_Destroy(OutputStream);
 
 	return true;
+}
+
+bool SpatialGDKGenerateSnapshot(UWorld* World)
+{
+	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), Settings->GetSpatialOSSnapshotFile());
+	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
+	{
+		return false;
+	}
+
+	UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Saving snapshot to: %s"), *SavePath);
+
+	Worker_ComponentVtable DefaultVtable{};
+	Worker_SnapshotParameters Parameters{};
+	Parameters.default_component_vtable = &DefaultVtable;
+
+	bool bSuccess = true;
+	Worker_SnapshotOutputStream* OutputStream = Worker_SnapshotOutputStream_Create(TCHAR_TO_UTF8(*SavePath), &Parameters);
+	if (const char* SchemaError = Worker_SnapshotOutputStream_GetError(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error creating SnapshotOutputStream: %s"), UTF8_TO_TCHAR(SchemaError));
+		bSuccess = false;
+	}
+	else
+	{
+		bSuccess = FillSnapshot(OutputStream, World);
+	}
+
+	Worker_SnapshotOutputStream_Destroy(OutputStream);
+
+	return bSuccess;
 }
