@@ -59,19 +59,6 @@ call :MarkStartOfBlock "Setup variables"
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
 call :MarkEndOfBlock "Setup variables"
 
-if not exist "%CORE_SDK_DIR%\core-sdk.version" goto NoCachedCoreSDK
-
-set /p CACHED_CORE_SDK_VERSION=<"%CORE_SDK_DIR%\core-sdk.version"
-if "%PINNED_CORE_SDK_VERSION%" == "%CACHED_CORE_SDK_VERSION%" (
-    echo.
-    echo CoreSDK version has not changed since the last run of Setup.bat. CoreSDK dependencies will be skipped.
-    echo If you wish to re-download them, please delete %CORE_SDK_DIR% folder and run Setup.bat again.
-    echo.
-    goto SkipCoreSDKDependencies
-)
-
-:NoCachedCoreSDK
-
 call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
@@ -114,8 +101,6 @@ call :MarkEndOfBlock "Copy standard library schema"
 call :MarkStartOfBlock "Update cached CoreSDK version"
     echo %PINNED_CORE_SDK_VERSION%>%CORE_SDK_DIR%\core-sdk.version
 call :MarkEndOfBlock "Update cached CoreSDK version"
-
-:SkipCoreSDKDependencies
 
 call :MarkStartOfBlock "Copy GDK schema"
     rd /s /q "%SCHEMA_COPY_DIR%"      2>nul
