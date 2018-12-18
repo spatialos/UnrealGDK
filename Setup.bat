@@ -6,18 +6,6 @@ pushd "%~dp0"
 
 call :MarkStartOfBlock "%~0"
 
-call :MarkStartOfBlock "Setup the git hooks"
-    if defined TEAMCITY_CAPTURE_ENV goto SkipGitHooks
-    if not exist .git\hooks goto SkipGitHooks
-
-    echo #!/bin/sh>.git\hooks\post-checkout
-    echo cmd.exe /c Setup.bat>>.git\hooks\post-checkout
-    echo #!/bin/sh>.git\hooks\post-merge
-    echo cmd.exe /c Setup.bat>>.git\hooks\post-merge
-
-    :SkipGitHooks
-call :MarkEndOfBlock "Setup the git hooks"
-
 call :MarkStartOfBlock "Check dependencies"
     set /p UNREAL_VERSION=<./SpatialGDK/Extras/unreal-engine.version
     if defined TEAMCITY_CAPTURE_ENV (
