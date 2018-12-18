@@ -146,8 +146,11 @@ bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == ERepLayoutCmdType::DynamicArray;
 }
 
-FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(UObject* Object)
+FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
+	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
+	checkf(!Object->IsPendingKill(), TEXT("Attempted to create initial rep change state on an object which is pending kill. This will fail to create a RepLayout: "), *Object->GetName());
+
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 
 	TArray<uint16> InitialRepChanged;
@@ -465,7 +468,7 @@ TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 		}
 		else
 		{
-			Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, SubobjectInfoPair.Key));
+			Object = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, SubobjectInfoPair.Key)).Get();
 		}
 
 
