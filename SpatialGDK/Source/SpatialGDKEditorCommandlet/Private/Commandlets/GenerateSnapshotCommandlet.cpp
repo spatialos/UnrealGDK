@@ -8,6 +8,7 @@
 #include "Engine/ObjectLibrary.h"
 #include "Engine/World.h"
 #include "FileHelpers.h"
+#include "Misc/Paths.h"
 
 UGenerateSnapshotCommandlet::UGenerateSnapshotCommandlet()
 {

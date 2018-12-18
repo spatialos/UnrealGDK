@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Async/Future.h"
 #include "CoreMinimal.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);

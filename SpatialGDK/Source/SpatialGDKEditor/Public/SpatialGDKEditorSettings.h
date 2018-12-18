@@ -1,7 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
+#include "Misc/Paths.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
 
