@@ -49,6 +49,7 @@ call :MarkStartOfBlock "Check dependencies"
 call :MarkEndOfBlock "Check dependencies"
 
 call :MarkStartOfBlock "Setup variables"
+    set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
     set BUILD_DIR=%~dp0SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
     set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
@@ -97,10 +98,6 @@ call :MarkStartOfBlock "Copy standard library schema"
     echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
     xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
 call :MarkEndOfBlock "Copy standard library schema"
-
-call :MarkStartOfBlock "Update cached CoreSDK version"
-    echo %PINNED_CORE_SDK_VERSION%>%CORE_SDK_DIR%\core-sdk.version
-call :MarkEndOfBlock "Update cached CoreSDK version"
 
 call :MarkStartOfBlock "Copy GDK schema"
     rd /s /q "%SCHEMA_COPY_DIR%"      2>nul
