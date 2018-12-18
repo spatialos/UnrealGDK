@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
+#include "Async/Future.h"
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 #include "Templates/SharedPointer.h"

@@ -6,12 +6,12 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
-#include "SpatialActorChannel.h"
+#include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/SpatialTypebindingManager.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
-#include "SpatialNetConnection.h"
-#include "SpatialNetDriver.h"
-#include "SpatialTypebindingManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityRegistry.h"
 #include "Utils/RepDataUtils.h"
@@ -20,7 +20,7 @@
 
 #include "EngineUtils.h"
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
-#include "UObjectIterator.h"
+#include "UObject/UObjectIterator.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>

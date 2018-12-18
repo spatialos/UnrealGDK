@@ -1,14 +1,16 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialGDKEditorToolbar.h"
 #include "Async/Async.h"
+#include "Editor.h"
 #include "EditorStyleSet.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
 #include "Misc/MessageDialog.h"
-#include "NotificationManager.h"
-#include "SNotificationList.h"
+#include "Framework/Notifications/NotificationManager.h"
+#include "Widgets/Notifications/SNotificationList.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "SpatialGDKEditorToolbarStyle.h"

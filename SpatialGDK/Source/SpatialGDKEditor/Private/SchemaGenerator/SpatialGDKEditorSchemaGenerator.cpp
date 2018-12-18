@@ -10,7 +10,7 @@
 #include "GenericPlatform/GenericPlatformProcess.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MonitoredProcess.h"
-#include "SharedPointer.h"
+#include "Templates/SharedPointer.h"
 
 #include "TypeStructure.h"
 #include "SchemaGenerator.h"

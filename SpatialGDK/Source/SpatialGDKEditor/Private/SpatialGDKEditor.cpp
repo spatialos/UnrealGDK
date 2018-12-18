@@ -2,7 +2,7 @@
 
 #include "SpatialGDKEditor.h"
 
-#include "Async.h"
+#include "Async/Async.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
 
