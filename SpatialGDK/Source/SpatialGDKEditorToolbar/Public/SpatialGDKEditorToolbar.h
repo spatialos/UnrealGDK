@@ -1,16 +1,21 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
+#include "Async/Future.h"
 #include "CoreMinimal.h"
-#include "ModuleManager.h"
+#include "Modules/ModuleManager.h"
+#include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
+#include "UObject/UnrealType.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 class FToolBarBuilder;
 class FMenuBuilder;
 class FUICommandList;
 class USoundBase;
+class FSpatialGDKEditor;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
 
 class FSpatialGDKEditorToolbarModule : public IModuleInterface, public FTickableEditorObject
 {
@@ -53,8 +58,6 @@ private:
 	void SchemaGenerateButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
-	void CacheSpatialObjects(uint32 SpatialFlags);
-
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
@@ -82,5 +85,5 @@ private:
 	USoundBase* ExecutionFailSound;
 
 	TFuture<bool> SchemaGeneratorResult;
-	bool bSchemaGeneratorRunning;
+	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 };

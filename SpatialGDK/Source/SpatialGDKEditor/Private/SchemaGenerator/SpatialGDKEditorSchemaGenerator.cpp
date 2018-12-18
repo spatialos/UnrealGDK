@@ -10,12 +10,12 @@
 #include "GenericPlatform/GenericPlatformProcess.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MonitoredProcess.h"
-#include "SharedPointer.h"
+#include "Templates/SharedPointer.h"
 
 #include "TypeStructure.h"
 #include "SchemaGenerator.h"
 #include "SpatialConstants.h"
-#include "SpatialGDKEditorToolbarSettings.h"
+#include "SpatialGDKEditorSettings.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
@@ -184,8 +184,14 @@ void SaveSchemaDatabase()
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
 
-		FString FilePath = FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension());
-		bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FilePath, GLog);
+		// NOTE: UPackage::GetMetaData() has some code where it will auto-create the metadata if it's missing
+		// UPackage::SavePackage() calls UPackage::GetMetaData() at some point, and will cause an exception to get thrown
+		// if the metadata auto-creation branch needs to be taken. This is the case when generating the schema from the
+		// command line, so we just pre-empt it here.
+		Package->GetMetaData();
+
+		FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
+		bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
 
 		if (!bSuccess)
 		{
@@ -263,7 +269,7 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
-	FString SchemaOutputPath = GetDefault<USpatialGDKEditorToolbarSettings>()->GetGeneratedSchemaOutputFolder();
+	FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
 

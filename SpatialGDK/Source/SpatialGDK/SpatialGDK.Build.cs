@@ -15,7 +15,7 @@ public class SpatialGDK : ModuleRules
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
         bFasterWithoutUnity = true;
 
-        PrivateIncludePaths.Add("Private");
+        PrivateIncludePaths.Add("SpatialGDK/Private");
 
         PublicDependencyModuleNames.AddRange(
             new string[]
@@ -37,7 +37,7 @@ public class SpatialGDK : ModuleRules
 			PublicDependencyModuleNames.Add("UnrealEd");
 		}
 
-   		var CoreSdkLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
+   		var CoreSdkLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
 
         string LibPrefix = "";
         string ImportLibSuffix = "";
