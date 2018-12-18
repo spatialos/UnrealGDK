@@ -552,7 +552,7 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 		{
 			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
 			Unresolved->Remove(UnresolvedObject);
-			// TODO: Also remove it from other maps which reference the object by handle etc.
+			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
 		}
 	}
 }
@@ -600,7 +600,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		{
 			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
 			UnresolvedObjects.Remove(Object);
-			// TODO: Also remove it from other maps which reference the object by handle etc.
+			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
 		}
 	}
 
