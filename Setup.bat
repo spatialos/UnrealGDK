@@ -13,8 +13,10 @@ call :MarkStartOfBlock "Setup the git hooks"
     rem Remove the old post-checkout hook.
     if exist .git\hooks\post-checkout del .git\hooks\post-checkout
 
+    rem Remove the old post-merge hook.
+    if exist .git\hooks\post-merge del .git\hooks\post-merge
+
     rem Add git hook to run Setup.bat when UnrealGDKVersion.bat has been updated.
-    if exist .git\hooks\post-merge goto SkipGitHooks
     echo #!/usr/bin/env bash>>.git\hooks\post-merge
     echo changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)">>.git\hooks\post-merge
     echo check_run() {>>.git\hooks\post-merge
