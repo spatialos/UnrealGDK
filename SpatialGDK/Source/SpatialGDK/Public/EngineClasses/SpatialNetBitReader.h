@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "UObject/CoreNet.h"
 
-#include "UObject/improbable/UnrealObjectRef.h"
+#include "Schema/UnrealObjectRef.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetBitReader, All, All);
 

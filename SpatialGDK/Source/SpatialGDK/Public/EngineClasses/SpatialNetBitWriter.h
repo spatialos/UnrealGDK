@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/CoreNet.h"
-#include "UObject/improbable/UnrealObjectRef.h"
+#include "Schema/UnrealObjectRef.h"
 
 class USpatialPackageMapClient;
 
