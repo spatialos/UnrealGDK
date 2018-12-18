@@ -50,7 +50,6 @@ call :MarkEndOfBlock "Check dependencies"
 
 call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
-
     set BUILD_DIR=%~dp0SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
     set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
@@ -59,19 +58,6 @@ call :MarkStartOfBlock "Setup variables"
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
 call :MarkEndOfBlock "Setup variables"
-
-if not exist "%CORE_SDK_DIR%\core-sdk.version" goto NoCachedCoreSDK
-
-set /p CACHED_CORE_SDK_VERSION=<"%CORE_SDK_DIR%\core-sdk.version"
-if "%PINNED_CORE_SDK_VERSION%" == "%CACHED_CORE_SDK_VERSION%" (
-    echo.
-    echo CoreSDK version has not changed since the last run of Setup.bat. CoreSDK dependencies will be skipped.
-    echo If you wish to re-download them, please delete %CORE_SDK_DIR% folder and run Setup.bat again.
-    echo.
-    goto SkipCoreSDKDependencies
-)
-
-:NoCachedCoreSDK
 
 call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
@@ -108,16 +94,10 @@ call :MarkStartOfBlock "Unpack dependencies"
     xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 
-:SkipCoreSDKDependencies
-
 call :MarkStartOfBlock "Copy standard library schema"
     echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
     xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
 call :MarkEndOfBlock "Copy standard library schema"
-
-call :MarkStartOfBlock "Update cached CoreSDK version"
-    echo %PINNED_CORE_SDK_VERSION%>%CORE_SDK_DIR%\core-sdk.version
-call :MarkEndOfBlock "Update cached CoreSDK version"
 
 call :MarkStartOfBlock "Copy GDK schema"
     rd /s /q "%SCHEMA_COPY_DIR%"      2>nul
