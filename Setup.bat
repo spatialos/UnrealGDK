@@ -10,14 +10,22 @@ call :MarkStartOfBlock "Setup the git hooks"
     if defined TEAMCITY_CAPTURE_ENV goto SkipGitHooks
     if not exist .git\hooks goto SkipGitHooks
 
-    rem Remove the old post-checkout hook
-    del .git\hooks\post-checkout
+    rem Remove the old post-checkout hook.
+    if exist .git\hooks\post-checkout del .git\hooks\post-checkout
 
-    echo #!/bin/sh>.git\hooks\post-merge
-    echo cmd.exe /c Setup.bat>>.git\hooks\post-merge
+    rem Add git hook to run Setup.bat when UnrealGDKVersion.bat has been updated.
+    if exist .git\hooks\post-merge goto SkipGitHooks
+    echo #!/usr/bin/env bash>>.git\hooks\post-merge
+    echo changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)">>.git\hooks\post-merge
+    echo check_run() {>>.git\hooks\post-merge
+	echo echo "$changed_files" ^| grep --quiet "$1" ^&^& eval "$2" >>.git\hooks\post-merge
+    echo }>>.git\hooks\post-merge
+    echo check_run UnrealGDKVersion.bat "cmd.exe /c Setup.bat">>.git\hooks\post-merge
 
     :SkipGitHooks
 call :MarkEndOfBlock "Setup the git hooks"
+
+pause
 
 call :MarkStartOfBlock "Check dependencies"
     set /p UNREAL_VERSION=<./SpatialGDK/Extras/unreal-engine.version
@@ -60,19 +68,6 @@ call :MarkStartOfBlock "Setup variables"
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
 call :MarkEndOfBlock "Setup variables"
 
-if not exist "%CORE_SDK_DIR%\core-sdk.version" goto NoCachedCoreSDK
-
-set /p CACHED_CORE_SDK_VERSION=<"%CORE_SDK_DIR%\core-sdk.version"
-if "%PINNED_CORE_SDK_VERSION%" == "%CACHED_CORE_SDK_VERSION%" (
-    echo.
-    echo CoreSDK version has not changed since the last run of Setup.bat. CoreSDK dependencies will be skipped.
-    echo If you wish to re-download them, please delete %CORE_SDK_DIR% folder and run Setup.bat again.
-    echo.
-    goto SkipCoreSDKDownload
-)
-
-:NoCachedCoreSDK
-
 call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve tools           schema_compiler-x86_64-win32           %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip"
     spatial package retrieve schema          standard_library                       %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\schema\standard_library.zip"
@@ -80,8 +75,6 @@ call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32         %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"
 call :MarkEndOfBlock "Retrieve dependencies"
-
-:SkipCoreSDKDownload
 
 call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
