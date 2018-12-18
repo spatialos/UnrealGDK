@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
+#include "Engine/EngineTypes.h"
+
 #include "SpatialGDKEditorSettings.generated.h"
 
 UCLASS(config = EditorPerProjectUserSettings, defaultconfig)
