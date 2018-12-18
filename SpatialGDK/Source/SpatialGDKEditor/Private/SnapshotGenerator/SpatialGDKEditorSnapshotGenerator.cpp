@@ -468,15 +468,13 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 		return false;
 	}
 
-	Worker_SnapshotOutputStream_Destroy(OutputStream);
-
 	return true;
 }
 
-bool SpatialGDKGenerateSnapshot(UWorld* World)
+bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
 {
-	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), Settings->GetSpatialOSSnapshotFile());
+	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
+	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), SnapshotFilename);
 	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
 	{
 		return false;
