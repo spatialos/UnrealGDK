@@ -3,7 +3,10 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
+#include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
+#include "UObject/UnrealType.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 class FToolBarBuilder;
 class FMenuBuilder;
