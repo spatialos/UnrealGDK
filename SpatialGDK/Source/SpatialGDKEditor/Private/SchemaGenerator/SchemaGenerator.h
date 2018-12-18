@@ -3,7 +3,7 @@
 #pragma once
 
 #include "TypeStructure.h"
-#include "SchemaDatabase.h"
+#include "Utils/SchemaDatabase.h"
 
 class FCodeWriter;
 struct FComponentIdGenerator;

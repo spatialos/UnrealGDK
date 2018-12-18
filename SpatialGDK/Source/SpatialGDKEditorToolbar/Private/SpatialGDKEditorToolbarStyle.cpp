@@ -2,8 +2,8 @@
 
 #include "SpatialGDKEditorToolbarStyle.h"
 #include "Framework/Application/SlateApplication.h"
-#include "IPluginManager.h"
-#include "SlateGameResources.h"
+#include "Interfaces/IPluginManager.h"
+#include "Slate/SlateGameResources.h"
 #include "SpatialGDKEditorToolbar.h"
 #include "Styling/SlateStyleRegistry.h"
 

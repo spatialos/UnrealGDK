@@ -6,7 +6,7 @@
 
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
-#include "SpatialTypebindingManager.h"
+#include "Interop/SpatialTypebindingManager.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
