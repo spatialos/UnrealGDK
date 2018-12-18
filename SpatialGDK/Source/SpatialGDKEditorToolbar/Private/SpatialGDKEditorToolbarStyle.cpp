@@ -2,8 +2,8 @@
 
 #include "SpatialGDKEditorToolbarStyle.h"
 #include "Framework/Application/SlateApplication.h"
-#include "IPluginManager.h"
-#include "SlateGameResources.h"
+#include "Interfaces/IPluginManager.h"
+#include "Slate/SlateGameResources.h"
 #include "SpatialGDKEditorToolbar.h"
 #include "Styling/SlateStyleRegistry.h"
 
@@ -45,7 +45,7 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 {
 	TSharedRef<FSlateStyleSet> Style =
 		MakeShareable(new FSlateStyleSet("SpatialGDKEditorToolbarStyle"));
-	Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialGDKEditorToolbar")->GetBaseDir() /
+	Style->SetContentRoot(IPluginManager::Get().FindPlugin("SpatialGDK")->GetBaseDir() /
 		TEXT("Resources"));
 
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSnapshot",

@@ -1,19 +1,22 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialGDKEditorToolbar.h"
-#include "Async.h"
+#include "Async/Async.h"
+#include "Editor.h"
 #include "EditorStyleSet.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
 #include "Misc/MessageDialog.h"
-#include "NotificationManager.h"
-#include "SNotificationList.h"
-#include "SpatialGDKEditorGenerateSnapshot.h"
-#include "SpatialGDKEditorSchemaGenerator.h"
+#include "Framework/Notifications/NotificationManager.h"
+#include "Widgets/Notifications/SNotificationList.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarSettings.h"
 #include "SpatialGDKEditorToolbarStyle.h"
+
+#include "SpatialGDKEditor.h"
+#include "SpatialGDKEditorSettings.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -23,7 +26,7 @@
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
+DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorToolbarModule"
 
@@ -54,7 +57,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	ExecutionSuccessSound->AddToRoot();
 	ExecutionFailSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileFailed_Cue.CompileFailed_Cue"));
 	ExecutionFailSound->AddToRoot();
-	bSchemaGeneratorRunning = false;
+	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = GetDefault<USpatialGDKEditorToolbarSettings>()->bStopSpatialOnExit;
@@ -123,10 +126,7 @@ void FSpatialGDKEditorToolbarModule::RegisterSettings()
 	{
 		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
 
-		SettingsContainer->DescribeCategory("SpatialGDKEditorToolbar", LOCTEXT("RuntimeWDCategoryName", "SpatialOS GDK for Unreal"),
-			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS GDK for Unreal"));
-
-		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditorToolbar", "Settings",
+		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Settings",
 			LOCTEXT("RuntimeGeneralSettingsName", "Settings"),
 			LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for the SpatialOS GDK for Unreal"),
 			GetMutableDefault<USpatialGDKEditorToolbarSettings>());
@@ -142,7 +142,7 @@ void FSpatialGDKEditorToolbarModule::UnregisterSettings()
 {
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
-		SettingsModule->UnregisterSettings("Project", "SpatialGDK", "Settings");
+		SettingsModule->UnregisterSettings("Project", "SpatialGDKEditor", "Settings");
 	}
 }
 
@@ -155,12 +155,12 @@ bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator() const
 {
-	return !bSchemaGeneratorRunning;
+	return SpatialGDKEditorInstance.IsValid() && !SpatialGDKEditorInstance.Get()->IsSchemaGeneratorRunning();
 }
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator() const
 {
-	return !bSchemaGeneratorRunning;
+	return SpatialGDKEditorInstance.IsValid() && !SpatialGDKEditorInstance.Get()->IsSchemaGeneratorRunning();
 }
 
 void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -243,41 +243,22 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
 	ShowTaskStartNotification("Started snapshot generation");
 
-	const bool bSuccess = SpatialGDKGenerateSnapshot(GEditor->GetEditorWorldContext().World());
+	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
 
-	if (bSuccess)
-	{
-		ShowSuccessNotification("Snapshot successfully generated!");
-	}
-	else
-	{
-		ShowFailedNotification("Snapshot generation failed!");
-	}
+	SpatialGDKEditorInstance->GenerateSnapshot(
+		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotFile(),
+		FSimpleDelegate::CreateLambda([this]() { ShowSuccessNotification("Snapshot successfully generated!"); }),
+		FSimpleDelegate::CreateLambda([this]() { ShowFailedNotification("Snapshot generation failed!"); }),
+		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
 }
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 {
 	ShowTaskStartNotification("Generating Schema");
-	bSchemaGeneratorRunning = true;
-
-	// Force spatial networking so schema layouts are correct
-	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
-	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
-	GeneralProjectSettings->bSpatialNetworking = true;
-
-	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema, [this, bCachedSpatialNetworking]()
-	{
-		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
-		{
-			ShowFailedNotification("Schema Generation Failed");
-		}
-		else
-		{
-			ShowSuccessNotification("Schema Generation Completed!");
-		}
-		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
-		bSchemaGeneratorRunning = false;
-	});
+	SpatialGDKEditorInstance->GenerateSchema(
+		FSimpleDelegate::CreateLambda([this]() { ShowSuccessNotification("Schema Generation Completed!"); }),
+		FSimpleDelegate::CreateLambda([this]() { ShowFailedNotification("Schema Generation Failed"); }),
+		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
 }
 		
 
@@ -322,8 +303,6 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 		{
 			GEditor->PlayEditorSound(ExecutionSuccessSound);
 		}
-
-		bSchemaGeneratorRunning = false;
 	});
 }
 
@@ -341,22 +320,21 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 		{
 			GEditor->PlayEditorSound(ExecutionFailSound);
 		}
-
-		bSchemaGeneratorRunning = false;
 	});
 }
 
 void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 {
 	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	const FString ExecuteAbsolutePath = SpatialGDKToolbarSettings->GetSpatialOSDirectory();
+	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
 		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *SpatialGDKToolbarSettings->SpatialOSLaunchConfig);
 
-	UE_LOG(LogSpatialGDKEditor, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
+	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
 	// execute it. We currently can't use pipes to capture output as it doesn't work properly with current
 	// spatial.exe.
@@ -375,8 +353,8 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	{
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 		const FString SpatialLogPath =
-			SpatialGDKToolbarSettings->GetSpatialOSDirectory() + FString(TEXT("/logs/spatial.log"));
-		UE_LOG(LogSpatialGDKEditor, Error,
+			SpatialGDKSettings->GetSpatialOSDirectory() + FString(TEXT("/logs/spatial.log"));
+		UE_LOG(LogSpatialGDKEditorToolbar, Error,
 				TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."),
 				*SpatialLogPath);
 	}
@@ -466,34 +444,6 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
 		{
 			bStopSpatialOnExit = ToolbarSettings->bStopSpatialOnExit;
-		}
-	}
-}
-
-void FSpatialGDKEditorToolbarModule::CacheSpatialObjects(uint32 SpatialFlags)
-{
-	// Load the asset registry module
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(FName("AssetRegistry"));
-	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
-
-	// Before running the schema generator, ensure all blueprint classes that have been tagged with 'spatial' are loaded
-	TArray<FAssetData> AssetData;
-	uint32 SpatialClassFlags = 0;
-	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetFName(), AssetData, true);
-	for (auto& It : AssetData)
-	{
-		if (It.GetTagValue("SpatialClassFlags", SpatialClassFlags))
-		{
-			if (SpatialClassFlags & SpatialFlags)
-			{
-				FString ObjectPath = It.ObjectPath.ToString() + TEXT("_C");
-				UClass* LoadedClass = LoadObject<UClass>(nullptr, *ObjectPath, nullptr, LOAD_EditorOnly, nullptr);
-				UE_LOG(LogSpatialGDKEditor, Log, TEXT("Found spatial blueprint class `%s`."), *ObjectPath);
-				if (LoadedClass == nullptr)
-				{
-					FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Error: Failed to load blueprint %s."), *ObjectPath)));
-				}
-			}
 		}
 	}
 }
