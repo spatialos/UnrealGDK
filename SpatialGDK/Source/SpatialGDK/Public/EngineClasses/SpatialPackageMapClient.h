@@ -6,7 +6,7 @@
 #include "Engine/PackageMapClient.h"
 
 #include "Schema/UnrealMetadata.h"
-#include "UObject/improbable/UnrealObjectRef.h"
+#include "Schema/UnrealObjectRef.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 

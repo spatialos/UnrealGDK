@@ -10,7 +10,7 @@
 #include "Interop/SpatialTypebindingManager.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
-#include "UObject/improbable/UnrealObjectRef.h"
+#include "Schema/UnrealObjectRef.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>

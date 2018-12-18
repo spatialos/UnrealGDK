@@ -114,6 +114,18 @@ void USpatialTypebindingManager::CreateTypebindings()
 					Info.HandoverProperties.Add(HandoverInfo);
 				}
 			}
+
+			if (Property->PropertyFlags & CPF_AlwaysInterested)
+			{
+				for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
+				{
+					FInterestPropertyInfo InterestInfo;
+					InterestInfo.Offset = Property->GetOffset_ForGC() + Property->ElementSize * ArrayIdx;
+					InterestInfo.Property = Property;
+
+					Info.InterestProperties.Add(InterestInfo);
+				}
+			}
 		}
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
