@@ -1061,7 +1061,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #if USE_SERVER_PERF_COUNTERS
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
-	if (IsServer() && ClientConnections.Num() > 0)
+	if (IsServer() && ClientConnections.Num() > 0 && Connection->IsConnected())
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE

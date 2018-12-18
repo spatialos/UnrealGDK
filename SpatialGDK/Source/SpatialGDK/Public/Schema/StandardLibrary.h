@@ -3,7 +3,9 @@
 #pragma once
 
 #include "Math/Vector.h"
+
 #include "Schema/Component.h"
+#include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/Package.h"
@@ -43,6 +45,27 @@ struct Coordinates
 		return Location;
 	}
 };
+
+inline void AddCoordinateToSchema(Schema_Object* Object, Schema_FieldId Id, const Coordinates& Coordinate)
+{
+	Schema_Object* CoordsObject = Schema_AddObject(Object, Id);
+
+	Schema_AddDouble(CoordsObject, 1, Coordinate.X);
+	Schema_AddDouble(CoordsObject, 2, Coordinate.Y);
+	Schema_AddDouble(CoordsObject, 3, Coordinate.Z);
+}
+
+inline Coordinates GetCoordinateFromSchema(Schema_Object* Object, Schema_FieldId Id)
+{
+	Schema_Object* CoordsObject = Schema_GetObject(Object, Id);
+
+	Coordinates Coordinate;
+	Coordinate.X = Schema_GetDouble(CoordsObject, 1);
+	Coordinate.Y = Schema_GetDouble(CoordsObject, 2);
+	Coordinate.Z = Schema_GetDouble(CoordsObject, 3);
+
+	return Coordinate;
+}
 
 struct EntityAcl : Component
 {
@@ -181,11 +204,7 @@ struct Position : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		Schema_Object* CoordsObject = Schema_GetObject(ComponentObject, 1);
-
-		Coords.X = Schema_GetDouble(CoordsObject, 1);
-		Coords.Y = Schema_GetDouble(CoordsObject, 2);
-		Coords.Z = Schema_GetDouble(CoordsObject, 3);
+		Coords = GetCoordinateFromSchema(ComponentObject, 1);
 	}
 
 	Worker_ComponentData CreatePositionData()
@@ -195,11 +214,7 @@ struct Position : Component
 		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		Schema_Object* CoordsObject = Schema_AddObject(ComponentObject, 1);
-
-		Schema_AddDouble(CoordsObject, 1, Coords.X);
-		Schema_AddDouble(CoordsObject, 2, Coords.Y);
-		Schema_AddDouble(CoordsObject, 3, Coords.Z);
+		AddCoordinateToSchema(ComponentObject, 1, Coords);
 
 		return Data;
 	}
@@ -211,11 +226,7 @@ struct Position : Component
 		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
-		Schema_Object* CoordsObject = Schema_AddObject(ComponentObject, 1);
-
-		Schema_AddDouble(CoordsObject, 1, Coords.X);
-		Schema_AddDouble(CoordsObject, 2, Coords.Y);
-		Schema_AddDouble(CoordsObject, 3, Coords.Z);
+		AddCoordinateToSchema(ComponentObject, 1, Coords);
 
 		return ComponentUpdate;
 	}
