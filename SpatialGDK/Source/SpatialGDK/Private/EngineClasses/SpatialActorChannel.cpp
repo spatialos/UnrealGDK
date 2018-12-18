@@ -148,8 +148,8 @@ bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
+	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
 	checkf(!Object->IsPendingKill(), TEXT("Attempted to create initial rep change state on an object which is pending kill. This will fail to create a RepLayout: "), *Object->GetName());
-	check(Object.IsValid());
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 
