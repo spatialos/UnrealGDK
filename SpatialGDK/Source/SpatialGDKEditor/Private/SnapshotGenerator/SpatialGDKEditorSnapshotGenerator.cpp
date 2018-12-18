@@ -1,17 +1,17 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialGDKEditorGenerateSnapshot.h"
+#include "SpatialGDKEditorSnapshotGenerator.h"
 
 #include "Engine/LevelScriptActor.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
-#include "SpatialActorChannel.h"
+#include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialNetConnection.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/SpatialTypebindingManager.h"
 #include "SpatialConstants.h"
-#include "SpatialGDKEditorToolbarSettings.h"
-#include "SpatialNetConnection.h"
-#include "SpatialNetDriver.h"
-#include "SpatialTypebindingManager.h"
+#include "SpatialGDKEditorSettings.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/EntityRegistry.h"
 #include "Utils/RepDataUtils.h"
@@ -20,7 +20,7 @@
 
 #include "EngineUtils.h"
 #include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
-#include "UObjectIterator.h"
+#include "UObject/UObjectIterator.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
@@ -471,10 +471,10 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	return true;
 }
 
-bool SpatialGDKGenerateSnapshot(UWorld* World)
+bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
 {
-	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
-	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), Settings->GetSpatialOSSnapshotFile());
+	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
+	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), SnapshotFilename);
 	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
 	{
 		return false;

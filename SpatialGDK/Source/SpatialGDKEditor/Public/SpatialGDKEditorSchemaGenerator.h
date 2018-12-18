@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "LogMacros.h"
+#include "Logging/LogMacros.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKSchemaGenerator, Log, All);
 
-bool SpatialGDKGenerateSchema();
+SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema();
