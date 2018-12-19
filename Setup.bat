@@ -22,7 +22,7 @@ call :MarkStartOfBlock "Setup the git hooks"
     echo check_run() {>>.git\hooks\post-merge
 	echo echo "$changed_files" ^| grep --quiet "$1" ^&^& eval "$2" >>.git\hooks\post-merge
     echo }>>.git\hooks\post-merge
-    echo check_run UnrealGDKVersion.bat "cmd.exe /c Setup.bat">>.git\hooks\post-merge
+    echo check_run UnrealGDK.version "cmd.exe /c Setup.bat">>.git\hooks\post-merge
 
     :SkipGitHooks
 call :MarkEndOfBlock "Setup the git hooks"
