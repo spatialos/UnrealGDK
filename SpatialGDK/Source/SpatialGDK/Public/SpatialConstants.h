@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "UObject/improbable/UnrealObjectRef.h"
+#include "Schema/UnrealObjectRef.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -52,6 +52,7 @@ namespace SpatialConstants
 	const Worker_ComponentId METADATA_COMPONENT_ID				= 53;
 	const Worker_ComponentId POSITION_COMPONENT_ID				= 54;
 	const Worker_ComponentId PERSISTENCE_COMPONENT_ID			= 55;
+	const Worker_ComponentId INTEREST_COMPONENT_ID              = 58;
 
 	const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 100001;
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 100002;

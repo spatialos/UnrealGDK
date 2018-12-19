@@ -11,7 +11,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
-#include "UObject/improbable/UnrealObjectRef.h"
+#include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
 
@@ -97,7 +97,7 @@ FNetworkGUID USpatialPackageMapClient::GetNetGUIDFromEntityId(const Worker_Entit
 	return GetNetGUIDFromUnrealObjectRef(ObjectRef);
 }
 
-UObject* USpatialPackageMapClient::GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)
+TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)
 {
 	FNetworkGUID NetGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef);
 	if (NetGUID.IsValid() && !NetGUID.IsDefault())

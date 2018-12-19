@@ -3,6 +3,7 @@
 #include "SpatialGDKEditorSnapshotGenerator.h"
 
 #include "Engine/LevelScriptActor.h"
+#include "Schema/Interest.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
@@ -246,13 +247,14 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 		uint32 Offset = SubobjectInfoPair.Key;
 		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		if (UObject* Subobject = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset)))
+		TWeakObjectPtr<UObject> Subobject = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset));
+		if (Subobject.IsValid())
 		{
 			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 			// Create component data for initial state of subobject
-			ComponentData.Append(DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges));
+			ComponentData.Append(DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges));
 
 			// Add subobject RPCs to entity
 			for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
@@ -281,6 +283,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	WriteAclMap ComponentWriteAcl;
 
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 
@@ -344,6 +347,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
 	Components.Add(improbable::UnrealMetadata(StaticPath, {}, ActorClass->GetPathName()).CreateUnrealMetadataData());
+	Components.Add(improbable::Interest().CreateInterestData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
 
