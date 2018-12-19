@@ -23,6 +23,15 @@ pushd "$(dirname "$0")"
 
 markStartOfBlock "$0"
 
+markStartOfBlock "Setup the git hooks"
+    if [ -z "${TEAMCITY_CAPTURE_ENV:-}" -a -e .git/hooks ]; then
+        echo "#!/bin/sh" > .git/hooks/post-checkout
+        echo "sh ./Setup.sh" >> .git/hooks/post-checkout
+        echo "#!/bin/sh" > .git/hooks/post-merge
+        echo "sh ./Setup.sh" >> .git/hooks/post-merge
+    fi
+markEndOfBlock "Setup the git hooks"
+
 markStartOfBlock "Check dependencies"
     if [ -z "${UNREAL_HOME:-}" ]; then
         echo "Error: Please set UNREAL_HOME environment variable to point to the Unreal Engine folder."
@@ -47,7 +56,7 @@ markStartOfBlock "Setup variables"
 
     BUILD_DIR="$(dirname "$0")/SpatialGDK/Build"
     CORE_SDK_DIR="$BUILD_DIR/core_sdk"
-    WORKER_SDK_DIR="$(dirname "$0")/SpatialGDK/Source/Public/WorkerSdk"
+    WORKER_SDK_DIR="$(dirname "$0")/SpatialGDK/Source/SpatialGDK/Public/WorkerSdk"
     BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
     SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
     SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
