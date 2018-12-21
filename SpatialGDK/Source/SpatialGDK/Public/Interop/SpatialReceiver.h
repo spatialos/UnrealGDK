@@ -23,7 +23,6 @@ class USpatialSender;
 class UGlobalStateManager;
 
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
 struct FObjectReferences;
 using FObjectReferencesMap = TMap<int32, FObjectReferences>;
 using FReliableRPCMap = TMap<Worker_RequestId, TSharedRef<struct FPendingRPCParams>>;
