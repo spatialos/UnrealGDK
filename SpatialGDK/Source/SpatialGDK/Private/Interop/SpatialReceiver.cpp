@@ -194,11 +194,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				{
 					Actor->Role = ROLE_Authority;
 
-					if (Actor->GetNetConnection() != nullptr)
-					{
-						Actor->RemoteRole = ROLE_AutonomousProxy;
-					}
-					else if (Actor->IsA<APawn>())
+					if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
@@ -232,7 +228,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 			check(Info);
 
-			if (Op.component_id == Info->SchemaComponents[SCHEMA_ClientRPC])
+			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == Info->SchemaComponents[SCHEMA_ClientRPC])
 			{
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
