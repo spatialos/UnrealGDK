@@ -143,6 +143,25 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
+
+	////Setup new interest queries:
+	//improbable::Interest Interest;
+
+	//improbable::ComponentInterest ServerWorkerComponentInterest;
+	//improbable::ComponentInterest::Query ServerWorkerInterestQuery;
+	//ServerWorkerInterestQuery.Constraint.EntityIdConstraint = Channel->GetEntityId();
+	//ServerWorkerInterestQuery.FullSnapshotResult = true;
+	//ServerWorkerComponentInterest.Queries.Add(ServerWorkerInterestQuery);
+	//Interest.ComponentInterest.Add(SpatialConstants::POSITION_COMPONENT_ID, ServerWorkerComponentInterest);
+
+	//improbable::ComponentInterest ClientWorkerComponentInterest;
+	//improbable::ComponentInterest::Query ClientWorkerInterestQuery;
+	//ClientWorkerInterestQuery.Constraint.EntityIdConstraint = Channel->GetEntityId();
+	//ClientWorkerInterestQuery.FullSnapshotResult = true;
+	//ClientWorkerComponentInterest.Queries.Add(ClientWorkerInterestQuery);
+	//Interest.ComponentInterest.Add(Info->SchemaComponents[SCHEMA_ClientRPC], ClientWorkerComponentInterest);
+
+	//ComponentDatas.Add(Interest.CreateInterestData());
 	ComponentDatas.Add(improbable::Interest().CreateInterestData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
