@@ -33,6 +33,9 @@ class UEntityRegistry;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
+DECLARE_STATS_GROUP(TEXT("SpatialNetDriver"), STATGROUP_SpatialNetDriver, STATCAT_Advanced);
+DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_ConsiderList, STATGROUP_SpatialNetDriver,);
+
 class FSpatialWorkerUniqueNetId : public FUniqueNetId
 {
 public:

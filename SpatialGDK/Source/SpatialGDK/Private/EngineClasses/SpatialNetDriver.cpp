@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
+#pragma optimize("", off)
 #include "EngineClasses/SpatialNetDriver.h"
 
 #include "EngineGlobals.h"
@@ -31,6 +31,9 @@
 #include "Utils/EntityRegistry.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
+
+DECLARE_CYCLE_STAT(TEXT("SpatialNetDriver ~ ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNetDriver);
+DEFINE_STAT(STAT_ConsiderList);
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
@@ -448,7 +451,17 @@ static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Act
 {
 	//SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
 	// We might make some exceptions in the future, so keeping this function.
-	return true;
+	 return true;
+
+	//for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
+	//{
+	//	if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
+	//	{
+	//		return true;
+	//	}
+	//}
+
+	//return false;
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
@@ -663,7 +676,20 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	int32 ActorUpdatesThisConnectionSent = 0;
 	int32 FinalRelevantCount = 0;
 
-	for (int32 j = 0; j < FinalSortedCount; j++)
+	// IMPROBABLE-BEGIN RATE LIMITING
+
+	// Simple limit to 100 per frame
+
+	int32 RateLimit = 100;
+	if (FinalSortedCount < RateLimit)
+	{
+		RateLimit = FinalSortedCount;
+	}
+
+	// IMPROBABLE-END RATE LIMITING
+
+
+	for (int32 j = 0; j < RateLimit; j++)
 	{
 		// Deletion entry
 		if (PriorityActors[j]->ActorInfo == NULL && PriorityActors[j]->DestructionInfo)
@@ -705,7 +731,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
 
-			//SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
+			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
 			// only check visibility on already visible actors every 1.0 + 0.5R seconds
 			// bTearOff actors should never be checked
 			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
@@ -817,7 +843,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		}
 	}
 
-	return FinalSortedCount;
+	return RateLimit;
 }
 #endif
 
@@ -826,6 +852,8 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 // For this reason, things like ready checks, acks, throttling based on number of updated connections, interest management are irrelevant at this level.
 int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialServerReplicateActors);
+
 #if WITH_SERVER_CODE
 	if (ClientConnections.Num() == 0)
 	{
@@ -848,6 +876,8 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		return 0;
 	}
 
+	//const int32 NumClientsToTick = 1;
+
 	AWorldSettings* WorldSettings = World->GetWorldSettings();
 
 	bool bCPUSaturated = false;
@@ -862,11 +892,16 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		bCPUSaturated = DeltaSeconds > 1.2f * ServerTickTime;
 	}
 
+	SET_DWORD_STAT(STAT_ConsiderList, 0);
+
 	TArray<FNetworkObjectInfo*> ConsiderList;
 	ConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
 
 	// Build the consider list (actors that are ready to replicate)
 	ServerReplicateActors_BuildConsiderList(ConsiderList, ServerTickTime);
+
+	SET_DWORD_STAT(STAT_ConsiderList, ConsiderList.Num());
+
 	FMemMark Mark(FMemStack::Get());
 
 	for (int32 i = 0; i < ClientConnections.Num(); i++)
@@ -874,34 +909,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(ClientConnections[i]);
 		check(SpatialConnection);
 
-		// if this client shouldn't be ticked this frame
-		if (i >= NumClientsToTick)
-		{
-			// SpatialGDK: This should not really happen in our case because we only replicate to SpatialOS and not to individual clients. Leaving the code here just in case.
-
-			//UE_LOG(LogNet, Log, TEXT("skipping update to %s"),*Connection->GetName());
-			// then mark each considered actor as bPendingNetUpdate so that they will be considered again the next frame when the connection is actually ticked
-			for (int32 ConsiderIdx = 0; ConsiderIdx < ConsiderList.Num(); ConsiderIdx++)
-			{
-				AActor *Actor = ConsiderList[ConsiderIdx]->Actor;
-				// if the actor hasn't already been flagged by another connection,
-				if (Actor != NULL && !ConsiderList[ConsiderIdx]->bPendingNetUpdate)
-				{
-					// find the channel
-					UActorChannel *Channel = SpatialConnection->ActorChannelMap().FindRef(Actor);
-					// and if the channel last update time doesn't match the last net update time for the actor
-					if (Channel != NULL && Channel->LastUpdateTime < ConsiderList[ConsiderIdx]->LastNetUpdateTime)
-					{
-						//UE_LOG(LogNet, Log, TEXT("flagging %s for a future update"),*Actor->GetName());
-						// flag it for a pending update
-						ConsiderList[ConsiderIdx]->bPendingNetUpdate = true;
-					}
-				}
-			}
-			// clear the time sensitive flag to avoid sending an extra packet to this connection
-			SpatialConnection->TimeSensitive = false;
-		}
-		else if (SpatialConnection->bReliableSpatialConnection || SpatialConnection->ViewTarget)
+		if (SpatialConnection->bReliableSpatialConnection || SpatialConnection->ViewTarget)
 		{
 			// Make a list of viewers this connection should consider (this connection and children of this connection)
 			TArray<FNetViewer>& ConnectionViewers = WorldSettings->ReplicationViewers;

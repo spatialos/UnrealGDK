@@ -22,6 +22,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
+DECLARE_CYCLE_STAT(TEXT("SpatialActorChannel ~ ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNetDriver);
+
 namespace
 {
 // This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
@@ -199,6 +201,8 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 
 int64 USpatialActorChannel::ReplicateActor()
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
+
 	if (!IsReadyForReplication())
 	{
 		return 0;
