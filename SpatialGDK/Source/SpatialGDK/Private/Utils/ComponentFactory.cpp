@@ -471,7 +471,7 @@ improbable::Interest ComponentFactory::CreateInterestComponent(UObject* Object, 
 	}
 
 	improbable::Interest Interest;
-	Interest.ComponentInterest.Add(improbable::Position::ComponentId, ComponentInterest);
+	Interest.ComponentInterest.Add(SpatialConstants::POSITION_COMPONENT_ID, ComponentInterest);
 
 	return Interest;
 }
