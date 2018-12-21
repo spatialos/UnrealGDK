@@ -37,11 +37,11 @@ struct FPendingRPCParams
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-using FOutgoingRPCMap = TMap<const UObject*, TArray<TSharedRef<FPendingRPCParams>>>;
-using FUnresolvedEntry = TSharedPtr<TSet<const UObject*>>;
+using FOutgoingRPCMap = TMap<TWeakObjectPtr<const UObject>, TArray<TSharedRef<FPendingRPCParams>>>;
+using FUnresolvedEntry = TSharedPtr<TSet<TWeakObjectPtr<const UObject>>>;
 using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
 using FChannelToHandleToUnresolved = TMap<FChannelObjectPair, FHandleToUnresolved>;
-using FOutgoingRepUpdates = TMap<const UObject*, FChannelToHandleToUnresolved>;
+using FOutgoingRepUpdates = TMap<TWeakObjectPtr<const UObject>, FChannelToHandleToUnresolved>;
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject
@@ -72,7 +72,7 @@ private:
 
 	// Queuing
 	void ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover);
-	void QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects, bool bIsHandover);
+	void QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, bool bIsHandover);
 	void QueueOutgoingRPC(const UObject* UnresolvedObject, TSharedRef<FPendingRPCParams> Params);
 
 	// RPC Construction
