@@ -10,10 +10,19 @@ call :MarkStartOfBlock "Setup the git hooks"
     if defined TEAMCITY_CAPTURE_ENV goto SkipGitHooks
     if not exist .git\hooks goto SkipGitHooks
 
-    echo #!/bin/sh>.git\hooks\post-checkout
-    echo cmd.exe /c Setup.bat>>.git\hooks\post-checkout
-    echo #!/bin/sh>.git\hooks\post-merge
-    echo cmd.exe /c Setup.bat>>.git\hooks\post-merge
+    rem Remove the old post-checkout hook.
+    if exist .git\hooks\post-checkout del .git\hooks\post-checkout
+
+    rem Remove the old post-merge hook.
+    if exist .git\hooks\post-merge del .git\hooks\post-merge
+
+    rem Add git hook to run Setup.bat when RequireSetup file has been updated.
+    echo #!/usr/bin/env bash>>.git\hooks\post-merge
+    echo changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)">>.git\hooks\post-merge
+    echo check_run() {>>.git\hooks\post-merge
+	echo echo "$changed_files" ^| grep --quiet "$1" ^&^& eval "$2" >>.git\hooks\post-merge
+    echo }>>.git\hooks\post-merge
+    echo check_run RequireSetup "cmd.exe /c Setup.bat">>.git\hooks\post-merge
 
     :SkipGitHooks
 call :MarkEndOfBlock "Setup the git hooks"

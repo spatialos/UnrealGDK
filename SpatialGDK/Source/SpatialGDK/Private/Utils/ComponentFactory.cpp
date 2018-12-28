@@ -43,7 +43,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 			if (GetGroupFromCondition(Parent.Condition) == PropertyGroup)
 			{
 				const uint8* Data = (uint8*)Object + Cmd.Offset;
-				TSet<const UObject*> UnresolvedObjects;
+				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 
 				AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
 
@@ -87,7 +87,7 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		const FHandoverPropertyInfo& PropertyInfo = Info->HandoverProperties[ChangedHandle - 1];
 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
-		TSet<const UObject*> UnresolvedObjects;
+		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 
 		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, UnresolvedObjects, ClearedIds);
 
@@ -111,7 +111,7 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 	return bWroteSomething;
 }
 
-void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<const UObject*>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds)
+void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
@@ -471,7 +471,7 @@ improbable::Interest ComponentFactory::CreateInterestComponent(UObject* Object, 
 	}
 
 	improbable::Interest Interest;
-	Interest.ComponentInterest.Add(improbable::Position::ComponentId, ComponentInterest);
+	Interest.ComponentInterest.Add(SpatialConstants::POSITION_COMPONENT_ID, ComponentInterest);
 
 	return Interest;
 }
