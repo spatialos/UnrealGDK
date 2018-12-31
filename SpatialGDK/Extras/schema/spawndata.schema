@@ -14,7 +14,8 @@ component SpawnData {
     // scale, and velocity, regardless of whether the actor replicates movement. In our case,
     // location is represented by Spatial position, and this component contains the rest.
     id = 100001;
-    Rotator rotation = 1;
-    improbable.Vector3f scale = 2;
-    improbable.Vector3f velocity = 3;
+    improbable.Vector3f location = 1;
+    Rotator rotation = 2;
+    improbable.Vector3f scale = 3;
+    improbable.Vector3f velocity = 4;
 }
