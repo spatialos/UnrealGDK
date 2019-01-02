@@ -55,6 +55,8 @@ public:
 	void SendComponentUpdates(UObject* Object, FClassInfo* Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
+	void EnqueueRPC(TSharedRef<FPendingRPCParams> Params);
+	void FlushQueuedRPCs();
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 
@@ -110,4 +112,6 @@ private:
 	FOutgoingRPCMap OutgoingRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
+
+	TArray<TSharedRef<FPendingRPCParams>> QueuedRPCs;
 };

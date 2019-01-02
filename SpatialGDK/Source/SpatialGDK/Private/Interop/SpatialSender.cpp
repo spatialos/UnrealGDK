@@ -431,6 +431,19 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 }
 
+void USpatialSender::EnqueueRPC(TSharedRef<FPendingRPCParams> Params)
+{
+	QueuedRPCs.Push(Params);
+}
+
+void USpatialSender::FlushQueuedRPCs()
+{
+	while (QueuedRPCs.Num() > 0)
+	{
+		SendRPC(QueuedRPCs.Pop());
+	}
+}
+
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 {
 	UE_LOG(LogSpatialSender, Log, TEXT("Sending reserve entity Id request for %s"), *Channel->Actor->GetName());

@@ -749,6 +749,11 @@ void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 	ReceiveCommandResponse(Op);
 }
 
+void USpatialReceiver::FlushQueuedRPCs()
+{
+	Sender->FlushQueuedRPCs();
+}
+
 void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 {
 	TSharedRef<FPendingRPCParams>* ReliableRPCPtr = PendingReliableRPCs.Find(Op.request_id);
@@ -779,7 +784,7 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 			FTimerHandle RetryTimer;
 			TimerManager->SetTimer(RetryTimer, [this, ReliableRPC]()
 			{
-				Sender->SendRPC(ReliableRPC);
+				Sender->EnqueueRPC(ReliableRPC);
 			}, WaitTime, false);
 		}
 		else
