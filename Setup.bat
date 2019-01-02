@@ -17,10 +17,10 @@ call :MarkStartOfBlock "Setup the git hooks"
     if exist .git\hooks\post-merge del .git\hooks\post-merge
 
     rem Add git hook to run Setup.bat when RequireSetup file has been updated.
-    echo #!/usr/bin/env bash>>.git\hooks\post-merge
+    echo #!/usr/bin/env bash>.git\hooks\post-merge
     echo changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)">>.git\hooks\post-merge
     echo check_run() {>>.git\hooks\post-merge
-	echo echo "$changed_files" ^| grep --quiet "$1" ^&^& eval "$2" >>.git\hooks\post-merge
+	echo echo "$changed_files" ^| grep --quiet "$1" ^&^& exec $2>>.git\hooks\post-merge
     echo }>>.git\hooks\post-merge
     echo check_run RequireSetup "cmd.exe /c Setup.bat">>.git\hooks\post-merge
 
