@@ -438,6 +438,8 @@ void USpatialSender::EnqueueRPC(TSharedRef<FPendingRPCParams> Params)
 
 void USpatialSender::FlushQueuedRPCs()
 {
+	// Retried RPCs are popped from a stack to reverse their order.
+	// This is doe to undo the reversal of ordering caused by the TimerManager class.
 	while (QueuedRPCs.Num() > 0)
 	{
 		SendRPC(QueuedRPCs.Pop());
