@@ -134,7 +134,9 @@ private:
 
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
-	AActor* CreateActor(improbable::Position* Position, improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
+	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
+
+	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 

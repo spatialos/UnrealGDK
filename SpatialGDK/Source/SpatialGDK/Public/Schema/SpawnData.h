@@ -22,6 +22,7 @@ struct SpawnData : Component
 	{
 		const USceneComponent* RootComponent = Actor->GetRootComponent();
 
+		Location = RootComponent ? FRepMovement::RebaseOntoZeroOrigin(Actor->GetActorLocation(), Actor) : FVector::ZeroVector;
 		Rotation = RootComponent ? Actor->GetActorRotation() : FRotator::ZeroRotator;
 		Scale = RootComponent ? Actor->GetActorScale() : FVector::OneVector;
 		Velocity = RootComponent ? Actor->GetVelocity() : FVector::ZeroVector;
@@ -31,9 +32,10 @@ struct SpawnData : Component
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		Rotation = GetRotatorFromSchema(ComponentObject, 1);
-		Scale = GetVectorFromSchema(ComponentObject, 2);
-		Velocity = GetVectorFromSchema(ComponentObject, 3);
+		Location = GetVectorFromSchema(ComponentObject, 1);
+		Rotation = GetRotatorFromSchema(ComponentObject, 2);
+		Scale = GetVectorFromSchema(ComponentObject, 3);
+		Velocity = GetVectorFromSchema(ComponentObject, 4);
 	}
 
 	Worker_ComponentData CreateSpawnDataData()
@@ -43,13 +45,15 @@ struct SpawnData : Component
 		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		AddRotatorToSchema(ComponentObject, 1, Rotation);
-		AddVectorToSchema(ComponentObject, 2, Scale);
-		AddVectorToSchema(ComponentObject, 3, Velocity);
+		AddVectorToSchema(ComponentObject, 1, Location);
+		AddRotatorToSchema(ComponentObject, 2, Rotation);
+		AddVectorToSchema(ComponentObject, 3, Scale);
+		AddVectorToSchema(ComponentObject, 4, Velocity);
 
 		return Data;
 	}
 
+	FVector Location;
 	FRotator Rotation;
 	FVector Scale;
 	FVector Velocity;
