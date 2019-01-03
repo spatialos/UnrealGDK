@@ -104,7 +104,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		{
 			if (FieldId == 45 && Cmd.Property->GetName() == TEXT("Inventory"))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("ComponentReader::ApplySchemaObject Moving on to process the update <%s%d> .c"), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
+				UE_LOG(LogTemp, Warning, TEXT("ComponentReader::ApplySchemaObject Moving on to process the update <%s%d> .GPlayInEditorID"), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
 			}
 			// This swaps Role/RemoteRole as we write it
 			const FRepLayoutCmd& SwappedCmd = (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
