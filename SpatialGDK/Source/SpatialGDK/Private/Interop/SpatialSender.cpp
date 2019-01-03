@@ -40,7 +40,6 @@ FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunct
 		It->CopyCompleteValue_InContainer(Parameters.GetData(), InParameters);
 	}
 
-	Index = RPCIndex;
 }
 
 FPendingRPCParams::~FPendingRPCParams()
