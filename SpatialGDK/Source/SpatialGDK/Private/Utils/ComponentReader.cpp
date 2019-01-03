@@ -61,8 +61,6 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
 {
-	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
-
 	TArray<uint32> UpdateFields;
 	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
 	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
@@ -86,7 +84,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 	bool bIsAuthServer = Channel->IsAuthoritativeServer();
 
-	FSpatialConditionMapFilter ConditionMap(Channel, bAutonomousProxy);
+	FSpatialConditionMapFilter ConditionMap(Channel);
 
 	TArray<UProperty*> RepNotifies;
 
@@ -163,6 +161,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 				{
 					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 					// the client RPCs component.
+					bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
 					UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
 					if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 					{
