@@ -74,30 +74,14 @@ public:
 		check(Info);
 
 		TArray<FString> WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
-
-		for (FString entry : WorkerAttributes)
-		{
-			//UE_LOG(LogTemp, Warning, TEXT("Entry %s Num %d <%s%d> .GPlayInEditorID"), *entry, WorkerAttributes.Num(), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
-		}
-
 		if (WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(Info->SchemaComponents[SCHEMA_ClientRPC]))
 		{
 			for (WorkerAttributeSet AttributeSet : *WorkerRequirementsSet)
 			{
 				for (FString Attribute : AttributeSet)
 				{
-					FString WorkerId = NetDriver->Connection->GetWorkerId();
-					//UE_LOG(LogTemp, Warning, TEXT("WorkerID %s Attribute: %s AttributeSet size %d <%s%d> .GPlayInEditorID"), *WorkerId, *Attribute, AttributeSet.Num(), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
-
 					if (WorkerAttributes.Contains(Attribute))
 					{
-						//UE_LOG(LogTemp, Warning, TEXT("NetOwned contains!! WorkerID %s Attribute: %s AttributeSet size %d <%s%d> .GPlayInEditorID"), *WorkerId, *Attribute, AttributeSet.Num(), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
-						return true;
-					}
-
-					if (Attribute == WorkerId)
-					{
-						//UE_LOG(LogTemp, Warning, TEXT("NetOwned!! WorkerID %s Attribute: %s AttributeSet size %d <%s%d> .GPlayInEditorID"), *WorkerId, *Attribute, AttributeSet.Num(), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
 						return true;
 					}
 				}

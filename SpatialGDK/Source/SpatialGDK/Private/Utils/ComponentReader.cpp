@@ -8,7 +8,6 @@
 #include "UObject/TextProperty.h"
 
 #include "EngineClasses/SpatialNetBitReader.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
@@ -38,7 +37,7 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, ComponentData.component_id, Channel->GetEntityId(), Object, Channel, true);
+		ApplySchemaObject(ComponentObject, Object, Channel, true);
 	}
 }
 
@@ -56,11 +55,11 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, ComponentUpdate.component_id, Channel->GetEntityId(), Object, Channel, false, &ClearedIds);
+		ApplySchemaObject(ComponentObject, Object, Channel, false, &ClearedIds);
 	}
 }
 
-void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, Worker_ComponentId ComponentId, Worker_EntityId EntityId, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
+void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
 {
 	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
 
