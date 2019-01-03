@@ -95,17 +95,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		const FRepLayoutCmd& Cmd = Cmds[BaseHandleToCmdIndex[FieldId - 1].CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
-		if (FieldId == 45 && Cmd.Property->GetName() == TEXT("Inventory"))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ComponentReader::ApplySchemaObject <%s%d> .GPlayInEditorID"), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
-		}
-
 		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
 		{
-			if (FieldId == 45 && Cmd.Property->GetName() == TEXT("Inventory"))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("ComponentReader::ApplySchemaObject Moving on to process the update <%s%d> .GPlayInEditorID"), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
-			}
 			// This swaps Role/RemoteRole as we write it
 			const FRepLayoutCmd& SwappedCmd = (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
 
@@ -192,11 +183,6 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 				}
 			}
-		}
-
-		if (FieldId == 45 && Cmd.Property->GetName() == TEXT("Inventory"))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("ComponentReader::ApplySchemaObject End <%s%d> .GPlayInEditorID"), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
 		}
 	}
 
