@@ -57,7 +57,7 @@ public:
 	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params);
-	void FlushQueuedRetryRPCs();
+	void FlushRetryRPCs();
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 
@@ -114,5 +114,5 @@ private:
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 
-	TArray<TSharedRef<FPendingRPCParams>> QueuedRetryRPCs;
+	TArray<TSharedRef<FPendingRPCParams>> RetryRPCs;
 };

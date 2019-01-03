@@ -436,18 +436,18 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 void USpatialSender::EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params)
 {
-	QueuedRetryRPCs.Push(Params);
+	RetryRPCs.Add(Params);
 }
 
-void USpatialSender::FlushQueuedRetryRPCs()
+void USpatialSender::FlushRetryRPCs()
 {
 	// Retried RPCs are sorted by their index.
 	// This is done to undo the reversal of ordering caused by the TimerManager class.
-	QueuedRetryRPCs.Sort([](const TSharedPtr<FPendingRPCParams>& A, const TSharedPtr<FPendingRPCParams>& B) { return A->Index < B->Index; });
-	for (int i = 0; i < QueuedRetryRPCs.Num(); i++) {
-		SendRPC(QueuedRetryRPCs[i]);
+	RetryRPCs.Sort([](const TSharedPtr<FPendingRPCParams>& A, const TSharedPtr<FPendingRPCParams>& B) { return A->Index < B->Index; });
+	for (int i = 0; i < RetryRPCs.Num(); i++) {
+		SendRPC(RetryRPCs[i]);
 	}
-	QueuedRetryRPCs.Empty();
+	RetryRPCs.Empty();
 }
 
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)

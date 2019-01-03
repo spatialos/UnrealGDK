@@ -105,7 +105,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 		Receiver->OnComponentUpdate(Op->component_update);
 	}
 
-	Receiver->FlushQueuedRetryRPCs();
+	Receiver->FlushRetryRPCs();
 
 	// Check every channel for net ownership changes (determines ACL and component interest)
 	const FActorChannelMap& ChannelMap = NetDriver->GetSpatialOSNetConnection()->ActorChannelMap();

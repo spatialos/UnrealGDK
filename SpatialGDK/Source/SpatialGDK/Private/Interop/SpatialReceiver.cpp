@@ -749,9 +749,9 @@ void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 	ReceiveCommandResponse(Op);
 }
 
-void USpatialReceiver::FlushQueuedRetryRPCs()
+void USpatialReceiver::FlushRetryRPCs()
 {
-	Sender->FlushQueuedRetryRPCs();
+	Sender->FlushRetryRPCs();
 }
 
 void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
