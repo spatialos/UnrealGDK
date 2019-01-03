@@ -63,22 +63,22 @@ public:
 		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_ClientRPC]);
 	}
 
-	FORCEINLINE bool IsNetOwned()
+	FORCEINLINE bool IsNetOwned() const
 	{
 		if (NetDriver->GetNetMode() != NM_Client)
 		{
 			return false;
 		}
 
-		FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+		const FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 		check(Info);
 
-		TArray<FString> WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
+		const TArray<FString> WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
 		if (WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(Info->SchemaComponents[SCHEMA_ClientRPC]))
 		{
-			for (WorkerAttributeSet AttributeSet : *WorkerRequirementsSet)
+			for (const WorkerAttributeSet AttributeSet : *WorkerRequirementsSet)
 			{
-				for (FString Attribute : AttributeSet)
+				for (const FString Attribute : AttributeSet)
 				{
 					if (WorkerAttributes.Contains(Attribute))
 					{
