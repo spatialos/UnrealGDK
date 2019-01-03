@@ -5,12 +5,11 @@
 #include "Engine/ActorChannel.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialTypebindingManager.h"
-#include "Utils/RepDataUtils.h"
-
 #include "Schema/StandardLibrary.h"
-#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
