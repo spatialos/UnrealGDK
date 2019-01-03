@@ -442,7 +442,6 @@ void USpatialSender::EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params)
 void USpatialSender::FlushRetryRPCs()
 {
 	// Retried RPCs are sorted by their index.
-	// This is done to undo the reversal of ordering caused by the TimerManager class.
 	RetryRPCs.Sort([](const TSharedPtr<FPendingRPCParams>& A, const TSharedPtr<FPendingRPCParams>& B) { return A->Index < B->Index; });
 	for (int i = 0; i < RetryRPCs.Num(); i++) 
 	{
