@@ -10,7 +10,7 @@
 #include "Utils/RepDataUtils.h"
 
 #include "Schema/StandardLibrary.h"
-#include "Connection/SpatialWorkerConnection.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
