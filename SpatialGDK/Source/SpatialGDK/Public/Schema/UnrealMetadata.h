@@ -24,8 +24,8 @@ struct UnrealMetadata : Component
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerId, const FString& InClassPath)
-		: StaticPath(InStaticPath), OwnerWorkerAttribute(InOwnerWorkerId), ClassPath(InClassPath) {}
+	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerAttribute, const FString& InClassPath)
+		: StaticPath(InStaticPath), OwnerWorkerAttribute(InOwnerWorkerAttribute), ClassPath(InClassPath) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
