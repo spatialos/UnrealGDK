@@ -36,7 +36,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 class FSpatialWorkerUniqueNetId : public FUniqueNetId
 {
 public:
-	FSpatialWorkerUniqueNetId(const FString& WorkerAttribute) : WorkerAttribute{WorkerAttribute} {}
+	FSpatialWorkerUniqueNetId(const FString& InWorkerAttribute) : WorkerAttribute{InWorkerAttribute} {}
 	~FSpatialWorkerUniqueNetId() override = default;
 
 	const uint8* GetBytes() const override { return reinterpret_cast<const uint8*>(*WorkerAttribute); }
