@@ -27,7 +27,7 @@ DEFINE_LOG_CATEGORY(LogSpatialSender);
 
 using namespace improbable;
 
-FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters)
+FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int RPCIndex)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, Attempts(0)
@@ -39,6 +39,8 @@ FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunct
 		It->InitializeValue_InContainer(Parameters.GetData());
 		It->CopyCompleteValue_InContainer(Parameters.GetData(), InParameters);
 	}
+
+	Index = RPCIndex;
 }
 
 FPendingRPCParams::~FPendingRPCParams()
@@ -395,6 +397,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Send command request (entity: %lld, component: %d, command: %d)"), EntityId, CommandRequest.component_id, Schema_GetCommandRequestCommandIndex(CommandRequest.schema_type));
 				// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 				Params->Attempts++;
 				Receiver->AddPendingReliableRPC(RequestId, Params);
@@ -431,19 +434,20 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 }
 
-void USpatialSender::EnqueueRPC(TSharedRef<FPendingRPCParams> Params)
+void USpatialSender::EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params)
 {
-	QueuedRPCs.Push(Params);
+	QueuedRetryRPCs.Push(Params);
 }
 
-void USpatialSender::FlushQueuedRPCs()
+void USpatialSender::FlushQueuedRetryRPCs()
 {
-	// Retried RPCs are popped from a stack to reverse their order.
+	// Retried RPCs are sorted by their index.
 	// This is done to undo the reversal of ordering caused by the TimerManager class.
-	while (QueuedRPCs.Num() > 0)
-	{
-		SendRPC(QueuedRPCs.Pop());
+	QueuedRetryRPCs.Sort([](const TSharedPtr<FPendingRPCParams>& A, const TSharedPtr<FPendingRPCParams>& B) { return A->Index < B->Index; });
+	for (int i = 0; i < QueuedRetryRPCs.Num(); i++) {
+		SendRPC(QueuedRetryRPCs[i]);
 	}
+	QueuedRetryRPCs.Empty();
 }
 
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)

@@ -163,4 +163,6 @@ private:
 #endif
 
 	friend class USpatialNetConnection;
+
+	int NextRPCIndex;
 };

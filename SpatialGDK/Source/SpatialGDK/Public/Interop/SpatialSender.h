@@ -25,13 +25,14 @@ class USpatialWorkerConnection;
 
 struct FPendingRPCParams
 {
-	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters);
+	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int RPCIndex);
 	~FPendingRPCParams();
 
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
 	TArray<uint8> Parameters;
 	int Attempts; // For reliable RPCs
+	int Index; // Index for ordering reliable RPCs on subsequent tries
 };
 
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
@@ -55,8 +56,8 @@ public:
 	void SendComponentUpdates(UObject* Object, FClassInfo* Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
-	void EnqueueRPC(TSharedRef<FPendingRPCParams> Params);
-	void FlushQueuedRPCs();
+	void EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params);
+	void FlushQueuedRetryRPCs();
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 
@@ -113,5 +114,5 @@ private:
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 
-	TArray<TSharedRef<FPendingRPCParams>> QueuedRPCs;
+	TArray<TSharedRef<FPendingRPCParams>> QueuedRetryRPCs;
 };

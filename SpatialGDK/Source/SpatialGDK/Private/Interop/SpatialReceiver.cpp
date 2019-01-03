@@ -749,9 +749,9 @@ void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 	ReceiveCommandResponse(Op);
 }
 
-void USpatialReceiver::FlushQueuedRPCs()
+void USpatialReceiver::FlushQueuedRetryRPCs()
 {
-	Sender->FlushQueuedRPCs();
+	Sender->FlushQueuedRetryRPCs();
 }
 
 void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
@@ -784,7 +784,7 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 			FTimerHandle RetryTimer;
 			TimerManager->SetTimer(RetryTimer, [this, ReliableRPC]()
 			{
-				Sender->EnqueueRPC(ReliableRPC);
+				Sender->EnqueueRetryRPC(ReliableRPC);
 			}, WaitTime, false);
 		}
 		else
