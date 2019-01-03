@@ -36,18 +36,18 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 class FSpatialWorkerUniqueNetId : public FUniqueNetId
 {
 public:
-	FSpatialWorkerUniqueNetId(const FString& WorkerId) : WorkerId{WorkerId} {}
+	FSpatialWorkerUniqueNetId(const FString& WorkerAttribute) : WorkerAttribute{WorkerAttribute} {}
 	~FSpatialWorkerUniqueNetId() override = default;
 
-	const uint8* GetBytes() const override { return reinterpret_cast<const uint8*>(*WorkerId); }
-	int32 GetSize() const override { return WorkerId.Len() * sizeof(TCHAR); }
+	const uint8* GetBytes() const override { return reinterpret_cast<const uint8*>(*WorkerAttribute); }
+	int32 GetSize() const override { return WorkerAttribute.Len() * sizeof(TCHAR); }
 	bool IsValid() const override { return true; }
-	FString ToString() const override { return WorkerId; }
-	FString ToDebugString() const override { return TEXT("workerId:") + WorkerId; }
+	FString ToString() const override { return WorkerAttribute; }
+	FString ToDebugString() const override { return WorkerAttribute; }
 	virtual FName GetType() const override { return NULL_SUBSYSTEM; };
 
 private:
-	FString WorkerId;
+	FString WorkerAttribute;
 };
 
 UCLASS()
