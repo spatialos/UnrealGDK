@@ -234,6 +234,11 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			}
 		}
 	}
+
+	if (Op.component_id == 100290)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("USpatialReceiver::HandleActorAuthority authority change %d Authority %d <%s%d> .GPlayInEditorID"), Op.component_id, Op.authority, GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
+	}
 }
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)

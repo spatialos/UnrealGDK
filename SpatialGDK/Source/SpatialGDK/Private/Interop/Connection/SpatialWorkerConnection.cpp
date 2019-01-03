@@ -303,6 +303,19 @@ FString USpatialWorkerConnection::GetWorkerId() const
 	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
 
+TArray<FString> USpatialWorkerConnection::GetWorkerAttributes() const
+{
+	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
+
+	TArray<FString> AttributesArray;
+	for (uint32 index = 0; index < Attributes->attribute_count; ++index)
+	{
+		AttributesArray.Add(UTF8_TO_TCHAR(Attributes->attributes[index]));
+	}
+
+	return AttributesArray;
+}
+
 Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntiyQuery)
 {
 	return Worker_Connection_SendEntityQueryRequest(WorkerConnection, EntiyQuery, 0);

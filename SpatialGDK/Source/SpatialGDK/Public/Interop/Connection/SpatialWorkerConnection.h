@@ -39,6 +39,7 @@ public:
 	void SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message);
 	void SendComponentInterest(Worker_EntityId EntityId, const TArray<Worker_InterestOverride>& ComponentInterest);
 	FString GetWorkerId() const;
+	TArray<FString> GetWorkerAttributes() const;
 	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntiyQuery);
 
 	FOnConnectedDelegate OnConnected;

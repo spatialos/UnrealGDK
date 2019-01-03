@@ -8,6 +8,7 @@
 #include "UObject/TextProperty.h"
 
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaUtils.h"
@@ -37,7 +38,7 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, true);
+		ApplySchemaObject(ComponentObject, ComponentData.component_id, Channel->GetEntityId(), Object, Channel, true);
 	}
 }
 
@@ -55,11 +56,11 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, false, &ClearedIds);
+		ApplySchemaObject(ComponentObject, ComponentUpdate.component_id, Channel->GetEntityId(), Object, Channel, false, &ClearedIds);
 	}
 }
 
-void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
+void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, Worker_ComponentId ComponentId, Worker_EntityId EntityId, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
 {
 	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
 
@@ -97,8 +98,17 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		const FRepLayoutCmd& Cmd = Cmds[BaseHandleToCmdIndex[FieldId - 1].CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
+		if (FieldId == 45 && Cmd.Property->GetName() == TEXT("Inventory"))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ComponentReader::ApplySchemaObject <%s%d> .GPlayInEditorID"), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
+		}
+
 		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
 		{
+			if (FieldId == 45 && Cmd.Property->GetName() == TEXT("Inventory"))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ComponentReader::ApplySchemaObject Moving on to process the update <%s%d> .c"), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
+			}
 			// This swaps Role/RemoteRole as we write it
 			const FRepLayoutCmd& SwappedCmd = (!bIsAuthServer && Parent.RoleSwapIndex != -1) ? Cmds[Parents[Parent.RoleSwapIndex].CmdStart] : Cmd;
 
@@ -184,6 +194,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 				}
 			}
+		}
+
+		if (FieldId == 45 && Cmd.Property->GetName() == TEXT("Inventory"))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ComponentReader::ApplySchemaObject End <%s%d> .GPlayInEditorID"), GPlayInEditorID == 1 ? TEXT("Server") : TEXT("Client"), GPlayInEditorID);
 		}
 	}
 
