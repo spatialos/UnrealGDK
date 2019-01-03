@@ -308,7 +308,7 @@ TArray<FString> USpatialWorkerConnection::GetWorkerAttributes() const
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
 
 	TArray<FString> AttributesArray;
-	for (uint32 index = 0; index < Attributes->attribute_count; ++index)
+	for (uint32 Index = 0; Index < Attributes->attribute_count; ++Index)
 	{
 		AttributesArray.Add(UTF8_TO_TCHAR(Attributes->attributes[Index]));
 	}
