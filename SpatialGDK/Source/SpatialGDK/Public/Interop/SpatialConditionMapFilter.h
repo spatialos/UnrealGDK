@@ -18,7 +18,7 @@ public:
 		RepFlags.bReplay = 0;
 		RepFlags.bNetInitial = 1; // The server will only ever send one update for bNetInitial, so just let them through here.
 		RepFlags.bNetSimulated = ActorChannel->Actor->Role == ROLE_SimulatedProxy;
-		RepFlags.bNetOwner = ActorChannel->IsNetOwned();
+		RepFlags.bNetOwner = ActorChannel->IsOwnedByWorker();
 		RepFlags.bRepPhysics = ActorChannel->Actor->ReplicatedMovement.bRepPhysics;
 
 #if 0

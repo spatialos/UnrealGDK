@@ -62,7 +62,7 @@ public:
 		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_ClientRPC]);
 	}
 
-	FORCEINLINE bool IsNetOwned() const
+	FORCEINLINE bool IsOwnedByWorker() const
 	{
 		if (NetDriver->GetNetMode() != NM_Client)
 		{
