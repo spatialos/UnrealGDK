@@ -1049,7 +1049,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Sender->SendRPC(MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters));
+		Sender->SendRPC(MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++));
 	}
 }
 

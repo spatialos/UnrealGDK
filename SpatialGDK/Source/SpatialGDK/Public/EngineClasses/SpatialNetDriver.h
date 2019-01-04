@@ -163,4 +163,9 @@ private:
 #endif
 
 	friend class USpatialNetConnection;
+
+	// This index is incremented and assigned to every new RPC in ProcessRemoteFunction.
+	// The SpatialSender uses these indexes to retry any failed reliable RPCs
+	// in the correct order, if needed.
+	int NextRPCIndex;
 };

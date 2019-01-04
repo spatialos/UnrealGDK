@@ -127,6 +127,7 @@ public:
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
+	void FlushRetryRPCs();
 
 private:
 	void EnterCriticalSection();
