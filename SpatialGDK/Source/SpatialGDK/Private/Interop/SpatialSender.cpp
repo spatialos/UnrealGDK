@@ -31,6 +31,7 @@ FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunct
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, Attempts(0)
+	, Index(RPCIndex)
 {
 	Parameters.SetNumZeroed(Function->ParmsSize);
 
@@ -39,7 +40,6 @@ FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunct
 		It->InitializeValue_InContainer(Parameters.GetData());
 		It->CopyCompleteValue_InContainer(Parameters.GetData(), InParameters);
 	}
-
 }
 
 FPendingRPCParams::~FPendingRPCParams()
@@ -442,9 +442,9 @@ void USpatialSender::FlushRetryRPCs()
 {
 	// Retried RPCs are sorted by their index.
 	RetryRPCs.Sort([](const TSharedPtr<FPendingRPCParams>& A, const TSharedPtr<FPendingRPCParams>& B) { return A->Index < B->Index; });
-	for (int i = 0; i < RetryRPCs.Num(); i++) 
+	for(auto& RetryRPC : RetryRPCs)
 	{
-		SendRPC(RetryRPCs[i]);
+		SendRPC(RetryRPC);
 	}
 	RetryRPCs.Empty();
 }
