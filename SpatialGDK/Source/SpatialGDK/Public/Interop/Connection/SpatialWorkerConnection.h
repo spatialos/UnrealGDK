@@ -57,8 +57,12 @@ private:
 
 	void GetAndPrintConnectionFailureMessage();
 
+	void CacheWorkerAttributes();
+
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLocator;
 
 	bool bIsConnected;
+
+	TArray<FString> CachedWorkerAttributes;
 };
