@@ -64,11 +64,6 @@ public:
 
 	FORCEINLINE bool IsOwnedByWorker() const
 	{
-		if (NetDriver->GetNetMode() != NM_Client)
-		{
-			return false;
-		}
-
 		const FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 		check(Info);
 

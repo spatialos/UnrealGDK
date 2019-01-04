@@ -83,8 +83,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;
 
 	bool bIsAuthServer = Channel->IsAuthoritativeServer();
+	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
+	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
 
-	FSpatialConditionMapFilter ConditionMap(Channel);
+	FSpatialConditionMapFilter ConditionMap(Channel, bIsClient);
 
 	TArray<UProperty*> RepNotifies;
 
@@ -152,7 +154,6 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 				{
 					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
 					// the client RPCs component.
-					bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
 					UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
 					if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
 					{
