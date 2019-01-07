@@ -88,7 +88,7 @@ struct FPendingIncomingRPC
 	int64 CountBits;
 #if !UE_BUILD_SHIPPING
 	FString SenderWorkerId;
-#endif
+#endif // !UE_BUILD_SHIPPING
 };
 
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
