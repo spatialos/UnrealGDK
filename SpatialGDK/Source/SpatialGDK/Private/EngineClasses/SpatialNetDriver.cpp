@@ -47,9 +47,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
-	TypebindingManager = NewObject<USpatialTypebindingManager>();
-	TypebindingManager->Init(this);
-
 	// Extract the snapshot to load (if any) from the map URL so that once we are connected to a deployment we can load that snapshot into the Spatial deployment.
 	SnapshotToLoad = URL.GetOption(*SpatialConstants::SnapshotURLOption, TEXT(""));
 
@@ -94,6 +91,14 @@ void USpatialNetDriver::PostInitProperties()
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
+	if (TypebindingManager == nullptr)
+	{
+		// Delay loading of the schema database until after the map is loaded to prevent package/outer conflicts. This can
+		// be moved back to Init() once we have lazy loading of schema database implemented - JIRA: 833
+		TypebindingManager = NewObject<USpatialTypebindingManager>();
+		TypebindingManager->Init(this);
+	}
+
 	if (LoadedWorld->GetNetDriver() != this)
 	{
 		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
