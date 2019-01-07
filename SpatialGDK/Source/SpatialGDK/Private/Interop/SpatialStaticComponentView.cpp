@@ -6,6 +6,7 @@
 #include "Schema/Interest.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
+#include "EngineClasses/SpatialNetDriver.h"
 
 Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
@@ -20,9 +21,12 @@ Worker_Authority USpatialStaticComponentView::GetAuthority(Worker_EntityId Entit
 	return WORKER_AUTHORITY_NOT_AUTHORITATIVE;
 }
 
+DECLARE_CYCLE_STAT(TEXT("SpatialComponentView ~ HasAuthority"), STAT_SpatialComponentViewHasAuthority, STATGROUP_SpatialNetDriver);
+
 // TODO UNR-640 - Need to fix for authority loss imminent
 bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialComponentViewHasAuthority);
 	return GetAuthority(EntityId, ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 }
 

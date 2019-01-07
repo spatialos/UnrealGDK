@@ -189,8 +189,11 @@ void USpatialTypebindingManager::CreateTypebindings()
 	}
 }
 
+DECLARE_CYCLE_STAT(TEXT("SpatialTBM ~ FindClassInfoByClass"), STAT_SpatialTBMFindClassInfo, STATGROUP_SpatialNetDriver);
+
 FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialTBMFindClassInfo);
 	return ClassInfoMap.Find(Class);
 }
 

@@ -17,7 +17,9 @@ class USpatialPackageMapClient;
 class UNetDriver;
 class UProperty;
 
-using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
+enum EReplicatedPropertyGroup : uint32;
+
+using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<TWeakObjectPtr<const UObject>>>;
 
 namespace improbable
 {

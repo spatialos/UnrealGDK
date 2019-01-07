@@ -23,6 +23,8 @@
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
 DECLARE_CYCLE_STAT(TEXT("SpatialActorChannel ~ ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNetDriver);
+DECLARE_CYCLE_STAT(TEXT("SpatialActorChannel ~ UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNetDriver);
+DECLARE_CYCLE_STAT(TEXT("SpatialActorChannel ~ ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNetDriver);
 
 namespace
 {
@@ -397,6 +399,8 @@ int64 USpatialActorChannel::ReplicateActor()
 
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo* Info, const FReplicationFlags& RepFlags)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateSubobject);
+
 	if (Info == nullptr)
 	{
 		return false;
@@ -691,6 +695,8 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
+
 	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
 	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
 	// of the PlayerController and PlayerState at the same time as the pawn.

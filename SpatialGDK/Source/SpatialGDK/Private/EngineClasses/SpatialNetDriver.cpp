@@ -33,7 +33,7 @@
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
 DECLARE_CYCLE_STAT(TEXT("SpatialNetDriver ~ ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNetDriver);
-DEFINE_STAT(STAT_ConsiderList);
+DEFINE_STAT(STAT_SpatialConsiderList);
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
@@ -565,6 +565,8 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 	int32 FinalSortedCount = 0;
 	int32 DeletedCount = 0;
 
+	int32 RateLimit = 200;
+
 	const int32 MaxSortedActors = ConsiderList.Num() + DestroyedStartupOrDormantActors.Num();
 	if (MaxSortedActors > 0)
 	{
@@ -629,7 +631,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 			// NOTE - We use NetTag to make sure SentTemporaries didn't already mark this actor to be skipped
 			if (Actor->NetTag != NetTag)
 			{
-				UE_LOG(LogNetTraffic, Log, TEXT("Consider %s alwaysrelevant %d frequency %f "), *Actor->GetName(), Actor->bAlwaysRelevant, Actor->NetUpdateFrequency);
+				UE_LOG(LogNetTraffic, Warning, TEXT("Consider %s alwaysrelevant %d frequency %f "), *Actor->GetName(), Actor->bAlwaysRelevant, Actor->NetUpdateFrequency);
 
 				Actor->NetTag = NetTag;
 
@@ -657,9 +659,13 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 		// Sort by priority
 		Sort(OutPriorityActors, FinalSortedCount, FCompareFActorPriority());
+
+		// SpatialGDK
+		// Rate limit the number of possible actors we send in a single tick.
+
 	}
 
-	UE_LOG(LogNetTraffic, Log, TEXT("ServerReplicateActors_PrioritizeActors: Potential %04i ConsiderList %03i FinalSortedCount %03i"), MaxSortedActors, ConsiderList.Num(), FinalSortedCount);
+	UE_LOG(LogNetTraffic, Error, TEXT("ServerReplicateActors_PrioritizeActors: Potential %04i ConsiderList %03i FinalSortedCount %03i"), MaxSortedActors, ConsiderList.Num(), FinalSortedCount);
 
 	return FinalSortedCount;
 }
@@ -678,9 +684,10 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 	// IMPROBABLE-BEGIN RATE LIMITING
 
-	// Simple limit to 100 per frame
-
-	int32 RateLimit = 100;
+	// Simple limit to 200 per frame.
+	// 200 is approx the amount Unreal will do per frame.
+	// TODO: Base this number on the ticking rate of the server.
+	int32 RateLimit = 200;
 	if (FinalSortedCount < RateLimit)
 	{
 		RateLimit = FinalSortedCount;
@@ -688,8 +695,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 	// IMPROBABLE-END RATE LIMITING
 
-
-	for (int32 j = 0; j < RateLimit; j++)
+	for (int32 j = 0; j < FinalSortedCount; j++)
 	{
 		// Deletion entry
 		if (PriorityActors[j]->ActorInfo == NULL && PriorityActors[j]->DestructionInfo)
@@ -705,7 +711,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			if (Channel)
 			{
 				FinalRelevantCount++;
-				UE_LOG(LogNetTraffic, Log, TEXT("Server replicate actor creating destroy channel for NetGUID <%s,%s> Priority: %d"), *PriorityActors[j]->DestructionInfo->NetGUID.ToString(), *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
+				UE_LOG(LogNetTraffic, Warning, TEXT("Server replicate actor creating destroy channel for NetGUID <%s,%s> Priority: %d"), *PriorityActors[j]->DestructionInfo->NetGUID.ToString(), *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
 
 				InConnection->GetDestroyedStartupOrDormantActorGUIDs().Remove(PriorityActors[j]->DestructionInfo->NetGUID); // Remove from connections to-be-destroyed list (close bunch of reliable, so it will make it there)
 			}
@@ -725,7 +731,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 		// Normal actor replication
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(PriorityActors[j]->Channel);
-		UE_LOG(LogNetTraffic, Log, TEXT(" Maybe Replicate %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
+		UE_LOG(LogNetTraffic, Warning, TEXT(" Maybe Replicate %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
 		if (!Channel || Channel->Actor) //make sure didn't just close this channel
 		{
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
@@ -736,9 +742,10 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			// bTearOff actors should never be checked
 			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
 			{
-				if (IsActorRelevantToConnection(Actor, ConnectionViewers))
+				if (RateLimit > 0)
 				{
 					bIsRelevant = true;
+					RateLimit--;
 				}
 				else if (DebugRelevantActors)
 				{
@@ -772,10 +779,10 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						{
 							Channel->SetChannelActor(Actor);
 						}
-						// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
 						else if (Actor->NetUpdateFrequency < 1.0f)
 						{
-							UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
+
+							UE_LOG(LogNetTraffic, Warning, TEXT("Unable to replicate %s"), *Actor->GetName());
 							PriorityActors[j]->ActorInfo->NextUpdateTime = Actor->GetWorld()->TimeSeconds + 0.2f * FMath::FRand();
 						}
 					}
@@ -787,43 +794,45 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					if (bIsRelevant)
 					{
 						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
-					}
-					// if the channel isn't saturated
-					if (Channel->IsNetReady(0))
-					{
-						// replicate the actor
-						UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
-						if (DebugRelevantActors)
-						{
-							LastRelevantActors.Add(Actor);
-						}
 
-						if (Channel->ReplicateActor())
+
+						// if the channel isn't saturated
+						if (Channel->IsNetReady(0))
 						{
-							ActorUpdatesThisConnectionSent++;
+							// replicate the actor
+							UE_LOG(LogNetTraffic, Warning, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
 							if (DebugRelevantActors)
 							{
-								LastSentActors.Add(Actor);
+								LastRelevantActors.Add(Actor);
 							}
 
-							// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
-							const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
-							const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
-							const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
+							if (Channel->ReplicateActor())
+							{
+								ActorUpdatesThisConnectionSent++;
+								if (DebugRelevantActors)
+								{
+									LastSentActors.Add(Actor);
+								}
 
-							// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
-							PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
-							PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
+								// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
+								const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
+								const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
+								const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
+
+								// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
+								PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
+								PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
+							}
+							ActorUpdatesThisConnection++;
+							OutUpdated++;
 						}
-						ActorUpdatesThisConnection++;
-						OutUpdated++;
-					}
 
-					// second check for channel saturation
-					if (!InConnection->IsNetReady(0))
-					{
-						// We can bail out now since this connection is saturated, we'll return how far we got though
-						return j;
+						// second check for channel saturation
+						if (!InConnection->IsNetReady(0))
+						{
+							// We can bail out now since this connection is saturated, we'll return how far we got though
+							return j;
+						}
 					}
 				}
 			}
@@ -842,6 +851,8 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			}
 		}
 	}
+
+	UE_LOG(LogTemp, Log, TEXT("ActorUpdatesThisConnectionSent: %d"), ActorUpdatesThisConnectionSent);
 
 	return RateLimit;
 }
@@ -892,7 +903,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		bCPUSaturated = DeltaSeconds > 1.2f * ServerTickTime;
 	}
 
-	SET_DWORD_STAT(STAT_ConsiderList, 0);
+	SET_DWORD_STAT(STAT_SpatialConsiderList, 0);
 
 	TArray<FNetworkObjectInfo*> ConsiderList;
 	ConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
@@ -900,7 +911,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// Build the consider list (actors that are ready to replicate)
 	ServerReplicateActors_BuildConsiderList(ConsiderList, ServerTickTime);
 
-	SET_DWORD_STAT(STAT_ConsiderList, ConsiderList.Num());
+	SET_DWORD_STAT(STAT_SpatialConsiderList, ConsiderList.Num());
 
 	FMemMark Mark(FMemStack::Get());
 
@@ -954,13 +965,13 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				UE_LOG(LogNetTraffic, Verbose, TEXT("Saturated. %s"), *Actor->GetName());
 				if (Channel != NULL && Time - Channel->RelevantTime <= 1.f)
 				{
-					UE_LOG(LogNetTraffic, Log, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
+					UE_LOG(LogNetTraffic, Error, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
 					PriorityActors[k]->ActorInfo->bPendingNetUpdate = true;
 				}
 				else if (IsActorRelevantToConnection(Actor, ConnectionViewers))
 				{
 					// If this actor was relevant but didn't get processed, force another update for next frame
-					UE_LOG(LogNetTraffic, Log, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
+					UE_LOG(LogNetTraffic, Error, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
 					PriorityActors[k]->ActorInfo->bPendingNetUpdate = true;
 					if (Channel != NULL)
 					{
