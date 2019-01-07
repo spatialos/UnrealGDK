@@ -25,7 +25,7 @@ class USpatialWorkerConnection;
 
 struct FPendingRPCParams
 {
-	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters);
+	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex);
 	~FPendingRPCParams();
 
 	TWeakObjectPtr<UObject> TargetObject;
@@ -33,6 +33,7 @@ struct FPendingRPCParams
 	TArray<uint8> Parameters;
 	int Attempts; // For reliable RPCs
 
+	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
 #if !UE_BUILD_SHIPPING
 	int ReliableRPCIndex;
 #endif // !UE_BUILD_SHIPPING
@@ -59,6 +60,8 @@ public:
 	void SendComponentUpdates(UObject* Object, FClassInfo* Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
+	void EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params);
+	void FlushRetryRPCs();
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 
@@ -114,4 +117,6 @@ private:
 	FOutgoingRPCMap OutgoingRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
+
+	TArray<TSharedRef<FPendingRPCParams>> RetryRPCs;
 };

@@ -27,10 +27,11 @@ DEFINE_LOG_CATEGORY(LogSpatialSender);
 
 using namespace improbable;
 
-FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters)
+FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, Attempts(0)
+	, RetryIndex(InRetryIndex)
 {
 	Parameters.SetNumZeroed(Function->ParmsSize);
 
@@ -400,6 +401,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Send command request (entity: %lld, component: %d, command: %d)"), EntityId, CommandRequest.component_id, Schema_GetCommandRequestCommandIndex(CommandRequest.schema_type));
 				// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 				Params->Attempts++;
 				Receiver->AddPendingReliableRPC(RequestId, Params);
@@ -434,6 +436,22 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	{
 		QueueOutgoingRPC(UnresolvedObject, Params);
 	}
+}
+
+void USpatialSender::EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params)
+{
+	RetryRPCs.Add(Params);
+}
+
+void USpatialSender::FlushRetryRPCs()
+{
+	// Retried RPCs are sorted by their index.
+	RetryRPCs.Sort([](const TSharedPtr<FPendingRPCParams>& A, const TSharedPtr<FPendingRPCParams>& B) { return A->RetryIndex < B->RetryIndex; });
+	for(auto& RetryRPC : RetryRPCs)
+	{
+		SendRPC(RetryRPC);
+	}
+	RetryRPCs.Empty();
 }
 
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)

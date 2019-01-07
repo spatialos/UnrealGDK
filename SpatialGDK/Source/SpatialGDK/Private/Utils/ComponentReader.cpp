@@ -61,8 +61,6 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
 {
-	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
-
 	TArray<uint32> UpdateFields;
 	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
 	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
@@ -85,8 +83,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;
 
 	bool bIsAuthServer = Channel->IsAuthoritativeServer();
+	bool bAutonomousProxy = Channel->IsClientAutonomousProxy();
+	bool bIsClient = NetDriver->GetNetMode() == NM_Client;
 
-	FSpatialConditionMapFilter ConditionMap(Channel, bAutonomousProxy);
+	FSpatialConditionMapFilter ConditionMap(Channel, bIsClient);
 
 	TArray<UProperty*> RepNotifies;
 

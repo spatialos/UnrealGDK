@@ -83,10 +83,10 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 
     ```
     // Only replicate health to the owning client.
-    DOREPLIFETIME_CONDITION(ATPSCharacter, CurrentHealth, COND_AutonomousOnly);
+    DOREPLIFETIME_CONDITION(ATPSCharacter, CurrentHealth, COND_OwnerOnly);
     ```
 
-    > **Note:** You only want to replicate the `CurrentHealth` variable to the client that owns this Actor, thus you specify the `COND_AutonomousOnly` flag.
+    > **Note:** You only want to replicate the `CurrentHealth` variable to the client that owns this Actor, thus you specify the `COND_OwnerOnly` flag.
 
     Finally, you need to implement the `OnRep_CurentHealth` function so that the player health UI gets updated when the `CurrentHealth` variable is replicated:
 

@@ -749,6 +749,11 @@ void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 	ReceiveCommandResponse(Op);
 }
 
+void USpatialReceiver::FlushRetryRPCs()
+{
+	Sender->FlushRetryRPCs();
+}
+
 void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 {
 	TSharedRef<FPendingRPCParams>* ReliableRPCPtr = PendingReliableRPCs.Find(Op.request_id);
@@ -779,7 +784,7 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 			FTimerHandle RetryTimer;
 			TimerManager->SetTimer(RetryTimer, [this, ReliableRPC]()
 			{
-				Sender->SendRPC(ReliableRPC);
+				Sender->EnqueueRetryRPC(ReliableRPC);
 			}, WaitTime, false);
 		}
 		else
@@ -832,7 +837,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 	FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
 
 #if !UE_BUILD_SHIPPING
-	int ReliableRPCId;
+	int ReliableRPCId = 0;
 	if (Function->FunctionFlags & FUNC_NetReliable)
 	{
 		PayloadReader << ReliableRPCId;
