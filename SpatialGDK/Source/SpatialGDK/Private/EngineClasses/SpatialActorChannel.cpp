@@ -741,7 +741,7 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	{
 		return GetActorSpatialPosition(Controller->GetPawn());
 	}
-	else if (InActor->GetOwner())
+	else if (InActor->GetOwner() != nullptr)
 	{
 		return GetActorSpatialPosition(InActor->GetOwner());
 	}
