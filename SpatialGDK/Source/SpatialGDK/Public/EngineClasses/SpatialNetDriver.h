@@ -124,6 +124,9 @@ public:
 	UPROPERTY()
 	USnapshotManager* SnapshotManager;
 
+	UPROPERTY(Config)
+	int32 ActorReplicationRateLimit;
+
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
@@ -143,7 +146,6 @@ private:
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
 	FString SnapshotToLoad;
-	int32 ActorReplicationRateLimit;
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);

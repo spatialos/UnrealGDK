@@ -522,6 +522,16 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 			// the view target is what the player controller is looking at OR the owning actor itself when using beacons
 			SpatialConnection->ViewTarget = SpatialConnection->PlayerController ? SpatialConnection->PlayerController->GetViewTarget() : OwningActor;
 
+			// UnrealGDK - If we don't have a view target then we need to try and grab one from a client connection for building replication priorities.
+			//if (SpatialConnection->ViewTarget == nullptr)
+			//{
+			//	if(ConnIdx + 1 < ClientConnections.Num())
+			//	{
+			//		USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[ConnIdx + 1]);
+			//		SpatialConnection->ViewTarget = OtherSpatialConnection->PlayerController ? OtherSpatialConnection->PlayerController->GetViewTarget() : OwningActor;
+			//	}
+			//}
+
 			for (int32 ChildIdx = 0; ChildIdx < SpatialConnection->Children.Num(); ChildIdx++)
 			{
 				UNetConnection *Child = SpatialConnection->Children[ChildIdx];
@@ -635,7 +645,9 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 				Actor->NetTag = NetTag;
 
-				OutPriorityList[FinalSortedCount] = FActorPriority(PriorityConnection, Channel, ActorInfo, ConnectionViewers, bLowNetBandwidth);
+				FActorPriority NewPriorityActor = FActorPriority(PriorityConnection, Channel, ActorInfo, ConnectionViewers, bLowNetBandwidth);
+
+				OutPriorityList[FinalSortedCount] = NewPriorityActor;
 				OutPriorityActors[FinalSortedCount] = OutPriorityList + FinalSortedCount;
 
 				FinalSortedCount++;
@@ -687,7 +699,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	// Simple limit to 200 per frame.
 	// 200 is approx the amount Unreal will do per frame.
 	// TODO: Base this number on the ticking rate of the server.
-	int32 RateLimit = 200;
+	int32 RateLimit = ActorReplicationRateLimit;
 	if (FinalSortedCount < RateLimit)
 	{
 		RateLimit = FinalSortedCount;
@@ -742,15 +754,16 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			// bTearOff actors should never be checked
 			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
 			{
-				if (RateLimit > 0)
-				{
-					bIsRelevant = true;
-					RateLimit--;
-				}
-				else if (DebugRelevantActors)
+				if (DebugRelevantActors)
 				{
 					LastNonRelevantActors.Add(Actor);
 				}
+			}
+
+			if (RateLimit > 0)
+			{
+				bIsRelevant = true;
+				RateLimit--;
 			}
 
 			// if the actor is now relevant or was recently relevant
@@ -791,10 +804,10 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				if (Channel)
 				{
 					// if it is relevant then mark the channel as relevant for a short amount of time
+
+					Channel->RelevantTime = Time + 0.5f * FMath::SRand();
 					if (bIsRelevant)
 					{
-						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
-
 
 						// if the channel isn't saturated
 						if (Channel->IsNetReady(0))
@@ -834,6 +847,17 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 							return j;
 						}
 					}
+					else
+					{
+						// Double the update frequency for an actor which was missed but should be relevant.
+						const float MinOptimalDelta = 1.0f / (Actor->NetUpdateFrequency * 2);
+						const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
+						const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
+
+						// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
+						PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
+						PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
+					}
 				}
 			}
 
@@ -851,8 +875,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			}
 		}
 	}
-
-	UE_LOG(LogTemp, Log, TEXT("ActorUpdatesThisConnectionSent: %d"), ActorUpdatesThisConnectionSent);
 
 	return RateLimit;
 }
@@ -935,6 +957,27 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 					{
 						new(ConnectionViewers)FNetViewer(SpatialConnection->Children[ViewerIndex], DeltaSeconds);
 					}
+				}
+			}
+			else
+			{
+				// We must be the fake spatial connection and thus borrow the other player controllers.
+
+				// TODO: Do this for all connections and not just one.
+				if (i + 1 < ClientConnections.Num())
+				{
+					USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[i + 1]);
+
+					new(ConnectionViewers)FNetViewer(OtherSpatialConnection, DeltaSeconds);
+
+					// TODO: Ignore children for now
+					//for (int32 ViewerIndex = 0; ViewerIndex < OtherSpatialConnection->Children.Num(); ViewerIndex++)
+					//{
+					//	if (SpatialConnection->Children[ViewerIndex]->ViewTarget != NULL)
+					//	{
+					//		new(ConnectionViewers)FNetViewer(SpatialConnection->Children[ViewerIndex], DeltaSeconds);
+					//	}
+					//}
 				}
 			}
 

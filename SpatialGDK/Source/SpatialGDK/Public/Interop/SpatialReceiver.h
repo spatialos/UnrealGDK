@@ -200,7 +200,7 @@ private:
 	TArray<Worker_EntityId> PendingRemoveEntities;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
-	FReliableRPCMap PendingReliableRPCs;
+	FReliableRPCMap PendingReliableRPCs;\
 
 	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
 	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
