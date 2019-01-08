@@ -295,20 +295,17 @@ void FillComponentInterests(FClassInfo* Info, bool bNetOwned, TArray<Worker_Inte
 	}
 }
 
-TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* Actor)
+TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* Actor, bool bIsNetOwned)
 {
 	TArray<Worker_InterestOverride> ComponentInterest;
 
-	// This effectively checks whether the actor is owned by our PlayerController
-	bool bNetOwned = Actor->GetNetConnection() != nullptr;
-
 	FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-	FillComponentInterests(ActorInfo, bNetOwned, ComponentInterest);
+	FillComponentInterests(ActorInfo, bIsNetOwned, ComponentInterest);
 
 	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
 	{
 		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
-		FillComponentInterests(SubobjectInfo, bNetOwned, ComponentInterest);
+		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
 	}
 
 	return ComponentInterest;
@@ -318,7 +315,9 @@ void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId Entity
 {
 	check(!NetDriver->IsServer());
 
-	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor));
+	const USpatialActorChannel* const ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+	const bool bIsNetOwned = ActorChannel && ActorChannel->IsOwnedByWorker();
+	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor, bIsNetOwned));
 }
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
