@@ -34,8 +34,8 @@ markEndOfBlock "Setup the git hooks"
 
 markStartOfBlock "Check dependencies"
     if [ -z "${UNREAL_HOME:-}" ]; then
-        echo "Error: Please set UNREAL_HOME environment variable to point to the Unreal Engine folder."
-        #exit 1
+        echo "Error: Please set UNREAL_HOME environment variable in ~/.bashrc or ~/.zshrc to point to the Unreal Engine folder."
+        exit 1
     fi
 
     which msbuild > /dev/null
