@@ -128,7 +128,7 @@ public:
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
 #if !UE_BUILD_SHIPPING
-	uint8 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
+	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
 	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint8 RPCId, UObject* TargetObject, UFunction* Function);
 
 	struct FReliableRPCId
