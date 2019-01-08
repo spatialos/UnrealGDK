@@ -47,7 +47,7 @@ In this step, you're going to build the GDK for Unreal module dependencies, whic
 
 #### Deploy locally
 
-1. In the Unreal Editor, on the SpatialOS GDK toolbar, click **Launch**. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
+1. In the Unreal Editor, on the SpatialOS GDK toolbar, click **Start**. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2** and check the box next to **Run Dedicated Server**. Then, under Modes, select **New Editor Window (PIE)**.
 1. On the toolbar, click **Play** to run the game.
