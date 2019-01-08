@@ -234,6 +234,22 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			}
 		}
 	}
+
+#if !UE_BUILD_SHIPPING
+	if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
+	{
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			ESchemaComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Op.component_id);
+			if (ComponentType >= SCHEMA_FirstRPC && ComponentType <= SCHEMA_LastRPC)
+			{
+				// This could be either an RPC component on the actor or the subobject, but we assume
+				// they will be received together, so resetting multiple times should not be a problem.
+				NetDriver->OnRPCAuthorityGained(Actor, ComponentType);
+			}
+		}
+	}
+#endif // !UE_BUILD_SHIPPING
 }
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)

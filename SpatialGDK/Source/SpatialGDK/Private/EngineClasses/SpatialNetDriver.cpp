@@ -1401,7 +1401,7 @@ uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentTy
 			// We previously used to receive RPCs of this type, now we're about to send one, so we reset the reliable RPC index.
 			// This should only be possible for CrossServer RPCs.
 			check(RPCType == SCHEMA_CrossServerRPC);
-			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Actor %s, object %s: Used to receive reliable CrossServer RPCs from worker %s, now about to send one. The entity must have crossed boundary."),
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to receive reliable CrossServer RPCs from worker %s, now about to send one. The entity must have crossed boundary."),
 				*Actor->GetName(), *TargetObject->GetName(), *RPCIdEntry->WorkerId);
 			RPCIdEntry->WorkerId = FString();
 			RPCIdEntry->RPCId = 0;
@@ -1434,13 +1434,13 @@ void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentTyp
 			{
 				// We previously used to send RPCs of this type, now we received one. This should only be possible for CrossServer RPCs.
 				check(RPCType == SCHEMA_CrossServerRPC);
-				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Actor %s, object %s: Used to send reliable CrossServer RPCs, now received one from worker %s. The entity must have crossed boundary."),
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to send reliable CrossServer RPCs, now received one from worker %s. The entity must have crossed boundary."),
 					*Actor->GetName(), *TargetObject->GetName(), *WorkerId);
 			}
 			else
 			{
 				// We received an RPC from a different worker than the one we used to receive RPCs of this type from.
-				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Actor %s, object %s: Received a reliable %s RPC from a different worker %s. Previously received from worker %s."),
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Received a reliable %s RPC from a different worker %s. Previously received from worker %s."),
 					*Actor->GetName(), *TargetObject->GetName(), *RPCSchemaTypeToString(RPCType), *WorkerId, *RPCIdEntry->WorkerId);
 			}
 			RPCIdEntry->WorkerId = WorkerId;
@@ -1449,17 +1449,17 @@ void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentTyp
 		{
 			if (RPCId < RPCIdEntry->RPCId)
 			{
-				UE_LOG(LogSpatialActorChannel, Error, TEXT("Actor %s: Reliable %s RPC received out of order! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Actor %s: Reliable %s RPC received out of order! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
 					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
 			}
 			else if (RPCId == RPCIdEntry->RPCId)
 			{
-				UE_LOG(LogSpatialActorChannel, Error, TEXT("Actor %s: Reliable %s RPC index duplicated! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Actor %s: Reliable %s RPC index duplicated! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
 					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
 			}
 			else
 			{
-				UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor %s: One or more reliable %s RPCs skipped! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
+				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: One or more reliable %s RPCs skipped! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
 					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
 			}
 		}
@@ -1473,4 +1473,21 @@ void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentTyp
 		ReliableRPCIds.Add(RPCType, FReliableRPCId(WorkerId, RPCId, TargetObject->GetName(), Function->GetName()));
 	}
 }
+
+void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType)
+{
+	// When we gain authority on an RPC component of an actor that we previously received RPCs for, reset the reliable RPC counter.
+	// This is to account for the case where the actor crosses to another worker, receives a couple of reliable RPCs, and comes back
+	// to the original worker.
+	if (FRPCTypeToReliableRPCIdMap* ReliableRPCIds = ReliableRPCIdMap.Find(Actor))
+	{
+		if (ReliableRPCIds->Contains(RPCType))
+		{
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s: Gained authority over %s RPC component. Resetting previous reliable RPC counter."),
+				*Actor->GetName(), *RPCSchemaTypeToString(RPCType));
+			ReliableRPCIds->Remove(RPCType);
+		}
+	}
+}
+
 #endif // !UE_BUILD_SHIPPING
