@@ -1386,7 +1386,7 @@ void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate
 }
 
 #if !UE_BUILD_SHIPPING
-uint8 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject)
+uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject)
 {
 	if (!ReliableRPCIdMap.Contains(Actor))
 	{
