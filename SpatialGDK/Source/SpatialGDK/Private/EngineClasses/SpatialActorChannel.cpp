@@ -732,10 +732,16 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 {
 	FVector Location = FVector::ZeroVector;
 
-	// If the Actor has an Owner, use its position.
+	// If the Actor is a Controller, use its Pawn's position,
+	// Otherwise if the Actor has an Owner, use its position.
 	// Otherwise if the Actor has a well defined location then use that
 	// Otherwise use the origin
-	if (InActor->GetOwner())
+	AController* Controller = Cast<AController>(InActor);
+	if (Controller != nullptr && Controller->GetPawn() != nullptr)
+	{
+		return GetActorSpatialPosition(Controller->GetPawn());
+	}
+	else if (InActor->GetOwner() != nullptr)
 	{
 		return GetActorSpatialPosition(InActor->GetOwner());
 	}
