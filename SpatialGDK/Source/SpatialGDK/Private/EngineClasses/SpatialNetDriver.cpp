@@ -39,6 +39,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
+	// This is a temporary measure until we can look into replication graph support, required due to UNR-832
 	checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
 
 	bConnectAsClient = bInitAsClient;
