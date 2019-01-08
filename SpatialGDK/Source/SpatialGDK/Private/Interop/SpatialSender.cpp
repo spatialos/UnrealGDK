@@ -27,10 +27,11 @@ DEFINE_LOG_CATEGORY(LogSpatialSender);
 
 using namespace improbable;
 
-FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters)
+FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int RPCIndex)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, Attempts(0)
+	, Index(RPCIndex)
 {
 	Parameters.SetNumZeroed(Function->ParmsSize);
 
@@ -245,7 +246,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo* Info, USp
 			{
 				ResetOutgoingUpdate(Channel, Object, Handle, /* bIsHandover */ false);
 
-				if (TSet<const UObject*>* UnresolvedObjects = UnresolvedObjectsMap.Find(Handle))
+				if (TSet<TWeakObjectPtr<const UObject>>* UnresolvedObjects = UnresolvedObjectsMap.Find(Handle))
 				{
 					QueueOutgoingUpdate(Channel, Object, Handle, *UnresolvedObjects, /* bIsHandover */ false);
 				}
@@ -259,7 +260,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo* Info, USp
 		{
 			ResetOutgoingUpdate(Channel, Object, Handle, /* bIsHandover */ true);
 
-			if (TSet<const UObject*>* UnresolvedObjects = HandoverUnresolvedObjectsMap.Find(Handle))
+			if (TSet<TWeakObjectPtr<const UObject>>* UnresolvedObjects = HandoverUnresolvedObjectsMap.Find(Handle))
 			{
 				QueueOutgoingUpdate(Channel, Object, Handle, *UnresolvedObjects, /* bIsHandover */ true);
 			}
@@ -294,20 +295,17 @@ void FillComponentInterests(FClassInfo* Info, bool bNetOwned, TArray<Worker_Inte
 	}
 }
 
-TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* Actor)
+TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* Actor, bool bIsNetOwned)
 {
 	TArray<Worker_InterestOverride> ComponentInterest;
 
-	// This effectively checks whether the actor is owned by our PlayerController
-	bool bNetOwned = Actor->GetNetConnection() != nullptr;
-
 	FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-	FillComponentInterests(ActorInfo, bNetOwned, ComponentInterest);
+	FillComponentInterests(ActorInfo, bIsNetOwned, ComponentInterest);
 
 	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
 	{
 		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
-		FillComponentInterests(SubobjectInfo, bNetOwned, ComponentInterest);
+		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
 	}
 
 	return ComponentInterest;
@@ -317,7 +315,9 @@ void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId Entity
 {
 	check(!NetDriver->IsServer());
 
-	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor));
+	const USpatialActorChannel* const ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+	const bool bIsNetOwned = ActorChannel && ActorChannel->IsOwnedByWorker();
+	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor, bIsNetOwned));
 }
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
@@ -395,6 +395,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Send command request (entity: %lld, component: %d, command: %d)"), EntityId, CommandRequest.component_id, Schema_GetCommandRequestCommandIndex(CommandRequest.schema_type));
 				// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 				Params->Attempts++;
 				Receiver->AddPendingReliableRPC(RequestId, Params);
@@ -429,6 +430,22 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	{
 		QueueOutgoingRPC(UnresolvedObject, Params);
 	}
+}
+
+void USpatialSender::EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params)
+{
+	RetryRPCs.Add(Params);
+}
+
+void USpatialSender::FlushRetryRPCs()
+{
+	// Retried RPCs are sorted by their index.
+	RetryRPCs.Sort([](const TSharedPtr<FPendingRPCParams>& A, const TSharedPtr<FPendingRPCParams>& B) { return A->Index < B->Index; });
+	for(auto& RetryRPC : RetryRPCs)
+	{
+		SendRPC(RetryRPC);
+	}
+	RetryRPCs.Empty();
 }
 
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
@@ -482,19 +499,28 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	UE_LOG(LogSpatialSender, Log, TEXT("Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
-	for (const UObject* UnresolvedObject : *Unresolved)
+	for (TWeakObjectPtr<const UObject>& UnresolvedObject : *Unresolved)
 	{
-		FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
-		FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
-
-		OtherHandleToUnresolved.Remove(Handle);
-		if (OtherHandleToUnresolved.Num() == 0)
+		if (UnresolvedObject.IsValid())
 		{
-			ChannelToUnresolved.Remove(ChannelObjectPair);
-			if (ChannelToUnresolved.Num() == 0)
+			FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
+			FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
+
+			OtherHandleToUnresolved.Remove(Handle);
+			if (OtherHandleToUnresolved.Num() == 0)
 			{
-				ObjectToUnresolved.Remove(UnresolvedObject);
+				ChannelToUnresolved.Remove(ChannelObjectPair);
+				if (ChannelToUnresolved.Num() == 0)
+				{
+					ObjectToUnresolved.Remove(UnresolvedObject);
+				}
 			}
+		}
+		else
+		{
+			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
+			Unresolved->Remove(UnresolvedObject);
+			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
 		}
 	}
 
@@ -505,7 +531,7 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	}
 }
 
-void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<const UObject*>& UnresolvedObjects, bool bIsHandover)
+void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, bool bIsHandover)
 {
 	check(DependentChannel);
 	check(ReplicatedObject);
@@ -518,7 +544,7 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	FChannelToHandleToUnresolved& PropertyToUnresolved = bIsHandover ? HandoverPropertyToUnresolved : RepPropertyToUnresolved;
 	FOutgoingRepUpdates& ObjectToUnresolved = bIsHandover ? HandoverObjectToUnresolved : RepObjectToUnresolved;
 
-	FUnresolvedEntry Unresolved = MakeShared<TSet<const UObject*>>();
+	FUnresolvedEntry Unresolved = MakeShared<TSet<TWeakObjectPtr<const UObject>>>();
 	*Unresolved = UnresolvedObjects;
 
 	FHandleToUnresolved& HandleToUnresolved = PropertyToUnresolved.FindOrAdd(ChannelObjectPair);
@@ -528,14 +554,23 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	}
 	HandleToUnresolved.Add(Handle, Unresolved);
 
-	for (const UObject* UnresolvedObject : UnresolvedObjects)
+	for (const TWeakObjectPtr<const UObject>& UnresolvedObject : UnresolvedObjects)
 	{
-		FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
-		check(!AnotherHandleToUnresolved.Find(Handle));
-		AnotherHandleToUnresolved.Add(Handle, Unresolved);
+		if (UnresolvedObject.IsValid())
+		{
+			FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
+			check(!AnotherHandleToUnresolved.Find(Handle));
+			AnotherHandleToUnresolved.Add(Handle, Unresolved);
 
-		// Following up on the previous log: listing the unresolved objects
-		UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
+			// Following up on the previous log: listing the unresolved objects
+			UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
+		}
+		else
+		{
+			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
+			Unresolved->Remove(UnresolvedObject);
+			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
+		}
 	}
 }
 
@@ -563,18 +598,27 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 
 	OutEntityId = TargetObjectRef.Entity;
 
-	TSet<const UObject*> UnresolvedObjects;
+	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
 
-	for (const UObject* Object : UnresolvedObjects)
+	for (TWeakObjectPtr<const UObject> Object : UnresolvedObjects)
 	{
-		// Take the first unresolved object
-		OutUnresolvedObject = Object;
-		Schema_DestroyCommandRequest(CommandRequest.schema_type);
-		return CommandRequest;
+		if (Object.IsValid())
+		{
+			// Take the first unresolved object
+			OutUnresolvedObject = Object.Get();
+			Schema_DestroyCommandRequest(CommandRequest.schema_type);
+			return CommandRequest;
+		}
+		else
+		{
+			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
+			UnresolvedObjects.Remove(Object);
+			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
+		}
 	}
 
 	AddPayloadToSchema(RequestObject, 1, PayloadWriter);
@@ -601,18 +645,27 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 
 	OutEntityId = TargetObjectRef.Entity;
 
-	TSet<const UObject*> UnresolvedObjects;
+	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
 
-	for (const UObject* Object : UnresolvedObjects)
+	for (TWeakObjectPtr<const UObject> Object : UnresolvedObjects)
 	{
-		// Take the first unresolved object
-		OutUnresolvedObject = Object;
-		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
-		return ComponentUpdate;
+		if (Object.IsValid())
+		{
+			// Take the first unresolved object
+			OutUnresolvedObject = Object.Get();
+			Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
+			return ComponentUpdate;
+		}
+		else
+		{
+			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
+			UnresolvedObjects.Remove(Object);
+			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
+		}
 	}
 
 	AddPayloadToSchema(EventData, 1, PayloadWriter);

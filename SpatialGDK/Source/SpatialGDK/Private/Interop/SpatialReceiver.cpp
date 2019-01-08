@@ -194,11 +194,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				{
 					Actor->Role = ROLE_Authority;
 
-					if (Actor->GetNetConnection() != nullptr)
-					{
-						Actor->RemoteRole = ROLE_AutonomousProxy;
-					}
-					else if (Actor->IsA<APawn>())
+					if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
@@ -232,7 +228,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 			check(Info);
 
-			if (Op.component_id == Info->SchemaComponents[SCHEMA_ClientRPC])
+			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == Info->SchemaComponents[SCHEMA_ClientRPC])
 			{
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
@@ -248,7 +244,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(EntityRegistry);
 
-	improbable::Position* Position = StaticComponentView->GetComponentData<improbable::Position>(EntityId);
 	improbable::SpawnData* SpawnData = StaticComponentView->GetComponentData<improbable::SpawnData>(EntityId);
 	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
@@ -318,7 +313,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			EntityActor = CreateActor(Position, SpawnData, ActorClass, true);
+			EntityActor = CreateActor(SpawnData, ActorClass, true);
 
 			// Don't have authority over Actor until SpatialOS delegates authority
 			EntityActor->Role = ROLE_SimulatedProxy;
@@ -355,9 +350,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		if (bDoingDeferredSpawn)
 		{
-			FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
-			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
-			EntityActor->FinishSpawning(FTransform(SpawnData->Rotation, SpawnLocation));
+			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, World->OriginLocation);
+
+			// FinishSpawning takes a transform relative to the template transform, so we need to adjust it.
+			FTransform SpawnTransform = GetRelativeSpawnTransform(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation));
+			EntityActor->FinishSpawning(SpawnTransform);
 
 			// Imitate the behavior in UPackageMapClient::SerializeNewActor.
 			const float Epsilon = 0.001f;
@@ -503,9 +500,8 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred)
 {
-	FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
 	AActor* NewActor = nullptr;
 	if (ActorClass)
 	{
@@ -517,13 +513,28 @@ AActor* USpatialReceiver::CreateActor(improbable::Position* Position, improbable
 		// We defer the construction in the GDK pipeline to allow initialization of replicated properties first.
 		SpawnInfo.bDeferConstruction = bDeferred;
 
-		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
+		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, World->OriginLocation);
 
 		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
 		check(NewActor);
 	}
 
 	return NewActor;
+}
+
+FTransform USpatialReceiver::GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform)
+{
+	FTransform NewTransform = SpawnTransform;
+	if (AActor* Template = ActorClass->GetDefaultObject<AActor>())
+	{
+		if (USceneComponent* TemplateRootComponent = Template->GetRootComponent())
+		{
+			TemplateRootComponent->UpdateComponentToWorld();
+			NewTransform = TemplateRootComponent->GetComponentToWorld().Inverse() * NewTransform;
+		}
+	}
+
+	return NewTransform;
 }
 
 void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel)
@@ -738,6 +749,11 @@ void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
 	ReceiveCommandResponse(Op);
 }
 
+void USpatialReceiver::FlushRetryRPCs()
+{
+	Sender->FlushRetryRPCs();
+}
+
 void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 {
 	TSharedRef<FPendingRPCParams>* ReliableRPCPtr = PendingReliableRPCs.Find(Op.request_id);
@@ -768,7 +784,7 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 			FTimerHandle RetryTimer;
 			TimerManager->SetTimer(RetryTimer, [this, ReliableRPC]()
 			{
-				Sender->SendRPC(ReliableRPC);
+				Sender->EnqueueRetryRPC(ReliableRPC);
 			}, WaitTime, false);
 		}
 		else

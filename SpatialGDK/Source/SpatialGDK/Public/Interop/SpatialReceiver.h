@@ -23,7 +23,6 @@ class USpatialSender;
 class UGlobalStateManager;
 
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-using FUnresolvedObjectsMap = TMap<Schema_FieldId, TSet<const UObject*>>;
 struct FObjectReferences;
 using FObjectReferencesMap = TMap<int32, FObjectReferences>;
 using FReliableRPCMap = TMap<Worker_RequestId, TSharedRef<struct FPendingRPCParams>>;
@@ -128,6 +127,7 @@ public:
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
+	void FlushRetryRPCs();
 
 private:
 	void EnterCriticalSection();
@@ -135,7 +135,9 @@ private:
 
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
-	AActor* CreateActor(improbable::Position* Position, improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
+	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
+
+	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
