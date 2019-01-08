@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "UObject/Script.h"
+
 #include "Schema/UnrealObjectRef.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
