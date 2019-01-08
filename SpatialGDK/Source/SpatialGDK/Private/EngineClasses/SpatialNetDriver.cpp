@@ -39,6 +39,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
+	checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
+
 	bConnectAsClient = bInitAsClient;
 	bAuthoritativeDestruction = true;
 
