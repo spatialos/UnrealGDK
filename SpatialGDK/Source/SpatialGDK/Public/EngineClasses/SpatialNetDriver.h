@@ -129,7 +129,7 @@ public:
 
 #if !UE_BUILD_SHIPPING
 	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
-	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint8 RPCId, UObject* TargetObject, UFunction* Function);
+	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
 
 	struct FReliableRPCId
 	{
