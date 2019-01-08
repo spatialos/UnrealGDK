@@ -737,7 +737,7 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	// Otherwise if the Actor has a well defined location then use that
 	// Otherwise use the origin
 	AController* Controller = Cast<AController>(InActor);
-	if (Controller && Controller->GetPawn())
+	if (Controller != nullptr && Controller->GetPawn() != nullptr)
 	{
 		return GetActorSpatialPosition(Controller->GetPawn());
 	}
