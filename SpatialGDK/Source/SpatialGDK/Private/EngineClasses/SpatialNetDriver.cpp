@@ -680,10 +680,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 	// SpatialGDK - Actor replication rate limiting based on config value.
 	int32 RateLimit = ActorReplicationRateLimit > 0 ? ActorReplicationRateLimit : INT32_MAX;
-	if (FinalSortedCount < RateLimit)
-	{
-		RateLimit = FinalSortedCount;
-	}
+	RateLimit = FinalSortedCount < RateLimit ? FinalSortedCount : RateLimit;
 	int32 FinalReplicatedCount = RateLimit;
 
 	for (int32 j = 0; j < FinalSortedCount; j++)
@@ -784,12 +781,12 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 				if (Channel)
 				{
-					// if it is relevant then mark the channel as relevant for a short amount of time
-					Channel->RelevantTime = Time + 0.5f * FMath::SRand();
-
 					// SpatialGDK - Only replicate actors marked as relevant (rate limiting).
 					if (bIsRelevant)
 					{
+						// if it is relevant then mark the channel as relevant for a short amount of time
+						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
+
 						// if the channel isn't saturated
 						if (Channel->IsNetReady(0))
 						{
