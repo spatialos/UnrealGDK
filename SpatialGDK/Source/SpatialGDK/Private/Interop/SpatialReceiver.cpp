@@ -451,6 +451,11 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	if (Actor->GetTearOff())
+	{
+		return;
+	}
+
 	if (APlayerController* PC = Cast<APlayerController>(Actor))
 	{
 		// Force APlayerController::DestroyNetworkActorHandled to return false

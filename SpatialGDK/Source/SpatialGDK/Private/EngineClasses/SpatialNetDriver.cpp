@@ -732,6 +732,21 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				}
 			}
 
+			// If the actor channel can't be found in the current connection (e.g. if the actor was detached from the controller),
+			// then search through all the connections to find the actor's channel.
+			if (!Channel)
+			{
+				for (int32 ConnIdx = 0; ConnIdx < ClientConnections.Num(); ConnIdx++)
+				{
+					Channel = Cast<USpatialActorChannel>(ClientConnections[ConnIdx]->ActorChannelMap().FindRef(Actor));
+					if (Channel)
+					{
+						break;
+					}
+				}
+			}
+
+
 			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit.
 			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
 			if (FinalReplicatedCount < RateLimit)
@@ -1511,3 +1526,12 @@ void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType
 }
 
 #endif // !UE_BUILD_SHIPPING
+
+void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay)
+{
+	FTimerHandle RetryTimer;
+	TimerManager->SetTimer(RetryTimer, [this, EntityId]()
+	{
+		Sender->SendDeleteEntityRequest(EntityId);
+	}, Delay, false);
+}
