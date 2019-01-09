@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
+
 #include "EngineClasses/SpatialNetDriver.h"
 
 #include "EngineGlobals.h"
@@ -461,7 +461,7 @@ static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Act
 	// We might make some exceptions in the future, so keeping this function.
 	return true;
 
-	// TODO: UNR-??? Start using IsNetRelevantFor again for relevancy checks rather than returning true.
+	// TODO: UNR-837 Start using IsNetRelevantFor again for relevancy checks rather than returning true.
 	//for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
 	//{
 	//	if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
