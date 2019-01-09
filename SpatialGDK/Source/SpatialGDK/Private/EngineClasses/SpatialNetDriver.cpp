@@ -684,6 +684,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	{
 		RateLimit = FinalSortedCount;
 	}
+	int32 FinalReplicatedCount = RateLimit;
 
 	for (int32 j = 0; j < FinalSortedCount; j++)
 	{
@@ -827,17 +828,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 							return j;
 						}
 					}
-					else
-					{
-						// Double the update frequency for an actor which was missed but should be relevant.
-						const float MinOptimalDelta = 1.0f / (Actor->NetUpdateFrequency * 2);
-						const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
-						const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
-
-						// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
-						PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
-						PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
-					}
 				}
 			}
 
@@ -856,7 +846,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		}
 	}
 
-	return RateLimit;
+	return FinalReplicatedCount;
 }
 #endif
 
