@@ -453,6 +453,7 @@ static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Act
 	// We might make some exceptions in the future, so keeping this function.
 	return true;
 
+	// TODO: UNR-??? Start using IsNetRelevantFor again for relevancy checks rather than returning true.
 	//for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
 	//{
 	//	if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
@@ -633,9 +634,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 				Actor->NetTag = NetTag;
 
-				FActorPriority NewPriorityActor = FActorPriority(PriorityConnection, Channel, ActorInfo, ConnectionViewers, bLowNetBandwidth);
-
-				OutPriorityList[FinalSortedCount] = NewPriorityActor;
+				OutPriorityList[FinalSortedCount] = FActorPriority(PriorityConnection, Channel, ActorInfo, ConnectionViewers, bLowNetBandwidth);
 				OutPriorityActors[FinalSortedCount] = OutPriorityList + FinalSortedCount;
 
 				FinalSortedCount++;
@@ -772,7 +771,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						}
 						else if (Actor->NetUpdateFrequency < 1.0f)
 						{
-
 							UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
 							PriorityActors[j]->ActorInfo->NextUpdateTime = Actor->GetWorld()->TimeSeconds + 0.2f * FMath::FRand();
 						}
