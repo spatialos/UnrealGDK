@@ -100,7 +100,19 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	// If we have authority and aren't trying to delete a critical entity, delete it
 	if (bHasAuthority && !IsSingletonEntity())
 	{
-		Sender->SendDeleteEntityRequest(EntityId);
+		// HACK - delayed delete entity request.
+		if (Actor->GetTearOff())
+		{
+			FTimerHandle RetryTimer;
+			NetDriver->TimerManager->SetTimer(RetryTimer, [this]()
+			{
+				Sender->SendDeleteEntityRequest(EntityId);
+			}, 1, false);
+		}
+		else
+		{
+			Sender->SendDeleteEntityRequest(EntityId);
+		}
 	}
 
 	Receiver->CleanupDeletedEntity(EntityId);
