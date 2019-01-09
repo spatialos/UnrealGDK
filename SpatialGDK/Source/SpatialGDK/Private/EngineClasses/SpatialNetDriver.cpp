@@ -451,17 +451,17 @@ static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Act
 {
 	// SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
 	// We might make some exceptions in the future, so keeping this function.
-	// return true;
+	return true;
 
-	for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
-	{
-		if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
-		{
-			return true;
-		}
-	}
+	//for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
+	//{
+	//	if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
+	//	{
+	//		return true;
+	//	}
+	//}
 
-	return false;
+	//return false;
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
@@ -732,11 +732,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			// bTearOff actors should never be checked
 			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
 			{
-				if (IsActorRelevantToConnection(Actor, ConnectionViewers))
-				{
-					bIsRelevant = true;
-				}
-				else if (DebugRelevantActors)
+				if (DebugRelevantActors)
 				{
 					LastNonRelevantActors.Add(Actor);
 				}
@@ -744,11 +740,11 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit.
 			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
-			//if (RateLimit > 0)
-			//{
-			//	bIsRelevant = true;
-			//	RateLimit--;
-			//}
+			if (RateLimit > 0)
+			{
+				bIsRelevant = true;
+				RateLimit--;
+			}
 
 			// if the actor is now relevant or was recently relevant
 			const bool bIsRecentlyRelevant = bIsRelevant || (Channel && Time - Channel->RelevantTime < RelevantTimeout);
@@ -787,60 +783,60 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 				if (Channel)
 				{
+					// if it is relevant then mark the channel as relevant for a short amount of time
+					Channel->RelevantTime = Time + 0.5f * FMath::SRand();
+
+					// SpatialGDK - Only replicate actors marked as relevant (rate limiting).
 					if (bIsRelevant)
 					{
-						// if it is relevant then mark the channel as relevant for a short amount of time
-						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
-					}
-					// SpatialGDK - Only replicate actors marked as relevant (rate limiting).
-
-					// if the channel isn't saturated
-					if (Channel->IsNetReady(0))
-					{
-						// replicate the actor
-						UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
-						if (DebugRelevantActors)
+						// if the channel isn't saturated
+						if (Channel->IsNetReady(0))
 						{
-							LastRelevantActors.Add(Actor);
-						}
-
-						if (Channel->ReplicateActor())
-						{
-							ActorUpdatesThisConnectionSent++;
+							// replicate the actor
+							UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
 							if (DebugRelevantActors)
 							{
-								LastSentActors.Add(Actor);
+								LastRelevantActors.Add(Actor);
 							}
 
-							// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
-							const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
-							const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
-							const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
+							if (Channel->ReplicateActor())
+							{
+								ActorUpdatesThisConnectionSent++;
+								if (DebugRelevantActors)
+								{
+									LastSentActors.Add(Actor);
+								}
 
-							// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
-							PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
-							PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
+								// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
+								const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
+								const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
+								const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
+
+								// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
+								PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
+								PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
+							}
+							ActorUpdatesThisConnection++;
+							OutUpdated++;
 						}
-						ActorUpdatesThisConnection++;
-						OutUpdated++;
-					}
 
-					// second check for channel saturation
-					if (!InConnection->IsNetReady(0))
-					{
-						// We can bail out now since this connection is saturated, we'll return how far we got though
-						return j;
+						// second check for channel saturation
+						if (!InConnection->IsNetReady(0))
+						{
+							// We can bail out now since this connection is saturated, we'll return how far we got though
+							return j;
+						}
 					}
 					else
 					{
-						//// Double the update frequency for an actor which was missed but should be relevant.
-						//const float MinOptimalDelta = 1.0f / (Actor->NetUpdateFrequency * 2);
-						//const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
-						//const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
+						// Double the update frequency for an actor which was missed but should be relevant.
+						const float MinOptimalDelta = 1.0f / (Actor->NetUpdateFrequency * 2);
+						const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
+						const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
 
-						//// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
-						//PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
-						//PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
+						// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
+						PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
+						PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
 					}
 				}
 			}
@@ -860,7 +856,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		}
 	}
 
-	return FinalSortedCount;
+	return RateLimit;
 }
 #endif
 
