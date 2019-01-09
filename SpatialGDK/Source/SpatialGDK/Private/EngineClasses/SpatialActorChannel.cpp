@@ -9,7 +9,10 @@
 #include "GameFramework/PlayerState.h"
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
+
+#if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
+#endif
 
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -122,7 +125,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
 			NetDriver->GetWorld()->bIsTearingDown &&
 			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId) &&
-			bDeleteDynamicEntities == true )
+			bDeleteDynamicEntities == true)
 		{
 			if (!IsStablyNamedEntity())
 			{
