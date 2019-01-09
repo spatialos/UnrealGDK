@@ -96,6 +96,8 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 		if (Worker_Connection_IsConnected(WorkerConnection))
 		{
+			CacheWorkerAttributes();
+
 			AsyncTask(ENamedThreads::GameThread, [this]
 			{
 				this->bIsConnected = true;
@@ -205,6 +207,8 @@ void USpatialWorkerConnection::ConnectToLocator()
 			Worker_ConnectionFuture_Destroy(ConnectionFuture);
 			if (Worker_Connection_IsConnected(SpatialConnection->WorkerConnection))
 			{
+				SpatialConnection->CacheWorkerAttributes();
+
 				AsyncTask(ENamedThreads::GameThread, [SpatialConnection]
 				{
 					SpatialConnection->bIsConnected = true;
@@ -303,7 +307,23 @@ FString USpatialWorkerConnection::GetWorkerId() const
 	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
 
+const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
+{
+	return CachedWorkerAttributes;
+}
+
 Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntiyQuery)
 {
 	return Worker_Connection_SendEntityQueryRequest(WorkerConnection, EntiyQuery, 0);
+}
+
+void USpatialWorkerConnection::CacheWorkerAttributes()
+{
+	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
+
+	CachedWorkerAttributes.Empty();
+	for (uint32 Index = 0; Index < Attributes->attribute_count; ++Index)
+	{
+		CachedWorkerAttributes.Add(UTF8_TO_TCHAR(Attributes->attributes[Index]));
+	}
 }

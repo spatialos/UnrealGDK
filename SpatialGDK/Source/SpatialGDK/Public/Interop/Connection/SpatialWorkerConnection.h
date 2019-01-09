@@ -39,6 +39,7 @@ public:
 	void SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message);
 	void SendComponentInterest(Worker_EntityId EntityId, const TArray<Worker_InterestOverride>& ComponentInterest);
 	FString GetWorkerId() const;
+	const TArray<FString>& GetWorkerAttributes() const;
 	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntiyQuery);
 
 	FOnConnectedDelegate OnConnected;
@@ -56,8 +57,12 @@ private:
 
 	void GetAndPrintConnectionFailureMessage();
 
+	void CacheWorkerAttributes();
+
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLocator;
 
 	bool bIsConnected;
+
+	TArray<FString> CachedWorkerAttributes;
 };

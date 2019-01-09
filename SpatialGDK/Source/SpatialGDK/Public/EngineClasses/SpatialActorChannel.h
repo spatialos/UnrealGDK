@@ -5,8 +5,10 @@
 #include "Engine/ActorChannel.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialTypebindingManager.h"
+#include "Schema/StandardLibrary.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -58,6 +60,29 @@ public:
 		check(Info);
 
 		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_ClientRPC]);
+	}
+
+	FORCEINLINE bool IsOwnedByWorker() const
+	{
+		const FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+		check(Info);
+
+		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
+		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(Info->SchemaComponents[SCHEMA_ClientRPC]))
+		{
+			for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
+			{
+				for (const FString& Attribute : AttributeSet)
+				{
+					if (WorkerAttributes.Contains(Attribute))
+					{
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	FORCEINLINE bool IsAuthoritativeServer()

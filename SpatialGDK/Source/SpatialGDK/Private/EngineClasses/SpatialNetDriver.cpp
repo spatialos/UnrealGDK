@@ -42,6 +42,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
+	// This is a temporary measure until we can look into replication graph support, required due to UNR-832
+	checkf(!GetReplicationDriver(), TEXT("Replication Driver not supported, please remove it from config"));
+
 	bConnectAsClient = bInitAsClient;
 	bAuthoritativeDestruction = true;
 
@@ -49,9 +52,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
-
-	TypebindingManager = NewObject<USpatialTypebindingManager>();
-	TypebindingManager->Init(this);
 
 	// Extract the snapshot to load (if any) from the map URL so that once we are connected to a deployment we can load that snapshot into the Spatial deployment.
 	SnapshotToLoad = URL.GetOption(*SpatialConstants::SnapshotURLOption, TEXT(""));
@@ -97,6 +97,14 @@ void USpatialNetDriver::PostInitProperties()
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
+	if (TypebindingManager == nullptr)
+	{
+		// Delay loading of the schema database until after the map is loaded to prevent package/outer conflicts. This can
+		// be moved back to Init() once we have lazy loading of schema database implemented - JIRA: 833
+		TypebindingManager = NewObject<USpatialTypebindingManager>();
+		TypebindingManager->Init(this);
+	}
+
 	if (LoadedWorld->GetNetDriver() != this)
 	{
 		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
@@ -1073,7 +1081,16 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Sender->SendRPC(MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters));
+		TSharedRef<FPendingRPCParams> RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++);
+
+#if !UE_BUILD_SHIPPING
+		if (Function->FunctionFlags & FUNC_NetReliable)
+		{
+			RPCParams->ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
+		}
+#endif // !UE_BUILD_SHIPPING
+
+		Sender->SendRPC(RPCParams);
 	}
 }
 
@@ -1394,3 +1411,110 @@ void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate
 		SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 	}
 }
+
+#if !UE_BUILD_SHIPPING
+uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject)
+{
+	if (!ReliableRPCIdMap.Contains(Actor))
+	{
+		ReliableRPCIdMap.Add(Actor);
+	}
+	FRPCTypeToReliableRPCIdMap& ReliableRPCIds = ReliableRPCIdMap[Actor];
+
+	if (FReliableRPCId* RPCIdEntry = ReliableRPCIds.Find(RPCType))
+	{
+		if (!RPCIdEntry->WorkerId.IsEmpty())
+		{
+			// We previously used to receive RPCs of this type, now we're about to send one, so we reset the reliable RPC index.
+			// This should only be possible for CrossServer RPCs.
+			check(RPCType == SCHEMA_CrossServerRPC);
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to receive reliable CrossServer RPCs from worker %s, now about to send one. The entity must have crossed boundary."),
+				*Actor->GetName(), *TargetObject->GetName(), *RPCIdEntry->WorkerId);
+			RPCIdEntry->WorkerId = FString();
+			RPCIdEntry->RPCId = 0;
+		}
+	}
+	else
+	{
+		// Add an entry for this RPC type with empty WorkerId and RPCId = 0
+		ReliableRPCIds.Add(RPCType);
+	}
+
+	return ++ReliableRPCIds[RPCType].RPCId;
+}
+
+void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function)
+{
+	check(!WorkerId.IsEmpty());
+
+	if (!ReliableRPCIdMap.Contains(Actor))
+	{
+		ReliableRPCIdMap.Add(Actor);
+	}
+	FRPCTypeToReliableRPCIdMap& ReliableRPCIds = ReliableRPCIdMap[Actor];
+
+	if (FReliableRPCId* RPCIdEntry = ReliableRPCIds.Find(RPCType))
+	{
+		if (WorkerId != RPCIdEntry->WorkerId)
+		{
+			if (RPCIdEntry->WorkerId.IsEmpty())
+			{
+				// We previously used to send RPCs of this type, now we received one. This should only be possible for CrossServer RPCs.
+				check(RPCType == SCHEMA_CrossServerRPC);
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to send reliable CrossServer RPCs, now received one from worker %s. The entity must have crossed boundary."),
+					*Actor->GetName(), *TargetObject->GetName(), *WorkerId);
+			}
+			else
+			{
+				// We received an RPC from a different worker than the one we used to receive RPCs of this type from.
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Received a reliable %s RPC from a different worker %s. Previously received from worker %s."),
+					*Actor->GetName(), *TargetObject->GetName(), *RPCSchemaTypeToString(RPCType), *WorkerId, *RPCIdEntry->WorkerId);
+			}
+			RPCIdEntry->WorkerId = WorkerId;
+		}
+		else if (RPCId != RPCIdEntry->RPCId + 1)
+		{
+			if (RPCId < RPCIdEntry->RPCId)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Actor %s: Reliable %s RPC received out of order! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
+					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+			}
+			else if (RPCId == RPCIdEntry->RPCId)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Actor %s: Reliable %s RPC index duplicated! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
+					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Actor %s: One or more reliable %s RPCs skipped! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
+					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+			}
+		}
+
+		RPCIdEntry->RPCId = RPCId;
+		RPCIdEntry->LastRPCTarget = TargetObject->GetName();
+		RPCIdEntry->LastRPCName = Function->GetName();
+	}
+	else
+	{
+		ReliableRPCIds.Add(RPCType, FReliableRPCId(WorkerId, RPCId, TargetObject->GetName(), Function->GetName()));
+	}
+}
+
+void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType)
+{
+	// When we gain authority on an RPC component of an actor that we previously received RPCs for, reset the reliable RPC counter.
+	// This is to account for the case where the actor crosses to another worker, receives a couple of reliable RPCs, and comes back
+	// to the original worker.
+	if (FRPCTypeToReliableRPCIdMap* ReliableRPCIds = ReliableRPCIdMap.Find(Actor))
+	{
+		if (ReliableRPCIds->Contains(RPCType))
+		{
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s: Gained authority over %s RPC component. Resetting previous reliable RPC counter."),
+				*Actor->GetName(), *RPCSchemaTypeToString(RPCType));
+			ReliableRPCIds->Remove(RPCType);
+		}
+	}
+}
+
+#endif // !UE_BUILD_SHIPPING

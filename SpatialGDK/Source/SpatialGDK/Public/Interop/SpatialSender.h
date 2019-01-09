@@ -25,13 +25,18 @@ class USpatialWorkerConnection;
 
 struct FPendingRPCParams
 {
-	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters);
+	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex);
 	~FPendingRPCParams();
 
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
 	TArray<uint8> Parameters;
 	int Attempts; // For reliable RPCs
+
+	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
+#if !UE_BUILD_SHIPPING
+	int ReliableRPCIndex;
+#endif // !UE_BUILD_SHIPPING
 };
 
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
@@ -55,6 +60,8 @@ public:
 	void SendComponentUpdates(UObject* Object, FClassInfo* Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
+	void EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params);
+	void FlushRetryRPCs();
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 
@@ -76,10 +83,10 @@ private:
 	void QueueOutgoingRPC(const UObject* UnresolvedObject, TSharedRef<FPendingRPCParams> Params);
 
 	// RPC Construction
-	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
+	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int ReliableRPCIndex);
 	Worker_ComponentUpdate CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 
-	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor);
+	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
 	FString GetOwnerWorkerAttribute(AActor* Actor);
 
 private:
@@ -110,4 +117,6 @@ private:
 	FOutgoingRPCMap OutgoingRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
+
+	TArray<TSharedRef<FPendingRPCParams>> RetryRPCs;
 };

@@ -39,18 +39,18 @@ DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialCo
 class FSpatialWorkerUniqueNetId : public FUniqueNetId
 {
 public:
-	FSpatialWorkerUniqueNetId(const FString& WorkerId) : WorkerId{WorkerId} {}
+	FSpatialWorkerUniqueNetId(const FString& InWorkerAttribute) : WorkerAttribute{InWorkerAttribute} {}
 	~FSpatialWorkerUniqueNetId() override = default;
 
-	const uint8* GetBytes() const override { return reinterpret_cast<const uint8*>(*WorkerId); }
-	int32 GetSize() const override { return WorkerId.Len() * sizeof(TCHAR); }
+	const uint8* GetBytes() const override { return reinterpret_cast<const uint8*>(*WorkerAttribute); }
+	int32 GetSize() const override { return WorkerAttribute.Len() * sizeof(TCHAR); }
 	bool IsValid() const override { return true; }
-	FString ToString() const override { return WorkerId; }
-	FString ToDebugString() const override { return TEXT("workerId:") + WorkerId; }
+	FString ToString() const override { return WorkerAttribute; }
+	FString ToDebugString() const override { return WorkerAttribute; }
 	virtual FName GetType() const override { return NULL_SUBSYSTEM; };
 
 private:
-	FString WorkerId;
+	FString WorkerAttribute;
 };
 
 UCLASS()
@@ -133,6 +133,26 @@ public:
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
+#if !UE_BUILD_SHIPPING
+	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
+	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
+	void OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType);
+
+	struct FReliableRPCId
+	{
+		FReliableRPCId() = default;
+		FReliableRPCId(FString InWorkerId, uint32 InRPCId, FString InRPCTarget, FString InRPCName) : WorkerId(InWorkerId), RPCId(InRPCId), LastRPCTarget(InRPCTarget), LastRPCName(InRPCName) {}
+
+		FString WorkerId;
+		uint32 RPCId = 0;
+		FString LastRPCTarget;
+		FString LastRPCName;
+	};
+	using FRPCTypeToReliableRPCIdMap = TMap<ESchemaComponentType, FReliableRPCId>;
+	// Per actor, maps from RPC type to the reliable RPC index used to detect if reliable RPCs go out of order.
+	TMap<TWeakObjectPtr<AActor>, FRPCTypeToReliableRPCIdMap> ReliableRPCIdMap;
+#endif // !UE_BUILD_SHIPPING
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -169,4 +189,9 @@ private:
 #endif
 
 	friend class USpatialNetConnection;
+
+	// This index is incremented and assigned to every new RPC in ProcessRemoteFunction.
+	// The SpatialSender uses these indexes to retry any failed reliable RPCs
+	// in the correct order, if needed.
+	int NextRPCIndex;
 };

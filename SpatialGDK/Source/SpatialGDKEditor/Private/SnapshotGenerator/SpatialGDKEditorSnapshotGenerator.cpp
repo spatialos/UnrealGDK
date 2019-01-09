@@ -312,7 +312,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 
 		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
 		UObject* Subobject = Actor->GetDefaultSubobjectByName(SubobjectInfo.SubobjectName);
-		if (Subobject == nullptr)
+		if (Subobject == nullptr || Subobject->IsPendingKill())
 		{
 			continue;
 		}
@@ -366,7 +366,7 @@ bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialTypebindingMana
 		UClass* ActorClass = Actor->GetClass();
 
 		// If Actor is critical to the level, skip
-		if (ActorClass->IsChildOf<AWorldSettings>() || ActorClass->IsChildOf<ALevelScriptActor>())
+		if (ActorClass->IsChildOf<AWorldSettings>())
 		{
 			continue;
 		}

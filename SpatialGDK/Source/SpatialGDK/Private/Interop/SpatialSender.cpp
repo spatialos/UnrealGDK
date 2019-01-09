@@ -27,10 +27,11 @@ DEFINE_LOG_CATEGORY(LogSpatialSender);
 
 using namespace improbable;
 
-FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters)
+FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, Attempts(0)
+	, RetryIndex(InRetryIndex)
 {
 	Parameters.SetNumZeroed(Function->ParmsSize);
 
@@ -297,20 +298,17 @@ void FillComponentInterests(FClassInfo* Info, bool bNetOwned, TArray<Worker_Inte
 	}
 }
 
-TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* Actor)
+TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* Actor, bool bIsNetOwned)
 {
 	TArray<Worker_InterestOverride> ComponentInterest;
 
-	// This effectively checks whether the actor is owned by our PlayerController
-	bool bNetOwned = Actor->GetNetConnection() != nullptr;
-
 	FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-	FillComponentInterests(ActorInfo, bNetOwned, ComponentInterest);
+	FillComponentInterests(ActorInfo, bIsNetOwned, ComponentInterest);
 
 	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
 	{
 		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
-		FillComponentInterests(SubobjectInfo, bNetOwned, ComponentInterest);
+		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
 	}
 
 	return ComponentInterest;
@@ -320,7 +318,9 @@ void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId Entity
 {
 	check(!NetDriver->IsServer());
 
-	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor));
+	const USpatialActorChannel* const ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+	const bool bIsNetOwned = ActorChannel && ActorChannel->IsOwnedByWorker();
+	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor, bIsNetOwned));
 }
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
@@ -389,7 +389,12 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	case SCHEMA_ServerRPC:
 	case SCHEMA_CrossServerRPC:
 	{
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), Info->SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		int ReliableRPCIndex = 0;
+#if !UE_BUILD_SHIPPING
+		ReliableRPCIndex = Params->ReliableRPCIndex;
+#endif // !UE_BUILD_SHIPPING
+
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), Info->SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject, ReliableRPCIndex);
 
 		if (!UnresolvedObject)
 		{
@@ -398,6 +403,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Send command request (entity: %lld, component: %d, command: %d)"), EntityId, CommandRequest.component_id, Schema_GetCommandRequestCommandIndex(CommandRequest.schema_type));
 				// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 				Params->Attempts++;
 				Receiver->AddPendingReliableRPC(RequestId, Params);
@@ -432,6 +438,22 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	{
 		QueueOutgoingRPC(UnresolvedObject, Params);
 	}
+}
+
+void USpatialSender::EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params)
+{
+	RetryRPCs.Add(Params);
+}
+
+void USpatialSender::FlushRetryRPCs()
+{
+	// Retried RPCs are sorted by their index.
+	RetryRPCs.Sort([](const TSharedPtr<FPendingRPCParams>& A, const TSharedPtr<FPendingRPCParams>& B) { return A->RetryIndex < B->RetryIndex; });
+	for(auto& RetryRPC : RetryRPCs)
+	{
+		SendRPC(RetryRPC);
+	}
+	RetryRPCs.Empty();
 }
 
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
@@ -574,7 +596,7 @@ void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, TSharedRe
 	OutgoingRPCs.FindOrAdd(UnresolvedObject).Add(Params);
 }
 
-Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject)
+Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int ReliableRPCId)
 {
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = ComponentId;
@@ -593,6 +615,13 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 
 	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
+
+#if !UE_BUILD_SHIPPING
+	if (Function->FunctionFlags & FUNC_NetReliable)
+	{
+		PayloadWriter << ReliableRPCId;
+	}
+#endif // !UE_BUILD_SHIPPING
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
