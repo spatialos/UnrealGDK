@@ -449,19 +449,19 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 // Returns true if this actor should replicate to *any* of the passed in connections
 static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers)
 {
-	//SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
+	// SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
 	// We might make some exceptions in the future, so keeping this function.
-	 return true;
+	// return true;
 
-	//for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
-	//{
-	//	if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
-	//	{
-	//		return true;
-	//	}
-	//}
+	for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
+	{
+		if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
+		{
+			return true;
+		}
+	}
 
-	//return false;
+	return false;
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
@@ -522,16 +522,6 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 			// the view target is what the player controller is looking at OR the owning actor itself when using beacons
 			SpatialConnection->ViewTarget = SpatialConnection->PlayerController ? SpatialConnection->PlayerController->GetViewTarget() : OwningActor;
 
-			// UnrealGDK - If we don't have a view target then we need to try and grab one from a client connection for building replication priorities.
-			//if (SpatialConnection->ViewTarget == nullptr)
-			//{
-			//	if(ConnIdx + 1 < ClientConnections.Num())
-			//	{
-			//		USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[ConnIdx + 1]);
-			//		SpatialConnection->ViewTarget = OtherSpatialConnection->PlayerController ? OtherSpatialConnection->PlayerController->GetViewTarget() : OwningActor;
-			//	}
-			//}
-
 			for (int32 ChildIdx = 0; ChildIdx < SpatialConnection->Children.Num(); ChildIdx++)
 			{
 				UNetConnection *Child = SpatialConnection->Children[ChildIdx];
@@ -574,8 +564,6 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 	int32 FinalSortedCount = 0;
 	int32 DeletedCount = 0;
-
-	int32 RateLimit = 200;
 
 	const int32 MaxSortedActors = ConsiderList.Num() + DestroyedStartupOrDormantActors.Num();
 	if (MaxSortedActors > 0)
@@ -628,7 +616,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(), *InConnection->GetName());
 			}
 
-			//SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
+			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
 			// We have removed the level load check because it doesn't apply.
 			// Relevancy checking is also mostly just a pass through, might be removed later.
 			if (!IsActorRelevantToConnection(Actor, ConnectionViewers))
@@ -671,10 +659,6 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 		// Sort by priority
 		Sort(OutPriorityActors, FinalSortedCount, FCompareFActorPriority());
-
-		// SpatialGDK
-		// Rate limit the number of possible actors we send in a single tick.
-
 	}
 
 	UE_LOG(LogNetTraffic, Log, TEXT("ServerReplicateActors_PrioritizeActors: Potential %04i ConsiderList %03i FinalSortedCount %03i"), MaxSortedActors, ConsiderList.Num(), FinalSortedCount);
@@ -694,18 +678,12 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	int32 ActorUpdatesThisConnectionSent = 0;
 	int32 FinalRelevantCount = 0;
 
-	// IMPROBABLE-BEGIN RATE LIMITING
-
-	// Simple limit to 200 per frame.
-	// 200 is approx the amount Unreal will do per frame.
-	// TODO: Base this number on the ticking rate of the server.
-	int32 RateLimit = ActorReplicationRateLimit;
+	// SpatialGDK - Actor replication rate limiting based on config value.
+	int32 RateLimit = ActorReplicationRateLimit > 0 ? ActorReplicationRateLimit : INT32_MAX;
 	if (FinalSortedCount < RateLimit)
 	{
 		RateLimit = FinalSortedCount;
 	}
-
-	// IMPROBABLE-END RATE LIMITING
 
 	for (int32 j = 0; j < FinalSortedCount; j++)
 	{
@@ -744,7 +722,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		// Normal actor replication
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(PriorityActors[j]->Channel);
 		UE_LOG(LogNetTraffic, Log, TEXT(" Maybe Replicate %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
-		if (!Channel || Channel->Actor) //make sure didn't just close this channel
+		if (!Channel || Channel->Actor) // make sure didn't just close this channel
 		{
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
@@ -754,17 +732,23 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			// bTearOff actors should never be checked
 			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
 			{
-				if (DebugRelevantActors)
+				if (IsActorRelevantToConnection(Actor, ConnectionViewers))
+				{
+					bIsRelevant = true;
+				}
+				else if (DebugRelevantActors)
 				{
 					LastNonRelevantActors.Add(Actor);
 				}
 			}
 
-			if (RateLimit > 0)
-			{
-				bIsRelevant = true;
-				RateLimit--;
-			}
+			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit.
+			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
+			//if (RateLimit > 0)
+			//{
+			//	bIsRelevant = true;
+			//	RateLimit--;
+			//}
 
 			// if the actor is now relevant or was recently relevant
 			const bool bIsRecentlyRelevant = bIsRelevant || (Channel && Time - Channel->RelevantTime < RelevantTimeout);
@@ -803,60 +787,60 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 				if (Channel)
 				{
-					// if it is relevant then mark the channel as relevant for a short amount of time
-
-					Channel->RelevantTime = Time + 0.5f * FMath::SRand();
 					if (bIsRelevant)
 					{
+						// if it is relevant then mark the channel as relevant for a short amount of time
+						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
+					}
+					// SpatialGDK - Only replicate actors marked as relevant (rate limiting).
 
-						// if the channel isn't saturated
-						if (Channel->IsNetReady(0))
+					// if the channel isn't saturated
+					if (Channel->IsNetReady(0))
+					{
+						// replicate the actor
+						UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
+						if (DebugRelevantActors)
 						{
-							// replicate the actor
-							UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
+							LastRelevantActors.Add(Actor);
+						}
+
+						if (Channel->ReplicateActor())
+						{
+							ActorUpdatesThisConnectionSent++;
 							if (DebugRelevantActors)
 							{
-								LastRelevantActors.Add(Actor);
+								LastSentActors.Add(Actor);
 							}
 
-							if (Channel->ReplicateActor())
-							{
-								ActorUpdatesThisConnectionSent++;
-								if (DebugRelevantActors)
-								{
-									LastSentActors.Add(Actor);
-								}
+							// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
+							const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
+							const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
+							const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
 
-								// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
-								const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
-								const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
-								const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
-
-								// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
-								PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
-								PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
-							}
-							ActorUpdatesThisConnection++;
-							OutUpdated++;
+							// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
+							PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
+							PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
 						}
+						ActorUpdatesThisConnection++;
+						OutUpdated++;
+					}
 
-						// second check for channel saturation
-						if (!InConnection->IsNetReady(0))
-						{
-							// We can bail out now since this connection is saturated, we'll return how far we got though
-							return j;
-						}
+					// second check for channel saturation
+					if (!InConnection->IsNetReady(0))
+					{
+						// We can bail out now since this connection is saturated, we'll return how far we got though
+						return j;
 					}
 					else
 					{
-						// Double the update frequency for an actor which was missed but should be relevant.
-						const float MinOptimalDelta = 1.0f / (Actor->NetUpdateFrequency * 2);
-						const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
-						const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
+						//// Double the update frequency for an actor which was missed but should be relevant.
+						//const float MinOptimalDelta = 1.0f / (Actor->NetUpdateFrequency * 2);
+						//const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
+						//const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
 
-						// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
-						PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
-						PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
+						//// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
+						//PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
+						//PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
 					}
 				}
 			}
@@ -876,7 +860,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		}
 	}
 
-	return RateLimit;
+	return FinalSortedCount;
 }
 #endif
 
@@ -902,14 +886,12 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 	const int32 NumClientsToTick = ServerReplicateActors_PrepConnections(DeltaSeconds);
 
-	//SpatialGDK: This is a formality as there is at least one "perfect" Spatial connection in our design.
+	// SpatialGDK: This is a formality as there is at least one "perfect" Spatial connection in our design.
 	if (NumClientsToTick == 0)
 	{
 		// No connections are ready this frame
 		return 0;
 	}
-
-	//const int32 NumClientsToTick = 1;
 
 	AWorldSettings* WorldSettings = World->GetWorldSettings();
 
@@ -961,23 +943,22 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 			}
 			else
 			{
-				// We must be the fake spatial connection and thus borrow the other player controllers.
-
-				// TODO: Do this for all connections and not just one.
-				if (i + 1 < ClientConnections.Num())
+				// Not having a ViewTarget implies this must be the fake spatial connection and thus borrow the player controllers from other connections.
+				for (int j = 0; j < ClientConnections.Num(); j++)
 				{
-					USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[i + 1]);
+					USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[j]);
+					if (OtherSpatialConnection->ViewTarget)
+					{
+						new(ConnectionViewers)FNetViewer(OtherSpatialConnection, DeltaSeconds);
 
-					new(ConnectionViewers)FNetViewer(OtherSpatialConnection, DeltaSeconds);
-
-					// TODO: Ignore children for now
-					//for (int32 ViewerIndex = 0; ViewerIndex < OtherSpatialConnection->Children.Num(); ViewerIndex++)
-					//{
-					//	if (SpatialConnection->Children[ViewerIndex]->ViewTarget != NULL)
-					//	{
-					//		new(ConnectionViewers)FNetViewer(SpatialConnection->Children[ViewerIndex], DeltaSeconds);
-					//	}
-					//}
+						for (int32 ViewerIndex = 0; ViewerIndex < OtherSpatialConnection->Children.Num(); ViewerIndex++)
+						{
+							if (OtherSpatialConnection->Children[ViewerIndex]->ViewTarget != NULL)
+							{
+								new(ConnectionViewers)FNetViewer(OtherSpatialConnection->Children[ViewerIndex], DeltaSeconds);
+							}
+						}
+					}
 				}
 			}
 
