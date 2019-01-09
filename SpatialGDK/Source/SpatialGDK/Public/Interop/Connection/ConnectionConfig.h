@@ -25,7 +25,7 @@ struct FConnectionConfig
 		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
         
 #if PLATFORM_IOS || PLATFORM_ANDROID
-        // mobile platform only be client worker and using the external ip.
+		// On a mobile platform, you can only be a client worker, and therefore use the external IP.
         WorkerType = SpatialConstants::ClientWorkerType;
         UseExternalIp = true;
 #endif
