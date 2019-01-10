@@ -124,7 +124,7 @@ public:
 	UPROPERTY()
 	USnapshotManager* SnapshotManager;
 
-	// Setting ActorReplicationRateLimit in DefaultEngine.ini will limit the number of actors which are replicated per tick to the number specified.
+	// Setting ActorReplicationRateLimit in DefaultEngine.ini `[/Script/SpatialGDK.SpatialNetDriver]` section will limit the number of actors which are replicated per tick to the number specified.
 	// This acts as a hard limit to the number of actors per frame but nothing else. It's recommended to set this value to around 100~ (experimentation recommended).
 	// If not set spatial will replicate every actor per frame (unbounded) and so large worlds will experience slowdown server-side and client-side.
 	// Use `stat SpatialNet` in editor builds to find the number of calls to 'ReplicateActor' and use this to inform the rate limit setting.

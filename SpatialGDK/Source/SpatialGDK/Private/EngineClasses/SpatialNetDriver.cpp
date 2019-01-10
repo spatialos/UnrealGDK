@@ -459,18 +459,8 @@ static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Act
 {
 	// SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
 	// We might make some exceptions in the future, so keeping this function.
-	return true;
-
 	// TODO: UNR-837 Start using IsNetRelevantFor again for relevancy checks rather than returning true.
-	//for (int32 viewerIdx = 0; viewerIdx < ConnectionViewers.Num(); viewerIdx++)
-	//{
-	//	if (Actor->IsNetRelevantFor(ConnectionViewers[viewerIdx].InViewer, ConnectionViewers[viewerIdx].ViewTarget, ConnectionViewers[viewerIdx].ViewLocation))
-	//	{
-	//		return true;
-	//	}
-	//}
-
-	//return false;
+	return true;
 }
 
 // Returns true if this actor is considered dormant (and all properties caught up) to the current connection
@@ -687,8 +677,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 	// SpatialGDK - Actor replication rate limiting based on config value.
 	int32 RateLimit = ActorReplicationRateLimit > 0 ? ActorReplicationRateLimit : INT32_MAX;
-	RateLimit = FinalSortedCount < RateLimit ? FinalSortedCount : RateLimit;
-	int32 FinalReplicatedCount = RateLimit;
+	int32 FinalReplicatedCount = 0;
 
 	for (int32 j = 0; j < FinalSortedCount; j++)
 	{
@@ -745,10 +734,10 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit.
 			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
-			if (RateLimit > 0)
+			if (FinalReplicatedCount < RateLimit)
 			{
 				bIsRelevant = true;
-				RateLimit--;
+				FinalReplicatedCount++;
 			}
 
 			// if the actor is now relevant or was recently relevant
@@ -936,6 +925,8 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 				for (int j = 0; j < ClientConnections.Num(); j++)
 				{
 					USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[j]);
+					check(OtherSpatialConnection);
+
 					if (OtherSpatialConnection->ViewTarget)
 					{
 						new(ConnectionViewers)FNetViewer(OtherSpatialConnection, DeltaSeconds);
