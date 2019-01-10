@@ -97,14 +97,6 @@ void USpatialNetDriver::PostInitProperties()
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
-	if (TypebindingManager == nullptr)
-	{
-		// Delay loading of the schema database until after the map is loaded to prevent package/outer conflicts. This can
-		// be moved back to Init() once we have lazy loading of schema database implemented - JIRA: 833
-		TypebindingManager = NewObject<USpatialTypebindingManager>();
-		TypebindingManager->Init(this);
-	}
-
 	if (LoadedWorld->GetNetDriver() != this)
 	{
 		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
@@ -199,6 +191,14 @@ void USpatialNetDriver::Connect()
 void USpatialNetDriver::OnMapLoadedAndConnected()
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS and map has been loaded."));
+
+	if (TypebindingManager == nullptr)
+	{
+		// Delay loading of the schema database until after the map is loaded to prevent package/outer conflicts. This can
+		// be moved back to Init() once we have lazy loading of schema database implemented - JIRA: 833
+		TypebindingManager = NewObject<USpatialTypebindingManager>();
+		TypebindingManager->Init(this);
+	}
 
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 
