@@ -24,7 +24,9 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
 TArray<UClass*> SchemaGeneratedClasses;
+TArray<UClass*> AdditionalSchemaGeneratedClasses;
 TMap<FString, FSchemaData> ClassPathToSchema;
+uint32 NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 
 namespace
 {
@@ -152,15 +154,40 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 }
 }// ::
 
-void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
+const Worker_ComponentId GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
 {
-	Worker_ComponentId ComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
-
 	// Generate the actual schema
-	for (auto& TypeInfo : TypeInfos)
+	for (const auto& TypeInfo : TypeInfos)
 	{
-		ComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, ComponentId, TypeInfo);
+		const UClass* const Class = Cast<UClass>(TypeInfo->Type);
+		const FSchemaData* const SchemaData = ClassPathToSchema.Find(*Class->GetPathName());
+		
+		if (SchemaData)
+		{
+			bool bFoundNonZeroId = false;
+
+			for (const auto& CurrComponentId : SchemaData->SchemaComponents)
+			{
+				if (CurrComponentId)
+				{
+					GenerateCompleteSchemaFromClass(CombinedSchemaPath, CurrComponentId, TypeInfo);
+					bFoundNonZeroId = true;
+					break;
+				}
+			}
+
+			if (!bFoundNonZeroId)
+			{
+				NextAvailableComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, NextAvailableComponentId, TypeInfo);
+			}
+		}
+		else
+		{
+			NextAvailableComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, NextAvailableComponentId, TypeInfo);
+		}
 	}
+
+	return NextAvailableComponentId;
 }
 
 FString GenerateIntermediateDirectory()
@@ -172,13 +199,14 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
-void SaveSchemaDatabase()
+void SaveSchemaDatabase(const uint32 NextAvailiableComponentId)
 {
-	AsyncTask(ENamedThreads::GameThread, []{
+	AsyncTask(ENamedThreads::GameThread, [NextAvailiableComponentId]{
 		FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
 		UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
 		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+		SchemaDatabase->NextAvailableComponentId = NextAvailiableComponentId;
 		SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
 
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
@@ -244,18 +272,84 @@ TArray<UClass*> GetAllSupportedClasses()
 	return Classes.Array();
 }
 
+void DeleteGeneratedSchemaFiles()
+{
+	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
+	{
+		if (!PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not clean the generated schema directory '%s'! Please make sure the directory and the files inside are writeable."), *SchemaOutputPath);
+		}
+	}
+	PlatformFile.CreateDirectory(*SchemaOutputPath);
+}
+
+void InitClassPathToSchemaMap()
+{
+	TSoftObjectPtr<USchemaDatabase> SchemaDatabasePtr(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")));
+	SchemaDatabasePtr.LoadSynchronous();
+	const USchemaDatabase* const SchemaDatabase = SchemaDatabasePtr.Get();
+
+	if (SchemaDatabase)
+	{
+		ClassPathToSchema = SchemaDatabase->ClassPathToSchema;
+		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
+	}
+	else
+	{
+		// As a safety precaution, if the SchemaDatabase.uasset doesn't exist then make sure the schema generated folder is cleared as well. 
+		DeleteGeneratedSchemaFiles();
+	}
+}
+#pragma optimize("", off)
+void PreProcessSchemaMap()
+{
+	TArray<FString> EntriesToRemove;
+	for (const auto& EntryIn : ClassPathToSchema)
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Checking if following file exists: %s"), *(EntryIn.Key));
+
+		const FSoftObjectPath ItemToReference(EntryIn.Key);
+
+		// first check if the object is already loaded into memory
+		UObject* const ResolvedObject = ItemToReference.ResolveObject();
+		UObject* const LoadedObject   = ResolvedObject ? nullptr : ItemToReference.TryLoad();
+
+		// only store classes that weren't currently loaded into memory
+		if (LoadedObject && !AdditionalSchemaGeneratedClasses.Find(Cast<UClass>(LoadedObject)))
+		{
+			// don't allow the Garbage Collector to delete these objects
+			LoadedObject->AddToRoot();
+			AdditionalSchemaGeneratedClasses.Add(Cast<UClass>(LoadedObject));
+
+		}
+
+		// if the class isn't loaded then mark the entry for removal from the map
+		else if(!ResolvedObject && !LoadedObject)
+		{
+			EntriesToRemove.Add(EntryIn.Key);
+		}
+	}
+
+	// this will prevent any garbage/unused classes from sticking around in the SchemaDatabase as clutter
+	for (const auto& EntryIn : EntriesToRemove)
+	{
+		ClassPathToSchema.Remove(EntryIn);
+	}
+}
+
 bool SpatialGDKGenerateSchema()
 {
-	ClassPathToSchema.Empty();
-
+	// gets the classes currently loaded into memory
 	SchemaGeneratedClasses = GetAllSupportedClasses();
-
 	SchemaGeneratedClasses.Sort();
 
 	// Generate Type Info structs for all classes
 	TArray<TSharedPtr<FUnrealType>> TypeInfos;
 
-	for (const auto& Class : SchemaGeneratedClasses)
+	for ( UClass*  Class : SchemaGeneratedClasses)
 	{
 		// Parent and static array index start at 0 for checksum calculations.
 		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0, false));
@@ -277,21 +371,12 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (PlatformFile.DirectoryExists(*SchemaOutputPath))
-	{
-		if (!PlatformFile.DeleteDirectoryRecursively(*SchemaOutputPath))
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not clean the generated schema directory '%s'! Please make sure the directory and the files inside are writeable."), *SchemaOutputPath);
-			return false;
-		}
-		PlatformFile.CreateDirectory(*SchemaOutputPath);
-	}
-
 	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
-	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath);
 
-	SaveSchemaDatabase();
+	DeleteGeneratedSchemaFiles();
+
+	SaveSchemaDatabase(GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath));
 
 	return true;
 }
+#pragma  optimize("", on)
