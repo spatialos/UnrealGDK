@@ -27,6 +27,10 @@ DEFINE_LOG_CATEGORY(LogSpatialSender);
 
 using namespace improbable;
 
+DECLARE_CYCLE_STAT(TEXT("SendComponentUpdates"), STAT_SpatialSenderSendComponentUpdates, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ResetOutgoingUpdate"), STAT_SpatialSenderResetOutgoingUpdate, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("QueueOutgoingUpdate"), STAT_SpatialSenderQueueOutgoingUpdate, STATGROUP_SpatialNet);
+
 FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
@@ -228,6 +232,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo* Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
 	Worker_EntityId EntityId = Channel->GetEntityId();
 
 	UE_LOG(LogSpatialSender, Verbose, TEXT("Sending component update (object: %s, entity: %lld)"), *Object->GetName(), EntityId);
@@ -477,6 +482,8 @@ void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
 
 void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderResetOutgoingUpdate);
+
 	check(DependentChannel);
 	check(ReplicatedObject);
 	const FChannelObjectPair ChannelObjectPair(DependentChannel, ReplicatedObject);
@@ -538,6 +545,7 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 
 void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, bool bIsHandover)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderQueueOutgoingUpdate);
 	check(DependentChannel);
 	check(ReplicatedObject);
 	FChannelObjectPair ChannelObjectPair(DependentChannel, ReplicatedObject);
