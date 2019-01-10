@@ -32,7 +32,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
-DECLARE_CYCLE_STAT(TEXT("SpatialNetDriver ~ ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNetDriver);
+DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
 DEFINE_STAT(STAT_SpatialConsiderList);
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)

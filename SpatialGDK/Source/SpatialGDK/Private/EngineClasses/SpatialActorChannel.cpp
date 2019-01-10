@@ -26,9 +26,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
-DECLARE_CYCLE_STAT(TEXT("SpatialActorChannel ~ ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNetDriver);
-DECLARE_CYCLE_STAT(TEXT("SpatialActorChannel ~ UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNetDriver);
-DECLARE_CYCLE_STAT(TEXT("SpatialActorChannel ~ ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNetDriver);
+DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
 
 namespace
 {

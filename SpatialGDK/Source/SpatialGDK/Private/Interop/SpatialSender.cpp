@@ -27,6 +27,10 @@ DEFINE_LOG_CATEGORY(LogSpatialSender);
 
 using namespace improbable;
 
+DECLARE_CYCLE_STAT(TEXT("SendComponentUpdates"), STAT_SpatialSenderSendComponentUpdates, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ResetOutgoingUpdate"), STAT_SpatialSenderResetOutgoingUpdate, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("QueueOutgoingUpdate"), STAT_SpatialSenderQueueOutgoingUpdate, STATGROUP_SpatialNet);
+
 FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
@@ -225,8 +229,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	return CreateEntityRequestId;
 }
-
-DECLARE_CYCLE_STAT(TEXT("SpatialSender ~ SendComponentUpdates"), STAT_SpatialSenderSendComponentUpdates, STATGROUP_SpatialNetDriver);
 
 void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo* Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
 {
@@ -478,8 +480,6 @@ void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
 	Connection->SendDeleteEntityRequest(EntityId);
 }
 
-DECLARE_CYCLE_STAT(TEXT("SpatialSender ~ ResetOutgoingUpdate"), STAT_SpatialSenderResetOutgoingUpdate, STATGROUP_SpatialNetDriver);
-
 void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderResetOutgoingUpdate);
@@ -542,8 +542,6 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 		PropertyToUnresolved.Remove(ChannelObjectPair);
 	}
 }
-
-DECLARE_CYCLE_STAT(TEXT("SpatialSender ~ QueueOutgoingUpdate"), STAT_SpatialSenderQueueOutgoingUpdate, STATGROUP_SpatialNetDriver);
 
 void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, bool bIsHandover)
 {

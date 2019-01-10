@@ -33,8 +33,8 @@ class UEntityRegistry;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
-DECLARE_STATS_GROUP(TEXT("SpatialNetDriver"), STATGROUP_SpatialNetDriver, STATCAT_Advanced);
-DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNetDriver,);
+DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);
+DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet,);
 
 class FSpatialWorkerUniqueNetId : public FUniqueNetId
 {
@@ -124,6 +124,10 @@ public:
 	UPROPERTY()
 	USnapshotManager* SnapshotManager;
 
+	// Setting ActorReplicationRateLimit in DefaultEngine.ini will limit the number of actors which are replicated per tick to the number specified.
+	// This acts as a hard limit to the number of actors per frame but nothing else. It's recommended to set this value to around 100~ (experimentation recommended).
+	// If not set spatial will replicate every actor per frame (unbounded) and so large worlds will experience slowdown server-side and client-side.
+	// Use `stat SpatialNet` in editor builds to find the number of calls to 'ReplicateActor' and use this to inform the rate limit setting.
 	UPROPERTY(Config)
 	int32 ActorReplicationRateLimit;
 
