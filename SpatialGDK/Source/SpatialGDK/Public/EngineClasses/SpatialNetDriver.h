@@ -124,9 +124,9 @@ public:
 	UPROPERTY()
 	USnapshotManager* SnapshotManager;
 
-	// Setting ActorReplicationRateLimit in DefaultEngine.ini `[/Script/SpatialGDK.SpatialNetDriver]` section will limit the number of actors which are replicated per tick to the number specified.
+	// Limit the number of actors which are replicated per tick to the number specified.
 	// This acts as a hard limit to the number of actors per frame but nothing else. It's recommended to set this value to around 100~ (experimentation recommended).
-	// If not set spatial will replicate every actor per frame (unbounded) and so large worlds will experience slowdown server-side and client-side.
+	// If not set SpatialOS will replicate every actor per frame (unbounded) and so large worlds will experience slowdown server-side and client-side.
 	// Use `stat SpatialNet` in editor builds to find the number of calls to 'ReplicateActor' and use this to inform the rate limit setting.
 	UPROPERTY(Config)
 	int32 ActorReplicationRateLimit;
@@ -185,7 +185,7 @@ private:
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 		
 #if WITH_SERVER_CODE
-	//SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.
+	// SpatialGDK: These functions all exist in UNetDriver, but we need to modify/simplify them in certain ways.
 	// Could have marked them virtual in base class but that's a pointless source change as these functions are not meant to be called from anywhere except USpatialNetDriver::ServerReplicateActors.
 	int32 ServerReplicateActors_PrepConnections(const float DeltaSeconds);
 	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors);

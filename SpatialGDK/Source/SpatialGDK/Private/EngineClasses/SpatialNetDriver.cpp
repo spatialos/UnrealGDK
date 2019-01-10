@@ -676,7 +676,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	int32 FinalRelevantCount = 0;
 
 	// SpatialGDK - Actor replication rate limiting based on config value.
-	int32 RateLimit = ActorReplicationRateLimit > 0 ? ActorReplicationRateLimit : INT32_MAX;
+	int32 RateLimit = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
 	int32 FinalReplicatedCount = 0;
 
 	for (int32 j = 0; j < FinalSortedCount; j++)
@@ -716,7 +716,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		// Normal actor replication
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(PriorityActors[j]->Channel);
 		UE_LOG(LogNetTraffic, Log, TEXT(" Maybe Replicate %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
-		if (!Channel || Channel->Actor) // make sure didn't just close this channel
+		if (Channel == nullptr || Channel->Actor) // Make sure didn't just close this channel.
 		{
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
@@ -740,7 +740,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				FinalReplicatedCount++;
 			}
 
-			// if the actor is now relevant or was recently relevant
+			// If the actor is now relevant or was recently relevant.
 			const bool bIsRecentlyRelevant = bIsRelevant || (Channel && Time - Channel->RelevantTime < RelevantTimeout);
 
 			if (bIsRecentlyRelevant)
@@ -779,13 +779,13 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					// SpatialGDK - Only replicate actors marked as relevant (rate limiting).
 					if (bIsRelevant)
 					{
-						// if it is relevant then mark the channel as relevant for a short amount of time
+						// If it is relevant then mark the channel as relevant for a short amount of time.
 						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
 
-						// if the channel isn't saturated
+						// If the channel isn't saturated.
 						if (Channel->IsNetReady(0))
 						{
-							// replicate the actor
+							// Replicate the actor.
 							UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
 							if (DebugRelevantActors)
 							{
@@ -813,11 +813,11 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 							OutUpdated++;
 						}
 
-						// second check for channel saturation
+						// Second check for channel saturation.
 						if (!InConnection->IsNetReady(0))
 						{
 							// We can bail out now since this connection is saturated, we'll return how far we got though
-							return j;
+							return FinalReplicatedCount;
 						}
 					}
 				}
@@ -921,6 +921,8 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 			}
 			else
 			{
+				ConnectionViewers.Reset();
+
 				// Not having a ViewTarget implies this must be the fake spatial connection and thus borrow the player controllers from other connections.
 				for (int j = 0; j < ClientConnections.Num(); j++)
 				{
