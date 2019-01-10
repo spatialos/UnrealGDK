@@ -307,7 +307,7 @@ FString USpatialWorkerConnection::GetWorkerId() const
 	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
 }
 
-TArray<FString> USpatialWorkerConnection::GetWorkerAttributes() const
+const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 {
 	return CachedWorkerAttributes;
 }
@@ -325,5 +325,5 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	for (uint32 Index = 0; Index < Attributes->attribute_count; ++Index)
 	{
 		CachedWorkerAttributes.Add(UTF8_TO_TCHAR(Attributes->attributes[Index]));
-	}	
+	}
 }
