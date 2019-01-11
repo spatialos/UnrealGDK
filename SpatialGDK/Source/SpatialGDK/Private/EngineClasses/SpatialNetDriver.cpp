@@ -1077,7 +1077,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		TSharedRef<FPendingRPCParams> RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++);
 
 #if !UE_BUILD_SHIPPING
-		if (Function->FunctionFlags & FUNC_NetReliable)
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 		{
 			RPCParams->ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
 		}
