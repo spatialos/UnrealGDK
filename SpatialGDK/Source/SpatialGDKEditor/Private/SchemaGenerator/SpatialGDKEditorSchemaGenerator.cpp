@@ -287,7 +287,7 @@ void PreProcessSchemaMap()
 	{
 		const FSoftObjectPath ItemToReference(EntryIn.Key);
 
-		// first check if the object is already loaded into memory
+		// First check if the object is already loaded into memory.
 		UObject* const ResolvedObject = ItemToReference.ResolveObject();
 		UObject* const LoadedObject   = ResolvedObject ? nullptr : ItemToReference.TryLoad();
 
