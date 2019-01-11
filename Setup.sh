@@ -132,5 +132,5 @@ markEndOfBlock "$0"
 
 popd
 
-echo "UnrealGDK build completed successfully^!"
+echo "UnrealGDK build completed successfully!"
 exit 0
