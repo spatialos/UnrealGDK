@@ -88,7 +88,7 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 
     > **Note:** You only want to replicate the `CurrentHealth` variable to the client that owns this Actor, thus you specify the `COND_OwnerOnly` flag.
 
-    Finally, you need to implement the `OnRep_CurentHealth` function so that the player health UI gets updated when the `CurrentHealth` variable is replicated:
+    Finally, you need to implement the `OnRep_CurrentHealth` function so that the player health UI gets updated when the `CurrentHealth` variable is replicated:
 
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
 1. In the public scope of the class, insert the following snippet:
