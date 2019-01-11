@@ -10,10 +10,19 @@ call :MarkStartOfBlock "Setup the git hooks"
     if defined TEAMCITY_CAPTURE_ENV goto SkipGitHooks
     if not exist .git\hooks goto SkipGitHooks
 
-    echo #!/bin/sh>.git\hooks\post-checkout
-    echo cmd.exe /c Setup.bat>>.git\hooks\post-checkout
-    echo #!/bin/sh>.git\hooks\post-merge
-    echo cmd.exe /c Setup.bat>>.git\hooks\post-merge
+    rem Remove the old post-checkout hook.
+    if exist .git\hooks\post-checkout del .git\hooks\post-checkout
+
+    rem Remove the old post-merge hook.
+    if exist .git\hooks\post-merge del .git\hooks\post-merge
+
+    rem Add git hook to run Setup.bat when RequireSetup file has been updated.
+    echo #!/usr/bin/env bash>.git\hooks\post-merge
+    echo changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)">>.git\hooks\post-merge
+    echo check_run() {>>.git\hooks\post-merge
+    echo echo "$changed_files" ^| grep --quiet "$1" ^&^& exec $2>>.git\hooks\post-merge
+    echo }>>.git\hooks\post-merge
+    echo check_run RequireSetup "cmd.exe /c Setup.bat">>.git\hooks\post-merge
 
     :SkipGitHooks
 call :MarkEndOfBlock "Setup the git hooks"
@@ -50,31 +59,19 @@ call :MarkEndOfBlock "Check dependencies"
 
 call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
-
     set BUILD_DIR=%~dp0SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
-    set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\Public\WorkerSdk
+    set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
+    set WORKER_SDK_DIR_OLD=%~dp0SpatialGDK\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
 call :MarkEndOfBlock "Setup variables"
 
-if not exist "%CORE_SDK_DIR%\core-sdk.version" goto NoCachedCoreSDK
-
-set /p CACHED_CORE_SDK_VERSION=<"%CORE_SDK_DIR%\core-sdk.version"
-if "%PINNED_CORE_SDK_VERSION%" == "%CACHED_CORE_SDK_VERSION%" (
-    echo.
-    echo CoreSDK version has not changed since the last run of Setup.bat. CoreSDK dependencies will be skipped.
-    echo If you wish to re-download them, please delete %CORE_SDK_DIR% folder and run Setup.bat again.
-    echo.
-    goto SkipCoreSDKDependencies
-)
-
-:NoCachedCoreSDK
-
 call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
+    rd /s /q "%WORKER_SDK_DIR_OLD%"     2>nul
     rd /s /q "%BINARIES_DIR%"           2>nul
     rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
 call :MarkEndOfBlock "Clean folders"
@@ -110,12 +107,6 @@ call :MarkStartOfBlock "Copy standard library schema"
     echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
     xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
 call :MarkEndOfBlock "Copy standard library schema"
-
-call :MarkStartOfBlock "Update cached CoreSDK version"
-    echo %PINNED_CORE_SDK_VERSION%>%CORE_SDK_DIR%\core-sdk.version
-call :MarkEndOfBlock "Update cached CoreSDK version"
-
-:SkipCoreSDKDependencies
 
 call :MarkStartOfBlock "Copy GDK schema"
     rd /s /q "%SCHEMA_COPY_DIR%"      2>nul

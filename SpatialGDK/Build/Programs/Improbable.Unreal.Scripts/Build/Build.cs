@@ -30,6 +30,7 @@ exit /b !ERRORLEVEL!
         public static void Main(string[] args)
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
+            var noCompile = false;
 
             var exitCode = 0;
             if (args.Length < 4 && !help)
@@ -38,10 +39,22 @@ exit /b !ERRORLEVEL!
                 exitCode = 1;
                 Console.Error.WriteLine("Path to uproject file is required.");
             }
+            else if (args.Length > 4)
+            {
+                if (args[4].CompareTo("-nocompile") != 0)
+                {
+                    help = true;
+                    exitCode = 1;
+                }
+                else
+                {
+                    noCompile = true;
+                }
+            }
 
             if (help)
             {
-                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject>");
+                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile]");
 
                 Environment.Exit(exitCode);
             }
@@ -57,15 +70,22 @@ exit /b !ERRORLEVEL!
 
             if (gameName == baseGameName + "Editor")
             {
-                Common.WriteHeading(" > Building Editor for use as a managed worker.");
-
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new[]
+                if (noCompile)
                 {
-                    gameName,
-                    platform,
-                    configuration,
-                    Quote(projectFile)
-                });
+                    Common.WriteHeading(" > Using precompiled Editor for use as a managed worker.");
+                }
+                else
+                {
+                    Common.WriteHeading(" > Building Editor for use as a managed worker.");
+
+                    Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new[]
+                    {
+                        gameName,
+                        platform,
+                        configuration,
+                        Quote(projectFile)
+                    });
+                }
 
                 var windowsEditorPath = Path.Combine(stagingDir, "WindowsEditor");
                 if (!Directory.Exists(windowsEditorPath))
@@ -91,13 +111,13 @@ exit /b !ERRORLEVEL!
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "BuildCookRun",
-                    "-build",
+                    noCompile ? "-nobuild" : "-build",
+                    noCompile ? "-nocompile" : "-compile",
                     "-project=" + Quote(projectFile),
                     "-noP4",
                     "-clientconfig=" + configuration,
                     "-serverconfig=" + configuration,
                     "-utf8output",
-                    "-compile",
                     "-cook",
                     "-stage",
                     "-package",
@@ -129,13 +149,13 @@ exit /b !ERRORLEVEL!
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "BuildCookRun",
-                    "-build",
+                    noCompile ? "-nobuild" : "-build",
+                    noCompile ? "-nocompile" : "-compile",
                     "-project=" + Quote(projectFile),
                     "-noP4",
                     "-clientconfig=" + configuration,
                     "-serverconfig=" + configuration,
                     "-utf8output",
-                    "-compile",
                     "-cook",
                     "-stage",
                     "-package",
