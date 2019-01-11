@@ -53,8 +53,7 @@ In order to get access to this fork, you need to link your GitHub account to a v
 
 ------
 
-* License: use of the contents of this repository is subject to the [Improbable license](https://docs.improbable.io/unreal/latest/license) </br>
-(Your access to and use of the Unreal Engine is governed by the [Unreal Engine End User License Agreement](https://www.unrealengine.com/en-US/previous-versions/udk-licensing-resources?sessionInvalidated=true). Please ensure that you have agreed to those terms before you access or use the Unreal Engine.)
+* Your access to and use of the Unreal Engine is governed by the [Unreal Engine End User License Agreement](https://www.unrealengine.com/en-US/previous-versions/udk-licensing-resources?sessionInvalidated=true). Please ensure that you have agreed to those terms before you access or use the Unreal Engine.
 * Version: alpha (stability and performance improvements pending)
 * GDK repository: [github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 
