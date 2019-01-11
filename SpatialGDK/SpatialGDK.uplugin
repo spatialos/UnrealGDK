@@ -19,22 +19,25 @@
       "Name": "SpatialGDK",
       "Type": "Runtime",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64", "Linux", "XboxOne", "PS4" ]
+      "WhitelistPlatforms": [ "Win64", "Linux", "Mac", "XboxOne", "PS4", "IOS" ]
     },
     {
       "Name": "SpatialGDKEditor",
       "Type": "Editor",
-      "LoadingPhase": "Default"
+      "LoadingPhase": "Default",
+      "WhitelistPlatforms": [ "Win64" ]
     },
     {
       "Name": "SpatialGDKEditorToolbar",
       "Type": "Editor",
-      "LoadingPhase": "Default"
+      "LoadingPhase": "Default",
+      "WhitelistPlatforms": [ "Win64" ]
     },
     {
       "Name": "SpatialGDKEditorCommandlet",
       "Type": "Editor",
-      "LoadingPhase": "Default"
+      "LoadingPhase": "Default",
+      "WhitelistPlatforms": [ "Win64" ]
     }
   ],
   "Plugins": [
