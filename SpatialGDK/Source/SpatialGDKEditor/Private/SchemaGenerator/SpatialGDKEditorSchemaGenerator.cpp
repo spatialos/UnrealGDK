@@ -24,7 +24,7 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
 TArray<UClass*> SchemaGeneratedClasses;
-TArray<UClass*> AdditionalSchemaGeneratedClasses;
+TArray<UClass*> AdditionalSchemaGeneratedClasses; // used to load and keep objects into memory
 TMap<FString, FSchemaData> ClassPathToSchema;
 uint32 NextAvailableComponentId;
 
