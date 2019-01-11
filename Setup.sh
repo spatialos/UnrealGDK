@@ -6,6 +6,11 @@
 set -e -u -o pipefail
 if [ -n "${TEAMCITY_CAPTURE_ENV:-}" ]; then set -x; else set +x; fi
 
+if [ "$(uname -s)" != "Darwin" ]; then
+    echo "This script should only be used on OS X. If you are using Windows, please run Setup.bat."
+    exit 1
+fi
+
 function markStartOfBlock {
     if [ -n "${TEAMCITY_CAPTURE_ENV:-}" ]; then
         echo -e "/x23/x23teamcity[blockOpened name='$1']"
