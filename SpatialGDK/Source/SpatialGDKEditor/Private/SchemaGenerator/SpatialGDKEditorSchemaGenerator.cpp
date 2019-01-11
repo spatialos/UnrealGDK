@@ -294,7 +294,7 @@ void PreProcessSchemaMap()
 		// only store classes that weren't currently loaded into memory
 		if (LoadedObject && !AdditionalSchemaGeneratedClasses.Find(Cast<UClass>(LoadedObject)))
 		{
-			// don't allow the Garbage Collector to delete these objects
+			// don't allow the Garbage Collector to delete these objects even between maps
 			LoadedObject->AddToRoot();
 			AdditionalSchemaGeneratedClasses.Add(Cast<UClass>(LoadedObject));
 		}
