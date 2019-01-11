@@ -67,12 +67,12 @@ public:
 		const FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 		check(Info);
 
-		const TArray<FString> WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
+		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
 		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(Info->SchemaComponents[SCHEMA_ClientRPC]))
 		{
-			for (const WorkerAttributeSet AttributeSet : *WorkerRequirementsSet)
+			for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
 			{
-				for (const FString Attribute : AttributeSet)
+				for (const FString& Attribute : AttributeSet)
 				{
 					if (WorkerAttributes.Contains(Attribute))
 					{

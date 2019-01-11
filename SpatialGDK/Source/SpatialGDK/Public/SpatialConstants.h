@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "UObject/Script.h"
+
 #include "Schema/UnrealObjectRef.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -34,6 +36,48 @@ enum ESchemaComponentType : int32
 	SCHEMA_FirstRPC = SCHEMA_ClientRPC,
 	SCHEMA_LastRPC = SCHEMA_CrossServerRPC,
 };
+
+FORCEINLINE ESchemaComponentType FunctionFlagsToRPCSchemaType(EFunctionFlags FunctionFlags)
+{
+	if (FunctionFlags & FUNC_NetClient)
+	{
+		return SCHEMA_ClientRPC;
+	}
+	else if (FunctionFlags & FUNC_NetServer)
+	{
+		return SCHEMA_ServerRPC;
+	}
+	else if (FunctionFlags & FUNC_NetMulticast)
+	{
+		return SCHEMA_NetMulticastRPC;
+	}
+	else if (FunctionFlags & FUNC_NetCrossServer)
+	{
+		return SCHEMA_CrossServerRPC;
+	}
+	else
+	{
+		return SCHEMA_Invalid;
+	}
+}
+
+FORCEINLINE FString RPCSchemaTypeToString(ESchemaComponentType RPCType)
+{
+	switch (RPCType)
+	{
+	case SCHEMA_ClientRPC:
+		return TEXT("Client");
+	case SCHEMA_ServerRPC:
+		return TEXT("Server");
+	case SCHEMA_NetMulticastRPC:
+		return TEXT("Multicast");
+	case SCHEMA_CrossServerRPC:
+		return TEXT("CrossServer");
+	}
+
+	checkNoEntry();
+	return FString();
+}
 
 namespace SpatialConstants
 {

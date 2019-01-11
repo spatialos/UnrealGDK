@@ -10,6 +10,10 @@
 #include "Net/DataBunch.h"
 #include "Net/NetworkProfiler.h"
 
+#if WITH_EDITOR
+#include "Settings/LevelEditorPlaySettings.h"
+#endif
+
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -21,6 +25,10 @@
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
+
+DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
 
 namespace
 {
@@ -114,10 +122,14 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 #if WITH_EDITOR
 	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
 	{
+		bool bDeleteDynamicEntities = true;
+		GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities(bDeleteDynamicEntities);
+
 		if (NetDriver->IsServer() &&
 			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
 			NetDriver->GetWorld()->bIsTearingDown &&
-			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
+			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId) &&
+			bDeleteDynamicEntities == true)
 		{
 			if (!IsStablyNamedEntity())
 			{
@@ -199,6 +211,8 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 
 int64 USpatialActorChannel::ReplicateActor()
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
+
 	if (!IsReadyForReplication())
 	{
 		return 0;
@@ -393,6 +407,8 @@ int64 USpatialActorChannel::ReplicateActor()
 
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo* Info, const FReplicationFlags& RepFlags)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateSubobject);
+
 	if (Info == nullptr)
 	{
 		return false;
@@ -690,6 +706,8 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
+
 	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
 	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
 	// of the PlayerController and PlayerState at the same time as the pawn.

@@ -32,6 +32,9 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
+DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
+DEFINE_STAT(STAT_SpatialConsiderList);
+
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
 	if (!Super::InitBase(bInitAsClient, InNotify, URL, bReuseAddressAndPort, Error))
@@ -94,14 +97,6 @@ void USpatialNetDriver::PostInitProperties()
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
-	if (TypebindingManager == nullptr)
-	{
-		// Delay loading of the schema database until after the map is loaded to prevent package/outer conflicts. This can
-		// be moved back to Init() once we have lazy loading of schema database implemented - JIRA: 833
-		TypebindingManager = NewObject<USpatialTypebindingManager>();
-		TypebindingManager->Init(this);
-	}
-
 	if (LoadedWorld->GetNetDriver() != this)
 	{
 		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
@@ -196,6 +191,14 @@ void USpatialNetDriver::Connect()
 void USpatialNetDriver::OnMapLoadedAndConnected()
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS and map has been loaded."));
+
+	if (TypebindingManager == nullptr)
+	{
+		// Delay loading of the schema database until after the map is loaded to prevent package/outer conflicts. This can
+		// be moved back to Init() once we have lazy loading of schema database implemented - JIRA: 833
+		TypebindingManager = NewObject<USpatialTypebindingManager>();
+		TypebindingManager->Init(this);
+	}
 
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 
@@ -454,8 +457,9 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 // Returns true if this actor should replicate to *any* of the passed in connections
 static FORCEINLINE_DEBUGGABLE bool IsActorRelevantToConnection(const AActor* Actor, const TArray<FNetViewer>& ConnectionViewers)
 {
-	//SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
+	// SpatialGDK: Currently we're just returning true as a worker replicates all the known actors in our design.
 	// We might make some exceptions in the future, so keeping this function.
+	// TODO: UNR-837 Start using IsNetRelevantFor again for relevancy checks rather than returning true.
 	return true;
 }
 
@@ -611,7 +615,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(), *InConnection->GetName());
 			}
 
-			//SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
+			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
 			// We have removed the level load check because it doesn't apply.
 			// Relevancy checking is also mostly just a pass through, might be removed later.
 			if (!IsActorRelevantToConnection(Actor, ConnectionViewers))
@@ -671,6 +675,10 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	int32 ActorUpdatesThisConnectionSent = 0;
 	int32 FinalRelevantCount = 0;
 
+	// SpatialGDK - Actor replication rate limiting based on config value.
+	int32 RateLimit = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
+	int32 FinalReplicatedCount = 0;
+
 	for (int32 j = 0; j < FinalSortedCount; j++)
 	{
 		// Deletion entry
@@ -708,27 +716,31 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		// Normal actor replication
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(PriorityActors[j]->Channel);
 		UE_LOG(LogNetTraffic, Log, TEXT(" Maybe Replicate %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
-		if (!Channel || Channel->Actor) //make sure didn't just close this channel
+		if (Channel == nullptr || Channel->Actor) // Make sure didn't just close this channel.
 		{
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
 
-			//SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
+			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
 			// only check visibility on already visible actors every 1.0 + 0.5R seconds
 			// bTearOff actors should never be checked
 			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
 			{
-				if (IsActorRelevantToConnection(Actor, ConnectionViewers))
-				{
-					bIsRelevant = true;
-				}
-				else if (DebugRelevantActors)
+				if (DebugRelevantActors)
 				{
 					LastNonRelevantActors.Add(Actor);
 				}
 			}
 
-			// if the actor is now relevant or was recently relevant
+			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit.
+			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
+			if (FinalReplicatedCount < RateLimit)
+			{
+				bIsRelevant = true;
+				FinalReplicatedCount++;
+			}
+
+			// If the actor is now relevant or was recently relevant.
 			const bool bIsRecentlyRelevant = bIsRelevant || (Channel && Time - Channel->RelevantTime < RelevantTimeout);
 
 			if (bIsRecentlyRelevant)
@@ -754,7 +766,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						{
 							Channel->SetChannelActor(Actor);
 						}
-						// if we couldn't replicate it for a reason that should be temporary, and this Actor is updated very infrequently, make sure we update it again soon
 						else if (Actor->NetUpdateFrequency < 1.0f)
 						{
 							UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
@@ -765,47 +776,49 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 				if (Channel)
 				{
-					// if it is relevant then mark the channel as relevant for a short amount of time
+					// SpatialGDK - Only replicate actors marked as relevant (rate limiting).
 					if (bIsRelevant)
 					{
+						// If it is relevant then mark the channel as relevant for a short amount of time.
 						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
-					}
-					// if the channel isn't saturated
-					if (Channel->IsNetReady(0))
-					{
-						// replicate the actor
-						UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
-						if (DebugRelevantActors)
-						{
-							LastRelevantActors.Add(Actor);
-						}
 
-						if (Channel->ReplicateActor())
+						// If the channel isn't saturated.
+						if (Channel->IsNetReady(0))
 						{
-							ActorUpdatesThisConnectionSent++;
+							// Replicate the actor.
+							UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
 							if (DebugRelevantActors)
 							{
-								LastSentActors.Add(Actor);
+								LastRelevantActors.Add(Actor);
 							}
 
-							// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
-							const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
-							const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
-							const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
+							if (Channel->ReplicateActor())
+							{
+								ActorUpdatesThisConnectionSent++;
+								if (DebugRelevantActors)
+								{
+									LastSentActors.Add(Actor);
+								}
 
-							// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
-							PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
-							PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
+								// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
+								const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
+								const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
+								const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
+
+								// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
+								PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
+								PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
+							}
+							ActorUpdatesThisConnection++;
+							OutUpdated++;
 						}
-						ActorUpdatesThisConnection++;
-						OutUpdated++;
-					}
 
-					// second check for channel saturation
-					if (!InConnection->IsNetReady(0))
-					{
-						// We can bail out now since this connection is saturated, we'll return how far we got though
-						return j;
+						// Second check for channel saturation.
+						if (!InConnection->IsNetReady(0))
+						{
+							// We can bail out now since this connection is saturated, we'll return how far we got though
+							return FinalReplicatedCount;
+						}
 					}
 				}
 			}
@@ -825,7 +838,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		}
 	}
 
-	return FinalSortedCount;
+	return FinalReplicatedCount;
 }
 #endif
 
@@ -834,6 +847,8 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 // For this reason, things like ready checks, acks, throttling based on number of updated connections, interest management are irrelevant at this level.
 int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialServerReplicateActors);
+
 #if WITH_SERVER_CODE
 	if (ClientConnections.Num() == 0)
 	{
@@ -849,7 +864,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 	const int32 NumClientsToTick = ServerReplicateActors_PrepConnections(DeltaSeconds);
 
-	//SpatialGDK: This is a formality as there is at least one "perfect" Spatial connection in our design.
+	// SpatialGDK: This is a formality as there is at least one "perfect" Spatial connection in our design.
 	if (NumClientsToTick == 0)
 	{
 		// No connections are ready this frame
@@ -870,11 +885,16 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		bCPUSaturated = DeltaSeconds > 1.2f * ServerTickTime;
 	}
 
+	SET_DWORD_STAT(STAT_SpatialConsiderList, 0);
+
 	TArray<FNetworkObjectInfo*> ConsiderList;
 	ConsiderList.Reserve(GetNetworkObjectList().GetActiveObjects().Num());
 
 	// Build the consider list (actors that are ready to replicate)
 	ServerReplicateActors_BuildConsiderList(ConsiderList, ServerTickTime);
+
+	SET_DWORD_STAT(STAT_SpatialConsiderList, ConsiderList.Num());
+
 	FMemMark Mark(FMemStack::Get());
 
 	for (int32 i = 0; i < ClientConnections.Num(); i++)
@@ -882,34 +902,7 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(ClientConnections[i]);
 		check(SpatialConnection);
 
-		// if this client shouldn't be ticked this frame
-		if (i >= NumClientsToTick)
-		{
-			// SpatialGDK: This should not really happen in our case because we only replicate to SpatialOS and not to individual clients. Leaving the code here just in case.
-
-			//UE_LOG(LogNet, Log, TEXT("skipping update to %s"),*Connection->GetName());
-			// then mark each considered actor as bPendingNetUpdate so that they will be considered again the next frame when the connection is actually ticked
-			for (int32 ConsiderIdx = 0; ConsiderIdx < ConsiderList.Num(); ConsiderIdx++)
-			{
-				AActor *Actor = ConsiderList[ConsiderIdx]->Actor;
-				// if the actor hasn't already been flagged by another connection,
-				if (Actor != NULL && !ConsiderList[ConsiderIdx]->bPendingNetUpdate)
-				{
-					// find the channel
-					UActorChannel *Channel = SpatialConnection->ActorChannelMap().FindRef(Actor);
-					// and if the channel last update time doesn't match the last net update time for the actor
-					if (Channel != NULL && Channel->LastUpdateTime < ConsiderList[ConsiderIdx]->LastNetUpdateTime)
-					{
-						//UE_LOG(LogNet, Log, TEXT("flagging %s for a future update"),*Actor->GetName());
-						// flag it for a pending update
-						ConsiderList[ConsiderIdx]->bPendingNetUpdate = true;
-					}
-				}
-			}
-			// clear the time sensitive flag to avoid sending an extra packet to this connection
-			SpatialConnection->TimeSensitive = false;
-		}
-		else if (SpatialConnection->bReliableSpatialConnection || SpatialConnection->ViewTarget)
+		if (SpatialConnection->bReliableSpatialConnection || SpatialConnection->ViewTarget)
 		{
 			// Make a list of viewers this connection should consider (this connection and children of this connection)
 			TArray<FNetViewer>& ConnectionViewers = WorldSettings->ReplicationViewers;
@@ -923,6 +916,30 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 					if (SpatialConnection->Children[ViewerIndex]->ViewTarget != NULL)
 					{
 						new(ConnectionViewers)FNetViewer(SpatialConnection->Children[ViewerIndex], DeltaSeconds);
+					}
+				}
+			}
+			else
+			{
+				ConnectionViewers.Reset();
+
+				// Not having a ViewTarget implies this must be the fake spatial connection and thus borrow the player controllers from other connections.
+				for (int j = 0; j < ClientConnections.Num(); j++)
+				{
+					USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[j]);
+					check(OtherSpatialConnection);
+
+					if (OtherSpatialConnection->ViewTarget)
+					{
+						new(ConnectionViewers)FNetViewer(OtherSpatialConnection, DeltaSeconds);
+
+						for (int32 ViewerIndex = 0; ViewerIndex < OtherSpatialConnection->Children.Num(); ViewerIndex++)
+						{
+							if (OtherSpatialConnection->Children[ViewerIndex]->ViewTarget != NULL)
+							{
+								new(ConnectionViewers)FNetViewer(OtherSpatialConnection->Children[ViewerIndex], DeltaSeconds);
+							}
+						}
 					}
 				}
 			}
@@ -1057,7 +1074,16 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		Sender->SendRPC(MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++));
+		TSharedRef<FPendingRPCParams> RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++);
+
+#if !UE_BUILD_SHIPPING
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		{
+			RPCParams->ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
+		}
+#endif // !UE_BUILD_SHIPPING
+
+		Sender->SendRPC(RPCParams);
 	}
 }
 
@@ -1378,3 +1404,110 @@ void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate
 		SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 	}
 }
+
+#if !UE_BUILD_SHIPPING
+uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject)
+{
+	if (!ReliableRPCIdMap.Contains(Actor))
+	{
+		ReliableRPCIdMap.Add(Actor);
+	}
+	FRPCTypeToReliableRPCIdMap& ReliableRPCIds = ReliableRPCIdMap[Actor];
+
+	if (FReliableRPCId* RPCIdEntry = ReliableRPCIds.Find(RPCType))
+	{
+		if (!RPCIdEntry->WorkerId.IsEmpty())
+		{
+			// We previously used to receive RPCs of this type, now we're about to send one, so we reset the reliable RPC index.
+			// This should only be possible for CrossServer RPCs.
+			check(RPCType == SCHEMA_CrossServerRPC);
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to receive reliable CrossServer RPCs from worker %s, now about to send one. The entity must have crossed boundary."),
+				*Actor->GetName(), *TargetObject->GetName(), *RPCIdEntry->WorkerId);
+			RPCIdEntry->WorkerId = FString();
+			RPCIdEntry->RPCId = 0;
+		}
+	}
+	else
+	{
+		// Add an entry for this RPC type with empty WorkerId and RPCId = 0
+		ReliableRPCIds.Add(RPCType);
+	}
+
+	return ++ReliableRPCIds[RPCType].RPCId;
+}
+
+void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function)
+{
+	check(!WorkerId.IsEmpty());
+
+	if (!ReliableRPCIdMap.Contains(Actor))
+	{
+		ReliableRPCIdMap.Add(Actor);
+	}
+	FRPCTypeToReliableRPCIdMap& ReliableRPCIds = ReliableRPCIdMap[Actor];
+
+	if (FReliableRPCId* RPCIdEntry = ReliableRPCIds.Find(RPCType))
+	{
+		if (WorkerId != RPCIdEntry->WorkerId)
+		{
+			if (RPCIdEntry->WorkerId.IsEmpty())
+			{
+				// We previously used to send RPCs of this type, now we received one. This should only be possible for CrossServer RPCs.
+				check(RPCType == SCHEMA_CrossServerRPC);
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Used to send reliable CrossServer RPCs, now received one from worker %s. The entity must have crossed boundary."),
+					*Actor->GetName(), *TargetObject->GetName(), *WorkerId);
+			}
+			else
+			{
+				// We received an RPC from a different worker than the one we used to receive RPCs of this type from.
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s, object %s: Received a reliable %s RPC from a different worker %s. Previously received from worker %s."),
+					*Actor->GetName(), *TargetObject->GetName(), *RPCSchemaTypeToString(RPCType), *WorkerId, *RPCIdEntry->WorkerId);
+			}
+			RPCIdEntry->WorkerId = WorkerId;
+		}
+		else if (RPCId != RPCIdEntry->RPCId + 1)
+		{
+			if (RPCId < RPCIdEntry->RPCId)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s: Reliable %s RPC received out of order! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
+					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+			}
+			else if (RPCId == RPCIdEntry->RPCId)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s: Reliable %s RPC index duplicated! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
+					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s: One or more reliable %s RPCs skipped! Previously received RPC: %s, target %s, index %d. Now received: %s, target %s, index %d. Sender: %s"),
+					*Actor->GetName(), *RPCSchemaTypeToString(RPCType), *RPCIdEntry->LastRPCName, *RPCIdEntry->LastRPCTarget, RPCIdEntry->RPCId, *Function->GetName(), *TargetObject->GetName(), RPCId, *WorkerId);
+			}
+		}
+
+		RPCIdEntry->RPCId = RPCId;
+		RPCIdEntry->LastRPCTarget = TargetObject->GetName();
+		RPCIdEntry->LastRPCName = Function->GetName();
+	}
+	else
+	{
+		ReliableRPCIds.Add(RPCType, FReliableRPCId(WorkerId, RPCId, TargetObject->GetName(), Function->GetName()));
+	}
+}
+
+void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType)
+{
+	// When we gain authority on an RPC component of an actor that we previously received RPCs for, reset the reliable RPC counter.
+	// This is to account for the case where the actor crosses to another worker, receives a couple of reliable RPCs, and comes back
+	// to the original worker.
+	if (FRPCTypeToReliableRPCIdMap* ReliableRPCIds = ReliableRPCIdMap.Find(Actor))
+	{
+		if (ReliableRPCIds->Contains(RPCType))
+		{
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s: Gained authority over %s RPC component. Resetting previous reliable RPC counter."),
+				*Actor->GetName(), *RPCSchemaTypeToString(RPCType));
+			ReliableRPCIds->Remove(RPCType);
+		}
+	}
+}
+
+#endif // !UE_BUILD_SHIPPING
