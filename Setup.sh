@@ -6,6 +6,11 @@
 set -e -u -o pipefail
 if [ -n "${TEAMCITY_CAPTURE_ENV:-}" ]; then set -x; else set +x; fi
 
+if [ "$(uname -s)" != "Darwin" ]; then
+    echo "This script should only be used on OS X. If you are using Windows, please run Setup.bat."
+    exit 1
+fi
+
 function markStartOfBlock {
     if [ -n "${TEAMCITY_CAPTURE_ENV:-}" ]; then
         echo -e "/x23/x23teamcity[blockOpened name='$1']"
@@ -38,7 +43,7 @@ markStartOfBlock "Setup the git hooks"
         echo '#!/usr/bin/env bash' > .git/hooks/post-merge
         echo 'changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)"' >> .git/hooks/post-merge
         echo 'check_run() {' >> .git/hooks/post-merge
-        echo 'echo "$changed_files" ^| grep --quiet "$1" ^&^& exec $2' >> .git/hooks/post-merge
+        echo 'echo "$changed_files" | grep --quiet "$1" && exec $2' >> .git/hooks/post-merge
         echo '}' >> .git/hooks/post-merge
         echo 'check_run RequireSetup "sh Setup.sh"' >> .git/hooks/post-merge
     fi
@@ -132,5 +137,5 @@ markEndOfBlock "$0"
 
 popd
 
-echo "UnrealGDK build completed successfully^!"
+echo "UnrealGDK build completed successfully!"
 exit 0
