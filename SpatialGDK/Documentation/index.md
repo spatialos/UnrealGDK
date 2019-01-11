@@ -1,7 +1,9 @@
 # Welcome to the SpatialOS GDK for Unreal 
 <img src="{{assetRoot}}assets/unrealgdk-headline-image.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
 
-The SpatialOS Game Development Kit (GDK) for Unreal is a plugin which allows you to host your game and combine multiple dedicated server instances across one seamless game world, whilst using the Unreal Engine networking API. 
+The SpatialOS Game Development Kit (GDK) for Unreal is a plugin which allows you to host your game and combine multiple dedicated server instances across one seamless game world, whilst using the Unreal Engine networking API.
+
+<%(Callout type="warn" message="This is an [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal, pending significant stability, performance and documentation improvements. The API may change as we learn from feedback. See the guidance on [Recommended use] for more details.({{urlRoot}}/recommended-use).")%>
 
 The GDK offers:<br/>
 
@@ -31,4 +33,3 @@ The GDK offers:<br/>
 <br/>
 
 
-<%(Callout type="warn" message="This is an [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal, pending stability, performance and documentation improvements. The API may change as we learn from feedback  - see the guidance on [Recommended use]({{urlRoot}}/recommended-use).")%>
