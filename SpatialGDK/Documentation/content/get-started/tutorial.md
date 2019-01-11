@@ -67,7 +67,7 @@ In this ThirdPersonShooter project each `TPSCharacter` contains a variable calle
 To resolve this you need to mark the `CurrentHealth` property for replication, just as you would in the native [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1) workflow. To do this:
 
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
-1. Navigate to the declaration of the `CurrentHealth` variable (line 175), and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`. The UProperty should now look like this:
+1. Navigate to the declaration of the `CurrentHealth` variable (line 173), and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`. The UProperty should now look like this:
 
     ```
     UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
