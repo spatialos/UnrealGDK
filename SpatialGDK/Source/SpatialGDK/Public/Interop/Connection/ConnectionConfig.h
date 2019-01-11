@@ -23,6 +23,12 @@ struct FConnectionConfig
 		FParse::Bool(CommandLine, TEXT("useExternalIpForBridge"), UseExternalIp);
 		FParse::Bool(CommandLine, TEXT("enableProtocolLogging"), EnableProtocolLoggingAtStartup);
 		FParse::Value(CommandLine, TEXT("protocolLoggingPrefix"), ProtocolLoggingPrefix);
+        
+#if PLATFORM_IOS || PLATFORM_ANDROID
+		// On a mobile platform, you can only be a client worker, and therefore use the external IP.
+		WorkerType = SpatialConstants::ClientWorkerType;
+		UseExternalIp = true;
+#endif
 
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
