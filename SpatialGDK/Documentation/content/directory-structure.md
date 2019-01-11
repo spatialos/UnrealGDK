@@ -11,8 +11,8 @@ The table below lists the contents of the GDK for Unreal repository after runnin
 | `SpatialGDK/Extras/fastbuild` | Contains files related to [FASTBuild](http://www.fastbuild.org/docs/home.html), an open-source build system that is currently only usable with the GDK by Improbable engineers.
 | `SpatialGDK/Extras/schema` | Contains the [schema files](https://docs.improbable.io/reference/latest/shared/glossary#schema) required for the GDK to interact with SpatialOS.
 | `SpatialGDK/Extras/linting/` | Contains the scripts we use to lint the GDK.
-| `SpatialGDK/Source/Public` | Contains the public source code of the GDK uplugin.
-| `SpatialGDK/Source/Private` | Contains the private source code of the GDK uplugin.
-| `SpatialGDK/Source/Public/WorkerSdk/` | Not tracked in git. Contains the [C API worker SDK](https://docs.improbable.io/reference/latest/capi/introduction) headers which are used while building the GDK. You install these when you run `Setup.bat`
-| `/SpatialGDKEditorToolbar/` | Contains the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbars.md) that appears within the Unreal Editor GUI, from which you can take snapshots, generate schemas, start and stop deployments, and access the SpatialOS Inspector.
-| `/ci/` | Contains scripts we use internally for our continuous integration.
+| `SpatialGDK/Source/SpatialGDK/Public` | Contains the public source code of the GDK uplugin.
+| `SpatialGDK/Source/SpatialGDK/Private` | Contains the private source code of the GDK uplugin.
+| `SpatialGDK/Source/SpatialGDK/Public/WorkerSdk/` | Not tracked in git. Contains the [C API worker SDK](https://docs.improbable.io/reference/latest/capi/introduction) headers which are used while building the GDK. You install these when you run `Setup.bat`
+| `SpatialGDK/Source/SpatialGDKEditorToolbar/` | Contains the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbars.md) that appears within the Unreal Editor GUI, from which you can take snapshots, generate schemas, start and stop deployments, and access the SpatialOS Inspector.
+| `ci/` | Contains scripts we use internally for our continuous integration.
