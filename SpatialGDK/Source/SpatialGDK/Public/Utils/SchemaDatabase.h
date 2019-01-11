@@ -38,9 +38,10 @@ class SPATIALGDK_API USchemaDatabase : public UDataAsset
 {
 	GENERATED_BODY()
 
+public:
+
 	USchemaDatabase();
 
-public:
 	UPROPERTY(VisibleAnywhere)
 	TMap<FString, FSchemaData> ClassPathToSchema;
 

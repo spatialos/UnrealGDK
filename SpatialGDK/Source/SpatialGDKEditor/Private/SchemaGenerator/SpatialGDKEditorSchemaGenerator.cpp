@@ -26,7 +26,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 TArray<UClass*> SchemaGeneratedClasses;
 TArray<UClass*> AdditionalSchemaGeneratedClasses;
 TMap<FString, FSchemaData> ClassPathToSchema;
-uint32 NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+uint32 NextAvailableComponentId;
 
 namespace
 {
@@ -154,41 +154,16 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 }
 }// ::
 
-const Worker_ComponentId GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
+
+void  GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
 {
 	// Generate the actual schema
 	for (const auto& TypeInfo : TypeInfos)
 	{
-		const UClass* const Class = Cast<UClass>(TypeInfo->Type);
-		const FSchemaData* const SchemaData = ClassPathToSchema.Find(*Class->GetPathName());
-		
-		if (SchemaData)
-		{
-			bool bFoundNonZeroId = false;
-
-			for (const auto& CurrComponentId : SchemaData->SchemaComponents)
-			{
-				if (CurrComponentId)
-				{
-					GenerateCompleteSchemaFromClass(CombinedSchemaPath, CurrComponentId, TypeInfo);
-					bFoundNonZeroId = true;
-					break;
-				}
-			}
-
-			if (!bFoundNonZeroId)
-			{
-				NextAvailableComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, NextAvailableComponentId, TypeInfo);
-			}
-		}
-		else
-		{
-			NextAvailableComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, NextAvailableComponentId, TypeInfo);
-		}
+		NextAvailableComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, NextAvailableComponentId, TypeInfo);
 	}
-
-	return NextAvailableComponentId;
 }
+
 
 FString GenerateIntermediateDirectory()
 {
@@ -199,14 +174,14 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
-void SaveSchemaDatabase(const uint32 NextAvailiableComponentId)
+void SaveSchemaDatabase()
 {
-	AsyncTask(ENamedThreads::GameThread, [NextAvailiableComponentId]{
+	AsyncTask(ENamedThreads::GameThread, []{
 		FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
 		UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
 		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
-		SchemaDatabase->NextAvailableComponentId = NextAvailiableComponentId;
+		SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
 		SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
 
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
@@ -299,18 +274,17 @@ void InitClassPathToSchemaMap()
 	}
 	else
 	{
+		NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 		// As a safety precaution, if the SchemaDatabase.uasset doesn't exist then make sure the schema generated folder is cleared as well. 
 		DeleteGeneratedSchemaFiles();
 	}
 }
-#pragma optimize("", off)
+
 void PreProcessSchemaMap()
 {
 	TArray<FString> EntriesToRemove;
 	for (const auto& EntryIn : ClassPathToSchema)
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Checking if following file exists: %s"), *(EntryIn.Key));
-
 		const FSoftObjectPath ItemToReference(EntryIn.Key);
 
 		// first check if the object is already loaded into memory
@@ -323,9 +297,7 @@ void PreProcessSchemaMap()
 			// don't allow the Garbage Collector to delete these objects
 			LoadedObject->AddToRoot();
 			AdditionalSchemaGeneratedClasses.Add(Cast<UClass>(LoadedObject));
-
 		}
-
 		// if the class isn't loaded then mark the entry for removal from the map
 		else if(!ResolvedObject && !LoadedObject)
 		{
@@ -375,8 +347,9 @@ bool SpatialGDKGenerateSchema()
 
 	DeleteGeneratedSchemaFiles();
 
-	SaveSchemaDatabase(GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath));
+	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath);
+
+	SaveSchemaDatabase();
 
 	return true;
 }
-#pragma  optimize("", on)
