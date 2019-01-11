@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Interop/SpatialCommonTypes.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -21,11 +22,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 
 class USpatialSender;
 class UGlobalStateManager;
-
-using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-struct FObjectReferences;
-using FObjectReferencesMap = TMap<int32, FObjectReferences>;
-using FReliableRPCMap = TMap<Worker_RequestId, TSharedRef<struct FPendingRPCParams>>;
 
 struct PendingAddComponentWrapper
 {

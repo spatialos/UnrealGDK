@@ -4,7 +4,9 @@
 
 #include "Engine/ActorChannel.h"
 
+#include "Interop/SpatialCommonTypes.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/SpatialReceiver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialTypebindingManager.h"
@@ -129,6 +131,8 @@ public:
 
 	FVector GetActorSpatialPosition(AActor* Actor);
 
+	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
+	
 protected:
 	// UChannel Interface
 	virtual bool CleanUp(const bool bForDestroy) override;

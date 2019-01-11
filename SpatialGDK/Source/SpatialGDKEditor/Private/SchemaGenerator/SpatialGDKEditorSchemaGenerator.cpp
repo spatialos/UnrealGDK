@@ -227,8 +227,6 @@ TArray<UClass*> GetAllSupportedClasses()
 		// No replicated/handover properties found
 		if (SupportedClass == nullptr) continue;
 
-		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
-
 		// Ensure we don't process skeleton, reinitialized or classes that have since been hot reloaded
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
