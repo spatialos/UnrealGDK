@@ -46,6 +46,7 @@ If you want your snapshots to be exported to a different path you can specify th
 
 ## When to generate a snapshot
 You need to regenerate a snapshot when:
+
 1. Generating [schema]({{urlRoot}}/content/glossary#schema) for a new class.
 1. Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
 1. Placing or removing replicated Actors in the Level.
