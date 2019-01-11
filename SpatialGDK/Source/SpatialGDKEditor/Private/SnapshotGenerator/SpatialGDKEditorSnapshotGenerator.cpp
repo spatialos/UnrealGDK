@@ -20,7 +20,8 @@
 #include "Utils/SchemaUtils.h"
 
 #include "EngineUtils.h"
-#include "Runtime/Core/Public/HAL/PlatformFilemanager.h"
+#include "HAL/PlatformFile.h"
+#include "HAL/PlatformFilemanager.h"
 #include "UObject/UObjectIterator.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
