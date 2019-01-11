@@ -854,7 +854,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 
 #if !UE_BUILD_SHIPPING
 	int ReliableRPCId = 0;
-	if (Function->FunctionFlags & FUNC_NetReliable)
+	if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 	{
 		PayloadReader << ReliableRPCId;
 	}
@@ -866,7 +866,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 	if (UnresolvedRefs.Num() == 0)
 	{
 #if !UE_BUILD_SHIPPING
-		if (Function->FunctionFlags & FUNC_NetReliable)
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 		{
 			AActor* Actor = Cast<AActor>(TargetObject);
 			if (Actor == nullptr)
