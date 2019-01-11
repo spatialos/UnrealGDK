@@ -321,7 +321,7 @@ bool SpatialGDKGenerateSchema()
 	// Generate Type Info structs for all classes
 	TArray<TSharedPtr<FUnrealType>> TypeInfos;
 
-	for ( UClass*  Class : SchemaGeneratedClasses)
+	for (const auto&  Class : SchemaGeneratedClasses)
 	{
 		// Parent and static array index start at 0 for checksum calculations.
 		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0, false));
