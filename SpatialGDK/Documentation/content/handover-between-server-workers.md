@@ -10,7 +10,7 @@ In SpatialOS games, the work of the server is spread across several servers (kno
 As Unreal expects there to be only one server, rather than several servers, the SpatialOS GDK for Unreal has a custom solution to take advantage of the SpatialOS distributed server architecture. This involves a handover of responsibility for an Actor and its properties between server-workers. (Actors approximate to “entities” in SpatialOS, so we refer to them as “entities” when we are talking about what happens to them in SpatialOS - handily, “properties” in an entity’s components in SpatialOS map to replicated Actor properties. You can find out more about [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
 
 Server-workers have [authority]({{urlRoot}}/content/glossary#authority) over entities, meaning that they are responsible for properties of an entity. Only one server-worker has authority over the properties of an entity at a time. In order to [load balance](https://docs.improbable.io/reference/latest/shared/glossary#load-balancing) (SpatialOS documentation) between server-workers, each server-worker has only a certain area of authority, so each server-worker has a boundary.
-This means that, at the boundary between server-worker 1 and server-worker 2,  server-worker 1 needs to transfer authority of entity properties to server-worker 2 so that server-worker 2 can seamlessly continue to simulate the entity exactly where server-worker 1 stopped. (See SpatialOS documentation on [`AuthorityChange`](https://docs.improbable.io/reference/latest/shared/design/operations#authoritychange).)
+This means that, at the boundary between server-worker 1 and server-worker 2, server-worker 1 needs to transfer authority of entity properties to server-worker 2 so that server-worker 2 can seamlessly continue to simulate the entity exactly where server-worker 1 stopped. (See SpatialOS documentation on [`AuthorityChange`](https://docs.improbable.io/reference/latest/shared/design/operations#authoritychange).)
 
 Note that server-worker authority over properties is different to server-worker interest in properties. See SpatialOS documentation on [worker interest](https://docs.improbable.io/reference/latest/shared/glossary#interest).
 
@@ -32,7 +32,7 @@ To facilitate an Actor’s property handover between server-workers, follow the 
 
 1. Generate the [schema]({{urlRoot}}/content/glossary#schema-generation) for your Actor’s class. (In the Unreal Editor, from the [GDK toolbar]({{urlRoot}}/content/toolbars), select the **Schema** icon.)
 
-The GDK now ensures that server-workers transfer these tagged Actor’s properties between them.
+The GDK now ensures that server-workers transfer these tagged Actor’s properties between them. You can also define custom behaviour which executes when authority on such properties is lost or gained via [authority callbacks]({{urlRoot}}/content/authority#authority-callbacks).
 
 ## Native-Unreal class properties handover
 To ensure native-Unreal classes work with the GDK for Unreal, we are making handover-related changes on a class-by-class basis as we identify appropriate properties for `Handover` tags.
