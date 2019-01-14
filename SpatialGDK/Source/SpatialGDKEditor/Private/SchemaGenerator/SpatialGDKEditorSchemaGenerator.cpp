@@ -285,23 +285,24 @@ void PreProcessSchemaMap()
 	TArray<FString> EntriesToRemove;
 	for (const auto& EntryIn : ClassPathToSchema)
 	{
-		const FSoftObjectPath ItemToReference(EntryIn.Key);
+		const FString ClassPath = EntryIn.Key;
+		const FSoftObjectPath ItemToReference(ClassPath);
 
 		// First check if the object is already loaded into memory.
 		UObject* const ResolvedObject = ItemToReference.ResolveObject();
-		UObject* const LoadedObject   = ResolvedObject ? nullptr : ItemToReference.TryLoad();
+		UClass*  const LoadedClass    = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
 
 		// only store classes that weren't currently loaded into memory
-		if (LoadedObject && !AdditionalSchemaGeneratedClasses.Find(Cast<UClass>(LoadedObject)))
+		if (LoadedClass && !AdditionalSchemaGeneratedClasses.Find(LoadedClass))
 		{
 			// don't allow the Garbage Collector to delete these objects even between maps
-			LoadedObject->AddToRoot();
-			AdditionalSchemaGeneratedClasses.Add(Cast<UClass>(LoadedObject));
+			LoadedClass->AddToRoot();
+			AdditionalSchemaGeneratedClasses.Add(LoadedClass);
 		}
 		// if the class isn't loaded then mark the entry for removal from the map
-		else if(!ResolvedObject && !LoadedObject)
+		else if(!ResolvedObject && !LoadedClass)
 		{
-			EntriesToRemove.Add(EntryIn.Key);
+			EntriesToRemove.Add(ClassPath);
 		}
 	}
 
@@ -321,7 +322,7 @@ bool SpatialGDKGenerateSchema()
 	// Generate Type Info structs for all classes
 	TArray<TSharedPtr<FUnrealType>> TypeInfos;
 
-	for (const auto&  Class : SchemaGeneratedClasses)
+	for (const auto& Class : SchemaGeneratedClasses)
 	{
 		// Parent and static array index start at 0 for checksum calculations.
 		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0, false));
