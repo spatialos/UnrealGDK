@@ -93,8 +93,6 @@ public:
 	ESchemaComponentType FindCategoryByComponentId(Worker_ComponentId ComponentId);
 
 private:
-	void FindSupportedClasses();
-	void CreateTypebindings();
 	FClassInfo CreateTypebindingsForClass(UClass* Class);
 
 private:
