@@ -4,8 +4,8 @@
 
 #include "Engine/ActorChannel.h"
 
-#include "Interop/SpatialCommonTypes.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Interop/SpatialCommonTypes.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialTypebindingManager.h"
