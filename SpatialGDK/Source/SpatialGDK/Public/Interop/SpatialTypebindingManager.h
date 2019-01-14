@@ -79,7 +79,7 @@ class SPATIALGDK_API USpatialTypebindingManager : public UObject
 public:
 	void Init(USpatialNetDriver* NetDriver);
 
-	bool IsSupportedClass(UClass* Class);
+	bool IsSupportedClass(UClass* Class) const;
 
 	FClassInfo* FindClassInfoByClass(UClass* Class);
 	FClassInfo* FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset);
@@ -101,9 +101,6 @@ private:
 
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
-
-	UPROPERTY()
-	TArray<UClass*> SupportedClasses;
 
 	UPROPERTY()
 	TMap<UClass*, FClassInfo> ClassInfoMap;

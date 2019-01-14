@@ -220,9 +220,9 @@ UClass* USpatialTypebindingManager::FindClassByComponentId(Worker_ComponentId Co
 	return Class != nullptr ? *Class : nullptr;
 }
 
-bool USpatialTypebindingManager::IsSupportedClass(UClass* Class)
+bool USpatialTypebindingManager::IsSupportedClass(UClass* Class) const
 {
-	return SupportedClasses.Contains(Class);
+	return SchemaDatabase->ClassPathToSchema.Contains(Class->GetPathName());
 }
 
 bool USpatialTypebindingManager::FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
