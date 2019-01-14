@@ -30,7 +30,7 @@ void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 	}
 
 	FindSupportedClasses();
-	CreateTypebindings();
+	// CreateTypebindings();
 }
 
 void USpatialTypebindingManager::FindSupportedClasses()
@@ -189,8 +189,140 @@ void USpatialTypebindingManager::CreateTypebindings()
 	}
 }
 
+FClassInfo USpatialTypebindingManager::CreateTypebindingsForClass(UClass* Class)
+{
+	FClassInfo Info;
+
+	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
+
+	for (UFunction* RemoteFunction : RelevantClassFunctions)
+	{
+		ESchemaComponentType RPCType = SCHEMA_Invalid;
+		if (RemoteFunction->FunctionFlags & FUNC_NetClient)
+		{
+			RPCType = SCHEMA_ClientRPC;
+		}
+		else if (RemoteFunction->FunctionFlags & FUNC_NetServer)
+		{
+			RPCType = SCHEMA_ServerRPC;
+		}
+		else if (RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
+		{
+			RPCType = SCHEMA_CrossServerRPC;
+		}
+		else if (RemoteFunction->FunctionFlags & FUNC_NetMulticast)
+		{
+			RPCType = SCHEMA_NetMulticastRPC;
+		}
+		else
+		{
+			checkNoEntry();
+		}
+
+		TArray<UFunction*>& RPCArray = Info.RPCs.FindOrAdd(RPCType);
+
+		FRPCInfo RPCInfo;
+		RPCInfo.Type = RPCType;
+		RPCInfo.Index = RPCArray.Num();
+
+		RPCArray.Add(RemoteFunction);
+		Info.RPCInfoMap.Add(RemoteFunction, RPCInfo);
+	}
+
+	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
+	{
+		UProperty* Property = *PropertyIt;
+
+		if (Property->PropertyFlags & CPF_Handover)
+		{
+			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
+			{
+				FHandoverPropertyInfo HandoverInfo;
+				HandoverInfo.Handle = Info.HandoverProperties.Num() + 1; // 1-based index
+				HandoverInfo.Offset = Property->GetOffset_ForGC() + Property->ElementSize * ArrayIdx;
+				HandoverInfo.ArrayIdx = ArrayIdx;
+				HandoverInfo.Property = Property;
+
+				Info.HandoverProperties.Add(HandoverInfo);
+			}
+		}
+
+		if (Property->PropertyFlags & CPF_AlwaysInterested)
+		{
+			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
+			{
+				FInterestPropertyInfo InterestInfo;
+				InterestInfo.Offset = Property->GetOffset_ForGC() + Property->ElementSize * ArrayIdx;
+				InterestInfo.Property = Property;
+
+				Info.InterestProperties.Add(InterestInfo);
+			}
+		}
+	}
+
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+	{
+		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SchemaComponents[Type];
+		if (ComponentId != 0)
+		{
+			Info.SchemaComponents[Type] = ComponentId;
+			ComponentToClassMap.Add(ComponentId, Class);
+			ComponentToOffsetMap.Add(ComponentId, 0);
+			ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
+		}
+	});
+
+	Info.Class = Class;
+
+	for (auto& SubobjectDataPair : SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SubobjectData)
+	{
+		int32 Offset = SubobjectDataPair.Key;
+		FSubobjectSchemaData SubobjectSchemaData = SubobjectDataPair.Value;
+
+		FSoftClassPath SubobjectClassPath(SubobjectSchemaData.ClassPath);
+		UClass* SubobjectClass = SubobjectClassPath.TryLoadClass<UObject>();
+		if (SubobjectClass == nullptr)
+		{
+			continue;
+		}
+
+		FClassInfo* SubobjectInfoPtr = FindClassInfoByClass(SubobjectClass);
+		if (SubobjectInfoPtr == nullptr)
+		{
+			continue;
+		}
+
+		// Make a copy of the already made FClassInfo for this specific subobject
+		FClassInfo SubobjectInfo = *SubobjectInfoPtr;
+
+		SubobjectInfo.SubobjectName = SubobjectSchemaData.Name;
+
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
+			Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
+			if (ComponentId != 0)
+			{
+				SubobjectInfo.SchemaComponents[Type] = ComponentId;
+				ComponentToClassMap.Add(ComponentId, SubobjectClass);
+				ComponentToOffsetMap.Add(ComponentId, Offset);
+				ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
+			}
+		});
+
+		Info.SubobjectInfo.Add(Offset, MakeShared<FClassInfo>(SubobjectInfo));
+	}
+
+	return Info;
+}
+
 FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 {
+	if (!ClassInfoMap.Contains(Class))
+	{
+		FClassInfo Info = CreateTypebindingsForClass(Class);
+		ClassInfoMap.Emplace(Class, Info);
+	}
+
 	return ClassInfoMap.Find(Class);
 }
 

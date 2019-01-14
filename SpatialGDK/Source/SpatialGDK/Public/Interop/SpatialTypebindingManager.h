@@ -95,6 +95,7 @@ public:
 private:
 	void FindSupportedClasses();
 	void CreateTypebindings();
+	FClassInfo CreateTypebindingsForClass(UClass* Class);
 
 private:
 	UPROPERTY()
