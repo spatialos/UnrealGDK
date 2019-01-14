@@ -80,6 +80,7 @@ logs/
 Scripts/spatialos.*.build.json
 
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln
+!SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln
 
 # Don't ignore the Build util
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Build/
