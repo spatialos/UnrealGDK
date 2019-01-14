@@ -777,6 +777,8 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 
 void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object)
 {
+	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside structures.
+	// This prevents undefined behaviour when engine rep callbacks are issued where they don't expect unresolved objects in native flow.
 	RepNotifies.RemoveAll([&](UProperty* Property)
 	{
 		for (auto& ObjRef : RefMap)
@@ -785,7 +787,7 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1;
 			if (bIsSameRepNotify && !bIsArray)
 			{
-				UE_LOG(LogSpatialActorChannel, Warning, TEXT("MCS: RepNotify %s on %s ignored due to unresolved Actor"), *Property->GetName(), *Object->GetName());
+				UE_LOG(LogSpatialActorChannel, Warning, TEXT("RepNotify %s on %s ignored due to unresolved Actor"), *Property->GetName(), *Object->GetName());
 				return true;
 			}
 		}

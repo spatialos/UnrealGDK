@@ -6,7 +6,6 @@
 
 #include "Interop/SpatialCommonTypes.h"
 #include "EngineClasses/SpatialNetDriver.h"
-#include "Interop/SpatialReceiver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialTypebindingManager.h"
