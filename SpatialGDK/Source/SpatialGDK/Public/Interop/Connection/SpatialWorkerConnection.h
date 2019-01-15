@@ -40,7 +40,7 @@ public:
 	void SendComponentInterest(Worker_EntityId EntityId, const TArray<Worker_InterestOverride>& ComponentInterest);
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
-	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntiyQuery);
+	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
 
 	FOnConnectedDelegate OnConnected;
 	FOnConnectFailedDelegate OnConnectFailed;
