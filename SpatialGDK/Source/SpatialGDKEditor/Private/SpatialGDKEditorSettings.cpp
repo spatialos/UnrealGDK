@@ -4,9 +4,11 @@
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	SpatialOSDirectory.Path = TEXT("");
-	GeneratedSchemaOutputFolder.Path = TEXT("");
-	SpatialOSLaunchConfig = TEXT("default_launch.json");
+	SpatialOSDirectory.Path = GetSpatialOSDirectory();
+	SpatialOSLaunchConfig = GetSpatialOSLaunchConfig();
+	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotPath();
+	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
+	GeneratedSchemaOutputFolder.Path = GetGeneratedSchemaOutputFolder();
 }
 
 FString USpatialGDKEditorSettings::ToString()

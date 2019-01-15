@@ -7,7 +7,7 @@
 
 #include "SpatialGDKEditorSettings.generated.h"
 
-UCLASS(config = EditorPerProjectUserSettings, defaultconfig)
+UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
 	GENERATED_BODY()
