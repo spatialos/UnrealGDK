@@ -102,6 +102,10 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}
+	else if(IsSingletonEntity())
+	{
+		
+	}
 
 	Receiver->CleanupDeletedEntity(EntityId);
 }
