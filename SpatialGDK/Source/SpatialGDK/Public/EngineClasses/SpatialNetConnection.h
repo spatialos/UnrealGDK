@@ -17,7 +17,11 @@ public:
 	virtual void InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
 	virtual void InitRemoteConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, const class FInternetAddr& InRemoteAddr, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
 	virtual void InitLocalConnection(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
+#if ENGINE_MINOR_VERSION <= 20
 	virtual void LowLevelSend(void* Data, int32 CountBytes, int32 CountBits) override;
+#else
+	virtual void LowLevelSend(void* Data, int32 CountBits, FOutPacketTraits& Traits) override;
+#endif
 	virtual bool ClientHasInitializedLevelFor(const AActor* TestActor) const override;
 	virtual void Tick() override;
 

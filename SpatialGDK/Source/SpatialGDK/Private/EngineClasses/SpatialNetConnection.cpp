@@ -46,10 +46,17 @@ bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor
 	//Intentionally does not call Super::
 }
 
+#if ENGINE_MINOR_VERSION <= 20
 void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
 {
 	//Intentionally does not call Super::
 }
+#else
+void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBits, FOutPacketTraits& Traits)
+{
+	//Intentionally does not call Super::
+}
+#endif
 
 void USpatialNetConnection::Tick()
 {
