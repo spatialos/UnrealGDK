@@ -287,15 +287,17 @@ void PreProcessSchemaMap()
 	{
 		const FString ClassPath = EntryIn.Key;
 		const FSoftObjectPath ItemToReference(ClassPath);
-
+		
 		// First check if the object is already loaded into memory.
 		UObject* const ResolvedObject = ItemToReference.ResolveObject();
 		UClass*  const LoadedClass    = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
 
+		const bool UniqueEntry = AdditionalSchemaGeneratedClasses.Find(LoadedClass) == INDEX_NONE;
+
 		// only store classes that weren't currently loaded into memory
-		if (LoadedClass && !AdditionalSchemaGeneratedClasses.Find(LoadedClass))
+		if (LoadedClass && UniqueEntry)
 		{
-			// don't allow the Garbage Collector to delete these objects even between maps
+			// don't allow the Garbage Collector to delete these objects until we are done generating schema
 			LoadedClass->AddToRoot();
 			AdditionalSchemaGeneratedClasses.Add(LoadedClass);
 		}
@@ -351,6 +353,15 @@ bool SpatialGDKGenerateSchema()
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath);
 
 	SaveSchemaDatabase();
+
+	for (const auto& EntryIn : AdditionalSchemaGeneratedClasses)
+	{
+		if (EntryIn)
+		{
+			EntryIn->RemoveFromRoot();
+		}
+	}
+	AdditionalSchemaGeneratedClasses.Empty();
 
 	return true;
 }
