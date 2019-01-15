@@ -774,65 +774,50 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					}
 				}
 
-				if (Channel)
+				// SpatialGDK - Only replicate actors marked as relevant (rate limiting).
+				if (Channel && bIsRelevant)
 				{
-					// SpatialGDK - Only replicate actors marked as relevant (rate limiting).
-					if (bIsRelevant)
-					{
-						// If it is relevant then mark the channel as relevant for a short amount of time.
-						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
+					// If it is relevant then mark the channel as relevant for a short amount of time.
+					Channel->RelevantTime = Time + 0.5f * FMath::SRand();
 
-						// If the channel isn't saturated.
-						if (Channel->IsNetReady(0))
+					// If the channel isn't saturated.
+					if (Channel->IsNetReady(0))
+					{
+						// Replicate the actor.
+						UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
+						if (DebugRelevantActors)
 						{
-							// Replicate the actor.
-							UE_LOG(LogNetTraffic, Log, TEXT("- Replicate %s. %d"), *Actor->GetName(), PriorityActors[j]->Priority);
+							LastRelevantActors.Add(Actor);
+						}
+
+						if (Channel->ReplicateActor())
+						{
+							ActorUpdatesThisConnectionSent++;
 							if (DebugRelevantActors)
 							{
-								LastRelevantActors.Add(Actor);
+								LastSentActors.Add(Actor);
 							}
 
-							if (Channel->ReplicateActor())
-							{
-								ActorUpdatesThisConnectionSent++;
-								if (DebugRelevantActors)
-								{
-									LastSentActors.Add(Actor);
-								}
+							// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
+							const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
+							const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
+							const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
 
-								// Calculate min delta (max rate actor will update), and max delta (slowest rate actor will update)
-								const float MinOptimalDelta = 1.0f / Actor->NetUpdateFrequency;
-								const float MaxOptimalDelta = FMath::Max(1.0f / Actor->MinNetUpdateFrequency, MinOptimalDelta);
-								const float DeltaBetweenReplications = (World->TimeSeconds - PriorityActors[j]->ActorInfo->LastNetReplicateTime);
-
-								// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
-								PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
-								PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
-							}
-							ActorUpdatesThisConnection++;
-							OutUpdated++;
+							// Choose an optimal time, we choose 70% of the actual rate to allow frequency to go up if needed
+							PriorityActors[j]->ActorInfo->OptimalNetUpdateDelta = FMath::Clamp(DeltaBetweenReplications * 0.7f, MinOptimalDelta, MaxOptimalDelta);
+							PriorityActors[j]->ActorInfo->LastNetReplicateTime = World->TimeSeconds;
 						}
 
-						// Second check for channel saturation.
-						if (!InConnection->IsNetReady(0))
-						{
-							// We can bail out now since this connection is saturated, we'll return how far we got though
-							return FinalReplicatedCount;
-						}
+						ActorUpdatesThisConnection++;
+						OutUpdated++;
 					}
-				}
-			}
 
-			// If the actor wasn't recently relevant, or if it was torn off, close the actor channel if it exists for this connection
-			if ((!bIsRecentlyRelevant || Actor->GetTearOff()) && Channel != NULL)
-			{
-				// Non startup (map) actors have their channels closed immediately, which destroys them.
-				// Startup actors get to keep their channels open.
-
-				if (!Actor->IsNetStartupActor())
-				{
-					UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
-					Channel->Close();
+					// Second check for channel saturation.
+					if (!InConnection->IsNetReady(0))
+					{
+						// We can bail out now since this connection is saturated, we'll return how far we got though
+						return FinalReplicatedCount;
+					}
 				}
 			}
 		}
