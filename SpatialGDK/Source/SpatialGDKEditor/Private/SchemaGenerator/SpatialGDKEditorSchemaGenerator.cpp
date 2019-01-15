@@ -291,9 +291,11 @@ void PreProcessSchemaMap()
 		// First check if the object is already loaded into memory.
 		UObject* const ResolvedObject = ItemToReference.ResolveObject();
 		UClass*  const LoadedClass    = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
-
+		
+		const bool bUniqueEntry = AdditionalSchemaGeneratedClasses.Find(LoadedClass) == INDEX_NONE;
+		
 		// only store classes that weren't currently loaded into memory
-		if (LoadedClass && !AdditionalSchemaGeneratedClasses.Find(LoadedClass))
+		if (LoadedClass && bUniqueEntry)
 		{
 			// don't allow the Garbage Collector to delete these objects even between maps
 			LoadedClass->AddToRoot();
