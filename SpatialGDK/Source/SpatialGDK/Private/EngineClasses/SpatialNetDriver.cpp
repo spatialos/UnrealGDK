@@ -819,6 +819,19 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						return FinalReplicatedCount;
 					}
 				}
+
+				// UNR-865 - Handle closing actor channels for non-relevant actors without deleting the entity.
+				// If the actor wasn't recently relevant, or if it was torn off, close the actor channel if it exists for this connection
+				if (Actor->GetTearOff() && Channel != NULL)
+				{
+					// Non startup (map) actors have their channels closed immediately, which destroys them.
+					// Startup actors get to keep their channels open.
+					if (!Actor->IsNetStartupActor())
+					{
+						UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
+						Channel->Close();
+					}
+				}
 			}
 		}
 	}
