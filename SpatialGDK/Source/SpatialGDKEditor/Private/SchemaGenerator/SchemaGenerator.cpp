@@ -320,9 +320,9 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 
 		Writer.Printf("component {0} {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
-		Writer.Printf("id = {0};", CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 
-		ActorSchemaData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetCurrentId();
+		ActorSchemaData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 
 		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
@@ -346,9 +346,9 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		// Handover (server to server) replicated properties.
 		Writer.Printf("component {0} {", *SchemaHandoverDataName(Class));
 		Writer.Indent();
-		Writer.Printf("id = {0};", CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 
-		ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetCurrentId();
+		ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = IdGenerator.GetCurrentId();
 
 		int FieldCounter = 0;
 		for (auto& Prop : HandoverData)
@@ -379,9 +379,9 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 
 		Writer.Printf("component {0} {", *SchemaRPCComponentName(Group, Class));
 		Writer.Indent();
-		Writer.Printf("id = {0};", CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 
-		ActorSchemaData.SchemaComponents[RPCTypeToSchemaComponentType(Group)] = CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetCurrentId();
+		ActorSchemaData.SchemaComponents[RPCTypeToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 
 		for (auto& RPC : RPCsByType[Group])
 		{
@@ -448,11 +448,11 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		FString ComponentName = PropertyName + GetReplicatedPropertyGroupName(Group);
 		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
-		Writer.Printf("id = {0};", CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 		Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
-		SubobjectData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetCurrentId();
+		SubobjectData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 	}
 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
@@ -465,11 +465,11 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		// Handover (server to server) replicated properties.
 		Writer.Printf("component {0} {", *(PropertyName + TEXT("Handover")));
 		Writer.Indent();
-		Writer.Printf("id = {0};", CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 		Writer.Printf("data {0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
-		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetCurrentId();
+		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = IdGenerator.GetCurrentId();
 	}
 
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
@@ -488,7 +488,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		FString ComponentName = PropertyName + GetRPCTypeName(Group) + TEXT("RPCs");
 		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
-		Writer.Printf("id = {0};", CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 		for (auto& RPC : RPCsByType[Group])
 		{
 			if (Group == ERPCType::RPC_NetMulticast)
@@ -504,7 +504,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		}
 		Writer.Outdent().Print("}");
 
-		SubobjectData.SchemaComponents[RPCTypeToSchemaComponentType(Group)] = CachedComponentId > 0 ? CachedComponentId : IdGenerator.GetCurrentId();
+		SubobjectData.SchemaComponents[RPCTypeToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 	}
 
 	return SubobjectData;
