@@ -70,3 +70,10 @@ void USpatialNetConnection::Tick()
 	}
 	Super::Tick();
 }
+
+int32 USpatialNetConnection::IsNetReady(bool Saturate)
+{
+	// TODO: UNR-664 - Currently we do not report the number of bits sent when replicating, this means channel saturation cannot be checked properly.
+	// This will always return true until we solve this.
+	return true;
+}

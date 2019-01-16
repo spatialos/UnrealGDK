@@ -26,6 +26,10 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
+DECLARE_CYCLE_STAT(TEXT("ReplicateActor"), STAT_SpatialActorChannelReplicateActor, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("UpdateSpatialPosition"), STAT_SpatialActorChannelUpdateSpatialPosition, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ReplicateSubobject"), STAT_SpatialActorChannelReplicateSubobject, STATGROUP_SpatialNet);
+
 namespace
 {
 // This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
@@ -96,7 +100,16 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	// If we have authority and aren't trying to delete a critical entity, delete it
 	if (bHasAuthority && !IsSingletonEntity())
 	{
-		Sender->SendDeleteEntityRequest(EntityId);
+		// Workaround to delay the delete entity request if tearing off.
+		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
+		if (Actor->GetTearOff())
+		{
+			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
+		}
+		else
+		{
+			Sender->SendDeleteEntityRequest(EntityId);
+		}
 	}
 
 	Receiver->CleanupDeletedEntity(EntityId);
@@ -207,6 +220,8 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 
 int64 USpatialActorChannel::ReplicateActor()
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
+
 	if (!IsReadyForReplication())
 	{
 		return 0;
@@ -401,6 +416,8 @@ int64 USpatialActorChannel::ReplicateActor()
 
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo* Info, const FReplicationFlags& RepFlags)
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateSubobject);
+
 	if (Info == nullptr)
 	{
 		return false;
@@ -698,6 +715,8 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 
 void USpatialActorChannel::UpdateSpatialPosition()
 {
+	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
+
 	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
 	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
 	// of the PlayerController and PlayerState at the same time as the pawn.
@@ -750,9 +769,10 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	AController* Controller = Cast<AController>(InActor);
 	if (Controller != nullptr && Controller->GetPawn() != nullptr)
 	{
-		return GetActorSpatialPosition(Controller->GetPawn());
+		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
+		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
 	}
-	else if (InActor->GetOwner() != nullptr)
+	else if (InActor->GetOwner() != nullptr && InActor->GetIsReplicated())
 	{
 		return GetActorSpatialPosition(InActor->GetOwner());
 	}
