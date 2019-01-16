@@ -100,7 +100,16 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	// If we have authority and aren't trying to delete a critical entity, delete it
 	if (bHasAuthority && !IsSingletonEntity())
 	{
-		Sender->SendDeleteEntityRequest(EntityId);
+		// Workaround to delay the delete entity request if tearing off.
+		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
+		if (Actor->GetTearOff())
+		{
+			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
+		}
+		else
+		{
+			Sender->SendDeleteEntityRequest(EntityId);
+		}
 	}
 
 	Receiver->CleanupDeletedEntity(EntityId);
