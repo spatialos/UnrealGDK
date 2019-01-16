@@ -24,7 +24,7 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
 TArray<UClass*> SchemaGeneratedClasses;
-TArray<UClass*> AdditionalSchemaGeneratedClasses; // used to load and keep objects into memory
+TArray<UClass*> AdditionalSchemaGeneratedClasses; //Used to keep UClasses in memory whilst generating schema for them.
 TMap<FString, FSchemaData> ClassPathToSchema;
 uint32 NextAvailableComponentId;
 
@@ -274,6 +274,7 @@ void InitClassPathToSchemaMap()
 	}
 	else
 	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("SchemaDatabase not found on Engine startup so the generated schema directory will be cleared out if it exists."));
 		NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 		// As a safety precaution, if the SchemaDatabase.uasset doesn't exist then make sure the schema generated folder is cleared as well. 
 		DeleteGeneratedSchemaFiles();
@@ -291,11 +292,9 @@ void PreProcessSchemaMap()
 		// First check if the object is already loaded into memory.
 		UObject* const ResolvedObject = ItemToReference.ResolveObject();
 		UClass*  const LoadedClass    = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
-		
-		const bool bUniqueEntry = AdditionalSchemaGeneratedClasses.Find(LoadedClass) == INDEX_NONE;
-		
+
 		// only store classes that weren't currently loaded into memory
-		if (LoadedClass && bUniqueEntry)
+		if (LoadedClass)
 		{
 			// don't allow the Garbage Collector to delete these objects until we are done generating schema
 			LoadedClass->AddToRoot();
@@ -354,6 +353,8 @@ bool SpatialGDKGenerateSchema()
 
 	SaveSchemaDatabase();
 
+	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Allow the garbage collector to clean up classes that were manually loaded and forced to keep alive for the  Schema Generator process."));
+
 	for (const auto& EntryIn : AdditionalSchemaGeneratedClasses)
 	{
 		if (EntryIn)
@@ -361,6 +362,7 @@ bool SpatialGDKGenerateSchema()
 			EntryIn->RemoveFromRoot();
 		}
 	}
+
 	AdditionalSchemaGeneratedClasses.Empty();
 
 	return true;

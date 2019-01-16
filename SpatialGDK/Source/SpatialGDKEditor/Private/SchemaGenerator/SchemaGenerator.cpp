@@ -314,7 +314,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 			continue;
 		}
 
-		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : 0;
+		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
 
 		Writer.PrintNewLine();
 
@@ -339,7 +339,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
-		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : 0;
+		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : SpatialConstants::INVALID_COMPONENT_ID;
 
 		Writer.PrintNewLine();
 
@@ -373,7 +373,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 			continue;
 		}
 
-		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[RPCTypeToSchemaComponentType(Group)] : 0;
+		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[RPCTypeToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
 
 		Writer.PrintNewLine();
 
@@ -441,7 +441,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 			continue;
 		}
 
-		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : 0;
+		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
 
 		Writer.PrintNewLine();
 
@@ -458,7 +458,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
-		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : 0;
+		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : SpatialConstants::INVALID_COMPONENT_ID;
 
 		Writer.PrintNewLine();
 
@@ -481,7 +481,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 			continue;
 		}
 
-		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[RPCTypeToSchemaComponentType(Group)] : 0;
+		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[RPCTypeToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
 
 		Writer.PrintNewLine();
 
