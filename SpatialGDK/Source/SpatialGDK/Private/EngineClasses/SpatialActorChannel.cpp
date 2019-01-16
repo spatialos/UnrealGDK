@@ -769,9 +769,10 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	AController* Controller = Cast<AController>(InActor);
 	if (Controller != nullptr && Controller->GetPawn() != nullptr)
 	{
-		return GetActorSpatialPosition(Controller->GetPawn());
+		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
+		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
 	}
-	else if (InActor->GetOwner() != nullptr)
+	else if (InActor->GetOwner() != nullptr && InActor->GetIsReplicated())
 	{
 		return GetActorSpatialPosition(InActor->GetOwner());
 	}
