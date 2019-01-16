@@ -4,18 +4,19 @@
 
 struct FComponentIdGenerator
 {
-	FComponentIdGenerator(int StartId) : InitialId(StartId), NumIds(0)
+	FComponentIdGenerator(int StartId) : InitialId(StartId), IdReturned(StartId), NumIds(0)
 	{
 	}
 
-	int GetNextAvailableId()
+	int GetNextAvailableId(const uint32 InComponentId)
 	{
-		return InitialId + (NumIds++);
+		IdReturned = InComponentId != SpatialConstants::INVALID_COMPONENT_ID ? InComponentId : InitialId + (NumIds++);
+		return IdReturned;
 	}
 
-	int GetCurrentId()
+	int GetCurrentId() const
 	{
-		return InitialId + (NumIds - 1);
+		return IdReturned;
 	}
 
 	int GetNumUsedIds() const
@@ -26,4 +27,5 @@ struct FComponentIdGenerator
 private:
 	int InitialId;
 	int NumIds;
+	int IdReturned;
 };
