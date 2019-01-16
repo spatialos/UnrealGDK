@@ -197,6 +197,11 @@ void UGlobalStateManager::LinkAllExistingSingletonActors()
 
 	for (const auto& Pair : SingletonNameToEntityId)
 	{
+		if (Pair.Key.IsEmpty())
+		{
+			continue;
+		}
+
 		UClass* SingletonActorClass = LoadObject<UClass>(nullptr, *Pair.Key);
 		if (SingletonActorClass == nullptr)
 		{
@@ -359,6 +364,35 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 		// Start accepting players only AFTER we've triggered BeginPlay
 		SetAcceptingPlayers(true);
 	}
+}
+
+void UGlobalStateManager::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+#ifdef WITH_EDITOR
+	if (NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
+	{
+		// If we are deleting dynamically spawned entities, we need to
+		if (GetDefault<ULevelEditorPlaySettings>()->IsDeleteDynamicEntitiesActive())
+		{
+			// Reset the BeginPlay flag so Startup Actors are properly managed.
+			SetCanBeginPlay(false);
+
+			// Reset the Singleton map so Singletons are recreated.
+			Worker_ComponentUpdate Update = {};
+			Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
+			Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
+			Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+
+			SingletonNameToEntityId.Empty();
+			SingletonNameToEntityId.Add(TEXT(""), 0);
+			AddStringToEntityMapToSchema(UpdateObject, 1, SingletonNameToEntityId);
+
+			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
+		}
+	}
+#endif
 }
 
 void UGlobalStateManager::BecomeAuthoritativeOverAllActors()

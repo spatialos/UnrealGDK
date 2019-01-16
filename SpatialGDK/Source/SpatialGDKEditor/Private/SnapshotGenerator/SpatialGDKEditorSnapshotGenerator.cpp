@@ -350,7 +350,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(NetConnection->CreateChannel(CHTYPE_Actor, 1));
 	Channel->SetEntityId(EntityId);
 
-	FString StaticPath = Actor->GetPathName(nullptr);
+	//FString StaticPath = Actor->GetPathName(nullptr);
 
 	TArray<Worker_ComponentData> Components;
 	Components.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
@@ -358,7 +358,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	Components.Add(improbable::UnrealMetadata(StaticPath, {}, ActorClass->GetPathName()).CreateUnrealMetadataData());
+	Components.Add(improbable::UnrealMetadata({}, {}, ActorClass->GetPathName()).CreateUnrealMetadataData());
 	Components.Add(improbable::Interest().CreateInterestData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));

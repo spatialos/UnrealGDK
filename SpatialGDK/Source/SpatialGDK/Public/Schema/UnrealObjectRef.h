@@ -56,8 +56,8 @@ struct FUnrealObjectRef
 		return !operator==(Other);
 	}
 
-	Worker_EntityId Entity;
-	uint32 Offset;
+	Worker_EntityId Entity = 0;
+	uint32 Offset = 0;
 	improbable::TSchemaOption<FString> Path;
 	improbable::TSchemaOption<FUnrealObjectRef> Outer;
 };

@@ -37,11 +37,10 @@ public:
 	void ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update);
 	void ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update);
 
+	bool IsSingletonEntity(Worker_EntityId EntityId) const;
 	void LinkAllExistingSingletonActors();
 	void ExecuteInitialSingletonActorReplication();
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
-
-	bool IsSingletonEntity(Worker_EntityId EntityId) const;
 
 	void QueryGSM(bool bRetryUntilAcceptingPlayers);
 	void RetryQueryGSM(bool bRetryUntilAcceptingPlayers);
@@ -54,14 +53,21 @@ public:
 
 	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
 
+	void BeginDestroy() override;
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
+	// Singleton Manager Component
+	StringToEntityMap SingletonNameToEntityId;
+
 	// Deployment Map Component
 	FString DeploymentMapURL;
 	bool bAcceptingPlayers;
+
+	// Startup Actor Manager Component
+	bool bCanBeginPlay;
 
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
@@ -83,12 +89,7 @@ private:
 	UPROPERTY()
 	USpatialReceiver* Receiver;
 
-	StringToEntityMap SingletonNameToEntityId;
-
 	FTimerManager* TimerManager;
-
-	// Startup Actor Manager Component
-	bool bCanBeginPlay;
 
 	bool bTriggeredBeginPlay;
 };

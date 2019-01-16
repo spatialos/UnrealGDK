@@ -5,6 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "Interop/SpatialTypebindingManager.h"
 #include "Schema/Component.h"
+#include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 #include "UObject/Package.h"
 #include "UObject/UObjectHash.h"
@@ -24,14 +25,14 @@ struct UnrealMetadata : Component
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const FString& InStaticPath, const FString& InOwnerWorkerAttribute, const FString& InClassPath)
-		: StaticPath(InStaticPath), OwnerWorkerAttribute(InOwnerWorkerAttribute), ClassPath(InClassPath) {}
+	UnrealMetadata(const FUnrealObjectRef& InStablyNamedRef, const FString& InOwnerWorkerAttribute, const FString& InClassPath)
+		: StablyNamedRef(InStablyNamedRef), OwnerWorkerAttribute(InOwnerWorkerAttribute), ClassPath(InClassPath) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		StaticPath = GetStringFromSchema(ComponentObject, 1);
+		StablyNamedRef = GetObjectRefFromSchema(ComponentObject, 1);
 		OwnerWorkerAttribute = GetStringFromSchema(ComponentObject, 2);
 		ClassPath = GetStringFromSchema(ComponentObject, 3);
 	}
@@ -43,7 +44,7 @@ struct UnrealMetadata : Component
 		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		AddStringToSchema(ComponentObject, 1, StaticPath);
+		AddObjectRefToSchema(ComponentObject, 1, StablyNamedRef);
 		AddStringToSchema(ComponentObject, 2, OwnerWorkerAttribute);
 		AddStringToSchema(ComponentObject, 3, ClassPath);
 
@@ -63,7 +64,7 @@ struct UnrealMetadata : Component
 		return nullptr;
 	}
 
-	FString StaticPath;
+	FUnrealObjectRef StablyNamedRef;
 	FString OwnerWorkerAttribute;
 	FString ClassPath;
 };

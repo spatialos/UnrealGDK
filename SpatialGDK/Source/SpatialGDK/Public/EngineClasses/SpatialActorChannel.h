@@ -136,7 +136,6 @@ protected:
 private:
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
-	bool IsStablyNamedEntity();
 
 	void UpdateSpatialPosition();
 

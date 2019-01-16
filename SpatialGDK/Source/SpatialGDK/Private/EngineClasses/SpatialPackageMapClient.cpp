@@ -142,12 +142,36 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 
 	USpatialReceiver* Receiver = SpatialNetDriver->Receiver;
 
-	// Set up the NetGUID and ObjectRef for this actor.
-	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
+	FNetworkGUID NetGUID;
 	FUnrealObjectRef ObjectRef(EntityId, 0);
-	RegisterObjectRef(NetGUID, ObjectRef);
-	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
-		*Actor->GetName(), *NetGUID.ToString(), EntityId);
+
+	// Valid if Actor is stably named. Used for stably named subobject assignment further below
+	FUnrealObjectRef StablyNamedRef;
+
+	if (Actor->IsNameStableForNetworking())
+	{
+		// Startup Actors have two valid UnrealObjectRefs: the entity id and the path.
+		// AssignNewStablyNamedObjectNetGUID will register the path ref.
+		NetGUID = AssignNewStablyNamedObjectNetGUID(Actor);
+
+		// We register the entity id ref here.
+		UnrealObjectRefToNetGUID.Emplace(ObjectRef, NetGUID);
+
+		// Once we have an entity id, we should always be using it to refer to entities.
+		// Since the path ref may have been registered previously, we first try to remove it
+		// and then register the entity id ref.
+		StablyNamedRef = NetGUIDToUnrealObjectRef[NetGUID];
+		NetGUIDToUnrealObjectRef.Remove(NetGUID);
+		NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjectRef);
+	}
+	else
+	{
+		NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
+		RegisterObjectRef(NetGUID, ObjectRef);
+	}
+
+	//UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
+	//	*Actor->GetName(), *NetGUID.ToString(), EntityId);
 
 	// This will be null when being used in the snapshot generator
 #if WITH_EDITOR
@@ -164,10 +188,22 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 
 		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 		FUnrealObjectRef SubobjectRef(EntityId, Offset);
+
+		if (Subobject->IsNameStableForNetworking())
+		{
+			// Startup Actors have two valid UnrealObjectRefs: the entity id and the path.
+			// AssignNewStablyNamedObjectNetGUID will register the path ref.
+			//FNetworkGUID SubobjectNetGUID = AssignNewStablyNamedObjectNetGUID(Subobject);
+			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
+			FUnrealObjectRef StablyNamedSubobjectRef(0, 0, Subobject->GetFName().ToString(), StablyNamedRef);
+
+			UnrealObjectRefToNetGUID.Emplace(StablyNamedSubobjectRef, SubobjectNetGUID);
+		}
+
 		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 
-		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
-			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
+		//UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
+		//	*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
 
 			// This will be null when being used in the snapshot generator
 #if WITH_EDITOR
@@ -222,6 +258,10 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	UClass* Class = Actor->GetClass();
 	FClassInfo* Info = SpatialNetDriver->TypebindingManager->FindClassInfoByClass(Class);
 
+	improbable::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
+	check(UnrealMetadata);
+	const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef;
+
 	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
 	{
 		FUnrealObjectRef SubobjectRef(EntityId, SubobjectInfoPair.Key);
@@ -229,6 +269,11 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 		{
 			NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
 			UnrealObjectRefToNetGUID.Remove(SubobjectRef);
+
+			if (StablyNamedRef != SpatialConstants::NULL_OBJECT_REF)
+			{
+				UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(), StablyNamedRef));
+			}
 		}
 	}
 

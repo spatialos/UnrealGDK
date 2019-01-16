@@ -331,14 +331,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			if (UnrealMetadata->StaticPath.IsEmpty())
+			if (UnrealMetadata->StablyNamedRef == SpatialConstants::NULL_OBJECT_REF)
 			{
-				EntityActor = CreateActor(Position, SpawnData, ActorClass, true);
+				EntityActor = CreateActor(SpawnData, ActorClass, true);
 				bDoingDeferredSpawn = true;
 			}
 			else
 			{
-				EntityActor = Cast<AActor>(StaticLoadObject(ActorClass, World, *UnrealMetadata->StaticPath));
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(UnrealMetadata->StablyNamedRef);
+				EntityActor = Cast<AActor>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				check(EntityActor);
 			}
 
 			// Don't have authority over Actor until SpatialOS delegates authority
@@ -372,28 +374,32 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Add to entity registry.
 		EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
-		FVector InitialLocation = improbable::Coordinates::ToFVector(Position->Coords);
-		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(InitialLocation, World->OriginLocation);
+		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, World->OriginLocation);
+		FTransform SpawnTransform = GetRelativeSpawnTransform(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation));
+
 		if (bDoingDeferredSpawn)
 		{
-			EntityActor->FinishSpawning(FTransform(SpawnData->Rotation, SpawnLocation));
+			EntityActor->FinishSpawning(SpawnTransform);
+
+			const float Epsilon = 0.001f;
+			if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
+			{
+				EntityActor->PostNetReceiveVelocity(SpawnData->Velocity);
+			}
+			if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
+			{
+				EntityActor->SetActorScale3D(SpawnData->Scale);
+			}
 		}
-		else
-		{
-			EntityActor->SetActorTransform(FTransform(SpawnData->Rotation, SpawnLocation));
-		}
+		//else if (!UnrealMetadata->StaticPath.IsEmpty() && EntityActor->RootComponent->Mov)
+		//{
+		//	// For stably named actors, we only have to move them to the correct place
+		//	// in the case a stably named actor crosses from one worker to another, the second worker
+		//	// already has a representation of this actor and only needs to be moved to the correct place.
+		//	EntityActor->SetActorTransform(SpawnTransform);
+		//}
 
 		// Imitate the behavior in UPackageMapClient::SerializeNewActor.
-		const float Epsilon = 0.001f;
-		if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
-		{
-			EntityActor->PostNetReceiveVelocity(SpawnData->Velocity);
-		}
-		if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
-		{
-			EntityActor->SetActorScale3D(SpawnData->Scale);
-		}
-
 		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(ActorClass);
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId, improbable::CreateOffsetMapFromActor(EntityActor, Info));
