@@ -26,8 +26,8 @@ FString USpatialGDKEditorSettings::ToString()
 		"SpatialOSLaunchArgument={1}, "
 		"bStopSpatialOnExit={2}, "
 		"SpatialOSSnapshotPath={3}, "
-		"SpatialOSSnapshotFile={4}")
-		"GeneratedSchemaOutputFolder={5}, "
+		"SpatialOSSnapshotFile={4}, "
+		"GeneratedSchemaOutputFolder={5}")
 		, Args);
 }
 

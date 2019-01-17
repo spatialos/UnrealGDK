@@ -55,7 +55,6 @@ public:
 		return SpatialOSLaunchConfig.IsEmpty() ? FString(TEXT("default_launch.json")) : SpatialOSLaunchConfig;
 	}
 
-	UFUNCTION()
 	FORCEINLINE FString GetSpatialOSSnapshotFile() const
 	{
 		return SpatialOSSnapshotFile.IsEmpty() ? FString(TEXT("default.snapshot")) : SpatialOSSnapshotFile;
