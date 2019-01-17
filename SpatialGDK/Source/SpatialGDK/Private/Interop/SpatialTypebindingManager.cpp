@@ -34,7 +34,7 @@ void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 
 void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 {
-	FClassInfo Info;
+	FClassInfo& Info = ClassInfoMap.Add(Class);
 
 	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
 
@@ -154,8 +154,6 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 
 		Info.SubobjectInfo.Add(Offset, MakeShared<FClassInfo>(SubobjectInfo));
 	}
-
-	ClassInfoMap.Emplace(Class, Info);
 }
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
