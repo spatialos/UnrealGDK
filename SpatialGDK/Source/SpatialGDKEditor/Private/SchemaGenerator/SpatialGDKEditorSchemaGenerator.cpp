@@ -275,6 +275,7 @@ void InitClassPathToSchemaMap()
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
 		if (ClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
 			ClassPathToSchema.Empty();
 			DeleteGeneratedSchemaFiles();
 		}
