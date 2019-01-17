@@ -317,6 +317,11 @@ Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_E
 	return Worker_Connection_SendEntityQueryRequest(WorkerConnection, EntiyQuery, 0);
 }
 
+void USpatialWorkerConnection::SendMetrics(const Worker_Metrics* metrics)
+{
+	Worker_Connection_SendMetrics(WorkerConnection, metrics);
+}
+
 void USpatialWorkerConnection::CacheWorkerAttributes()
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);

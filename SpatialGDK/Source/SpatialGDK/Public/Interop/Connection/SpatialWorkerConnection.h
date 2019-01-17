@@ -41,6 +41,7 @@ public:
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntiyQuery);
+	void SendMetrics(const Worker_Metrics* metrics);
 
 	FOnConnectedDelegate OnConnected;
 	FOnConnectFailedDelegate OnConnectFailed;
