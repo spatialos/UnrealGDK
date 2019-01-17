@@ -271,6 +271,14 @@ void InitClassPathToSchemaMap()
 	{
 		ClassPathToSchema = SchemaDatabase->ClassPathToSchema;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
+
+		// temporary code for users to avoid having spatial launch errors due to recent changes to SchemaDatabase.
+		// this code will only ever be ran once when a user updates their GDK to include unr-636 changes
+		if (ClassPathToSchema.Num() && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+		{
+			ClassPathToSchema.Empty();
+			DeleteGeneratedSchemaFiles();
+		}
 	}
 	else
 	{
