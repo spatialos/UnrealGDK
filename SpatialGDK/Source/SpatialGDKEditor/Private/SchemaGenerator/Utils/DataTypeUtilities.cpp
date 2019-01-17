@@ -5,11 +5,11 @@
 #include "Algo/Transform.h"
 
 // Regex pattern matcher to match alphanumeric characters.
-const FRegexPattern AlphanumericPattern(TEXT("[A-Z,a-z,0-9]"));
+const FRegexPattern AlphanumericPattern(TEXT("[A-Za-z0-9]"));
 
-FString GetNamespace(UStruct* Struct)
+FString GetNamespace(UClass* Class)
 {
-	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *UnrealNameToSchemaName(Struct->GetName().ToLower()));
+	return FString::Printf(TEXT("improbable::unreal::generated::%s::"), *ClassToSchemaName[Class].ToLower());
 }
 
 FString GetEnumDataType(const UEnumProperty* EnumProperty)
@@ -56,19 +56,19 @@ FString UnrealNameToSchemaComponentName(const FString& UnrealName)
 	return SchemaTypeName;
 }
 
-FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, bool bPrependNamespace /*= false*/)
+FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UClass* Class, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%s%s%s"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaComponentName(Type->GetName()), *GetReplicatedPropertyGroupName(Group));
+	return FString::Printf(TEXT("%s%s%s"), bPrependNamespace ? *GetNamespace(Class) : TEXT(""), *UnrealNameToSchemaComponentName(ClassToSchemaName[Class]), *GetReplicatedPropertyGroupName(Group));
 }
 
-FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace /*= false*/)
+FString SchemaHandoverDataName(UClass* Class, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%s%sHandover"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaComponentName(Type->GetName()));
+	return FString::Printf(TEXT("%s%sHandover"), bPrependNamespace ? *GetNamespace(Class) : TEXT(""), *UnrealNameToSchemaComponentName(ClassToSchemaName[Class]));
 }
 
-FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace /*= false*/)
+FString SchemaRPCComponentName(ERPCType RpcType, UClass* Class, bool bPrependNamespace /*= false*/)
 {
-	return FString::Printf(TEXT("%s%s%sRPCs"), bPrependNamespace ? *GetNamespace(Type) : TEXT(""), *UnrealNameToSchemaComponentName(Type->GetName()), *GetRPCTypeName(RpcType));
+	return FString::Printf(TEXT("%s%s%sRPCs"), bPrependNamespace ? *GetNamespace(Class) : TEXT(""), *UnrealNameToSchemaComponentName(ClassToSchemaName[Class]), *GetRPCTypeName(RpcType));
 }
 
 FString SchemaRPCName(UFunction* Function)

@@ -28,6 +28,10 @@ TArray<UClass*> AdditionalSchemaGeneratedClasses; //Used to keep UClasses in mem
 TMap<FString, FSchemaData> ClassPathToSchema;
 uint32 NextAvailableComponentId;
 
+// Prevent name collisions
+TMap<UClass*, FString> ClassToSchemaName;
+TMap<FString, UClass*> UsedSchemaNames;
+
 namespace
 {
 
@@ -122,23 +126,24 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 {
 	// Remove all underscores from the class names, check for duplicates.
-	for (int i = 0; i < TypeInfos.Num() - 1; ++i)
+	for (auto& TypeInfo : TypeInfos)
 	{
-		const FString& ClassA = TypeInfos[i]->Type->GetName();
-		const FString SchemaTypeA = UnrealNameToSchemaName(ClassA);
+		UClass* Class = Cast<UClass>(TypeInfo->Type);
+		check(Class);
+		const FString& ClassName = Class->GetName();
+		FString SchemaName = UnrealNameToSchemaName(ClassName);
 
-		for (int j = i + 1; j < TypeInfos.Num(); ++j)
+		int Suffix = 0;
+		while (UsedSchemaNames.Contains(SchemaName))
 		{
-			const FString& ClassB = TypeInfos[j]->Type->GetName();
-			const FString SchemaTypeB = UnrealNameToSchemaName(ClassB);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for types '%s' and '%s'. Will add a suffix to resolve the collision."),
+				*SchemaName, *Class->GetPathName(), *UsedSchemaNames[SchemaName]->GetPathName());
 
-			if (SchemaTypeA.Equals(SchemaTypeB))
-			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Class name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for types '%s' and '%s'"),
-					*SchemaTypeA, *TypeInfos[i]->Type->GetPathName(), *TypeInfos[j]->Type->GetPathName());
-				return false;
-			}
+			SchemaName = UnrealNameToSchemaName(ClassName) + FString::Printf(TEXT("%d"), ++Suffix);
 		}
+
+		ClassToSchemaName.Add(Class, SchemaName);
+		UsedSchemaNames.Add(SchemaName, Class);
 	}
 
 	// Check for duplicate names in the generated type info
@@ -316,6 +321,9 @@ void PreProcessSchemaMap()
 
 bool SpatialGDKGenerateSchema()
 {
+	ClassToSchemaName.Empty();
+	UsedSchemaNames.Empty();
+
 	// gets the classes currently loaded into memory
 	SchemaGeneratedClasses = GetAllSupportedClasses();
 	SchemaGeneratedClasses.Sort();
