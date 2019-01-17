@@ -312,9 +312,9 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 	return CachedWorkerAttributes;
 }
 
-Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntiyQuery)
+Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {
-	return Worker_Connection_SendEntityQueryRequest(WorkerConnection, EntiyQuery, 0);
+	return Worker_Connection_SendEntityQueryRequest(WorkerConnection, EntityQuery, 0);
 }
 
 void USpatialWorkerConnection::SendMetrics(const Worker_Metrics* metrics)

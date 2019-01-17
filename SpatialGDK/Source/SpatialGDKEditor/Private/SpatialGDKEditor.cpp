@@ -16,6 +16,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 FSpatialGDKEditor::FSpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
 {
+	InitClassPathToSchemaMap();
 }
 
 void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
@@ -32,6 +33,8 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
 	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
 	GeneralProjectSettings->bSpatialNetworking = true;
+
+	PreProcessSchemaMap();
 
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
 		[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()
