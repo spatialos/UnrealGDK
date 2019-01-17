@@ -272,8 +272,7 @@ void InitClassPathToSchemaMap()
 		ClassPathToSchema = SchemaDatabase->ClassPathToSchema;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 
-		// temporary code for users to avoid having spatial launch errors due to recent changes to SchemaDatabase.
-		// this code will only ever be ran once when a user updates their GDK to include unr-636 changes
+		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
 		if (ClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
 			ClassPathToSchema.Empty();
