@@ -15,6 +15,8 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Utils/RepLayoutUtils.h"
 
+DEFINE_LOG_CATEGORY(LogTypebindingManager);
+
 void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
@@ -158,6 +160,12 @@ FClassInfo USpatialTypebindingManager::CreateTypebindingsForClass(UClass* Class)
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 {
+	if (!IsSupportedClass(Class))
+	{
+		UE_LOG(LogTypebindingManager, Warning, TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
+		return nullptr;
+	}
+
 	if (!ClassInfoMap.Contains(Class))
 	{
 		FClassInfo Info = CreateTypebindingsForClass(Class);
