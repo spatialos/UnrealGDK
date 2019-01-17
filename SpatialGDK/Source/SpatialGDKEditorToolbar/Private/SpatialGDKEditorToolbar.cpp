@@ -12,7 +12,6 @@
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "SpatialGDKEditorToolbarCommands.h"
-#include "SpatialGDKEditorToolbarSettings.h"
 #include "SpatialGDKEditorToolbarStyle.h"
 
 #include "SpatialGDKEditor.h"
@@ -47,7 +46,6 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	MapActions(PluginCommands);
 	SetupToolbar(PluginCommands);
 
-	RegisterSettings();
 	CheckForRunningStack();
 
 	// load sounds
@@ -60,7 +58,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	SpatialGDKEditorInstance = MakeShareable(new FSpatialGDKEditor());
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
-	bStopSpatialOnExit = GetDefault<USpatialGDKEditorToolbarSettings>()->bStopSpatialOnExit;
+	bStopSpatialOnExit = GetDefault<USpatialGDKEditorSettings>()->bStopSpatialOnExit;
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -94,11 +92,6 @@ void FSpatialGDKEditorToolbarModule::ShutdownModule()
 		ExecutionFailSound = nullptr;
 	}
 
-	if (UObjectInitialized())
-	{
-		UnregisterSettings();
-	}
-
 	FSpatialGDKEditorToolbarStyle::Shutdown();
 	FSpatialGDKEditorToolbarCommands::Unregister();
 }
@@ -118,39 +111,6 @@ void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 		FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
 		SpatialOSStackProcessID = 0;
 	}
-}
-
-void FSpatialGDKEditorToolbarModule::RegisterSettings()
-{
-	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
-	{
-		ISettingsContainerPtr SettingsContainer = SettingsModule->GetContainer("Project");
-
-		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Settings",
-			LOCTEXT("RuntimeGeneralSettingsName", "Settings"),
-			LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for the SpatialOS GDK for Unreal"),
-			GetMutableDefault<USpatialGDKEditorToolbarSettings>());
-
-		if (SettingsSection.IsValid())
-		{
-			SettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorToolbarModule::HandleSettingsSaved);
-		}
-	}
-}
-
-void FSpatialGDKEditorToolbarModule::UnregisterSettings()
-{
-	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
-	{
-		SettingsModule->UnregisterSettings("Project", "SpatialGDKEditor", "Settings");
-	}
-}
-
-bool FSpatialGDKEditorToolbarModule::HandleSettingsSaved()
-{
-	GetMutableDefault<USpatialGDKEditorToolbarSettings>()->SaveConfig();
-
-	return true;
 }
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator() const
@@ -243,7 +203,7 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 {
 	ShowTaskStartNotification("Started snapshot generation");
 
-	const USpatialGDKEditorToolbarSettings* Settings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 
 	SpatialGDKEditorInstance->GenerateSnapshot(
 		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotFile(),
@@ -325,14 +285,14 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 
 void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 {
-	const USpatialGDKEditorToolbarSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorToolbarSettings>();
+	const USpatialGDKEditorSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorSettings>();
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *SpatialGDKToolbarSettings->SpatialOSLaunchConfig);
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *SpatialGDKToolbarSettings->GetSpatialOSLaunchConfig());
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
@@ -429,21 +389,21 @@ void FSpatialGDKEditorToolbarModule::CheckForRunningStack()
 }
 
 /**
-* This function is used to update our own local copy of bStopSpatialOnExit as ToolbarSettings change.
-* We keep the copy of the variable as all the USpatialGDKEditorToolbarSettings references get
+* This function is used to update our own local copy of bStopSpatialOnExit as Settings change.
+* We keep the copy of the variable as all the USpatialGDKEditorSettings references get
 * cleaned before all the available callbacks that IModuleInterface exposes. This means that we can't access
 * this variable through its references after the engine is closed.
 */
 void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent)
 {
-	if (USpatialGDKEditorToolbarSettings* ToolbarSettings = Cast<USpatialGDKEditorToolbarSettings>(ObjectBeingModified))
+	if (USpatialGDKEditorSettings* Settings = Cast<USpatialGDKEditorSettings>(ObjectBeingModified))
 	{
 		FName PropertyName = PropertyChangedEvent.Property != nullptr
 				? PropertyChangedEvent.Property->GetFName()
 				: NAME_None;
 		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
 		{
-			bStopSpatialOnExit = ToolbarSettings->bStopSpatialOnExit;
+			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
 	}
 }
