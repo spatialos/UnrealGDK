@@ -32,7 +32,7 @@ void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 	}
 }
 
-FClassInfo USpatialTypebindingManager::CreateTypebindingsForClass(UClass* Class)
+void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 {
 	FClassInfo Info;
 
@@ -155,7 +155,7 @@ FClassInfo USpatialTypebindingManager::CreateTypebindingsForClass(UClass* Class)
 		Info.SubobjectInfo.Add(Offset, MakeShared<FClassInfo>(SubobjectInfo));
 	}
 
-	return Info;
+	ClassInfoMap.Emplace(Class, Info);
 }
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
@@ -168,8 +168,7 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 
 	if (!ClassInfoMap.Contains(Class))
 	{
-		FClassInfo Info = CreateTypebindingsForClass(Class);
-		ClassInfoMap.Emplace(Class, Info);
+		AddTypebindingsForClass(Class);
 	}
 
 	return ClassInfoMap.Find(Class);
