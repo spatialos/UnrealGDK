@@ -361,8 +361,7 @@ bool SpatialGDKGenerateSchema()
 
 	SaveSchemaDatabase();
 
-	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Allow the garbage collector to clean up classes that were manually loaded and forced to keep alive for the  Schema Generator process."));
-
+	//Allow the garbage collector to clean up classes that were manually loaded and forced to keep alive for the Schema Generator process.
 	for (const auto& EntryIn : AdditionalSchemaGeneratedClasses)
 	{
 		if (EntryIn)
