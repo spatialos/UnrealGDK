@@ -511,36 +511,20 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	UE_LOG(LogSpatialSender, Log, TEXT("Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
-	TArray<TWeakObjectPtr<const UObject>> InvalidObjects;
 	for (TWeakObjectPtr<const UObject>& UnresolvedObject : *Unresolved)
 	{
-		if (UnresolvedObject.IsValid())
-		{
-			FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
-			FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
+		FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
+		FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
 
-			OtherHandleToUnresolved.Remove(Handle);
-			if (OtherHandleToUnresolved.Num() == 0)
+		OtherHandleToUnresolved.Remove(Handle);
+		if (OtherHandleToUnresolved.Num() == 0)
+		{
+			ChannelToUnresolved.Remove(ChannelObjectPair);
+			if (ChannelToUnresolved.Num() == 0)
 			{
-				ChannelToUnresolved.Remove(ChannelObjectPair);
-				if (ChannelToUnresolved.Num() == 0)
-				{
-					ObjectToUnresolved.Remove(UnresolvedObject);
-				}
+				ObjectToUnresolved.Remove(UnresolvedObject);
 			}
 		}
-		else
-		{
-			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
-			// (Only remove after iterating over the set)
-			InvalidObjects.Add(UnresolvedObject);
-			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
-		}
-	}
-
-	for (TWeakObjectPtr<const UObject>& InvalidObject : InvalidObjects)
-	{
-		Unresolved->Remove(InvalidObject);
 	}
 
 	HandleToUnresolved->Remove(Handle);
