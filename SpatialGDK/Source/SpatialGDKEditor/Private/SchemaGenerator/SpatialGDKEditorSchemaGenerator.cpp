@@ -126,7 +126,7 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 {
 	// Remove all underscores from the class names, check for duplicates.
-	for (auto& TypeInfo : TypeInfos)
+	for (const auto& TypeInfo : TypeInfos)
 	{
 		UClass* Class = Cast<UClass>(TypeInfo->Type);
 		check(Class);
