@@ -284,9 +284,10 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *UnrealNameToSchemaName(Class->GetName())));
 }
 
-
 int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
+	const FSchemaData* const SchemaData = ClassPathToSchema.Find(*Class->GetPathName());
+
 	FCodeWriter Writer;
 
 	FComponentIdGenerator IdGenerator(ComponentId);
@@ -313,11 +314,13 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 			continue;
 		}
 
+		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
+
 		Writer.PrintNewLine();
 
 		Writer.Printf("component {0} {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 
 		ActorSchemaData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 
@@ -336,12 +339,14 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
+		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : SpatialConstants::INVALID_COMPONENT_ID;
+
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
 		Writer.Printf("component {0} {", *SchemaHandoverDataName(Class));
 		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 
 		ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = IdGenerator.GetCurrentId();
 
@@ -368,11 +373,13 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 			continue;
 		}
 
+		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[RPCTypeToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
+
 		Writer.PrintNewLine();
 
 		Writer.Printf("component {0} {", *SchemaRPCComponentName(Group, Class));
 		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 
 		ActorSchemaData.SchemaComponents[RPCTypeToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 
@@ -417,8 +424,11 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 	return IdGenerator.GetNumUsedIds();
 }
 
-FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass)
+FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex)
 {
+	const FSchemaData* const SchemaData = ClassPathToSchema.Find(*ActorClass->GetPathName());
+	const FSubobjectSchemaData* const SubobjectSchemaData = SchemaData ? SchemaData->SubobjectData.Find(MapIndex) : nullptr;
+	
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
 	FSubobjectSchemaData SubobjectData;
@@ -431,12 +441,14 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 			continue;
 		}
 
+		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
+
 		Writer.PrintNewLine();
 
 		FString ComponentName = PropertyName + GetReplicatedPropertyGroupName(Group);
 		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 		Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
@@ -446,12 +458,14 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
+		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : SpatialConstants::INVALID_COMPONENT_ID;
+
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
 		Writer.Printf("component {0} {", *(PropertyName + TEXT("Handover")));
 		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 		Writer.Printf("data {0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
@@ -467,12 +481,14 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 			continue;
 		}
 
+		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[RPCTypeToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
+
 		Writer.PrintNewLine();
 
 		FString ComponentName = PropertyName + GetRPCTypeName(Group) + TEXT("RPCs");
 		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
 		for (auto& RPC : RPCsByType[Group])
 		{
 			if (Group == ERPCType::RPC_NetMulticast)
@@ -534,7 +550,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 					if (IsReplicatedSubobject(PropertyTypeInfo) && SchemaGeneratedClasses.Contains(Value->GetClass()))
 					{
 						bHasComponents = true;
-						SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(PropertyTypeInfo->Name.ToString()), PropertyTypeInfo, Value->GetClass());
+						SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(PropertyTypeInfo->Name.ToString()), PropertyTypeInfo, Value->GetClass(), ActorClass, CurrentOffset);
 					}
 					else
 					{

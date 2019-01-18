@@ -100,7 +100,16 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	// If we have authority and aren't trying to delete a critical entity, delete it
 	if (bHasAuthority && !IsSingletonEntity())
 	{
-		Sender->SendDeleteEntityRequest(EntityId);
+		// Workaround to delay the delete entity request if tearing off.
+		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
+		if (Actor->GetTearOff())
+		{
+			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
+		}
+		else
+		{
+			Sender->SendDeleteEntityRequest(EntityId);
+		}
 	}
 
 	Receiver->CleanupDeletedEntity(EntityId);
@@ -760,9 +769,10 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	AController* Controller = Cast<AController>(InActor);
 	if (Controller != nullptr && Controller->GetPawn() != nullptr)
 	{
-		return GetActorSpatialPosition(Controller->GetPawn());
+		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
+		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
 	}
-	else if (InActor->GetOwner() != nullptr)
+	else if (InActor->GetOwner() != nullptr && InActor->GetIsReplicated())
 	{
 		return GetActorSpatialPosition(InActor->GetOwner());
 	}

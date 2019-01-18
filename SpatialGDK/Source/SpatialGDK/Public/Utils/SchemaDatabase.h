@@ -39,6 +39,13 @@ class SPATIALGDK_API USchemaDatabase : public UDataAsset
 	GENERATED_BODY()
 
 public:
+
+	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID) {}
+
 	UPROPERTY(VisibleAnywhere)
 	TMap<FString, FSchemaData> ClassPathToSchema;
+
+	UPROPERTY(VisibleAnywhere)
+	uint32 NextAvailableComponentId;
 };
+
