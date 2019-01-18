@@ -187,6 +187,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		}
 	}
 
+	Channel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, *Replicator.RepLayout, RootObjectReferencesMap, Object);
+
 	Channel->PostReceiveSpatialUpdate(Object, RepNotifies);
 }
 
