@@ -166,7 +166,12 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 		return nullptr;
 	}
 
-	if (FClassInfo* Info = ClassInfoMap.Find(Class))
+	if (!ClassInfoMap.Contains(Class))
+	{
+		AddTypebindingsForClass(Class);
+	}
+	
+	return ClassInfoMap.Find(Class);
 	{
 		return Info;
 	}
