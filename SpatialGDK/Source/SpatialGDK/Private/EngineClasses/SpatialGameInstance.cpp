@@ -28,6 +28,18 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 
 		if (NetDriver == nullptr)
 		{
+			// If Spatial networking is enabled, override the GameNetDriver with the SpatialNetDriver
+			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			{
+				if (FNetDriverDefinition* DriverDefinition = GEngine->NetDriverDefinitions.FindByPredicate([](const FNetDriverDefinition& CurDef)
+				{
+					return CurDef.DefName == NAME_GameNetDriver;
+				}))
+				{
+					DriverDefinition->DriverClassName = DriverDefinition->DriverClassNameFallback = TEXT("/Script/SpatialGDK.SpatialNetDriver");
+				}
+			}
+
 			bShouldDestroyNetDriver = GEngine->CreateNamedNetDriver(World, NAME_PendingNetDriver, NAME_GameNetDriver);
 			NetDriver = GEngine->FindNamedNetDriver(World, NAME_PendingNetDriver);
 		}

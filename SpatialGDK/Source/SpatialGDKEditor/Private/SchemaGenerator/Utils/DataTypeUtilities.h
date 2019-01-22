@@ -6,6 +6,8 @@
 
 #include "SchemaGenerator/TypeStructure.h"
 
+extern TMap<UClass*, FString> ClassToSchemaName;
+
 // Return the string representation of the underlying data type of an enum property
 FString GetEnumDataType(const UEnumProperty* EnumProperty);
 
@@ -17,15 +19,15 @@ FString UnrealNameToSchemaComponentName(const FString& UnrealName);
 
 // Given a replicated property group and Unreal type, generates the name of the corresponding schema component.
 // For example: UnrealCharacterMultiClientRepData
-FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UStruct* Type, bool bPrependNamespace = false);
+FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UClass* Class, bool bPrependNamespace = false);
 
 // Given an unreal type, generates the name of the component which stores server to server replication data.
 // For example: UnrealCharacterHandoverData
-FString SchemaHandoverDataName(UStruct* Type, bool bPrependNamespace = false);
+FString SchemaHandoverDataName(UClass* Class, bool bPrependNamespace = false);
 
 // Given an RPC type and Unreal type, generates the name of the corresponding RPC container component.
 // For example: UnrealCharacterClientRPCs
-FString SchemaRPCComponentName(ERPCType RpcType, UStruct* Type, bool bPrependNamespace = false);
+FString SchemaRPCComponentName(ERPCType RpcType, UClass* Class, bool bPrependNamespace = false);
 
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
 FString SchemaRPCName(UFunction* Function);

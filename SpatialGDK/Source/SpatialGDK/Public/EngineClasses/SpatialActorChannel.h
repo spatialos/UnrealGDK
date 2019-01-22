@@ -9,6 +9,7 @@
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialTypebindingManager.h"
 #include "Schema/StandardLibrary.h"
+#include "SpatialCommonTypes.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
@@ -129,6 +130,8 @@ public:
 
 	FVector GetActorSpatialPosition(AActor* Actor);
 
+	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
+	
 protected:
 	// UChannel Interface
 	virtual bool CleanUp(const bool bForDestroy) override;
