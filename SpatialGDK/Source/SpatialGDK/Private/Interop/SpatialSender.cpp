@@ -511,28 +511,21 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	UE_LOG(LogSpatialSender, Log, TEXT("Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
+	// Remove any references to the unresolved objects. Since these are not dereferenced before removing,
+	// it is safe to not check whether the unresolved object is still valid.
 	for (TWeakObjectPtr<const UObject>& UnresolvedObject : *Unresolved)
 	{
-		if (UnresolvedObject.IsValid())
-		{
-			FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
-			FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
+		FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
+		FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
 
-			OtherHandleToUnresolved.Remove(Handle);
-			if (OtherHandleToUnresolved.Num() == 0)
-			{
-				ChannelToUnresolved.Remove(ChannelObjectPair);
-				if (ChannelToUnresolved.Num() == 0)
-				{
-					ObjectToUnresolved.Remove(UnresolvedObject);
-				}
-			}
-		}
-		else
+		OtherHandleToUnresolved.Remove(Handle);
+		if (OtherHandleToUnresolved.Num() == 0)
 		{
-			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
-			Unresolved->Remove(UnresolvedObject);
-			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
+			ChannelToUnresolved.Remove(ChannelObjectPair);
+			if (ChannelToUnresolved.Num() == 0)
+			{
+				ObjectToUnresolved.Remove(UnresolvedObject);
+			}
 		}
 	}
 
@@ -580,9 +573,8 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 		}
 		else
 		{
-			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
-			Unresolved->Remove(UnresolvedObject);
-			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
+			// It is expected that this will never be reached. If it is, we should consider whether to clean up the invalid objects here.
+			UE_LOG(LogSpatialSender, Error, TEXT("Invalid UnresolvedObject passed in to USpatialSender::QueueOutgoingUpdate"));
 		}
 	}
 }
@@ -633,12 +625,6 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 			Schema_DestroyCommandRequest(CommandRequest.schema_type);
 			return CommandRequest;
 		}
-		else
-		{
-			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
-			UnresolvedObjects.Remove(Object);
-			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
-		}
 	}
 
 	AddPayloadToSchema(RequestObject, 1, PayloadWriter);
@@ -679,12 +665,6 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 			OutUnresolvedObject = Object.Get();
 			Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 			return ComponentUpdate;
-		}
-		else
-		{
-			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
-			UnresolvedObjects.Remove(Object);
-			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
 		}
 	}
 

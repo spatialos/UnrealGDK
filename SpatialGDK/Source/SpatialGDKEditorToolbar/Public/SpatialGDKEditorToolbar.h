@@ -39,10 +39,6 @@ public:
 	}
 
 private:
-	void RegisterSettings();
-	void UnregisterSettings();
-	bool HandleSettingsSaved();
-
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
 	void AddToolbarExtension(FToolBarBuilder& Builder);
