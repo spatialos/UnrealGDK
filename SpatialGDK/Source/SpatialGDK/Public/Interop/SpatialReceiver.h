@@ -11,6 +11,7 @@
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialCommonTypes.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -21,11 +22,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 
 class USpatialSender;
 class UGlobalStateManager;
-
-using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-struct FObjectReferences;
-using FObjectReferencesMap = TMap<int32, FObjectReferences>;
-using FReliableRPCMap = TMap<Worker_RequestId, TSharedRef<struct FPendingRPCParams>>;
 
 struct PendingAddComponentWrapper
 {

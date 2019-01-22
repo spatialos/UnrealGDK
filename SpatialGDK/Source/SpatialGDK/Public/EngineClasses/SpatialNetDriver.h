@@ -157,6 +157,8 @@ public:
 	TMap<TWeakObjectPtr<AActor>, FRPCTypeToReliableRPCIdMap> ReliableRPCIdMap;
 #endif // !UE_BUILD_SHIPPING
 
+	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 

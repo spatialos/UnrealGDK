@@ -1,5 +1,8 @@
 * text=auto
 *.go text eol=lf
 
+# Bat files should not be normalized
+*.bat -text
+
 # Don't count vendored go code as part of language stats.
 go/src/improbable.io/vendor/* linguist-vendored

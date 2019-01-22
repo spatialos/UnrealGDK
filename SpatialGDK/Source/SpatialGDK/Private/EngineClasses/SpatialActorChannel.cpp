@@ -101,7 +101,16 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 	// If we have authority and aren't trying to delete a critical entity, delete it
 	if (bHasAuthority)
 	{
-		Sender->SendDeleteEntityRequest(EntityId);
+		// Workaround to delay the delete entity request if tearing off.
+		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
+		if (Actor->GetTearOff())
+		{
+			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
+		}
+		else
+		{
+			Sender->SendDeleteEntityRequest(EntityId);
+		}
 	}
 
 	Receiver->CleanupDeletedEntity(EntityId);
@@ -356,7 +365,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
 
-			if (ObjectRef != SpatialConstants::NULL_OBJECT_REF)
+			if (ObjectRef != SpatialConstants::NULL_OBJECT_REF && ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				FClassInfo* SubobjectInfo = Info->SubobjectInfo[ObjectRef.Offset].Get();
 
@@ -756,9 +765,10 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 	AController* Controller = Cast<AController>(InActor);
 	if (Controller != nullptr && Controller->GetPawn() != nullptr)
 	{
-		return GetActorSpatialPosition(Controller->GetPawn());
+		USceneComponent* PawnRootComponent = Controller->GetPawn()->GetRootComponent();
+		Location = PawnRootComponent ? PawnRootComponent->GetComponentLocation() : FVector::ZeroVector;
 	}
-	else if (InActor->GetOwner() != nullptr)
+	else if (InActor->GetOwner() != nullptr && InActor->GetIsReplicated())
 	{
 		return GetActorSpatialPosition(InActor->GetOwner());
 	}
@@ -769,6 +779,26 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 
 	// Rebase location onto zero origin so actor is positioned correctly in SpatialOS.
 	return FRepMovement::RebaseOntoZeroOrigin(Location, InActor);
+}
+
+void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object)
+{
+	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside UStructs.
+	// This prevents undefined behaviour when engine rep callbacks are issued where they don't expect unresolved objects in native flow.
+	RepNotifies.RemoveAll([&](UProperty* Property)
+	{
+		for (auto& ObjRef : RefMap)
+		{
+			bool bIsSameRepNotify = RepLayout.Parents[ObjRef.Value.ParentIndex].Property == Property;
+			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1;
+			if (bIsSameRepNotify && !bIsArray)
+			{
+				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("RepNotify %s on %s ignored due to unresolved Actor"), *Property->GetName(), *Object->GetName());
+				return true;
+			}
+		}
+		return false;
+	});
 }
 
 void USpatialActorChannel::SpatialViewTick()
