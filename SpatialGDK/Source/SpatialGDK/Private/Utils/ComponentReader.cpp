@@ -324,6 +324,10 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 					UE_LOG(LogSpatialComponentReader, Warning, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
 						*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
 					ObjectProperty->SetObjectPropertyValue(Data, nullptr);
+
+					InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ParentIndex, Property));
+					UnresolvedRefs.Add(ObjectRef);
+					bUnresolved = true;
 					return;
 				}
 				checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());

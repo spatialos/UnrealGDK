@@ -204,14 +204,22 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 				}
 			}
 
-			ObjectRef = FUnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
+			ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
-				// A legal static object reference should never be unresolved.
-				check(!ObjectValue->IsFullNameStableForNetworking());
-				UnresolvedObjects.Add(ObjectValue);
-				ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+				// Something assigned a NetGUID without going through the FSpatialNetGUID (e.g. FObjectReplicator)
+				// Assign an UnrealObjectRef by going through the FSpatialNetGUID flow
+				if (ObjectValue->IsFullNameStableForNetworking())
+				{
+					PackageMap->ResolveStablyNamedObject(ObjectValue);
+					ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				}
+				else
+				{
+					UnresolvedObjects.Add(ObjectValue);
+					ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+				}
 			}
 		}
 

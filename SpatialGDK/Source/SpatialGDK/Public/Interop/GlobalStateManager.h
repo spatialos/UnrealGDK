@@ -55,6 +55,8 @@ public:
 
 	void BeginDestroy() override;
 
+	bool HasAuthority();
+
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 
 	Worker_EntityId GlobalStateManagerEntityId;

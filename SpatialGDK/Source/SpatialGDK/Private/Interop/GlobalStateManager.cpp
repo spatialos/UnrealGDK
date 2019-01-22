@@ -396,6 +396,11 @@ void UGlobalStateManager::BeginDestroy()
 #endif
 }
 
+bool UGlobalStateManager::HasAuthority()
+{
+	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
+}
+
 void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 {
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)

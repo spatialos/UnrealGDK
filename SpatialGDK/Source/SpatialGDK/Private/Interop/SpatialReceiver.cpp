@@ -374,7 +374,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				EntityActor = Cast<AActor>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 				if (EntityActor == nullptr)
 				{
-					//check(EntityActor);
 					return;
 				}
 			}
@@ -1254,7 +1253,11 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			if (NetGUID.IsValid())
 			{
 				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-				check(Object);
+				if (Object == nullptr)
+				{
+					continue;
+				}
+				//check(Object);
 
 				UE_LOG(LogSpatialReceiver, Log, TEXT("ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
 
