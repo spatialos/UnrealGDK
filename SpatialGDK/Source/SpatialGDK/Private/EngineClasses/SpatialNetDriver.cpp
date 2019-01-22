@@ -721,17 +721,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
 
-			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
-			// only check visibility on already visible actors every 1.0 + 0.5R seconds
-			// bTearOff actors should never be checked
-			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
-			{
-				if (DebugRelevantActors)
-				{
-					LastNonRelevantActors.Add(Actor);
-				}
-			}
-
 			// Workaround: If the actor channel can't be found in the current connection (e.g. if the actor was detached from the controller),
 			// then search through all the connections to find the actor's channel.
 			// Task to improve this: https://improbableio.atlassian.net/browse/UNR-842
@@ -747,10 +736,20 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				}
 			}
 
+			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
+			// only check visibility on already visible actors every 1.0 + 0.5R seconds
+			// bTearOff actors should never be checked
+			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
+			{
+				if (DebugRelevantActors)
+				{
+					LastNonRelevantActors.Add(Actor);
+				}
+			}
 
 			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit.
 			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
-			if (FinalReplicatedCount < RateLimit)
+			if (FinalReplicatedCount < RateLimit && !Actor->GetTearOff())
 			{
 				bIsRelevant = true;
 				FinalReplicatedCount++;
@@ -761,8 +760,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 			if (bIsRecentlyRelevant)
 			{
-				FinalRelevantCount++;
-
 				// Find or create the channel for this actor.
 				// we can't create the channel if the client is in a different world than we are
 				// or the package map doesn't support the actor's class/archetype (or the actor itself in the case of serializable actors)
@@ -1061,14 +1058,14 @@ void USpatialNetDriver::ProcessRemoteFunction(
 {
 	if (Connection == nullptr || !Connection->IsConnected())
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"));
 		return;
 	}
 
 	USpatialNetConnection* NetConnection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (NetConnection == nullptr)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"));
 		return;
 	}
 
