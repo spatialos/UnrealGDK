@@ -166,17 +166,13 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 		return nullptr;
 	}
 
+	// This could be optimised to a single map lookup in all cases if we Find first, but we keep this pattern for readability
 	if (!ClassInfoMap.Contains(Class))
 	{
-		AddTypebindingsForClass(Class);
+		return &AddTypebindingsForClass(Class);
 	}
 	
 	return ClassInfoMap.Find(Class);
-	{
-		return Info;
-	}
-
-	return &AddTypebindingsForClass(Class);
 }
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset)
