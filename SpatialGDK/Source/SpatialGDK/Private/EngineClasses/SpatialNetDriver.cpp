@@ -142,9 +142,16 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 	if (LoadedWorld->URL.HasOption(TEXT("locator")))
 	{
-		Connection->LocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
-		Connection->LocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
-		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
+		Connection->LegacyLocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
+		Connection->LegacyLocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
+		Connection->LegacyLocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
+		Connection->LegacyLocatorConfig.UseExternalIp = true;
+	}
+	else if (LoadedWorld->URL.HasOption(TEXT("locatorv2")))
+	{
+		// Obtain PIT and LT.
+		Connection->LocatorConfig.PlayerIdentityToken = LoadedWorld->URL.GetOption(TEXT("playeridentity="), TEXT(""));
+		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
 	}
 	else
