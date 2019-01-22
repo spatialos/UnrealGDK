@@ -568,6 +568,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 
 	if (NetDriver->TypebindingManager->FindClassInfoByClass(InActor->GetClass()) == nullptr)
 	{
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("No schema was generated for class %s! This class was not loaded during schema generation most likely due to soft references."
+			"Either manually load the class before schema generation or have a hard reference from a class that is already loaded."), *InActor->GetClass()->GetName())
 		return;
 	}
 
