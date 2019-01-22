@@ -302,6 +302,11 @@ void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, c
 	Worker_Connection_SendComponentInterest(WorkerConnection, EntityId, ComponentInterest.GetData(), ComponentInterest.Num());
 }
 
+void USpatialWorkerConnection::SendMetrics(const Worker_Metrics* metrics)
+{
+	Worker_Connection_SendMetrics(WorkerConnection, metrics);
+}
+
 FString USpatialWorkerConnection::GetWorkerId() const
 {
 	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
@@ -315,11 +320,6 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {
 	return Worker_Connection_SendEntityQueryRequest(WorkerConnection, EntityQuery, 0);
-}
-
-void USpatialWorkerConnection::SendMetrics(const Worker_Metrics* metrics)
-{
-	Worker_Connection_SendMetrics(WorkerConnection, metrics);
 }
 
 void USpatialWorkerConnection::CacheWorkerAttributes()
