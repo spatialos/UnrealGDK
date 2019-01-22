@@ -45,7 +45,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	PackageMap = InNetDriver->PackageMap;
-	World = InNetDriver->GetWorld();
 	TypebindingManager = InNetDriver->TypebindingManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 	TimerManager = InTimerManager;
@@ -254,7 +253,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 {
-	checkf(World, TEXT("We should have a world whilst processing ops."));
+	checkf(NetDriver->GetWorld(), TEXT("We should have a world whilst processing ops."));
 	check(NetDriver);
 
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
@@ -366,7 +365,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		if (bDoingDeferredSpawn)
 		{
-			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, World->OriginLocation);
+			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
 
 			// FinishSpawning takes a transform relative to the template transform, so we need to adjust it.
 			FTransform SpawnTransform = GetRelativeSpawnTransform(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation));
@@ -536,9 +535,9 @@ AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* 
 		// We defer the construction in the GDK pipeline to allow initialization of replicated properties first.
 		SpawnInfo.bDeferConstruction = bDeferred;
 
-		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, World->OriginLocation);
+		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
 
-		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
+		NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
 		check(NewActor);
 	}
 
