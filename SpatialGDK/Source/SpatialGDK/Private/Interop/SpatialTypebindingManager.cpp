@@ -201,7 +201,7 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 		}
 	}
 
-	UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to find class at path for component %u in schema database"), ComponentId);
+	UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to find class for component %u in schema database"), ComponentId);
 	return nullptr;
 }
 
@@ -303,10 +303,14 @@ ESchemaComponentType USpatialTypebindingManager::FindCategoryByComponentId(Worke
 		return *Category;
 	}
 
-	if (UClass* Class = FindClassByComponentId(ComponentId))
+	// Only try to load classes for generated components
+	if (ComponentId >= SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 	{
-		AddTypebindingsForClass(Class);
-		return ComponentToCategoryMap[ComponentId];
+		if (UClass* Class = FindClassByComponentId(ComponentId))
+		{
+			AddTypebindingsForClass(Class);
+			return ComponentToCategoryMap[ComponentId];
+		}
 	}
 
 	return ESchemaComponentType::SCHEMA_Invalid;
