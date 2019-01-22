@@ -384,6 +384,7 @@ void UGlobalStateManager::BeginDestroy()
 			Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 			Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 			Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+			//Schema_AddComponentUpdateClearedField(Update, 1);
 
 			SingletonNameToEntityId.Empty();
 			SingletonNameToEntityId.Add(TEXT(""), 0);
@@ -402,7 +403,7 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 		AActor* Actor = *It;
 		if (Actor != nullptr && !Actor->IsPendingKill())
 		{
-			if (Actor->IsNetStartupActor())
+			if (Actor->GetIsReplicated())
 			{
 				Actor->Role = ROLE_Authority;
 				Actor->RemoteRole = ROLE_SimulatedProxy;

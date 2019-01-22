@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+#pragma optimize("", off)
 
 #include "Interop/SpatialReceiver.h"
 
@@ -195,15 +196,46 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 				{
 					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
 
-					if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
+					if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
-					else
+					else if (APawn* Pawn = Cast<APawn>(Actor))
 					{
-						Actor->RemoteRole = ROLE_SimulatedProxy;
+						if (Pawn->IsPlayerControlled())
+						{
+							Pawn->RemoteRole = ROLE_AutonomousProxy;
+						}
 					}
+
+					//if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+					//{
+					//	Actor->RemoteRole = ROLE_AutonomousProxy;
+
+					//	if (APawn* Pawn = PlayerController->GetPawn())
+					//	{
+					//		Pawn->RemoteRole = ROLE_AutonomousProxy;
+					//	}
+					//}
+					//else if (APawn* Pawn = Cast<APawn>(Actor))
+					//{
+					//	if (Pawn->IsPlayerControlled())
+					//	{
+					//		Pawn->RemoteRole = ROLE_AutonomousProxy;
+					//	}
+					//}
+					//else if (APlayerState* PlayerState = Cast<APlayerState>(Actor))
+					//{
+					//	if (APlayerController* PlayerController = PlayerState->GetOwner())
+					//	{
+					//		if (APawn* Pawn = PlayerController->GetPawn())
+					//		{
+					//			Pawn->RemoteRole = ROLE_AutonomousProxy;
+					//		}
+					//	}
+					//}
 
 					Actor->OnAuthorityGained();
 				}
@@ -340,7 +372,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			{
 				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(UnrealMetadata->StablyNamedRef);
 				EntityActor = Cast<AActor>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
-				check(EntityActor);
+				if (EntityActor == nullptr)
+				{
+					//check(EntityActor);
+					return;
+				}
 			}
 
 			// Don't have authority over Actor until SpatialOS delegates authority
@@ -453,7 +489,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
 	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (!Actor || Actor->IsPendingKill())
@@ -884,7 +920,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 	if (UnresolvedRefs.Num() == 0)
 	{
 #if !UE_BUILD_SHIPPING
-		if (Function->FunctionFlags & FUNC_NetReliable)
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 		{
 			AActor* Actor = Cast<AActor>(TargetObject);
 			if (Actor == nullptr)
@@ -1281,3 +1317,4 @@ void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& Com
 
 	ApplyRPC(TargetObject, Function, PayloadData, CountBits, SenderWorkerId);
 }
+#pragma optimize("", on)

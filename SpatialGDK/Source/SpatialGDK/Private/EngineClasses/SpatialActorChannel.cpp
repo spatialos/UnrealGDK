@@ -1,4 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+#pragma optimize("", off)
 
 #include "EngineClasses/SpatialActorChannel.h"
 
@@ -202,6 +203,11 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 int64 USpatialActorChannel::ReplicateActor()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
+
+	if (Actor->GetName().Contains("Door"))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("whoa"));
+	}
 
 	if (!IsReadyForReplication())
 	{
@@ -801,3 +807,4 @@ void USpatialActorChannel::SpatialViewTick()
 		}
 	}
 }
+#pragma optimize("", on)

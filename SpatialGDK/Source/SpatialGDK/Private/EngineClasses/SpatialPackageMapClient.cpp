@@ -259,6 +259,11 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	FClassInfo* Info = SpatialNetDriver->TypebindingManager->FindClassInfoByClass(Class);
 
 	improbable::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
+
+	if (UnrealMetadata == nullptr)
+	{
+		return;
+	}
 	check(UnrealMetadata);
 	const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef;
 
