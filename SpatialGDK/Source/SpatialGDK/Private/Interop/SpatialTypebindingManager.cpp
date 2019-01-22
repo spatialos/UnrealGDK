@@ -15,7 +15,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Utils/RepLayoutUtils.h"
 
-DEFINE_LOG_CATEGORY(LogTypebindingManager);
+DEFINE_LOG_CATEGORY(LogSpatialTypebindingManager);
 
 void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 {
@@ -173,7 +173,7 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 				UClass* Class = SoftClassPath.TryLoadClass<UObject>();
 				if (Class == nullptr)
 				{
-					UE_LOG(LogTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
+					UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
 						*ObjectDataPair.Key, ComponentId);
 				}
 				return Class;
@@ -192,7 +192,7 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 					UClass* Class = SoftClassPath.TryLoadClass<UObject>();
 					if (Class == nullptr)
 					{
-						UE_LOG(LogTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
+						UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
 							*ObjectDataPair.Key, ComponentId);
 					}
 					return Class;
@@ -201,7 +201,7 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 		}
 	}
 
-	UE_LOG(LogTypebindingManager, Warning, TEXT("Failed to find class at path for component %u in schema database"), ComponentId);
+	UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to find class at path for component %u in schema database"), ComponentId);
 	return nullptr;
 }
 
