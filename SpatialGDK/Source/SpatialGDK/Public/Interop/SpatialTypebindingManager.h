@@ -96,6 +96,7 @@ public:
 
 private:
 	FClassInfo& AddTypebindingsForClass(UClass* Class);
+	UClass* LoadClassForComponent(Worker_ComponentId ComponentId) const;
 
 private:
 	UPROPERTY()
