@@ -560,7 +560,7 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&StartupActorQuery);
 
 	EntityQueryDelegate StartupActorDelegate;
-	StartupActorDelegate.BindLambda([this, &Actor, &EntityId](Worker_EntityQueryResponseOp& Op)
+	StartupActorDelegate.BindLambda([this, Actor, EntityId](Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
