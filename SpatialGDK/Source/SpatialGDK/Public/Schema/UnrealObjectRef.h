@@ -43,6 +43,16 @@ struct FUnrealObjectRef
 		return FString::Printf(TEXT("(entity ID: %lld, offset: %u)"), Entity, Offset);
 	}
 
+	FORCEINLINE FUnrealObjectRef GetLevelReference() const
+	{
+		if (Path->Equals(TEXT("PersistentLevel")))
+		{
+			return *this;
+		}
+
+		return Outer->GetLevelReference();
+	}
+
 	FORCEINLINE bool operator==(const FUnrealObjectRef& Other) const
 	{
 		return Entity == Other.Entity &&

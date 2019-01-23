@@ -509,6 +509,13 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	// Actor is a startup actor that is a part of the level. We need to do an entity query to see
+	// if the entity was actually deleted or only removed from our view
+	if (Actor->bNetLoadOnClient == true)
+	{
+		QueryForStartupActor(Actor, EntityId);
+	}
+
 	if (APlayerController* PC = Cast<APlayerController>(Actor))
 	{
 		// Force APlayerController::DestroyNetworkActorHandled to return false
@@ -533,6 +540,44 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	DestroyActor(Actor, EntityId);
+}
+
+void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId)
+{
+	Worker_EntityIdConstraint StartupActorConstraintEntityId;
+	StartupActorConstraintEntityId.entity_id = EntityId;
+
+	Worker_Constraint StartupActorConstraint{};
+	StartupActorConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID
+	StartupActorConstraint.entity_id_constraint = StartupActorConstraintEntityId;
+
+	Worker_EntityQuery StartupActorQuery{};
+	StartupActorQuery.constraint = StartupActorConstraint;
+	StartupActorQuery.result_type = WORKER_RESULT_TYPE_COUNT;
+
+	Worker_RequestId RequestID;
+	RequestID = NetDriver->Connection->SendEntityQueryRequest(&StartupActorQuery);
+
+	EntityQueryDelegate StartupActorDelegate;
+	StartupActorDelegate.BindLambda([this, &Actor, &EntityId](Worker_EntityQueryResponseOp& Op)
+	{
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+		{
+			return;
+		}
+
+		if (Op.result_count == 0)
+		{
+			DestroyActor(Actor, EntityId);
+		}
+	});
+
+	Receiver->AddEntityQueryDelegate(RequestID, StartupActorDelegate)
+}
+
+void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
+{
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
 	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative 
@@ -1257,6 +1302,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				{
 					continue;
 				}
+				// TODO: come back to this
 				//check(Object);
 
 				UE_LOG(LogSpatialReceiver, Log, TEXT("ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());

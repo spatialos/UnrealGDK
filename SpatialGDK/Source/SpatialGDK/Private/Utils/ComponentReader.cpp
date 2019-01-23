@@ -326,7 +326,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 					ObjectProperty->SetObjectPropertyValue(Data, nullptr);
 
 					InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ParentIndex, Property));
-					UnresolvedRefs.Add(ObjectRef);
+					UnresolvedRefs.Add(ObjectRef.GetLevelReference());
 					bUnresolved = true;
 					return;
 				}

@@ -50,6 +50,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
+	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
+
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
@@ -172,6 +174,29 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	Connect();
+}
+
+void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
+{
+	if (GlobalStateManager != nullptr && StaticComponentView != nullptr)
+	{
+	}
+
+	if (bConnectAsClient && LoadedLevel->bIsVisible)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Loaded level %s"), *LoadedLevel->GetFullName())
+
+		if (Receiver != nullptr && PackageMap != nullptr)
+		{
+			FNetworkGUID LevelNetGUID = PackageMap->ResolveStablyNamedObject(LoadedLevel);
+			if (LevelNetGUID.IsValid())
+			{
+				FUnrealObjectRef LevelRef = PackageMap->GetUnrealObjectRefFromNetGUID(LevelNetGUID);
+				Receiver->ResolvePendingOperations(LoadedLevel, LevelRef);
+				//UE_LOG(LogTemp, Verbose, TEXT("whoa"));
+			}
+		}
+	}
 }
 
 void USpatialNetDriver::Connect()
