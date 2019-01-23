@@ -549,7 +549,7 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 	StartupActorConstraintEntityId.entity_id = EntityId;
 
 	Worker_Constraint StartupActorConstraint{};
-	StartupActorConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID
+	StartupActorConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
 	StartupActorConstraint.entity_id_constraint = StartupActorConstraintEntityId;
 
 	Worker_EntityQuery StartupActorQuery{};
@@ -573,11 +573,16 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 		}
 	});
 
-	Receiver->AddEntityQueryDelegate(RequestID, StartupActorDelegate)
+	AddEntityQueryDelegate(RequestID, StartupActorDelegate);
 }
 
 void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 {
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
 	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative 

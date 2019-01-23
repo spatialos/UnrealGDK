@@ -139,7 +139,7 @@ private:
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
-	void QueryForStartupActor(AActor* Actor, Worker_EntityId, EntityId);
+	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
 
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
