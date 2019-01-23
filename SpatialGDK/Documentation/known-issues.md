@@ -15,5 +15,5 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 | `ReplicateYes` policy on GameplayAbilities not supported. | 2018-10-24 | [UNR-675](https://improbableio.atlassian.net/projects/UNR/issues/UNR-675) | Don't use replicated GameplayAbilities. If they need access to replicated data, store it on the AbilityComponent itself. |
 | NetDeltaSerialize or Fast TArray Replication not supported.  | 2018-10-24 |  | Use default serialization |
 | Non-replicated instanced data on stably-named replicated actors is reset to defaults on world startup. | 2018-10-29 | [UNR-624](https://improbableio.atlassian.net/projects/UNR/issues/UNR-624) | Mark the desired properties as replicated, or change them in a blueprint subclass. |
-| Sometimes the player is unable to move when spawning | 2018-10-30 | [UNR-691](https://improbableio.atlassian.net/browse/UNR-691) | Reconnect 
-
+| Sometimes the player is unable to move when spawning | 2018-10-30 | [UNR-691](https://improbableio.atlassian.net/browse/UNR-691) | Reconnect| 
+| Seamless Travel is not supported | 2019-01-22 | [UNR-897](https://improbableio.atlassian.net/browse/UNR-897) | Disable Seamless travel |  
