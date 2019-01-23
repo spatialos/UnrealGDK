@@ -369,7 +369,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
 
-			if (ObjectRef != SpatialConstants::NULL_OBJECT_REF)
+			if (ObjectRef != SpatialConstants::NULL_OBJECT_REF && ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
 				FClassInfo* SubobjectInfo = Info->SubobjectInfo[ObjectRef.Offset].Get();
 
@@ -568,6 +568,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 
 	if (NetDriver->TypebindingManager->FindClassInfoByClass(InActor->GetClass()) == nullptr)
 	{
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("No schema was generated for class %s! This class was not loaded during schema generation most likely due to soft references."
+			"Either manually load the class before schema generation or have a hard reference from a class that is already loaded."), *InActor->GetClass()->GetName())
 		return;
 	}
 
@@ -783,6 +785,26 @@ FVector USpatialActorChannel::GetActorSpatialPosition(AActor* InActor)
 
 	// Rebase location onto zero origin so actor is positioned correctly in SpatialOS.
 	return FRepMovement::RebaseOntoZeroOrigin(Location, InActor);
+}
+
+void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object)
+{
+	// Prevent rep notify callbacks from being issued when unresolved obj references exist inside UStructs.
+	// This prevents undefined behaviour when engine rep callbacks are issued where they don't expect unresolved objects in native flow.
+	RepNotifies.RemoveAll([&](UProperty* Property)
+	{
+		for (auto& ObjRef : RefMap)
+		{
+			bool bIsSameRepNotify = RepLayout.Parents[ObjRef.Value.ParentIndex].Property == Property;
+			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1;
+			if (bIsSameRepNotify && !bIsArray)
+			{
+				UE_LOG(LogSpatialActorChannel, Verbose, TEXT("RepNotify %s on %s ignored due to unresolved Actor"), *Property->GetName(), *Object->GetName());
+				return true;
+			}
+		}
+		return false;
+	});
 }
 
 void USpatialActorChannel::SpatialViewTick()
