@@ -160,6 +160,12 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 
 UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId ComponentId) const
 {
+	// Only try to load classes for generated components
+	if (ComponentId < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+	{
+		return nullptr;
+	}
+
 	for (auto& ObjectDataPair : SchemaDatabase->ClassPathToSchema)
 	{
 		for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
@@ -301,14 +307,10 @@ ESchemaComponentType USpatialTypebindingManager::FindCategoryByComponentId(Worke
 		return *Category;
 	}
 
-	// Only try to load classes for generated components
-	if (ComponentId >= SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+	if (UClass* Class = FindClassByComponentId(ComponentId))
 	{
-		if (UClass* Class = FindClassByComponentId(ComponentId))
-		{
-			AddTypebindingsForClass(Class);
-			return ComponentToCategoryMap[ComponentId];
-		}
+		AddTypebindingsForClass(Class);
+		return ComponentToCategoryMap[ComponentId];
 	}
 
 	return ESchemaComponentType::SCHEMA_Invalid;
