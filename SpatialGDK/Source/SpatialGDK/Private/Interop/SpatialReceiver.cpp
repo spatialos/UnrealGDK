@@ -451,6 +451,17 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	// If entity is to be deleted after having been torn off, clean up the entity, but don't destroy the actor.
+	if (Actor->GetTearOff())
+	{
+		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
+		{
+			ActorChannel->ConditionalCleanUp();
+			CleanupDeletedEntity(EntityId);
+		}
+		return;
+	}
+
 	if (APlayerController* PC = Cast<APlayerController>(Actor))
 	{
 		// Force APlayerController::DestroyNetworkActorHandled to return false
@@ -854,7 +865,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 
 #if !UE_BUILD_SHIPPING
 	int ReliableRPCId = 0;
-	if (Function->FunctionFlags & FUNC_NetReliable)
+	if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 	{
 		PayloadReader << ReliableRPCId;
 	}
@@ -866,7 +877,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 	if (UnresolvedRefs.Num() == 0)
 	{
 #if !UE_BUILD_SHIPPING
-		if (Function->FunctionFlags & FUNC_NetReliable)
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 		{
 			AActor* Actor = Cast<AActor>(TargetObject);
 			if (Actor == nullptr)
@@ -1093,6 +1104,8 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 
 		if (bSomeObjectsWereMapped)
 		{
+			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, *UnresolvedRefs, ReplicatingObject);
+
 			UE_LOG(LogSpatialReceiver, Log, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
 			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies);
 		}
