@@ -280,6 +280,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 		if (Worker_Connection_IsConnected(WorkerConnection))
 		{
+			CacheWorkerAttributes();
 			AsyncTask(ENamedThreads::GameThread, [this]
 			{
 				this->bIsConnected = true;
