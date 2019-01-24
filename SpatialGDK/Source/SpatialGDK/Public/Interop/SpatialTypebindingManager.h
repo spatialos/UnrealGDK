@@ -95,7 +95,7 @@ public:
 	ESchemaComponentType FindCategoryByComponentId(Worker_ComponentId ComponentId);
 
 private:
-	FClassInfo& AddTypebindingsForClass(UClass* Class);
+	void AddTypebindingsForClass(UClass* Class);
 	UClass* LoadClassForComponent(Worker_ComponentId ComponentId) const;
 
 private:

@@ -32,7 +32,7 @@ void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 	}
 }
 
-FClassInfo& USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
+void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 {
 	checkf(IsSupportedClass(Class), TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
 
@@ -156,8 +156,6 @@ FClassInfo& USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 
 		Info.SubobjectInfo.Add(Offset, MakeShared<FClassInfo>(SubobjectInfo));
 	}
-
-	return Info;
 }
 
 UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId ComponentId) const
@@ -215,7 +213,7 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 	// This could be optimised to a single map lookup in all cases if we Find first, but we keep this pattern for readability
 	if (!ClassInfoMap.Contains(Class))
 	{
-		return &AddTypebindingsForClass(Class);
+		AddTypebindingsForClass(Class);
 	}
 	
 	return ClassInfoMap.Find(Class);
