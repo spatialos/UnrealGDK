@@ -454,7 +454,11 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	// If entity is to be deleted after having been torn off, clean up the entity, but don't destroy the actor.
 	if (Actor->GetTearOff())
 	{
-		CleanupDeletedEntity(EntityId);
+		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
+		{
+			ActorChannel->ConditionalCleanUp();
+			CleanupDeletedEntity(EntityId);
+		}
 		return;
 	}
 
