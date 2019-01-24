@@ -26,6 +26,12 @@ void USpatialWorkerConnection::DestroyConnection()
 		Worker_Locator_Destroy(WorkerLegacyLocator);
 		WorkerLegacyLocator = nullptr;
 	}
+
+	if (WorkerLocator)
+	{
+		Worker_Alpha_Locator_Destroy(WorkerLocator);
+		WorkerLocator = nullptr;
+	}
 }
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
@@ -245,6 +251,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	LocatorParams.player_identity.player_identity_token = PlayerIdentityTokenCStr.Get();
 	LocatorParams.player_identity.login_token = LoginTokenCStr.Get();
 
+	// Connect to the locator on the default port(0 will choose the default)
 	WorkerLocator = Worker_Alpha_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
 
 	// TODO: Move creation of connection parameters into a function somehow
@@ -289,16 +296,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 		}
 		else
 		{
-			Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
-			for (int i = 0; i < (int)OpList->op_count; i++)
-			{
-				if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
-				{
-					UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Couldn't connect to SpatialOS: %s"), UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
-					GEngine->AddOnScreenDebugMessage(-1, 200.0f, FColor::Red, FString::Printf(TEXT("Couldn't connect to SpatialOS: %s"), UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason)));
-				}
-			}
-
+			GetAndPrintConnectionFailureMessage();
 			// TODO: Try to reconnect - UNR-576
 		}
 	});
@@ -306,7 +304,9 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 {
-	if (!LocatorConfig.LoginToken.IsEmpty())
+	// The legacy locator path did not specify PlayerIdentityToken, so if we have one
+	// we can use the new locator workflow.
+	if (!LocatorConfig.PlayerIdentityToken.IsEmpty())
 	{
 		return SpatialConnectionType::Locator;
 	}

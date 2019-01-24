@@ -163,6 +163,8 @@ void USpatialGameInstance::StartGameInstance()
 
 		// Initialize a legacy locator configuration which will parse command line arguments.
 		// If there is a legacy locator token present in the command line arguments then connect to deployment automatically.
+		// The new locator uses the same param for the LoginToken, so this will notice LocatorConfig launches as well.
+		// NOTE: When we remove the LegacyLocatorConfig, this should be updated to check LocatorConfig instead of be removed.
 		FLegacyLocatorConfig LegacyLocatorConfig;
 		if (!LegacyLocatorConfig.LoginToken.IsEmpty() && GIsClient)
 		{
