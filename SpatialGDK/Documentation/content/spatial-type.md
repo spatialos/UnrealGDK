@@ -1,6 +1,6 @@
 # Spatial Type
 
- Spatial Type (`SpatialType`) is a SpatialOS-specific [class specifier (Unreal documentation)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers). The GDK uses `SpatialType` expose network-relevant class information to SpatialOS.
+ Spatial Type (`SpatialType`) is a SpatialOS-specific [class specifier (Unreal documentation)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers). The GDK uses `SpatialType` to expose network-relevant class information to SpatialOS.
  
  `SpatialType` is similar to other Unreal class specifiers, but implemented in parallel with [EClassFlags (Unreal documentation)](https://api.unrealengine.com/INT/API/Runtime/CoreUObject/UObject/EClassFlags/index.html) to minimize the possibility of conflicting changes between the standard Unreal Engine and the GDK’s Unreal Engine fork.
 
