@@ -161,8 +161,8 @@ void USpatialGameInstance::StartGameInstance()
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialWorkerConnection();
 
-		// Initialize a locator configuration which will parse command line arguments.
-		// If there is a locator token present in the command line arguments then connect to deployment automatically.
+		// Initialize a legacy locator configuration which will parse command line arguments.
+		// If there is a legacy locator token present in the command line arguments then connect to deployment automatically.
 		FLegacyLocatorConfig LegacyLocatorConfig;
 		if (!LegacyLocatorConfig.LoginToken.IsEmpty() && GIsClient)
 		{
