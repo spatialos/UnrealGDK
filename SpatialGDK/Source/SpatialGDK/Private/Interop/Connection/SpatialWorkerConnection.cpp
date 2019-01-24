@@ -268,15 +268,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
 
 	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
-#if PLATFORM_WINDOWS || PLATFORM_XBOXONE
-	ConnectionParams.enable_protocol_logging_at_startup = true;
-#if PLATFORM_XBOXONE
-	ConnectionParams.protocol_logging.log_prefix = "T:\\protocol-log-";
-#else
 	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
-#endif
-	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Protocol log prefix: %s"), UTF8_TO_TCHAR(ConnectionParams.protocol_logging.log_prefix));
-#endif
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Alpha_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
