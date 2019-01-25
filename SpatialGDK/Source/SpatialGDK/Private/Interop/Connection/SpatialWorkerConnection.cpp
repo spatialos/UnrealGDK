@@ -307,9 +307,9 @@ Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_E
 	return Worker_Connection_SendEntityQueryRequest(WorkerConnection, EntityQuery, 0);
 }
 
-void USpatialWorkerConnection::SendMetrics(const Worker_Metrics* metrics)
+void USpatialWorkerConnection::SendMetrics(const Worker_Metrics* Metrics)
 {
-	Worker_Connection_SendMetrics(WorkerConnection, metrics);
+	Worker_Connection_SendMetrics(WorkerConnection, Metrics);
 }
 
 FString USpatialWorkerConnection::GetWorkerId() const
