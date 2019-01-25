@@ -395,7 +395,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(UObject* Object
 
 		UE_LOG(LogSpatialPackageMap, Log, TEXT("%s: NetGUID for object %s was not found in the cache. Generated new NetGUID %s."),
 			*Cast<USpatialNetDriver>(Driver)->Connection->GetWorkerId(),
-			*Object->GetName(),
+			*Object->GetPathName(),
 			*NetGUID.ToString());
 	}
 

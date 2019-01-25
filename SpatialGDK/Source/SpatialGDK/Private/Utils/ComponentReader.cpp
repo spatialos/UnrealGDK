@@ -327,7 +327,6 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 
 					InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ParentIndex, Property));
 					UnresolvedRefs.Add(ObjectRef.GetLevelReference());
-					bUnresolved = true;
 					return;
 				}
 				checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
