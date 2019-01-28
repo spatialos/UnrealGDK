@@ -788,11 +788,13 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				}
 
 				// SpatialGDK - Only replicate actors marked as relevant (rate limiting).
-				if (Channel && bIsRelevant)
+				if (Channel)
 				{
-					// If it is relevant then mark the channel as relevant for a short amount of time.
-					Channel->RelevantTime = Time + 0.5f * FMath::SRand();
-
+					if (bIsRelevant)
+					{
+						// If it is relevant then mark the channel as relevant for a short amount of time.
+						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
+					}
 					// If the channel isn't saturated.
 					if (Channel->IsNetReady(0))
 					{
