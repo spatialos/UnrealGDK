@@ -156,7 +156,7 @@ void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 	RemoveActor(Op.entity_id);
 }
 
-void USpatialReceiver::UpdateShadowData(const Worker_EntityId& EntityId)
+void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 {
 	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
 	ActorChannel->UpdateShadowData();
