@@ -100,7 +100,7 @@ public:
 	FORCEINLINE FRepStateStaticBuffer& GetObjectStaticBuffer(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
-		return FindOrCreateReplicator(Object)->ChangelistMgr->GetRepChangelistState()->StaticBuffer;
+		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
 	}
 
 	// UChannel interface

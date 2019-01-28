@@ -633,7 +633,7 @@ FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PreNetReceive();
 
-	Replicator.RepLayout->InitShadowData(Replicator./*ChangelistMgr->GetRepChangelistState()*/RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
+	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 
 	return Replicator;
 }
