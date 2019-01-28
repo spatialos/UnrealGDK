@@ -648,6 +648,11 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	TargetObject->PostNetReceive();
 	Replicator.RepNotifies = RepNotifies;
 	Replicator.CallRepNotifies(false);
+
+	if (!TargetObject->IsPendingKill())
+	{
+		TargetObject->PostRepNotifies();
+	}
 }
 
 void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId)
