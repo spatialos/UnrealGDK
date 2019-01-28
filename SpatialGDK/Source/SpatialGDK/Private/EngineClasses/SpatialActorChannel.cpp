@@ -303,7 +303,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		UpdateSpatialPosition();
 	}
-
+	
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
