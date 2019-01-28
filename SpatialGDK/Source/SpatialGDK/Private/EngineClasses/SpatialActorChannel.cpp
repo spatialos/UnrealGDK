@@ -169,9 +169,12 @@ bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 
 void USpatialActorChannel::UpdateShadowData()
 {
-	FObjectReplicator& ActorObjReplicator = FindOrCreateReplicator(Actor).Get();
-	ActorObjReplicator.RepLayout->InitShadowData(ActorObjReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
-	
+	check(Actor);
+
+	// refresh shadow data when crossing over servers to prevent stale/out-of-date data
+	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
+
+	// refresh the data for all replicated components of this actor as well
 	for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 	{
 		FObjectReplicator& ComponentReplicator = FindOrCreateReplicator(ActorComponent).Get();
