@@ -171,7 +171,7 @@ void USpatialActorChannel::UpdateShadowData()
 {
 	check(Actor);
 
-	// refresh shadow data when crossing over servers to prevent stale/out-of-date data
+	// Refresh shadow data when crossing over servers to prevent stale/out-of-date data.
 	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
 
 	// refresh the data for all replicated components of this actor as well
