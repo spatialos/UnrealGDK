@@ -306,7 +306,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		UpdateSpatialPosition();
 	}
-
+	
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
@@ -440,7 +440,6 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo* Info,
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
-
 	Replicator.ChangelistMgr->Update(Object, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
 	const int32 PossibleNewHistoryIndex = Replicator.RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
@@ -635,7 +634,6 @@ FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PreNetReceive();
-
 	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 
 	return Replicator;
