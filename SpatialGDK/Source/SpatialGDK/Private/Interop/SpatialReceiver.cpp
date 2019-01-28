@@ -209,7 +209,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 						Actor->RemoteRole = ROLE_SimulatedProxy;
 					}
 				
-					UpdateShadowData(Actor, Op.entity_id);
+					UpdateShadowData(Op.entity_id);
 
 					Actor->OnAuthorityGained();
 				}
