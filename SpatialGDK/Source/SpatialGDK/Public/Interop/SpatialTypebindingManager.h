@@ -81,22 +81,23 @@ class SPATIALGDK_API USpatialTypebindingManager : public UObject
 public:
 	void Init(USpatialNetDriver* NetDriver);
 
+	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
 	bool IsSupportedClass(UClass* Class) const;
 
 	FClassInfo* FindClassInfoByClass(UClass* Class);
 	FClassInfo* FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset);
-	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
+
+	// Object should be an Actor or a Subobject with a valid UnrealObjectRef
 	FClassInfo* FindClassInfoByObject(UObject* Object);
 
+	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
 	UClass* FindClassByComponentId(Worker_ComponentId ComponentId);
-
 	bool FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
-
 	ESchemaComponentType FindCategoryByComponentId(Worker_ComponentId ComponentId);
 
 private:
 	void AddTypebindingsForClass(UClass* Class);
-	UClass* LoadClassForComponent(Worker_ComponentId ComponentId) const;
+	UClass* LoadClassForComponent(Worker_ComponentId ComponentId);
 
 private:
 	UPROPERTY()
@@ -108,7 +109,7 @@ private:
 	UPROPERTY()
 	TMap<UClass*, FClassInfo> ClassInfoMap;
 
-	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
+	TMap<Worker_ComponentId, TSharedPtr<FClassInfo>> ComponentToClassInfoMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
 };
