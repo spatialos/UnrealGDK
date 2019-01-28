@@ -100,7 +100,7 @@ public:
 	FORCEINLINE FRepStateStaticBuffer& GetObjectStaticBuffer(UObject* Object)
 	{
 		check(ObjectHasReplicator(Object));
-		return FindOrCreateReplicator(Object)->RepState->StaticBuffer;
+		return FindOrCreateReplicator(Object)->ChangelistMgr->GetRepChangelistState()->StaticBuffer;
 	}
 
 	// UChannel interface
@@ -132,6 +132,8 @@ public:
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
+	void UpdateShadowData();
+
 protected:
 	// UChannel Interface
 	virtual bool CleanUp(const bool bForDestroy) override;

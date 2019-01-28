@@ -167,6 +167,18 @@ bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == ERepLayoutCmdType::DynamicArray;
 }
 
+void USpatialActorChannel::UpdateShadowData()
+{
+	FObjectReplicator& ActorObjReplicator = FindOrCreateReplicator(Actor).Get();
+	ActorObjReplicator.RepLayout->InitShadowData(ActorObjReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
+	
+	for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
+	{
+		FObjectReplicator& ComponentReplicator = FindOrCreateReplicator(ActorComponent).Get();
+		ComponentReplicator.RepLayout->InitShadowData(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, ActorComponent->GetClass(), (uint8*)ActorComponent);
+	}
+}
+
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
 	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
@@ -291,7 +303,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		UpdateSpatialPosition();
 	}
-	
+
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
@@ -425,6 +437,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo* Info,
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
+
 	Replicator.ChangelistMgr->Update(Object, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
 
 	const int32 PossibleNewHistoryIndex = Replicator.RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
@@ -619,7 +632,8 @@ FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* Target
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PreNetReceive();
-	Replicator.RepLayout->InitShadowData(Replicator.RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
+
+	Replicator.RepLayout->InitShadowData(Replicator./*ChangelistMgr->GetRepChangelistState()*/RepState->StaticBuffer, TargetObject->GetClass(), (uint8*)TargetObject);
 
 	return Replicator;
 }
