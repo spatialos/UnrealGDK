@@ -174,7 +174,7 @@ void USpatialActorChannel::UpdateShadowData()
 	// Refresh shadow data when crossing over servers to prevent stale/out-of-date data.
 	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
 
-	// refresh the data for all replicated components of this actor as well
+	// Refresh the shadow data for all replicated components of this actor as well.
 	for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 	{
 		FObjectReplicator& ComponentReplicator = FindOrCreateReplicator(ActorComponent).Get();
