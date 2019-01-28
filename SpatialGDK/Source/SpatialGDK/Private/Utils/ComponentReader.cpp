@@ -74,15 +74,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	{
 		return;
 	}
-	if (Object->GetName().Contains("ColorComponent"))
-	{
-		UE_LOG(LogTemp, Verbose, TEXT(""));
-	}
 
-	FObjectReplicator& Replicator       = Channel->PreReceiveSpatialUpdate(Object);
-	FRepStateStaticBuffer& StaticBuffer = Replicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer;
-	TArray<FRepLayoutCmd>& Cmds         = Replicator.RepLayout->Cmds;
+	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
 
+	TSharedPtr<FRepState> RepState = Replicator.RepState;
+	TArray<FRepLayoutCmd>& Cmds = Replicator.RepLayout->Cmds;
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
 	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;
 
@@ -168,7 +164,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
 				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
 				{
-					bool bIsIdentical = Cmd.Property->Identical(StaticBuffer.GetData() + SwappedCmd.Offset, Data);
+					bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data);
 
 					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
 					if (bIsInitialData)
