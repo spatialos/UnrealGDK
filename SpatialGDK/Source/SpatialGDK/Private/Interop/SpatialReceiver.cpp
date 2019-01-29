@@ -156,6 +156,12 @@ void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 	RemoveActor(Op.entity_id);
 }
 
+void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
+{
+	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+	ActorChannel->UpdateShadowData();
+}
+
 void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 {
 	if (bInCriticalSection)
@@ -202,6 +208,8 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 					{
 						Actor->RemoteRole = ROLE_SimulatedProxy;
 					}
+				
+					UpdateShadowData(Op.entity_id);
 
 					Actor->OnAuthorityGained();
 				}
