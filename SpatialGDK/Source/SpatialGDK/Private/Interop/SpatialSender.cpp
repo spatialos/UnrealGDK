@@ -627,7 +627,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		}
 	}
 
-	AddPayloadToSchema(RequestObject, 1, PayloadWriter);
+	AddBytesToSchema(RequestObject, 1, PayloadWriter);
 
 	return CommandRequest;
 }
@@ -668,7 +668,7 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 		}
 	}
 
-	AddPayloadToSchema(EventData, 1, PayloadWriter);
+	AddBytesToSchema(EventData, 1, PayloadWriter);
 
 	return ComponentUpdate;
 }
@@ -779,39 +779,18 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 
 FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 {
+	// This should only be executed on the server.
+	check(NetDriver->GetServerConnection() == nullptr);
+
 	// If we don't have an owning connection, there is no assoicated client
 	if (Actor->GetNetConnection() == nullptr)
 	{
 		return FString();
 	}
 
-	if (APlayerController* PlayerController = Actor->GetNetConnection()->PlayerController)
+	if (USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		if (APlayerState* PlayerState = PlayerController->PlayerState)
-		{
-			// If the player state is resolved, the UniqueId is set to be the owning attribute - USpatialNetDriver::AcceptNewPlayer
-			if (PlayerState->UniqueId.IsValid())
-			{
-				return PlayerState->UniqueId.ToString();
-			}
-			else
-			{
-				// If the UniqueId is invalid, get the owning attribute from the PlayerController's EntityACL.
-				Worker_EntityId PlayerControllerEntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(PlayerController);
-				if (PlayerControllerEntityId == 0)
-				{
-					return FString();
-				}
-
-				improbable::EntityAcl* EntityACL = StaticComponentView->GetComponentData<improbable::EntityAcl>(PlayerControllerEntityId);
-
-				FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
-
-				WorkerRequirementSet ClientRPCRequirementSet = EntityACL->ComponentWriteAcl[Info->SchemaComponents[SCHEMA_ClientRPC]];
-				WorkerAttributeSet ClientRPCAttributeSet = ClientRPCRequirementSet[0];
-				return ClientRPCAttributeSet[0];
-			}
-		}
+		return SpatialConnection->WorkerAttribute;
 	}
 
 	return FString();

@@ -2,6 +2,8 @@
 
 #include "Interop/SpatialPlayerSpawner.h"
 
+#include "Engine/Engine.h"
+#include "Engine/LocalPlayer.h"
 #include "SocketSubsystem.h"
 #include "TimerManager.h"
 
@@ -27,12 +29,24 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* 
 	NumberOfAttempts = 0;
 }
 
-void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(FString URLString, const char* CallerAttribute, Worker_RequestId RequestId )
+void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId )
 {
+	// Extract spawn parameters.
+	FString URLString = GetStringFromSchema(Payload, 1);
+
+	FUniqueNetIdRepl UniqueId;
+	TArray<uint8> UniqueIdBytes = GetBytesFromSchema(Payload, 2);
+	FNetBitReader UniqueIdReader(nullptr, UniqueIdBytes.GetData(), UniqueIdBytes.Num());
+	UniqueIdReader << UniqueId;
+
+	FName OnlinePlatformName = FName(*GetStringFromSchema(Payload, 3));
+
+	// Accept new player.
 	URLString.Append(TEXT("?workerAttribute=")).Append(UTF8_TO_TCHAR(CallerAttribute));
 
-	NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), false);
+	NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
 
+	// Send response.
 	Worker_CommandResponse CommandResponse = {};
 	CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
@@ -79,6 +93,16 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 			Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 			AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
 
+			// Write player identity information.
+			FUniqueNetIdRepl UniqueId;
+			FName OnlinePlatformName;
+			ObtainPlayerId(UniqueId, OnlinePlatformName);
+
+			FNetBitWriter UniqueIdWriter(0);
+			UniqueIdWriter << UniqueId;
+			AddBytesToSchema(RequestObject, 2, UniqueIdWriter);
+			AddStringToSchema(RequestObject, 3, OnlinePlatformName.ToString());
+
 			NetDriver->Connection->SendCommandRequest(Op.results[0].entity_id, &CommandRequest, 1);
 		}
 	});
@@ -111,4 +135,22 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp&
 		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Player spawn request failed too many times. (%u attempts)"),
 			SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 	}
+}
+
+void USpatialPlayerSpawner::ObtainPlayerId(FUniqueNetIdRepl& OutUniqueId, FName& OutOnlinePlatformName)
+{
+	const FWorldContext* const WorldContext = GEngine->GetWorldContextFromWorld(NetDriver->GetWorld());
+	check(WorldContext->OwningGameInstance);
+
+	// This code is adapted from PendingNetGame.cpp:242
+	ULocalPlayer* LocalPlayer = WorldContext->OwningGameInstance->GetFirstGamePlayer();
+	if (LocalPlayer)
+	{
+		// TODO: Send nickname and game login options as a part of the URL. UNR-911
+
+		// Send the player unique Id at login
+		OutUniqueId = LocalPlayer->GetPreferredUniqueNetId();
+	}
+
+	OutOnlinePlatformName = WorldContext->OwningGameInstance->GetOnlinePlatformName();
 }

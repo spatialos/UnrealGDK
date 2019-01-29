@@ -6,6 +6,7 @@
 #include "UObject/NoExportTypes.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
+#include <WorkerSDK/improbable/c_schema.h>
 
 #include "SpatialPlayerSpawner.generated.h"
 
@@ -18,22 +19,24 @@ UCLASS()
 class SPATIALGDK_API USpatialPlayerSpawner : public UObject
 {
 	GENERATED_BODY()
-	
+
 public:
 
 	void Init(USpatialNetDriver* NetDriver, FTimerManager* TimerManager);
 
 	// Server
-	void ReceivePlayerSpawnRequest(FString URLString, const char* CallerAttribute, Worker_RequestId RequestId);
+	void ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId);
 
 	// Client
 	void SendPlayerSpawnRequest();
 	void ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op);
 
 private:
+	void ObtainPlayerId(FUniqueNetIdRepl& OutUniqueId, FName& OutOnlinePlatformName);
+
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
-	
+
 	FTimerManager* TimerManager;
 	int NumberOfAttempts;
 };
