@@ -178,9 +178,6 @@ private:
 	USpatialPackageMapClient* PackageMap;
 
 	UPROPERTY()
-	UWorld* World;
-
-	UPROPERTY()
 	USpatialTypebindingManager* TypebindingManager;
 
 	UPROPERTY()
