@@ -60,9 +60,9 @@ struct FReceptionistConfig : public FConnectionConfig
 	uint16 ReceptionistPort;
 };
 
-struct FLocatorConfig : public FConnectionConfig
+struct FLegacyLocatorConfig : public FConnectionConfig
 {
-	FLocatorConfig()
+	FLegacyLocatorConfig()
 		: LocatorHost(TEXT("locator.improbable.io"))
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
@@ -76,5 +76,20 @@ struct FLocatorConfig : public FConnectionConfig
 	FString ProjectName;
 	FString DeploymentName;
 	FString LocatorHost;
+	FString LoginToken;
+};
+
+struct FLocatorConfig : public FConnectionConfig
+{
+	FLocatorConfig()
+		: LocatorHost(TEXT("locator.improbable.io")) {
+		const TCHAR* CommandLine = FCommandLine::Get();
+		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
+		FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
+	}
+
+	FString LocatorHost;
+	FString PlayerIdentityToken;
 	FString LoginToken;
 };

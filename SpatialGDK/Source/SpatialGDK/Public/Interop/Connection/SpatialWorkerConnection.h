@@ -13,6 +13,13 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 DECLARE_DELEGATE(FOnConnectedDelegate);
 DECLARE_DELEGATE_OneParam(FOnConnectFailedDelegate, const FString&);
 
+enum class SpatialConnectionType
+{
+	Receptionist,
+	LegacyLocator,
+	Locator
+};
+
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject
 {
@@ -38,29 +45,33 @@ public:
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 	void SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message);
 	void SendComponentInterest(Worker_EntityId EntityId, const TArray<Worker_InterestOverride>& ComponentInterest);
+	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
+	void SendMetrics(const Worker_Metrics* Metrics);
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
-	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
 
 	FOnConnectedDelegate OnConnected;
 	FOnConnectFailedDelegate OnConnectFailed;
 
 	FReceptionistConfig ReceptionistConfig;
+	FLegacyLocatorConfig LegacyLocatorConfig;
 	FLocatorConfig LocatorConfig;
 
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);
+	void ConnectToLegacyLocator();
 	void ConnectToLocator();
 
 	Worker_ConnectionParameters CreateConnectionParameters(FConnectionConfig& Config);
-	bool ShouldConnectWithLocator();
+	SpatialConnectionType GetConnectionType() const;
 
 	void GetAndPrintConnectionFailureMessage();
 
 	void CacheWorkerAttributes();
 
 	Worker_Connection* WorkerConnection;
-	Worker_Locator* WorkerLocator;
+	Worker_Locator* WorkerLegacyLocator;
+	Worker_Alpha_Locator* WorkerLocator;
 
 	bool bIsConnected;
 
