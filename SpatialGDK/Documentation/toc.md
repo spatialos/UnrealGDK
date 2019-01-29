@@ -33,6 +33,7 @@
  ***
 - <h3>[- Troubleshooting]({{urlRoot}}/content/troubleshooting)</h3>
 - <h3>[- Known issues]({{urlRoot}}/known-issues)</h3>
+- <h3>[- Ability system]({{urlRoot}}/content/ability-system)</h3>
 
 ***
 - <h3>Get involved</h3>
