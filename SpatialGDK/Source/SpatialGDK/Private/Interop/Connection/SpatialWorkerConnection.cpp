@@ -3,6 +3,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 #include "Async/Async.h"
+#include "Misc/Paths.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
