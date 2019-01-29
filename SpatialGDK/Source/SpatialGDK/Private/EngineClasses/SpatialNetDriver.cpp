@@ -1065,7 +1065,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	USpatialNetConnection* NetConnection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (NetConnection == nullptr)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"));
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));
 		return;
 	}
 
