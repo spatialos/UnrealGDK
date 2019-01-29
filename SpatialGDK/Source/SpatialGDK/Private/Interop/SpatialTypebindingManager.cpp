@@ -120,10 +120,10 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 	});
 
 
-	for (auto& SubobjectDataPair : SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SubobjectData)
+	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SubobjectData)
 	{
-		int32 Offset = SubobjectDataPair.Key;
-		FSubobjectSchemaData SubobjectSchemaData = SubobjectDataPair.Value;
+		int32 Offset = SubobjectClassDataPair.Key;
+		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
 
 		FSoftClassPath SubobjectClassPath(SubobjectSchemaData.ClassPath);
 		UClass* SubobjectClass = SubobjectClassPath.TryLoadClass<UObject>();
@@ -166,46 +166,46 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 		return nullptr;
 	}
 
-	for (auto& ObjectDataPair : SchemaDatabase->ClassPathToSchema)
+	for (auto& ClassDataPair : SchemaDatabase->ClassPathToSchema)
 	{
 		for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
 		{
-			const Worker_ComponentId ObjectComponentId = ObjectDataPair.Value.SchemaComponents[Type];
+			const Worker_ComponentId ObjectComponentId = ClassDataPair.Value.SchemaComponents[Type];
 			if (ComponentId == ObjectComponentId)
 			{
-				FSoftClassPath SoftClassPath(ObjectDataPair.Key);
+				FSoftClassPath SoftClassPath(ClassDataPair.Key);
 				UClass* Class = SoftClassPath.TryLoadClass<UObject>();
 				if (Class == nullptr)
 				{
 					UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
-						*ObjectDataPair.Key, ComponentId);
+						*ClassDataPair.Key, ComponentId);
 				}
 				AddTypebindingsForClass(Class);
 				return Class;
 			}
 		}
 
-		for (auto& SubobjectDataPair : ObjectDataPair.Value.SubobjectData)
+		for (auto& SubobjectClassDataPair : ClassDataPair.Value.SubobjectData)
 		{
 			for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
 			{
-				const Worker_ComponentId SubobjectComponentId = SubobjectDataPair.Value.SchemaComponents[Type];
+				const Worker_ComponentId SubobjectComponentId = SubobjectClassDataPair.Value.SchemaComponents[Type];
 				if (ComponentId == SubobjectComponentId)
 				{
-					FSoftClassPath SoftClassPath(SubobjectDataPair.Value.ClassPath);
+					FSoftClassPath SoftClassPath(SubobjectClassDataPair.Value.ClassPath);
 					UClass* Class = SoftClassPath.TryLoadClass<UObject>();
 					if (Class == nullptr)
 					{
 						UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
-							*ObjectDataPair.Key, ComponentId);
+							*ClassDataPair.Key, ComponentId);
 					}
 
-					FSoftClassPath SoftActorClassPath(ObjectDataPair.Key);
+					FSoftClassPath SoftActorClassPath(ClassDataPair.Key);
 					UClass* ActorClass = SoftActorClassPath.TryLoadClass<UObject>();
 					if (ActorClass == nullptr)
 					{
 						UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
-							*ObjectDataPair.Key, ComponentId);
+							*ClassDataPair.Key, ComponentId);
 					}
 					AddTypebindingsForClass(ActorClass);
 					return Class;
