@@ -745,9 +745,11 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				}
 			}
 
-			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit.
+			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit and the final tick of TearOff actors.
 			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
-			if (FinalReplicatedCount < RateLimit && !Actor->GetTearOff())
+			// TearOff actors would normally replicate their final tick due to RecentlyRelevant, after which the channel is closed.
+			// With throttling we no longer always replicate when RecentlyRelevant is true, thus we ensure to always replicate a TearOff actor while it still has a channel.
+			if ((FinalReplicatedCount < RateLimit && !Actor->GetTearOff()) || (Actor->GetTearOff() && Channel))
 			{
 				bIsRelevant = true;
 				FinalReplicatedCount++;
@@ -786,13 +788,11 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				}
 
 				// SpatialGDK - Only replicate actors marked as relevant (rate limiting).
-				if (Channel)
+				if (Channel && bIsRelevant)
 				{
-					if (bIsRelevant)
-					{
-						// If it is relevant then mark the channel as relevant for a short amount of time.
-						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
-					}
+					// If it is relevant then mark the channel as relevant for a short amount of time.
+					Channel->RelevantTime = Time + 0.5f * FMath::SRand();
+
 					// If the channel isn't saturated.
 					if (Channel->IsNetReady(0))
 					{
