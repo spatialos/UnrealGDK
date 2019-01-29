@@ -126,7 +126,7 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
 
 		FSoftClassPath SubobjectClassPath(SubobjectSchemaData.ClassPath);
-		UClass* SubobjectClass = SubobjectClassPath.TryLoadClass<UObject>();
+		UClass* SubobjectClass = SubobjectClassPath.ResolveClass();
 		if (SubobjectClass == nullptr)
 		{
 			continue;
@@ -174,7 +174,7 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 			if (ComponentId == ObjectComponentId)
 			{
 				FSoftClassPath SoftClassPath(ClassDataPair.Key);
-				UClass* Class = SoftClassPath.TryLoadClass<UObject>();
+				UClass* Class = SoftClassPath.ResolveClass();
 				if (Class == nullptr)
 				{
 					UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
@@ -193,7 +193,7 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 				if (ComponentId == SubobjectComponentId)
 				{
 					FSoftClassPath SoftClassPath(SubobjectClassDataPair.Value.ClassPath);
-					UClass* Class = SoftClassPath.TryLoadClass<UObject>();
+					UClass* Class = SoftClassPath.ResolveClass();
 					if (Class == nullptr)
 					{
 						UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
@@ -201,7 +201,7 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 					}
 
 					FSoftClassPath SoftActorClassPath(ClassDataPair.Key);
-					UClass* ActorClass = SoftActorClassPath.TryLoadClass<UObject>();
+					UClass* ActorClass = SoftActorClassPath.ResolveClass();
 					if (ActorClass == nullptr)
 					{
 						UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
