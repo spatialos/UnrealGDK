@@ -132,6 +132,8 @@ public:
 
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
+	void UpdateShadowData();
+
 protected:
 	// UChannel Interface
 	virtual bool CleanUp(const bool bForDestroy) override;
