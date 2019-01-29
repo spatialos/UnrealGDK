@@ -140,11 +140,18 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// Grab the SpatialWorkerConnection from the SpatialGameInstance (stored there for persistence in server travel). 
 	Connection = GameInstance->SpatialConnection;
 
-	if (LoadedWorld->URL.HasOption(TEXT("locator")))
+	if (LoadedWorld->URL.HasOption(TEXT("legacylocator")))
 	{
-		Connection->LocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
-		Connection->LocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
-		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
+		Connection->LegacyLocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
+		Connection->LegacyLocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
+		Connection->LegacyLocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
+		Connection->LegacyLocatorConfig.UseExternalIp = true;
+	}
+	else if (LoadedWorld->URL.HasOption(TEXT("locator")))
+	{
+		// Obtain PIT and LT.
+		Connection->LocatorConfig.PlayerIdentityToken = LoadedWorld->URL.GetOption(TEXT("playeridentity="), TEXT(""));
+		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
 	}
 	else

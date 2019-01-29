@@ -3,6 +3,7 @@
 #include "DataTypeUtilities.h"
 
 #include "Algo/Transform.h"
+#include "Internationalization/Regex.h"
 
 // Regex pattern matcher to match alphanumeric characters.
 const FRegexPattern AlphanumericPattern(TEXT("[A-Za-z0-9]"));

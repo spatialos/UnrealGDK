@@ -161,10 +161,12 @@ void USpatialGameInstance::StartGameInstance()
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialWorkerConnection();
 
-		// Initialize a locator configuration which will parse command line arguments.
-		// If there is a locator token present in the command line arguments then connect to deployment automatically.
-		FLocatorConfig LocatorConfig;
-		if (!LocatorConfig.LoginToken.IsEmpty() && GIsClient)
+		// Initialize a legacy locator configuration which will parse command line arguments.
+		// If there is a legacy locator token present in the command line arguments then connect to deployment automatically.
+		// The new locator uses the same param for the LoginToken, so this will notice LocatorConfig launches as well.
+		// NOTE: When we remove the LegacyLocatorConfig, this should be updated to check LocatorConfig instead of be removed.
+		FLegacyLocatorConfig LegacyLocatorConfig;
+		if (!LegacyLocatorConfig.LoginToken.IsEmpty() && GIsClient)
 		{
 			FString Error;
 			if (!StartGameInstance_SpatialGDKClient(Error))

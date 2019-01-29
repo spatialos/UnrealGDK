@@ -29,13 +29,26 @@ The Locator is a SpatialOS service which allows you to connect to cloud deployme
 
 > Experimental: You can use `ClientTravel` to change which cloud deployment a client-worker is connected to. This functionality is highly experimental and requires you to write your own authorization code.
 
-Using the locator flow is very similar to using the receptionist, except with different URL options. You must add the `locator` option, and specify a project name (the SpatialOS Console project where you have started your deployment), a deployment name (the name you use to start the deployment), and a login token (requires writing authentication code, see [our authentication service docs](https://docs.improbable.io/reference/latest/shared/auth/integrate-authentication) for details). For example:
+Using the locator flow is very similar to using the receptionist, except with different URL options. You must add the `locator`, or `legacylocator` option, and specify the appropriate options.  The `locator` workflow makes use of the new [Authentication flow](https://docs.improbable.io/reference/latest/shared/auth/integrate-authentication-platform-sdk), and the `legacylocator` makes use of the [Deprecated Authentication flow](https://docs.improbable.io/reference/latest/shared/auth/integrate-authentication)
 
+**Locator**: Add the options `locator`, `playeridentity` and `login`.
 ```
 FURL TravelURL;
 TravelURL.Host = TEXT("locator.improbable.io");
 TravelURL.Map = TEXT("DesiredMap");
 TravelURL.AddOption(TEXT("locator"));
+TravelURL.AddOption(TEXT("playeridentity=MY_PLAYER_IDENTITY_TOKEN"));
+TravelURL.AddOption(TEXT("login=MY_LOGIN_TOKEN"));
+
+PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bSeamless*/);
+```
+
+**Legacy Locator**: Add `legacylocator`, a project name (the SpatialOS Console project where you have started your deployment), a deployment name (the name you use to start the deployment), and a login token (requires writing authentication code, see [our authentication service docs](https://docs.improbable.io/reference/latest/shared/auth/integrate-authentication) for details).
+```
+FURL TravelURL;
+TravelURL.Host = TEXT("locator.improbable.io");
+TravelURL.Map = TEXT("DesiredMap");
+TravelURL.AddOption(TEXT("legacylocator"));
 TravelURL.AddOption(TEXT("project=MY_PROJECT_NAME"));
 TravelURL.AddOption(TEXT("deployment=MY_DEPLOYMENT_NAME"));
 TravelURL.AddOption(TEXT("token=MY_LOGIN_TOKEN"));
