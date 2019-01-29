@@ -253,8 +253,8 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 {
-	checkf(NetDriver->GetWorld(), TEXT("We should have a world whilst processing ops."));
-	check(NetDriver);
+	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
+	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
 
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(EntityRegistry);
