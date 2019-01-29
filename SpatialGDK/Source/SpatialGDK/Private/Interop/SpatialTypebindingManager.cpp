@@ -201,7 +201,7 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 					}
 
 					FSoftClassPath SoftActorClassPath(ObjectDataPair.Key);
-					UClass* ActorClass = SoftClassPath.TryLoadClass<UObject>();
+					UClass* ActorClass = SoftActorClassPath.TryLoadClass<UObject>();
 					if (ActorClass == nullptr)
 					{
 						UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
