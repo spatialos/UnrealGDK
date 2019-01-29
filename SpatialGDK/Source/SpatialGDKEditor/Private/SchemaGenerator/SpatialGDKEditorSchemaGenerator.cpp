@@ -11,8 +11,10 @@
 #include "GenericPlatform/GenericPlatformProcess.h"
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/FileHelper.h"
+#include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
 #include "Templates/SharedPointer.h"
+#include "UObject/UObjectIterator.h"
 
 #include "TypeStructure.h"
 #include "SchemaGenerator.h"
