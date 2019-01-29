@@ -46,7 +46,6 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 
 	NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
 
-	// Send response.
 	Worker_CommandResponse CommandResponse = {};
 	CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
