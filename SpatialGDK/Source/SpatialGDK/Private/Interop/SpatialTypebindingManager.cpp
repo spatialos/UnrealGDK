@@ -119,7 +119,6 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 		}
 	});
 
-
 	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SubobjectData)
 	{
 		int32 Offset = SubobjectClassDataPair.Key;
@@ -154,6 +153,8 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 			}
 		});
 
+		// This is needed because the recursive call to FindClassInfoByClass for subobjects changes the map
+		Info = ClassInfoMap.FindChecked(Class);
 		Info.SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
 }
