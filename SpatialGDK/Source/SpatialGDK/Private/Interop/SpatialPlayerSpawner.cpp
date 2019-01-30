@@ -142,8 +142,7 @@ void USpatialPlayerSpawner::ObtainPlayerId(FUniqueNetIdRepl& OutUniqueId, FName&
 	check(WorldContext->OwningGameInstance);
 
 	// This code is adapted from PendingNetGame.cpp:242
-	ULocalPlayer* LocalPlayer = WorldContext->OwningGameInstance->GetFirstGamePlayer();
-	if (LocalPlayer)
+	if (ULocalPlayer* LocalPlayer = WorldContext->OwningGameInstance->GetFirstGamePlayer())
 	{
 		// TODO: Send nickname and game login options as a part of the URL. UNR-911
 
