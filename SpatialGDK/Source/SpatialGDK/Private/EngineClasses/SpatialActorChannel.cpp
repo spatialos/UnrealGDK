@@ -222,10 +222,10 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	return { InitialRepChanged, *Replicator.RepLayout };
 }
 
-FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(const FClassInfo* ClassInfo)
+FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(const FClassInfo& ClassInfo)
 {
 	FHandoverChangeState HandoverChanged;
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo->HandoverProperties)
+	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
 	{
 		HandoverChanged.Add(PropertyInfo.Handle);
 	}
@@ -335,7 +335,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
-	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 
 	FHandoverChangeState HandoverChangeState;
 
@@ -386,7 +386,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 			if (ObjectRef != SpatialConstants::NULL_OBJECT_REF && ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
-				FClassInfo* SubobjectInfo = Info->SubobjectInfo[ObjectRef.Offset].Get();
+				FClassInfo& SubobjectInfo = Info.SubobjectInfo[ObjectRef.Offset].Get();
 
 				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, SubobjectInfo, RepFlags);
 				bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
@@ -396,7 +396,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 		{
 			UObject* Subobject = SubobjectInfoPair.Key;
-			FClassInfo* SubobjectInfo = SubobjectInfoPair.Value;
+			FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
 			// Handover shadow data should already exist for this object. If it doesn't, it must have
 			// started replicating after SetChannelActor was called on the owning actor.
@@ -429,14 +429,9 @@ int64 USpatialActorChannel::ReplicateActor()
 	return (bWroteSomethingImportant) ? 1 : 0;	// TODO: return number of bits written (UNR-664)
 }
 
-bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo* Info, const FReplicationFlags& RepFlags)
+bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo& Info, const FReplicationFlags& RepFlags)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateSubobject);
-
-	if (Info == nullptr)
-	{
-		return false;
-	}
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
@@ -481,21 +476,25 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo* Info,
 bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags)
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
-	return ReplicateSubobject(Obj, NetDriver->TypebindingManager->FindClassInfoByObject(Obj), RepFlags);
+	if (FClassInfo* SubobjectInfo = NetDriver->TypebindingManager->FindClassInfoByObject(Obj))
+	{
+		return ReplicateSubobject(Obj, *SubobjectInfo, RepFlags);
+	}
+
+	return false;
 }
 
 TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 {
-	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-	check(Info);
+	FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 
 	TMap<UObject*, FClassInfo*> FoundSubobjects;
 
-	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
+	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
-		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
+		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		if (SubobjectInfo->HandoverProperties.Num() == 0)
+		if (SubobjectInfo.HandoverProperties.Num() == 0)
 		{
 			// Not interested in this component if it has no handover properties
 			continue;
@@ -504,7 +503,7 @@ TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 		UObject* Object = nullptr;
 		if (EntityId == 0)
 		{
-			Object = Actor->GetDefaultSubobjectByName(SubobjectInfo->SubobjectName);
+			Object = Actor->GetDefaultSubobjectByName(SubobjectInfo.SubobjectName);
 		}
 		else
 		{
@@ -517,7 +516,7 @@ TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 			continue;
 		}
 
-		FoundSubobjects.Add(Object, SubobjectInfo);
+		FoundSubobjects.Add(Object, &SubobjectInfo);
 	}
 
 	return FoundSubobjects;
@@ -525,11 +524,10 @@ TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 
 void USpatialActorChannel::InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object)
 {
-	FClassInfo* ClassInfo = NetDriver->TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	check(ClassInfo);
+	FClassInfo& ClassInfo = NetDriver->TypebindingManager->FindClassInfoByClass(Object->GetClass());
 
 	uint32 Size = 0;
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo->HandoverProperties)
+	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
 	{
 		if (PropertyInfo.ArrayIdx == 0) // For static arrays, the first element will handle the whole array
 		{
@@ -540,7 +538,7 @@ void USpatialActorChannel::InitializeHandoverShadowData(TArray<uint8>& ShadowDat
 	}
 	ShadowData.AddZeroed(Size);
 	uint32 Offset = 0;
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo->HandoverProperties)
+	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
 	{
 		if (PropertyInfo.ArrayIdx == 0)
 		{
@@ -555,11 +553,10 @@ FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& 
 {
 	FHandoverChangeState HandoverChanged;
 
-	FClassInfo* ClassInfo = NetDriver->TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	check(ClassInfo);
+	FClassInfo& ClassInfo = NetDriver->TypebindingManager->FindClassInfoByClass(Object->GetClass());
 
 	uint32 ShadowDataOffset = 0;
-	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo->HandoverProperties)
+	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
 	{
 		ShadowDataOffset = Align(ShadowDataOffset, PropertyInfo.Property->GetMinAlignment());
 
@@ -580,13 +577,6 @@ FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
 	Super::SetChannelActor(InActor);
-
-	if (NetDriver->TypebindingManager->FindClassInfoByClass(InActor->GetClass()) == nullptr)
-	{
-		UE_LOG(LogSpatialActorChannel, Error, TEXT("No schema was generated for class %s! This class was not loaded during schema generation most likely due to soft references."
-			"Either manually load the class before schema generation or have a hard reference from a class that is already loaded."), *InActor->GetClass()->GetName())
-		return;
-	}
 
 	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
 	check(NetDriver->GetEntityRegistry());
@@ -610,9 +600,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	check(!HandoverShadowDataMap.Contains(InActor));
 
 	// Create the shadow map, and store a quick access pointer to it
-	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(InActor->GetClass());
-
-	if (Info->SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
+	FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(InActor->GetClass());
+	if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		ActorHandoverShadowData = &HandoverShadowDataMap.Add(InActor, MakeShared<TArray<uint8>>()).Get();
 		InitializeHandoverShadowData(*ActorHandoverShadowData, InActor);
@@ -699,7 +688,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 	RegisterEntityId(EntityId);
 
 	// Register Actor with package map since we know what the entity id is.
-	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
 
 	// Force an Update so that the entity will be created in the next batch of processed actors

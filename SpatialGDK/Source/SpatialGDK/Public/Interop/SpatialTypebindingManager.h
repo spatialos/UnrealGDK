@@ -54,7 +54,7 @@ struct FClassInfo
 {
 	GENERATED_BODY()
 
-	UClass* Class;
+	TWeakObjectPtr<UClass> Class;
 
 	TMap<ESchemaComponentType, TArray<UFunction*>> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
@@ -66,7 +66,7 @@ struct FClassInfo
 
 	FName SubobjectName;
 
-	TMap<uint32, TSharedPtr<FClassInfo>> SubobjectInfo;
+	TMap<uint32, TSharedRef<FClassInfo>> SubobjectInfo;
 };
 
 class USpatialNetDriver;
@@ -84,7 +84,7 @@ public:
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
 	bool IsSupportedClass(UClass* Class) const;
 
-	FClassInfo* FindClassInfoByClass(UClass* Class);
+	FClassInfo& FindClassInfoByClass(UClass* Class);
 	FClassInfo* FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset);
 
 	// Object should be an Actor or a Subobject with a valid UnrealObjectRef
@@ -106,10 +106,9 @@ private:
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
 
-	UPROPERTY()
-	TMap<UClass*, FClassInfo> ClassInfoMap;
+	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
 
-	TMap<Worker_ComponentId, TSharedPtr<FClassInfo>> ComponentToClassInfoMap;
+	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
 };
