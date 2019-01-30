@@ -341,7 +341,7 @@ FUnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetw
 {
 	if (!NetGUID.IsValid())
 	{
-		return NULL_OBJECT_REF;
+		return SpatialConstants::NULL_OBJECT_REF;
 	}
 
 	const FUnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
