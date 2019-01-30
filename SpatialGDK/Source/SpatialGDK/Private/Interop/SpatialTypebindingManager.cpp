@@ -36,11 +36,7 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 {
 	FSoftClassPath SoftClassPath(ClassPath);
 	UClass* Class = SoftClassPath.ResolveClass();
-	if (Class == nullptr)
-	{
-		UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s"),
-			*ClassPath);
-	}
+	checkf(Class, TEXT("Failed to load class at path %s"), *ClassPath);
 	return Class;
 }
 
@@ -136,10 +132,6 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
 
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
-		if (SubobjectClass == nullptr)
-		{
-			continue;
-		}
 
 		FClassInfo* SubobjectInfoPtr = FindClassInfoByClass(SubobjectClass);
 		if (SubobjectInfoPtr == nullptr)
