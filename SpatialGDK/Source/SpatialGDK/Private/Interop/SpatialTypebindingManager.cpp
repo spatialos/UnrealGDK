@@ -32,6 +32,18 @@ void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
 	}
 }
 
+FORCEINLINE UClass* ResolveClass(FString& ClassPath)
+{
+	FSoftClassPath SoftClassPath(ClassPath);
+	UClass* Class = SoftClassPath.ResolveClass();
+	if (Class == nullptr)
+	{
+		UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s"),
+			*ClassPath);
+	}
+	return Class;
+}
+
 void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 {
 	checkf(IsSupportedClass(Class), TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
@@ -124,8 +136,7 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 		int32 Offset = SubobjectClassDataPair.Key;
 		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
 
-		FSoftClassPath SubobjectClassPath(SubobjectSchemaData.ClassPath);
-		UClass* SubobjectClass = SubobjectClassPath.ResolveClass();
+		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
 		if (SubobjectClass == nullptr)
 		{
 			continue;
@@ -174,13 +185,7 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 			const Worker_ComponentId ObjectComponentId = ClassDataPair.Value.SchemaComponents[Type];
 			if (ComponentId == ObjectComponentId)
 			{
-				FSoftClassPath SoftClassPath(ClassDataPair.Key);
-				UClass* Class = SoftClassPath.ResolveClass();
-				if (Class == nullptr)
-				{
-					UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
-						*ClassDataPair.Key, ComponentId);
-				}
+				UClass* Class = ResolveClass(ClassDataPair.Key);
 				AddTypebindingsForClass(Class);
 				return Class;
 			}
@@ -193,21 +198,8 @@ UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId Com
 				const Worker_ComponentId SubobjectComponentId = SubobjectClassDataPair.Value.SchemaComponents[Type];
 				if (ComponentId == SubobjectComponentId)
 				{
-					FSoftClassPath SoftClassPath(SubobjectClassDataPair.Value.ClassPath);
-					UClass* Class = SoftClassPath.ResolveClass();
-					if (Class == nullptr)
-					{
-						UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
-							*ClassDataPair.Key, ComponentId);
-					}
-
-					FSoftClassPath SoftActorClassPath(ClassDataPair.Key);
-					UClass* ActorClass = SoftActorClassPath.ResolveClass();
-					if (ActorClass == nullptr)
-					{
-						UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to load class at path %s which is needed for component %u"),
-							*ClassDataPair.Key, ComponentId);
-					}
+					UClass* Class = ResolveClass(SubobjectClassDataPair.Value.ClassPath);
+					UClass* ActorClass = ResolveClass(ClassDataPair.Key);
 					AddTypebindingsForClass(ActorClass);
 					return Class;
 				}
