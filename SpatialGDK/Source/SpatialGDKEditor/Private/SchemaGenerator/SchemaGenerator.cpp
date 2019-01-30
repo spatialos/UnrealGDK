@@ -3,9 +3,10 @@
 #include "SchemaGenerator.h"
 
 #include "Algo/Reverse.h"
-
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
+#include "UObject/TextProperty.h"
+
 #include "Interop/SpatialTypebindingManager.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"

@@ -137,7 +137,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			RepLayout_SerializePropertiesForStruct(*RepLayout, ValueDataWriter, PackageMap, const_cast<uint8*>(Data), bHasUnmapped);
 		}
 
-		AddPayloadToSchema(Object, FieldId, ValueDataWriter);
+		AddBytesToSchema(Object, FieldId, ValueDataWriter);
 	}
 	else if (UBoolProperty* BoolProperty = Cast<UBoolProperty>(Property))
 	{
