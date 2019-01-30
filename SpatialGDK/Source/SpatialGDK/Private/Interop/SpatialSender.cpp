@@ -141,9 +141,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		});
 	}
 
-	// Only want to have a static path if this Actor is stably named.
-	// We use this to tell if we should create an Actor or link a pre-existing Actor
-	// when receiving the AddEntityOp.
+	// Only want to have a stably object ref if this Actor is stably named.
+	// We use this to indiciate if a new Actor should be created or to link a pre-existing Actor
+	// when receiving an AddEntityOp.
 	FUnrealObjectRef StablyNamedObjectRef;
 	if (Actor->IsFullNameStableForNetworking())
 	{

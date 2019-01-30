@@ -317,7 +317,7 @@ inline ComponentInterest::Query IndexQueryFromSchema(Schema_Object* Object, Sche
 
 	if (Schema_GetObjectCount(QueryObject, 2) > 0)
 	{
-		NewQuery.FullSnapshotResult = !!Schema_GetBool(QueryObject, 2);
+		NewQuery.FullSnapshotResult = GetBoolFromSchema(QueryObject, 2);
 	}
 
 	uint32 ResultComponentIdCount = Schema_GetObjectCount(QueryObject, 3);

@@ -191,7 +191,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		if (ObjectValue != nullptr)
 		{
 			FNetworkGUID NetGUID;
-			if (ObjectValue->IsFullNameStableForNetworking() || ObjectValue->IsSupportedForNetworking())
+			if (ObjectValue->IsSupportedForNetworking())
 			{
 				NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
 

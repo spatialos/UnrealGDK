@@ -188,7 +188,7 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 {
 	// If we have authority over the GSM when loading a sublevel, make sure we have authority
 	// over the actors in the sublevel.
-	if (GlobalStateManager != nullptr && StaticComponentView != nullptr)
+	if (GlobalStateManager != nullptr)
 	{
 		if (GlobalStateManager->HasAuthority())
 		{
@@ -200,6 +200,8 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		}
 	}
 
+	// if we are the client, it is possible to have unresolved references
+	// to stably named actors in a newly loaded sublevel. Resolve these here.
 	if (bConnectAsClient && LoadedLevel->bIsVisible)
 	{
 		if (Receiver != nullptr && PackageMap != nullptr)

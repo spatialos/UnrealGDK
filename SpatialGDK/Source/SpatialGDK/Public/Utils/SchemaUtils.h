@@ -38,6 +38,11 @@ inline FString GetStringFromSchema(const Schema_Object* Object, Schema_FieldId I
 	return IndexStringFromSchema(Object, Id, 0);
 }
 
+inline bool GetBoolFromSchema(const Schema_Object* Object, Schema_FieldId Id)
+{
+	return !!Schema_GetBool(Object, Id);
+}
+
 inline void AddBytesToSchema(Schema_Object* Object, Schema_FieldId Id, FBitWriter& Writer)
 {
 	uint32 PayloadSize = Writer.GetNumBytes();

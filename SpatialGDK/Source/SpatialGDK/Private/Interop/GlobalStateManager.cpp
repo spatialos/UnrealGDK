@@ -2,23 +2,22 @@
 
 #include "Interop/GlobalStateManager.h"
 
+#include "Engine/Classes/AI/AISystemBase.h"
 #include "Engine/World.h"
-#include "Kismet/GameplayStatics.h"
-
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "EngineUtils.h"
+#include "GameFramework/GameModeBase.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
-#include "GameFramework/GameModeBase.h"
-#include "EngineUtils.h"
-#include "Engine/Classes/AI/AISystemBase.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
@@ -53,7 +52,7 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, 1));
 
 	// Set the AcceptingPlayers state.
-	bool bDataAcceptingPlayers = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+	bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
 	ApplyAcceptingPlayersUpdate(bDataAcceptingPlayers);
 }
 
@@ -61,7 +60,7 @@ void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentDat
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-	bool bCanBeginPlayData = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID);
+	bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID);
 	ApplyCanBeginPlayUpdate(bCanBeginPlayData);
 }
 
@@ -86,7 +85,7 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate&
 
 	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
 	{
-		bool bUpdateAcceptingPlayers = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+		bool bUpdateAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
 		ApplyAcceptingPlayersUpdate(bUpdateAcceptingPlayers);
 	}
 }
@@ -109,7 +108,7 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 
 	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID) == 1)
 	{
-		bool bCanBeginPlayUpdate = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID);
+		bool bCanBeginPlayUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID);
 		ApplyCanBeginPlayUpdate(bCanBeginPlayUpdate);
 	}
 }
@@ -521,7 +520,7 @@ bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(Worker_EntityQuer
 
 			if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
 			{
-				bool bDataAcceptingPlayers = !!Schema_GetBool(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+				bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
 				return bDataAcceptingPlayers;
 			}
 		}

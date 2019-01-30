@@ -189,6 +189,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 	return true;
 }
 
+// This function is not in use.
 // Set up classes needed for Startup Actor creation
 void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialTypebindingManager*& TypebindingManager, UEntityRegistry*& EntityRegistry, UWorld* World)
 {
@@ -215,6 +216,7 @@ void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnect
 	NetDriver->PackageMap = PackageMap;
 }
 
+// This function is not in use.
 void CleanupNetDriverAndConnection(USpatialNetDriver* NetDriver, USpatialNetConnection* NetConnection)
 {
 	// On clean up of the NetDriver due to garbage collection, either the ServerConnection or ClientConnections need to be not nullptr.
@@ -223,6 +225,7 @@ void CleanupNetDriverAndConnection(USpatialNetDriver* NetDriver, USpatialNetConn
 	NetDriver->ServerConnection = NetConnection;
 }
 
+// This function is not in use.
 TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channel, AActor* Actor, USpatialTypebindingManager* TypebindingManager, USpatialNetDriver* NetDriver)
 {
 	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
@@ -282,6 +285,7 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	return ComponentData;
 }
 
+// This function is not in use.
 bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor, Worker_EntityId EntityId, USpatialNetConnection* NetConnection, USpatialTypebindingManager* TypebindingManager)
 {
 	Worker_Entity Entity;
@@ -350,8 +354,6 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(NetConnection->CreateChannel(CHTYPE_Actor, 1));
 	Channel->SetEntityId(EntityId);
 
-	//FString StaticPath = Actor->GetPathName(nullptr);
-
 	TArray<Worker_ComponentData> Components;
 	Components.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	Components.Add(improbable::Metadata(ActorClass->GetName()).CreateMetadataData());
@@ -369,6 +371,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &Entity) != 0;
 }
 
+// This function is not in use.
 bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialTypebindingManager* TypebindingManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
 {
 	Worker_EntityId CurrentEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
@@ -399,6 +402,7 @@ bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialTypebindingMana
 	return true;
 }
 
+// This function is not in use.
 bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 {
 	USpatialNetDriver* NetDriver = nullptr;
@@ -477,12 +481,6 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 		return false;
 	}
-
-	//if (!CreateStartupActors(OutputStream, World))
-	//{
-	//	UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Startup Actors in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-	//	return false;
-	//}
 
 	return true;
 }

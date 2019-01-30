@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
 
 #include "Interop/SpatialReceiver.h"
 
@@ -382,6 +381,9 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				EntityActor = Cast<AActor>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 				if (EntityActor == nullptr)
 				{
+					// In native networking, if Unreal tries to look up a stably named actor on the client
+					// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
+					// returning here does the same behavior.
 					return;
 				}
 			}
@@ -417,9 +419,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Add to entity registry.
 		EntityRegistry->AddToRegistry(EntityId, EntityActor);
 
-		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, World->OriginLocation);
-		FTransform SpawnTransform = GetRelativeSpawnTransform(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation));
-
 		if (bDoingDeferredSpawn)
 		{
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
@@ -428,6 +427,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			FTransform SpawnTransform = GetRelativeSpawnTransform(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation));
 			EntityActor->FinishSpawning(SpawnTransform);
 
+			// Imitate the behavior in UPackageMapClient::SerializeNewActor.
 			const float Epsilon = 0.001f;
 			if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
 			{
@@ -438,15 +438,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				EntityActor->SetActorScale3D(SpawnData->Scale);
 			}
 		}
-		//else if (!UnrealMetadata->StaticPath.IsEmpty() && EntityActor->RootComponent->Mov)
-		//{
-		//	// For stably named actors, we only have to move them to the correct place
-		//	// in the case a stably named actor crosses from one worker to another, the second worker
-		//	// already has a representation of this actor and only needs to be moved to the correct place.
-		//	EntityActor->SetActorTransform(SpawnTransform);
-		//}
 
-		// Imitate the behavior in UPackageMapClient::SerializeNewActor.
 		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(ActorClass);
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId, improbable::CreateOffsetMapFromActor(EntityActor, Info));
@@ -530,6 +522,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	if (Actor->bNetLoadOnClient == true)
 	{
 		QueryForStartupActor(Actor, EntityId);
+		return;
 	}
 
 	if (APlayerController* PC = Cast<APlayerController>(Actor))
@@ -1319,12 +1312,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			if (NetGUID.IsValid())
 			{
 				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
-				if (Object == nullptr)
-				{
-					continue;
-				}
-				// TODO: come back to this
-				//check(Object);
+				check(Object);
 
 				UE_LOG(LogSpatialReceiver, Log, TEXT("ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
 
@@ -1396,4 +1384,3 @@ void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& Com
 
 	ApplyRPC(TargetObject, Function, PayloadData, CountBits, SenderWorkerId);
 }
-#pragma optimize("", on)

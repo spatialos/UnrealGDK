@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
 
 #include "EngineClasses/SpatialPackageMapClient.h"
 
@@ -144,7 +143,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	USpatialReceiver* Receiver = SpatialNetDriver->Receiver;
 
 	FNetworkGUID NetGUID;
-	FUnrealObjectRef ObjectRef(EntityId, 0);
+	FUnrealObjectRef EntityObjectRef(EntityId, 0);
 
 	// Valid if Actor is stably named. Used for stably named subobject assignment further below
 	FUnrealObjectRef StablyNamedRef;
@@ -156,30 +155,30 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 		NetGUID = AssignNewStablyNamedObjectNetGUID(Actor);
 
 		// We register the entity id ref here.
-		UnrealObjectRefToNetGUID.Emplace(ObjectRef, NetGUID);
+		UnrealObjectRefToNetGUID.Emplace(EntityObjectRef, NetGUID);
 
 		// Once we have an entity id, we should always be using it to refer to entities.
 		// Since the path ref may have been registered previously, we first try to remove it
 		// and then register the entity id ref.
 		StablyNamedRef = NetGUIDToUnrealObjectRef[NetGUID];
 		NetGUIDToUnrealObjectRef.Remove(NetGUID);
-		NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjectRef);
+		NetGUIDToUnrealObjectRef.Emplace(NetGUID, EntityObjectRef);
 	}
 	else
 	{
 		NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
-		RegisterObjectRef(NetGUID, ObjectRef);
+		RegisterObjectRef(NetGUID, EntityObjectRef);
 	}
 
-	//UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
-	//	*Actor->GetName(), *NetGUID.ToString(), EntityId);
+	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
+		*Actor->GetName(), *NetGUID.ToString(), EntityId);
 
 	// This will be null when being used in the snapshot generator
 #if WITH_EDITOR
 	if (Receiver != nullptr)
 #endif
 	{
-		Receiver->ResolvePendingOperations(Actor, ObjectRef);
+		Receiver->ResolvePendingOperations(Actor, EntityObjectRef);
 	}
 
 	for (auto& Pair : SubobjectToOffset)
@@ -188,30 +187,29 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 		uint32 Offset = Pair.Value;
 
 		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
-		FUnrealObjectRef SubobjectRef(EntityId, Offset);
+		FUnrealObjectRef EntityIdSubobjectRef(EntityId, Offset);
 
 		if (Subobject->IsNameStableForNetworking())
 		{
 			// Startup Actors have two valid UnrealObjectRefs: the entity id and the path.
 			// AssignNewStablyNamedObjectNetGUID will register the path ref.
-			//FNetworkGUID SubobjectNetGUID = AssignNewStablyNamedObjectNetGUID(Subobject);
 			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 			FUnrealObjectRef StablyNamedSubobjectRef(0, 0, Subobject->GetFName().ToString(), StablyNamedRef);
 
 			UnrealObjectRefToNetGUID.Emplace(StablyNamedSubobjectRef, SubobjectNetGUID);
 		}
 
-		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
+		RegisterObjectRef(SubobjectNetGUID, EntityIdSubobjectRef);
 
-		//UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
-		//	*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
+		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
+			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
 
 			// This will be null when being used in the snapshot generator
 #if WITH_EDITOR
 			if (Receiver != nullptr)
 #endif
 			{
-				Receiver->ResolvePendingOperations(Subobject, SubobjectRef);
+				Receiver->ResolvePendingOperations(Subobject, EntityIdSubobjectRef);
 			}
 	}
 
@@ -410,4 +408,3 @@ void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const FUnreal
 	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjectRef);
 	UnrealObjectRefToNetGUID.Emplace(ObjectRef, NetGUID);
 }
-#pragma optimize("", on)

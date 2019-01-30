@@ -236,8 +236,6 @@ TArray<UClass*> GetAllSupportedClasses()
 			}
 		}
 
-		if (SupportedClass->IsChildOf<USceneComponent>()) continue;
-
 		// No replicated/handover properties found
 		if (SupportedClass == nullptr) continue;
 
