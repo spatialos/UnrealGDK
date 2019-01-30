@@ -36,7 +36,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 
 	FUniqueNetIdRepl UniqueId;
 	TArray<uint8> UniqueIdBytes = GetBytesFromSchema(Payload, 2);
-	FNetBitReader UniqueIdReader(nullptr, UniqueIdBytes.GetData(), UniqueIdBytes.Num());
+	FNetBitReader UniqueIdReader(nullptr, UniqueIdBytes.GetData(), UniqueIdBytes.Num() * 8);
 	UniqueIdReader << UniqueId;
 
 	FName OnlinePlatformName = FName(*GetStringFromSchema(Payload, 3));
