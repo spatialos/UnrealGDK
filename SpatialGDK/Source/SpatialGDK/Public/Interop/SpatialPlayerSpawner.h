@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/OnlineReplStructs.h"
 #include "UObject/NoExportTypes.h"
 
 #include <WorkerSDK/improbable/c_worker.h>

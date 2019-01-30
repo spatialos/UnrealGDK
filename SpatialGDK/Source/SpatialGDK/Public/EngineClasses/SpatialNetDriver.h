@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
 #include "OnlineSubsystemNames.h"
 #include "UObject/CoreOnline.h"

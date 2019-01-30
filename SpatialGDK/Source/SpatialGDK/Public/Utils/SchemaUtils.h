@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Serialization/BitWriter.h"
 
 #include "Schema/UnrealObjectRef.h"
