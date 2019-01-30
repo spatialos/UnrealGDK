@@ -7,6 +7,7 @@
 
 /**
  * This class ensures that the C API worker library is loaded before it is needed by code.
+ * This is only required when a platform uses PublicDelayLoadDLLs in SpatialGDK.Build.cs.
  */
 class FSpatialGDKLoader
 {
