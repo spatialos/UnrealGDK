@@ -49,7 +49,6 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 	checkf(IsSupportedClass(Class), TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
 
 	FClassInfo& Info = ClassInfoMap.Add(Class);
-
 	Info.Class = Class;
 
 	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
