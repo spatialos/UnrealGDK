@@ -14,7 +14,7 @@ The [Gameplay Ability System](https://docs.unrealengine.com/en-us/Gameplay/Gamep
         ...
     }
     ```
-    This will ensure the replicated data on the `UAttributeSet` object is correctly replicated.    
+    This ensures that the replicated data on the `UAttributeSet` object is replicated correctly.    
 1. If the `AbilitySystemComponent` is owned by a class that extends `UPawn`, override the `UPawn::OnRep_Controller()` function and call `AbilitySystemComponent::RefreshAbilityActorInfo()`. For instance -
     ```
     MyActor::OnRep_Controller()
