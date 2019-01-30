@@ -54,7 +54,7 @@ struct FClassInfo
 {
 	GENERATED_BODY()
 
-	UClass* Class;
+	TWeakObjectPtr<UClass> Class;
 
 	TMap<ESchemaComponentType, TArray<UFunction*>> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
@@ -66,10 +66,12 @@ struct FClassInfo
 
 	FName SubobjectName;
 
-	TMap<uint32, TSharedPtr<FClassInfo>> SubobjectInfo;
+	TMap<uint32, TSharedRef<FClassInfo>> SubobjectInfo;
 };
 
 class USpatialNetDriver;
+
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialTypebindingManager, Log, All)
 
 UCLASS()
 class SPATIALGDK_API USpatialTypebindingManager : public UObject
@@ -79,22 +81,23 @@ class SPATIALGDK_API USpatialTypebindingManager : public UObject
 public:
 	void Init(USpatialNetDriver* NetDriver);
 
-	bool IsSupportedClass(UClass* Class);
+	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
+	bool IsSupportedClass(UClass* Class) const;
 
-	FClassInfo* FindClassInfoByClass(UClass* Class);
+	FClassInfo& FindClassInfoByClass(UClass* Class);
 	FClassInfo* FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset);
-	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
+
+	// Object should be an Actor or a Subobject with a valid UnrealObjectRef
 	FClassInfo* FindClassInfoByObject(UObject* Object);
 
+	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
 	UClass* FindClassByComponentId(Worker_ComponentId ComponentId);
-
 	bool FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
-
 	ESchemaComponentType FindCategoryByComponentId(Worker_ComponentId ComponentId);
 
 private:
-	void FindSupportedClasses();
-	void CreateTypebindings();
+	void AddTypebindingsForClass(UClass* Class);
+	UClass* LoadClassForComponent(Worker_ComponentId ComponentId);
 
 private:
 	UPROPERTY()
@@ -103,13 +106,9 @@ private:
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
 
-	UPROPERTY()
-	TArray<UClass*> SupportedClasses;
+	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
 
-	UPROPERTY()
-	TMap<UClass*, FClassInfo> ClassInfoMap;
-
-	TMap<Worker_ComponentId, UClass*> ComponentToClassMap;
+	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
 };

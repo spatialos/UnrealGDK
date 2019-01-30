@@ -57,19 +57,17 @@ public:
 			return false;
 		}
 
-		FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-		check(Info);
+		FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 
-		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_ClientRPC]);
+		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info.SchemaComponents[SCHEMA_ClientRPC]);
 	}
 
 	FORCEINLINE bool IsOwnedByWorker() const
 	{
-		const FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-		check(Info);
+		const FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
-		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(Info->SchemaComponents[SCHEMA_ClientRPC]))
+		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(Info.SchemaComponents[SCHEMA_ClientRPC]))
 		{
 			for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
 			{
@@ -110,13 +108,13 @@ public:
 	virtual void SetChannelActor(AActor* InActor) override;
 
 	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
-	bool ReplicateSubobject(UObject* Obj, FClassInfo* Info, const FReplicationFlags& RepFlags);
+	bool ReplicateSubobject(UObject* Obj, FClassInfo& Info, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 
 	TMap<UObject*, FClassInfo*> GetHandoverSubobjects();
 
 	FRepChangeState CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object);
-	FHandoverChangeState CreateInitialHandoverChangeState(const FClassInfo* ClassInfo);
+	FHandoverChangeState CreateInitialHandoverChangeState(const FClassInfo& ClassInfo);
 
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);

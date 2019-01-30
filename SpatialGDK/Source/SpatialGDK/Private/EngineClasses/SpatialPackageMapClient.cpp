@@ -220,9 +220,9 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	}
 
 	UClass* Class = Actor->GetClass();
-	FClassInfo* Info = SpatialNetDriver->TypebindingManager->FindClassInfoByClass(Class);
+	FClassInfo& Info = SpatialNetDriver->TypebindingManager->FindClassInfoByClass(Class);
 
-	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
+	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
 		FUnrealObjectRef SubobjectRef(EntityId, SubobjectInfoPair.Key);
 		if (FNetworkGUID* SubobjectNetGUID = UnrealObjectRefToNetGUID.Find(SubobjectRef))
