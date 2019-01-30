@@ -191,6 +191,7 @@ private:
 
 	FTimerManager* TimerManager;
 
+public:
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;

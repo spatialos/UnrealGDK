@@ -491,7 +491,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
-	if (!Actor || Actor->IsPendingKill())
+	if (Actor == nullptr || Actor->IsPendingKill())
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{

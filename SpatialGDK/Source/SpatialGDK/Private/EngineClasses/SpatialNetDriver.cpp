@@ -178,22 +178,32 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
 {
+	// If we have authority over the GSM when loading a sublevel, make sure we have authority
+	// over the actors in the sublevel.
 	if (GlobalStateManager != nullptr && StaticComponentView != nullptr)
 	{
+		if (GlobalStateManager->HasAuthority())
+		{
+			for (auto Actor : LoadedLevel->Actors)
+			{
+				Actor->Role = ROLE_Authority;
+				Actor->RemoteRole = ROLE_SimulatedProxy;
+			}
+		}
 	}
 
 	if (bConnectAsClient && LoadedLevel->bIsVisible)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Loaded level %s"), *LoadedLevel->GetFullName())
-
 		if (Receiver != nullptr && PackageMap != nullptr)
 		{
 			FNetworkGUID LevelNetGUID = PackageMap->ResolveStablyNamedObject(LoadedLevel);
 			if (LevelNetGUID.IsValid())
 			{
 				FUnrealObjectRef LevelRef = PackageMap->GetUnrealObjectRefFromNetGUID(LevelNetGUID);
+
+				TSet<FChannelObjectPair>* TargetObjectSet = Receiver->IncomingRefsMap.Find(LevelRef);
+
 				Receiver->ResolvePendingOperations(LoadedLevel, LevelRef);
-				//UE_LOG(LogTemp, Verbose, TEXT("whoa"));
 			}
 		}
 	}
