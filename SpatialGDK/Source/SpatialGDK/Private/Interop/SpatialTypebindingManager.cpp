@@ -44,8 +44,8 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 {
 	checkf(IsSupportedClass(Class), TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
 
-	FClassInfo& Info = ClassInfoMap.Add(Class);
-	Info.Class = Class;
+	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
+	Info->Class = Class;
 
 	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
 
@@ -73,14 +73,14 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 			checkNoEntry();
 		}
 
-		TArray<UFunction*>& RPCArray = Info.RPCs.FindOrAdd(RPCType);
+		TArray<UFunction*>& RPCArray = Info->RPCs.FindOrAdd(RPCType);
 
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
 		RPCInfo.Index = RPCArray.Num();
 
 		RPCArray.Add(RemoteFunction);
-		Info.RPCInfoMap.Add(RemoteFunction, RPCInfo);
+		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
 	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
@@ -92,12 +92,12 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
 			{
 				FHandoverPropertyInfo HandoverInfo;
-				HandoverInfo.Handle = Info.HandoverProperties.Num() + 1; // 1-based index
+				HandoverInfo.Handle = Info->HandoverProperties.Num() + 1; // 1-based index
 				HandoverInfo.Offset = Property->GetOffset_ForGC() + Property->ElementSize * ArrayIdx;
 				HandoverInfo.ArrayIdx = ArrayIdx;
 				HandoverInfo.Property = Property;
 
-				Info.HandoverProperties.Add(HandoverInfo);
+				Info->HandoverProperties.Add(HandoverInfo);
 			}
 		}
 
@@ -109,7 +109,7 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 				InterestInfo.Offset = Property->GetOffset_ForGC() + Property->ElementSize * ArrayIdx;
 				InterestInfo.Property = Property;
 
-				Info.InterestProperties.Add(InterestInfo);
+				Info->InterestProperties.Add(InterestInfo);
 			}
 		}
 	}
@@ -119,8 +119,8 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SchemaComponents[Type];
 		if (ComponentId != 0)
 		{
-			Info.SchemaComponents[Type] = ComponentId;
-			ComponentToClassInfoMap.Emplace(ComponentId, MakeShared<FClassInfo>(Info));
+			Info->SchemaComponents[Type] = ComponentId;
+			ComponentToClassInfoMap.Add(ComponentId, Info);
 			ComponentToOffsetMap.Add(ComponentId, 0);
 			ComponentToCategoryMap.Add(ComponentId, (ESchemaComponentType)Type);
 		}
@@ -133,14 +133,10 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
 
-		FClassInfo* SubobjectInfoPtr = FindClassInfoByClass(SubobjectClass);
-		if (SubobjectInfoPtr == nullptr)
-		{
-			continue;
-		}
+		FClassInfo& SubobjectInfo = FindClassInfoByClass(SubobjectClass);
 
 		// Make a copy of the already made FClassInfo for this specific subobject
-		TSharedPtr<FClassInfo> ActorSubobjectInfo = MakeShared<FClassInfo>(*SubobjectInfoPtr);
+		TSharedRef<FClassInfo> ActorSubobjectInfo = MakeShared<FClassInfo>(SubobjectInfo);
 		ActorSubobjectInfo->SubobjectName = SubobjectSchemaData.Name;
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
@@ -149,15 +145,13 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 			if (ComponentId != 0)
 			{
 				ActorSubobjectInfo->SchemaComponents[Type] = ComponentId;
-				ComponentToClassInfoMap.Emplace(ComponentId, ActorSubobjectInfo);
+				ComponentToClassInfoMap.Add(ComponentId, ActorSubobjectInfo);
 				ComponentToOffsetMap.Add(ComponentId, Offset);
 				ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
 			}
 		});
 
-		// This is needed because the recursive call to FindClassInfoByClass for subobjects changes the map
-		Info = ClassInfoMap.FindChecked(Class);
-		Info.SubobjectInfo.Add(Offset, ActorSubobjectInfo);
+		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
 }
 
@@ -207,7 +201,7 @@ bool USpatialTypebindingManager::IsSupportedClass(UClass* Class) const
 	return SchemaDatabase->ClassPathToSchema.Contains(Class->GetPathName());
 }
 
-FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
+FClassInfo& USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 {
 	// This could be optimised to a single map lookup in all cases if we Find first, but we keep this pattern for readability
 	if (!ClassInfoMap.Contains(Class))
@@ -215,24 +209,21 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
 		AddTypebindingsForClass(Class);
 	}
 	
-	return ClassInfoMap.Find(Class);
+	return ClassInfoMap[Class].Get();
 }
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset)
 {
-	if (FClassInfo* Info = FindClassInfoByClass(Class))
+	FClassInfo& Info = FindClassInfoByClass(Class);
+
+	if (Offset == 0)
 	{
-		if (Offset == 0)
-		{
-			return Info;
-		}
+		return &Info;
+	}
 
-		if (TSharedPtr<FClassInfo>* SubobjectInfo = Info->SubobjectInfo.Find(Offset))
-		{
-			return SubobjectInfo->Get();
-		}
-
-		return nullptr;
+	if (TSharedRef<FClassInfo>* SubobjectInfo = Info.SubobjectInfo.Find(Offset))
+	{
+		return &SubobjectInfo->Get();
 	}
 
 	return nullptr;
@@ -242,7 +233,7 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByObject(UObject* Object)
 {
 	if (AActor* Actor = Cast<AActor>(Object))
 	{
-		return FindClassInfoByClass(Actor->GetClass());
+		return &FindClassInfoByClass(Actor->GetClass());
 	}
 	else
 	{
@@ -261,14 +252,14 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByObject(UObject* Object)
 
 FClassInfo* USpatialTypebindingManager::FindClassInfoByComponentId(Worker_ComponentId ComponentId)
 {
-	if (TSharedPtr<FClassInfo>* Info = ComponentToClassInfoMap.Find(ComponentId))
+	if (TSharedRef<FClassInfo>* Info = ComponentToClassInfoMap.Find(ComponentId))
 	{
-		return Info->Get();
+		return &Info->Get();
 	}
 
 	if (LoadClassForComponent(ComponentId) != nullptr)
 	{
-		return ComponentToClassInfoMap[ComponentId].Get();
+		return &ComponentToClassInfoMap[ComponentId].Get();
 	}
 
 	return nullptr;
@@ -276,9 +267,21 @@ FClassInfo* USpatialTypebindingManager::FindClassInfoByComponentId(Worker_Compon
 
 UClass* USpatialTypebindingManager::FindClassByComponentId(Worker_ComponentId ComponentId)
 {
-	if (TSharedPtr<FClassInfo>* Info = ComponentToClassInfoMap.Find(ComponentId))
+	if (TSharedRef<FClassInfo>* Info = ComponentToClassInfoMap.Find(ComponentId))
 	{
-		return (*Info)->Class;
+		if (UClass* Class = (*Info)->Class.Get())
+		{
+			return Class;
+		}
+		else
+		{
+			UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
+
+			// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use it to clean up the old entry.
+			ClassInfoMap.Remove((*Info)->Class);
+
+			// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of LoadClassForComponent).
+		}
 	}
 
 	return LoadClassForComponent(ComponentId);

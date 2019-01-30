@@ -214,8 +214,7 @@ void CleanupNetDriverAndConnection(USpatialNetDriver* NetDriver, USpatialNetConn
 
 TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channel, AActor* Actor, USpatialTypebindingManager* TypebindingManager, USpatialNetDriver* NetDriver)
 {
-	FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-	check(Info);
+	FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 
 	// This ensures that the Actor has prepared it's replicated fields before replicating. For instance, the simulate physics on a UPrimitiveComponent
 	// will be queried and set the Actor's ReplicatedMovement.bRepPhysics field. These fields are then serialized correctly within the snapshot. We are
@@ -236,17 +235,17 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	// Add Actor RPCs to entity
 	for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
 	{
-		if (Info->SchemaComponents[RPCType] != 0)
+		if (Info.SchemaComponents[RPCType] != 0)
 		{
-			ComponentData.Add(ComponentFactory::CreateEmptyComponentData(Info->SchemaComponents[RPCType]));
+			ComponentData.Add(ComponentFactory::CreateEmptyComponentData(Info.SchemaComponents[RPCType]));
 		}
 	}
 
 	// Visit each supported subobject and create component data for initial state of each subobject
-	for (auto& SubobjectInfoPair : Info->SubobjectInfo)
+	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
 		uint32 Offset = SubobjectInfoPair.Key;
-		FClassInfo* SubobjectInfo = SubobjectInfoPair.Value.Get();
+		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
 		TWeakObjectPtr<UObject> Subobject = NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset));
 		if (Subobject.IsValid())
@@ -260,9 +259,9 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 			// Add subobject RPCs to entity
 			for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
 			{
-				if (SubobjectInfo->SchemaComponents[RPCType] != 0)
+				if (SubobjectInfo.SchemaComponents[RPCType] != 0)
 				{
-					ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo->SchemaComponents[RPCType]));
+					ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo.SchemaComponents[RPCType]));
 				}
 			}
 		}
@@ -278,8 +277,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 
 	UClass* ActorClass = Actor->GetClass();
 
-	FClassInfo* ActorInfo = TypebindingManager->FindClassInfoByClass(ActorClass);
-	check(ActorInfo);
+	FClassInfo& ActorInfo = TypebindingManager->FindClassInfoByClass(ActorClass);
 
 	WriteAclMap ComponentWriteAcl;
 
@@ -290,7 +288,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		Worker_ComponentId ComponentId = ActorInfo->SchemaComponents[Type];
+		Worker_ComponentId ComponentId = ActorInfo.SchemaComponents[Type];
 
 		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
 		{
@@ -307,9 +305,9 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	});
 
 
-	for (auto& SubobjectInfoPair : ActorInfo->SubobjectInfo)
+	for (auto& SubobjectInfoPair : ActorInfo.SubobjectInfo)
 	{
-		FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
+		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
 		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
 		UObject* Subobject = Actor->GetDefaultSubobjectByName(SubobjectInfo.SubobjectName);
@@ -411,7 +409,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	bSuccess &= ProcessSupportedActors(WorldActors, TypebindingManager, [&PackageMap, &EntityRegistry, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
 	{
 		EntityRegistry->AddToRegistry(EntityId, Actor);
-		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+		FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
 		return true;
 	});
