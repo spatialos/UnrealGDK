@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Containers/UnrealString.h"
+
 #include "Utils/SchemaOption.h"
 
 #include <cstdint>

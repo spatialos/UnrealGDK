@@ -15,7 +15,9 @@ FSpatialNetBitReader::FSpatialNetBitReader(USpatialPackageMapClient* InPackageMa
 
 void FSpatialNetBitReader::DeserializeObjectRef(FUnrealObjectRef& ObjectRef)
 {
-	*this << ObjectRef.Entity;
+	int64 EntityId;
+	*this << EntityId;
+	ObjectRef.Entity = EntityId;
 	*this << ObjectRef.Offset;
 
 	uint8 HasPath;

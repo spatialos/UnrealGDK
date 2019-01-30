@@ -67,7 +67,7 @@ In this ThirdPersonShooter project each `TPSCharacter` contains a variable calle
 To resolve this you need to mark the `CurrentHealth` property for replication, just as you would in the native [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1) workflow. To do this:
 
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
-1. Navigate to the declaration of the `CurrentHealth` variable (line 175), and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`. The UProperty should now look like this:
+1. Navigate to the declaration of the `CurrentHealth` variable, and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`. The UProperty should now look like this:
 
     ```
     UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
@@ -88,7 +88,7 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 
     > **Note:** You only want to replicate the `CurrentHealth` variable to the client that owns this Actor, thus you specify the `COND_OwnerOnly` flag.
 
-    Finally, you need to implement the `OnRep_CurentHealth` function so that the player health UI gets updated when the `CurrentHealth` variable is replicated:
+    Finally, you need to implement the `OnRep_CurrentHealth` function so that the player health UI gets updated when the `CurrentHealth` variable is replicated:
 
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
 1. In the public scope of the class, insert the following snippet:
@@ -284,4 +284,4 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to halt your deployment.
 
 ### Next steps
-We hope you've enjoyed this tutorial. If you want to build a new game using the SpatialOS GDK, you should build it ontop of the [Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project). If you want to port your existing game to SpatialOS, follow the [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk).
+We hope you've enjoyed this tutorial. If you want to build a new game using the SpatialOS GDK, you should build it on top of the [Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project). If you want to port your existing game to SpatialOS, follow the [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk).

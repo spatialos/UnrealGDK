@@ -14,7 +14,7 @@ struct FConnectionConfig
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_RAKNET)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
@@ -32,7 +32,21 @@ struct FConnectionConfig
 
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
-		LinkProtocol = LinkProtocolString == TEXT("Tcp") ? WORKER_NETWORK_CONNECTION_TYPE_TCP : WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
+		if (LinkProtocolString == TEXT("Tcp"))
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_TCP;
+		}
+		else if (LinkProtocolString == TEXT("Kcp"))
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
+		}
+#if !(PLATFORM_PS4 || PLATFORM_XBOXONE)
+		// RakNet is not compiled for console platforms.
+		else if (LinkProtocolString == TEXT("RakNet"))
+		{
+			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
+		}
+#endif // !(PLATFORM_PS4 || PLATFORM_XBOXONE)
 	}
 
 	FString WorkerId;
@@ -60,9 +74,9 @@ struct FReceptionistConfig : public FConnectionConfig
 	uint16 ReceptionistPort;
 };
 
-struct FLocatorConfig : public FConnectionConfig
+struct FLegacyLocatorConfig : public FConnectionConfig
 {
-	FLocatorConfig()
+	FLegacyLocatorConfig()
 		: LocatorHost(TEXT("locator.improbable.io"))
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
@@ -76,5 +90,20 @@ struct FLocatorConfig : public FConnectionConfig
 	FString ProjectName;
 	FString DeploymentName;
 	FString LocatorHost;
+	FString LoginToken;
+};
+
+struct FLocatorConfig : public FConnectionConfig
+{
+	FLocatorConfig()
+		: LocatorHost(TEXT("locator.improbable.io")) {
+		const TCHAR* CommandLine = FCommandLine::Get();
+		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
+		FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
+		FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
+	}
+
+	FString LocatorHost;
+	FString PlayerIdentityToken;
 	FString LoginToken;
 };

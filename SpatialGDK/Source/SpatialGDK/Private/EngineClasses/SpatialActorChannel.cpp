@@ -158,6 +158,21 @@ bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 	return RepLayout->Cmds[RepLayout->BaseHandleToCmdIndex[Handle - 1].CmdIndex].Type == ERepLayoutCmdType::DynamicArray;
 }
 
+void USpatialActorChannel::UpdateShadowData()
+{
+	check(Actor);
+
+	// Refresh shadow data when crossing over servers to prevent stale/out-of-date data.
+	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
+
+	// Refresh the shadow data for all replicated components of this actor as well.
+	for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
+	{
+		FObjectReplicator& ComponentReplicator = FindOrCreateReplicator(ActorComponent).Get();
+		ComponentReplicator.RepLayout->InitShadowData(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, ActorComponent->GetClass(), (uint8*)ActorComponent);
+	}
+}
+
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
 	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
@@ -560,7 +575,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	if (NetDriver->TypebindingManager->FindClassInfoByClass(InActor->GetClass()) == nullptr)
 	{
 		UE_LOG(LogSpatialActorChannel, Error, TEXT("No schema was generated for class %s! This class was not loaded during schema generation most likely due to soft references."
-												   "Either manually load the class before schema generation or have a hard reference from a class that is already loaded."), *InActor->GetClass()->GetName())
+			"Either manually load the class before schema generation or have a hard reference from a class that is already loaded."), *InActor->GetClass()->GetName())
 		return;
 	}
 
@@ -624,6 +639,11 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	TargetObject->PostNetReceive();
 	Replicator.RepNotifies = RepNotifies;
 	Replicator.CallRepNotifies(false);
+
+	if (!TargetObject->IsPendingKill())
+	{
+		TargetObject->PostRepNotifies();
+	}
 }
 
 void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId)

@@ -46,7 +46,6 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	PackageMap = InNetDriver->PackageMap;
-	World = InNetDriver->GetWorld();
 	TypebindingManager = InNetDriver->TypebindingManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 	TimerManager = InTimerManager;
@@ -160,6 +159,12 @@ void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 	RemoveActor(Op.entity_id);
 }
 
+void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
+{
+	USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
+	ActorChannel->UpdateShadowData();
+}
+
 void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 {
 	if (bInCriticalSection)
@@ -209,6 +214,8 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 							Pawn->RemoteRole = ROLE_AutonomousProxy;
 						}
 					}
+				
+					UpdateShadowData(Op.entity_id);
 
 					//if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 					//{
@@ -288,8 +295,8 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 {
-	checkf(World, TEXT("We should have a world whilst processing ops."));
-	check(NetDriver);
+	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
+	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
 
 	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
 	check(EntityRegistry);
@@ -354,7 +361,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			FString URLString = FURL().ToString();
 			URLString += TEXT("?workerAttribute=") + UnrealMetadataComponent->OwnerWorkerAttribute;
 
-			Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), true);
+			// TODO: Once we can checkout PlayerController and PlayerState atomically, we can grab the UniqueId and online subsystem type from PlayerState. UNR-933
+			Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), true);
 			check(Connection);
 
 			EntityActor = Connection->PlayerController;
@@ -414,6 +422,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		if (bDoingDeferredSpawn)
 		{
+			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
+
+			// FinishSpawning takes a transform relative to the template transform, so we need to adjust it.
+			FTransform SpawnTransform = GetRelativeSpawnTransform(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation));
 			EntityActor->FinishSpawning(SpawnTransform);
 
 			const float Epsilon = 0.001f;
@@ -505,7 +517,11 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	// If entity is to be deleted after having been torn off, clean up the entity, but don't destroy the actor.
 	if (Actor->GetTearOff())
 	{
-		CleanupDeletedEntity(EntityId);
+		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
+		{
+			ActorChannel->ConditionalCleanUp();
+			CleanupDeletedEntity(EntityId);
+		}
 		return;
 	}
 
@@ -585,9 +601,9 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
-	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative 
-	// on this server, we need to make sure this worker doesn't issue an entity delete request, as this entity is really 
-	// transitioning to the same server as the actor we're currently operating on, and is just a few frames behind. 
+	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative
+	// on this server, we need to make sure this worker doesn't issue an entity delete request, as this entity is really
+	// transitioning to the same server as the actor we're currently operating on, and is just a few frames behind.
 	// We make the assumption that if we're destroying actors here (due to a remove entity op), then this is only due to two
 	// situations;
 	// 1. Actor's entity has been transitioned to another server
@@ -637,9 +653,9 @@ AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* 
 		// We defer the construction in the GDK pipeline to allow initialization of replicated properties first.
 		SpawnInfo.bDeferConstruction = bDeferred;
 
-		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, World->OriginLocation);
+		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
 
-		NewActor = World->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
+		NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
 		check(NewActor);
 	}
 
@@ -823,7 +839,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		// 1. The attribute of the worker type
 		// 2. The attribute of the specific worker that sent the request
 		// We want to give authority to the specific worker, so we grab the second element from the attribute set.
-		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(GetStringFromSchema(Payload, 1), Op.caller_attribute_set.attributes[1], Op.request_id);
+		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Payload, Op.caller_attribute_set.attributes[1], Op.request_id);
 		return;
 	}
 
@@ -944,7 +960,7 @@ void USpatialReceiver::ReceiveMulticastUpdate(const Worker_ComponentUpdate& Comp
 		{
 			Schema_Object* EventData = Schema_IndexObject(EventsObject, EventIndex, i);
 
-			TArray<uint8> PayloadData = GetPayloadFromSchema(EventData, 1);
+			TArray<uint8> PayloadData = GetBytesFromSchema(EventData, 1);
 			// A bit hacky, we should probably include the number of bits with the data instead.
 			int64 CountBits = PayloadData.Num() * 8;
 
@@ -1374,7 +1390,7 @@ void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& Com
 {
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
-	TArray<uint8> PayloadData = GetPayloadFromSchema(RequestObject, 1);
+	TArray<uint8> PayloadData = GetBytesFromSchema(RequestObject, 1);
 	// A bit hacky, we should probably include the number of bits with the data instead.
 	int64 CountBits = PayloadData.Num() * 8;
 

@@ -161,7 +161,7 @@ private:
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
 
 	void ProcessQueuedResolvedObjects();
-
+	void UpdateShadowData(Worker_EntityId EntityId);
 	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
 
 private:
@@ -179,9 +179,6 @@ private:
 
 	UPROPERTY()
 	USpatialPackageMapClient* PackageMap;
-
-	UPROPERTY()
-	UWorld* World;
 
 	UPROPERTY()
 	USpatialTypebindingManager* TypebindingManager;

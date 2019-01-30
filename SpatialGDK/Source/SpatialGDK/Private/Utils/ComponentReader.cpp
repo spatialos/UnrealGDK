@@ -236,7 +236,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
-		TArray<uint8> ValueData = IndexPayloadFromSchema(Object, FieldId, Index);
+		TArray<uint8> ValueData = IndexBytesFromSchema(Object, FieldId, Index);
 		// A bit hacky, we should probably include the number of bits with the data instead.
 		int64 CountBits = ValueData.Num() * 8;
 		TSet<FUnrealObjectRef> NewUnresolvedRefs;

@@ -37,7 +37,7 @@ public class SpatialGDK : ModuleRules
 			PublicDependencyModuleNames.Add("UnrealEd");
 		}
 
-   		var CoreSdkLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
+        var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
 
         string LibPrefix = "";
         string ImportLibSuffix = "";
@@ -69,6 +69,8 @@ public class SpatialGDK : ModuleRules
             case UnrealTargetPlatform.XboxOne:
                 ImportLibSuffix = ".lib";
                 SharedLibSuffix = ".dll";
+                // We don't set bAddDelayLoad = true here, because we get "unresolved external symbol __delayLoadHelper2".
+                // See: https://www.fmod.org/questions/question/deploy-issue-on-xboxone-with-unrealengine-4-14/
                 break;
             case UnrealTargetPlatform.IOS:
                 LibPrefix = "lib";
@@ -78,15 +80,15 @@ public class SpatialGDK : ModuleRules
                 throw new System.Exception(System.String.Format("Unsupported platform {0}", Target.Platform.ToString()));
         }
 
-        string CoreSdkImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
-        string CoreSdkSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
+        string WorkerImportLib = System.String.Format("{0}worker{1}", LibPrefix, ImportLibSuffix);
+        string WorkerSharedLib = System.String.Format("{0}worker{1}", LibPrefix, SharedLibSuffix);
 
-        PublicAdditionalLibraries.AddRange(new[] { Path.Combine(CoreSdkLibraryDir, CoreSdkImportLib) });
-        RuntimeDependencies.Add(Path.Combine(CoreSdkLibraryDir, CoreSdkSharedLib), StagedFileType.NonUFS);
-        PublicLibraryPaths.Add(CoreSdkLibraryDir);
+        PublicAdditionalLibraries.AddRange(new[] { Path.Combine(WorkerLibraryDir, WorkerImportLib) });
+        PublicLibraryPaths.Add(WorkerLibraryDir);
+        RuntimeDependencies.Add(Path.Combine(WorkerLibraryDir, WorkerSharedLib), StagedFileType.NonUFS);
         if (bAddDelayLoad)
         {
-            PublicDelayLoadDLLs.Add(CoreSdkSharedLib);
+            PublicDelayLoadDLLs.Add(WorkerSharedLib);
         }
 
         // Point generated code to the correct API spec.

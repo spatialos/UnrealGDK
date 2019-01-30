@@ -521,28 +521,21 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	UE_LOG(LogSpatialSender, Log, TEXT("Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
+	// Remove any references to the unresolved objects. Since these are not dereferenced before removing,
+	// it is safe to not check whether the unresolved object is still valid.
 	for (TWeakObjectPtr<const UObject>& UnresolvedObject : *Unresolved)
 	{
-		if (UnresolvedObject.IsValid())
-		{
-			FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
-			FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
+		FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
+		FHandleToUnresolved& OtherHandleToUnresolved = ChannelToUnresolved.FindChecked(ChannelObjectPair);
 
-			OtherHandleToUnresolved.Remove(Handle);
-			if (OtherHandleToUnresolved.Num() == 0)
-			{
-				ChannelToUnresolved.Remove(ChannelObjectPair);
-				if (ChannelToUnresolved.Num() == 0)
-				{
-					ObjectToUnresolved.Remove(UnresolvedObject);
-				}
-			}
-		}
-		else
+		OtherHandleToUnresolved.Remove(Handle);
+		if (OtherHandleToUnresolved.Num() == 0)
 		{
-			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
-			Unresolved->Remove(UnresolvedObject);
-			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
+			ChannelToUnresolved.Remove(ChannelObjectPair);
+			if (ChannelToUnresolved.Num() == 0)
+			{
+				ObjectToUnresolved.Remove(UnresolvedObject);
+			}
 		}
 	}
 
@@ -590,9 +583,8 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 		}
 		else
 		{
-			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
-			Unresolved->Remove(UnresolvedObject);
-			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
+			// It is expected that this will never be reached. If it is, we should consider whether to clean up the invalid objects here.
+			UE_LOG(LogSpatialSender, Error, TEXT("Invalid UnresolvedObject passed in to USpatialSender::QueueOutgoingUpdate"));
 		}
 	}
 }
@@ -643,15 +635,9 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 			Schema_DestroyCommandRequest(CommandRequest.schema_type);
 			return CommandRequest;
 		}
-		else
-		{
-			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
-			UnresolvedObjects.Remove(Object);
-			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
-		}
 	}
 
-	AddPayloadToSchema(RequestObject, 1, PayloadWriter);
+	AddBytesToSchema(RequestObject, 1, PayloadWriter);
 
 	return CommandRequest;
 }
@@ -690,15 +676,9 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 			Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 			return ComponentUpdate;
 		}
-		else
-		{
-			// If the object is no longer valid (may have been deleted or IsPendingKill) then remove it from the UnresolvedObjects.
-			UnresolvedObjects.Remove(Object);
-			// TODO: UNR-814 Also remove it from other maps which reference the object by handle etc.
-		}
 	}
 
-	AddPayloadToSchema(EventData, 1, PayloadWriter);
+	AddBytesToSchema(EventData, 1, PayloadWriter);
 
 	return ComponentUpdate;
 }
@@ -809,39 +789,18 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 
 FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 {
+	// This should only be executed on the server.
+	check(NetDriver->IsServer());
+
 	// If we don't have an owning connection, there is no assoicated client
 	if (Actor->GetNetConnection() == nullptr)
 	{
 		return FString();
 	}
 
-	if (APlayerController* PlayerController = Actor->GetNetConnection()->PlayerController)
+	if (USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		if (APlayerState* PlayerState = PlayerController->PlayerState)
-		{
-			// If the player state is resolved, the UniqueId is set to be the owning attribute - USpatialNetDriver::AcceptNewPlayer
-			if (PlayerState->UniqueId.IsValid())
-			{
-				return PlayerState->UniqueId.ToString();
-			}
-			else
-			{
-				// If the UniqueId is invalid, get the owning attribute from the PlayerController's EntityACL.
-				Worker_EntityId PlayerControllerEntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(PlayerController);
-				if (PlayerControllerEntityId == 0)
-				{
-					return FString();
-				}
-
-				improbable::EntityAcl* EntityACL = StaticComponentView->GetComponentData<improbable::EntityAcl>(PlayerControllerEntityId);
-
-				FClassInfo* Info = TypebindingManager->FindClassInfoByClass(PlayerController->GetClass());
-
-				WorkerRequirementSet ClientRPCRequirementSet = EntityACL->ComponentWriteAcl[Info->SchemaComponents[SCHEMA_ClientRPC]];
-				WorkerAttributeSet ClientRPCAttributeSet = ClientRPCRequirementSet[0];
-				return ClientRPCAttributeSet[0];
-			}
-		}
+		return SpatialConnection->WorkerAttribute;
 	}
 
 	return FString();

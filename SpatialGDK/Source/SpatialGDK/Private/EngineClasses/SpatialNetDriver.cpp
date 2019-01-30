@@ -6,6 +6,7 @@
 #include "Engine/ActorChannel.h"
 #include "Engine/ChildConnection.h"
 #include "Engine/Engine.h"
+#include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
@@ -139,14 +140,21 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		GameInstance->CreateNewSpatialWorkerConnection();
 	}
 
-	// Grab the SpatialWorkerConnection from the SpatialGameInstance (stored there for persistence in server travel). 
+	// Grab the SpatialWorkerConnection from the SpatialGameInstance (stored there for persistence in server travel).
 	Connection = GameInstance->SpatialConnection;
 
-	if (LoadedWorld->URL.HasOption(TEXT("locator")))
+	if (LoadedWorld->URL.HasOption(TEXT("legacylocator")))
 	{
-		Connection->LocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
-		Connection->LocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
-		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
+		Connection->LegacyLocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
+		Connection->LegacyLocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
+		Connection->LegacyLocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
+		Connection->LegacyLocatorConfig.UseExternalIp = true;
+	}
+	else if (LoadedWorld->URL.HasOption(TEXT("locator")))
+	{
+		// Obtain PIT and LT.
+		Connection->LocatorConfig.PlayerIdentityToken = LoadedWorld->URL.GetOption(TEXT("playeridentity="), TEXT(""));
+		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
 	}
 	else
@@ -448,7 +456,7 @@ bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const 
 
 void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessTravel /*= false*/)
 {
-	// Intentionally does not call Super::NotifyActorDestroyed, but most of the functionality is copied here 
+	// Intentionally does not call Super::NotifyActorDestroyed, but most of the functionality is copied here
 	// The native UNetDriver would normally store destruction info here for "StartupActors" - replicated actors
 	// placed in the level, but we handle this flow differently in the GDK
 
@@ -708,7 +716,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 	int32 ActorUpdatesThisConnection = 0;
 	int32 ActorUpdatesThisConnectionSent = 0;
-	int32 FinalRelevantCount = 0;
 
 	// SpatialGDK - Actor replication rate limiting based on config value.
 	int32 RateLimit = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
@@ -729,7 +736,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			UActorChannel* Channel = (UActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
 			if (Channel)
 			{
-				FinalRelevantCount++;
 				UE_LOG(LogNetTraffic, Log, TEXT("Server replicate actor creating destroy channel for NetGUID <%s,%s> Priority: %d"), *PriorityActors[j]->DestructionInfo->NetGUID.ToString(), *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
 
 				InConnection->GetDestroyedStartupOrDormantActorGUIDs().Remove(PriorityActors[j]->DestructionInfo->NetGUID); // Remove from connections to-be-destroyed list (close bunch of reliable, so it will make it there)
@@ -756,17 +762,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
 
-			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
-			// only check visibility on already visible actors every 1.0 + 0.5R seconds
-			// bTearOff actors should never be checked
-			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
-			{
-				if (DebugRelevantActors)
-				{
-					LastNonRelevantActors.Add(Actor);
-				}
-			}
-
 			// Workaround: If the actor channel can't be found in the current connection (e.g. if the actor was detached from the controller),
 			// then search through all the connections to find the actor's channel.
 			// Task to improve this: https://improbableio.atlassian.net/browse/UNR-842
@@ -782,10 +777,22 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				}
 			}
 
+			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
+			// only check visibility on already visible actors every 1.0 + 0.5R seconds
+			// bTearOff actors should never be checked
+			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
+			{
+				if (DebugRelevantActors)
+				{
+					LastNonRelevantActors.Add(Actor);
+				}
+			}
 
-			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit.
+			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit and the final tick of TearOff actors.
 			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
-			if (FinalReplicatedCount < RateLimit)
+			// TearOff actors would normally replicate their final tick due to RecentlyRelevant, after which the channel is closed.
+			// With throttling we no longer always replicate when RecentlyRelevant is true, thus we ensure to always replicate a TearOff actor while it still has a channel.
+			if ((FinalReplicatedCount < RateLimit && !Actor->GetTearOff()) || (Actor->GetTearOff() && Channel))
 			{
 				bIsRelevant = true;
 				FinalReplicatedCount++;
@@ -796,8 +803,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 			if (bIsRecentlyRelevant)
 			{
-				FinalRelevantCount++;
-
 				// Find or create the channel for this actor.
 				// we can't create the channel if the client is in a different world than we are
 				// or the package map doesn't support the actor's class/archetype (or the actor itself in the case of serializable actors)
@@ -1096,14 +1101,14 @@ void USpatialNetDriver::ProcessRemoteFunction(
 {
 	if (Connection == nullptr || !Connection->IsConnected())
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));
 		return;
 	}
 
 	USpatialNetConnection* NetConnection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (NetConnection == nullptr)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));
 		return;
 	}
 
@@ -1184,7 +1189,7 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	}
 }
 
-USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, bool bExistingPlayer)
+USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, FUniqueNetIdRepl UniqueId, FName OnlinePlatformName, bool bExistingPlayer)
 {
 	bool bOk = true;
 
@@ -1200,11 +1205,14 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	Notify->NotifyAcceptedConnection(SpatialConnection);
 	AddClientConnection(SpatialConnection);
 
-	// Set up the net ID for this player.
+	// Set the unique net ID for this player. This and the code below is adapted from World.cpp:4499
+	SpatialConnection->PlayerId = UniqueId;
+	SpatialConnection->SetPlayerOnlinePlatformName(OnlinePlatformName);
+
+	// Get the worker attribute.
 	const TCHAR* WorkerAttributeOption = InUrl.GetOption(TEXT("workerAttribute"), nullptr);
 	check(WorkerAttributeOption);
-	FString WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
-	FUniqueNetIdRepl WorkerAttributeId(TSharedPtr<FSpatialWorkerUniqueNetId>(new FSpatialWorkerUniqueNetId(WorkerAttribute)));
+	SpatialConnection->WorkerAttribute = FString(WorkerAttributeOption).Mid(1); // Trim off the = at the beginning.
 
 	// We will now ask GameMode/GameSession if it's ok for this user to join.
 	// Note that in the initial implementation, we carry over no data about the user here (such as a unique player id, or the real IP)
@@ -1220,7 +1228,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 	AGameModeBase* GameMode = GetWorld()->GetAuthGameMode();
 	if (GameMode)
 	{
-		GameMode->PreLogin(Tmp, SpatialConnection->LowLevelGetRemoteAddress(), WorkerAttributeId, ErrorMsg);
+		GameMode->PreLogin(Tmp, SpatialConnection->LowLevelGetRemoteAddress(), SpatialConnection->PlayerId, ErrorMsg);
 	}
 
 	if (!ErrorMsg.IsEmpty())
@@ -1244,7 +1252,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, boo
 
 		if (!bExistingPlayer)
 		{
-			SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, WorkerAttributeId, ErrorMsg);
+			SpatialConnection->PlayerController = World->SpawnPlayActor(SpatialConnection, ROLE_AutonomousProxy, InUrl, SpatialConnection->PlayerId, ErrorMsg);
 		}
 		else
 		{
