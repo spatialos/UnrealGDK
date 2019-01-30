@@ -681,7 +681,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 	int32 ActorUpdatesThisConnection = 0;
 	int32 ActorUpdatesThisConnectionSent = 0;
-	int32 FinalRelevantCount = 0;
 
 	// SpatialGDK - Actor replication rate limiting based on config value.
 	int32 RateLimit = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
@@ -702,7 +701,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			UActorChannel* Channel = (UActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
 			if (Channel)
 			{
-				FinalRelevantCount++;
 				UE_LOG(LogNetTraffic, Log, TEXT("Server replicate actor creating destroy channel for NetGUID <%s,%s> Priority: %d"), *PriorityActors[j]->DestructionInfo->NetGUID.ToString(), *PriorityActors[j]->DestructionInfo->PathName, PriorityActors[j]->Priority);
 
 				InConnection->GetDestroyedStartupOrDormantActorGUIDs().Remove(PriorityActors[j]->DestructionInfo->NetGUID); // Remove from connections to-be-destroyed list (close bunch of reliable, so it will make it there)
@@ -729,17 +727,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
 
-			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
-			// only check visibility on already visible actors every 1.0 + 0.5R seconds
-			// bTearOff actors should never be checked
-			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
-			{
-				if (DebugRelevantActors)
-				{
-					LastNonRelevantActors.Add(Actor);
-				}
-			}
-
 			// Workaround: If the actor channel can't be found in the current connection (e.g. if the actor was detached from the controller),
 			// then search through all the connections to find the actor's channel.
 			// Task to improve this: https://improbableio.atlassian.net/browse/UNR-842
@@ -755,10 +742,22 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				}
 			}
 
+			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
+			// only check visibility on already visible actors every 1.0 + 0.5R seconds
+			// bTearOff actors should never be checked
+			if (!Actor->GetTearOff() && (!Channel || Time - Channel->RelevantTime > 1.f))
+			{
+				if (DebugRelevantActors)
+				{
+					LastNonRelevantActors.Add(Actor);
+				}
+			}
 
-			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit.
+			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit and the final tick of TearOff actors.
 			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
-			if (FinalReplicatedCount < RateLimit)
+			// TearOff actors would normally replicate their final tick due to RecentlyRelevant, after which the channel is closed.
+			// With throttling we no longer always replicate when RecentlyRelevant is true, thus we ensure to always replicate a TearOff actor while it still has a channel.
+			if ((FinalReplicatedCount < RateLimit && !Actor->GetTearOff()) || (Actor->GetTearOff() && Channel))
 			{
 				bIsRelevant = true;
 				FinalReplicatedCount++;
@@ -769,8 +768,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 
 			if (bIsRecentlyRelevant)
 			{
-				FinalRelevantCount++;
-
 				// Find or create the channel for this actor.
 				// we can't create the channel if the client is in a different world than we are
 				// or the package map doesn't support the actor's class/archetype (or the actor itself in the case of serializable actors)
@@ -1069,14 +1066,14 @@ void USpatialNetDriver::ProcessRemoteFunction(
 {
 	if (Connection == nullptr || !Connection->IsConnected())
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));
 		return;
 	}
 
 	USpatialNetConnection* NetConnection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
 	if (NetConnection == nullptr)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was establised"))
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));
 		return;
 	}
 
