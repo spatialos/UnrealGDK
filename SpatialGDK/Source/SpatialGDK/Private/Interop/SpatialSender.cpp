@@ -190,7 +190,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
 		if (!Subobject.IsValid())
 		{
-			UE_LOG(LogSpatialSender, Error, TEXT("Tried to generate initial replication state for an invalid sub-object. Object may have been deleted or is PendingKill."));
+			UE_LOG(LogSpatialSender, Error, TEXT("Tried to generate initial replication state for an invalid sub-object (class %s, sub-object %s, actor %s). Object may have been deleted or is PendingKill."), *SubobjectInfo->Class->GetName(), *SubobjectInfo->SubobjectName.ToString(), *Actor->GetName());
 			continue;
 		}
 
