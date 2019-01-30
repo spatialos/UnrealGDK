@@ -780,7 +780,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
 {
 	// This should only be executed on the server.
-	check(NetDriver->GetServerConnection() == nullptr);
+	check(NetDriver->IsServer());
 
 	// If we don't have an owning connection, there is no assoicated client
 	if (Actor->GetNetConnection() == nullptr)
