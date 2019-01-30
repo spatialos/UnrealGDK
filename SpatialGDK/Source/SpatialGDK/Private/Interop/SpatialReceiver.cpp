@@ -216,33 +216,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				
 					UpdateShadowData(Op.entity_id);
 
-					//if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-					//{
-					//	Actor->RemoteRole = ROLE_AutonomousProxy;
-
-					//	if (APawn* Pawn = PlayerController->GetPawn())
-					//	{
-					//		Pawn->RemoteRole = ROLE_AutonomousProxy;
-					//	}
-					//}
-					//else if (APawn* Pawn = Cast<APawn>(Actor))
-					//{
-					//	if (Pawn->IsPlayerControlled())
-					//	{
-					//		Pawn->RemoteRole = ROLE_AutonomousProxy;
-					//	}
-					//}
-					//else if (APlayerState* PlayerState = Cast<APlayerState>(Actor))
-					//{
-					//	if (APlayerController* PlayerController = PlayerState->GetOwner())
-					//	{
-					//		if (APawn* Pawn = PlayerController->GetPawn())
-					//		{
-					//			Pawn->RemoteRole = ROLE_AutonomousProxy;
-					//		}
-					//	}
-					//}
-
 					Actor->OnAuthorityGained();
 				}
 				else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
