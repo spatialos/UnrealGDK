@@ -204,7 +204,14 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 				}
 			}
 
-			ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			if (NetGUID.IsValid())
+			{
+				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			}
+			else
+			{
+				ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+			}
 
 			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
 			{
