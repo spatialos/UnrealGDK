@@ -203,16 +203,15 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 		return;
 	}
 
-	FClassInfo* ClassInfo = TypebindingManager->FindClassInfoByClass(Object->GetClass());
-	check(ClassInfo);
+	FClassInfo& ClassInfo = TypebindingManager->FindClassInfoByClass(Object->GetClass());
 
 	Channel->PreReceiveSpatialUpdate(Object);
 
 	for (uint32 FieldId : UpdateFields)
 	{
 		// FieldId is the same as handover handle
-		check(FieldId > 0 && (int)FieldId - 1 < ClassInfo->HandoverProperties.Num());
-		const FHandoverPropertyInfo& PropertyInfo = ClassInfo->HandoverProperties[FieldId - 1];
+		check(FieldId > 0 && (int)FieldId - 1 < ClassInfo.HandoverProperties.Num());
+		const FHandoverPropertyInfo& PropertyInfo = ClassInfo.HandoverProperties[FieldId - 1];
 
 		uint8* Data = (uint8*)Object + PropertyInfo.Offset;
 

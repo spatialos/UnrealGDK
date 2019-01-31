@@ -178,8 +178,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	Channel->SetChannelActor(SingletonActor);
 
 	// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
-	FClassInfo* Info = NetDriver->TypebindingManager->FindClassInfoByClass(SingletonActor->GetClass());
-	check(Info);
+	FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(SingletonActor->GetClass());
 
 	NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId, improbable::CreateOffsetMapFromActor(SingletonActor, Info));
 

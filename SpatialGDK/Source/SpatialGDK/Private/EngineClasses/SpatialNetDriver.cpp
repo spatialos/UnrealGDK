@@ -49,6 +49,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	bConnectAsClient = bInitAsClient;
 	bAuthoritativeDestruction = true;
 
+	TypebindingManager = NewObject<USpatialTypebindingManager>();
+	TypebindingManager->Init(this);
+
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
 	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
@@ -236,14 +239,6 @@ void USpatialNetDriver::Connect()
 void USpatialNetDriver::OnMapLoadedAndConnected()
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS and map has been loaded."));
-
-	if (TypebindingManager == nullptr)
-	{
-		// Delay loading of the schema database until after the map is loaded to prevent package/outer conflicts. This can
-		// be moved back to Init() once we have lazy loading of schema database implemented - JIRA: 833
-		TypebindingManager = NewObject<USpatialTypebindingManager>();
-		TypebindingManager->Init(this);
-	}
 
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 

@@ -238,10 +238,9 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		// If we did, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
 		if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
 		{
-			FClassInfo* Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-			check(Info);
+			FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
 
-			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == Info->SchemaComponents[SCHEMA_ClientRPC])
+			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == Info.SchemaComponents[SCHEMA_ClientRPC])
 			{
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
@@ -412,7 +411,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			}
 		}
 
-		FClassInfo* Info = TypebindingManager->FindClassInfoByClass(ActorClass);
+		FClassInfo& Info = TypebindingManager->FindClassInfoByClass(ActorClass);
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId, improbable::CreateOffsetMapFromActor(EntityActor, Info));
 
@@ -707,6 +706,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::METADATA_COMPONENT_ID:
 	case SpatialConstants::POSITION_COMPONENT_ID:
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
+	case SpatialConstants::INTEREST_COMPONENT_ID:
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
