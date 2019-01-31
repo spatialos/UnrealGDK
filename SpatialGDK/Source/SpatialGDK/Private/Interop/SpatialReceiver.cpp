@@ -232,7 +232,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		// If we did, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
 		if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
 		{
-			const FClassInfo& Info = ClassInfoManager->GetorCreateClassInfoByClass(Actor->GetClass());
+			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == Info.SchemaComponents[SCHEMA_ClientRPC])
 			{
@@ -391,7 +391,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			}
 		}
 
-		const FClassInfo& Info = ClassInfoManager->GetorCreateClassInfoByClass(ActorClass);
+		const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(ActorClass);
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId, improbable::CreateOffsetMapFromActor(EntityActor, Info));
 
@@ -752,7 +752,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 
-	const FClassInfo& Info = ClassInfoManager->GetClassInfoByObject(TargetObject);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
 	ESchemaComponentType RPCType = ClassInfoManager->GetCategoryByComponentId(Op.request.component_id);
 	check(RPCType >= SCHEMA_FirstRPC && RPCType <= SCHEMA_LastRPC);

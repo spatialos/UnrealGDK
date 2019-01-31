@@ -96,7 +96,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ReadAcl = AnyUnrealServerOrClient;
 	}
 
-	const FClassInfo& Info = ClassInfoManager->GetorCreateClassInfoByClass(Class);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, ServersOnly);
@@ -303,7 +303,7 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 {
 	TArray<Worker_InterestOverride> ComponentInterest;
 
-	const FClassInfo& ActorInfo = ClassInfoManager->GetorCreateClassInfoByClass(Actor->GetClass());
+	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 	FillComponentInterests(ActorInfo, bIsNetOwned, ComponentInterest);
 
 	for (auto& SubobjectInfoPair : ActorInfo.SubobjectInfo)
@@ -354,7 +354,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		return;
 	}
 
-	const FClassInfo& Info = ClassInfoManager->GetClassInfoByObject(TargetObject);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Params->Function);
 
 	// We potentially have a parent function and need to find the child function.
@@ -694,7 +694,7 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
 		FHandleToUnresolved& HandleToUnresolved = ChannelProperties.Value;
 
-		const FClassInfo& Info = ClassInfoManager->GetClassInfoByObject(ReplicatingObject);
+		const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(ReplicatingObject);
 
 		TArray<uint16> PropertyHandles;
 
@@ -801,7 +801,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 		return false;
 	}
 
-	const FClassInfo& Info = ClassInfoManager->GetorCreateClassInfoByClass(Actor->GetClass());
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	FString OwnerWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };

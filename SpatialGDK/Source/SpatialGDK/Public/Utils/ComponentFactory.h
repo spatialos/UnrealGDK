@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
 #include "Utils/RepDataUtils.h"
 

@@ -7,7 +7,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"

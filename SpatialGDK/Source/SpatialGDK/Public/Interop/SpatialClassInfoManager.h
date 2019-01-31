@@ -7,7 +7,7 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include "SpatialTypebindingManager.generated.h"
+#include "SpatialClassInfoManager.generated.h"
 
 FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)> Callback)
 {
@@ -84,10 +84,10 @@ public:
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
 	bool IsSupportedClass(UClass* Class) const;
 
-	const FClassInfo& GetorCreateClassInfoByClass(UClass* Class);
-	const FClassInfo& GetClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset);
-	const FClassInfo& GetClassInfoByObject(UObject* Object);
-	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId);
+	const FClassInfo& GetOrCreateClassInfoByClass(UClass* Class);
+	const FClassInfo& GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset);
+	const FClassInfo& GetOrCreateClassInfoByObject(UObject* Object);
+	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId) const;
 
 	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);

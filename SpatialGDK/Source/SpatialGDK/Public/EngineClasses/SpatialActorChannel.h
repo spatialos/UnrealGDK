@@ -6,8 +6,8 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialStaticComponentView.h"
-#include "Interop/SpatialTypebindingManager.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
 #include "Utils/RepDataUtils.h"
@@ -57,14 +57,14 @@ public:
 			return false;
 		}
 
-		const FClassInfo& Info = NetDriver->ClassInfoManager->GetorCreateClassInfoByClass(Actor->GetClass());
+		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info.SchemaComponents[SCHEMA_ClientRPC]);
 	}
 
 	FORCEINLINE bool IsOwnedByWorker() const
 	{
-		const FClassInfo& Info = NetDriver->ClassInfoManager->GetorCreateClassInfoByClass(Actor->GetClass());
+		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
 		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(Info.SchemaComponents[SCHEMA_ClientRPC]))

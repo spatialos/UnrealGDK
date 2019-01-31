@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 
 #include "AssetRegistryModule.h"
 #include "Engine/Blueprint.h"
@@ -133,7 +133,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
 
-		const FClassInfo& SubobjectInfo = GetorCreateClassInfoByClass(SubobjectClass);
+		const FClassInfo& SubobjectInfo = GetOrCreateClassInfoByClass(SubobjectClass);
 
 		// Make a copy of the already made FClassInfo for this specific subobject
 		TSharedRef<FClassInfo> ActorSubobjectInfo = MakeShared<FClassInfo>(SubobjectInfo);
@@ -160,7 +160,7 @@ bool USpatialClassInfoManager::IsSupportedClass(UClass* Class) const
 	return SchemaDatabase->ClassPathToSchema.Contains(Class->GetPathName());
 }
 
-const FClassInfo& USpatialClassInfoManager::GetorCreateClassInfoByClass(UClass* Class)
+const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* Class)
 {
 	if (ClassInfoMap.Find(Class) == nullptr)
 	{
@@ -170,9 +170,9 @@ const FClassInfo& USpatialClassInfoManager::GetorCreateClassInfoByClass(UClass* 
 	return ClassInfoMap[Class].Get();
 }
 
-const FClassInfo& USpatialClassInfoManager::GetClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset)
+const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset)
 {
-	const FClassInfo& Info = GetorCreateClassInfoByClass(Class);
+	const FClassInfo& Info = GetOrCreateClassInfoByClass(Class);
 
 	if (Offset == 0)
 	{
@@ -183,11 +183,11 @@ const FClassInfo& USpatialClassInfoManager::GetClassInfoByActorClassAndOffset(UC
 	return SubobjectInfo.Get();
 }
 
-const FClassInfo& USpatialClassInfoManager::GetClassInfoByObject(UObject* Object)
+const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject* Object)
 {
 	if (AActor* Actor = Cast<AActor>(Object))
 	{
-		return GetorCreateClassInfoByClass(Actor->GetClass());
+		return GetOrCreateClassInfoByClass(Actor->GetClass());
 	}
 	else
 	{
@@ -197,11 +197,11 @@ const FClassInfo& USpatialClassInfoManager::GetClassInfoByObject(UObject* Object
 
 		check(ObjectRef != SpatialConstants::NULL_OBJECT_REF && ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
 
-		return GetClassInfoByActorClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
+		return GetOrCreateClassInfoByClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
 	}
 }
 
-const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_ComponentId ComponentId)
+const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_ComponentId ComponentId) const
 {
 	TSharedRef<FClassInfo> Info = ComponentToClassInfoMap.FindChecked(ComponentId);
 	return Info.Get();

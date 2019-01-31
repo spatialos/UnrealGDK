@@ -10,7 +10,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
 #include "Utils/ComponentFactory.h"
@@ -214,7 +214,7 @@ void CleanupNetDriverAndConnection(USpatialNetDriver* NetDriver, USpatialNetConn
 
 TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channel, AActor* Actor, USpatialClassInfoManager* TypebindingManager, USpatialNetDriver* NetDriver)
 {
-	const FClassInfo& Info = TypebindingManager->GetorCreateClassInfoByClass(Actor->GetClass());
+	const FClassInfo& Info = TypebindingManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	// This ensures that the Actor has prepared it's replicated fields before replicating. For instance, the simulate physics on a UPrimitiveComponent
 	// will be queried and set the Actor's ReplicatedMovement.bRepPhysics field. These fields are then serialized correctly within the snapshot. We are
@@ -277,7 +277,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 
 	UClass* ActorClass = Actor->GetClass();
 
-	const FClassInfo& ActorInfo = TypebindingManager->GetorCreateClassInfoByClass(ActorClass);
+	const FClassInfo& ActorInfo = TypebindingManager->GetOrCreateClassInfoByClass(ActorClass);
 
 	WriteAclMap ComponentWriteAcl;
 
@@ -409,7 +409,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	bSuccess &= ProcessSupportedActors(WorldActors, TypebindingManager, [&PackageMap, &EntityRegistry, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
 	{
 		EntityRegistry->AddToRegistry(EntityId, Actor);
-		const FClassInfo& Info = TypebindingManager->GetorCreateClassInfoByClass(Actor->GetClass());
+		const FClassInfo& Info = TypebindingManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
 		return true;
 	});

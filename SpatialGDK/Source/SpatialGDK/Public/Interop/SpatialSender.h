@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-#include "SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>

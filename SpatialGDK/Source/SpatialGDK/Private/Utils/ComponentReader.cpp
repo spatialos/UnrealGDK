@@ -203,7 +203,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 		return;
 	}
 
-	const FClassInfo& ClassInfo = TypebindingManager->GetorCreateClassInfoByClass(Object->GetClass());
+	const FClassInfo& ClassInfo = TypebindingManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
 	Channel->PreReceiveSpatialUpdate(Object);
 
