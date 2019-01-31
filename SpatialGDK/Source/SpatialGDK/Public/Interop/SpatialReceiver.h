@@ -178,7 +178,7 @@ private:
 	USpatialPackageMapClient* PackageMap;
 
 	UPROPERTY()
-	USpatialTypebindingManager* TypebindingManager;
+	USpatialClassInfoManager* ClassInfoManager;
 
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;

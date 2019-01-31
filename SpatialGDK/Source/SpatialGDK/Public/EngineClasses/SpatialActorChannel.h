@@ -57,14 +57,14 @@ public:
 			return false;
 		}
 
-		FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+		const FClassInfo& Info = NetDriver->ClassInfoManager->GetorCreateClassInfoByClass(Actor->GetClass());
 
 		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info.SchemaComponents[SCHEMA_ClientRPC]);
 	}
 
 	FORCEINLINE bool IsOwnedByWorker() const
 	{
-		const FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+		const FClassInfo& Info = NetDriver->ClassInfoManager->GetorCreateClassInfoByClass(Actor->GetClass());
 
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
 		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(Info.SchemaComponents[SCHEMA_ClientRPC]))
@@ -108,7 +108,7 @@ public:
 	virtual void SetChannelActor(AActor* InActor) override;
 
 	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
-	bool ReplicateSubobject(UObject* Obj, FClassInfo& Info, const FReplicationFlags& RepFlags);
+	bool ReplicateSubobject(UObject* Obj, const FClassInfo& Info, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 
 	TMap<UObject*, FClassInfo*> GetHandoverSubobjects();

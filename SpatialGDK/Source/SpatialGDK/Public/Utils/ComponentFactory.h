@@ -11,7 +11,7 @@
 
 class USpatialNetDriver;
 class USpatialPackageMap;
-class USpatialTypebindingManager;
+class USpatialClassInfoManager;
 class USpatialPackageMapClient;
 
 class UNetDriver;
@@ -29,8 +29,8 @@ class SPATIALGDK_API ComponentFactory
 public:
 	ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver);
 
-	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState);
-	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState);
+	TArray<Worker_ComponentData> CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState);
+	TArray<Worker_ComponentUpdate> CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState);
 
 	static Worker_ComponentData CreateEmptyComponentData(Worker_ComponentId ComponentId);
 
@@ -40,21 +40,21 @@ private:
 
 	bool FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	Worker_ComponentData CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, FClassInfo& Info, const FHandoverChangeState& Changes);
-	Worker_ComponentUpdate CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething);
+	Worker_ComponentData CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes);
+	Worker_ComponentUpdate CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething);
 
-	bool FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
+	bool FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds = nullptr);
 
-	Worker_ComponentData CreateInterestComponentData(UObject* Object, FClassInfo& Info);
-	Worker_ComponentUpdate CreateInterestComponentUpdate(UObject* Object, FClassInfo& Info);
-	improbable::Interest CreateInterestComponent(UObject* Object, FClassInfo& Info);
+	Worker_ComponentData CreateInterestComponentData(UObject* Object, const FClassInfo& Info);
+	Worker_ComponentUpdate CreateInterestComponentUpdate(UObject* Object, const FClassInfo& Info);
+	improbable::Interest CreateInterestComponent(UObject* Object, const FClassInfo& Info);
 	void AddObjectToComponentInterest(UObject* Object, UObjectPropertyBase* Property, uint8* Data, improbable::ComponentInterest& ComponentInterest);
 
 	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
 
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
-	USpatialTypebindingManager* TypebindingManager;
+	USpatialClassInfoManager* TypebindingManager;
 
 	FUnresolvedObjectsMap& PendingRepUnresolvedObjectsMap;
 	FUnresolvedObjectsMap& PendingHandoverUnresolvedObjectsMap;

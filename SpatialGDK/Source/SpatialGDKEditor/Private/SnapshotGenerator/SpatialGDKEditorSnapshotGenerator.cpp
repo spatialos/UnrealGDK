@@ -179,15 +179,15 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 }
 
 // Set up classes needed for Startup Actor creation
-void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialTypebindingManager*& TypebindingManager, UEntityRegistry*& EntityRegistry, UWorld* World)
+void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialClassInfoManager*& TypebindingManager, UEntityRegistry*& EntityRegistry, UWorld* World)
 {
 	NetDriver = NewObject<USpatialNetDriver>();
 	NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
-	NetDriver->TypebindingManager = TypebindingManager;
+	NetDriver->ClassInfoManager = TypebindingManager;
 	NetDriver->GuidCache = MakeShareable(new FSpatialNetGUIDCache(NetDriver));
 	NetDriver->World = World;
 
-	TypebindingManager = NewObject<USpatialTypebindingManager>();
+	TypebindingManager = NewObject<USpatialClassInfoManager>();
 	TypebindingManager->Init(NetDriver);
 
 	EntityRegistry = NewObject<UEntityRegistry>();
@@ -212,9 +212,9 @@ void CleanupNetDriverAndConnection(USpatialNetDriver* NetDriver, USpatialNetConn
 	NetDriver->ServerConnection = NetConnection;
 }
 
-TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channel, AActor* Actor, USpatialTypebindingManager* TypebindingManager, USpatialNetDriver* NetDriver)
+TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channel, AActor* Actor, USpatialClassInfoManager* TypebindingManager, USpatialNetDriver* NetDriver)
 {
-	FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	const FClassInfo& Info = TypebindingManager->GetorCreateClassInfoByClass(Actor->GetClass());
 
 	// This ensures that the Actor has prepared it's replicated fields before replicating. For instance, the simulate physics on a UPrimitiveComponent
 	// will be queried and set the Actor's ReplicatedMovement.bRepPhysics field. These fields are then serialized correctly within the snapshot. We are
@@ -270,14 +270,14 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	return ComponentData;
 }
 
-bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor, Worker_EntityId EntityId, USpatialNetConnection* NetConnection, USpatialTypebindingManager* TypebindingManager)
+bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor, Worker_EntityId EntityId, USpatialNetConnection* NetConnection, USpatialClassInfoManager* TypebindingManager)
 {
 	Worker_Entity Entity;
 	Entity.entity_id = EntityId;
 
 	UClass* ActorClass = Actor->GetClass();
 
-	FClassInfo& ActorInfo = TypebindingManager->FindClassInfoByClass(ActorClass);
+	const FClassInfo& ActorInfo = TypebindingManager->GetorCreateClassInfoByClass(ActorClass);
 
 	WriteAclMap ComponentWriteAcl;
 
@@ -356,7 +356,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &Entity) != 0;
 }
 
-bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialTypebindingManager* TypebindingManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
+bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialClassInfoManager* TypebindingManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
 {
 	Worker_EntityId CurrentEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
 
@@ -391,7 +391,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	USpatialNetDriver* NetDriver = nullptr;
 	USpatialNetConnection* NetConnection = nullptr;
 	USpatialPackageMapClient* PackageMap = nullptr;
-	USpatialTypebindingManager* TypebindingManager = nullptr;
+	USpatialClassInfoManager* TypebindingManager = nullptr;
 	UEntityRegistry* EntityRegistry = nullptr;
 
 	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, TypebindingManager, EntityRegistry, World);
@@ -409,7 +409,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	bSuccess &= ProcessSupportedActors(WorldActors, TypebindingManager, [&PackageMap, &EntityRegistry, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
 	{
 		EntityRegistry->AddToRegistry(EntityId, Actor);
-		FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+		const FClassInfo& Info = TypebindingManager->GetorCreateClassInfoByClass(Actor->GetClass());
 		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
 		return true;
 	});

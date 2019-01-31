@@ -68,7 +68,7 @@ struct UnrealMetadata : Component
 	FString ClassPath;
 };
 
-FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, FClassInfo& Info)
+FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const FClassInfo& Info)
 {
 	SubobjectToOffsetMap SubobjectNameToOffset;
 
