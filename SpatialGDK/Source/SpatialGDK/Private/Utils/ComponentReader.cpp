@@ -31,13 +31,18 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
+	TArray<Schema_FieldId> ClearedIds;
+	TArray<uint32> UpdatedIds;
+	UpdatedIds.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
+
 	if (bIsHandover)
 	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true);
+		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ClearedIds);
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, true);
+		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds, ClearedIds);
 	}
 }
 
@@ -49,27 +54,27 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 	ClearedIds.SetNum(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
 	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIds.GetData());
 
-	if (bIsHandover)
+	TArray<uint32> UpdatedIds;
+	UpdatedIds.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
+
+	UpdatedIds.Append(ClearedIds);
+
+	if (UpdatedIds.Num() > 0)
 	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, &ClearedIds);
-	}
-	else
-	{
-		ApplySchemaObject(ComponentObject, Object, Channel, false, &ClearedIds);
+		if (bIsHandover)
+		{
+			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ClearedIds);
+		}
+		else
+		{
+			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds, ClearedIds);
+		}
 	}
 }
 
-void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
+void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds, TArray<Schema_FieldId>& ClearedIds)
 {
-	TArray<uint32> UpdateFields;
-	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
-
-	if (UpdateFields.Num() == 0)
-	{
-		return;
-	}
-
 	if(Object->IsPendingKill())
 	{
 		return;
@@ -90,7 +95,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 	TArray<UProperty*> RepNotifies;
 
-	for (uint32 FieldId : UpdateFields)
+	for (uint32 FieldId : UpdatedIds)
 	{
 		// FieldId is the same as rep handle
 		check(FieldId > 0 && (int)FieldId - 1 < BaseHandleToCmdIndex.Num());
@@ -104,7 +109,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 			uint8* Data = (uint8*)Object + SwappedCmd.Offset;
 
-			if (bIsInitialData || GetPropertyCount(ComponentObject, FieldId, Cmd.Property) > 0 || ClearedIds->Find(FieldId) != INDEX_NONE)
+			if (bIsInitialData || GetPropertyCount(ComponentObject, FieldId, Cmd.Property) > 0 || ClearedIds.Find(FieldId) != INDEX_NONE)
 			{
 				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 				{
@@ -192,22 +197,13 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	Channel->PostReceiveSpatialUpdate(Object, RepNotifies);
 }
 
-void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
+void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds, TArray<Schema_FieldId>& ClearedIds)
 {
-	TArray<uint32> UpdateFields;
-	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
-
-	if (UpdateFields.Num() == 0)
-	{
-		return;
-	}
-
 	FClassInfo& ClassInfo = TypebindingManager->FindClassInfoByClass(Object->GetClass());
 
 	Channel->PreReceiveSpatialUpdate(Object);
 
-	for (uint32 FieldId : UpdateFields)
+	for (uint32 FieldId : UpdatedIds)
 	{
 		// FieldId is the same as handover handle
 		check(FieldId > 0 && (int)FieldId - 1 < ClassInfo.HandoverProperties.Num());
@@ -215,7 +211,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 
 		uint8* Data = (uint8*)Object + PropertyInfo.Offset;
 
-		if (bIsInitialData || GetPropertyCount(ComponentObject, FieldId, PropertyInfo.Property) > 0 || ClearedIds->Find(FieldId) != INDEX_NONE)
+		if (bIsInitialData || GetPropertyCount(ComponentObject, FieldId, PropertyInfo.Property) > 0 || ClearedIds.Find(FieldId) != INDEX_NONE)
 		{
 			if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
 			{
