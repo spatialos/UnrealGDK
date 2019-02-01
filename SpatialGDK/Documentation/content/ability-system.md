@@ -4,7 +4,7 @@ The [Gameplay Ability System](https://docs.unrealengine.com/en-us/Gameplay/Gamep
 
 This page lists the workarounds that you need to use with the Gameplay Ability System in the alpha release of the GDK. We are working to remove some of these limitations in the future.
 
-## Current Gameplay Ability System workarounds
+## Gameplay Ability System workarounds
 1. The GDK dies not currently support replicated gameplay abilities. To work around this, you must ensure that any `UGameplayAbility` has its `ReplicationPolicy` set to `ReplicateNo`. Replicated gameplay abilities will be available once we support dynamic Actor components in the GDK.
 2. You must add any `UAttributeSet` objects to the `Actor` that owns the `AbilitySystemComponent`, and you must add them to the `Actor` as `DefaultSubObjects`. For example -
 
