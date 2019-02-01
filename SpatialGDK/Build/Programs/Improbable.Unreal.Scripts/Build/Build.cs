@@ -151,7 +151,6 @@ exit /b !ERRORLEVEL!
                     "-SkipCookingEditorContent",
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
-                    "-allmaps",
                 });
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
@@ -189,7 +188,6 @@ exit /b !ERRORLEVEL!
                     "-SkipCookingEditorContent",
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
-                    "-allmaps",
                     "-nullrhi",
                 });
 
@@ -243,7 +241,6 @@ exit /b !ERRORLEVEL!
                     "-unattended",
                     "-fileopenlog",
                     "-SkipCookingEditorContent",
-                    "-allmaps",
                     "-server",
                     "-serverplatform=" + platform,
                     "-noclient",
