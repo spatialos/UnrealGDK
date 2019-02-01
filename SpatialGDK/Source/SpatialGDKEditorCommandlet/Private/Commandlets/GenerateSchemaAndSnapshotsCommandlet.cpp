@@ -31,7 +31,20 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 
 	FSpatialGDKEditor SpatialGDKEditor;
 	if (Params.Contains(TEXT("MapName")))
-		GenerateSchemaAndSnapshotForMap(SpatialGDKEditor, *Params.Find(TEXT("MapName")));
+	{
+		FString MapNameParam = *Params.Find(TEXT("MapName"));
+
+		FString ThisMapName;
+		FString RemainingMapNames = MapNameParam;
+		while (RemainingMapNames.Split(TEXT(";"), &ThisMapName, &RemainingMapNames))
+		{
+			GenerateSchemaAndSnapshotForMap(SpatialGDKEditor, ThisMapName);
+		}
+		//When we get to this point, one of two things is true:
+		//1) RemainingMapNames was NEVER split, and should be interpreted as a single map name
+		//2) RemainingMapnames was split n times, and the last map that needs to be run after the loop is still in it
+		GenerateSchemaAndSnapshotForMap(SpatialGDKEditor, RemainingMapNames);
+	}
 	else
 	{
 	}
