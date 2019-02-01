@@ -20,6 +20,10 @@ public:
 	virtual int32 Main(const FString& Params) override;
 
 private:
+	void GenerateSchemaAndSnapshotForMap(FSpatialGDKEditor& InSpatialGDKEditor, FString InMapName);
+
+	void GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor);
+	void GenerateSnapshotForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor, FString InMapName);
 	void GenerateSchema(FSpatialGDKEditor& SpatialGDKEditor);
 	void GenerateSnapshots(FSpatialGDKEditor& SpatialGDKEditor);
 	TArray<FString> GetAllMapPaths(FString InMapsPath);
