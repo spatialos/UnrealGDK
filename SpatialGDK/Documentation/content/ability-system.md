@@ -5,7 +5,7 @@ The [Gameplay Ability System](https://docs.unrealengine.com/en-us/Gameplay/Gamep
 This page lists the workarounds that you need to use with the Gameplay Ability System in the alpha release of the GDK. We are working to remove some of these limitations in the future.
 
 ## Current Gameplay Ability System workarounds
-1. We currently do not support replicated gameplay abilities. Ensure that any `UGameplayAbility` has its `ReplicationPolicy` set to `ReplicateNo`. Replicated gameplay abilities will be available once we support dynamic Actor components in the GDK.
+1. We currently do not support replicated gameplay abilities. You must ensure that any `UGameplayAbility` has its `ReplicationPolicy` set to `ReplicateNo`. Replicated gameplay abilities will be available once we support dynamic Actor components in the GDK.
 2. You must add any `UAttributeSet` objects to the `Actor` that owns the `AbilitySystemComponent`, and you must add them to the `Actor` as `DefaultSubObjects`. For example -
 
     ```
@@ -19,7 +19,7 @@ This page lists the workarounds that you need to use with the Gameplay Ability S
     ```
     
     This ensures that the replicated data on the `UAttributeSet` object is replicated correctly.    
-3. If the `AbilitySystemComponent` is owned by a class that extends `UPawn`, override the `UPawn::OnRep_Controller()` function and call `AbilitySystemComponent::RefreshAbilityActorInfo()`. For example -
+3. If the `AbilitySystemComponent` is owned by a class that extends `UPawn`, you must override the `UPawn::OnRep_Controller()` function and call `AbilitySystemComponent::RefreshAbilityActorInfo()`. For example -
 
     ```
     MyActor::OnRep_Controller()
