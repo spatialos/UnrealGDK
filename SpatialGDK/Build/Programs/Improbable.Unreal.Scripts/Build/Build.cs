@@ -50,6 +50,8 @@ exit /b !ERRORLEVEL!
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
             var noCompile = false;
+			
+			string additionalUATArgs = System.String.Empty;
 
             var exitCode = 0;
             if (args.Length < 4 && !help)
@@ -60,20 +62,22 @@ exit /b !ERRORLEVEL!
             }
             else if (args.Length > 4)
             {
-                if (args[4].CompareTo("-nocompile") != 0)
-                {
-                    help = true;
-                    exitCode = 1;
-                }
-                else
-                {
-                    noCompile = true;
-                }
+				for (var i = 4; i < args.Length; ++i)
+				{
+					if (args[i].CompareTo("-nocompile") != 0)
+					{
+						additionalUATArgs += args[i] + " ";
+					}
+					else
+					{
+						noCompile = true;
+					}
+				}
             }
-
+			
             if (help)
             {
-                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile]");
+                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>");
 
                 Environment.Exit(exitCode);
             }
@@ -151,6 +155,7 @@ exit /b !ERRORLEVEL!
                     "-SkipCookingEditorContent",
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
+					additionalUATArgs
                 });
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
@@ -189,6 +194,7 @@ exit /b !ERRORLEVEL!
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
                     "-nullrhi",
+					additionalUATArgs
                 });
 
                 var linuxFakeClientPath = Path.Combine(stagingDir, "LinuxNoEditor");
@@ -244,6 +250,7 @@ exit /b !ERRORLEVEL!
                     "-server",
                     "-serverplatform=" + platform,
                     "-noclient",
+					additionalUATArgs
                 });
 
                 bool isLinux = platform == "Linux";
