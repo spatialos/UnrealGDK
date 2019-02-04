@@ -276,6 +276,13 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo& Info, USp
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
 		{
 			UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send component update but don't have authority! Update will not be sent. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
+			UE_LOG(LogSpatialSender, Warning, TEXT("Queueing the update, to send upon receiving authority."));
+			
+			// TODO - Make a task to fix this
+			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the update, to send upon receiving authority.
+			// Note: This will break in a multi-worker context, if we try to create an entity that we don't intend to have authority over. For this reason, this fix is only temporary.
+			TArray<Worker_ComponentUpdate>* UpdatesQueuedUntilAuthority = &UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
+			UpdatesQueuedUntilAuthority->Add(Update);
 			continue;
 		}
 
@@ -283,6 +290,20 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo& Info, USp
 	}
 }
 
+
+// Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
+void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId)
+{
+	if (UpdatesQueuedUntilAuthorityMap.Contains(EntityId))
+	{
+		TArray<Worker_ComponentUpdate> UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap[EntityId];
+		for (Worker_ComponentUpdate& Update : UpdatesQueuedUntilAuthority)
+		{
+			Connection->SendComponentUpdate(EntityId, &Update);
+		}
+		UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
+	}
+}
 
 void FillComponentInterests(FClassInfo& Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
 {

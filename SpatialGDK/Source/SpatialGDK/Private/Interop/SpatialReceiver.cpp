@@ -163,6 +163,10 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 
 void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 {
+	if (Op.authority == 1)
+	{
+		Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id);
+	}
 	if (bInCriticalSection)
 	{
 		PendingAuthorityChanges.Add(Op);
