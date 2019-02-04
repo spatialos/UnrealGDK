@@ -278,7 +278,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo& Info, USp
 			UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send component update but don't have authority! Update will not be sent. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
 			UE_LOG(LogSpatialSender, Warning, TEXT("Queueing the update, to send upon receiving authority."));
 			
-			// TODO - Make a task to fix this
+			// This is a temporary fix. A task improve this has been created: https://improbableio.atlassian.net/browse/UNR-955
 			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the update, to send upon receiving authority.
 			// Note: This will break in a multi-worker context, if we try to create an entity that we don't intend to have authority over. For this reason, this fix is only temporary.
 			TArray<Worker_ComponentUpdate>* UpdatesQueuedUntilAuthority = &UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
