@@ -29,11 +29,16 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferenc
 
 void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject* Object, USpatialActorChannel* Channel, bool bIsHandover)
 {
+	if (Object->IsPendingKill())
+	{
+		return;
+	}
+
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
 	TArray<Schema_FieldId> ClearedIds;
 	TArray<uint32> UpdatedIds;
-	UpdatedIds.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
+	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
 	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
 
 	if (bIsHandover)
@@ -48,17 +53,22 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 
 void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* Object, USpatialActorChannel* Channel, bool bIsHandover)
 {
+	if (Object->IsPendingKill())
+	{
+		return;
+	}
+
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
-	TArray<Schema_FieldId> ClearedIds;
-	ClearedIds.SetNum(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
-	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIds.GetData());
-
 	TArray<uint32> UpdatedIds;
-	UpdatedIds.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
+	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
 	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
 
-	UpdatedIds.Append(ClearedIds);
+	TArray<Schema_FieldId> ClearedIds;
+	ClearedIds.SetNumUninitialized(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
+	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIds.GetData());
+
+	UpdatedIds.Append(ClearedIds);	// Schema_FieldId == uint32
 
 	if (UpdatedIds.Num() > 0)
 	{
@@ -75,11 +85,6 @@ void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& Compone
 
 void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds, TArray<Schema_FieldId>& ClearedIds)
 {
-	if(Object->IsPendingKill())
-	{
-		return;
-	}
-
 	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
 
 	TSharedPtr<FRepState> RepState = Replicator.RepState;
