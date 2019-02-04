@@ -511,7 +511,7 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
 	// Remove any references to the unresolved objects. Since these are not dereferenced before removing,
-	// it is safe to not check whether the unresolved object is still valid.
+	// It is safe to not check whether the unresolved object is still valid.
 	for (TWeakObjectPtr<const UObject>& UnresolvedObject : *Unresolved)
 	{
 		FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
@@ -561,20 +561,17 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 
 	for (const TWeakObjectPtr<const UObject>& UnresolvedObject : UnresolvedObjects)
 	{
-		if (UnresolvedObject.IsValid())
-		{
-			FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
-			check(!AnotherHandleToUnresolved.Find(Handle));
-			AnotherHandleToUnresolved.Add(Handle, Unresolved);
+		// It is expected that this will never be reached. We should never have added an invalid object as an unresolved reference.
+		// Check the ComponentFactory.cpp should this ever be triggered.
+		checkf(UnresolvedObject.IsValid(), TEXT("Invalid UnresolvedObject passed in to USpatialSender::QueueOutgoingUpdate"));
 
-			// Following up on the previous log: listing the unresolved objects
-			UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
-		}
-		else
-		{
-			// It is expected that this will never be reached. If it is, we should consider whether to clean up the invalid objects here.
-			UE_LOG(LogSpatialSender, Error, TEXT("Invalid UnresolvedObject passed in to USpatialSender::QueueOutgoingUpdate"));
-		}
+		FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
+		check(!AnotherHandleToUnresolved.Find(Handle));
+		AnotherHandleToUnresolved.Add(Handle, Unresolved);
+
+		// Following up on the previous log: listing the unresolved objects
+		UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
+
 	}
 }
 
