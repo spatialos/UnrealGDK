@@ -188,7 +188,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		FUnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
-		if (ObjectValue != nullptr)
+		if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
 		{
 			FNetworkGUID NetGUID;
 			if (ObjectValue->IsFullNameStableForNetworking() || ObjectValue->IsSupportedForNetworking())
