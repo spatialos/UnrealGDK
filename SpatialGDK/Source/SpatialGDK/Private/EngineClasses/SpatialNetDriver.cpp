@@ -187,15 +187,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 void USpatialNetDriver::Connect()
 {
-	Connection->OnConnected.BindLambda([this]
-	{
-		OnMapLoadedAndConnected();
-	});
-	Connection->OnConnectFailed.BindLambda([this](const FString& Reason)
-	{
-		OnConnectFailed(Reason);
-	});
-
 	Connection->Connect(bConnectAsClient);
 }
 
@@ -276,11 +267,6 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 		// Once we've finished loading the snapshot we must update our bResponsibleForSnapshotLoading in-case we do not gain authority over the new GSM.
 		Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading = false;
 	}
-}
-
-void USpatialNetDriver::OnConnectFailed(const FString& Reason)
-{
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
 }
 
 void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
@@ -1083,6 +1069,13 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		return;
 	}
 
+
+	if (!IsServer() && (Function->FunctionFlags & FUNC_NetCrossServer))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Attempted to invoke cross server RPC from client for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
+		return;
+	}
+
 	// The RPC might have been called by an actor directly, or by a subobject on that actor
 	UObject* CallingObject = SubObject ? SubObject : Actor;
 
@@ -1536,4 +1529,23 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
+}
+
+void USpatialNetDriver::HandleOnConnected()
+{
+	UE_LOG(LogSpatialOSNetDriver, Debug, TEXT("Succesfully connected to SpatialOS"));
+	OnMapLoadedAndConnected();
+	OnConnected.Broadcast();
+}
+
+void USpatialNetDriver::HandleOnDisconnected(const FString& Reason)
+{
+	UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
+	OnDisconnected.Broadcast(Reason);
+}
+
+void USpatialNetDriver::HandleOnConnectionFailed(const FString& Reason)
+{
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
+	OnConnectionFailed.Broadcast(Reason);
 }

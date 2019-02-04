@@ -37,6 +37,10 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet,);
 
+DECLARE_EVENT(FOnConnectedEvent);
+DECLARE_EVENT_OneParam(FOnDisconnectedEvent, const FString&);
+DECLARE_EVENT_OneParam(FOnConnectionFailedEvent, const FString&);
+
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 {
@@ -84,6 +88,14 @@ public:
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
+
+	void HandleOnConnected();
+	void HandleOnDisconnected(const FString& Reason);
+	void HandleOnConnectionFailed(const FString& Reason);
+
+	FOnConnectedEvent OnConnected;
+	FOnDisconnectedEvent OnDisconnected;
+	FOnConnectionFailedEvent OnConnectionFailed;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -164,9 +176,6 @@ private:
 
 	UFUNCTION()
 	void OnMapLoadedAndConnected();
-
-	UFUNCTION()
-	void OnConnectFailed(const FString& Reason);
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 
