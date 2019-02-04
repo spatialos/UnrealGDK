@@ -37,7 +37,7 @@ void FSpatialNetBitWriter::SerializeObjectRef(FUnrealObjectRef& ObjectRef)
 FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 {
 	FUnrealObjectRef ObjectRef;
-	if (Value != nullptr)
+	if (Value != nullptr && !Value->IsPendingKill())
 	{
 		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
 		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
