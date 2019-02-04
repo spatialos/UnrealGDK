@@ -110,7 +110,7 @@ public:
 	void OnComponentUpdate(Worker_ComponentUpdateOp& Op);
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
-
+ 
 	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
 	void OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op);
 	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
@@ -127,6 +127,8 @@ public:
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
+
+	void OnDisconnect(Worker_DisconnectOp& Op);
 
 private:
 	void EnterCriticalSection();

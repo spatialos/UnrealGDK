@@ -192,8 +192,6 @@ void USpatialNetDriver::Connect()
 
 void USpatialNetDriver::OnMapLoadedAndConnected()
 {
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS and map has been loaded."));
-
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 
 	Dispatcher = NewObject<USpatialDispatcher>();
@@ -1533,14 +1531,14 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 
 void USpatialNetDriver::HandleOnConnected()
 {
-	UE_LOG(LogSpatialOSNetDriver, Debug, TEXT("Succesfully connected to SpatialOS"));
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Succesfully connected to SpatialOS"));
 	OnMapLoadedAndConnected();
 	OnConnected.Broadcast();
 }
 
 void USpatialNetDriver::HandleOnDisconnected(const FString& Reason)
 {
-	UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
 	OnDisconnected.Broadcast(Reason);
 }
 

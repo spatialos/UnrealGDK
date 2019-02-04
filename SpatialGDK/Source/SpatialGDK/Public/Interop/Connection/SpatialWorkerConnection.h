@@ -10,10 +10,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
-DECLARE_EVENT(FOnConnectedEvent);
-DECLARE_EVENT_OneParam(FOnConnectFailedEvent, const FString&);
-DECLARE_EVENT_OneParam(FOnDisconnectedEvent, const FString&);
-
 enum class SpatialConnectionType
 {
 	Receptionist,
@@ -30,6 +26,8 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject
 public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
+
+	void Init(UWorld* InWorld);
 
 	void Connect(bool bConnectAsClient);
 
@@ -74,6 +72,8 @@ private:
 	Worker_Alpha_Locator* WorkerLocator;
 
 	bool bIsConnected;
+
+	TWeakObjectPtr<UWorld> World;
 
 	TArray<FString> CachedWorkerAttributes;
 };

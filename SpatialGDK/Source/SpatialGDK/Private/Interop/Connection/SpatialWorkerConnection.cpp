@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "SpatialNetDriver.h"
+
+#include "EngineClasses//SpatialNetDriver.h"
 #include "Async/Async.h"
-#include "World.h"
 #include "Misc/Paths.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
@@ -11,6 +11,7 @@ DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 void USpatialWorkerConnection::FinishDestroy()
 {
 	DestroyConnection();
+	World.Reset();
 
 	Super::FinishDestroy();
 }
@@ -34,6 +35,11 @@ void USpatialWorkerConnection::DestroyConnection()
 		Worker_Alpha_Locator_Destroy(WorkerLocator);
 		WorkerLocator = nullptr;
 	}
+}
+
+void USpatialWorkerConnection::Init(UWorld* InWorld)
+{
+	World = InWorld;
 }
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
@@ -111,12 +117,16 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 			AsyncTask(ENamedThreads::GameThread, [this]
 			{
-				OnConnectionSuccess();
+				this->OnConnectionSuccess();
 			});
 		}
 		else
 		{
-			OnConnectionFailure();
+			// TODO: Try to reconnect - UNR-576
+			AsyncTask(ENamedThreads::GameThread, [this]
+			{
+				this->OnConnectionFailure();
+			});
 		}
 	});
 }
@@ -204,7 +214,7 @@ void USpatialWorkerConnection::ConnectToLegacyLocator()
 		}
 
 		Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(SpatialConnection->WorkerLegacyLocator, DeploymentList->deployments[DeploymentIndex].deployment_name,
-				&ConnectionParams, nullptr, nullptr);
+			&ConnectionParams, nullptr, nullptr);
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, SpatialConnection]
 		{
@@ -274,7 +284,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, this]
 	{
-		WorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+		auto WorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 		if (Worker_Connection_IsConnected(WorkerConnection))
@@ -282,14 +292,15 @@ void USpatialWorkerConnection::ConnectToLocator()
 			CacheWorkerAttributes();
 			AsyncTask(ENamedThreads::GameThread, [this]
 			{
-				OnConnectionSuccess();
+				this->OnConnectionSuccess();
 			});
 		}
 		else
 		{
+			// TODO: Try to reconnect - UNR-576
 			AsyncTask(ENamedThreads::GameThread, [this]
 			{
-				OnConnectionFailure();
+				this->OnConnectionFailure();
 			});
 		}
 	});
@@ -311,56 +322,6 @@ SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 	{
 		return SpatialConnectionType::Receptionist;
 	}
-}
-
-void USpatialWorkerConnection::OnConnectionSuccess()
-{
-	bIsConnected = true;
-
-	auto NetDriver = Cast<USpatialNetDriver>(GetWorld(this)->GetNetDriver());
-	check(NetDriver);
-
-	NetDriver->HandleOnConnected();
-}
-
-void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
-{
-	bIsConnected = false;
-
-	auto NetDriver = Cast<USpatialNetDriver>(GetWorld(this)->GetNetDriver());
-	check(NetDriver);
-
-	NetDriver->HandleOnConnectionFailed(Reason);
-}
-
-
-void USpatialWorkerConnection::OnConnectionFailure()
-{
-	// TODO: Try to reconnect - UNR-576
-
-	bIsConnected = false;
-
-	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
-	for (int i = 0; i < static_cast<int>(OpList->op_count); i++)
-	{
-		if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
-		{
-			const FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
-			AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
-			{
-				auto NetDriver = Cast<USpatialNetDriver>(GetWorld(this)->GetNetDriver());
-				check(NetDriver);
-
-				NetDriver->HandleOnConnectionFailed(ErrorMessage);
-			});
-			break;
-		}
-	}
-}
-
-bool USpatialWorkerConnection::ShouldConnectWithLocator()
-{
-	return !LocatorConfig.LoginToken.IsEmpty();
 }
 
 Worker_OpList* USpatialWorkerConnection::GetOpList()
@@ -447,5 +408,47 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	for (uint32 Index = 0; Index < Attributes->attribute_count; ++Index)
 	{
 		CachedWorkerAttributes.Add(UTF8_TO_TCHAR(Attributes->attributes[Index]));
+	}
+}
+
+void USpatialWorkerConnection::OnConnectionSuccess()
+{
+	bIsConnected = true;
+
+	auto NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	check(NetDriver);
+
+	NetDriver->HandleOnConnected();
+}
+
+void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
+{
+	bIsConnected = false;
+
+	auto NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	check(NetDriver);
+
+	NetDriver->HandleOnConnectionFailed(Reason);
+}
+
+void USpatialWorkerConnection::OnConnectionFailure()
+{
+	bIsConnected = false;
+
+	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
+	for (int i = 0; i < static_cast<int>(OpList->op_count); i++)
+	{
+		if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
+		{
+			const FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
+			AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
+			{
+				auto NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+				check(NetDriver);
+
+				NetDriver->HandleOnConnectionFailed(ErrorMessage);
+			});
+			break;
+		}
 	}
 }

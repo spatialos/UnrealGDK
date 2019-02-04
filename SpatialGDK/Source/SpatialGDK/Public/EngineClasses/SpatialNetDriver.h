@@ -37,9 +37,9 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet,);
 
-DECLARE_EVENT(FOnConnectedEvent);
-DECLARE_EVENT_OneParam(FOnDisconnectedEvent, const FString&);
-DECLARE_EVENT_OneParam(FOnConnectionFailedEvent, const FString&);
+DECLARE_EVENT(USpatialNetDriver, FOnConnectedEvent);
+DECLARE_EVENT_OneParam(USpatialNetDriver, FOnDisconnectedEvent, const FString&);
+DECLARE_EVENT_OneParam(USpatialNetDriver, FOnConnectionFailedEvent, const FString&);
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
