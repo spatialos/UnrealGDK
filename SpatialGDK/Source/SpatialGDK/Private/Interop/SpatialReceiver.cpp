@@ -915,9 +915,16 @@ void USpatialReceiver::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseO
 {
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Received reserve entity Id: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 
-	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
+	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
+
+	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
+	if (Channel != nullptr && !Channel->IsPendingKill())
 	{
 		Channel->OnReserveEntityIdResponse(Op);
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("ReserveEntityId ActorChannel closed, entity not registered: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 	}
 }
 
@@ -952,9 +959,16 @@ void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request succeeded: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 	}
 
-	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
+	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
+
+	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
+	if (Channel != nullptr && !Channel->IsPendingKill())
 	{
 		Channel->OnCreateEntityResponse(Op);
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved CreateEntityResponse for actor which no longer has an actor channel: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 	}
 }
 
@@ -999,14 +1013,14 @@ void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, R
 	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
 }
 
-USpatialActorChannel* USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
+TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
 {
-	USpatialActorChannel** ChannelPtr = PendingActorRequests.Find(RequestId);
+	TWeakObjectPtr<USpatialActorChannel>* ChannelPtr = PendingActorRequests.Find(RequestId);
 	if (ChannelPtr == nullptr)
 	{
 		return nullptr;
 	}
-	USpatialActorChannel* Channel = *ChannelPtr;
+	TWeakObjectPtr<USpatialActorChannel> Channel = *ChannelPtr;
 	PendingActorRequests.Remove(RequestId);
 	return Channel;
 }
