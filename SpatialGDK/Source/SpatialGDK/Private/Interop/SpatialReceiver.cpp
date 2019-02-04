@@ -918,7 +918,7 @@ void USpatialReceiver::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseO
 	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
 
 	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
-	if (Channel != nullptr && !Channel->IsPendingKill())
+	if (Channel.IsValid())
 	{
 		Channel->OnReserveEntityIdResponse(Op);
 	}
@@ -962,7 +962,7 @@ void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
 
 	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
-	if (Channel != nullptr && !Channel->IsPendingKill())
+	if (Channel.IsValid())
 	{
 		Channel->OnCreateEntityResponse(Op);
 	}
