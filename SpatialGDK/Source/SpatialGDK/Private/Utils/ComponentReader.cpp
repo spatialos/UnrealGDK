@@ -320,9 +320,13 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 					// it's part of a streaming level that hasn't been streamed in. In this case, queue the actor based on it's level.
 					FString FullPath;
 					improbable::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
-					UE_LOG(LogSpatialComponentReader, Warning, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
-						*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
+					//UE_LOG(LogSpatialComponentReader, Warning, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
+					//	*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
 					ObjectProperty->SetObjectPropertyValue(Data, nullptr);
+
+					// Remap object reference since this reference is going to be stored
+					// and compared to later
+					PackageMap->NetworkRemapObjectRefPaths(ObjectRef);
 
 					InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ParentIndex, Property));
 					UnresolvedRefs.Add(ObjectRef.GetLevelReference());

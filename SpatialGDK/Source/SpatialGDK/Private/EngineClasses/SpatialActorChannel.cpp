@@ -97,7 +97,6 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 
 	UE_LOG(LogSpatialActorChannel, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
-	// If we have authority and aren't trying to delete a critical entity, delete it
 	if (bHasAuthority)
 	{
 		// Workaround to delay the delete entity request if tearing off.

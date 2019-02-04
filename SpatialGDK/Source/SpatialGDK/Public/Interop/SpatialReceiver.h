@@ -164,6 +164,9 @@ private:
 	void UpdateShadowData(Worker_EntityId EntityId);
 	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
 
+public:
+	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
+
 private:
 	template <typename T>
 	friend T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId);
@@ -188,9 +191,7 @@ private:
 
 	FTimerManager* TimerManager;
 
-public:
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
-	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 

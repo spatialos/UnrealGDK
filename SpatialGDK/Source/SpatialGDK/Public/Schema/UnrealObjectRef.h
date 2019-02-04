@@ -52,7 +52,14 @@ struct FUnrealObjectRef
 			return *this;
 		}
 
-		return Outer->GetLevelReference();
+		if (Outer.IsSet())
+		{
+			return Outer->GetLevelReference();
+		}
+		else
+		{
+			return FUnrealObjectRef{};
+		}
 	}
 
 	FORCEINLINE bool operator==(const FUnrealObjectRef& Other) const

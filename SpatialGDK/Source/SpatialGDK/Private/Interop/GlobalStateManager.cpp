@@ -41,7 +41,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-	SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, 1);
+	SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
 }
 
 void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Data)
@@ -49,10 +49,10 @@ void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Dat
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 	
 	// Set the Deployment Map URL.
-	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, 1));
+	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 
 	// Set the AcceptingPlayers state.
-	bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+	bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 	ApplyAcceptingPlayersUpdate(bDataAcceptingPlayers);
 }
 
@@ -60,7 +60,7 @@ void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentDat
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-	bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID);
+	bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 	ApplyCanBeginPlayUpdate(bCanBeginPlayData);
 }
 
@@ -68,9 +68,9 @@ void UGlobalStateManager::ApplySingletonManagerUpdate(const Worker_ComponentUpda
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if (Schema_GetObjectCount(ComponentObject, 1) > 0)
+	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID) > 0)
 	{
-		SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, 1);
+		SingletonNameToEntityId = GetStringToEntityMapFromSchema(ComponentObject, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
 	}
 }
 
@@ -78,14 +78,14 @@ void UGlobalStateManager::ApplyDeploymentMapUpdate(const Worker_ComponentUpdate&
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID) == 1)
+	if (Schema_GetObjectCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID) == 1)
 	{
-		SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID));
+		SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 	}
 
-	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
+	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
 	{
-		bool bUpdateAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+		bool bUpdateAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 		ApplyAcceptingPlayersUpdate(bUpdateAcceptingPlayers);
 	}
 }
@@ -106,9 +106,9 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID) == 1)
+	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID) == 1)
 	{
-		bool bCanBeginPlayUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID);
+		bool bCanBeginPlayUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 		ApplyCanBeginPlayUpdate(bCanBeginPlayUpdate);
 	}
 }
@@ -195,6 +195,7 @@ void UGlobalStateManager::LinkAllExistingSingletonActors()
 
 	for (const auto& Pair : SingletonNameToEntityId)
 	{
+		// This is a workaround for the fact that we can't clear containers at the moment.
 		if (Pair.Key.IsEmpty())
 		{
 			continue;
@@ -316,10 +317,10 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	// Set the map URL on the GSM.
-	AddStringToSchema(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID, NetDriver->GetWorld()->URL.Map);
+	AddStringToSchema(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID, NetDriver->GetWorld()->URL.Map);
 
 	// Set the AcceptingPlayers state on the GSM
-	Schema_AddBool(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, uint8_t(bInAcceptingPlayers));
+	Schema_AddBool(UpdateObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, static_cast<uint8_t>(bInAcceptingPlayers));
 
 	// Component updates are short circuited so we set the updated state here and then send the component update.
 	bAcceptingPlayers = bInAcceptingPlayers;
@@ -340,7 +341,7 @@ void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
 	// Set CanBeginPlay on GSM
-	Schema_AddBool(UpdateObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID, (uint8_t)bInCanBeginPlay);
+	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
 
 	bCanBeginPlay = bInCanBeginPlay;
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
@@ -369,7 +370,7 @@ void UGlobalStateManager::BeginDestroy()
 	Super::BeginDestroy();
 
 #ifdef WITH_EDITOR
-	if (NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
+	if (NetDriver != nullptr && NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 	{
 		// If we are deleting dynamically spawned entities, we need to
 		if (GetDefault<ULevelEditorPlaySettings>()->IsDeleteDynamicEntitiesActive())
@@ -382,11 +383,11 @@ void UGlobalStateManager::BeginDestroy()
 			Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 			Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 			Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-			//Schema_AddComponentUpdateClearedField(Update, 1);
 
+			// Workaround since we can't clear containers at the moment. We make the map have one element with an empty pair.
 			SingletonNameToEntityId.Empty();
 			SingletonNameToEntityId.Add(TEXT(""), 0);
-			AddStringToEntityMapToSchema(UpdateObject, 1, SingletonNameToEntityId);
+			AddStringToEntityMapToSchema(UpdateObject, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID, SingletonNameToEntityId);
 
 			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 		}
@@ -517,9 +518,9 @@ bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(Worker_EntityQuer
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-			if (Schema_GetBoolCount(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID) == 1)
+			if (Schema_GetBoolCount(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID) == 1)
 			{
-				bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID);
+				bool bDataAcceptingPlayers = GetBoolFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID);
 				return bDataAcceptingPlayers;
 			}
 		}

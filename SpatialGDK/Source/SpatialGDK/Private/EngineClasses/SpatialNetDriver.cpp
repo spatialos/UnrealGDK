@@ -189,6 +189,14 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
 {
+
+	// Callback got called on a World that's not assoicated with this NetDriver.
+	// Don't do anything.
+	if (OwningWorld != World)
+	{
+		return;
+	}
+
 	// If we have authority over the GSM when loading a sublevel, make sure we have authority
 	// over the actors in the sublevel.
 	if (GlobalStateManager != nullptr)
@@ -197,27 +205,28 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 		{
 			for (auto Actor : LoadedLevel->Actors)
 			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
+				if (Actor->GetIsReplicated())
+				{
+					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
+				}
 			}
 		}
 	}
 
-	// if we are the client, it is possible to have unresolved references
+	// If we are the client, it is possible to have unresolved references
 	// to stably named actors in a newly loaded sublevel. Resolve these here.
-	if (bConnectAsClient && LoadedLevel->bIsVisible)
+	if (bConnectAsClient)
 	{
 		if (Receiver != nullptr && PackageMap != nullptr)
 		{
 			FNetworkGUID LevelNetGUID = PackageMap->ResolveStablyNamedObject(LoadedLevel);
-			if (LevelNetGUID.IsValid())
-			{
-				FUnrealObjectRef LevelRef = PackageMap->GetUnrealObjectRefFromNetGUID(LevelNetGUID);
+			FUnrealObjectRef LevelRef = PackageMap->GetUnrealObjectRefFromNetGUID(LevelNetGUID);
+			//FUnrealObjectRef LevelRef = PackageMap->GetUnrealObjectRefFromObject(LoadedLevel);
 
-				TSet<FChannelObjectPair>* TargetObjectSet = Receiver->IncomingRefsMap.Find(LevelRef);
+			TSet<FChannelObjectPair>* TargetObjectSet = Receiver->IncomingRefsMap.Find(LevelRef);
 
-				Receiver->ResolvePendingOperations(LoadedLevel, LevelRef);
-			}
+			Receiver->ResolvePendingOperations(LoadedLevel, LevelRef);
 		}
 	}
 }

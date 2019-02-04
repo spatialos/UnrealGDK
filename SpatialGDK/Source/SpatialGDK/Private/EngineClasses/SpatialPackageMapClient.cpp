@@ -120,6 +120,11 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject*
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
+void USpatialPackageMapClient::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const
+{
+	static_cast<FSpatialNetGUIDCache*>(GuidCache.Get())->NetworkRemapObjectRefPaths(ObjectRef);
+}
+
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
 {
 	// Super::SerializeObject is not called here on purpose
@@ -161,7 +166,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 		// Since the path ref may have been registered previously, we first try to remove it
 		// and then register the entity id ref.
 		StablyNamedRef = NetGUIDToUnrealObjectRef[NetGUID];
-		NetGUIDToUnrealObjectRef.Remove(NetGUID);
 		NetGUIDToUnrealObjectRef.Emplace(NetGUID, EntityObjectRef);
 	}
 	else
@@ -186,16 +190,23 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 		UObject* Subobject = Pair.Key;
 		uint32 Offset = Pair.Value;
 
+		// AssignNewStablyNamedObjectNetGUID is not used due to using the wrong ObjectRef as the outer of the subobject.
+		// So it is ok to use RegisterObjectRef in both cases since no prior bookkeeping was done (unlike Actors)
 		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 		FUnrealObjectRef EntityIdSubobjectRef(EntityId, Offset);
 
 		if (Subobject->IsNameStableForNetworking())
 		{
-			// Startup Actors have two valid UnrealObjectRefs: the entity id and the path.
-			// AssignNewStablyNamedObjectNetGUID will register the path ref.
-			FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
+			if (Subobject->GetFName().ToString().Equals(TEXT("PersistentLevel")) && !Subobject->IsA<ULevel>())
+			{
+				UE_LOG(LogSpatialPackageMap, Fatal, TEXT("Found object called PersistentLevel which isn't a Level! This is not allowed when using the GDK"));
+			}
+
+			// Using StablyNamedRef for the outer since referencing ObjectRef in the map
+			// will have the EntityId
 			FUnrealObjectRef StablyNamedSubobjectRef(0, 0, Subobject->GetFName().ToString(), StablyNamedRef);
 
+			// This is the only extra object ref that has to be registered for the subobject.
 			UnrealObjectRefToNetGUID.Emplace(StablyNamedSubobjectRef, SubobjectNetGUID);
 		}
 
@@ -236,7 +247,22 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 		OuterGUID = AssignNewStablyNamedObjectNetGUID(OuterObject);
 	}
 
-	FUnrealObjectRef StablyNamedObjRef(0, 0, Object->GetFName().ToString(), (OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef());
+
+	if (Object->GetFName().ToString().Equals(TEXT("PersistentLevel")) && !Object->IsA<ULevel>())
+	{
+		UE_LOG(LogSpatialPackageMap, Fatal, TEXT("Found object called PersistentLevel which isn't a Level! This is not allowed when using the GDK"));
+	}
+
+	// Network sanitize path
+	FString TempPath = Object->GetFName().ToString();
+	//GEngine->NetworkRemapPath(Driver, TempPath, true);
+
+	//if (!TempPath.Equals(Object->GetFName().ToString()))
+	//{
+	//	UE_LOG(LogSpatialPackageMap, Log, TEXT("Found object called PersistentLevel which isn't a Level! This is not allowed when using the GDK"));
+	//}
+
+	FUnrealObjectRef StablyNamedObjRef(0, 0, TempPath, (OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef());
 	RegisterObjectRef(NetGUID, StablyNamedObjRef);
 
 	return NetGUID;
@@ -259,6 +285,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 
 	improbable::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
+	// There are times when the Editor is quitting out of PIE that this is nullptr.
 	if (UnrealMetadata == nullptr)
 	{
 		return;
@@ -286,6 +313,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
 	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
 	UnrealObjectRefToNetGUID.Remove(*ActorRef);
+	UnrealObjectRefToNetGUID.Remove(StablyNamedRef);
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)

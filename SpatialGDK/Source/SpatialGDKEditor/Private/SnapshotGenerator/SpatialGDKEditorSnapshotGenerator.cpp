@@ -74,7 +74,7 @@ Worker_ComponentData CreateSingletonManagerData()
 {
 	StringToEntityMap SingletonNameToEntityId;
 
-	Worker_ComponentData Data;
+	Worker_ComponentData Data{};
 	Data.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
@@ -86,27 +86,27 @@ Worker_ComponentData CreateSingletonManagerData()
 
 Worker_ComponentData CreateDeploymentData()
 {
-	Worker_ComponentData DeploymentData;
+	Worker_ComponentData DeploymentData{};
 	DeploymentData.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	DeploymentData.schema_type = Schema_CreateComponentData(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
 	Schema_Object* DeploymentDataObject = Schema_GetComponentDataFields(DeploymentData.schema_type);
 
-	Schema_Object* MapURLObject = Schema_AddObject(DeploymentDataObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID);
+	Schema_Object* MapURLObject = Schema_AddObject(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID);
 	AddStringToSchema(MapURLObject, 1, TEXT("default")); // TODO: Fill this with the map name of the map the snapshot is being generated for.
 
-	Schema_AddBool(DeploymentDataObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, false);
+	Schema_AddBool(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, false);
 
 	return DeploymentData;
 }
 
 Worker_ComponentData CreateStartupActorManagerData()
 {
-	Worker_ComponentData StartupActorManagerData;
+	Worker_ComponentData StartupActorManagerData{};
 	StartupActorManagerData.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
 	StartupActorManagerData.schema_type = Schema_CreateComponentData(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	Schema_Object* StartupActorManagerObject = Schema_GetComponentDataFields(StartupActorManagerData.schema_type);
 
-	Schema_AddBool(StartupActorManagerObject, SpatialConstants::GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID, false);
+	Schema_AddBool(StartupActorManagerObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, false);
 
 	return StartupActorManagerData;
 }

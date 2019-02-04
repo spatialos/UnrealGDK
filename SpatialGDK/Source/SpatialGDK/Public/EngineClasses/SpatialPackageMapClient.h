@@ -33,6 +33,8 @@ public:
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
 
+	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const;
+
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
 private:
@@ -55,8 +57,9 @@ public:
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(Worker_EntityId EntityId) const;
 
-private:
 	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const;
+
+private:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRefInternal(const FUnrealObjectRef& ObjectRef);
 
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(UObject* Object);

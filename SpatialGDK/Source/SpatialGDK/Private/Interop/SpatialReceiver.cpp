@@ -491,7 +491,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	// Actor is a startup actor that is a part of the level. We need to do an entity query to see
 	// if the entity was actually deleted or only removed from our view
-	if (Actor->bNetLoadOnClient == true)
+	if (Actor->bNetLoadOnClient)
 	{
 		QueryForStartupActor(Actor, EntityId);
 		return;
@@ -541,16 +541,18 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&StartupActorQuery);
 
 	EntityQueryDelegate StartupActorDelegate;
-	StartupActorDelegate.BindLambda([this, Actor, EntityId](Worker_EntityQueryResponseOp& Op)
+	TWeakObjectPtr<AActor> WeakActor(Actor);
+	StartupActorDelegate.BindLambda([this, WeakActor, EntityId](Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), Op.message);
 			return;
 		}
 
-		if (Op.result_count == 0)
+		if (Op.result_count == 0 && WeakActor.IsValid())
 		{
-			DestroyActor(Actor, EntityId);
+			DestroyActor(WeakActor.Get(), EntityId);
 		}
 	});
 

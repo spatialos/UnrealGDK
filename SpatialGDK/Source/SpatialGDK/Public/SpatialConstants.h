@@ -90,13 +90,13 @@ namespace SpatialConstants
 		PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
 	};
 
-	const Worker_ComponentId INVALID_COMPONENT_ID				= 0;
+	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
 
-	const Worker_ComponentId ENTITY_ACL_COMPONENT_ID			= 50;
-	const Worker_ComponentId METADATA_COMPONENT_ID				= 53;
-	const Worker_ComponentId POSITION_COMPONENT_ID				= 54;
-	const Worker_ComponentId PERSISTENCE_COMPONENT_ID			= 55;
-	const Worker_ComponentId INTEREST_COMPONENT_ID              = 58;
+	const Worker_ComponentId ENTITY_ACL_COMPONENT_ID						= 50;
+	const Worker_ComponentId METADATA_COMPONENT_ID							= 53;
+	const Worker_ComponentId POSITION_COMPONENT_ID							= 54;
+	const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
+	const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
 
 	const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 100001;
 	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 100002;
@@ -107,10 +107,12 @@ namespace SpatialConstants
 	const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID				= 100007;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 100010;
 
-	const Schema_FieldId GLOBAL_STATE_MANAGER_MAP_URL_ID			= 1;
-	const Schema_FieldId GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID	= 2;
+	const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
 
-	const Schema_FieldId GLOBAL_STATE_MANAGER_CAN_BEGIN_PLAY_ID		= 1;
+	const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
+	const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
+
+	const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;
