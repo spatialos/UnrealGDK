@@ -601,12 +601,24 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 	ESchemaComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Data.component_id);
 
+
 	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly)
 	{
+		if (UActorComponent* ActorComp = Cast<UActorComponent>(TargetObject))
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+			bool bReplicates = !!Schema_IndexBool(ComponentObject, SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID, 0);
+			if (!bReplicates)
+			{
+				return;
+			}
+		}
+
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<FUnrealObjectRef> UnresolvedRefs;
 
 		ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
+
 		Reader.ApplyComponentData(Data, TargetObject.Get(), Channel, /* bIsHandover */ false);
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
