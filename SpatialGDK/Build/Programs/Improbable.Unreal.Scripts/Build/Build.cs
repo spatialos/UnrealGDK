@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -49,9 +50,6 @@ exit /b !ERRORLEVEL!
         public static void Main(string[] args)
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
-            var noCompile = false;
-
-            string additionalUATArgs = System.String.Empty;
 
             var exitCode = 0;
             if (args.Length < 4 && !help)
@@ -59,20 +57,6 @@ exit /b !ERRORLEVEL!
                 help = true;
                 exitCode = 1;
                 Console.Error.WriteLine("Path to uproject file is required.");
-            }
-            else if (args.Length > 4)
-            {
-				for (var i = 4; i < args.Length; ++i)
-				{
-					if (args[i].CompareTo("-nocompile") != 0)
-					{
-						additionalUATArgs += args[i] + " ";
-					}
-					else
-					{
-						noCompile = true;
-					}
-				}
             }
 
             if (help)
@@ -86,6 +70,8 @@ exit /b !ERRORLEVEL!
             var platform = args[1];
             var configuration = args[2];
             var projectFile = Path.GetFullPath(args[3]);
+            var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
+            var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => arg.ToLowerInvariant() != "-nocompile"));
 
             var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
             var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));
