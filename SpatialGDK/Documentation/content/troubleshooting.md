@@ -67,3 +67,14 @@ When I launch my SpatialOS deployment, I receive error messages similar to: `use
 This means you were using the GDK since pre-alpha. To fix the issue, delete the contents of your `spatial/schema` folder, run `Setup.bat` again in the GDK folder, and generate the schemas again. You may also need to update your streaming queries in `spatialos.json`. Refer to our [StarterProject repo](https://github.com/spatialos/UnrealGDKStarterProject) to see an example.
 <br/>
 -----
+
+#### Q:
+When I run `Setup.bat`, I get the following error: `error MSB3644: The reference assemblies for framework ".NETFramework,Version=4.5" were not found`.
+
+(The full error message looks like:
+`C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\bin\Microsoft.Common.CurrentVersion.targets(1179,5): error MSB3644: The reference assemblies for framework ".NETFramework,Version=4.5" were not found. To resolve this, install the SDK or Targeting Pack for this framework version or retarget your application to a version of the framework for which you have the SDK or Targeting Pack installed. Note that assemblies will be resolved from the Global Assembly Cache (GAC) and will be used in place of reference assemblies. Therefore your assembly may not be correctly targeted for the framework you intend. [C:\MyProject\Game\Plugins\UnrealGDK\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Build\Build.csproj]`)
+
+#### A:
+.NET Framework 4.5 is included with `Universal Windows Platform development` when you install Visual Studio. Make sure you have installed all the [GDK dependencies]({{urlRoot}}/content/get-started/dependencies). If you have already installed Visual Studio, you can add the missing packages by running `Visual Studio Installer` and clicking `Modify` on your existing Visual Studio installation.
+<br/>
+-----
