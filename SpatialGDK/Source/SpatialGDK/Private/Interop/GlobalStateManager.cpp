@@ -29,6 +29,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 	Receiver = InNetDriver->Receiver;
 	TimerManager = InTimerManager;
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
+	FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::SendShutdownMultiProcessRequest);
 }
 
 void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
@@ -90,6 +91,45 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 
 		// Tell the SpatialNetDriver that AcceptingPlayers has changed.
 		NetDriver->OnAcceptingPlayersChanged(bAcceptingPlayersUpdate);
+	}
+}
+
+void UGlobalStateManager::SendShutdownMultiProcessRequest(bool bValue)
+{
+	const ULevelEditorPlaySettings* const PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+
+	// only the client should ever send this request
+	if (PlayInSettings && NetDriver && NetDriver->GetNetMode() != NM_DedicatedServer)
+	{
+		bool bRunUnderOneProcess = true;
+		PlayInSettings->GetRunUnderOneProcess(bRunUnderOneProcess);
+
+		if (!bRunUnderOneProcess)
+		{
+			Internal_SendShutdownMultiProcessRequest();
+		}
+	}
+}
+
+void UGlobalStateManager::Internal_SendShutdownMultiProcessRequest()
+{
+	FURL DummyURL;
+	Worker_CommandRequest CommandRequest = {};
+	CommandRequest.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
+	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, 1);
+	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+	AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
+
+	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest, 1);
+}
+
+void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
+{
+	if (NetDriver && NetDriver->GetNetMode() == NM_DedicatedServer)
+	{
+		UE_LOG(LogGlobalStateManager, Warning, TEXT("Received shutdown multi-process request."));
+		SetAcceptingPlayers(false);
+		GIsRequestingExit = true;
 	}
 }
 
