@@ -162,7 +162,7 @@ private:
 
 	void ProcessQueuedResolvedObjects();
 	void UpdateShadowData(Worker_EntityId EntityId);
-	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
+	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
 
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
@@ -203,7 +203,7 @@ private:
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_EntityId> PendingRemoveEntities;
 
-	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
+	TMap<Worker_RequestId, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
 
 	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
