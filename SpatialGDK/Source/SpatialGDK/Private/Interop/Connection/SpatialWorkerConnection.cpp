@@ -284,7 +284,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, this]
 	{
-		auto WorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+		WorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 		if (Worker_Connection_IsConnected(WorkerConnection))

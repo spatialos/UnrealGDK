@@ -1067,13 +1067,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		return;
 	}
 
-
-	if (!IsServer() && (Function->FunctionFlags & FUNC_NetCrossServer))
-	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Attempted to invoke cross server RPC from client for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
-		return;
-	}
-
 	// The RPC might have been called by an actor directly, or by a subobject on that actor
 	UObject* CallingObject = SubObject ? SubObject : Actor;
 
