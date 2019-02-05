@@ -295,7 +295,7 @@ void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId
 {
 	if (UpdatesQueuedUntilAuthorityMap.Contains(EntityId))
 	{
-		TArray<Worker_ComponentUpdate> UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap[EntityId];
+		TArray<Worker_ComponentUpdate>& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap[EntityId];
 		for (Worker_ComponentUpdate& Update : UpdatesQueuedUntilAuthority)
 		{
 			Connection->SendComponentUpdate(EntityId, &Update);
