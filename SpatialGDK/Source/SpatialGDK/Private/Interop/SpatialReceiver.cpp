@@ -601,10 +601,9 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 	ESchemaComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Data.component_id);
 
-
 	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly)
 	{
-		if (UActorComponent* ActorComp = Cast<UActorComponent>(TargetObject))
+		if (ComponentType == SCHEMA_Data && TargetObject->IsA<UActorComponent>())
 		{
 			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 			bool bReplicates = !!Schema_IndexBool(ComponentObject, SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID, 0);
@@ -618,7 +617,6 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 		TSet<FUnrealObjectRef> UnresolvedRefs;
 
 		ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
-
 		Reader.ApplyComponentData(Data, TargetObject.Get(), Channel, /* bIsHandover */ false);
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
