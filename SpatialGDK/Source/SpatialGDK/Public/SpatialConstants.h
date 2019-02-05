@@ -105,10 +105,16 @@ namespace SpatialConstants
 	const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 100005;
 	const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 100006;
 	const Worker_ComponentId SERVER_ONLY_SINGLETON_COMPONENT_ID				= 100007;
+	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 100008;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 100010;
 
 	const Schema_FieldId GLOBAL_STATE_MANAGER_MAP_URL_ID			= 1;
 	const Schema_FieldId GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID	= 2;
+
+	const Schema_FieldId HEARTBEAT_EVENT_ID = 1;
+
+	const float HEARTBEAT_INTERVAL_SECONDS = 2.0f;
+	const float HEARTBEAT_TIMEOUT_SECONDS = 10.0f;
 
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;
