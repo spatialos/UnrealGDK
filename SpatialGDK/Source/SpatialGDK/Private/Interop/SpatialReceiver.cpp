@@ -189,7 +189,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			return;
 		}
 
-		// TODO UNR-955 - Remove this once batch EntityIds are in.
+		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id);
