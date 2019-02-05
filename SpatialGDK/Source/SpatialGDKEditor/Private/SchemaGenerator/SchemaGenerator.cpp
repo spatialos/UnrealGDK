@@ -258,7 +258,7 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 			const UProperty* ReplicatesProp = UActorComponent::StaticClass()->FindPropertyByName("bReplicates");
 			if (!(ExpectedReplicatesPropData->IsValid() && ExpectedReplicatesPropData->Get()->Property == ReplicatesProp))
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Did not find ActorComponent->bReplicates at field ACTOR_COMPONENT_REPLICATES_ID[%d]"),
+				UE_LOG(LogTemp, Error, TEXT("Did not find ActorComponent->bReplicates at field ACTOR_COMPONENT_REPLICATES_ID[%d]. Modifying the base Actor Component class is currently not supported."),
 					SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID);
 			}
 		}
