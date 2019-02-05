@@ -800,6 +800,13 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				// or it's an editor placed actor and the client hasn't initialized the level it's in
 				if (Channel == nullptr && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
+					if (!Actor->HasAuthority())
+					{
+						// Trying to replicate Actor which we don't have authority over.
+						// Remove after UNR-961
+						continue;
+					}
+
 					// If we're a singleton, and don't have a channel, defer to GSM
 					if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 					{

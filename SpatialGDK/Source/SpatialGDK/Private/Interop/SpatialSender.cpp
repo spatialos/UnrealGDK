@@ -143,8 +143,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// Only want to have a stably object ref if this Actor is stably named.
 	// We use this to indiciate if a new Actor should be created or to link a pre-existing Actor
 	// when receiving an AddEntityOp.
-	FUnrealObjectRef StablyNamedObjectRef;
-	if (Actor->IsFullNameStableForNetworking() && Actor->bNetLoadOnClient)
+	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
+	if (Actor->IsFullNameStableForNetworking())
 	{
 		FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
 		StablyNamedObjectRef = FUnrealObjectRef(0, 0, Actor->GetFName().ToString(), OuterObjectRef);
@@ -488,7 +488,7 @@ void USpatialSender::FlushRetryRPCs()
 
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 {
-	UE_LOG(LogSpatialSender, Log, TEXT("Sending reserve entity Id request for %s"), *Channel->Actor->GetName());
+	UE_LOG(LogSpatialSender, Warning, TEXT("%s Sending reserve entity Id request for %s"), *Connection->GetWorkerId(), *Channel->Actor->GetName());
 	Worker_RequestId RequestId = Connection->SendReserveEntityIdRequest();
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }

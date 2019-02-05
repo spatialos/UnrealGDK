@@ -168,8 +168,16 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 	Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
 
-	SingletonActor->Role = ROLE_SimulatedProxy;
-	SingletonActor->RemoteRole = ROLE_Authority;
+	if (StaticComponentView->GetAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		SingletonActor->Role = ROLE_Authority;
+		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
+	}
+	else
+	{
+		SingletonActor->Role = ROLE_SimulatedProxy;
+		SingletonActor->RemoteRole = ROLE_Authority;
+	}
 
 	// Add to entity registry
 	// This indirectly causes SetChannelActor to not create a new entity for this actor
@@ -236,9 +244,6 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		// We have control over the GSM, so can safely setup a new channel and let it allocate an entity id
 		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
 		Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
-
-		SingletonActor->Role = ROLE_Authority;
-		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
 
 		// If entity id already exists for this singleton, set the actor to it
 		// Otherwise SetChannelActor will issue a new entity id request

@@ -25,14 +25,17 @@ struct UnrealMetadata : Component
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const FUnrealObjectRef& InStablyNamedRef, const FString& InOwnerWorkerAttribute, const FString& InClassPath)
+	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InOwnerWorkerAttribute, const FString& InClassPath)
 		: StablyNamedRef(InStablyNamedRef), OwnerWorkerAttribute(InOwnerWorkerAttribute), ClassPath(InClassPath) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		StablyNamedRef = GetObjectRefFromSchema(ComponentObject, 1);
+		if (Schema_GetObjectCount(ComponentObject, 1) == 1)
+		{
+			StablyNamedRef = GetObjectRefFromSchema(ComponentObject, 1);
+		}
 		OwnerWorkerAttribute = GetStringFromSchema(ComponentObject, 2);
 		ClassPath = GetStringFromSchema(ComponentObject, 3);
 	}
@@ -44,7 +47,10 @@ struct UnrealMetadata : Component
 		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		AddObjectRefToSchema(ComponentObject, 1, StablyNamedRef);
+		if (StablyNamedRef.IsSet())
+		{
+			AddObjectRefToSchema(ComponentObject, 1, StablyNamedRef.GetValue());
+		}
 		AddStringToSchema(ComponentObject, 2, OwnerWorkerAttribute);
 		AddStringToSchema(ComponentObject, 3, ClassPath);
 
@@ -64,7 +70,7 @@ struct UnrealMetadata : Component
 		return nullptr;
 	}
 
-	FUnrealObjectRef StablyNamedRef;
+	TSchemaOption<FUnrealObjectRef> StablyNamedRef;
 	FString OwnerWorkerAttribute;
 	FString ClassPath;
 };

@@ -348,14 +348,14 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			if (UnrealMetadata->StablyNamedRef == SpatialConstants::NULL_OBJECT_REF)
+			if (!UnrealMetadata->StablyNamedRef.IsSet())
 			{
 				EntityActor = CreateActor(SpawnData, ActorClass, true);
 				bDoingDeferredSpawn = true;
 			}
 			else
 			{
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(UnrealMetadata->StablyNamedRef);
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(UnrealMetadata->StablyNamedRef.GetValue());
 				EntityActor = Cast<AActor>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
 				if (EntityActor == nullptr)
 				{

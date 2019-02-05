@@ -11,6 +11,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "SchemaOption.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
@@ -282,7 +283,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 		return;
 	}
 
-	const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef;
+	improbable::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
@@ -292,9 +293,9 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 			NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
 			UnrealObjectRefToNetGUID.Remove(SubobjectRef);
 
-			if (StablyNamedRef != SpatialConstants::NULL_OBJECT_REF)
+			if (StablyNamedRefOption.IsSet())
 			{
-				UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(), StablyNamedRef));
+				UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
 			}
 		}
 	}
@@ -304,7 +305,10 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
 	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
 	UnrealObjectRefToNetGUID.Remove(*ActorRef);
-	UnrealObjectRefToNetGUID.Remove(StablyNamedRef);
+	if (StablyNamedRefOption.IsSet())
+	{
+		UnrealObjectRefToNetGUID.Remove(StablyNamedRefOption.GetValue());
+	}
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)
