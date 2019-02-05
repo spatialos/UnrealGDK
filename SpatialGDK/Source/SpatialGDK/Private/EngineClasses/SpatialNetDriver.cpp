@@ -216,19 +216,19 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 
 	// If we are the client, it is possible to have unresolved references
 	// to stably named actors in a newly loaded sublevel. Resolve these here.
-	if (bConnectAsClient)
-	{
-		if (Receiver != nullptr && PackageMap != nullptr)
-		{
-			FNetworkGUID LevelNetGUID = PackageMap->ResolveStablyNamedObject(LoadedLevel);
-			FUnrealObjectRef LevelRef = PackageMap->GetUnrealObjectRefFromNetGUID(LevelNetGUID);
-			//FUnrealObjectRef LevelRef = PackageMap->GetUnrealObjectRefFromObject(LoadedLevel);
+	//if (bConnectAsClient)
+	//{
+	//	if (Receiver != nullptr && PackageMap != nullptr)
+	//	{
+	//		FNetworkGUID LevelNetGUID = PackageMap->ResolveStablyNamedObject(LoadedLevel);
+	//		FUnrealObjectRef LevelRef = PackageMap->GetUnrealObjectRefFromNetGUID(LevelNetGUID);
+	//		//FUnrealObjectRef LevelRef = PackageMap->GetUnrealObjectRefFromObject(LoadedLevel);
 
-			TSet<FChannelObjectPair>* TargetObjectSet = Receiver->IncomingRefsMap.Find(LevelRef);
+	//		TSet<FChannelObjectPair>* TargetObjectSet = Receiver->IncomingRefsMap.Find(LevelRef);
 
-			Receiver->ResolvePendingOperations(LoadedLevel, LevelRef);
-		}
-	}
+	//		Receiver->ResolvePendingOperations(LoadedLevel, LevelRef);
+	//	}
+	//}
 }
 
 void USpatialNetDriver::Connect()

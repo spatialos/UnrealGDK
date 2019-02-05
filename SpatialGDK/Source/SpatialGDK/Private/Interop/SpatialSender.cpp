@@ -144,7 +144,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// We use this to indiciate if a new Actor should be created or to link a pre-existing Actor
 	// when receiving an AddEntityOp.
 	FUnrealObjectRef StablyNamedObjectRef;
-	if (Actor->IsFullNameStableForNetworking())
+	if (Actor->IsFullNameStableForNetworking() && Actor->bNetLoadOnClient)
 	{
 		FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
 		StablyNamedObjectRef = FUnrealObjectRef(0, 0, Actor->GetFName().ToString(), OuterObjectRef);
