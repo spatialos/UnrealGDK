@@ -36,7 +36,6 @@ void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentDa
 
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
-	TArray<Schema_FieldId> ClearedIds;
 	TArray<uint32> UpdatedIds;
 	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
 	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
