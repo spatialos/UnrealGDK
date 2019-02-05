@@ -16,6 +16,9 @@ function Write-Log() {
   }
 }
 
+
+Write-Output "Starting Unreal GDK build pipeline.."
+
 pushd "$($gdk_home)"
 
   pushd "SpatialGDK/Extras"
