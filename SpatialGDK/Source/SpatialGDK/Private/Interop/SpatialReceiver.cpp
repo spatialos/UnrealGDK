@@ -189,6 +189,12 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			return;
 		}
 
+		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id);
+		}
+
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
 		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
