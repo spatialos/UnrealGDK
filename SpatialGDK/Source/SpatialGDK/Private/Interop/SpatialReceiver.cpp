@@ -163,10 +163,6 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 
 void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 {
-	if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-	{
-		Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id);
-	}
 	if (bInCriticalSection)
 	{
 		PendingAuthorityChanges.Add(Op);
@@ -191,6 +187,12 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		{
 			GlobalStateManager->ExecuteInitialSingletonActorReplication();
 			return;
+		}
+
+		// TODO UNR-955 - Remove this once batch EntityIds are in.
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id);
 		}
 
 		// If we became authoritative over the position component. set our role to be ROLE_Authority

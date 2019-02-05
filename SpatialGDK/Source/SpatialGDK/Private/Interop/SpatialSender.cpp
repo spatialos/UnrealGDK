@@ -293,10 +293,9 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo& Info, USp
 // Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
 void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId)
 {
-	if (UpdatesQueuedUntilAuthorityMap.Contains(EntityId))
+	if (TArray<Worker_ComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
 	{
-		TArray<Worker_ComponentUpdate>& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap[EntityId];
-		for (Worker_ComponentUpdate& Update : UpdatesQueuedUntilAuthority)
+		for (Worker_ComponentUpdate& Update : *UpdatesQueuedUntilAuthority)
 		{
 			Connection->SendComponentUpdate(EntityId, &Update);
 		}
