@@ -189,6 +189,12 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			return;
 		}
 
+		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id);
+		}
+
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
 		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
@@ -597,6 +603,16 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly)
 	{
+		if (ComponentType == SCHEMA_Data && TargetObject->IsA<UActorComponent>())
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+			bool bReplicates = !!Schema_IndexBool(ComponentObject, SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID, 0);
+			if (!bReplicates)
+			{
+				return;
+			}
+		}
+
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<FUnrealObjectRef> UnresolvedRefs;
 
@@ -915,9 +931,16 @@ void USpatialReceiver::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseO
 {
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Received reserve entity Id: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 
-	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
+	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
+
+	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
+	if (Channel.IsValid())
 	{
 		Channel->OnReserveEntityIdResponse(Op);
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("ReserveEntityId ActorChannel closed, entity not registered: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 	}
 }
 
@@ -952,9 +975,16 @@ void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request succeeded: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 	}
 
-	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
+	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
+
+	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
+	if (Channel.IsValid())
 	{
 		Channel->OnCreateEntityResponse(Op);
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 	}
 }
 
@@ -999,14 +1029,14 @@ void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, R
 	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
 }
 
-USpatialActorChannel* USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
+TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
 {
-	USpatialActorChannel** ChannelPtr = PendingActorRequests.Find(RequestId);
+	TWeakObjectPtr<USpatialActorChannel>* ChannelPtr = PendingActorRequests.Find(RequestId);
 	if (ChannelPtr == nullptr)
 	{
 		return nullptr;
 	}
-	USpatialActorChannel* Channel = *ChannelPtr;
+	TWeakObjectPtr<USpatialActorChannel> Channel = *ChannelPtr;
 	PendingActorRequests.Remove(RequestId);
 	return Channel;
 }

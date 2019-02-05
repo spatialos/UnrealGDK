@@ -439,6 +439,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 			{
 				check(Channel->OpenedLocally);
 				Channel->bClearRecentActorRefs = false;
+				// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
 				Channel->Close();
 			}
 
@@ -846,6 +847,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				if (!Actor->IsNetStartupActor())
 				{
 					UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
+					// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
 					Channel->Close();
 				}
 			}
