@@ -65,9 +65,6 @@ FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
 				improbable::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
 				UE_LOG(LogSpatialNetBitReader, Verbose, TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: %s %s"),
 					*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
-
-				// TODO UNR-945: Be able to distinguish between a not loaded actor in a streaming level and a deleted actor.
-				UnresolvedRefs.Add(ObjectRef.GetLevelReference());
 			}
 		}
 		else

@@ -253,16 +253,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 		UE_LOG(LogSpatialPackageMap, Fatal, TEXT("Found object called PersistentLevel which isn't a Level! This is not allowed when using the GDK"));
 	}
 
-	// Network sanitize path
-	FString TempPath = Object->GetFName().ToString();
-	//GEngine->NetworkRemapPath(Driver, TempPath, true);
-
-	//if (!TempPath.Equals(Object->GetFName().ToString()))
-	//{
-	//	UE_LOG(LogSpatialPackageMap, Log, TEXT("Found object called PersistentLevel which isn't a Level! This is not allowed when using the GDK"));
-	//}
-
-	FUnrealObjectRef StablyNamedObjRef(0, 0, TempPath, (OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef());
+	FUnrealObjectRef StablyNamedObjRef(0, 0, Object->GetFName().ToString(), (OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef());
 	RegisterObjectRef(NetGUID, StablyNamedObjRef);
 
 	return NetGUID;
