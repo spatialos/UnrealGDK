@@ -115,8 +115,8 @@ void UGlobalStateManager::Internal_SendShutdownMultiProcessRequest()
 {
 	FURL DummyURL;
 	Worker_CommandRequest CommandRequest = {};
-	CommandRequest.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
-	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, 1);
+	CommandRequest.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
+	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, 1);
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 	AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
 
@@ -129,7 +129,7 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	{
 		UE_LOG(LogGlobalStateManager, Warning, TEXT("Received shutdown multi-process request."));
 		SetAcceptingPlayers(false);
-		GIsRequestingExit = true;
+		FGenericPlatformMisc::RequestExit(false);
 	}
 }
 

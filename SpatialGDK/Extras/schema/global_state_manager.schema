@@ -1,10 +1,10 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-type BeginShutdownMultiProcessRequest {
+type ShutdownMultiProcessRequest {
 }
 
-type BeginShutdownMultiProcessResponse {
+type ShutdownMultiProcessResponse {
 }
 
 component SingletonManager {
@@ -16,5 +16,9 @@ component DeploymentMap {
     id = 100006;
     string map_url = 1;
     bool accepting_players = 2;
-    command BeginShutdownMultiProcessResponse begin_shutdown_multiprocess(BeginShutdownMultiProcessRequest);
+}
+
+component GSMShutdown {
+    id = 100008;
+    command ShutdownMultiProcessResponse begin_shutdown_multiprocess(ShutdownMultiProcessRequest);
 }
