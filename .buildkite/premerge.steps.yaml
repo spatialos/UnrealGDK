@@ -36,7 +36,7 @@ common: &common
     # If you want to deploy/release, choose 'pusher'/'releaser' respectively.
     # See also playwright/.../internal-infrastructure.go
     - "permission_set=builder"
-    - "queue=v2-1548936514-80a4d609e170d4d6-------z"
+    - "queue=v2-1549379516-c74b97ee691bb989-------z"
   timeout_in_minutes: 60 # TODO(ENG-548): reduce timeout once agent-cold-start is optimised.
   retry:
     automatic:
