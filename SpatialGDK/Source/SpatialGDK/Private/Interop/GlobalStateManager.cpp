@@ -128,7 +128,7 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 {
 	if (NetDriver && NetDriver->GetNetMode() == NM_DedicatedServer)
 	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("Received shutdown multi-process request."));
+		UE_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown multi-process request."));
 		SetAcceptingPlayers(false);
 		FGenericPlatformMisc::RequestExit(false);
 	}
