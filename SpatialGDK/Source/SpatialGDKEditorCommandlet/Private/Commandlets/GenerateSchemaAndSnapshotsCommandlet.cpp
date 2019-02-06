@@ -80,7 +80,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 		CorrectedPath = GameDirName;
 		if (!InPath.StartsWith(TEXT("/")))
 		{
-			CorrectedPath += "/";
+			CorrectedPath += TEXT("/");
 		}
 	}
 	CorrectedPath += InPath;
