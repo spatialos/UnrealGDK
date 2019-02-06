@@ -8,7 +8,7 @@ To get access to our fork, you need to link your GitHub account to a verified Ep
 
 ### Step 2: Get the Unreal Engine fork source code and Unreal Linux cross-platform support
 
-> You should clone the Unreal Engine fork into your root directory to avoid file path length errors. <br/>For example: C:\GitHub\UnrealEngine
+> **TIP:** Clone the Unreal Engine fork into your root directory to avoid file path length errors. <br/>For example: C:\GitHub\UnrealEngine
 
 1\.  Open a terminal and run either of these commands to clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK) repository.
 
