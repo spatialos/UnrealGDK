@@ -252,6 +252,17 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 			continue;
 		}
 
+		if (Group == REP_MultiClient)
+		{
+			auto ExpectedReplicatesPropData = RepData[Group].Find(SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID);
+			const UProperty* ReplicatesProp = UActorComponent::StaticClass()->FindPropertyByName("bReplicates");
+			if (!(ExpectedReplicatesPropData->IsValid() && ExpectedReplicatesPropData->Get()->Property == ReplicatesProp))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Did not find ActorComponent->bReplicates at field ACTOR_COMPONENT_REPLICATES_ID[%d]"),
+					SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID);
+			}
+		}
+
 		Writer.PrintNewLine();
 		Writer.Printf("type {0} {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();

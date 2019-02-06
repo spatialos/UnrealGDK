@@ -1,4 +1,4 @@
-# Get started: 2 - Get and build the GDK’s Unreal Engine Fork
+# Get started: 2 - Get and build the SpatialOS Unreal Engine fork
 
 The GDK for Unreal extends Unreal Engine's networking capabilities at its core. To use it you first need to build our SpatialOS fork of Unreal Engine from source.
 
@@ -25,7 +25,7 @@ In Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Li
 
 ### Step 3: Add environment variables
 
-You need to add two [environment variables](https://docs.microsoft.com/en-us/windows/desktop/shell/user-environment-variables): one to set the path to the Unreal Engine fork directory, and another one to set the path to the Linux cross-platform support directory.
+You need to add two [environment variables](https://docs.microsoft.com/en-us/windows/desktop/procthread/environment-variables): one to set the path to the Unreal Engine fork directory, and another one to set the path to the Linux cross-platform support directory.
 
 1. Go to **Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**.
 2. Create a system variable named **UNREAL_HOME**.

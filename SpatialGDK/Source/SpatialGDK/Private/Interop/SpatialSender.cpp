@@ -275,7 +275,13 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo& Info, USp
 	{
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
 		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send component update but don't have authority! Update will not be sent. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
+			UE_LOG(LogSpatialSender, Log, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
+
+			// This is a temporary fix. A task to improve this has been created: UNR-955
+			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the update, to send upon receiving authority.
+			// Note: This will break in a multi-worker context, if we try to create an entity that we don't intend to have authority over. For this reason, this fix is only temporary.
+			TArray<Worker_ComponentUpdate>& UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.FindOrAdd(EntityId);
+			UpdatesQueuedUntilAuthority.Add(Update);
 			continue;
 		}
 
@@ -283,6 +289,19 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo& Info, USp
 	}
 }
 
+
+// Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
+void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId)
+{
+	if (TArray<Worker_ComponentUpdate>* UpdatesQueuedUntilAuthority = UpdatesQueuedUntilAuthorityMap.Find(EntityId))
+	{
+		for (Worker_ComponentUpdate& Update : *UpdatesQueuedUntilAuthority)
+		{
+			Connection->SendComponentUpdate(EntityId, &Update);
+		}
+		UpdatesQueuedUntilAuthorityMap.Remove(EntityId);
+	}
+}
 
 void FillComponentInterests(FClassInfo& Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
 {
@@ -450,7 +469,7 @@ void USpatialSender::FlushRetryRPCs()
 {
 	// Retried RPCs are sorted by their index.
 	RetryRPCs.Sort([](const TSharedPtr<FPendingRPCParams>& A, const TSharedPtr<FPendingRPCParams>& B) { return A->RetryIndex < B->RetryIndex; });
-	for(auto& RetryRPC : RetryRPCs)
+	for (auto& RetryRPC : RetryRPCs)
 	{
 		SendRPC(RetryRPC);
 	}
@@ -510,8 +529,8 @@ void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	UE_LOG(LogSpatialSender, Log, TEXT("Resetting pending outgoing array depending on channel: %s, object: %s, handle: %d."),
 		*DependentChannel->GetName(), *ReplicatedObject->GetName(), Handle);
 
-	// Remove any references to the unresolved objects. Since these are not dereferenced before removing,
-	// it is safe to not check whether the unresolved object is still valid.
+	// Remove any references to the unresolved objects.
+	// Since these are not dereferenced before removing, it is safe to not check whether the unresolved object is still valid.
 	for (TWeakObjectPtr<const UObject>& UnresolvedObject : *Unresolved)
 	{
 		FChannelToHandleToUnresolved& ChannelToUnresolved = ObjectToUnresolved.FindChecked(UnresolvedObject);
@@ -561,20 +580,17 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 
 	for (const TWeakObjectPtr<const UObject>& UnresolvedObject : UnresolvedObjects)
 	{
-		if (UnresolvedObject.IsValid())
-		{
-			FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
-			check(!AnotherHandleToUnresolved.Find(Handle));
-			AnotherHandleToUnresolved.Add(Handle, Unresolved);
+		// It is expected that this will never be reached. We should never have added an invalid object as an unresolved reference.
+		// Check the ComponentFactory.cpp should this ever be triggered.
+		checkf(UnresolvedObject.IsValid(), TEXT("Invalid UnresolvedObject passed in to USpatialSender::QueueOutgoingUpdate"));
 
-			// Following up on the previous log: listing the unresolved objects
-			UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
-		}
-		else
-		{
-			// It is expected that this will never be reached. If it is, we should consider whether to clean up the invalid objects here.
-			UE_LOG(LogSpatialSender, Error, TEXT("Invalid UnresolvedObject passed in to USpatialSender::QueueOutgoingUpdate"));
-		}
+		FHandleToUnresolved& AnotherHandleToUnresolved = ObjectToUnresolved.FindOrAdd(UnresolvedObject).FindOrAdd(ChannelObjectPair);
+		check(!AnotherHandleToUnresolved.Find(Handle));
+		AnotherHandleToUnresolved.Add(Handle, Unresolved);
+
+		// Following up on the previous log: listing the unresolved objects
+		UE_LOG(LogSpatialSender, Log, TEXT("- %s"), *UnresolvedObject->GetName());
+
 	}
 }
 
