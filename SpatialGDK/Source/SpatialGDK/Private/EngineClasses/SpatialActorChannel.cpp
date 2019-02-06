@@ -804,6 +804,12 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 	{
 		for (auto& ObjRef : RefMap)
 		{
+			// ParentIndex will be -1 for handover properties.
+			if (ObjRef.Value.ParentIndex < 0)
+			{
+				continue;
+			}
+
 			bool bIsSameRepNotify = RepLayout.Parents[ObjRef.Value.ParentIndex].Property == Property;
 			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1;
 			if (bIsSameRepNotify && !bIsArray)
