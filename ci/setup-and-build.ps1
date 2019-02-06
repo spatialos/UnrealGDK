@@ -38,7 +38,7 @@ pushd "$($gdk_home)"
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
             "cp", `
             "gs://$($gcs_publish_bucket)/$($gcs_unreal_location)", `
-            "$($unreal_version)" `
+            "$($unreal_version).zip" `
         )
         if ($gsu_proc.ExitCode -ne 0) {
             Write-Log "Failed to download Engine artifacts. Error: $($gsu_proc.ExitCode)"
@@ -48,7 +48,8 @@ pushd "$($gdk_home)"
         Write-Log "Unzipping Unreal Engine"
         $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
         "e", `
-        "$($unreal_version).zip"
+        "$($unreal_version).zip", `
+        "-aoa" `
         )
         if ($zip_proc.ExitCode -ne 0) {
             Write-Log "Failed to unzip Unreal Engine. Error: $($zip_proc.ExitCode)"
