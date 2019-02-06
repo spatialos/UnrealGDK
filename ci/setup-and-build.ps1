@@ -58,17 +58,18 @@ pushd "$($gdk_home)"
 
     popd
 
-    #[Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($gdk_home)/UnrealEngine", "Machine")
+    Write-Log "Setting UNREAL_HOME environment variable to $($gdk_home)/UnrealEngine"
+    [Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($gdk_home)/UnrealEngine", "Machine")
 
-  # Run the Setup.bat file located in the root
-  <#Write-Log "Setup Unreal GDK dependencies" -Expand $true
-  Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($gdk_home)\Setup.bat"
-  if ($LASTEXITCODE -ne 0) {
-      Write-Log "Failed to install Unreal GDK dependencies.  Error code $($LASTEXITCODE)"
-      Throw "Failed to install Unreal GDK dependencies"
-  }
+    # Run the Setup.bat file located in the root
+    Write-Log "Setup Unreal GDK dependencies" -Expand $true
+    Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($gdk_home)\Setup.bat"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log "Failed to install Unreal GDK dependencies.  Error code $($LASTEXITCODE)"
+        Throw "Failed to install Unreal GDK dependencies"
+    }
 
-  pushd "SpatialGDK"
+  <#pushd "SpatialGDK"
   
     # Finally, build the Unreal GDK 
     Write-Log "Build Unreal GDK"
