@@ -804,7 +804,7 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 	{
 		for (auto& ObjRef : RefMap)
 		{
-			if (ObjRef.Value.ParentIndex == -1)
+			if (ObjRef.Value.ParentIndex < 0)
 			{
 				continue;
 			}
