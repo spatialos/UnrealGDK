@@ -188,7 +188,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		FUnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
-		if (ObjectValue != nullptr)
+		if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
 		{
 			FNetworkGUID NetGUID;
 			if (ObjectValue->IsFullNameStableForNetworking() || ObjectValue->IsSupportedForNetworking())
@@ -310,6 +310,8 @@ Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
+	// We're currently ignoring ClearedId fields, which is problematic if the initial replicated state
+	// is different to what the default state is (the client will have the incorrect data). UNR:959
 	FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true);
 
 	return ComponentData;

@@ -7,7 +7,7 @@
 #include "Engine/SCS_Node.h"
 #include "UObject/TextProperty.h"
 
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
@@ -250,6 +250,17 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 		if (RepData[Group].Num() == 0)
 		{
 			continue;
+		}
+
+		if (Group == REP_MultiClient)
+		{
+			auto ExpectedReplicatesPropData = RepData[Group].Find(SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID);
+			const UProperty* ReplicatesProp = UActorComponent::StaticClass()->FindPropertyByName("bReplicates");
+			if (!(ExpectedReplicatesPropData->IsValid() && ExpectedReplicatesPropData->Get()->Property == ReplicatesProp))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Did not find ActorComponent->bReplicates at field ACTOR_COMPONENT_REPLICATES_ID[%d]"),
+					SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID);
+			}
 		}
 
 		Writer.PrintNewLine();

@@ -47,6 +47,7 @@ using FUnresolvedEntry = TSharedPtr<TSet<TWeakObjectPtr<const UObject>>>;
 using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
 using FChannelToHandleToUnresolved = TMap<FChannelObjectPair, FHandleToUnresolved>;
 using FOutgoingRepUpdates = TMap<TWeakObjectPtr<const UObject>, FChannelToHandleToUnresolved>;
+using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId, TArray<Worker_ComponentUpdate>>;
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject
@@ -73,6 +74,8 @@ public:
 	void ResolveOutgoingRPCs(UObject* Object);
 
 	bool UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId);
+
+	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
@@ -119,4 +122,6 @@ private:
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 
 	TArray<TSharedRef<FPendingRPCParams>> RetryRPCs;
+
+	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;
 };
