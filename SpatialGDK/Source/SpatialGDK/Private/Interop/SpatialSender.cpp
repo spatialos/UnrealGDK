@@ -61,7 +61,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 	Connection = InNetDriver->Connection;
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
-	TypebindingManager = InNetDriver->TypebindingManager;
+	ClassInfoManager = InNetDriver->ClassInfoManager;
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
@@ -96,7 +96,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ReadAcl = AnyUnrealServerOrClient;
 	}
 
-	FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Class);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, ServersOnly);
@@ -229,7 +229,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	return CreateEntityRequestId;
 }
 
-void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
+void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
 	Worker_EntityId EntityId = Channel->GetEntityId();
@@ -289,7 +289,6 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo& Info, USp
 	}
 }
 
-
 // Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
 void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId)
 {
@@ -303,7 +302,7 @@ void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId
 	}
 }
 
-void FillComponentInterests(FClassInfo& Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
+void FillComponentInterests(const FClassInfo& Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
 {
 	if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
@@ -322,7 +321,7 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 {
 	TArray<Worker_InterestOverride> ComponentInterest;
 
-	FClassInfo& ActorInfo = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 	FillComponentInterests(ActorInfo, bIsNetOwned, ComponentInterest);
 
 	for (auto& SubobjectInfoPair : ActorInfo.SubobjectInfo)
@@ -373,21 +372,14 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		return;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByObject(TargetObject);
-
-	if (Info == nullptr)
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send RPC %s on unsupported Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
-		return;
-	}
-
-	const FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Params->Function);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Params->Function);
 
 	// We potentially have a parent function and need to find the child function.
 	// This exists as it's possible in blueprints to explicitly call the parent function.
 	if (RPCInfo == nullptr)
 	{
-		for (auto It = Info->RPCInfoMap.CreateConstIterator(); It; ++It)
+		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
 		{
 			if (It.Key()->GetName() == Params->Function->GetName())
 			{
@@ -414,7 +406,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		ReliableRPCIndex = Params->ReliableRPCIndex;
 #endif // !UE_BUILD_SHIPPING
 
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), Info->SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject, ReliableRPCIndex);
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), Info.SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject, ReliableRPCIndex);
 
 		if (!UnresolvedObject)
 		{
@@ -433,7 +425,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 	case SCHEMA_NetMulticastRPC:
 	{
-		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), Info->SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), Info.SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -717,11 +709,7 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
 		FHandleToUnresolved& HandleToUnresolved = ChannelProperties.Value;
 
-		FClassInfo* Info = TypebindingManager->FindClassInfoByObject(ReplicatingObject);
-		if (Info == nullptr)
-		{
-			continue;
-		}
+		const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(ReplicatingObject);
 
 		TArray<uint16> PropertyHandles;
 
@@ -755,14 +743,14 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 		{
 			if (bIsHandover)
 			{
-				SendComponentUpdates(ReplicatingObject, *Info, DependentChannel, nullptr, &PropertyHandles);
+				SendComponentUpdates(ReplicatingObject, Info, DependentChannel, nullptr, &PropertyHandles);
 			}
 			else
 			{
 				// End with zero to indicate the end of the list of handles.
 				PropertyHandles.Add(0);
 				FRepChangeState RepChangeState = { PropertyHandles, DependentChannel->GetObjectRepLayout(ReplicatingObject) };
-				SendComponentUpdates(ReplicatingObject, *Info, DependentChannel, &RepChangeState, nullptr);
+				SendComponentUpdates(ReplicatingObject, Info, DependentChannel, &RepChangeState, nullptr);
 			}
 		}
 	}
@@ -828,7 +816,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 		return false;
 	}
 
-	FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	FString OwnerWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
@@ -838,7 +826,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
-		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
+		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
 		if (SubobjectInfo.SchemaComponents[SCHEMA_ClientRPC] != SpatialConstants::INVALID_COMPONENT_ID)
 		{

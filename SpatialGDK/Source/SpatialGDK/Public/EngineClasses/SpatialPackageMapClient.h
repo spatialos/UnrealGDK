@@ -14,7 +14,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
-class USpatialTypebindingManager;
+class USpatialClassInfoManager;
 
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
@@ -37,7 +37,7 @@ public:
 
 private:
 	UPROPERTY()
-	USpatialTypebindingManager* TypebindingManager;
+	USpatialClassInfoManager* TypebindingManager;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache

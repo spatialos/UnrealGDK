@@ -220,7 +220,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	}
 
 	UClass* Class = Actor->GetClass();
-	FClassInfo& Info = SpatialNetDriver->TypebindingManager->FindClassInfoByClass(Class);
+	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
