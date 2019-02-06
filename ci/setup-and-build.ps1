@@ -45,20 +45,13 @@ pushd "$($gdk_home)"
         }
 
         Write-Log "Unzipping Unreal Engine"
-        $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
-        "e", `
-        "$($unreal_version).zip", `
-        "-aoa" `
-        )
-        if ($zip_proc.ExitCode -ne 0) {
-            Write-Log "Failed to unzip Unreal Engine. Error: $($zip_proc.ExitCode)"
-            Throw "Failed to unzip Unreal Engine."
-        }
+        Expand-Archive -Path "$($unreal_version).zip" -Force
 
     popd
 
-    Write-Log "Setting UNREAL_HOME environment variable to $($gdk_home)/UnrealEngine"
-    [Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($gdk_home)/UnrealEngine", "Machine")
+    $unreal_path = "$($gdk_home)\UnrealEngine\$($unreal_version)\"
+    Write-Log "Setting UNREAL_HOME environment variable to $($unreal_path)"
+    [Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($unreal_path)", "Machine")
 
     ## THIS REPLACES THE OLD SETUP.BAT SCRIPT
 
