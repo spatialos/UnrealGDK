@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 UnrealEngine-d04f9c7bbbc2070be75e40bcd276839a1768a03b
+=======
+UnrealEngine-something.zip
+>>>>>>> Added unrealengine version to pull down engine dependencies, chmod+x setup-and-build
