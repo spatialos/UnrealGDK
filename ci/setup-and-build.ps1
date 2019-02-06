@@ -92,7 +92,7 @@ pushd "$($gdk_home)"
     )
 
     Write-Log "Extracting spatial packages.."
-    Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\" -DestinationPath "$($binaries_dir)\Win64\" -Force
+    Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip" -DestinationPath "$($binaries_dir)\Win64\" -Force
 
     # Copy from binaries_dir
     Copy-Item "$($binaries_dir)\Win64\include" "$($worker_sdk_dir)" -Force -Recurse
