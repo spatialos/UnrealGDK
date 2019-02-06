@@ -418,6 +418,8 @@ USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 	return NetDriver;
 }
 
+
+// TODO: UNR-962 - move connection events in to native connection handling codepath (eg, UEngine::HandleNetworkFailure)
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
