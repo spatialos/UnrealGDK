@@ -185,7 +185,7 @@ void USpatialGameInstance::StartGameInstance()
 
 void USpatialGameInstance::Shutdown()
 {
-	auto World = GetWorld();
+	UWorld* World = GetWorld();
 	if (World != nullptr && SpatialConnection != nullptr && SpatialConnection->IsConnected())
 	{
 		Cast<USpatialNetDriver>(World->GetNetDriver())->HandleOnDisconnected(TEXT("Client shutdown"));

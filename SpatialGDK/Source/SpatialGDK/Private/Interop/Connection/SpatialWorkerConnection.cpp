@@ -2,7 +2,7 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
-#include "EngineClasses//SpatialNetDriver.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Async/Async.h"
 #include "Misc/Paths.h"
 
