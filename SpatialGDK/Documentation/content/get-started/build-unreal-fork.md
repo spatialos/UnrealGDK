@@ -6,11 +6,11 @@ The GDK for Unreal extends Unreal Engine's networking capabilities at its core. 
 
 To get access to our fork, you need to link your GitHub account to a verified Epic Games account, and agree to the Unreal Engine End User License Agreement ([EULA](https://www.unrealengine.com/en-US/eula)). You cannot use the GDK without doing this first. To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
-### Step 2: Getting the Unreal Engine fork source code and Unreal Linux cross-platform support
+### Step 2: Get the Unreal Engine fork source code and Unreal Linux cross-platform support
 
 > You should clone the Unreal Engine fork into your root directory to avoid file path length errors. <br/>For example: C:\GitHub\UnrealEngine
 
-1\.  Clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK) repository by opening a terminal and running either of these commands: 
+1\.  Open a terminal and run either of these commands to clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK) repository.
 
 > You may get a 404 from this link. See  the instructions above, under _Unreal Engine EULA_, on how to get access to this repository. 
 
@@ -23,7 +23,7 @@ To get access to our fork, you need to link your GitHub account to a verified Ep
 
 In Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation, in the **getting the toolchain** section, click **v11 clang 5.0.0-based** to download the **v11_clang-5.0.0-centos7.zip** archive, then unzip this file into a suitable directory.
 
-### Step 3: Adding environment variables
+### Step 3: Add environment variables
 
 You need to add two [environment variables](https://docs.microsoft.com/en-us/windows/desktop/shell/user-environment-variables): one to set the path to the Unreal Engine fork directory, and another one to set the path to the Linux cross-platform support directory.
 
@@ -35,9 +35,9 @@ You need to add two [environment variables](https://docs.microsoft.com/en-us/win
 6. Set the variable value to the path to the directory of your unzipped Linux cross compilation toolchain.
 7. Restart your terminal and run `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell). If you have registered the environment variable correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7.zip` into. If it doesn’t, check that you’ve set the environment variable correctly.
 
-### Step 4: Building Unreal Engine
+### Step 4: Build Unreal Engine
 
-1. Open **Explorer** and navigate to the directory you cloned the Unreal Engine fork into.
+1. Open **File Explorer** and navigate to the directory you cloned the Unreal Engine fork into.
 
 2. Double-click **`Setup.bat`**.
 
