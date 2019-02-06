@@ -21,7 +21,7 @@ namespace improbable
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
-	, TypebindingManager(InNetDriver->TypebindingManager)
+	, TypebindingManager(InNetDriver->ClassInfoManager)
 	, RootObjectReferencesMap(InObjectReferencesMap)
 	, UnresolvedRefs(InUnresolvedRefs)
 {
@@ -203,7 +203,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
 {
-	FClassInfo& ClassInfo = TypebindingManager->FindClassInfoByClass(Object->GetClass());
+	const FClassInfo& ClassInfo = TypebindingManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
 	Channel->PreReceiveSpatialUpdate(Object);
 
