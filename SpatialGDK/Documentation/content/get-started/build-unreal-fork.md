@@ -4,7 +4,7 @@ The GDK for Unreal extends Unreal Engine's networking capabilities at its core. 
 
 ### Step 1: Unreal Engine EULA
 
-To get access to our fork, you need to link your GitHub account to a verified Epic Games account, and agree to the Unreal Engine End User License Agreement ([EULA](https://www.unrealengine.com/en-US/eula)). You cannot use the GDK without doing this first. To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/en-US/ue4-on-github).
+To get access to our fork, you need to link your GitHub account to a verified Epic Games account, agree to the Unreal Engine End User License Agreement ([EULA](https://www.unrealengine.com/en-US/eula)) and accept the invite to join the [EpicGames organisation on Github](https://github.com/EpicGames). You cannot use the GDK without doing this first. To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
 ### Step 2: Get the Unreal Engine fork source code and Unreal Linux cross-platform support
 
