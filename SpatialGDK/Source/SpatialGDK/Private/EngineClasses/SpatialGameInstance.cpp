@@ -139,6 +139,12 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 	{
 		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 	}
+	// CORVUS_BEGIN
+	else
+	{
+		OnStart();
+	}
+	// CORVUS_END
 
 	FString Error;
 
