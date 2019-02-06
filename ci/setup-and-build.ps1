@@ -24,20 +24,19 @@ pushd "$($gdk_home)"
 
     # Fetch the version of Unreal Engine we need
     pushd "ci"
-
         $unrealversion = Get-Content -Path "unreal-engine.version" -Raw
-        Write-Output "Using Unreal Engine version $($unrealversion)"
+        Write-Log "Using Unreal Engine version $($unrealversion)"
     popd
 
-    # Create an UnrealEngine directory if it doesn't already exist
+    Write-Log "Create an UnrealEngine directory if it doesn't already exist"
     new-item -Name "UnrealEngine" -itemtype directory
 
-    # Download the UnrealEngine artifacts from GCS
+    Write-Log "Downloading the Unreal Engine artifacts from GCS"
     pushd "UnrealEngine"
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
             "cp", `
-            "gs://$($gcs_publish_bucket)/UnrealEngine/$($unrealversion).zip" `
-            "$($unrealversion)", `
+            "gs://$($gcs_publish_bucket)/UnrealEngine/$($unrealversion).zip", `
+            "$($unrealversion)" `
         )
         if ($gsu_proc.ExitCode -ne 0) {
             Write-Log "Failed to download Engine artifacts. Error: $($gsu_proc.ExitCode)"
