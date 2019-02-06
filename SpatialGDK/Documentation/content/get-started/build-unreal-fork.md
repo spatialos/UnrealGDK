@@ -19,7 +19,7 @@ To get access to our fork, you need to link your GitHub account to a verified Ep
 | HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git -b 4.20-SpatialOSUnrealGDK` |
 | SSH |`git clone git@github.com:improbableio/UnrealEngine.git -b 4.20-SpatialOSUnrealGDK`
 
-2\.  To build Unreal server-workers for SpatialOS deployments, you need to build the Unreal Engine fork targeting Linux. This requires cross-compilation of your SpatialOS project and the Unreal Engine fork.
+2\.  To build Unreal server-workers for SpatialOS deployments you need to build the Unreal Engine fork targeting Linux. This requires cross-compilation of your SpatialOS project and the Unreal Engine fork.
 
 In Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation, in the **getting the toolchain** section, click **v11 clang 5.0.0-based** to download the **v11_clang-5.0.0-centos7.zip** archive, then unzip this file into a suitable directory.
 
@@ -29,10 +29,10 @@ You need to add two [environment variables](https://docs.microsoft.com/en-us/win
 
 1. Go to **Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**.
 2. Create a system variable named **UNREAL_HOME**.
-3. Set the variable value to be the path to the directory you cloned the Unreal Engine fork into.
+3. Set the variable value to the path to the directory you cloned the Unreal Engine fork into.
 4. Restart your terminal and run `echo %UNREAL_HOME%` (Command Prompt) or `echo$Env:UNREAL_HOME` (PowerShell). If you have registered the environment variable correctly, this returns the path to the directory you cloned the Unreal Engine fork into. If it doesn’t, check that you’ve set the environment variable correctly.
 5. Create a system variable named **LINUX_MULTIARCH_ROOT**.
-6. Set the variable value to be the path to the directory of your unzipped Linux cross compilation toolchain.
+6. Set the variable value to the path to the directory of your unzipped Linux cross compilation toolchain.
 7. Restart your terminal and run `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell). If you have registered the environment variable correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7.zip` into. If it doesn’t, check that you’ve set the environment variable correctly.
 
 ### Step 4: Building Unreal Engine
