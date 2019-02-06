@@ -1,5 +1,5 @@
 param(
-  [string] $gdk_home = "$($PSScriptRoot)/.." ## The root of the UnrealGDK repo
+  [string] $gdk_home = "$($PSScriptRoot)/..", ## The root of the UnrealGDK repo
   [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production"
 )
 
