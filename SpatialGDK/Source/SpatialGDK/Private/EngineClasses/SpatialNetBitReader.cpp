@@ -45,8 +45,8 @@ FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
 
 	DeserializeObjectRef(ObjectRef);
 
-	check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
-	if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
+	check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
+	if (ObjectRef == FUnrealObjectRef::NULL_OBJECT_REF)
 	{
 		Value = nullptr;
 	}

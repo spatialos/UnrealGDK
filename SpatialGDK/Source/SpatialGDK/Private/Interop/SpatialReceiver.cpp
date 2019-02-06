@@ -397,9 +397,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			}
 		}
 
-		const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(ActorClass);
-
-		PackageMap->ResolveEntityActor(EntityActor, EntityId, improbable::CreateOffsetMapFromActor(EntityActor, Info));
+		PackageMap->ResolveEntityActor(EntityActor, EntityId);
 
 		Channel->SetChannelActor(EntityActor);
 
