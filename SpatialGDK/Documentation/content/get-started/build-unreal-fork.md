@@ -10,9 +10,7 @@ To get access to our fork, you need to link your GitHub account to a verified Ep
 
 1\.  Open a terminal and run either of these commands to clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK) repository.
 
-> **TIP:** Clone the Unreal Engine fork into your root directory to avoid file path length errors. <br/>For example: C:\GitHub\UnrealEngine
-
-> You may get a 404 from this link. See  the instructions above, under _Unreal Engine EULA_, on how to get access to this repository. 
+> **TIPS:** <br/> * Clone the Unreal Engine fork into your root directory to avoid file path length errors. For example: C:\GitHub\UnrealEngine <br/> * You may get a 404 from this link. See  the instructions above, under _Unreal Engine EULA_, on how to get access to this repository. 
 
 |     |     |
 | --- | --- |
