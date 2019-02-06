@@ -49,7 +49,6 @@ exit /b !ERRORLEVEL!
         public static void Main(string[] args)
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
-            var noCompile = false;
 
             var exitCode = 0;
             if (args.Length < 4 && !help)
@@ -58,22 +57,10 @@ exit /b !ERRORLEVEL!
                 exitCode = 1;
                 Console.Error.WriteLine("Path to uproject file is required.");
             }
-            else if (args.Length > 4)
-            {
-                if (args[4].CompareTo("-nocompile") != 0)
-                {
-                    help = true;
-                    exitCode = 1;
-                }
-                else
-                {
-                    noCompile = true;
-                }
-            }
 
             if (help)
             {
-                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile]");
+                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>");
 
                 Environment.Exit(exitCode);
             }
@@ -82,6 +69,8 @@ exit /b !ERRORLEVEL!
             var platform = args[1];
             var configuration = args[2];
             var projectFile = Path.GetFullPath(args[3]);
+            var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
+            var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => arg.ToLowerInvariant() != "-nocompile"));
 
             var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
             var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));
@@ -151,7 +140,7 @@ exit /b !ERRORLEVEL!
                     "-SkipCookingEditorContent",
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
-                    "-allmaps",
+                    additionalUATArgs
                 });
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
@@ -189,8 +178,8 @@ exit /b !ERRORLEVEL!
                     "-SkipCookingEditorContent",
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
-                    "-allmaps",
                     "-nullrhi",
+                    additionalUATArgs
                 });
 
                 var linuxFakeClientPath = Path.Combine(stagingDir, "LinuxNoEditor");
@@ -243,10 +232,10 @@ exit /b !ERRORLEVEL!
                     "-unattended",
                     "-fileopenlog",
                     "-SkipCookingEditorContent",
-                    "-allmaps",
                     "-server",
                     "-serverplatform=" + platform,
                     "-noclient",
+                    additionalUATArgs
                 });
 
                 bool isLinux = platform == "Linux";
