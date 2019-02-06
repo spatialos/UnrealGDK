@@ -137,9 +137,13 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 {
 	if (NetDriver && NetDriver->GetNetMode() == NM_DedicatedServer)
 	{
+<<<<<<< HEAD
 		UE_LOG(LogGlobalStateManager, Warning, TEXT("Received shutdown multi-process request."));
 
 		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
+=======
+		UE_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown multi-process request."));
+>>>>>>> c257bac4680de180ee45acbaa116e9f1f613dfb4
 		SetAcceptingPlayers(false);
 
 		// allow each worker to begin shutting down
