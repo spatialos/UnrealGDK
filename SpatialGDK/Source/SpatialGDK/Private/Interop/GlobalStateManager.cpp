@@ -29,7 +29,20 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 	Receiver = InNetDriver->Receiver;
 	TimerManager = InTimerManager;
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
-	FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::SendShutdownMultiProcessRequest);
+
+	const ULevelEditorPlaySettings* const PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
+
+	// only the client should ever send this request
+	if (PlayInSettings && NetDriver && NetDriver->GetNetMode() != NM_DedicatedServer)
+	{
+		bool bRunUnderOneProcess = true;
+		PlayInSettings->GetRunUnderOneProcess(bRunUnderOneProcess);
+
+		if (!bRunUnderOneProcess)
+		{
+			FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::SendShutdownMultiProcessRequest);
+		}
+	}
 }
 
 void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
@@ -96,19 +109,7 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 
 void UGlobalStateManager::SendShutdownMultiProcessRequest(bool bValue)
 {
-	const ULevelEditorPlaySettings* const PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-
-	// only the client should ever send this request
-	if (PlayInSettings && NetDriver && NetDriver->GetNetMode() != NM_DedicatedServer)
-	{
-		bool bRunUnderOneProcess = true;
-		PlayInSettings->GetRunUnderOneProcess(bRunUnderOneProcess);
-
-		if (!bRunUnderOneProcess)
-		{
-			Internal_SendShutdownMultiProcessRequest();
-		}
-	}
+	Internal_SendShutdownMultiProcessRequest();
 }
 
 void UGlobalStateManager::Internal_SendShutdownMultiProcessRequest()
