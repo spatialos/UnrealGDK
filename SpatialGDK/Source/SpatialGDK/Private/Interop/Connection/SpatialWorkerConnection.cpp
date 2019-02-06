@@ -411,24 +411,23 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	}
 }
 
+USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
+{
+	auto NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	checkf(NetDriver, TEXT("SpatialNetDriver was invalid during SpatialOS connection event!"));
+	return NetDriver;
+}
+
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
-
-	auto NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-	check(NetDriver);
-
-	NetDriver->HandleOnConnected();
+	GetSpatialNetDriverChecked()->HandleOnConnected();
 }
 
 void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
 {
 	bIsConnected = false;
-
-	auto NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-	check(NetDriver);
-
-	NetDriver->HandleOnConnectionFailed(Reason);
+	GetSpatialNetDriverChecked()->HandleOnConnectionFailed(Reason);
 }
 
 void USpatialWorkerConnection::OnConnectionFailure()
@@ -443,10 +442,7 @@ void USpatialWorkerConnection::OnConnectionFailure()
 			const FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
 			AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
 			{
-				auto NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-				check(NetDriver);
-
-				NetDriver->HandleOnConnectionFailed(ErrorMessage);
+				GetSpatialNetDriverChecked()->HandleOnConnectionFailed(ErrorMessage);
 			});
 			break;
 		}
