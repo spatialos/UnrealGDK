@@ -214,15 +214,15 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 	{
 		return Class;
 	}
-	//else
-	//{
-	//	UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
+	else
+	{
+		UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
 
-	//	// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use it to clean up the old entry.
-	//	ClassInfoMap.Remove((Info)->Class);
+		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use it to clean up the old entry.
+		ClassInfoMap.Remove(Info->Class);
 
-	//	// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of LoadClassForComponent).
-	//}
+		// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of LoadClassForComponent).
+	}
 
 	return nullptr;
 }
