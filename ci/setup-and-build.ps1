@@ -31,8 +31,8 @@ pushd "$($gdk_home)"
     Write-Log "Create an UnrealEngine directory if it doesn't already exist"
     new-item -Name "UnrealEngine" -itemtype directory
 
-    Write-Log "Downloading the Unreal Engine artifacts from GCS"
     pushd "UnrealEngine"
+        Write-Log "Downloading the Unreal Engine artifacts from GCS"
         $gcs_unreal_location = "$($unreal_version).zip"
 
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
@@ -43,10 +43,21 @@ pushd "$($gdk_home)"
         if ($gsu_proc.ExitCode -ne 0) {
             Write-Log "Failed to download Engine artifacts. Error: $($gsu_proc.ExitCode)"
             Throw "Failed to download Engine artifacts"
-        }  
+        }
+
+        Write-Log "Unzipping Unreal Engine"
+        $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
+        "e", `
+        "$($unreal_version).zip"
+        )
+        if ($zip_proc.ExitCode -ne 0) {
+            Write-Log "Failed to unzip Unreal Engine. Error: $($zip_proc.ExitCode)"
+            Throw "Failed to unzip Unreal Engine."
+        }
+
     popd
 
-
+    #[Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($gdk_home)/UnrealEngine", "Machine")
 
   # Run the Setup.bat file located in the root
   <#Write-Log "Setup Unreal GDK dependencies" -Expand $true
