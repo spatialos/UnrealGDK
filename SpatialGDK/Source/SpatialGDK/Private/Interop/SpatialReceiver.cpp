@@ -142,6 +142,8 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
  		GlobalStateManager->ApplyDeploymentMapURLData(Op.data);
 		return;
+	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+		return;
 	default:
 		Data = MakeShared<improbable::DynamicComponent>(Op.data);
 		break;
@@ -649,6 +651,9 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
 		return;
+	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
+		return;
 	}
 
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
@@ -735,11 +740,13 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Payload, Op.caller_attribute_set.attributes[1], Op.request_id);
 		return;
 	}
+#if defined(WITH_EDITOR)
 	else if (Op.request.component_id == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID && CommandIndex == 1)
 	{
 		NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
 		return;
 	}
+#endif // defined(WITH_EDITOR)
 
 	Worker_CommandResponse Response = {};
 	Response.component_id = Op.request.component_id;

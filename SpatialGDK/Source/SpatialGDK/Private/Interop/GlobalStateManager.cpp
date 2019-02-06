@@ -30,6 +30,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 	TimerManager = InTimerManager;
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
+#if defined(WITH_EDITOR)
 	const ULevelEditorPlaySettings* const PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
 
 	// only the client should ever send this request
@@ -40,9 +41,10 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 
 		if (!bRunUnderOneProcess)
 		{
-			FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::SendShutdownMultiProcessRequest);
+			FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEnded);
 		}
 	}
+#endif // defined(WITH_EDITOR)
 }
 
 void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
@@ -107,13 +109,20 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 	}
 }
 
-void UGlobalStateManager::SendShutdownMultiProcessRequest(bool bValue)
+#if defined(WITH_EDITOR)
+void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 {
-	Internal_SendShutdownMultiProcessRequest();
+	SendShutdownMultiProcessRequest();
 }
 
-void UGlobalStateManager::Internal_SendShutdownMultiProcessRequest()
+void UGlobalStateManager::SendShutdownMultiProcessRequest()
 {
+	/** When running with Use Single Process unticked, send a shutdown command to the servers to allow SpatialOS to shutdown.
+	  * Standard UnrealEngine behavior is to call TerminateProc on external processes and there is no method to send any messaging
+	  * to those external process.
+	  * The GDK requires shutdown code to be ran for workers to disconnect cleanly so instead of abruptly shutting down the server worker,
+	  * just send a command to the worker to begin it's shutdown phase. 
+	  */
 	FURL DummyURL;
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
@@ -129,10 +138,15 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	if (NetDriver && NetDriver->GetNetMode() == NM_DedicatedServer)
 	{
 		UE_LOG(LogGlobalStateManager, Warning, TEXT("Received shutdown multi-process request."));
+
+		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
 		SetAcceptingPlayers(false);
+
+		// allow each worker to begin shutting down
 		FGenericPlatformMisc::RequestExit(false);
 	}
 }
+#endif // defined(WITH_EDITOR)
 
 void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
 {

@@ -56,13 +56,18 @@ public:
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
-	void SendShutdownMultiProcessRequest(bool bValue);
+#if defined(WITH_EDITOR)
+	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
-
+#endif // defined(WITH_EDITOR)
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
-	void Internal_SendShutdownMultiProcessRequest();
+
+#if defined(WITH_EDITOR)
+	void SendShutdownMultiProcessRequest();
+#endif // defined(WITH_EDITOR)
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
