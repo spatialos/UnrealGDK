@@ -1,4 +1,4 @@
-# Get started: 2 - Get and build the SpatialOS Unreal Engine Fork
+# Get started: 2 - Get and build the SpatialOS Unreal Engine fork
 
 The GDK for Unreal extends Unreal Engine's networking capabilities at its core. To use it you first need to build our SpatialOS fork of Unreal Engine from source.
 
