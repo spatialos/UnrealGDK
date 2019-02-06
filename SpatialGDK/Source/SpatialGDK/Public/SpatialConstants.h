@@ -111,6 +111,8 @@ namespace SpatialConstants
 	const Schema_FieldId GLOBAL_STATE_MANAGER_MAP_URL_ID			= 1;
 	const Schema_FieldId GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID	= 2;
 
+	const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID = 1;
+
 	const Schema_FieldId HEARTBEAT_EVENT_ID = 1;
 
 	const float HEARTBEAT_INTERVAL_SECONDS = 2.0f;

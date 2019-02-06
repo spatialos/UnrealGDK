@@ -29,52 +29,64 @@ ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferenc
 
 void ComponentReader::ApplyComponentData(const Worker_ComponentData& ComponentData, UObject* Object, USpatialActorChannel* Channel, bool bIsHandover)
 {
+	if (Object->IsPendingKill())
+	{
+		return;
+	}
+
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
+
+	TArray<uint32> UpdatedIds;
+	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
 
 	if (bIsHandover)
 	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true);
+		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, true, UpdatedIds);
 	}
 	else
 	{
-		ApplySchemaObject(ComponentObject, Object, Channel, true);
+		ApplySchemaObject(ComponentObject, Object, Channel, true, UpdatedIds);
 	}
 }
 
 void ComponentReader::ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* Object, USpatialActorChannel* Channel, bool bIsHandover)
 {
+	if (Object->IsPendingKill())
+	{
+		return;
+	}
+
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
+	// Retrieve all the fields that have been updated in this component update
+	TArray<uint32> UpdatedIds;
+	UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
+	Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
+
+	// Retrieve all the fields that have been cleared (eg. list with no entries)
 	TArray<Schema_FieldId> ClearedIds;
-	ClearedIds.SetNum(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
+	ClearedIds.SetNumUninitialized(Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate.schema_type));
 	Schema_GetComponentUpdateClearedFieldList(ComponentUpdate.schema_type, ClearedIds.GetData());
 
-	if (bIsHandover)
+	// Merge cleared fields into updated fields to ensure they will be processed (Schema_FieldId == uint32)
+	UpdatedIds.Append(ClearedIds);
+
+	if (UpdatedIds.Num() > 0)
 	{
-		ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, &ClearedIds);
-	}
-	else
-	{
-		ApplySchemaObject(ComponentObject, Object, Channel, false, &ClearedIds);
+		if (bIsHandover)
+		{
+			ApplyHandoverSchemaObject(ComponentObject, Object, Channel, false, UpdatedIds);
+		}
+		else
+		{
+			ApplySchemaObject(ComponentObject, Object, Channel, false, UpdatedIds);
+		}
 	}
 }
 
-void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
+void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
 {
-	TArray<uint32> UpdateFields;
-	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
-
-	if (UpdateFields.Num() == 0)
-	{
-		return;
-	}
-
-	if(Object->IsPendingKill())
-	{
-		return;
-	}
-
 	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
 
 	TSharedPtr<FRepState> RepState = Replicator.RepState;
@@ -90,7 +102,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 	TArray<UProperty*> RepNotifies;
 
-	for (uint32 FieldId : UpdateFields)
+	for (uint32 FieldId : UpdatedIds)
 	{
 		// FieldId is the same as rep handle
 		check(FieldId > 0 && (int)FieldId - 1 < BaseHandleToCmdIndex.Num());
@@ -104,85 +116,82 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 			uint8* Data = (uint8*)Object + SwappedCmd.Offset;
 
-			if (bIsInitialData || GetPropertyCount(ComponentObject, FieldId, Cmd.Property) > 0 || ClearedIds->Find(FieldId) != INDEX_NONE)
+			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 			{
-				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
+				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+				bool bProcessedArray = false;
+
+				// Check if this is a FastArraySerializer array so we can simulate the FFastArraySerializerItem PreReplicatedRemove and PostReplicatedAdd calls.
+				if (UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property))
 				{
-					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
-					bool bProcessedArray = false;
-
-					// Check if this is a FastArraySerializer array so we can simulate the FFastArraySerializerItem PreReplicatedRemove and PostReplicatedAdd calls.
-					if (UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property))
+					if (ParentStruct->Struct->IsChildOf(FFastArraySerializer::StaticStruct()))
 					{
-						if (ParentStruct->Struct->IsChildOf(FFastArraySerializer::StaticStruct()))
+						// Read array into a temporary array so the appropriate remove/add operations can be processed
+						FScriptArray TempArray;
+						// Populate array with existing data so compare will incorporate non-replicated entities
+						Cmd.Property->CopyCompleteValue((void*)&TempArray, Data);
+
+						ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, (uint8*)&TempArray, SwappedCmd.Offset, Cmd.ParentIndex);
+						bProcessedArray = true;
+
+						if (!Cmd.Property->Identical((void*)&TempArray, Data))
 						{
-							// Read array into a temporary array so the appropriate remove/add operations can be processed
-							FScriptArray TempArray;
-							// Populate array with existing data so compare will incorporate non-replicated entities
-							Cmd.Property->CopyCompleteValue((void*)&TempArray, Data);
+							FSpatialNetDeltaSerializeInfo Parms;
+							Parms.NewArray = &TempArray;
+							Parms.ArrayProperty = ArrayProperty;
 
-							ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, (uint8*)&TempArray, SwappedCmd.Offset, Cmd.ParentIndex);
-							bProcessedArray = true;
+							UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
+							check(CppStructOps);
 
-							if (!Cmd.Property->Identical((void*)&TempArray, Data))
-							{
-								FSpatialNetDeltaSerializeInfo Parms;
-								Parms.NewArray = &TempArray;
-								Parms.ArrayProperty = ArrayProperty;
-
-								UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
-								check(CppStructOps);
-
-								// This call resolves into FFastArraySerializer::SpatialFastArrayDeltaSerialize where our custom FFastArraySerializerItem
-								// callback are triggered.
-								CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
-							}
+							// This call resolves into FFastArraySerializer::SpatialFastArrayDeltaSerialize where our custom FFastArraySerializerItem
+							// callback are triggered.
+							CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
 						}
 					}
+				}
 
-					if (!bProcessedArray)
+				if (!bProcessedArray)
+				{
+					ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, Cmd.ParentIndex);
+				}
+			}
+			else
+			{
+				ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, Cmd.ParentIndex);
+			}
+
+			if (Cmd.Property->GetFName() == NAME_RemoteRole)
+			{
+				// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
+				// the client RPCs component.
+				UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
+				if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
+				{
+					ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
+				}
+			}
+
+			// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
+			if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
+			{
+				bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data);
+
+				// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
+				if (bIsInitialData)
+				{
+					if (!bIsIdentical)
 					{
-						ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, Cmd.ParentIndex);
+						RepNotifies.AddUnique(Parent.Property);
 					}
 				}
 				else
 				{
-					ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, Cmd.ParentIndex);
-				}
-
-				if (Cmd.Property->GetFName() == NAME_RemoteRole)
-				{
-					// Downgrade role from AutonomousProxy to SimulatedProxy if we aren't authoritative over
-					// the client RPCs component.
-					UByteProperty* ByteProperty = Cast<UByteProperty>(Cmd.Property);
-					if (!bIsAuthServer && !bAutonomousProxy && ByteProperty->GetPropertyValue(Data) == ROLE_AutonomousProxy)
+					if (Parent.RepNotifyCondition == REPNOTIFY_Always || !bIsIdentical)
 					{
-						ByteProperty->SetPropertyValue(Data, ROLE_SimulatedProxy);
+						RepNotifies.AddUnique(Parent.Property);
 					}
 				}
 
-				// Parent.Property is the "root" replicated property, e.g. if a struct property was flattened
-				if (Parent.Property->HasAnyPropertyFlags(CPF_RepNotify))
-				{
-					bool bIsIdentical = Cmd.Property->Identical(RepState->StaticBuffer.GetData() + SwappedCmd.Offset, Data);
-
-					// Only call RepNotify for REPNOTIFY_Always if we are not applying initial data.
-					if (bIsInitialData)
-					{
-						if (!bIsIdentical)
-						{
-							RepNotifies.AddUnique(Parent.Property);
-						}
-					}
-					else
-					{
-						if (Parent.RepNotifyCondition == REPNOTIFY_Always || !bIsIdentical)
-						{
-							RepNotifies.AddUnique(Parent.Property);
-						}
-					}
-
-				}
 			}
 		}
 	}
@@ -192,22 +201,13 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	Channel->PostReceiveSpatialUpdate(Object, RepNotifies);
 }
 
-void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds)
+void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
 {
-	TArray<uint32> UpdateFields;
-	UpdateFields.SetNum(Schema_GetUniqueFieldIdCount(ComponentObject));
-	Schema_GetUniqueFieldIds(ComponentObject, UpdateFields.GetData());
-
-	if (UpdateFields.Num() == 0)
-	{
-		return;
-	}
-
 	FClassInfo& ClassInfo = TypebindingManager->FindClassInfoByClass(Object->GetClass());
 
 	Channel->PreReceiveSpatialUpdate(Object);
 
-	for (uint32 FieldId : UpdateFields)
+	for (uint32 FieldId : UpdatedIds)
 	{
 		// FieldId is the same as handover handle
 		check(FieldId > 0 && (int)FieldId - 1 < ClassInfo.HandoverProperties.Num());
@@ -215,16 +215,13 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 
 		uint8* Data = (uint8*)Object + PropertyInfo.Offset;
 
-		if (bIsInitialData || GetPropertyCount(ComponentObject, FieldId, PropertyInfo.Property) > 0 || ClearedIds->Find(FieldId) != INDEX_NONE)
+		if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
 		{
-			if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
-			{
-				ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, PropertyInfo.Offset, -1);
-			}
-			else
-			{
-				ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, PropertyInfo.Property, Data, PropertyInfo.Offset, -1);
-			}
+			ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, PropertyInfo.Offset, -1);
+		}
+		else
+		{
+			ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, PropertyInfo.Property, Data, PropertyInfo.Offset, -1);
 		}
 	}
 
