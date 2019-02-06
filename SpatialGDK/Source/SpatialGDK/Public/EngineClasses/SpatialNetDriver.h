@@ -30,6 +30,7 @@ class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
 class USnapshotManager;
 
+class UEntityPool;
 class UEntityRegistry;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
@@ -122,6 +123,8 @@ public:
 	UEntityRegistry* EntityRegistry;
 	UPROPERTY()
 	USnapshotManager* SnapshotManager;
+	UPROPERTY()
+	UEntityPool* EntityPool;
 
 	// Limit the number of actors which are replicated per tick to the number specified.
 	// This acts as a hard limit to the number of actors per frame but nothing else. It's recommended to set this value to around 100~ (experimentation recommended).
