@@ -17,7 +17,6 @@ function Write-Log() {
   }
 }
 
-
 Write-Output "Starting Unreal GDK build pipeline.."
 
 pushd "$($gdk_home)"
@@ -29,7 +28,7 @@ pushd "$($gdk_home)"
     popd
 
     Write-Log "Create an UnrealEngine directory if it doesn't already exist"
-    new-item -Name "UnrealEngine" -itemtype directory
+    New-Item -Name "UnrealEngine" -ItemType Directory -Force
 
     pushd "UnrealEngine"
         Write-Log "Downloading the Unreal Engine artifacts from GCS"
@@ -61,13 +60,47 @@ pushd "$($gdk_home)"
     Write-Log "Setting UNREAL_HOME environment variable to $($gdk_home)/UnrealEngine"
     [Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($gdk_home)/UnrealEngine", "Machine")
 
-    # Run the Setup.bat file located in the root
-    Write-Log "Setup Unreal GDK dependencies" -Expand $true
-    Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($gdk_home)\Setup.bat"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Log "Failed to install Unreal GDK dependencies.  Error code $($LASTEXITCODE)"
-        Throw "Failed to install Unreal GDK dependencies"
-    }
+    ## THIS REPLACES THE OLD SETUP.BAT SCRIPT
+
+    # TODO: check for msbuild
+    #call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
+
+    # Setup variables
+    $pinned_core_sdk_version = Get-Content -Path "$($gdk_home)\SpatialGDK\Extras\core-sdk.version" -Raw
+    $build_dir = "$($gdk_home)\SpatialGDK\Build"
+    $core_sdk_dir = "$($build_dir)\core_sdk"
+    $worker_sdk_dir = "$($gdk_home)\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK"
+    $worker_sdk_dir_old = "$($gdk_home)\SpatialGDK\Source\Public\WorkerSdk"
+    $binaries_dir = "$($gdk_home)\SpatialGDK\Binaries\ThirdParty\Improbable"
+
+    Write-Log "Creating folders.."
+    New-Item -Name "$($worker_sdk_dir)" -ItemType Directory -Force
+    New-Item -Name "$($core_sdk_dir)\schema" -ItemType Directory -Force
+    New-Item -Name "$($core_sdk_dir)\tools" -ItemType Directory -Force
+    New-Item -Name "$($core_sdk_dir)\worker_sdk" -ItemType Directory -Force
+    New-Item -Name "$($binaries_dir)" -ItemType Directory -Force
+
+    Write-Log "Downloading spatial packages.."
+    Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
+        "package", `
+        "retrieve", `
+        "worker_sdk", `
+        "c-dynamic-x86_64-msvc_md-win32", `
+        "$($pinned_core_sdk_version)", `
+        "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip" `
+    )
+
+    Write-Log "Extracting spatial packages.."
+    Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\"`
+     -DestinationPath \"$($binaries_dir)\Win64\"`
+     -Force`
+    )
+
+    # Copy from binaries_dir
+    Copy-Item "$($binaries_dir)\Win64\include" "$($worker_sdk_dir)" -Force -Recurse
+
+    # TODO : Build utilities
+    #%MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
 
   <#pushd "SpatialGDK"
   
