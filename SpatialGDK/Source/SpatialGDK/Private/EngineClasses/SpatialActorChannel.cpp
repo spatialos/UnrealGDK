@@ -804,6 +804,7 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 	{
 		for (auto& ObjRef : RefMap)
 		{
+			// ParentIndex will be -1 for handover properties.
 			if (ObjRef.Value.ParentIndex < 0)
 			{
 				continue;
