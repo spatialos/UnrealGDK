@@ -7,7 +7,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
@@ -159,7 +159,7 @@ private:
 
 	void ProcessQueuedResolvedObjects();
 	void UpdateShadowData(Worker_EntityId EntityId);
-	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
+	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
 
 private:
 	template <typename T>
@@ -178,7 +178,7 @@ private:
 	USpatialPackageMapClient* PackageMap;
 
 	UPROPERTY()
-	USpatialTypebindingManager* TypebindingManager;
+	USpatialClassInfoManager* ClassInfoManager;
 
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
@@ -198,7 +198,7 @@ private:
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_EntityId> PendingRemoveEntities;
 
-	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
+	TMap<Worker_RequestId, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
 
 	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
