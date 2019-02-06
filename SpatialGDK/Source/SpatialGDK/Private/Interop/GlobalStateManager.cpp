@@ -30,7 +30,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 	TimerManager = InTimerManager;
 	GlobalStateManagerEntityId = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
-#if defined(WITH_EDITOR)
+#if WITH_EDITOR
 	const ULevelEditorPlaySettings* const PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
 
 	// only the client should ever send this request
@@ -44,7 +44,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 			FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEnded);
 		}
 	}
-#endif // defined(WITH_EDITOR)
+#endif // WITH_EDITOR
 }
 
 void UGlobalStateManager::ApplyData(const Worker_ComponentData& Data)
@@ -109,7 +109,7 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 	}
 }
 
-#if defined(WITH_EDITOR)
+#if WITH_EDITOR
 void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 {
 	SendShutdownMultiProcessRequest();
@@ -117,18 +117,18 @@ void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 
 void UGlobalStateManager::SendShutdownMultiProcessRequest()
 {
+	// TODO:UNR-964. An event will need to be sent from the server to notify all the non-authoritative servers to shutdown.
+
 	/** When running with Use Single Process unticked, send a shutdown command to the servers to allow SpatialOS to shutdown.
 	  * Standard UnrealEngine behavior is to call TerminateProc on external processes and there is no method to send any messaging
 	  * to those external process.
 	  * The GDK requires shutdown code to be ran for workers to disconnect cleanly so instead of abruptly shutting down the server worker,
 	  * just send a command to the worker to begin it's shutdown phase. 
 	  */
-	FURL DummyURL;
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
 	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, 1);
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-	AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
 
 	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest, 1);
 }
@@ -146,7 +146,7 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 		FGenericPlatformMisc::RequestExit(false);
 	}
 }
-#endif // defined(WITH_EDITOR)
+#endif // WITH_EDITOR
 
 void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
 {

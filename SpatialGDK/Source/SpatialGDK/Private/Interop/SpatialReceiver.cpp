@@ -740,13 +740,13 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Payload, Op.caller_attribute_set.attributes[1], Op.request_id);
 		return;
 	}
-#if defined(WITH_EDITOR)
+#if WITH_EDITOR
 	else if (Op.request.component_id == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID && CommandIndex == 1)
 	{
 		NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
 		return;
 	}
-#endif // defined(WITH_EDITOR)
+#endif // WITH_EDITOR
 
 	Worker_CommandResponse Response = {};
 	Response.component_id = Op.request.component_id;

@@ -56,17 +56,17 @@ public:
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
-#if defined(WITH_EDITOR)
+#if WITH_EDITOR
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
-#endif // defined(WITH_EDITOR)
+#endif // WITH_EDITOR
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
 
-#if defined(WITH_EDITOR)
+#if WITH_EDITOR
 	void SendShutdownMultiProcessRequest();
-#endif // defined(WITH_EDITOR)
+#endif // WITH_EDITOR
 
 private:
 	UPROPERTY()
