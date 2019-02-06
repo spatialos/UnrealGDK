@@ -2,7 +2,6 @@
 
 #include "Containers/UnrealString.h"
 
-#include "SpatialConstants.h"
 #include "Utils/SchemaOption.h"
 
 #include <cstdint>
