@@ -47,7 +47,7 @@ using FUnresolvedEntry = TSharedPtr<TSet<TWeakObjectPtr<const UObject>>>;
 using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
 using FChannelToHandleToUnresolved = TMap<FChannelObjectPair, FHandleToUnresolved>;
 using FOutgoingRepUpdates = TMap<TWeakObjectPtr<const UObject>, FChannelToHandleToUnresolved>;
-using FUpdatesQueuedUntilAuthority = TMap<int64, TArray<Worker_ComponentUpdate>>;
+using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<Worker_ComponentUpdate>>;
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject
