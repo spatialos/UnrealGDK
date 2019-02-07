@@ -33,6 +33,7 @@ struct FRPCInfo
 {
 	ESchemaComponentType Type;
 	uint32 Index;
+	bool bReliable;
 };
 
 struct FHandoverPropertyInfo
@@ -56,7 +57,7 @@ struct FClassInfo
 
 	TWeakObjectPtr<UClass> Class;
 
-	TMap<ESchemaComponentType, TArray<UFunction*>> RPCs;
+	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
 
 	TArray<FHandoverPropertyInfo> HandoverProperties;

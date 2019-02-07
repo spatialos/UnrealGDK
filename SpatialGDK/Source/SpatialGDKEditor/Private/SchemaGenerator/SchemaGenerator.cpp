@@ -379,7 +379,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 	}
 
 	// RPC components.
-	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
+	/*FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
 
 	TArray<FString> ReliableMulticasts;
 
@@ -419,20 +419,20 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 			}
 		}
 		Writer.Outdent().Print("}");
-	}
+	}*/
 
 	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData);
 
-	if (ReliableMulticasts.Num() > 0)
-	{
-		FString AllReliableMulticasts;
-		for (const FString& FunctionName : ReliableMulticasts)
-		{
-			AllReliableMulticasts += FunctionName + TEXT("\n");					
-		}
+	//if (ReliableMulticasts.Num() > 0)
+	//{
+	//	FString AllReliableMulticasts;
+	//	for (const FString& FunctionName : ReliableMulticasts)
+	//	{
+	//		AllReliableMulticasts += FunctionName + TEXT("\n");					
+	//	}
 
-		UE_LOG(LogSchemaGenerator, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
-	}
+	//	UE_LOG(LogSchemaGenerator, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
+	//}
 
 	ClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
 
@@ -489,7 +489,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = IdGenerator.GetCurrentId();
 	}
 
-	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
+	/*FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
 
 	for (auto Group : GetRPCTypes())
 	{
@@ -522,7 +522,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		Writer.Outdent().Print("}");
 
 		SubobjectData.SchemaComponents[RPCTypeToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
-	}
+	}*/
 
 	return SubobjectData;
 }

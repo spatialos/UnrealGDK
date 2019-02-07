@@ -52,13 +52,23 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
 		ESchemaComponentType RPCType = SCHEMA_Invalid;
-		if (RemoteFunction->FunctionFlags & FUNC_NetClient)
+		bool bReliable = RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable);
+
+		if (RemoteFunction->FunctionFlags & FUNC_NetClient && bReliable)
 		{
 			RPCType = SCHEMA_ClientRPC;
 		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetServer)
+		else if (RemoteFunction->FunctionFlags & FUNC_NetServer && !bReliable)
+		{
+			RPCType = SCHEMA_ClientUnreliableRPC;
+		}
+		else if (RemoteFunction->FunctionFlags & FUNC_NetServer && bReliable)
 		{
 			RPCType = SCHEMA_ServerRPC;
+		}
+		else if (RemoteFunction->FunctionFlags & FUNC_NetServer && !bReliable)
+		{
+			RPCType = SCHEMA_ServerUnreliableRPC;
 		}
 		else if (RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
 		{
@@ -73,13 +83,14 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 			checkNoEntry();
 		}
 
-		TArray<UFunction*>& RPCArray = Info->RPCs.FindOrAdd(RPCType);
+		//TArray<UFunction*>& RPCArray = Info->RPCs.FindOrAdd(RPCType);
 
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
-		RPCInfo.Index = RPCArray.Num();
+		RPCInfo.bReliable = RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable);
+		RPCInfo.Index = Info->RPCs.Num();
 
-		RPCArray.Add(RemoteFunction);
+		Info->RPCs.Add(RemoteFunction);
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 

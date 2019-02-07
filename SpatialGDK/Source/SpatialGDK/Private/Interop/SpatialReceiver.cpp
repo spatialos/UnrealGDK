@@ -786,6 +786,11 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyStartupActorManagerUpdate(Op.update);
 		return;
+	case SpatialConstants::CLIENT_RPCS_COMPONENT_ID:
+	case SpatialConstants::SERVER_RPCS_COMPONENT_ID:
+	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
+		HandleUnreliableRPC(Op);
+		return;
 	}
 
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
@@ -840,14 +845,47 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 	else if (Category == ESchemaComponentType::SCHEMA_NetMulticastRPC)
 	{
-		if (const TArray<UFunction*>* RPCArray = Info.RPCs.Find(SCHEMA_NetMulticastRPC))
-		{
-			ReceiveMulticastUpdate(Op.update, TargetObject, *RPCArray);
-		}
+		checkNoEntry();
+		//if (const TArray<UFunction*>* RPCArray = Info.RPCs.Find(SCHEMA_NetMulticastRPC))
+		//{
+		//	ReceiveMulticastUpdate(Op.update, TargetObject, *RPCArray);
+		//}
 	}
 	else
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because it's an empty component update from an RPC component. (most likely as a result of gaining authority)"), Op.entity_id, Op.update.component_id);
+	}
+}
+
+void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
+{
+	Worker_EntityId EntityId = Op.entity_id;
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
+	uint32 EventCount = Schema_GetObjectCount(EventsObject, 1);
+
+	for (uint32 i = 0; i < EventCount; i++)
+	{
+		Schema_Object* EventData = Schema_IndexObject(EventsObject, 1, i);
+
+		uint32 Offset = Schema_GetUint32(EventData, 1);
+		uint32 Index = Schema_GetUint32(EventData, 2);
+		TArray<uint8> PayloadData = GetBytesFromSchema(EventData, 3);
+		int64 CountBits = PayloadData.Num() * 8;
+
+		FUnrealObjectRef ObjectRef(EntityId, Offset);
+
+		TWeakObjectPtr<UObject> WeakObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef);
+		if (WeakObject.IsValid())
+		{
+			continue;
+		}
+
+		UObject* TargetObject = WeakObject.Get();
+
+		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+
+		UFunction* Function = ClassInfo.RPCs[Index];
+		ApplyRPC(TargetObject, Function, PayloadData, CountBits, FString());
 	}
 }
 
@@ -879,14 +917,17 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	Response.component_id = Op.request.component_id;
 	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
 
+	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
+
 	uint32 Offset = 0;
-	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.request.component_id, Offset);
-	if (!bFoundOffset)
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("No offset found for ComponentId %d"), Op.request.component_id);
-		Sender->SendCommandResponse(Op.request_id, Response);
-		return;
-	}
+	Offset = Schema_GetUint32(RequestObject, 1);
+	//bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.request.component_id, Offset);
+	//if (!bFoundOffset)
+	//{
+	//	UE_LOG(LogSpatialReceiver, Warning, TEXT("No offset found for ComponentId %d"), Op.request.component_id);
+	//	Sender->SendCommandResponse(Op.request_id, Response);
+	//	return;
+	//}
 
 	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get();
 	if (TargetObject == nullptr)
@@ -898,14 +939,18 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-	ESchemaComponentType RPCType = ClassInfoManager->GetCategoryByComponentId(Op.request.component_id);
-	check(RPCType >= SCHEMA_FirstRPC && RPCType <= SCHEMA_LastRPC);
+	//ESchemaComponentType RPCType = ClassInfoManager->GetCategoryByComponentId(Op.request.component_id);
+	//check(RPCType >= SCHEMA_FirstRPC && RPCType <= SCHEMA_LastRPC);
 
-	const TArray<UFunction*>* RPCArray = Info.RPCs.Find(RPCType);
-	check(RPCArray);
-	check((int)CommandIndex - 1 < RPCArray->Num());
+	uint32 Index = Schema_GetUint32(RequestObject, 2);
 
-	UFunction* Function = (*RPCArray)[CommandIndex - 1];
+	UFunction* Function = Info.RPCs[Index];
+
+	//const TArray<UFunction*>* RPCArray = Info.RPCs.Find(RPCType);
+	//check(RPCArray);
+	//check((int)CommandIndex - 1 < RPCArray->Num());
+
+	//UFunction* Function = (*RPCArray)[CommandIndex - 1];
 
 	ReceiveRPCCommandRequest(Op.request, TargetObject, Function, UTF8_TO_TCHAR(Op.caller_worker_id));
 

@@ -23,13 +23,16 @@ enum ESchemaComponentType : int32
 	SCHEMA_OwnerOnly,
 	SCHEMA_Handover,
 
+	SCHEMA_Count,
+
 	// RPCs
 	SCHEMA_ClientRPC,
+	SCHEMA_ClientUnreliableRPC,
 	SCHEMA_ServerRPC,
+	SCHEMA_ServerUnreliableRPC,
 	SCHEMA_NetMulticastRPC,
 	SCHEMA_CrossServerRPC,
 
-	SCHEMA_Count,
 
 	// Iteration helpers
 	SCHEMA_Begin = SCHEMA_Data,
@@ -107,6 +110,9 @@ namespace SpatialConstants
 	const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 9993;
 	const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 9992;
 	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 9991;
+	const Worker_ComponentId CLIENT_RPCS_COMPONENT_ID						= 9990;
+	const Worker_ComponentId SERVER_RPCS_COMPONENT_ID						= 9989;
+	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9987;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
 	const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
