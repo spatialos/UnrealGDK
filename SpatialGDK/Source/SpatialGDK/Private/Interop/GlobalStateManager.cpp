@@ -201,12 +201,6 @@ void UGlobalStateManager::LinkAllExistingSingletonActors()
 
 	for (const auto& Pair : SingletonNameToEntityId)
 	{
-		// This is a workaround for the fact that we can't clear containers at the moment.
-		if (Pair.Key.IsEmpty())
-		{
-			continue;
-		}
-
 		UClass* SingletonActorClass = LoadObject<UClass>(nullptr, *Pair.Key);
 		if (SingletonActorClass == nullptr)
 		{
@@ -385,12 +379,7 @@ void UGlobalStateManager::BeginDestroy()
 			Worker_ComponentUpdate Update = {};
 			Update.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 			Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
-			Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-
-			// Workaround since we can't clear containers at the moment. We make the map have one element with an empty pair.
-			SingletonNameToEntityId.Empty();
-			SingletonNameToEntityId.Add(TEXT(""), 0);
-			AddStringToEntityMapToSchema(UpdateObject, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID, SingletonNameToEntityId);
+			Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID);
 
 			NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 		}

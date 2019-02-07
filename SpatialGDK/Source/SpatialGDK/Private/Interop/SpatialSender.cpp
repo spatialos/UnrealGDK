@@ -480,7 +480,7 @@ void USpatialSender::FlushRetryRPCs()
 
 void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
 {
-	UE_LOG(LogSpatialSender, Warning, TEXT("%s Sending reserve entity Id request for %s"), *Connection->GetWorkerId(), *Channel->Actor->GetName());
+	UE_LOG(LogSpatialSender, Log, TEXT("Sending reserve entity Id request for %s"), *Channel->Actor->GetName());
 	Worker_RequestId RequestId = Connection->SendReserveEntityIdRequest();
 	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
