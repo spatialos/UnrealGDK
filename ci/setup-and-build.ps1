@@ -45,7 +45,14 @@ pushd "$($gdk_home)"
         }
 
         Write-Log "Unzipping Unreal Engine"
-        Expand-Archive -Path "$($unreal_version).zip" -Force
+        $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
+        "x", `  
+        "$($unreal_version).zip" `    
+        )   
+        if ($zip_proc.ExitCode -ne 0) { 
+            Write-Log "Failed to unzip Unreal Engine. Error: $($zip_proc.ExitCode)" 
+            Throw "Failed to unzip Unreal Engine."  
+        }
 
     popd
 
@@ -54,9 +61,6 @@ pushd "$($gdk_home)"
     [Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($unreal_path)", "Machine")
 
     ## THIS REPLACES THE OLD SETUP.BAT SCRIPT
-
-    # TODO: check for msbuild
-    #call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
 
     # Setup variables
     $root_dir = (get-item "$($PSScriptRoot)").parent.FullName
@@ -89,6 +93,10 @@ pushd "$($gdk_home)"
 
     # Copy from binaries_dir
     Copy-Item "$($binaries_dir)\Win64\include" "$($worker_sdk_dir)" -Force -Recurse
+
+    # TODO: check for msbuild
+    #call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
+    Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)\Engine\Build\BatchFiles\GetMSBuildPath.bat"
 
     # TODO : Build utilities
     #%MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
