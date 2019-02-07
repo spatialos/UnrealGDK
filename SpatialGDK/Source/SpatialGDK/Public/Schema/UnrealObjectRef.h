@@ -58,6 +58,14 @@ struct FUnrealObjectRef
 		return !operator==(Other);
 	}
 
+	FORCEINLINE bool IsValid() const
+	{
+		return (*this != NULL_OBJECT_REF && *this != UNRESOLVED_OBJECT_REF);
+	}
+
+	static const FUnrealObjectRef NULL_OBJECT_REF;
+	static const FUnrealObjectRef UNRESOLVED_OBJECT_REF;
+
 	Worker_EntityId Entity;
 	uint32 Offset;
 	improbable::TSchemaOption<FString> Path;

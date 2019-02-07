@@ -384,7 +384,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
 
-			if (ObjectRef != SpatialConstants::NULL_OBJECT_REF && ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
+			if (ObjectRef.IsValid())
 			{
 				FClassInfo& SubobjectInfo = Info.SubobjectInfo[ObjectRef.Offset].Get();
 
@@ -477,7 +477,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
 
-	if (NetDriver->PackageMap->GetUnrealObjectRefFromObject(Obj) == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	if (!NetDriver->PackageMap->GetUnrealObjectRefFromObject(Obj).IsValid())
 	{
 		// Not supported for Spatial replication
 		return false;
@@ -691,8 +691,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 	RegisterEntityId(EntityId);
 
 	// Register Actor with package map since we know what the entity id is.
-	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
+	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId);
 
 	// Force an Update so that the entity will be created in the next batch of processed actors
 	NetDriver->ForceNetUpdate(Actor);

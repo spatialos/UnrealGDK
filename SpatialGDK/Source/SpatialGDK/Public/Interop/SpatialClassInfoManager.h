@@ -71,7 +71,7 @@ struct FClassInfo
 
 class USpatialNetDriver;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialTypebindingManager, Log, All)
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialClassInfoManager, Log, All)
 
 UCLASS()
 class SPATIALGDK_API USpatialClassInfoManager : public UObject

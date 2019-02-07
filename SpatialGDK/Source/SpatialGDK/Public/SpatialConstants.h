@@ -104,7 +104,6 @@ namespace SpatialConstants
 	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 100004;
 	const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 100005;
 	const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 100006;
-	const Worker_ComponentId SERVER_ONLY_SINGLETON_COMPONENT_ID				= 100007;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 100010;
 
 	const Schema_FieldId GLOBAL_STATE_MANAGER_MAP_URL_ID			= 1;
@@ -115,9 +114,6 @@ namespace SpatialConstants
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;
 	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
-
-	const FUnrealObjectRef NULL_OBJECT_REF(0, 0);
-	const FUnrealObjectRef UNRESOLVED_OBJECT_REF(0, 1);
 
 	static const FString ClientWorkerType = TEXT("UnrealClient");
 	static const FString ServerWorkerType = TEXT("UnrealWorker");
