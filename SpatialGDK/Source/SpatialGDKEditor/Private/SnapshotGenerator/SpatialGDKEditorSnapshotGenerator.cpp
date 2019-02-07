@@ -226,9 +226,9 @@ void CleanupNetDriverAndConnection(USpatialNetDriver* NetDriver, USpatialNetConn
 }
 
 // This function is not in use.
-TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channel, AActor* Actor, USpatialClassInfoManager* TypebindingManager, USpatialNetDriver* NetDriver)
+TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channel, AActor* Actor, USpatialClassInfoManager* ClassInfoManager, USpatialNetDriver* NetDriver)
 {
-	const FClassInfo& Info = TypebindingManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	// This ensures that the Actor has prepared it's replicated fields before replicating. For instance, the simulate physics on a UPrimitiveComponent
 	// will be queried and set the Actor's ReplicatedMovement.bRepPhysics field. These fields are then serialized correctly within the snapshot. We are
@@ -284,19 +284,15 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	return ComponentData;
 }
 
-<<<<<<< HEAD
 // This function is not in use.
-bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor, Worker_EntityId EntityId, USpatialNetConnection* NetConnection, USpatialTypebindingManager* TypebindingManager)
-=======
-bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor, Worker_EntityId EntityId, USpatialNetConnection* NetConnection, USpatialClassInfoManager* TypebindingManager)
->>>>>>> 11732d210993c218959ae7a0e07e1c9c03eae534
+bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor, Worker_EntityId EntityId, USpatialNetConnection* NetConnection, USpatialClassInfoManager* ClassInfoManager)
 {
 	Worker_Entity Entity;
 	Entity.entity_id = EntityId;
 
 	UClass* ActorClass = Actor->GetClass();
 
-	const FClassInfo& ActorInfo = TypebindingManager->GetOrCreateClassInfoByClass(ActorClass);
+	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(ActorClass);
 
 	WriteAclMap ComponentWriteAcl;
 
@@ -365,7 +361,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::UnrealMetadata({}, {}, ActorClass->GetPathName()).CreateUnrealMetadataData());
 	Components.Add(improbable::Interest().CreateInterestData());
 
-	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
+	Components.Append(CreateStartupActorData(Channel, Actor, ClassInfoManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
 
 	Entity.component_count = Components.Num();
 	Entity.components = Components.GetData();
@@ -373,12 +369,8 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &Entity) != 0;
 }
 
-<<<<<<< HEAD
 // This function is not in use.
-bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialTypebindingManager* TypebindingManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
-=======
-bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialClassInfoManager* TypebindingManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
->>>>>>> 11732d210993c218959ae7a0e07e1c9c03eae534
+bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialClassInfoManager* ClassInfoManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
 {
 	Worker_EntityId CurrentEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
 
@@ -392,7 +384,7 @@ bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialClassInfoManage
 			continue;
 		}
 
-		if (Actor->IsEditorOnly() || Actor->IsPendingKill() || !TypebindingManager->IsSupportedClass(ActorClass) || !Actor->GetIsReplicated())
+		if (Actor->IsEditorOnly() || Actor->IsPendingKill() || !ClassInfoManager->IsSupportedClass(ActorClass) || !Actor->GetIsReplicated())
 		{
 			continue;
 		}
