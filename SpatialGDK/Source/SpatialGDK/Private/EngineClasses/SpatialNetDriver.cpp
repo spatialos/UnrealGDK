@@ -666,7 +666,6 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	for (int32 j = 0; j < FinalSortedCount; j++)
 	{
 		// Deletion entry
-		// Does this ever happen? Seems to be intended for destroyed startup actors, since we don't populate DestroyedStartupOrDormantActors after that because of the overridden NotifyActorDestroyed.
 		if (PriorityActors[j]->ActorInfo == NULL && PriorityActors[j]->DestructionInfo)
 		{
 			// Make sure client has streaming level loaded
@@ -892,18 +891,18 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	// The fake spatial connection will borrow the player controllers from other connections.
 	for (int j = 1; j < ClientConnections.Num(); j++)
 	{
-		USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[j]);
-		check(OtherSpatialConnection);
+		USpatialNetConnection* ClientConnection = Cast<USpatialNetConnection>(ClientConnections[j]);
+		check(ClientConnection);
 
-		if (OtherSpatialConnection->ViewTarget)
+		if (ClientConnection->ViewTarget != nullptr)
 		{
-			new(ConnectionViewers)FNetViewer(OtherSpatialConnection, DeltaSeconds);
+			new(ConnectionViewers)FNetViewer(ClientConnection, DeltaSeconds);
 
-			for (int32 ViewerIndex = 0; ViewerIndex < OtherSpatialConnection->Children.Num(); ViewerIndex++)
+			for (UChildConnection* ChildConnection : ClientConnection->Children)
 			{
-				if (OtherSpatialConnection->Children[ViewerIndex]->ViewTarget != NULL)
+				if (ChildConnection->ViewTarget != nullptr)
 				{
-					new(ConnectionViewers)FNetViewer(OtherSpatialConnection->Children[ViewerIndex], DeltaSeconds);
+					new(ConnectionViewers)FNetViewer(ChildConnection, DeltaSeconds);
 				}
 			}
 		}

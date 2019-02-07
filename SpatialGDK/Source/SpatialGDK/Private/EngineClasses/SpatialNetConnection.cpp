@@ -99,7 +99,7 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 				{
 					if (EventCount > 1)
 					{
-						UE_LOG(LogTemp, Warning, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), ConnectionPtr->PlayerControllerEntity);
+						UE_LOG(LogTemp, Log, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), ConnectionPtr->PlayerControllerEntity);
 					}
 
 					ConnectionPtr->OnHeartbeat();
