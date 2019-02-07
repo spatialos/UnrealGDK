@@ -1,5 +1,5 @@
 param(
-  [string] $gdk_home = "$($PSScriptRoot)/..", ## The root of the UnrealGDK repo
+  [string] $gdk_home = (get-item "$($PSScriptRoot)").parent.FullName, ## The root of the UnrealGDK repo
   [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production"
 )
 
@@ -63,13 +63,12 @@ pushd "$($gdk_home)"
     ## THIS REPLACES THE OLD SETUP.BAT SCRIPT
 
     # Setup variables
-    $root_dir = (get-item "$($PSScriptRoot)").parent.FullName
-    $pinned_core_sdk_version = Get-Content -Path "$($root_dir)\SpatialGDK\Extras\core-sdk.version" -Raw
-    $build_dir = "$($root_dir)\SpatialGDK\Build"
+    $pinned_core_sdk_version = Get-Content -Path "$($gdk_home)\SpatialGDK\Extras\core-sdk.version" -Raw
+    $build_dir = "$($gdk_home)\SpatialGDK\Build"
     $core_sdk_dir = "$($build_dir)\core_sdk"
-    $worker_sdk_dir = "$($root_dir)\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK"
-    $worker_sdk_dir_old = "$($root_dir)\SpatialGDK\Source\Public\WorkerSdk"
-    $binaries_dir = "$($root_dir)\SpatialGDK\Binaries\ThirdParty\Improbable"
+    $worker_sdk_dir = "$($gdk_home)\SpatialGDK\Source\SpatialGDK\Public\WorkerSDK"
+    $worker_sdk_dir_old = "$($gdk_home)\SpatialGDK\Source\Public\WorkerSdk"
+    $binaries_dir = "$($gdk_home)\SpatialGDK\Binaries\ThirdParty\Improbable"
 
     Write-Log "Creating folders.."
     New-Item -Path "$($worker_sdk_dir)" -ItemType Directory -Force
