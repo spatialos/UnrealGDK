@@ -374,7 +374,7 @@ void UGlobalStateManager::BeginDestroy()
 {
 	Super::BeginDestroy();
 
-#ifdef WITH_EDITOR
+#if WITH_EDITOR
 	if (NetDriver != nullptr && NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 	{
 		// If we are deleting dynamically spawned entities, we need to
