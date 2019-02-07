@@ -14,7 +14,7 @@ struct FConnectionConfig
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_RAKNET)
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
