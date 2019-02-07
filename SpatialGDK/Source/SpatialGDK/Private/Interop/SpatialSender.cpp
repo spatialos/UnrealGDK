@@ -374,7 +374,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 
 	UObject* TargetObject = Params->TargetObject.Get();
-	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s on unresolved Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
 		QueueOutgoingRPC(TargetObject, Params);
@@ -610,7 +610,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-	if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
 		Schema_DestroyCommandRequest(CommandRequest.schema_type);
@@ -658,7 +658,7 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 	Schema_Object* EventData = Schema_AddObject(EventsObject, EventIndex);
 
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-	if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);

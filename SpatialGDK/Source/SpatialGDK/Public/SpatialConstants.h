@@ -121,9 +121,6 @@ namespace SpatialConstants
 	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;
 	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
-	const FUnrealObjectRef NULL_OBJECT_REF(0, 0);
-	const FUnrealObjectRef UNRESOLVED_OBJECT_REF(0, 1);
-
 	static const FString ClientWorkerType = TEXT("UnrealClient");
 	static const FString ServerWorkerType = TEXT("UnrealWorker");
 
