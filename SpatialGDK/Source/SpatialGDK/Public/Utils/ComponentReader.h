@@ -30,7 +30,7 @@ private:
 private:
 	class USpatialPackageMapClient* PackageMap;
 	class USpatialNetDriver* NetDriver;
-	class USpatialClassInfoManager* TypebindingManager;
+	class USpatialClassInfoManager* ClassInfoManager;
 	FObjectReferencesMap& RootObjectReferencesMap;
 	TSet<FUnrealObjectRef>& UnresolvedRefs;
 };

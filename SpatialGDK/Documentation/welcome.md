@@ -15,7 +15,7 @@ The GDK offers:<br/>
 
 #### Want to get going with SpatialOS?
 
-* **[GET STARTED]({{urlRoot}}/content/get-started/introduction) with the SpatialOS GDK for Unreal.** If you’re an Unreal game developer and you're ready to get started with SpatialOS, the _Get started_  guide takes you through setting up the GDK and launching the  FPS Starter Project. (Note that the GDK is aimed at users comfortable with programming in Unreal.) 
+* **[Get started]({{urlRoot}}/content/get-started/introduction) with the SpatialOS GDK for Unreal.** If you’re an Unreal game developer and you're ready to get started with SpatialOS, the _Get started_  guide takes you through setting up the GDK and launching the  FPS Starter Project. (Note that the GDK is aimed at users comfortable with programming in Unreal.) 
 
 #### Want to find out more? 
 

@@ -21,7 +21,7 @@ namespace improbable
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
-	, TypebindingManager(InNetDriver->ClassInfoManager)
+	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, RootObjectReferencesMap(InObjectReferencesMap)
 	, UnresolvedRefs(InUnresolvedRefs)
 {
@@ -203,7 +203,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
 {
-	const FClassInfo& ClassInfo = TypebindingManager->GetOrCreateClassInfoByClass(Object->GetClass());
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
 	Channel->PreReceiveSpatialUpdate(Object);
 
@@ -298,10 +298,10 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
 		FUnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
-		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
-		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
+		if (ObjectRef == FUnrealObjectRef::NULL_OBJECT_REF)
 		{
 			ObjectProperty->SetObjectPropertyValue(Data, nullptr);
 		}

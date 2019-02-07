@@ -1,5 +1,5 @@
 # Directory structure
-The table below lists the contents of the GDK for Unreal repository after running `Setup.bat` to build the Unreal engine as part of [Getting started]({{urlRoot}}/content/get-started/build-unreal-fork#building-unreal-engine).
+The table below lists the contents of the GDK for Unreal repository after running `Setup.bat` to build the Unreal engine as part of [Getting started]({{urlRoot}}/content/get-started/build-unreal-fork#step-4-build-unreal-engine).
 
 | Directory | Purpose
 |-----------|---------

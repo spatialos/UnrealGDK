@@ -54,7 +54,7 @@ private:
 
 	USpatialNetDriver* NetDriver;
 	USpatialPackageMapClient* PackageMap;
-	USpatialClassInfoManager* TypebindingManager;
+	USpatialClassInfoManager* ClassInfoManager;
 
 	FUnresolvedObjectsMap& PendingRepUnresolvedObjectsMap;
 	FUnresolvedObjectsMap& PendingHandoverUnresolvedObjectsMap;
