@@ -477,7 +477,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
 
-	if (NetDriver->PackageMap->GetUnrealObjectRefFromObject(Obj).IsValid() == false)
+	if (!NetDriver->PackageMap->GetUnrealObjectRefFromObject(Obj).IsValid())
 	{
 		// Not supported for Spatial replication
 		return false;
