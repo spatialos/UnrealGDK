@@ -20,7 +20,7 @@ namespace improbable
 ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
-	, TypebindingManager(InNetDriver->TypebindingManager)
+	, TypebindingManager(InNetDriver->ClassInfoManager)
 	, PendingRepUnresolvedObjectsMap(RepUnresolvedObjectsMap)
 	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
 	, bInterestHasChanged(false)
@@ -77,7 +77,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 	return bWroteSomething;
 }
 
-bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
+bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /* = nullptr */)
 {
 	bool bWroteSomething = false;
 
@@ -283,7 +283,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 }
 
-TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState)
+TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Object, const FClassInfo& Info, const FRepChangeState& RepChangeState, const FHandoverChangeState& HandoverChangeState)
 {
 	TArray<Worker_ComponentData> ComponentDatas;
 
@@ -318,6 +318,8 @@ Worker_ComponentData ComponentFactory::CreateComponentData(Worker_ComponentId Co
 	ComponentData.schema_type = Schema_CreateComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
 
+	// We're currently ignoring ClearedId fields, which is problematic if the initial replicated state
+	// is different to what the default state is (the client will have the incorrect data). UNR:959
 	FillSchemaObject(ComponentObject, Object, Changes, PropertyGroup, true);
 
 	return ComponentData;
@@ -332,7 +334,7 @@ Worker_ComponentData ComponentFactory::CreateEmptyComponentData(Worker_Component
 	return ComponentData;
 }
 
-Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, FClassInfo& Info, const FHandoverChangeState& Changes)
+Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes)
 {
 	Worker_ComponentData ComponentData = CreateEmptyComponentData(ComponentId);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData.schema_type);
@@ -342,7 +344,7 @@ Worker_ComponentData ComponentFactory::CreateHandoverComponentData(Worker_Compon
 	return ComponentData;
 }
 
-TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState)
+TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject* Object, const FClassInfo& Info, Worker_EntityId EntityId, const FRepChangeState* RepChangeState, const FHandoverChangeState* HandoverChangeState)
 {
 	TArray<Worker_ComponentUpdate> ComponentUpdates;
 
@@ -417,7 +419,7 @@ Worker_ComponentUpdate ComponentFactory::CreateComponentUpdate(Worker_ComponentI
 	return ComponentUpdate;
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething)
+Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_ComponentId ComponentId, UObject* Object, const FClassInfo& Info, const FHandoverChangeState& Changes, bool& bWroteSomething)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -442,22 +444,22 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	return ComponentUpdate;
 }
 
-Worker_ComponentData ComponentFactory::CreateInterestComponentData(UObject* Object, FClassInfo& Info)
+Worker_ComponentData ComponentFactory::CreateInterestComponentData(UObject* Object, const FClassInfo& Info)
 {
 	return CreateInterestComponent(Object, Info).CreateInterestData();
 }
 
-Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(UObject* Object, FClassInfo& Info)
+Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(UObject* Object, const FClassInfo& Info)
 {
 	return CreateInterestComponent(Object, Info).CreateInterestUpdate();
 }
 
-improbable::Interest ComponentFactory::CreateInterestComponent(UObject* Object, FClassInfo& Info)
+improbable::Interest ComponentFactory::CreateInterestComponent(UObject* Object, const FClassInfo& Info)
 {
 	// Create a new component interest containing a query for every interested Object
 	improbable::ComponentInterest ComponentInterest;
 
-	for (FInterestPropertyInfo& PropertyInfo : Info.InterestProperties)
+	for (const FInterestPropertyInfo& PropertyInfo : Info.InterestProperties)
 	{
 		uint8* Data = (uint8*)Object + PropertyInfo.Offset;
 		if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(PropertyInfo.Property))

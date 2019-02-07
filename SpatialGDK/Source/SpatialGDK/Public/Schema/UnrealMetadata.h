@@ -3,7 +3,7 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Component.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
@@ -75,7 +75,7 @@ struct UnrealMetadata : Component
 	FString ClassPath;
 };
 
-FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, FClassInfo& Info)
+FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const FClassInfo& Info)
 {
 	SubobjectToOffsetMap SubobjectNameToOffset;
 

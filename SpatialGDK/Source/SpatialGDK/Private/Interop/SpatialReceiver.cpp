@@ -45,7 +45,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	PackageMap = InNetDriver->PackageMap;
-	TypebindingManager = InNetDriver->TypebindingManager;
+	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 	TimerManager = InTimerManager;
 }
@@ -244,7 +244,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		// If we did, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
 		if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
 		{
-			FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == Info.SchemaComponents[SCHEMA_ClientRPC])
 			{
@@ -258,7 +258,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	{
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			ESchemaComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Op.component_id);
+			ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
 			if (ComponentType >= SCHEMA_FirstRPC && ComponentType <= SCHEMA_LastRPC)
 			{
 				// This could be either an RPC component on the actor or the subobject, but we assume
@@ -417,7 +417,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			}
 		}
 
-		FClassInfo& Info = TypebindingManager->FindClassInfoByClass(ActorClass);
+		const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(ActorClass);
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId, improbable::CreateOffsetMapFromActor(EntityActor, Info));
 
@@ -655,7 +655,7 @@ FTransform USpatialReceiver::GetRelativeSpawnTransform(UClass* ActorClass, FTran
 void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel)
 {
 	uint32 Offset = 0;
-	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Data.component_id, Offset);
+	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Data.component_id, Offset);
 	if (!bFoundOffset)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id when applying component data to Actor %s!"), EntityId, Data.component_id, *Channel->GetActor()->GetName());
@@ -669,15 +669,25 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 		return;
 	}
 
-	UClass* Class = TypebindingManager->FindClassByComponentId(Data.component_id);
+	UClass* Class = ClassInfoManager->GetClassByComponentId(Data.component_id);
 	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."), Data.component_id);
 
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
-	ESchemaComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Data.component_id);
+	ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Data.component_id);
 
 	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly)
 	{
+		if (ComponentType == SCHEMA_Data && TargetObject->IsA<UActorComponent>())
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+			bool bReplicates = !!Schema_IndexBool(ComponentObject, SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID, 0);
+			if (!bReplicates)
+			{
+				return;
+			}
+		}
+
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<FUnrealObjectRef> UnresolvedRefs;
 
@@ -741,15 +751,10 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByComponentId(Op.update.component_id);
-	if (Info == nullptr)
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - Couldn't find ClassInfo for component id"), Op.entity_id, Op.update.component_id);
-		return;
-	}
+	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.update.component_id);
 
 	uint32 Offset;
-	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Op.update.component_id, Offset);
+	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.update.component_id, Offset);
 	if (!bFoundOffset)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - Couldn't find Offset for component id"), Op.entity_id, Op.update.component_id);
@@ -773,7 +778,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	ESchemaComponentType Category = TypebindingManager->FindCategoryByComponentId(Op.update.component_id);
+	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(Op.update.component_id);
 
 	if (Category == ESchemaComponentType::SCHEMA_Data || Category == ESchemaComponentType::SCHEMA_OwnerOnly)
 	{
@@ -791,7 +796,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 	else if (Category == ESchemaComponentType::SCHEMA_NetMulticastRPC)
 	{
-		if (TArray<UFunction*>* RPCArray = Info->RPCs.Find(SCHEMA_NetMulticastRPC))
+		if (const TArray<UFunction*>* RPCArray = Info.RPCs.Find(SCHEMA_NetMulticastRPC))
 		{
 			ReceiveMulticastUpdate(Op.update, TargetObject, *RPCArray);
 		}
@@ -824,7 +829,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
 
 	uint32 Offset = 0;
-	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Op.request.component_id, Offset);
+	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.request.component_id, Offset);
 	if (!bFoundOffset)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("No offset found for ComponentId %d"), Op.request.component_id);
@@ -840,13 +845,12 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByObject(TargetObject);
-	check(Info);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-	ESchemaComponentType RPCType = TypebindingManager->FindCategoryByComponentId(Op.request.component_id);
+	ESchemaComponentType RPCType = ClassInfoManager->GetCategoryByComponentId(Op.request.component_id);
 	check(RPCType >= SCHEMA_FirstRPC && RPCType <= SCHEMA_LastRPC);
 
-	const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);
+	const TArray<UFunction*>* RPCArray = Info.RPCs.Find(RPCType);
 	check(RPCArray);
 	check((int)CommandIndex - 1 < RPCArray->Num());
 

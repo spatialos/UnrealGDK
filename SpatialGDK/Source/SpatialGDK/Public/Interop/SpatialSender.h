@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-#include "SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -20,7 +20,7 @@ class USpatialNetDriver;
 class USpatialPackageMapClient;
 class USpatialReceiver;
 class USpatialStaticComponentView;
-class USpatialTypebindingManager;
+class USpatialClassInfoManager;
 class USpatialWorkerConnection;
 
 struct FPendingRPCParams
@@ -47,7 +47,7 @@ using FUnresolvedEntry = TSharedPtr<TSet<TWeakObjectPtr<const UObject>>>;
 using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
 using FChannelToHandleToUnresolved = TMap<FChannelObjectPair, FHandleToUnresolved>;
 using FOutgoingRepUpdates = TMap<TWeakObjectPtr<const UObject>, FChannelToHandleToUnresolved>;
-using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId, TArray<Worker_ComponentUpdate>>;
+using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<Worker_ComponentUpdate>>;
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject
@@ -58,7 +58,7 @@ public:
 	void Init(USpatialNetDriver* InNetDriver);
 
 	// Actor Updates
-	void SendComponentUpdates(UObject* Object, FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
+	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params);
@@ -109,7 +109,7 @@ private:
 	USpatialPackageMapClient* PackageMap;
 
 	UPROPERTY()
-	USpatialTypebindingManager* TypebindingManager;
+	USpatialClassInfoManager* ClassInfoManager;
 
 	FChannelToHandleToUnresolved RepPropertyToUnresolved;
 	FOutgoingRepUpdates RepObjectToUnresolved;
