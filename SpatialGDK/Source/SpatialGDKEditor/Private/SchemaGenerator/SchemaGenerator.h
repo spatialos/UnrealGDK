@@ -5,6 +5,8 @@
 #include "TypeStructure.h"
 #include "Utils/SchemaDatabase.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSchemaGenerator, Log, All);
+
 class FCodeWriter;
 struct FComponentIdGenerator;
 

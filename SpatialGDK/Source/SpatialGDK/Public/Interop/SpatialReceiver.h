@@ -7,7 +7,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
@@ -181,7 +181,7 @@ private:
 	USpatialPackageMapClient* PackageMap;
 
 	UPROPERTY()
-	USpatialTypebindingManager* TypebindingManager;
+	USpatialClassInfoManager* ClassInfoManager;
 
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
