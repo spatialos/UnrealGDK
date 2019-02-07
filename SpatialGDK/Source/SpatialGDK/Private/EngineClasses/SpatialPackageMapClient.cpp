@@ -50,7 +50,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 	});
 }
 
-FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset)
+FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
 	FNetworkGUID NetGUID = SpatialGuidCache->GetNetGUIDFromEntityId(EntityId);
@@ -58,7 +58,7 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_
 	// check we haven't already assigned a NetGUID to this object
 	if (!NetGUID.IsValid())
 	{
-		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor, SubobjectToOffset);
+		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
 	}
 	return NetGUID;
 }
@@ -113,7 +113,7 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject*
 {
 	if (Object == nullptr)
 	{
-		return SpatialConstants::NULL_OBJECT_REF;
+		return FUnrealObjectRef::NULL_OBJECT_REF;
 	}
 
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
@@ -139,7 +139,7 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
-FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset)
+FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 {
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
@@ -185,6 +185,9 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, co
 	{
 		Receiver->ResolvePendingOperations(Actor, EntityObjectRef);
 	}
+
+	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	const SubobjectToOffsetMap& SubobjectToOffset = improbable::CreateOffsetMapFromActor(Actor, Info);
 
 	for (auto& Pair : SubobjectToOffset)
 	{
@@ -235,7 +238,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 {
 	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Object);
 	FUnrealObjectRef ExistingObjRef = GetUnrealObjectRefFromNetGUID(NetGUID);
-	if (ExistingObjRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
+	if (ExistingObjRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		return NetGUID;
 	}
@@ -363,7 +366,7 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 FUnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
 	const FUnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
-	return ObjRef ? (FUnrealObjectRef)*ObjRef : SpatialConstants::UNRESOLVED_OBJECT_REF;
+	return ObjRef ? (FUnrealObjectRef)*ObjRef : FUnrealObjectRef::UNRESOLVED_OBJECT_REF;
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(Worker_EntityId EntityId) const

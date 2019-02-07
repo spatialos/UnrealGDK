@@ -21,7 +21,7 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
-	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
+	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
 	void RemoveEntityActor(Worker_EntityId EntityId);
 
 	FNetworkGUID ResolveStablyNamedObject(UObject* Object);
@@ -39,7 +39,7 @@ public:
 
 private:
 	UPROPERTY()
-	USpatialClassInfoManager* TypebindingManager;
+	USpatialClassInfoManager* ClassInfoManager;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -47,7 +47,7 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 		
-	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset);
+	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);
 	void RemoveNetGUID(const FNetworkGUID& NetGUID);
 

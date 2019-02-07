@@ -191,16 +191,17 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 
 // This function is not in use.
 // Set up classes needed for Startup Actor creation
-void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialClassInfoManager*& TypebindingManager, UEntityRegistry*& EntityRegistry, UWorld* World)
+void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialClassInfoManager*& ClassInfoManager, UEntityRegistry*& EntityRegistry, UWorld* World)
 {
 	NetDriver = NewObject<USpatialNetDriver>();
 	NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
-	NetDriver->ClassInfoManager = TypebindingManager;
 	NetDriver->GuidCache = MakeShareable(new FSpatialNetGUIDCache(NetDriver));
 	NetDriver->World = World;
 
-	TypebindingManager = NewObject<USpatialClassInfoManager>();
-	TypebindingManager->Init(NetDriver);
+	ClassInfoManager = NewObject<USpatialClassInfoManager>();
+	ClassInfoManager->Init(NetDriver);
+
+	NetDriver->ClassInfoManager = ClassInfoManager;
 
 	EntityRegistry = NewObject<UEntityRegistry>();
 	NetDriver->EntityRegistry = EntityRegistry;
@@ -406,10 +407,10 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	USpatialNetDriver* NetDriver = nullptr;
 	USpatialNetConnection* NetConnection = nullptr;
 	USpatialPackageMapClient* PackageMap = nullptr;
-	USpatialClassInfoManager* TypebindingManager = nullptr;
+	USpatialClassInfoManager* ClassInfoManager = nullptr;
 	UEntityRegistry* EntityRegistry = nullptr;
 
-	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, TypebindingManager, EntityRegistry, World);
+	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, ClassInfoManager, EntityRegistry, World);
 
 	// Create set of world actors (World actor iterator returns same actor multiple times in some circumstances)
 	TSet<AActor*> WorldActors;
@@ -421,17 +422,16 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	bool bSuccess = true;
 
 	// Need to add all actors in the world to the package map so they have assigned UnrealObjRefs for the ComponentFactory to use
-	bSuccess &= ProcessSupportedActors(WorldActors, TypebindingManager, [&PackageMap, &EntityRegistry, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(WorldActors, ClassInfoManager, [&PackageMap, &EntityRegistry, &ClassInfoManager](AActor* Actor, Worker_EntityId EntityId)
 	{
 		EntityRegistry->AddToRegistry(EntityId, Actor);
-		const FClassInfo& Info = TypebindingManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
+		PackageMap->ResolveEntityActor(Actor, EntityId);
 		return true;
 	});
 
-	bSuccess &= ProcessSupportedActors(WorldActors, TypebindingManager, [&NetConnection, &OutputStream, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(WorldActors, ClassInfoManager, [&NetConnection, &OutputStream, &ClassInfoManager](AActor* Actor, Worker_EntityId EntityId)
 	{
-		return CreateStartupActor(OutputStream, Actor, EntityId, NetConnection, TypebindingManager);
+		return CreateStartupActor(OutputStream, Actor, EntityId, NetConnection, ClassInfoManager);
 	});
 
 	CleanupNetDriverAndConnection(NetDriver, NetConnection);

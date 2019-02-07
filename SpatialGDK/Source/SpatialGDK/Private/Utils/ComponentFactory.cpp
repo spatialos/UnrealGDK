@@ -20,7 +20,7 @@ namespace improbable
 ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
-	, TypebindingManager(InNetDriver->ClassInfoManager)
+	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, PendingRepUnresolvedObjectsMap(RepUnresolvedObjectsMap)
 	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
 	, bInterestHasChanged(false)
@@ -185,7 +185,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		FUnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+		FUnrealObjectRef ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
 		if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
@@ -210,10 +210,10 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			}
 			else
 			{
-				ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+				ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 			}
 
-			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+			if (ObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 			{
 				// There are cases where something assigned a NetGUID without going through the FSpatialNetGUID (e.g. FObjectReplicator)
 				// Assign an UnrealObjectRef by going through the FSpatialNetGUID flow
@@ -225,7 +225,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 				else
 				{
 					UnresolvedObjects.Add(ObjectValue);
-					ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+					ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 				}
 			}
 		}
@@ -499,8 +499,8 @@ void ComponentFactory::AddObjectToComponentInterest(UObject* Object, UObjectProp
 
 	FUnrealObjectRef UnrealObjectRef = PackageMap->GetUnrealObjectRefFromObject(ObjectOfInterest);
 
-	check(UnrealObjectRef != SpatialConstants::NULL_OBJECT_REF);
-	if (UnrealObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	check(UnrealObjectRef != FUnrealObjectRef::NULL_OBJECT_REF);
+	if (UnrealObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		return;
 	}
