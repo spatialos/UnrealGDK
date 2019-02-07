@@ -15,7 +15,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Utils/RepLayoutUtils.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialTypebindingManager);
+DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
 void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
 {
@@ -195,7 +195,7 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject
 
 		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
 
-		check(ObjectRef != SpatialConstants::NULL_OBJECT_REF && ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
+		check(ObjectRef.IsValid())
 
 		return GetOrCreateClassInfoByClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
 	}
@@ -216,7 +216,7 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 	}
 	else
 	{
-		UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
+		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
 
 		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use it to clean up the old entry.
 		ClassInfoMap.Remove(Info->Class);
