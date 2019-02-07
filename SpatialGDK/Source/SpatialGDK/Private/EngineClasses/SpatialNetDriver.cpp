@@ -189,7 +189,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 
 void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
 {
-
 	// Callback got called on a World that's not associated with this NetDriver.
 	// Don't do anything.
 	if (OwningWorld != World)
