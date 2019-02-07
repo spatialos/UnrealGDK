@@ -36,44 +36,50 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 	PreProcessSchemaMap();
 
-	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
-		[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()
+	// Commandlet needs to run in the Game Thread to be able to save the SchemaDatabase.uasset
+	if (IsRunningCommandlet())
 	{
-		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
+		const bool bSuccess = SpatialGDKGenerateSchema();
+		if (bSuccess)
 		{
-			if (FailureCallback.IsBound())
-			{
-				FailureCallback.Execute();
-			}
+			SuccessCallback.ExecuteIfBound();
 		}
 		else
 		{
-			if (SuccessCallback.IsBound())
-			{
-				SuccessCallback.Execute();
-			}
+			FailureCallback.ExecuteIfBound();
 		}
 		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
 		bSchemaGeneratorRunning = false;
-	});
+	}
+	else
+	{
+		SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
+			[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()
+		{
+			const bool bSuccess = (SchemaGeneratorResult.IsReady() && SchemaGeneratorResult.Get() == true);
+			if (bSuccess)
+			{
+				SuccessCallback.ExecuteIfBound();
+			}
+			else
+			{
+				FailureCallback.ExecuteIfBound();
+			}
+			GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+			bSchemaGeneratorRunning = false;
+		});
+	}
 }
 
 void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
 {
 	const bool bSuccess = SpatialGDKGenerateSnapshot(World, SnapshotFilename);
-
 	if (bSuccess)
 	{
-		if (SuccessCallback.IsBound())
-		{
-			SuccessCallback.Execute();
-		}
+		SuccessCallback.ExecuteIfBound();
 	}
 	else
 	{
-		if (FailureCallback.IsBound())
-		{
-			FailureCallback.Execute();
-		}
+		FailureCallback.ExecuteIfBound();
 	}
 }

@@ -164,7 +164,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 }// ::
 
 
-void  GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
+void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
 {
 	// Generate the actual schema
 	for (const auto& TypeInfo : TypeInfos)
@@ -183,35 +183,44 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
+void SaveSchemaDatabaseInGameThread()
+{
+	static const FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+	UPackage *Package = CreatePackage(nullptr, *PackagePath);
+
+	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
+	SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
+
+	FAssetRegistryModule::AssetCreated(SchemaDatabase);
+	SchemaDatabase->MarkPackageDirty();
+
+	// NOTE: UPackage::GetMetaData() has some code where it will auto-create the metadata if it's missing
+	// UPackage::SavePackage() calls UPackage::GetMetaData() at some point, and will cause an exception to get thrown
+	// if the metadata auto-creation branch needs to be taken. This is the case when generating the schema from the
+	// command line, so we just pre-empt it here.
+	Package->GetMetaData();
+
+	const FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
+	const bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
+	if (!bSuccess)
+	{
+		FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
+		FPaths::MakePlatformFilename(FullPath);
+		FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to '%s'! Please make sure the file is writeable."), *FullPath)));
+	}
+}
+
 void SaveSchemaDatabase()
 {
-	AsyncTask(ENamedThreads::GameThread, []{
-		FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-		UPackage *Package = CreatePackage(nullptr, *PackagePath);
-
-		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
-		SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
-		SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
-
-		FAssetRegistryModule::AssetCreated(SchemaDatabase);
-		SchemaDatabase->MarkPackageDirty();
-
-		// NOTE: UPackage::GetMetaData() has some code where it will auto-create the metadata if it's missing
-		// UPackage::SavePackage() calls UPackage::GetMetaData() at some point, and will cause an exception to get thrown
-		// if the metadata auto-creation branch needs to be taken. This is the case when generating the schema from the
-		// command line, so we just pre-empt it here.
-		Package->GetMetaData();
-
-		FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
-		bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
-
-		if (!bSuccess)
-		{
-			FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
-			FPaths::MakePlatformFilename(FullPath);
-			FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to '%s'! Please make sure the file is writeable."), *FullPath)));
-		}
-	});
+	if (IsInGameThread())
+	{
+		SaveSchemaDatabaseInGameThread();
+	}
+	else
+	{
+		AsyncTask(ENamedThreads::GameThread, SaveSchemaDatabaseInGameThread);
+	}
 }
 
 TArray<UClass*> GetAllSupportedClasses()
