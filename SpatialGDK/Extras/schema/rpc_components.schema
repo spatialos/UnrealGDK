@@ -1,0 +1,27 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+import "unreal/gdk/core_types.schema";
+
+type UnrealPayload {
+    uint32 offset = 1;
+    uint32 rpc_index = 2;
+    bytes rpc_payload = 3;
+}
+
+component UnrealClientRPCs {
+    id = 100008;
+    event UnrealPayload server_unreliable_rpcs;
+    command UnrealRPCCommandResponse unreal_client_reliable_rpcs(UnrealPayload);
+}
+
+component UnrealServerRPCs {
+    id = 100009;
+    event UnrealPayload client_unreliable_rpcs;
+    command UnrealRPCCommandResponse unreal_server_reliable_rpcs(UnrealPayload);
+}
+
+component UnrealNetMulticastRPCs {
+    id = 100010;
+    event UnrealPayload netmulticast_rpcs;
+}
