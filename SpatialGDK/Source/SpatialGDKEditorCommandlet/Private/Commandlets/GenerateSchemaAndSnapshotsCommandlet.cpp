@@ -28,7 +28,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 	TMap<FString, FString> Params;
 	ParseCommandLine(*Args, Tokens, Switches, Params);
 
-	//TODO: Optionally clean up previous schema and snapshot files once the UnrealGDK provides support to do so
+	//TODO: Optionally clean up previous schema and snapshot files once UNR-954 is done
 	GeneratedMapPaths.Empty();
 
 	FSpatialGDKEditor SpatialGDKEditor;
