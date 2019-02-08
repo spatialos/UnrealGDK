@@ -134,9 +134,12 @@ private:
 
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
+	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
+
+	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
 
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
@@ -160,6 +163,9 @@ private:
 	void ProcessQueuedResolvedObjects();
 	void UpdateShadowData(Worker_EntityId EntityId);
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
+
+public:
+	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
 private:
 	template <typename T>
@@ -186,7 +192,6 @@ private:
 	FTimerManager* TimerManager;
 
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
-	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 

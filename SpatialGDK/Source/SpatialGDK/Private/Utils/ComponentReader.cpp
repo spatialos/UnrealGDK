@@ -314,14 +314,16 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 				if (ObjectValue == nullptr)
 				{
 					// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
-					// it's part of a streaming level that hasn't been streamed in. In either case, there's nothing we can do.
+					// it's part of a streaming level that hasn't been streamed in. In this case, queue the actor based on it's level.
 					FString FullPath;
 					improbable::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
 					UE_LOG(LogSpatialComponentReader, Warning, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
 						*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
+
 					ObjectProperty->SetObjectPropertyValue(Data, nullptr);
 					return;
 				}
+
 				checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
 				ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
 			}

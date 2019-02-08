@@ -62,9 +62,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = std::move(Data);
 }
 
-void USpatialStaticComponentView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
+void USpatialStaticComponentView::OnRemoveEntity(Worker_EntityId EntityId)
 {
-	EntityComponentMap.Remove(Op.entity_id);
+	EntityComponentMap.Remove(EntityId);
 }
 
 void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)

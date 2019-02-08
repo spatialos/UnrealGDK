@@ -38,6 +38,11 @@ inline FString GetStringFromSchema(const Schema_Object* Object, Schema_FieldId I
 	return IndexStringFromSchema(Object, Id, 0);
 }
 
+inline bool GetBoolFromSchema(const Schema_Object* Object, Schema_FieldId Id)
+{
+	return !!Schema_GetBool(Object, Id);
+}
+
 inline void AddBytesToSchema(Schema_Object* Object, Schema_FieldId Id, FBitWriter& Writer)
 {
 	uint32 PayloadSize = Writer.GetNumBytes();
@@ -145,7 +150,7 @@ inline void AddStringToEntityMapToSchema(Schema_Object* Object, Schema_FieldId I
 {
 	for (auto& Pair : Map)
 	{
-		Schema_Object* PairObject = Schema_AddObject(Object, 1);
+		Schema_Object* PairObject = Schema_AddObject(Object, Id);
 		AddStringToSchema(PairObject, SCHEMA_MAP_KEY_FIELD_ID, Pair.Key);
 		Schema_AddEntityId(PairObject, SCHEMA_MAP_VALUE_FIELD_ID, Pair.Value);
 	}

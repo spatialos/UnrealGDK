@@ -97,8 +97,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 
 	UE_LOG(LogSpatialActorChannel, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
-	// If we have authority and aren't trying to delete a critical entity, delete it
-	if (bHasAuthority && !IsSingletonEntity())
+	if (bHasAuthority)
 	{
 		// Workaround to delay the delete entity request if tearing off.
 		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
@@ -120,27 +119,17 @@ bool USpatialActorChannel::IsSingletonEntity()
 	return NetDriver->GlobalStateManager->IsSingletonEntity(EntityId);
 }
 
-bool USpatialActorChannel::IsStablyNamedEntity()
-{
-	improbable::UnrealMetadata* UnrealMetadata = NetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
-	return UnrealMetadata ? !UnrealMetadata->StaticPath.IsEmpty() : false;
-}
-
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 #if WITH_EDITOR
 	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
 	{
-		bool bDeleteDynamicEntities = true;
-		GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities(bDeleteDynamicEntities);
-
-		if (NetDriver->IsServer() &&
-			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-			NetDriver->GetWorld()->bIsTearingDown &&
-			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId) &&
-			bDeleteDynamicEntities == true)
+		if (GetDefault<ULevelEditorPlaySettings>()->IsDeleteDynamicEntitiesActive())
 		{
-			if (!IsStablyNamedEntity())
+			if (NetDriver->IsServer() &&
+				NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
+				NetDriver->GetWorld()->bIsTearingDown &&
+				NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
 			{
 				// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 				DeleteEntityIfAuthoritative();
