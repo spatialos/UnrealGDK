@@ -4,12 +4,12 @@
 #include "SpatialGDKEditorCommandletPrivate.h"
 #include "SpatialGDKEditor.h"
 
-#include "Kismet/GameplayStatics.h"
+#include "Engine/LevelStreaming.h"
 #include "Engine/ObjectLibrary.h"
 #include "Engine/World.h"
 #include "FileHelpers.h"
+#include "Kismet/GameplayStatics.h"
 #include "Misc/Paths.h"
-#include "Engine/LevelStreaming.h"
 
 UGenerateSchemaAndSnapshotsCommandlet::UGenerateSchemaAndSnapshotsCommandlet()
 {
