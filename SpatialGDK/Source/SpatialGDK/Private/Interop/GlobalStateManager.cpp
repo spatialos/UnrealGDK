@@ -141,7 +141,7 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
 		SetAcceptingPlayers(false);
 
-		// allow each worker to begin shutting down
+		// Allow each worker to begin shutting down.
 		FGenericPlatformMisc::RequestExit(false);
 	}
 }
