@@ -160,6 +160,9 @@ private:
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
+	UFUNCTION()
+	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
+
 	void Connect();
 
 	UFUNCTION()
