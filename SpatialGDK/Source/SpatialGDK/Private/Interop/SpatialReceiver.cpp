@@ -135,6 +135,9 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
+	case SpatialConstants::CLIENT_RPCS_COMPONENT_ID:
+	case SpatialConstants::SERVER_RPCS_COMPONENT_ID:
+	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -284,7 +287,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		{
 			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == Info.SchemaComponents[SCHEMA_ClientRPC])
+			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPCS_COMPONENT_ID)
 			{
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
@@ -874,13 +877,7 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 
 		FUnrealObjectRef ObjectRef(EntityId, Offset);
 
-		TWeakObjectPtr<UObject> WeakObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef);
-		if (WeakObject.IsValid())
-		{
-			continue;
-		}
-
-		UObject* TargetObject = WeakObject.Get();
+		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 
 		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
@@ -999,7 +996,7 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 				return;
 			}
 
-			// Queue retry
+			//Queue retry
 			FTimerHandle RetryTimer;
 			TimerManager->SetTimer(RetryTimer, [this, ReliableRPC]()
 			{
@@ -1486,7 +1483,7 @@ void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& Com
 {
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
-	TArray<uint8> PayloadData = GetBytesFromSchema(RequestObject, 1);
+	TArray<uint8> PayloadData = GetBytesFromSchema(RequestObject, 3);
 	// A bit hacky, we should probably include the number of bits with the data instead.
 	int64 CountBits = PayloadData.Num() * 8;
 

@@ -58,7 +58,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		{
 			RPCType = SCHEMA_ClientRPC;
 		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetServer && !bReliable)
+		else if (RemoteFunction->FunctionFlags & FUNC_NetClient && !bReliable)
 		{
 			RPCType = SCHEMA_ClientUnreliableRPC;
 		}
