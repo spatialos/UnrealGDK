@@ -93,24 +93,29 @@ pushd "$($gdk_home)"
     # Copy from binaries_dir
     Copy-Item "$($binaries_dir)\Win64\include" "$($worker_sdk_dir)" -Force -Recurse
 
-    # TODO: check for msbuild
+    Write-Log "Fetch MSBUILD_EXE location"
     #call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
     Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)\Engine\Build\BatchFiles\GetMSBuildPath.bat"
 
-    # TODO : Build utilities
-    #%MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
 
-  <#pushd "SpatialGDK"
-  
-    # Finally, build the Unreal GDK 
-    Write-Log "Build Unreal GDK"
-    Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($UNREAL_HOME)\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
-        "BuildPlugin", `
-        " -Plugin=`"$PWD/SpatialGDK.uplugin`"", `
-        "-TargetPlatforms=Win64", `
-        "-Package=`"$PWD/Intermediate/BuildPackage/Win64`"" `
+    Write-Log "Build utilities"
+    #%MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
+    Start-Process -Wait -PassThru -NoNewWindow -FilePath (get-item env:$MSBUILD_EXE).Value -ArgumentList @(`
+        "/nologo", `
+        "/verbosity:minimal", `
+        ".\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln", `
+        "/property:Configuration=Release" `
     )
 
-  popd#>
+  pushd "SpatialGDK"
+    Write-Log "Build Unreal GDK"
+    Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
+        "BuildPlugin", `
+        " -Plugin=`"$($gdk_home)/SpatialGDK/SpatialGDK.uplugin`"", `
+        "-TargetPlatforms=Win64", `
+        "-Package=`"$gdk_home/SpatialGDK/Intermediate/BuildPackage/Win64`"" `
+    )
+
+  popd
 
 popd
