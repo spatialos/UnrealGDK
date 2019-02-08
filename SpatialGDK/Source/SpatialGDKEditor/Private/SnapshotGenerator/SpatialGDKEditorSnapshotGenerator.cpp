@@ -70,11 +70,11 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &SpawnerEntity) != 0;
 }
 
-Worker_ComponentData CreateGlobalStateManagerData()
+Worker_ComponentData CreateSingletonManagerData()
 {
 	StringToEntityMap SingletonNameToEntityId;
 
-	Worker_ComponentData Data;
+	Worker_ComponentData Data{};
 	Data.component_id = SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID;
 	Data.schema_type = Schema_CreateComponentData(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
@@ -86,20 +86,29 @@ Worker_ComponentData CreateGlobalStateManagerData()
 
 Worker_ComponentData CreateDeploymentData()
 {
-	// Construct the Deployment component data object.
-	Worker_ComponentData DeploymentData;
+	Worker_ComponentData DeploymentData{};
 	DeploymentData.component_id = SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID;
 	DeploymentData.schema_type = Schema_CreateComponentData(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID);
 	Schema_Object* DeploymentDataObject = Schema_GetComponentDataFields(DeploymentData.schema_type);
 
-	// Add the MapURL schema field.
-	Schema_Object* MapURLObject = Schema_AddObject(DeploymentDataObject, SpatialConstants::GLOBAL_STATE_MANAGER_MAP_URL_ID);
+	Schema_Object* MapURLObject = Schema_AddObject(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID);
 	AddStringToSchema(MapURLObject, 1, TEXT("default")); // TODO: Fill this with the map name of the map the snapshot is being generated for.
 
-	// Add the accepting players schema field.
-	Schema_AddBool(DeploymentDataObject, SpatialConstants::GLOBAL_STATE_MANAGER_ACCEPTING_PLAYERS_ID, false);
+	Schema_AddBool(DeploymentDataObject, SpatialConstants::DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID, false);
 
 	return DeploymentData;
+}
+
+Worker_ComponentData CreateStartupActorManagerData()
+{
+	Worker_ComponentData StartupActorManagerData{};
+	StartupActorManagerData.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
+	StartupActorManagerData.schema_type = Schema_CreateComponentData(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
+	Schema_Object* StartupActorManagerObject = Schema_GetComponentDataFields(StartupActorManagerData.schema_type);
+
+	Schema_AddBool(StartupActorManagerObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, false);
+
+	return StartupActorManagerData;
 }
 
 bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
@@ -116,12 +125,14 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
-	Components.Add(CreateGlobalStateManagerData());
+	Components.Add(CreateSingletonManagerData());
 	Components.Add(CreateDeploymentData());
+	Components.Add(CreateStartupActorManagerData());
 	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
@@ -178,17 +189,19 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 	return true;
 }
 
+// This function is not in use.
 // Set up classes needed for Startup Actor creation
-void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialClassInfoManager*& TypebindingManager, UEntityRegistry*& EntityRegistry, UWorld* World)
+void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialClassInfoManager*& ClassInfoManager, UEntityRegistry*& EntityRegistry, UWorld* World)
 {
 	NetDriver = NewObject<USpatialNetDriver>();
 	NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
-	NetDriver->ClassInfoManager = TypebindingManager;
 	NetDriver->GuidCache = MakeShareable(new FSpatialNetGUIDCache(NetDriver));
 	NetDriver->World = World;
 
-	TypebindingManager = NewObject<USpatialClassInfoManager>();
-	TypebindingManager->Init(NetDriver);
+	ClassInfoManager = NewObject<USpatialClassInfoManager>();
+	ClassInfoManager->Init(NetDriver);
+
+	NetDriver->ClassInfoManager = ClassInfoManager;
 
 	EntityRegistry = NewObject<UEntityRegistry>();
 	NetDriver->EntityRegistry = EntityRegistry;
@@ -204,6 +217,7 @@ void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnect
 	NetDriver->PackageMap = PackageMap;
 }
 
+// This function is not in use.
 void CleanupNetDriverAndConnection(USpatialNetDriver* NetDriver, USpatialNetConnection* NetConnection)
 {
 	// On clean up of the NetDriver due to garbage collection, either the ServerConnection or ClientConnections need to be not nullptr.
@@ -212,9 +226,10 @@ void CleanupNetDriverAndConnection(USpatialNetDriver* NetDriver, USpatialNetConn
 	NetDriver->ServerConnection = NetConnection;
 }
 
-TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channel, AActor* Actor, USpatialClassInfoManager* TypebindingManager, USpatialNetDriver* NetDriver)
+// This function is not in use.
+TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channel, AActor* Actor, USpatialClassInfoManager* ClassInfoManager, USpatialNetDriver* NetDriver)
 {
-	const FClassInfo& Info = TypebindingManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	// This ensures that the Actor has prepared it's replicated fields before replicating. For instance, the simulate physics on a UPrimitiveComponent
 	// will be queried and set the Actor's ReplicatedMovement.bRepPhysics field. These fields are then serialized correctly within the snapshot. We are
@@ -270,14 +285,15 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	return ComponentData;
 }
 
-bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor, Worker_EntityId EntityId, USpatialNetConnection* NetConnection, USpatialClassInfoManager* TypebindingManager)
+// This function is not in use.
+bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor, Worker_EntityId EntityId, USpatialNetConnection* NetConnection, USpatialClassInfoManager* ClassInfoManager)
 {
 	Worker_Entity Entity;
 	Entity.entity_id = EntityId;
 
 	UClass* ActorClass = Actor->GetClass();
 
-	const FClassInfo& ActorInfo = TypebindingManager->GetOrCreateClassInfoByClass(ActorClass);
+	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(ActorClass);
 
 	WriteAclMap ComponentWriteAcl;
 
@@ -337,18 +353,16 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(NetConnection->CreateChannel(CHTYPE_Actor, 1));
 	Channel->SetEntityId(EntityId);
 
-	FString StaticPath = Actor->GetPathName(nullptr);
-
 	TArray<Worker_ComponentData> Components;
 	Components.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	Components.Add(improbable::Metadata(ActorClass->GetName()).CreateMetadataData());
 	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	Components.Add(improbable::UnrealMetadata(StaticPath, {}, ActorClass->GetPathName()).CreateUnrealMetadataData());
+	Components.Add(improbable::UnrealMetadata({}, {}, ActorClass->GetPathName()).CreateUnrealMetadataData());
 	Components.Add(improbable::Interest().CreateInterestData());
 
-	Components.Append(CreateStartupActorData(Channel, Actor, TypebindingManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
+	Components.Append(CreateStartupActorData(Channel, Actor, ClassInfoManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
 
 	Entity.component_count = Components.Num();
 	Entity.components = Components.GetData();
@@ -356,7 +370,8 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &Entity) != 0;
 }
 
-bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialClassInfoManager* TypebindingManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
+// This function is not in use.
+bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialClassInfoManager* ClassInfoManager, TFunction<bool(AActor*, Worker_EntityId)> Process)
 {
 	Worker_EntityId CurrentEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
 
@@ -370,7 +385,7 @@ bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialClassInfoManage
 			continue;
 		}
 
-		if (Actor->IsEditorOnly() || Actor->IsPendingKill() || !TypebindingManager->IsSupportedClass(ActorClass) || !Actor->GetIsReplicated())
+		if (Actor->IsEditorOnly() || Actor->IsPendingKill() || !ClassInfoManager->IsSupportedClass(ActorClass) || !Actor->GetIsReplicated())
 		{
 			continue;
 		}
@@ -386,15 +401,16 @@ bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialClassInfoManage
 	return true;
 }
 
+// This function is not in use.
 bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 {
 	USpatialNetDriver* NetDriver = nullptr;
 	USpatialNetConnection* NetConnection = nullptr;
 	USpatialPackageMapClient* PackageMap = nullptr;
-	USpatialClassInfoManager* TypebindingManager = nullptr;
+	USpatialClassInfoManager* ClassInfoManager = nullptr;
 	UEntityRegistry* EntityRegistry = nullptr;
 
-	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, TypebindingManager, EntityRegistry, World);
+	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, ClassInfoManager, EntityRegistry, World);
 
 	// Create set of world actors (World actor iterator returns same actor multiple times in some circumstances)
 	TSet<AActor*> WorldActors;
@@ -406,17 +422,16 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	bool bSuccess = true;
 
 	// Need to add all actors in the world to the package map so they have assigned UnrealObjRefs for the ComponentFactory to use
-	bSuccess &= ProcessSupportedActors(WorldActors, TypebindingManager, [&PackageMap, &EntityRegistry, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(WorldActors, ClassInfoManager, [&PackageMap, &EntityRegistry, &ClassInfoManager](AActor* Actor, Worker_EntityId EntityId)
 	{
 		EntityRegistry->AddToRegistry(EntityId, Actor);
-		const FClassInfo& Info = TypebindingManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-		PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
+		PackageMap->ResolveEntityActor(Actor, EntityId);
 		return true;
 	});
 
-	bSuccess &= ProcessSupportedActors(WorldActors, TypebindingManager, [&NetConnection, &OutputStream, &TypebindingManager](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(WorldActors, ClassInfoManager, [&NetConnection, &OutputStream, &ClassInfoManager](AActor* Actor, Worker_EntityId EntityId)
 	{
-		return CreateStartupActor(OutputStream, Actor, EntityId, NetConnection, TypebindingManager);
+		return CreateStartupActor(OutputStream, Actor, EntityId, NetConnection, ClassInfoManager);
 	});
 
 	CleanupNetDriverAndConnection(NetDriver, NetConnection);
@@ -462,12 +477,6 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	if (!CreatePlaceholders(OutputStream))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		return false;
-	}
-
-	if (!CreateStartupActors(OutputStream, World))
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Startup Actors in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 		return false;
 	}
 
