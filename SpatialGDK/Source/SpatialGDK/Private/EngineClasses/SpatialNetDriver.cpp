@@ -54,6 +54,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
+	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
+
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 
@@ -183,6 +185,33 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	Connect();
+}
+
+void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
+{
+	// Callback got called on a World that's not associated with this NetDriver.
+	// Don't do anything.
+	if (OwningWorld != World)
+	{
+		return;
+	}
+
+	// If we have authority over the GSM when loading a sublevel, make sure we have authority
+	// over the actors in the sublevel.
+	if (GlobalStateManager != nullptr)
+	{
+		if (GlobalStateManager->HasAuthority())
+		{
+			for (auto Actor : LoadedLevel->Actors)
+			{
+				if (Actor->GetIsReplicated())
+				{
+					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
+				}
+			}
+		}
+	}
 }
 
 void USpatialNetDriver::Connect()
@@ -736,6 +765,13 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				// or it's an editor placed actor and the client hasn't initialized the level it's in
 				if (Channel == nullptr && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
+					if (!Actor->HasAuthority())
+					{
+						// Trying to replicate Actor which we don't have authority over.
+						// Remove after UNR-961
+						continue;
+					}
+
 					// If we're a singleton, and don't have a channel, defer to GSM
 					if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 					{

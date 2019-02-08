@@ -137,11 +137,14 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyData(Op.data);
+		GlobalStateManager->ApplySingletonManagerData(Op.data);
 		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
- 		GlobalStateManager->ApplyDeploymentMapURLData(Op.data);
+ 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
+		return;
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+ 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
 		return;
 	default:
 		Data = MakeShared<improbable::DynamicComponent>(Op.data);
@@ -173,7 +176,6 @@ void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 	HandleActorAuthority(Op);
 }
 
-// TODO UNR-640 - This function needs a pass once we introduce soft handover (AUTHORITY_LOSS_IMMINENT)
 void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 {
 	if (NetDriver->IsServer())
@@ -205,14 +207,18 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 				{
 					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
 
-					if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
+					if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
-					else
+					else if (APawn* Pawn = Cast<APawn>(Actor))
 					{
-						Actor->RemoteRole = ROLE_SimulatedProxy;
+						if (Pawn->IsPlayerControlled())
+						{
+							Pawn->RemoteRole = ROLE_AutonomousProxy;
+						}
 					}
 				
 					UpdateShadowData(Op.entity_id);
@@ -381,13 +387,27 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			EntityActor = CreateActor(SpawnData, ActorClass, true);
+			if (!UnrealMetadata->StablyNamedRef.IsSet())
+			{
+				EntityActor = CreateActor(SpawnData, ActorClass, true);
+				bDoingDeferredSpawn = true;
+			}
+			else
+			{
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(UnrealMetadata->StablyNamedRef.GetValue());
+				EntityActor = Cast<AActor>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				if (EntityActor == nullptr)
+				{
+					// In native networking, if Unreal tries to look up a stably named actor on the client
+					// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
+					// returning here does the same behavior.
+					return;
+				}
+			}
 
 			// Don't have authority over Actor until SpatialOS delegates authority
 			EntityActor->Role = ROLE_SimulatedProxy;
 			EntityActor->RemoteRole = ROLE_Authority;
-
-			bDoingDeferredSpawn = true;
 
 			// Get the net connection for this actor.
 			if (NetDriver->IsServer())
@@ -487,10 +507,10 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
 	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
-	if (!Actor || Actor->IsPendingKill())
+	if (Actor == nullptr || Actor->IsPendingKill())
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
@@ -509,6 +529,14 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 			ActorChannel->ConditionalCleanUp();
 			CleanupDeletedEntity(EntityId);
 		}
+		return;
+	}
+
+	// Actor is a startup actor that is a part of the level. We need to do an entity query to see
+	// if the entity was actually deleted or only removed from our view
+	if (Actor->bNetLoadOnClient)
+	{
+		QueryForStartupActor(Actor, EntityId);
 		return;
 	}
 
@@ -532,6 +560,51 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	}
 
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		return;
+	}
+
+	DestroyActor(Actor, EntityId);
+}
+
+void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId)
+{
+	Worker_EntityIdConstraint StartupActorConstraintEntityId;
+	StartupActorConstraintEntityId.entity_id = EntityId;
+
+	Worker_Constraint StartupActorConstraint{};
+	StartupActorConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
+	StartupActorConstraint.entity_id_constraint = StartupActorConstraintEntityId;
+
+	Worker_EntityQuery StartupActorQuery{};
+	StartupActorQuery.constraint = StartupActorConstraint;
+	StartupActorQuery.result_type = WORKER_RESULT_TYPE_COUNT;
+
+	Worker_RequestId RequestID;
+	RequestID = NetDriver->Connection->SendEntityQueryRequest(&StartupActorQuery);
+
+	EntityQueryDelegate StartupActorDelegate;
+	TWeakObjectPtr<AActor> WeakActor(Actor);
+	StartupActorDelegate.BindLambda([this, WeakActor, EntityId](Worker_EntityQueryResponseOp& Op)
+	{
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), Op.message);
+			return;
+		}
+
+		if (Op.result_count == 0 && WeakActor.IsValid())
+		{
+			DestroyActor(WeakActor.Get(), EntityId);
+		}
+	});
+
+	AddEntityQueryDelegate(RequestID, StartupActorDelegate);
+}
+
+void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
+{
+	if (Actor == nullptr)
 	{
 		return;
 	}
@@ -567,6 +640,8 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	NetDriver->StopIgnoringAuthoritativeDestruction();
 
 	CleanupDeletedEntity(EntityId);
+
+	StaticComponentView->OnRemoveEntity(EntityId);
 }
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
@@ -702,11 +777,13 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		}
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyUpdate(Op.update);
+		GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
 		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		NetDriver->GlobalStateManager->ApplyStartupActorManagerUpdate(Op.update);
 		return;
 	}
 

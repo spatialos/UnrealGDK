@@ -11,15 +11,29 @@ namespace Improbable
 @"#!/bin/bash
 NEW_USER=unrealworker
 WORKER_ID=$1
-shift 1
+LOG_FILE=$2
+shift 2
 
 # 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
 useradd $NEW_USER -m -d /improbable/logs/UnrealWorker/Logs 2>/dev/null
 chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null
 chmod -R o+rw /improbable/logs 2>/dev/null
+
+# Create log file in case it doesn't exist and redirect stdout and stderr to the file.
+touch ""${{LOG_FILE}}""
+exec 1>>""${{LOG_FILE}}""
+exec 2>&1
+
 SCRIPT=""$(pwd)/{0}Server.sh""
+
+if [ ! -f $SCRIPT ]; then
+    echo ""Expected to run ${{SCRIPT}} but file not found!""
+    exit 1
+fi
+
 chmod +x $SCRIPT
-gosu $NEW_USER ""${{SCRIPT}}"" ""$@"" 2> >(grep -v xdg-user-dir >&2)";
+echo ""Running ${{SCRIPT}} to start worker...""
+gosu $NEW_USER ""${{SCRIPT}}"" ""$@""";
 
 
         // This is for internal use only. We do not support Linux clients.
