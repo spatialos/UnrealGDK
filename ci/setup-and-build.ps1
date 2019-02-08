@@ -95,15 +95,14 @@ pushd "$($gdk_home)"
 
     Write-Log "Fetch MSBUILD_EXE location"
     #call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
-    Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)\Engine\Build\BatchFiles\GetMSBuildPath.bat"
-
+    $msbuild_exe = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\MSBuild.exe"
 
     Write-Log "Build utilities"
     #%MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
-    Start-Process -Wait -PassThru -NoNewWindow -FilePath (get-item env:$MSBUILD_EXE).Value -ArgumentList @(`
+    Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
         "/nologo", `
         "/verbosity:minimal", `
-        ".\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln", `
+        "SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln", `
         "/property:Configuration=Release" `
     )
 
