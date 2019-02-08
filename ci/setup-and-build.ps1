@@ -78,6 +78,35 @@ pushd "$($gdk_home)"
     New-Item -Path "$($binaries_dir)" -ItemType Directory -Force
 
     Write-Log "Downloading spatial packages.."
+    
+    Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
+        "package", `
+        "retrieve", `
+        "tools", `
+        "schema_compiler-x86_64-win32", `
+        "$($pinned_core_sdk_version)", `
+        "$($core_sdk_dir)\tools\schema_compiler-x86_64-win32.zip" `
+    )
+
+    Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
+        "package", `
+        "retrieve", `
+        "schema", `
+        "standard_library", `
+        "$($pinned_core_sdk_version)", `
+        "$($core_sdk_dir)\schema\standard_library.zip" `
+    )
+
+    Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
+        "package", `
+        "retrieve", `
+        "worker_sdk", `
+        "c-dynamic-x86-msvc_md-win32", `
+        "$($pinned_core_sdk_version)", `
+        "$($core_sdk_dir)\worker_sdk\c-dynamic-x86-msvc_md-win32.zip" `
+    )
+
+
     Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
         "package", `
         "retrieve", `
@@ -87,8 +116,21 @@ pushd "$($gdk_home)"
         "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip" `
     )
 
+    Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
+        "package", `
+        "retrieve", `
+        "worker_sdk", `
+        "c-dynamic-x86_64-gcc_libstdcpp-linux", `
+        "$($pinned_core_sdk_version)", `
+        "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip" `
+    )
+
     Write-Log "Extracting spatial packages.."
+    Expand-Archive -Path "$($core_sdk_dir)\tools\schema_compiler-x86_64-win32.zip" -DestinationPath "$($binaries_dir)\Programs\" -Force
+    Expand-Archive -Path "$($core_sdk_dir)\schema\standard_library.zip" -DestinationPath "$($binaries_dir)\Programs\schema\" -Force
+    Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\c-dynamic-x86-msvc_md-win32.zip" -DestinationPath "$($binaries_dir)\Win32\" -Force
     Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip" -DestinationPath "$($binaries_dir)\Win64\" -Force
+    Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip" -DestinationPath "$($binaries_dir)\Linux\" -Force
 
     # Copy from binaries_dir
     Copy-Item "$($binaries_dir)\Win64\include" "$($worker_sdk_dir)" -Force -Recurse
