@@ -11,15 +11,29 @@ namespace Improbable
 @"#!/bin/bash
 NEW_USER=unrealworker
 WORKER_ID=$1
-shift 1
+LOG_FILE=$2
+shift 2
 
 # 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
 useradd $NEW_USER -m -d /improbable/logs/UnrealWorker/Logs 2>/dev/null
 chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null
 chmod -R o+rw /improbable/logs 2>/dev/null
+
+# Create log file in case it doesn't exist and redirect stdout and stderr to the file.
+touch ""${{LOG_FILE}}""
+exec 1>>""${{LOG_FILE}}""
+exec 2>&1
+
 SCRIPT=""$(pwd)/{0}Server.sh""
+
+if [ ! -f $SCRIPT ]; then
+    echo ""Expected to run ${{SCRIPT}} but file not found!""
+    exit 1
+fi
+
 chmod +x $SCRIPT
-gosu $NEW_USER ""${{SCRIPT}}"" ""$@"" 2> >(grep -v xdg-user-dir >&2)";
+echo ""Running ${{SCRIPT}} to start worker...""
+gosu $NEW_USER ""${{SCRIPT}}"" ""$@""";
 
 
         // This is for internal use only. We do not support Linux clients.
@@ -49,7 +63,6 @@ exit /b !ERRORLEVEL!
         public static void Main(string[] args)
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
-            var noCompile = false;
 
             var exitCode = 0;
             if (args.Length < 4 && !help)
@@ -58,22 +71,10 @@ exit /b !ERRORLEVEL!
                 exitCode = 1;
                 Console.Error.WriteLine("Path to uproject file is required.");
             }
-            else if (args.Length > 4)
-            {
-                if (args[4].CompareTo("-nocompile") != 0)
-                {
-                    help = true;
-                    exitCode = 1;
-                }
-                else
-                {
-                    noCompile = true;
-                }
-            }
 
             if (help)
             {
-                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile]");
+                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>");
 
                 Environment.Exit(exitCode);
             }
@@ -82,6 +83,8 @@ exit /b !ERRORLEVEL!
             var platform = args[1];
             var configuration = args[2];
             var projectFile = Path.GetFullPath(args[3]);
+            var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
+            var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => arg.ToLowerInvariant() != "-nocompile"));
 
             var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
             var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));
@@ -151,7 +154,7 @@ exit /b !ERRORLEVEL!
                     "-SkipCookingEditorContent",
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
-                    "-allmaps",
+                    additionalUATArgs
                 });
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
@@ -189,8 +192,8 @@ exit /b !ERRORLEVEL!
                     "-SkipCookingEditorContent",
                     "-platform=" + platform,
                     "-targetplatform=" + platform,
-                    "-allmaps",
                     "-nullrhi",
+                    additionalUATArgs
                 });
 
                 var linuxFakeClientPath = Path.Combine(stagingDir, "LinuxNoEditor");
@@ -243,10 +246,10 @@ exit /b !ERRORLEVEL!
                     "-unattended",
                     "-fileopenlog",
                     "-SkipCookingEditorContent",
-                    "-allmaps",
                     "-server",
                     "-serverplatform=" + platform,
                     "-noclient",
+                    additionalUATArgs
                 });
 
                 bool isLinux = platform == "Linux";

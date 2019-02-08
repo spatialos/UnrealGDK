@@ -45,7 +45,7 @@ void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTim
 	StaticComponentView = InNetDriver->StaticComponentView;
 	Sender = InNetDriver->Sender;
 	PackageMap = InNetDriver->PackageMap;
-	TypebindingManager = InNetDriver->TypebindingManager;
+	ClassInfoManager = InNetDriver->ClassInfoManager;
 	GlobalStateManager = InNetDriver->GlobalStateManager;
 	TimerManager = InTimerManager;
 }
@@ -136,11 +136,14 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyData(Op.data);
+		GlobalStateManager->ApplySingletonManagerData(Op.data);
 		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
- 		GlobalStateManager->ApplyDeploymentMapURLData(Op.data);
+ 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
+		return;
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+ 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
 		return;
 	default:
 		Data = MakeShared<improbable::DynamicComponent>(Op.data);
@@ -172,7 +175,6 @@ void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 	HandleActorAuthority(Op);
 }
 
-// TODO UNR-640 - This function needs a pass once we introduce soft handover (AUTHORITY_LOSS_IMMINENT)
 void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 {
 	if (NetDriver->IsServer())
@@ -189,6 +191,12 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			return;
 		}
 
+		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			Sender->ProcessUpdatesQueuedUntilAuthority(Op.entity_id);
+		}
+
 		// If we became authoritative over the position component. set our role to be ROLE_Authority
 		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
@@ -198,14 +206,18 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 				{
 					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
 
-					if (Actor->IsA<APawn>() || Actor->IsA<APlayerController>())
+					if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 					{
 						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
-					else
+					else if (APawn* Pawn = Cast<APawn>(Actor))
 					{
-						Actor->RemoteRole = ROLE_SimulatedProxy;
+						if (Pawn->IsPlayerControlled())
+						{
+							Pawn->RemoteRole = ROLE_AutonomousProxy;
+						}
 					}
 				
 					UpdateShadowData(Op.entity_id);
@@ -232,7 +244,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		// If we did, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
 		if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
 		{
-			FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == Info.SchemaComponents[SCHEMA_ClientRPC])
 			{
@@ -246,7 +258,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	{
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			ESchemaComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Op.component_id);
+			ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
 			if (ComponentType >= SCHEMA_FirstRPC && ComponentType <= SCHEMA_LastRPC)
 			{
 				// This could be either an RPC component on the actor or the subobject, but we assume
@@ -336,13 +348,27 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			EntityActor = CreateActor(SpawnData, ActorClass, true);
+			if (!UnrealMetadata->StablyNamedRef.IsSet())
+			{
+				EntityActor = CreateActor(SpawnData, ActorClass, true);
+				bDoingDeferredSpawn = true;
+			}
+			else
+			{
+				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(UnrealMetadata->StablyNamedRef.GetValue());
+				EntityActor = Cast<AActor>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
+				if (EntityActor == nullptr)
+				{
+					// In native networking, if Unreal tries to look up a stably named actor on the client
+					// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
+					// returning here does the same behavior.
+					return;
+				}
+			}
 
 			// Don't have authority over Actor until SpatialOS delegates authority
 			EntityActor->Role = ROLE_SimulatedProxy;
 			EntityActor->RemoteRole = ROLE_Authority;
-
-			bDoingDeferredSpawn = true;
 
 			// Get the net connection for this actor.
 			if (NetDriver->IsServer())
@@ -391,9 +417,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			}
 		}
 
-		FClassInfo& Info = TypebindingManager->FindClassInfoByClass(ActorClass);
-
-		PackageMap->ResolveEntityActor(EntityActor, EntityId, improbable::CreateOffsetMapFromActor(EntityActor, Info));
+		PackageMap->ResolveEntityActor(EntityActor, EntityId);
 
 		Channel->SetChannelActor(EntityActor);
 
@@ -444,10 +468,10 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
 	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
-	if (!Actor || Actor->IsPendingKill())
+	if (Actor == nullptr || Actor->IsPendingKill())
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
@@ -466,6 +490,14 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 			ActorChannel->ConditionalCleanUp();
 			CleanupDeletedEntity(EntityId);
 		}
+		return;
+	}
+
+	// Actor is a startup actor that is a part of the level. We need to do an entity query to see
+	// if the entity was actually deleted or only removed from our view
+	if (Actor->bNetLoadOnClient)
+	{
+		QueryForStartupActor(Actor, EntityId);
 		return;
 	}
 
@@ -489,6 +521,51 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	}
 
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		return;
+	}
+
+	DestroyActor(Actor, EntityId);
+}
+
+void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId)
+{
+	Worker_EntityIdConstraint StartupActorConstraintEntityId;
+	StartupActorConstraintEntityId.entity_id = EntityId;
+
+	Worker_Constraint StartupActorConstraint{};
+	StartupActorConstraint.constraint_type = WORKER_CONSTRAINT_TYPE_ENTITY_ID;
+	StartupActorConstraint.entity_id_constraint = StartupActorConstraintEntityId;
+
+	Worker_EntityQuery StartupActorQuery{};
+	StartupActorQuery.constraint = StartupActorConstraint;
+	StartupActorQuery.result_type = WORKER_RESULT_TYPE_COUNT;
+
+	Worker_RequestId RequestID;
+	RequestID = NetDriver->Connection->SendEntityQueryRequest(&StartupActorQuery);
+
+	EntityQueryDelegate StartupActorDelegate;
+	TWeakObjectPtr<AActor> WeakActor(Actor);
+	StartupActorDelegate.BindLambda([this, WeakActor, EntityId](Worker_EntityQueryResponseOp& Op)
+	{
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity Query Failed! %s"), Op.message);
+			return;
+		}
+
+		if (Op.result_count == 0 && WeakActor.IsValid())
+		{
+			DestroyActor(WeakActor.Get(), EntityId);
+		}
+	});
+
+	AddEntityQueryDelegate(RequestID, StartupActorDelegate);
+}
+
+void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
+{
+	if (Actor == nullptr)
 	{
 		return;
 	}
@@ -524,6 +601,8 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	NetDriver->StopIgnoringAuthoritativeDestruction();
 
 	CleanupDeletedEntity(EntityId);
+
+	StaticComponentView->OnRemoveEntity(EntityId);
 }
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
@@ -574,7 +653,7 @@ FTransform USpatialReceiver::GetRelativeSpawnTransform(UClass* ActorClass, FTran
 void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel)
 {
 	uint32 Offset = 0;
-	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Data.component_id, Offset);
+	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Data.component_id, Offset);
 	if (!bFoundOffset)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id when applying component data to Actor %s!"), EntityId, Data.component_id, *Channel->GetActor()->GetName());
@@ -588,15 +667,25 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 		return;
 	}
 
-	UClass* Class = TypebindingManager->FindClassByComponentId(Data.component_id);
+	UClass* Class = ClassInfoManager->GetClassByComponentId(Data.component_id);
 	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."), Data.component_id);
 
 	FChannelObjectPair ChannelObjectPair(Channel, TargetObject);
 
-	ESchemaComponentType ComponentType = TypebindingManager->FindCategoryByComponentId(Data.component_id);
+	ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Data.component_id);
 
 	if (ComponentType == SCHEMA_Data || ComponentType == SCHEMA_OwnerOnly)
 	{
+		if (ComponentType == SCHEMA_Data && TargetObject->IsA<UActorComponent>())
+		{
+			Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+			bool bReplicates = !!Schema_IndexBool(ComponentObject, SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID, 0);
+			if (!bReplicates)
+			{
+				return;
+			}
+		}
+
 		FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 		TSet<FUnrealObjectRef> UnresolvedRefs;
 
@@ -643,11 +732,13 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-		GlobalStateManager->ApplyUpdate(Op.update);
+		GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
 		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyDeploymentMapUpdate(Op.update);
+	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		NetDriver->GlobalStateManager->ApplyStartupActorManagerUpdate(Op.update);
 		return;
 	}
 
@@ -658,15 +749,10 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByComponentId(Op.update.component_id);
-	if (Info == nullptr)
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - Couldn't find ClassInfo for component id"), Op.entity_id, Op.update.component_id);
-		return;
-	}
+	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.update.component_id);
 
 	uint32 Offset;
-	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Op.update.component_id, Offset);
+	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.update.component_id, Offset);
 	if (!bFoundOffset)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - Couldn't find Offset for component id"), Op.entity_id, Op.update.component_id);
@@ -690,7 +776,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	ESchemaComponentType Category = TypebindingManager->FindCategoryByComponentId(Op.update.component_id);
+	ESchemaComponentType Category = ClassInfoManager->GetCategoryByComponentId(Op.update.component_id);
 
 	if (Category == ESchemaComponentType::SCHEMA_Data || Category == ESchemaComponentType::SCHEMA_OwnerOnly)
 	{
@@ -708,7 +794,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 	else if (Category == ESchemaComponentType::SCHEMA_NetMulticastRPC)
 	{
-		if (TArray<UFunction*>* RPCArray = Info->RPCs.Find(SCHEMA_NetMulticastRPC))
+		if (const TArray<UFunction*>* RPCArray = Info.RPCs.Find(SCHEMA_NetMulticastRPC))
 		{
 			ReceiveMulticastUpdate(Op.update, TargetObject, *RPCArray);
 		}
@@ -741,7 +827,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
 
 	uint32 Offset = 0;
-	bool bFoundOffset = TypebindingManager->FindOffsetByComponentId(Op.request.component_id, Offset);
+	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.request.component_id, Offset);
 	if (!bFoundOffset)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("No offset found for ComponentId %d"), Op.request.component_id);
@@ -757,13 +843,12 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByObject(TargetObject);
-	check(Info);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-	ESchemaComponentType RPCType = TypebindingManager->FindCategoryByComponentId(Op.request.component_id);
+	ESchemaComponentType RPCType = ClassInfoManager->GetCategoryByComponentId(Op.request.component_id);
 	check(RPCType >= SCHEMA_FirstRPC && RPCType <= SCHEMA_LastRPC);
 
-	const TArray<UFunction*>* RPCArray = Info->RPCs.Find(RPCType);
+	const TArray<UFunction*>* RPCArray = Info.RPCs.Find(RPCType);
 	check(RPCArray);
 	check((int)CommandIndex - 1 < RPCArray->Num());
 
@@ -915,9 +1000,16 @@ void USpatialReceiver::OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseO
 {
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Received reserve entity Id: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 
-	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
+	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
+
+	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
+	if (Channel.IsValid())
 	{
 		Channel->OnReserveEntityIdResponse(Op);
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("ReserveEntityId ActorChannel closed, entity not registered: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 	}
 }
 
@@ -952,9 +1044,16 @@ void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request succeeded: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 	}
 
-	if (USpatialActorChannel* Channel = PopPendingActorRequest(Op.request_id))
+	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
+
+	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
+	if (Channel.IsValid())
 	{
 		Channel->OnCreateEntityResponse(Op);
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
 	}
 }
 
@@ -999,14 +1098,14 @@ void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, R
 	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
 }
 
-USpatialActorChannel* USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
+TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
 {
-	USpatialActorChannel** ChannelPtr = PendingActorRequests.Find(RequestId);
+	TWeakObjectPtr<USpatialActorChannel>* ChannelPtr = PendingActorRequests.Find(RequestId);
 	if (ChannelPtr == nullptr)
 	{
 		return nullptr;
 	}
-	USpatialActorChannel* Channel = *ChannelPtr;
+	TWeakObjectPtr<USpatialActorChannel> Channel = *ChannelPtr;
 	PendingActorRequests.Remove(RequestId);
 	return Channel;
 }

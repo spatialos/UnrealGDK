@@ -14,14 +14,14 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
-class USpatialTypebindingManager;
+class USpatialClassInfoManager;
 
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
-	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId, const SubobjectToOffsetMap& SubobjectToOffset);
+	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
 	void RemoveEntityActor(Worker_EntityId EntityId);
 
 	FNetworkGUID ResolveStablyNamedObject(UObject* Object);
@@ -33,11 +33,13 @@ public:
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
 
+	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const;
+
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
 private:
 	UPROPERTY()
-	USpatialTypebindingManager* TypebindingManager;
+	USpatialClassInfoManager* ClassInfoManager;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -45,7 +47,7 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 		
-	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, const SubobjectToOffsetMap& SubobjectToOffset);
+	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);
 	void RemoveNetGUID(const FNetworkGUID& NetGUID);
 
@@ -55,8 +57,9 @@ public:
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(Worker_EntityId EntityId) const;
 
-private:
 	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const;
+
+private:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRefInternal(const FUnrealObjectRef& ObjectRef);
 
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(UObject* Object);

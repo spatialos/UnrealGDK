@@ -7,7 +7,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
@@ -134,9 +134,12 @@ private:
 
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
+	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
+
+	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
 
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
@@ -159,7 +162,10 @@ private:
 
 	void ProcessQueuedResolvedObjects();
 	void UpdateShadowData(Worker_EntityId EntityId);
-	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
+	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
+
+public:
+	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
 private:
 	template <typename T>
@@ -178,7 +184,7 @@ private:
 	USpatialPackageMapClient* PackageMap;
 
 	UPROPERTY()
-	USpatialTypebindingManager* TypebindingManager;
+	USpatialClassInfoManager* ClassInfoManager;
 
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
@@ -186,7 +192,6 @@ private:
 	FTimerManager* TimerManager;
 
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
-	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
@@ -198,7 +203,7 @@ private:
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_EntityId> PendingRemoveEntities;
 
-	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
+	TMap<Worker_RequestId, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
 
 	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;

@@ -37,7 +37,7 @@ void FSpatialNetBitWriter::SerializeObjectRef(FUnrealObjectRef& ObjectRef)
 FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 {
 	FUnrealObjectRef ObjectRef;
-	if (Value != nullptr)
+	if (Value != nullptr && !Value->IsPendingKill())
 	{
 		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
 		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
@@ -49,15 +49,15 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 			}
 		}
 		ObjectRef = FUnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));
-		if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+		if (ObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
 			UnresolvedObjects.Add(Value);
-			ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+			ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 		}
 	}
 	else
 	{
-		ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+		ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 	}
 
 	SerializeObjectRef(ObjectRef);

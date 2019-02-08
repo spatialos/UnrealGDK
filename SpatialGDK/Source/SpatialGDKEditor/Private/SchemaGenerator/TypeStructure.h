@@ -8,7 +8,7 @@
 /*
 
 This file contains functions to generate an abstract syntax tree which is used by the code generating in
-SchemaGenerator.cpp and TypeBindingGenerator.cpp. The AST follows a structure which is similar to a UClass/UProperty
+SchemaGenerator.cpp. The AST follows a structure which is similar to a UClass/UProperty
 structure, but also contains additional metadata such as replication data. One main difference is that the AST
 structure will recurse into object properties if it's determined that the container type holds a strong reference
 to that subobject (such as a character owning its movement component).

@@ -18,10 +18,10 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SnapshotManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
-#include "Interop/SpatialTypebindingManager.h"
 #include "Interop/SpatialDispatcher.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
@@ -49,10 +49,12 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	bConnectAsClient = bInitAsClient;
 	bAuthoritativeDestruction = true;
 
-	TypebindingManager = NewObject<USpatialTypebindingManager>();
-	TypebindingManager->Init(this);
+	ClassInfoManager = NewObject<USpatialClassInfoManager>();
+	ClassInfoManager->Init(this);
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
+
+	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
@@ -183,6 +185,33 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	Connect();
+}
+
+void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
+{
+	// Callback got called on a World that's not associated with this NetDriver.
+	// Don't do anything.
+	if (OwningWorld != World)
+	{
+		return;
+	}
+
+	// If we have authority over the GSM when loading a sublevel, make sure we have authority
+	// over the actors in the sublevel.
+	if (GlobalStateManager != nullptr)
+	{
+		if (GlobalStateManager->HasAuthority())
+		{
+			for (auto Actor : LoadedLevel->Actors)
+			{
+				if (Actor->GetIsReplicated())
+				{
+					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
+				}
+			}
+		}
+	}
 }
 
 void USpatialNetDriver::Connect()
@@ -439,6 +468,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 			{
 				check(Channel->OpenedLocally);
 				Channel->bClearRecentActorRefs = false;
+				// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
 				Channel->Close();
 			}
 
@@ -769,6 +799,13 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				// or it's an editor placed actor and the client hasn't initialized the level it's in
 				if (Channel == nullptr && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
+					if (!Actor->HasAuthority())
+					{
+						// Trying to replicate Actor which we don't have authority over.
+						// Remove after UNR-961
+						continue;
+					}
+
 					// If we're a singleton, and don't have a channel, defer to GSM
 					if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 					{
@@ -846,6 +883,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				if (!Actor->IsNetStartupActor())
 				{
 					UE_LOG(LogNetTraffic, Log, TEXT("- Closing channel for no longer relevant actor %s"), *Actor->GetName());
+					// TODO: UNR-952 - Add code here for cleaning up actor channels from our maps.
 					Channel->Close();
 				}
 			}
