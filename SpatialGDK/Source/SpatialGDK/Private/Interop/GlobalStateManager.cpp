@@ -33,7 +33,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 #if WITH_EDITOR
 	const ULevelEditorPlaySettings* const PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
 
-	// only the client should ever send this request
+	// Only the client should ever send this request.
 	if (PlayInSettings && NetDriver && NetDriver->GetNetMode() != NM_DedicatedServer)
 	{
 		bool bRunUnderOneProcess = true;
