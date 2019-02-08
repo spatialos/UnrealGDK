@@ -140,13 +140,23 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		});
 	}
 
+	// Only want to have a stably object ref if this Actor is stably named.
+	// We use this to indiciate if a new Actor should be created or to link a pre-existing Actor
+	// when receiving an AddEntityOp.
+	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
+	if (Actor->IsFullNameStableForNetworking())
+	{
+		FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
+		StablyNamedObjectRef = FUnrealObjectRef(0, 0, Actor->GetFName().ToString(), OuterObjectRef);
+	}
+
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(improbable::Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
 	ComponentDatas.Add(improbable::Interest().CreateInterestData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
