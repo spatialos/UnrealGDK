@@ -33,7 +33,7 @@ public:
 	void ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op);
 
 private:
-	void ObtainPlayerId(FURL& LoginURL, FUniqueNetIdRepl& OutUniqueId, FName& OutOnlinePlatformName);
+	void ObtainPlayerId(struct FURL& LoginURL, FUniqueNetIdRepl& OutUniqueId, FName& OutOnlinePlatformName);
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
