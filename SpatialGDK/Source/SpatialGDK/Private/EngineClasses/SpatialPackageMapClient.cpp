@@ -11,10 +11,10 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
-#include "SchemaOption.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
+#include "Utils/SchemaOption.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 

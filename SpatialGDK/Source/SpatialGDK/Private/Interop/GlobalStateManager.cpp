@@ -2,6 +2,10 @@
 
 #include "Interop/GlobalStateManager.h"
 
+#if WITH_EDITOR
+#include "Settings/LevelEditorPlaySettings.h"
+#endif
+
 #include "Engine/Classes/AI/AISystemBase.h"
 #include "Engine/World.h"
 #include "EngineClasses/SpatialActorChannel.h"
@@ -17,6 +21,7 @@
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
+#include "UObject/UObjectGlobals.h"
 #include "Utils/EntityRegistry.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
