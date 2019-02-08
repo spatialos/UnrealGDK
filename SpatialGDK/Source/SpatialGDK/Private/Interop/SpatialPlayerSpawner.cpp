@@ -88,7 +88,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 			FURL LoginURL;
 			FUniqueNetIdRepl UniqueId;
 			FName OnlinePlatformName;
-			ObtainPlayerId(LoginURL, UniqueId, OnlinePlatformName);
+			ObtainPlayerParams(LoginURL, UniqueId, OnlinePlatformName);
 
 			Worker_CommandRequest CommandRequest = {};
 			CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
@@ -136,7 +136,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp&
 	}
 }
 
-void USpatialPlayerSpawner::ObtainPlayerId(FURL& LoginURL, FUniqueNetIdRepl& OutUniqueId, FName& OutOnlinePlatformName)
+void USpatialPlayerSpawner::ObtainPlayerParams(FURL& LoginURL, FUniqueNetIdRepl& OutUniqueId, FName& OutOnlinePlatformName)
 {
 	const FWorldContext* const WorldContext = GEngine->GetWorldContextFromWorld(NetDriver->GetWorld());
 	check(WorldContext->OwningGameInstance);
