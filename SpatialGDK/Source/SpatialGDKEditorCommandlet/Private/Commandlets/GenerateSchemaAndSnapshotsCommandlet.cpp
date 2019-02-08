@@ -40,7 +40,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 		if (MapNameParam.Contains(TEXT(" ")))
 		{
 			UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s argument may not contain spaces."), *MapPathsParamName);
-				return 1;
+			return 1;
 		}
 
 		FString ThisMapName;
