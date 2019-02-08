@@ -67,6 +67,8 @@ private:
 
 	void CacheWorkerAttributes();
 
+	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
+
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLegacyLocator;
 	Worker_Alpha_Locator* WorkerLocator;
