@@ -359,7 +359,9 @@ Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_Entity
 
 void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
 {
-	Worker_Connection_SendComponentUpdate(WorkerConnection, EntityId, ComponentUpdate);
+	Worker_Alpha_UpdateParameters UpdateParameters{};
+	UpdateParameters.loopback = false;
+	Worker_Alpha_Connection_SendComponentUpdate(WorkerConnection, EntityId, ComponentUpdate, &UpdateParameters);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
