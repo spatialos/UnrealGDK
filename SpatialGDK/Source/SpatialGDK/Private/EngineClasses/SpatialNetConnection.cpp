@@ -11,6 +11,8 @@
 
 #include <WorkerSDK/improbable/c_schema.h>
 
+DEFINE_LOG_CATEGORY(LogSpatialNetConnection);
+
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
@@ -81,8 +83,6 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 	PlayerControllerEntity = InPlayerControllerEntity;
 	TimerManager = InTimerManager;
 
-	bIsServer = Driver->IsServer();
-
 	if (Driver->IsServer())
 	{
 		SetHeartbeatTimeoutTimer();
@@ -99,7 +99,7 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 				{
 					if (EventCount > 1)
 					{
-						UE_LOG(LogTemp, Log, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), ConnectionPtr->PlayerControllerEntity);
+						UE_LOG(LogSpatialNetConnection, Log, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), ConnectionPtr->PlayerControllerEntity);
 					}
 
 					ConnectionPtr->OnHeartbeat();

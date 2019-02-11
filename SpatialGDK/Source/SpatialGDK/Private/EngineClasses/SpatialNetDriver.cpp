@@ -553,28 +553,15 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 
 			// the view target is what the player controller is looking at OR the owning actor itself when using beacons
 			SpatialConnection->ViewTarget = SpatialConnection->PlayerController ? SpatialConnection->PlayerController->GetViewTarget() : OwningActor;
-
-			for (int32 ChildIdx = 0; ChildIdx < SpatialConnection->Children.Num(); ChildIdx++)
-			{
-				UNetConnection *Child = SpatialConnection->Children[ChildIdx];
-				APlayerController* ChildPlayerController = Child->PlayerController;
-				if (ChildPlayerController != NULL)
-				{
-					Child->ViewTarget = ChildPlayerController->GetViewTarget();
-				}
-				else
-				{
-					Child->ViewTarget = NULL;
-				}
-			}
 		}
 		else
 		{
 			SpatialConnection->ViewTarget = NULL;
-			for (int32 ChildIdx = 0; ChildIdx < SpatialConnection->Children.Num(); ChildIdx++)
-			{
-				SpatialConnection->Children[ChildIdx]->ViewTarget = NULL;
-			}
+		}
+
+		if (SpatialConnection->Children.Num() > 0)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Child connections present on Spatial connection %s! We don't support splitscreen yet, so this will not function correctly."), *SpatialConnection->GetName());
 		}
 	}
 
@@ -919,27 +906,24 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(ClientConnections[0]);
 	check(SpatialConnection && SpatialConnection->bReliableSpatialConnection);
 
-	// Make a list of viewers this connection should consider (this connection and children of this connection)
+	// Make a list of viewers this connection should consider
 	TArray<FNetViewer>& ConnectionViewers = WorldSettings->ReplicationViewers;
 
 	ConnectionViewers.Reset();
 
 	// The fake spatial connection will borrow the player controllers from other connections.
-	for (int j = 1; j < ClientConnections.Num(); j++)
+	for (int i = 1; i < ClientConnections.Num(); i++)
 	{
-		USpatialNetConnection* ClientConnection = Cast<USpatialNetConnection>(ClientConnections[j]);
+		USpatialNetConnection* ClientConnection = Cast<USpatialNetConnection>(ClientConnections[i]);
 		check(ClientConnection);
 
 		if (ClientConnection->ViewTarget != nullptr)
 		{
 			new(ConnectionViewers)FNetViewer(ClientConnection, DeltaSeconds);
 
-			for (UChildConnection* ChildConnection : ClientConnection->Children)
+			if (ClientConnection->Children.Num() > 0)
 			{
-				if (ChildConnection->ViewTarget != nullptr)
-				{
-					new(ConnectionViewers)FNetViewer(ChildConnection, DeltaSeconds);
-				}
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Child connections present on Spatial client connection %s! We don't support splitscreen yet, so this will not function correctly."), *ClientConnection->GetName());
 			}
 		}
 	}

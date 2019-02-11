@@ -176,8 +176,44 @@ void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 	HandleActorAuthority(Op);
 }
 
+void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& Op, APlayerController* PlayerController)
+{
+	// Server initializes heartbeat logic based on its authority over the position component,
+	// client does the same for heartbeat component
+	if ((NetDriver->IsServer() && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID) ||
+		(!NetDriver->IsServer() && Op.component_id == SpatialConstants::HEARTBEAT_COMPONENT_ID))
+	{
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
+			{
+				Connection->InitHeartbeat(TimerManager, Op.entity_id);
+			}
+		}
+		else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+		{
+			if (NetDriver->IsServer())
+			{
+				HeartbeatDelegates.Remove(Op.entity_id);
+			}
+			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
+			{
+				Connection->DisableHeartbeat();
+			}
+		}
+	}
+}
+
 void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 {
+	if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
+	{
+		if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+		{
+			HandlePlayerLifecycleAuthority(Op, PlayerController);
+		}
+	}
+
 	if (NetDriver->IsServer())
 	{
 		if (Op.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
@@ -223,15 +259,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				
 					UpdateShadowData(Op.entity_id);
 
-					// Player lifecycle
-					if (Actor->IsA<APlayerController>())
-					{
-						if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
-						{
-							Connection->InitHeartbeat(TimerManager, Op.entity_id);
-						}
-					}
-
 					Actor->OnAuthorityGained();
 				}
 				else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
@@ -242,16 +269,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				{
 					Actor->Role = ROLE_SimulatedProxy;
 					Actor->RemoteRole = ROLE_Authority;
-
-					// Player lifecycle
-					if (Actor->IsA<APlayerController>())
-					{
-						HeartbeatDelegates.Remove(Op.entity_id);
-						if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
-						{
-							Connection->DisableHeartbeat();
-						}
-					}
 
 					Actor->OnAuthorityLost();
 				}
@@ -269,25 +286,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == Info.SchemaComponents[SCHEMA_ClientRPC])
 			{
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
-			}
-
-			// Player lifecycle
-			if (Actor->IsA<APlayerController>() && Op.component_id == SpatialConstants::HEARTBEAT_COMPONENT_ID)
-			{
-				if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-				{
-					if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
-					{
-						Connection->InitHeartbeat(TimerManager, Op.entity_id);
-					}
-				}
-				else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
-				{
-					if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
-					{
-						Connection->DisableHeartbeat();
-					}
-				}
 			}
 		}
 	}

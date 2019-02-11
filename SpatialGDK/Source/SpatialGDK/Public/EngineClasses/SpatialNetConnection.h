@@ -9,6 +9,8 @@
 
 #include "SpatialNetConnection.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetConnection, Log, All);
+
 UCLASS(transient)
 class SPATIALGDK_API USpatialNetConnection : public UIpConnection
 {
@@ -49,6 +51,4 @@ public:
 	// Player lifecycle
 	Worker_EntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
-
-	bool bIsServer;
 };

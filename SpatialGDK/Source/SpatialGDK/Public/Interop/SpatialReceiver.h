@@ -144,6 +144,7 @@ private:
 
 	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
 
+	void HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
