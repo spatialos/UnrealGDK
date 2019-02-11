@@ -437,7 +437,7 @@ void USpatialWorkerConnection::OnConnectionFailure()
 	bIsConnected = false;
 
 	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
-	for (int i = 0; i < static_cast<int>(OpList->op_count); i++)
+	for (size_t i = 0; i < OpList->op_count; i++)
 	{
 		if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
 		{
