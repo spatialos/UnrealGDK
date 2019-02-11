@@ -164,7 +164,7 @@ pushd "$($gdk_home)"
 
 
     # Copy from binaries_dir
-    Copy-Item "$($binaries_dir)\Win64\include" "$($worker_sdk_dir)" -Force -Recurse
+    Copy-Item "$($binaries_dir)\Win64\include\*" "$($worker_sdk_dir)\" -Force -Recurse
 
     Write-Log "Fetch MSBUILD_EXE location"
     #call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
@@ -175,7 +175,6 @@ pushd "$($gdk_home)"
     #%MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
     Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
         "/nologo", `
-        "/verbosity:minimal", `
         "SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln", `
         "/property:Configuration=Release" `
     )
