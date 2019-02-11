@@ -87,7 +87,7 @@ pushd "$($gdk_home)"
     Finish-Event "download-unreal-engine" "build-unreal-gdk-:windows:"
 
 
-    $unreal_path = "$($gdk_home)\UnrealEngine\$($unreal_version)\"
+    $unreal_path = "$($gdk_home)\UnrealEngine"
     Write-Log "Setting UNREAL_HOME environment variable to $($unreal_path)"
     [Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($unreal_path)", "Machine")
 
