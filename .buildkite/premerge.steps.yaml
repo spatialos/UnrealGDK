@@ -9,17 +9,8 @@ common: &common
   agents:
     - "capable_of_building=gdk-for-unreal"
     - "environment=production"
-<<<<<<< HEAD
     - "permission_set=pusher"
     - "queue=v2-1550501909-6a4dedbb19b430d6-------z"
-=======
-    # 'agents' is a safe-default permission_set choice. CI is permission-walled from affecting other environments.
-    # If you want to deploy/release, choose 'pusher'/'releaser' respectively.
-    # See also playwright/.../internal-infrastructure.go
-    - "permission_set=pusher"
-    - "queue=v2-1549379516-c74b97ee691bb989-------z"
-  timeout_in_minutes: 60 # TODO(ENG-548): reduce timeout once agent-cold-start is optimised.
->>>>>>> Changed permission set from builder to pusher
   retry:
     automatic:
       - <<: *agent_transients
