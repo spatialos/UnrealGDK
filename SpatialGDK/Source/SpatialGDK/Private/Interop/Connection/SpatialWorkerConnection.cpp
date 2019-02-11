@@ -18,7 +18,6 @@ void USpatialWorkerConnection::DestroyConnection()
 {
 	if (WorkerConnection)
 	{
-		//Worker_Connection* ConnectionCopy = WorkerConnection;
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerConnection = WorkerConnection]
 		{
 			Worker_Connection_Destroy(WorkerConnection);
