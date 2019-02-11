@@ -413,7 +413,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
-	auto NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
 	checkf(NetDriver, TEXT("SpatialNetDriver was invalid during SpatialOS connection event!"));
 	return NetDriver;
 }
