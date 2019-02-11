@@ -305,9 +305,13 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 
 	// Remove actor.
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
-	FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
 	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
-	UnrealObjectRefToNetGUID.Remove(*ActorRef);
+	// TODO: Figure out why NetGUIDToUnrealObjectRef might not have this GUID. UNR-989
+	if (FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID))
+	{
+		UnrealObjectRefToNetGUID.Remove(*ActorRef);
+	}
+
 	if (StablyNamedRefOption.IsSet())
 	{
 		UnrealObjectRefToNetGUID.Remove(StablyNamedRefOption.GetValue());
