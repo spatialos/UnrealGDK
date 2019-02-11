@@ -3,6 +3,7 @@
 #include "Interop/SpatialStaticComponentView.h"
 
 #include "Schema/Component.h"
+#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
@@ -54,6 +55,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 		Data = MakeUnique<improbable::ComponentStorage<improbable::Interest>>(Op.data);
+		break;
+	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
+		Data = MakeUnique<improbable::ComponentStorage<improbable::Heartbeat>>(Op.data);
 		break;
 	default:
 		return;
