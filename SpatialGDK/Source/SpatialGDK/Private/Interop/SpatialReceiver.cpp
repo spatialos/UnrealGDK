@@ -495,7 +495,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	// Actor is a startup actor that is a part of the level. We need to do an entity query to see
 	// if the entity was actually deleted or only removed from our view
-	if (Actor->bNetLoadOnClient)
+	if (Actor->IsFullNameStableForNetworking())
 	{
 		QueryForStartupActor(Actor, EntityId);
 		return;
