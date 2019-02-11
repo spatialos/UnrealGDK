@@ -15,6 +15,7 @@ FString USpatialGDKEditorSettings::ToString()
 {
 	TArray<FStringFormatArg> Args;
 	Args.Add(SpatialOSDirectory.Path);
+	Args.Add(bGenerateDefaultLaunchConfig);
 	Args.Add(SpatialOSLaunchConfig);
 	Args.Add(bStopSpatialOnExit);
 	Args.Add(SpatialOSSnapshotPath.Path);
@@ -23,11 +24,12 @@ FString USpatialGDKEditorSettings::ToString()
 
 	return FString::Format(TEXT(
 		"ProjectRootFolder={0}, "
-		"SpatialOSLaunchArgument={1}, "
-		"bStopSpatialOnExit={2}, "
-		"SpatialOSSnapshotPath={3}, "
-		"SpatialOSSnapshotFile={4}, "
-		"GeneratedSchemaOutputFolder={5}")
+		"bGenerateDefaultLaunchConfig={1}"
+		"SpatialOSLaunchArgument={2}, "
+		"bStopSpatialOnExit={3}, "
+		"SpatialOSSnapshotPath={4}, "
+		"SpatialOSSnapshotFile={5}, "
+		"GeneratedSchemaOutputFolder={6}")
 		, Args);
 }
 

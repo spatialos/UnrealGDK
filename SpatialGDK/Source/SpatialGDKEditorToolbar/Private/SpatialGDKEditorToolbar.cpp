@@ -24,6 +24,8 @@
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
+#include "FileHelper.h"
+#include "JsonWriter.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -288,6 +290,8 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const USpatialGDKEditorSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorSettings>();
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
+	GenerateDefaultLaunchConfig();
+
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
@@ -405,6 +409,100 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		{
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
+	}
+}
+
+bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig() const
+{
+	const FString FileName = FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir(), "Improbable/DefaultLaunchConfig.json");
+	FString Text;
+	TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
+
+	// Populate json file for launch config
+	Writer->WriteObjectStart();
+	Writer->WriteValue(TEXT("template"), TEXT("small"));
+	Writer->WriteObjectStart(TEXT("world"));
+	Writer->WriteObjectStart(TEXT("dimensions"));
+	Writer->WriteValue(TEXT("x_meters"), 2000);
+	Writer->WriteValue(TEXT("z_meters"), 2000);
+	Writer->WriteObjectEnd();
+	Writer->WriteValue(TEXT("chunk_edge_length_meters"), 50);
+	Writer->WriteValue(TEXT("streaming_query_interval"), 4);
+	Writer->WriteArrayStart(TEXT("legacy_flags"));
+	Writer->WriteObjectStart();
+	Writer->WriteValue(TEXT("name"), TEXT("streaming_query_diff"));
+	Writer->WriteValue(TEXT("value"), TEXT("true"));
+	Writer->WriteObjectEnd();
+	Writer->WriteObjectStart();
+	Writer->WriteValue(TEXT("name"), TEXT("bridge_qos_max_timeout"));
+	Writer->WriteValue(TEXT("value"), TEXT("0"));
+	Writer->WriteObjectEnd();
+	Writer->WriteObjectStart();
+	Writer->WriteValue(TEXT("name"), TEXT("bridge_soft_handover_enabled"));
+	Writer->WriteValue(TEXT("value"), TEXT("false"));
+	Writer->WriteObjectEnd();
+	Writer->WriteObjectStart();
+	Writer->WriteValue(TEXT("name"), TEXT("qos_max_unacked_pings_rate"));
+	Writer->WriteValue(TEXT("value"), TEXT("10"));
+	Writer->WriteObjectEnd();
+	Writer->WriteArrayEnd();
+	Writer->WriteObjectStart(TEXT("snapshots"));
+	Writer->WriteValue(TEXT("snapshot_write_period_seconds"), 0);
+	Writer->WriteObjectEnd();
+	Writer->WriteObjectEnd();
+
+	Writer->WriteObjectStart(TEXT("load_balancing"));
+	Writer->WriteArrayStart("layer_configurations");
+	Writer->WriteObjectStart();
+	Writer->WriteValue(TEXT("layer"), TEXT("UnrealWorker"));
+	Writer->WriteObjectStart("rectangle_grid");
+	Writer->WriteValue(TEXT("cols"), 1);
+	Writer->WriteValue(TEXT("rows"), 1);
+	Writer->WriteObjectEnd();
+	Writer->WriteObjectStart(TEXT("options"));
+	Writer->WriteValue(TEXT("manual_worker_connection_only"), true);
+	Writer->WriteObjectEnd();
+	Writer->WriteObjectEnd();
+	Writer->WriteArrayEnd();
+	Writer->WriteObjectEnd();
+
+	Writer->WriteArrayStart(TEXT("workers"));
+
+	Writer->WriteObjectStart();
+	Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealWorker"));
+	Writer->WriteRawJSONValue("flags",  TEXT("[]"));
+	Writer->WriteArrayStart("permissions");
+	Writer->WriteObjectStart();
+	Writer->WriteObjectStart(TEXT("all"));
+	Writer->WriteObjectEnd();
+	Writer->WriteObjectEnd();
+	Writer->WriteArrayEnd();
+	Writer->WriteObjectEnd();
+
+	Writer->WriteObjectStart();
+	Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealClient"));
+	Writer->WriteRawJSONValue("flags", TEXT("[]"));
+	Writer->WriteArrayStart("permissions");
+	Writer->WriteObjectStart();
+	Writer->WriteObjectStart(TEXT("all"));
+	Writer->WriteObjectEnd();
+	Writer->WriteObjectEnd();
+	Writer->WriteArrayEnd();
+	Writer->WriteObjectEnd();
+
+	Writer->WriteArrayEnd();
+
+	Writer->WriteObjectEnd();
+	Writer->Close();
+
+	if (FFileHelper::SaveStringToFile(Text, *FileName))
+	{
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '{0}'. Perhaps the file is Read-Only?"), *FileName);
+		return false;
 	}
 }
 

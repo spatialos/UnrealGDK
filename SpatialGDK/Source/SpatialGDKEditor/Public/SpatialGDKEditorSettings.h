@@ -20,11 +20,19 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
 	FDirectoryPath SpatialOSDirectory;
 
+public:
+	/** Delete dynamic entities on shutdown. */
+	UPROPERTY(EditAnywhere, config, Category = "Play in editor settings", meta = (ConfigRestartRequired = false, DisplayName = "Delete dynamic entities"))
+	bool bDeleteDynamicEntities;
+
+	/** Generate default launch config. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Generate default launch config"))
+	bool bGenerateDefaultLaunchConfig;
+
 	/** Launch configuration file used for `spatial local launch`. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Launch configuration"))
 	FString SpatialOSLaunchConfig;
 
-public:
 	/** Stop `spatial local launch` when shutting down editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Stop on exit"))
 	bool bStopSpatialOnExit;
