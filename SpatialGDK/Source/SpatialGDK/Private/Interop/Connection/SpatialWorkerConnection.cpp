@@ -18,19 +18,32 @@ void USpatialWorkerConnection::DestroyConnection()
 {
 	if (WorkerConnection)
 	{
-		Worker_Connection_Destroy(WorkerConnection);
+		//Worker_Connection* ConnectionCopy = WorkerConnection;
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerConnection = WorkerConnection]
+		{
+			Worker_Connection_Destroy(WorkerConnection);
+		});
+
 		WorkerConnection = nullptr;
 	}
 
 	if (WorkerLegacyLocator)
 	{
-		Worker_Locator_Destroy(WorkerLegacyLocator);
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerLegacyLocator = WorkerLegacyLocator]
+		{
+			Worker_Locator_Destroy(WorkerLegacyLocator);
+		});
+
 		WorkerLegacyLocator = nullptr;
 	}
 
 	if (WorkerLocator)
 	{
-		Worker_Alpha_Locator_Destroy(WorkerLocator);
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerLocator = WorkerLocator]
+		{
+			Worker_Alpha_Locator_Destroy(WorkerLocator);
+		});
+
 		WorkerLocator = nullptr;
 	}
 }
