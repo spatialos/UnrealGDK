@@ -47,6 +47,10 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
 	FDirectoryPath SpatialOSSnapshotPath;
 
+	/** Name snapshot file like current level. */
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Name Snapshots like levels"))
+	bool bSnapshotUseCurrentLevelName = true;
+
 	/** Name of your SpatialOS snapshot file. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
 	FString SpatialOSSnapshotFile;
@@ -73,6 +77,11 @@ public:
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/default_launch.json")))
 			: SpatialOSLaunchConfig.FilePath;
+	}
+
+	FORCEINLINE bool IsSnapshotUsingCurrentLevelName() const
+	{
+		return bSnapshotUseCurrentLevelName;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotFile() const

@@ -23,6 +23,7 @@
 
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
+#include "Kismet/GameplayStatics.h"
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonWriter.h"
@@ -207,8 +208,18 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
 
+	FString SnapshotFilename;
+	if (Settings->IsSnapshotUsingCurrentLevelName())
+	{
+		const FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(GEditor->GetEditorWorldContext().World());
+		SnapshotFilename = CurrentLevelName + TEXT(".snapshot");
+	}
+	else
+	{
+		SnapshotFilename = Settings->GetSpatialOSSnapshotFile();
+	}
 	SpatialGDKEditorInstance->GenerateSnapshot(
-		GEditor->GetEditorWorldContext().World(), Settings->GetSpatialOSSnapshotFile(),
+		GEditor->GetEditorWorldContext().World(), SnapshotFilename,
 		FSimpleDelegate::CreateLambda([this]() { ShowSuccessNotification("Snapshot successfully generated!"); }),
 		FSimpleDelegate::CreateLambda([this]() { ShowFailedNotification("Snapshot generation failed!"); }),
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
@@ -302,9 +313,21 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
+	// Launch with the snapshot named like the current level
+	FString SnapshotFilename;
+	if (SpatialGDKSettings->IsSnapshotUsingCurrentLevelName())
+	{
+		const FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(GEditor->GetEditorWorldContext().World());
+		SnapshotFilename = CurrentLevelName + TEXT(".snapshot");
+	}
+	else
+	{
+		SnapshotFilename = SpatialGDKSettings->GetSpatialOSSnapshotFile();
+	}
+	const FString SnapshotFilePath = FPaths::Combine(SpatialGDKSettings->GetSpatialOSSnapshotFolderPath(), SnapshotFilename);
 
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *LaunchConfig);
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s --snapshot=%s ^& pause"), *LaunchConfig, *SnapshotFilePath);
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
