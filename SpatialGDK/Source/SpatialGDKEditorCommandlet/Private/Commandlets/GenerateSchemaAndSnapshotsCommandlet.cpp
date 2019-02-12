@@ -79,12 +79,8 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 	if (!InPath.StartsWith(GameDirName))
 	{
 		CorrectedPath = GameDirName;
-		if (!InPath.StartsWith(TEXT("/")))
-		{
-			CorrectedPath += TEXT("/");
-		}
 	}
-	CorrectedPath += InPath;
+	CorrectedPath.PathAppend(*InPath, InPath.Len());
 
 	//We rely on IsValidLongPackageName to differentiate between a map file and "anything else" -- the only accepted
 	//format of which is a directory path.
