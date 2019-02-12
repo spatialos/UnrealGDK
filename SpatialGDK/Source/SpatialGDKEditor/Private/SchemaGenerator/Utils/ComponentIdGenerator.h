@@ -8,7 +8,7 @@ struct FComponentIdGenerator
 	{
 	}
 
-	int GetNextAvailableId(const uint32 InComponentId)
+	int GetNextAvailableId(const uint32 InComponentId = SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		IdReturned = InComponentId != SpatialConstants::INVALID_COMPONENT_ID ? InComponentId : InitialId + (NumIds++);
 		return IdReturned;

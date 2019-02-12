@@ -93,6 +93,9 @@ public:
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 
+	UPROPERTY()
+	USchemaDatabase* SchemaDatabase;
+
 private:
 	void CreateClassInfoForClass(UClass* Class);
 
@@ -100,8 +103,6 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	UPROPERTY()
-	USchemaDatabase* SchemaDatabase;
 
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
 

@@ -157,11 +157,35 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
-	ComponentDatas.Add(improbable::Interest().CreateInterestData());
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+	{
+		USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection);
+
+		Interest CurrentInterest;
+		CurrentInterest.ComponentInterest.Add(Info.SchemaComponents[SCHEMA_ClientRPC], NetConnection->CurrentInterest.CreateComponentInterest());
+		ComponentDatas.Add(CurrentInterest.CreateInterestData());
+	}
+	else
+	{
+		ComponentDatas.Add(improbable::Interest().CreateInterestData());
+	}
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
+	}
+
+	if (StablyNamedObjectRef.IsSet())
+	{
+		if (uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId.Find(StablyNamedObjectRef->GetLevelReference().Path.GetValue()))
+		{
+			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(*ComponentId));
+		}
+	}
+	else
+	{
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_SPAWNED_COMPONENT_ID));
 	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;

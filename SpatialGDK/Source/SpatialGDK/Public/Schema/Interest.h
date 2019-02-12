@@ -154,22 +154,18 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 	//list<QueryConstraint> and_constraint = 9;
 	if (Constraint.AndConstraint.Num() > 0)
 	{
-		Schema_Object* AndConstraintObject = Schema_AddObject(QueryConstraintObject, 9);
-
 		for (const ComponentInterest::QueryConstraint& AndConstraintEntry : Constraint.AndConstraint)
 		{
-			AddQueryConstraintToQuerySchema(AndConstraintObject, 1, AndConstraintEntry);
+			AddQueryConstraintToQuerySchema(QueryConstraintObject, 9, AndConstraintEntry);
 		}
 	}
 
 	//list<QueryConstraint> or_constraint = 10;
 	if (Constraint.OrConstraint.Num() > 0)
 	{
-		Schema_Object* OrConstraintObject = Schema_AddObject(QueryConstraintObject, 10);
-
 		for (const ComponentInterest::QueryConstraint& OrConstraintEntry : Constraint.OrConstraint)
 		{
-			AddQueryConstraintToQuerySchema(OrConstraintObject, 1, OrConstraintEntry);
+			AddQueryConstraintToQuerySchema(QueryConstraintObject, 10, OrConstraintEntry);
 		}
 	}
 }

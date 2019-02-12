@@ -4,6 +4,9 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Gameframework/PlayerController.h"
+#include "Utils/EntityRegistry.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -69,4 +72,36 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 	// TODO: UNR-664 - Currently we do not report the number of bits sent when replicating, this means channel saturation cannot be checked properly.
 	// This will always return true until we solve this.
 	return true;
+}
+
+void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
+{
+	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
+
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Driver);
+	USpatialClassInfoManager* ClassInfoManager = NetDriver->ClassInfoManager;
+	USpatialPackageMapClient* PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
+
+	FString TilePath = PackageName.ToString();
+	int32 Index = 0;
+	TilePath.FindLastChar('/', Index);
+	TilePath = TilePath.Mid(Index + 1);
+	uint32 ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId[TilePath];
+
+	if (bIsVisible)
+	{
+		CurrentInterest.LoadedLevels.Add(ComponentId);
+	}
+	else
+	{
+		CurrentInterest.LoadedLevels.Remove(ComponentId);
+	}
+
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(PlayerController->GetClass());
+	Interest NewInterest;
+	NewInterest.ComponentInterest.Add(Info.SchemaComponents[SCHEMA_ClientRPC], CurrentInterest.CreateComponentInterest());
+	Worker_ComponentUpdate Update = NewInterest.CreateInterestUpdate();
+
+	Worker_EntityId EntityId = NetDriver->EntityRegistry->GetEntityIdFromActor(PlayerController);
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }

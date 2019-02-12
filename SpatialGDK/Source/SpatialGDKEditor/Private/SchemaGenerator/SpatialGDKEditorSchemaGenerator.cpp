@@ -24,12 +24,14 @@
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
+#include "Engine/WorldComposition.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
 TArray<UClass*> SchemaGeneratedClasses;
 TArray<UClass*> AdditionalSchemaGeneratedClasses; //Used to keep UClasses in memory whilst generating schema for them.
 TMap<FString, FSchemaData> ClassPathToSchema;
+TMap<FString, uint32> LevelNameToComponentId;
 uint32 NextAvailableComponentId;
 
 // Prevent name collisions
@@ -164,7 +166,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 }// ::
 
 
-void  GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
+void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
 {
 	// Generate the actual schema
 	for (const auto& TypeInfo : TypeInfos)
@@ -173,6 +175,55 @@ void  GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos
 	}
 }
 
+void GenerateSchemaFromSublevels(UWorld* World, const FString& SchemaPath)
+{
+	TArray<FString> StreamingLevelNames;
+
+	if (UWorldComposition* WorldComposition = World->WorldComposition)
+	{
+		for (const auto& Tile : WorldComposition->GetTilesList())
+		{
+			FString TilePath = Tile.PackageName.ToString();
+			int32 Index = 0;
+			TilePath.FindLastChar('/', Index);
+			TilePath = TilePath.Mid(Index + 1);
+			StreamingLevelNames.Add(TilePath);
+		}
+	}
+	else
+	{
+		//for (const auto& LevelStreamingObject : World->GetStreamingLevels())
+		//{
+		//	StreamingLevels.Add(LevelStreamingObject->GetLoadedLevel());
+		//}
+	}
+
+	if (StreamingLevelNames.Num() == 0)
+	{
+		return;
+	}
+
+	FCodeWriter Writer;
+	FComponentIdGenerator IdGenerator(NextAvailableComponentId);
+
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.generated.sublevels;)""");
+
+	for (const auto& LevelName : StreamingLevelNames)
+	{
+		Writer.PrintNewLine();
+		Writer.Printf("component {0} {", *UnrealNameToSchemaName(LevelName));
+		Writer.Indent();
+		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
+		Writer.Outdent().Print("}");
+
+		LevelNameToComponentId.Add(LevelName, IdGenerator.GetCurrentId());
+	}
+
+	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels.schema"), *SchemaPath));
+}
 
 FString GenerateIntermediateDirectory()
 {
@@ -192,6 +243,7 @@ void SaveSchemaDatabase()
 		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 		SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
 		SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
+		SchemaDatabase->LevelNameToComponentId = LevelNameToComponentId;
 
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
@@ -368,6 +420,8 @@ bool SpatialGDKGenerateSchema()
 	DeleteGeneratedSchemaFiles();
 
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath);
+
+	GenerateSchemaFromSublevels(GEditor->GetEditorWorldContext().World(), SchemaOutputPath);
 
 	SaveSchemaDatabase();
 

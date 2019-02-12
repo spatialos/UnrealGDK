@@ -105,6 +105,7 @@ namespace SpatialConstants
 	const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 100005;
 	const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 100006;
 	const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID				= 100007;
+	const Worker_ComponentId NOT_SPAWNED_COMPONENT_ID						= 100008;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 100010;
 

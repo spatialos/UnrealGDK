@@ -46,6 +46,9 @@ public:
 	TMap<FString, FSchemaData> ClassPathToSchema;
 
 	UPROPERTY(VisibleAnywhere)
+	TMap<FString, uint32> LevelNameToComponentId;
+
+	UPROPERTY(VisibleAnywhere)
 	uint32 NextAvailableComponentId;
 };
 

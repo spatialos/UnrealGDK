@@ -5,7 +5,43 @@
 #include "CoreMinimal.h"
 #include "IpConnection.h"
 
+#include "Schema/Interest.h"
+
 #include "SpatialNetConnection.generated.h"
+
+using namespace improbable;
+
+struct ClientInterest
+{
+	TSet<uint32> LoadedLevels;
+
+	inline improbable::ComponentInterest CreateComponentInterest()
+	{
+		ComponentInterest::QueryConstraint CheckoutRadiusConstraint;
+		CheckoutRadiusConstraint.RelativeCylinderConstraint = ComponentInterest::RelativeCylinderConstraint{ 50 };
+
+		ComponentInterest::QueryConstraint DefaultCheckout;
+		DefaultCheckout.ComponentConstraint = SpatialConstants::NOT_SPAWNED_COMPONENT_ID;
+
+		ComponentInterest::Query DefaultInterest;
+		DefaultInterest.Constraint.AndConstraint.Add(CheckoutRadiusConstraint);
+		DefaultInterest.Constraint.AndConstraint.Add(DefaultCheckout);
+
+		for (const auto& LevelComponentId : LoadedLevels)
+		{
+			ComponentInterest::QueryConstraint LevelConstraint;
+			LevelConstraint.ComponentConstraint = LevelComponentId;
+			DefaultInterest.Constraint.AndConstraint.Add(LevelConstraint);
+		}
+
+		DefaultInterest.FullSnapshotResult = true;
+
+		ComponentInterest CurrentInterest;
+		CurrentInterest.Queries.Add(DefaultInterest);
+
+		return CurrentInterest;
+	}
+};
 
 UCLASS(transient)
 class SPATIALGDK_API USpatialNetConnection : public UIpConnection
@@ -22,6 +58,9 @@ public:
 	virtual void Tick() override;
 	virtual int32 IsNetReady(bool Saturate) override;
 
+	/** Called by PlayerController to tell connection about client level visiblity change */
+	virtual void UpdateLevelVisibility(const FName& PackageName, bool bIsVisible) override;
+
 	// These functions don't make a lot of sense in a SpatialOS implementation.
 	virtual FString LowLevelGetRemoteAddress(bool bAppendPort = false) override { return TEXT(""); }
 	virtual FString LowLevelDescribe() override { return TEXT(""); }
@@ -33,4 +72,6 @@ public:
 
 	UPROPERTY()
 	FString WorkerAttribute;
+
+	ClientInterest CurrentInterest;
 };
