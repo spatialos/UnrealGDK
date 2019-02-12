@@ -4,7 +4,7 @@ SpatialOS uses [schema (SpatialOS documentation)](https://docs.improbable.io/ref
 
 ## Generating schema
 
-To generate schema, select the **Schema** button in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through objects with replicated properties to generate the required schema files and then updates the [`SchemaDatabase`(glossary entry)]({{urlRoot}}/content/glossary#schemadatabase).
+To generate schema, select the **Schema** button in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through objects with replicated properties to generate the required schema files and then updates the [`SchemaDatabase`(Unreal GDK Glossary)]({{urlRoot}}/content/glossary#schemadatabase).
 
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)
 
@@ -28,7 +28,7 @@ Schema [component IDs](https://docs.improbable.io/reference/13.5/shared/schema/r
 
 ## Deleting schema
 
-Whenever you generate schema, the GDK checks the [`SchemaDatabase`]({{urlRoot}}/content/glossary#schemadatabase) and all the relevant objects in your project and removes any references to missing objects from the `SchemaDatabase`. 
+Whenever you generate schema, the GDK checks the [`SchemaDatabase`(Unreal GDK Glossary)]({{urlRoot}}/content/glossary#schemadatabase) and all the relevant objects in your project and removes any references to missing objects from the `SchemaDatabase`. 
 
 If you delete any objects in your project, the GDK removes them from the `SchemaDatabase` the next time you generate schema.
 
