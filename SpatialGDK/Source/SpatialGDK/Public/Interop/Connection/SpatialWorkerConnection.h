@@ -10,6 +10,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+class UWorld;
+
 enum class SpatialConnectionType
 {
 	Receptionist,

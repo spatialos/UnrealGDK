@@ -3,6 +3,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
+#include "Engine/World.h"
 #include "Async/Async.h"
 #include "Misc/Paths.h"
 
@@ -428,7 +429,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-	checkf(NetDriver, TEXT("SpatialNetDriver was invalid during SpatialOS connection event!"));
+	checkf(NetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
 	return NetDriver;
 }
 
