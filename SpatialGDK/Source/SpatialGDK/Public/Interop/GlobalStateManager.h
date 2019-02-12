@@ -71,6 +71,10 @@ public:
 	// Startup Actor Manager Component
 	bool bCanBeginPlay;
 
+#if WITH_EDITOR
+	void OnPrePIEEnded(bool bValue);
+	void ReceiveShutdownMultiProcessRequest();
+#endif // WITH_EDITOR
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
@@ -79,6 +83,11 @@ private:
 	void BecomeAuthoritativeOverAllActors();
 	void TriggerBeginPlay();
 
+#if WITH_EDITOR
+	void SendShutdownMultiProcessRequest();
+#endif // WITH_EDITOR
+
+private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 

@@ -104,7 +104,9 @@ namespace SpatialConstants
 	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 100004;
 	const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 100005;
 	const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 100006;
-	const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID				= 100007;
+	const Worker_ComponentId SERVER_ONLY_SINGLETON_COMPONENT_ID				= 100007;
+  const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID				= 100007;
+	const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 100008;
 	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 100009;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 100010;
 
