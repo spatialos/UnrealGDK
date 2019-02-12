@@ -468,6 +468,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
 	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
+	TWeakObjectPtr<UObject> WeakActor(Actor);
+
+	if (!WeakActor.IsValid())
+	{
+		DestroyActor(Actor, EntityId);
+		return;
+	}
 
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
@@ -595,7 +602,8 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	}
 
 	// It is safe to call AActor::Destroy even if the destruction has already started.
-	if (!Actor->Destroy(true))
+	TWeakObjectPtr<UObject> WeakActor(Actor);
+	if (WeakActor.IsValid() && !Actor->Destroy(true))
 	{
 		UE_LOG(LogSpatialReceiver, Error, TEXT("Failed to destroy actor in RemoveActor %s %lld"), *Actor->GetName(), EntityId);
 	}

@@ -178,7 +178,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	if (StablyNamedObjectRef.IsSet())
 	{
-		if (uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId.Find(StablyNamedObjectRef->GetLevelReference().Path.GetValue()))
+		if (uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId.Find(StablyNamedObjectRef->GetLevelReference().Outer->Path.GetValue()))
 		{
 			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(*ComponentId));
 		}

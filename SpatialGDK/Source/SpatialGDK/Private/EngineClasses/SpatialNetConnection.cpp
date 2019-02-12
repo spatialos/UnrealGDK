@@ -84,8 +84,8 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 
 	FString TilePath = PackageName.ToString();
 	int32 Index = 0;
-	TilePath.FindLastChar('/', Index);
-	TilePath = TilePath.Mid(Index + 1);
+	TilePath.FindLastChar('L', Index);
+	TilePath = TilePath.Mid(Index);
 	uint32 ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId[TilePath];
 
 	if (bIsVisible)

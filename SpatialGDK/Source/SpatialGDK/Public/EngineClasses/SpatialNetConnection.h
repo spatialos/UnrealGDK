@@ -23,21 +23,29 @@ struct ClientInterest
 		ComponentInterest::QueryConstraint DefaultCheckout;
 		DefaultCheckout.ComponentConstraint = SpatialConstants::NOT_SPAWNED_COMPONENT_ID;
 
-		ComponentInterest::Query DefaultInterest;
-		DefaultInterest.Constraint.AndConstraint.Add(CheckoutRadiusConstraint);
-		DefaultInterest.Constraint.AndConstraint.Add(DefaultCheckout);
+		ComponentInterest::QueryConstraint DefaultConstraint;
+		DefaultConstraint.AndConstraint.Add(CheckoutRadiusConstraint);
+		DefaultConstraint.AndConstraint.Add(DefaultCheckout);
+
+		ComponentInterest::Query FullInterest;
+		FullInterest.Constraint.OrConstraint.Add(DefaultConstraint);
 
 		for (const auto& LevelComponentId : LoadedLevels)
 		{
 			ComponentInterest::QueryConstraint LevelConstraint;
 			LevelConstraint.ComponentConstraint = LevelComponentId;
-			DefaultInterest.Constraint.AndConstraint.Add(LevelConstraint);
+
+			ComponentInterest::QueryConstraint FullLevelConstraint;
+			FullLevelConstraint.AndConstraint.Add(CheckoutRadiusConstraint);
+			FullLevelConstraint.AndConstraint.Add(LevelConstraint);
+
+			FullInterest.Constraint.OrConstraint.Add(FullLevelConstraint);
 		}
 
-		DefaultInterest.FullSnapshotResult = true;
+		FullInterest.FullSnapshotResult = true;
 
 		ComponentInterest CurrentInterest;
-		CurrentInterest.Queries.Add(DefaultInterest);
+		CurrentInterest.Queries.Add(FullInterest);
 
 		return CurrentInterest;
 	}
