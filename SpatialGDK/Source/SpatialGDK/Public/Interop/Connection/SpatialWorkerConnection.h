@@ -29,8 +29,6 @@ public:
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
-	void Init(UWorld* InWorld);
-
 	void Connect(bool bConnectAsClient);
 
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
@@ -76,8 +74,6 @@ private:
 	Worker_Alpha_Locator* WorkerLocator;
 
 	bool bIsConnected;
-
-	TWeakObjectPtr<UWorld> World;
 
 	TArray<FString> CachedWorkerAttributes;
 };

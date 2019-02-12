@@ -4,6 +4,7 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/World.h"
+#include "UnrealEngine.h"
 #include "Async/Async.h"
 #include "Misc/Paths.h"
 
@@ -12,7 +13,6 @@ DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 void USpatialWorkerConnection::FinishDestroy()
 {
 	DestroyConnection();
-	World.Reset();
 
 	Super::FinishDestroy();
 }
@@ -48,11 +48,6 @@ void USpatialWorkerConnection::DestroyConnection()
 
 		WorkerLocator = nullptr;
 	}
-}
-
-void USpatialWorkerConnection::Init(UWorld* InWorld)
-{
-	World = InWorld;
 }
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
@@ -428,7 +423,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
-	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GEngine->GetWorldFromContextObjectChecked(this)->GetNetDriver());
 	checkf(NetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
 	return NetDriver;
 }

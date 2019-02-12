@@ -68,7 +68,6 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
 	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
-	SpatialConnection->Init(GetWorld());
 }
 
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
