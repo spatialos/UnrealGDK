@@ -1,6 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
+type ShutdownMultiProcessRequest {
+}
+
+type ShutdownMultiProcessResponse {
+}
+
 component SingletonManager {
     id = 100005;
     map<string, EntityId> singleton_name_to_entity_id = 1;
@@ -15,4 +21,9 @@ component DeploymentMap {
 component StartupActorManager {
     id = 100007;
     bool can_begin_play = 1;
+}
+
+component GSMShutdown {
+    id = 100008;
+    command ShutdownMultiProcessResponse begin_shutdown_multiprocess(ShutdownMultiProcessRequest);
 }
