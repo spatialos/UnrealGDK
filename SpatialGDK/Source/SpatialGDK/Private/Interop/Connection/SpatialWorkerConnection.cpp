@@ -423,6 +423,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
+	check(GEngine);
 	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GEngine->GetWorldFromContextObjectChecked(this)->GetNetDriver());
 	checkf(NetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
 	return NetDriver;
