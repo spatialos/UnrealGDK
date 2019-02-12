@@ -127,6 +127,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 	if (!FEditorFileUtils::LoadMap(InMapName))	//This loads the world into GWorld
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to load map %s"), *InMapName);
+		return;
 	}
 
 	//Ensure all sub-levels are also loaded
