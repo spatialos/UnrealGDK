@@ -133,6 +133,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 
 	// Ensure all sub-levels are also loaded
 	const TArray<ULevelStreaming*> StreamingLevels = GWorld->GetStreamingLevels();
+	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Loading %d Streaming SubLevels"), StreamingLevels.Num());
 	for (ULevelStreaming* StreamingLevel : StreamingLevels)
 	{
 		FLatentActionInfo LatentInfo;
@@ -143,6 +144,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 	if (GWorld->WorldComposition != NULL)
 	{
 		TArray<ULevelStreaming*> StreamingTiles = GWorld->WorldComposition->TilesStreaming;
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Loading %d World Composition Tiles"), StreamingTiles.Num());
 		for (ULevelStreaming* StreamingTile : StreamingTiles)
 		{
 			FLatentActionInfo LatentInfo;
