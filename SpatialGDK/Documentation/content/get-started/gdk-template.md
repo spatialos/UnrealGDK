@@ -5,7 +5,7 @@ Before setting up the SpatialOS GDK Starter template, you need to have followed:
 * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
 * [Getting started: 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/tutorial).
 
-If you haven't already, we recommend following our [Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/dependencies) to try out the SpatialOS for Unreal GDK development experience by adding a new feature to a project and testing it across two servers.
+If you haven't already, follow our [Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/dependencies) to try out the SpatialOS for Unreal GDK development experience by adding a new feature to a project and testing it across two servers.
 
 If you are ready to start developing your own game with the GDK, follow the steps below. 
 
