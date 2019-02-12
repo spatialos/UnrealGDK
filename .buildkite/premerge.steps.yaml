@@ -18,7 +18,7 @@ common: &common
     # If you want to deploy/release, choose 'pusher'/'releaser' respectively.
     # See also playwright/.../internal-infrastructure.go
     - "permission_set=pusher"
-    - "queue=v2-1549885463-28fdddb3dbb0bec0-------z"
+    - "queue=v2-1549893371-183fd9b7177e2649-------z"
   timeout_in_minutes: 60 # TODO(ENG-548): reduce timeout once agent-cold-start is optimised.
   retry:
     automatic:
@@ -30,7 +30,7 @@ common: &common
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
 
 steps:
-  - label: "Setup and build Unreal GDK :windows:"
+  - label: "Setup and build GDKStarterProject :windows:"
     command: "powershell ./ci/setup-and-build.ps1"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     
