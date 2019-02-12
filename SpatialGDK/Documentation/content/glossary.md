@@ -43,6 +43,10 @@ The GSM lists both the URL of the [Map (or Level - see Unreal documentation)](ht
 ### GSM
 Short for [Global State Manager](#global-state-manager).
 
+### SchemaDatabase
+
+The `SchemaDatabase.uasset` file contains information about uobjects and associated [schema (SpatialOS documentation)](https://docs.improbable.io/reference/13.6/shared/concepts/schema#schema) in your project. Information is automatically added to the SchemaDatabase by the GDK whenever you generate schema. You cannot manually edit this file. 
+
 ### Schema Generation
 A SpatialOS GDK for Unreal toolbar command (within the Unreal Editor) which takes a set of Unreal classes and generates SpatialOS [schema](#schema) that enables automatic communication between Unreal and SpatialOS. 
 
@@ -262,6 +266,7 @@ SpatialOS uses the schema to generate code. You can use this generated code in y
 
 > Related:
 >
+> * [Schema (Unreal GDK documentation)]({{urlRoot}}/content/schema)
 > * [Introduction to schema (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/schema/introduction)
 > * [Schema reference (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/schema/reference)
 
