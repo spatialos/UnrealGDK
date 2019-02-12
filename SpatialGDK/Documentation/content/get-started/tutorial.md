@@ -284,4 +284,4 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to halt your deployment.
 
 ### Next steps
-We hope you've enjoyed this tutorial. If you want to build a new game using the SpatialOS GDK, you should build it on top of the [Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project). If you want to port your existing game to SpatialOS, follow the [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk).
+We hope you've enjoyed this tutorial. If you want to build a new game using the SpatialOS GDK, you should build it on top of the [SpatialOS GDK Starter template]({{urlRoot}}/content/get-started/gdk-template). If you want to port your existing game to SpatialOS, follow the [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk).
