@@ -24,7 +24,7 @@ class USpatialWorkerConnection;
 class USpatialDispatcher;
 class USpatialSender;
 class USpatialReceiver;
-class USpatialTypebindingManager;
+class USpatialClassInfoManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
@@ -94,7 +94,7 @@ public:
 	UPROPERTY()
 	USpatialReceiver* Receiver;
 	UPROPERTY()
-	USpatialTypebindingManager* TypebindingManager;
+	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
 	UPROPERTY()
@@ -159,6 +159,9 @@ private:
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
+
+	UFUNCTION()
+	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
 
 	void Connect();
 

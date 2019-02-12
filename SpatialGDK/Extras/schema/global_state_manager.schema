@@ -18,6 +18,11 @@ component DeploymentMap {
     bool accepting_players = 2;
 }
 
+component StartupActorManager {
+    id = 100007;
+    bool can_begin_play = 1;
+}
+
 component GSMShutdown {
     id = 100008;
     command ShutdownMultiProcessResponse begin_shutdown_multiprocess(ShutdownMultiProcessRequest);

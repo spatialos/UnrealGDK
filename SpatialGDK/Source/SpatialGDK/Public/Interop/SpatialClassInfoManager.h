@@ -7,7 +7,7 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include "SpatialTypebindingManager.generated.h"
+#include "SpatialClassInfoManager.generated.h"
 
 FORCEINLINE void ForAllSchemaComponentTypes(TFunction<void(ESchemaComponentType)> Callback)
 {
@@ -71,10 +71,10 @@ struct FClassInfo
 
 class USpatialNetDriver;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialTypebindingManager, Log, All)
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialClassInfoManager, Log, All)
 
 UCLASS()
-class SPATIALGDK_API USpatialTypebindingManager : public UObject
+class SPATIALGDK_API USpatialClassInfoManager : public UObject
 {
 	GENERATED_BODY()
 
@@ -84,20 +84,17 @@ public:
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
 	bool IsSupportedClass(UClass* Class) const;
 
-	FClassInfo& FindClassInfoByClass(UClass* Class);
-	FClassInfo* FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset);
+	const FClassInfo& GetOrCreateClassInfoByClass(UClass* Class);
+	const FClassInfo& GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset);
+	const FClassInfo& GetOrCreateClassInfoByObject(UObject* Object);
+	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId) const;
 
-	// Object should be an Actor or a Subobject with a valid UnrealObjectRef
-	FClassInfo* FindClassInfoByObject(UObject* Object);
-
-	FClassInfo* FindClassInfoByComponentId(Worker_ComponentId ComponentId);
-	UClass* FindClassByComponentId(Worker_ComponentId ComponentId);
-	bool FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
-	ESchemaComponentType FindCategoryByComponentId(Worker_ComponentId ComponentId);
+	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
+	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
+	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 
 private:
-	void AddTypebindingsForClass(UClass* Class);
-	UClass* LoadClassForComponent(Worker_ComponentId ComponentId);
+	void CreateClassInfoForClass(UClass* Class);
 
 private:
 	UPROPERTY()

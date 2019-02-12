@@ -7,10 +7,12 @@
 #include "Engine/SCS_Node.h"
 #include "UObject/TextProperty.h"
 
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
+
+DEFINE_LOG_CATEGORY(LogSchemaGenerator);
 
 ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup Group)
 {
@@ -252,6 +254,20 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 			continue;
 		}
 
+		// If this class is an Actor Component, it MUST have bReplicates at field ID 1.
+		if (Group == REP_MultiClient && Class->IsChildOf<UActorComponent>())
+		{
+			TSharedPtr<FUnrealProperty> ExpectedReplicatesPropData = RepData[Group].FindRef(SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID);
+			const UProperty* ReplicatesProp = UActorComponent::StaticClass()->FindPropertyByName("bReplicates");
+
+			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
+			{
+				UE_LOG(LogSchemaGenerator, Warning, TEXT("Did not find ActorComponent->bReplicates at field %d for class %s"),
+					SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID,
+					*Class->GetName());
+			}
+		}
+
 		Writer.PrintNewLine();
 		Writer.Printf("type {0} {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
@@ -415,7 +431,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 			AllReliableMulticasts += FunctionName + TEXT("\n");					
 		}
 
-		UE_LOG(LogTemp, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
+		UE_LOG(LogSchemaGenerator, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
 	}
 
 	ClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
