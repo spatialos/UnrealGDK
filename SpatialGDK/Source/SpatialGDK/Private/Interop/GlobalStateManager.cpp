@@ -4,6 +4,7 @@
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
+#include "Editor.h"
 #endif
 
 #include "Engine/Classes/AI/AISystemBase.h"
