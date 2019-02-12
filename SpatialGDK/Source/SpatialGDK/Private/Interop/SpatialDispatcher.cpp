@@ -37,7 +37,6 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
 			Receiver->OnRemoveEntity(Op->remove_entity);
-			StaticComponentView->OnRemoveEntity(Op->remove_entity);
 			break;
 
 		// Components

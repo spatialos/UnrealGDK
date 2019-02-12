@@ -7,7 +7,7 @@
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
@@ -91,6 +91,7 @@ using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
 DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
+DECLARE_DELEGATE_OneParam(HeartbeatDelegate, Worker_ComponentUpdateOp&);
 
 UCLASS()
 class USpatialReceiver : public UObject
@@ -121,6 +122,8 @@ public:
 	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
 	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
 
+	void AddHeartbeatDelegate(Worker_EntityId EntityId, HeartbeatDelegate Delegate);
+
 	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
@@ -136,10 +139,14 @@ private:
 
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
+	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
+	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
+
+	void HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
@@ -161,7 +168,10 @@ private:
 
 	void ProcessQueuedResolvedObjects();
 	void UpdateShadowData(Worker_EntityId EntityId);
-	USpatialActorChannel* PopPendingActorRequest(Worker_RequestId RequestId);
+	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
+
+public:
+	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
 private:
 	template <typename T>
@@ -180,7 +190,7 @@ private:
 	USpatialPackageMapClient* PackageMap;
 
 	UPROPERTY()
-	USpatialTypebindingManager* TypebindingManager;
+	USpatialClassInfoManager* ClassInfoManager;
 
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
@@ -188,7 +198,6 @@ private:
 	FTimerManager* TimerManager;
 
 	// TODO: Figure out how to remove entries when Channel/Actor gets deleted - UNR:100
-	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 	TMap<FChannelObjectPair, FObjectReferencesMap> UnresolvedRefsMap;
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
@@ -200,9 +209,11 @@ private:
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
 	TArray<Worker_EntityId> PendingRemoveEntities;
 
-	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
+	TMap<Worker_RequestId, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
 
 	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
 	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
+
+	TMap<Worker_EntityId_Key, HeartbeatDelegate> HeartbeatDelegates;
 };

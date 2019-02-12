@@ -11,3 +11,8 @@ component DeploymentMap {
     string map_url = 1;
     bool accepting_players = 2;
 }
+
+component StartupActorManager {
+    id = 100007;
+    bool can_begin_play = 1;
+}

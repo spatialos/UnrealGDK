@@ -140,6 +140,10 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 	{
 		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 	}
+	else
+	{
+		OnStart();
+	}
 
 	FString Error;
 

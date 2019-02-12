@@ -29,11 +29,11 @@
 - <h3>[- Snapshots]({{urlRoot}}/content/generating-a-snapshot)</h3>
 - <h3>[- Helper scripts]({{urlRoot}}/content/helper-scripts)</h3>
 - <h3>[- Directory structure]({{urlRoot}}/content/directory-structure)</h3>
+- <h3>[- Gameplay Ability System]({{urlRoot}}/content/ability-system)</h3>
 
  ***
 - <h3>[- Troubleshooting]({{urlRoot}}/content/troubleshooting)</h3>
 - <h3>[- Known issues]({{urlRoot}}/known-issues)</h3>
-- <h3>[- Ability system]({{urlRoot}}/content/ability-system)</h3>
 
 ***
 - <h3>Get involved</h3>

@@ -97,8 +97,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 
 	UE_LOG(LogSpatialActorChannel, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
-	// If we have authority and aren't trying to delete a critical entity, delete it
-	if (bHasAuthority && !IsSingletonEntity())
+	if (bHasAuthority)
 	{
 		// Workaround to delay the delete entity request if tearing off.
 		// Task to improve this: https://improbableio.atlassian.net/browse/UNR-841
@@ -120,27 +119,17 @@ bool USpatialActorChannel::IsSingletonEntity()
 	return NetDriver->GlobalStateManager->IsSingletonEntity(EntityId);
 }
 
-bool USpatialActorChannel::IsStablyNamedEntity()
-{
-	improbable::UnrealMetadata* UnrealMetadata = NetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
-	return UnrealMetadata ? !UnrealMetadata->StaticPath.IsEmpty() : false;
-}
-
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 #if WITH_EDITOR
 	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
 	{
-		bool bDeleteDynamicEntities = true;
-		GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities(bDeleteDynamicEntities);
-
-		if (NetDriver->IsServer() &&
-			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-			NetDriver->GetWorld()->bIsTearingDown &&
-			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId) &&
-			bDeleteDynamicEntities == true)
+		if (GetDefault<ULevelEditorPlaySettings>()->IsDeleteDynamicEntitiesActive())
 		{
-			if (!IsStablyNamedEntity())
+			if (NetDriver->IsServer() &&
+				NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
+				NetDriver->GetWorld()->bIsTearingDown &&
+				NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
 			{
 				// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 				DeleteEntityIfAuthoritative();
@@ -335,7 +324,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 	ActorReplicator->RepState->LastCompareIndex = ChangelistState->CompareIndex;
 
-	FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	FHandoverChangeState HandoverChangeState;
 
@@ -384,7 +373,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
 
-			if (ObjectRef != SpatialConstants::NULL_OBJECT_REF && ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
+			if (ObjectRef.IsValid())
 			{
 				FClassInfo& SubobjectInfo = Info.SubobjectInfo[ObjectRef.Offset].Get();
 
@@ -429,7 +418,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	return (bWroteSomethingImportant) ? 1 : 0;	// TODO: return number of bits written (UNR-664)
 }
 
-bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo& Info, const FReplicationFlags& RepFlags)
+bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FClassInfo& Info, const FReplicationFlags& RepFlags)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateSubobject);
 
@@ -476,17 +465,20 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, FClassInfo& Info,
 bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags)
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
-	if (FClassInfo* SubobjectInfo = NetDriver->TypebindingManager->FindClassInfoByObject(Obj))
+
+	if (!NetDriver->PackageMap->GetUnrealObjectRefFromObject(Obj).IsValid())
 	{
-		return ReplicateSubobject(Obj, *SubobjectInfo, RepFlags);
+		// Not supported for Spatial replication
+		return false;
 	}
 
-	return false;
+	const FClassInfo& SubobjectInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Obj);
+	return ReplicateSubobject(Obj, SubobjectInfo, RepFlags);
 }
 
 TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 {
-	FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	TMap<UObject*, FClassInfo*> FoundSubobjects;
 
@@ -524,7 +516,7 @@ TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 
 void USpatialActorChannel::InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object)
 {
-	FClassInfo& ClassInfo = NetDriver->TypebindingManager->FindClassInfoByClass(Object->GetClass());
+	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
 	uint32 Size = 0;
 	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
@@ -553,7 +545,7 @@ FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& 
 {
 	FHandoverChangeState HandoverChanged;
 
-	FClassInfo& ClassInfo = NetDriver->TypebindingManager->FindClassInfoByClass(Object->GetClass());
+	const FClassInfo& ClassInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
 	uint32 ShadowDataOffset = 0;
 	for (const FHandoverPropertyInfo& PropertyInfo : ClassInfo.HandoverProperties)
@@ -600,7 +592,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	check(!HandoverShadowDataMap.Contains(InActor));
 
 	// Create the shadow map, and store a quick access pointer to it
-	FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(InActor->GetClass());
+	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(InActor->GetClass());
 	if (Info.SchemaComponents[SCHEMA_Handover] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
 		ActorHandoverShadowData = &HandoverShadowDataMap.Add(InActor, MakeShared<TArray<uint8>>()).Get();
@@ -688,8 +680,7 @@ void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityI
 	RegisterEntityId(EntityId);
 
 	// Register Actor with package map since we know what the entity id is.
-	FClassInfo& Info = NetDriver->TypebindingManager->FindClassInfoByClass(Actor->GetClass());
-	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId, improbable::CreateOffsetMapFromActor(Actor, Info));
+	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId);
 
 	// Force an Update so that the entity will be created in the next batch of processed actors
 	NetDriver->ForceNetUpdate(Actor);
@@ -804,6 +795,12 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 	{
 		for (auto& ObjRef : RefMap)
 		{
+			// ParentIndex will be -1 for handover properties.
+			if (ObjRef.Value.ParentIndex < 0)
+			{
+				continue;
+			}
+
 			bool bIsSameRepNotify = RepLayout.Parents[ObjRef.Value.ParentIndex].Property == Property;
 			bool bIsArray = RepLayout.Parents[ObjRef.Value.ParentIndex].Property->ArrayDim > 1;
 			if (bIsSameRepNotify && !bIsArray)
