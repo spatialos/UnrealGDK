@@ -105,6 +105,7 @@ Worker_ComponentData CreateGSMShutdownData()
 	GSMShutdownData.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
 	GSMShutdownData.schema_type = Schema_CreateComponentData(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID);
 	return GSMShutdownData;
+}
 
 Worker_ComponentData CreateStartupActorManagerData()
 {
