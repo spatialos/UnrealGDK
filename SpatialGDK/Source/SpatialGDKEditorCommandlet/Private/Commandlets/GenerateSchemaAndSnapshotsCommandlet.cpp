@@ -7,6 +7,7 @@
 #include "Engine/LevelStreaming.h"
 #include "Engine/ObjectLibrary.h"
 #include "Engine/World.h"
+#include "Engine/WorldComposition.h"
 #include "FileHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Misc/Paths.h"
@@ -138,6 +139,17 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 	{
 		FLatentActionInfo LatentInfo;
 		UGameplayStatics::LoadStreamLevel(GWorld, StreamingLevel->GetWorldAssetPackageFName(), false, true, LatentInfo);
+	}
+
+	//Ensure all world composition tiles are also loaded
+	if (GWorld->WorldComposition != NULL)
+	{
+		TArray<ULevelStreaming*> StreamingTiles = GWorld->WorldComposition->TilesStreaming;
+		for (ULevelStreaming* StreamingTile : StreamingTiles)
+		{
+			FLatentActionInfo LatentInfo;
+			UGameplayStatics::LoadStreamLevel(GWorld, StreamingTile->GetWorldAssetPackageFName(), false, true, LatentInfo);
+		}
 	}
 
 	//Generate Schema Iteration
