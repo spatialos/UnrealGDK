@@ -167,28 +167,35 @@ pushd "$($gdk_home)"
     Copy-Item "$($binaries_dir)\Win64\include\*" "$($worker_sdk_dir)\" -Force -Recurse
 
     Write-Log "Fetch MSBUILD_EXE location"
-    #call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
     $msbuild_exe = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\MSBuild.exe"
 
 
     Start-Event "build-utilities" "build-unreal-gdk-:windows:"
     #%MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
-    Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
+    $msbuild_proc = Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
         "/nologo", `
         "SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln", `
         "/property:Configuration=Release" `
     )
+    if ($msbuild_proc.ExitCode -ne 0) { 
+        Write-Log "Failed to build utilities. Error: $($msbuild_proc.ExitCode)" 
+        Throw "Failed to build utilities."  
+    }
     Finish-Event "build-utilities" "build-unreal-gdk-:windows:"
 
 
     Start-Event "build-unreal-gdk" "build-unreal-gdk-:windows:"
     pushd "SpatialGDK"
-        Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
+        $build_proc = Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
             "BuildPlugin", `
             " -Plugin=`"$($gdk_home)/SpatialGDK/SpatialGDK.uplugin`"", `
             "-TargetPlatforms=Win64", `
             "-Package=`"$gdk_home/SpatialGDK/Intermediate/BuildPackage/Win64`"" `
         )
+        if ($build_proc.ExitCode -ne 0) { 
+            Write-Log "Failed to build the Unreal GDK. Error: $($build_proc.ExitCode)" 
+            Throw "Failed to build the Unreal GDK."  
+        }
     popd
     Finish-Event "build-unreal-gdk" "build-unreal-gdk-:windows:"
 
