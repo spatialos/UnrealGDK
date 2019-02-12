@@ -67,7 +67,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 
 void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
-	SpatialConnection = NewObject<USpatialWorkerConnection>();
+	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
 }
 
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
@@ -139,6 +139,10 @@ FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULoca
 	{
 		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 	}
+	else
+	{
+		OnStart();
+	}
 
 	FString Error;
 
@@ -180,4 +184,15 @@ void USpatialGameInstance::StartGameInstance()
 	}
 
 	Super::StartGameInstance();
+}
+
+void USpatialGameInstance::Shutdown()
+{
+	UWorld* World = GetWorld();
+	if (World != nullptr && SpatialConnection != nullptr && SpatialConnection->IsConnected())
+	{
+		Cast<USpatialNetDriver>(World->GetNetDriver())->HandleOnDisconnected(TEXT("Client shutdown"));
+	}
+
+	Super::Shutdown();
 }

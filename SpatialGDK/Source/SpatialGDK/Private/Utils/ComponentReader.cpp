@@ -21,7 +21,7 @@ namespace improbable
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<FUnrealObjectRef>& InUnresolvedRefs)
 	: PackageMap(InNetDriver->PackageMap)
 	, NetDriver(InNetDriver)
-	, TypebindingManager(InNetDriver->ClassInfoManager)
+	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, RootObjectReferencesMap(InObjectReferencesMap)
 	, UnresolvedRefs(InUnresolvedRefs)
 {
@@ -203,7 +203,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds)
 {
-	const FClassInfo& ClassInfo = TypebindingManager->GetOrCreateClassInfoByClass(Object->GetClass());
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
 	Channel->PreReceiveSpatialUpdate(Object);
 
@@ -298,10 +298,10 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
 		FUnrealObjectRef ObjectRef = IndexObjectRefFromSchema(Object, FieldId, Index);
-		check(ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF);
+		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 		bool bUnresolved = false;
 
-		if (ObjectRef == SpatialConstants::NULL_OBJECT_REF)
+		if (ObjectRef == FUnrealObjectRef::NULL_OBJECT_REF)
 		{
 			ObjectProperty->SetObjectPropertyValue(Data, nullptr);
 		}
@@ -314,14 +314,16 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 				if (ObjectValue == nullptr)
 				{
 					// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
-					// it's part of a streaming level that hasn't been streamed in. In either case, there's nothing we can do.
+					// it's part of a streaming level that hasn't been streamed in. In this case, queue the actor based on it's level.
 					FString FullPath;
 					improbable::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
 					UE_LOG(LogSpatialComponentReader, Warning, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
 						*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
+
 					ObjectProperty->SetObjectPropertyValue(Data, nullptr);
 					return;
 				}
+
 				checkf(ObjectValue->IsA(ObjectProperty->PropertyClass), TEXT("Object ref %s maps to object %s with the wrong class."), *ObjectRef.ToString(), *ObjectValue->GetFullName());
 				ObjectProperty->SetObjectPropertyValue(Data, ObjectValue);
 			}

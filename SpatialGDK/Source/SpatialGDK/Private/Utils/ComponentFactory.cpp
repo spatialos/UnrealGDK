@@ -20,7 +20,7 @@ namespace improbable
 ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
-	, TypebindingManager(InNetDriver->ClassInfoManager)
+	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, PendingRepUnresolvedObjectsMap(RepUnresolvedObjectsMap)
 	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
 	, bInterestHasChanged(false)
@@ -185,40 +185,48 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	}
 	else if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(Property))
 	{
-		FUnrealObjectRef ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+		FUnrealObjectRef ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
 		if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
 		{
 			FNetworkGUID NetGUID;
-			if (ObjectValue->IsFullNameStableForNetworking() || ObjectValue->IsSupportedForNetworking())
+			if (ObjectValue->IsSupportedForNetworking())
 			{
 				NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
 
 				if (!NetGUID.IsValid())
 				{
-					// IsFullNameStableForNetworking for Actors relies on AActor::bNetStartup being set to true.
-					// This is set to true in InitalizeNetworkActors, which doesn't happen till the game starts
-					// So we can safely say that if we are in the editor, every Actor can be referred to.
-					if (NetDriver->World->WorldType == EWorldType::Editor)
-					{
-						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
-					}
-					else if (ObjectValue->IsFullNameStableForNetworking())
+					if (ObjectValue->IsFullNameStableForNetworking())
 					{
 						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 					}
 				}
 			}
 
-			ObjectRef = FUnrealObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID));
-
-			if (ObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+			if (NetGUID.IsValid())
 			{
-				// A legal static object reference should never be unresolved.
-				check(!ObjectValue->IsFullNameStableForNetworking());
-				UnresolvedObjects.Add(ObjectValue);
-				ObjectRef = SpatialConstants::NULL_OBJECT_REF;
+				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+			}
+			else
+			{
+				ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
+			}
+
+			if (ObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+			{
+				// There are cases where something assigned a NetGUID without going through the FSpatialNetGUID (e.g. FObjectReplicator)
+				// Assign an UnrealObjectRef by going through the FSpatialNetGUID flow
+				if (ObjectValue->IsFullNameStableForNetworking())
+				{
+					PackageMap->ResolveStablyNamedObject(ObjectValue);
+					ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+				}
+				else
+				{
+					UnresolvedObjects.Add(ObjectValue);
+					ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
+				}
 			}
 		}
 
@@ -491,8 +499,8 @@ void ComponentFactory::AddObjectToComponentInterest(UObject* Object, UObjectProp
 
 	FUnrealObjectRef UnrealObjectRef = PackageMap->GetUnrealObjectRefFromObject(ObjectOfInterest);
 
-	check(UnrealObjectRef != SpatialConstants::NULL_OBJECT_REF);
-	if (UnrealObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	check(UnrealObjectRef != FUnrealObjectRef::NULL_OBJECT_REF);
+	if (UnrealObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		return;
 	}
