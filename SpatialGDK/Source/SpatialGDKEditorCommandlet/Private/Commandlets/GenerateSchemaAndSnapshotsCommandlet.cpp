@@ -29,15 +29,16 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 	TMap<FString, FString> Params;
 	ParseCommandLine(*Args, Tokens, Switches, Params);
 
-	//TODO: Optionally clean up previous schema and snapshot files once UNR-954 is done
+	// TODO: Optionally clean up previous schema and snapshot files once UNR-954 is done
 	GeneratedMapPaths.Empty();
 
 	FSpatialGDKEditor SpatialGDKEditor;
+
 	if (Params.Contains(MapPathsParamName))
 	{
 		FString MapNameParam = *Params.Find(MapPathsParamName);
 
-		//Spaces are disallowed in all paths, so we just check for them now and exit early if an invalid path was provided
+		// Spaces are disallowed in all paths, so we just check for them now and exit early if an invalid path was provided
 		if (MapNameParam.Contains(TEXT(" ")))
 		{
 			UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s argument may not contain spaces."), *MapPathsParamName);
@@ -50,14 +51,14 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 		{
 			GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, ThisMapName);
 		}
-		//When we get to this point, one of two things is true:
-		//1) RemainingMapPaths was NEVER split, and should be interpreted as a single map name
-		//2) RemainingMapPaths was split n times, and the last map that needs to be run after the loop is still in it
+		// When we get to this point, one of two things is true:
+		// 1) RemainingMapPaths was NEVER split, and should be interpreted as a single map name
+		// 2) RemainingMapPaths was split n times, and the last map that needs to be run after the loop is still in it
 		GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, RemainingMapPaths);
 	}
 	else
 	{
-		//Default to everything in the project
+		// Default to everything in the project
 		GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, TEXT(""));
 	}
 
@@ -68,13 +69,13 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 
 void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InPath)
 {
-	//Massage input to allow some flexibility in command line path argument:
-	//	/Game/Path/MapName = Single map
-	//	/Game/Path/DirName/ = All maps in a dir, recursively
-	//NOTE: "/Game" is optional. If "/Game" is not included, the starting "/" is optional.
-	//Spaces in paths are DISALLOWED (it will currently break recursion, but there's no guarantee that
-	//will be consistent behaviour going forward).
-	//A single map is differentiated from a directory by the inclusion of "/" at the end of the path.
+	// Massage input to allow some flexibility in command line path argument:
+	// 	/Game/Path/MapName = Single map
+	// 	/Game/Path/DirName/ = All maps in a dir, recursively
+	// NOTE: "/Game" is optional. If "/Game" is not included, the starting "/" is optional.
+	// Spaces in paths are DISALLOWED (it will currently break recursion, but there's no guarantee that
+	// will be consistent behaviour going forward).
+	// A single map is differentiated from a directory by the inclusion of "/" at the end of the path.
 	FString CorrectedPath;
 	if (!InPath.StartsWith(GameDirName))
 	{
@@ -82,21 +83,21 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 	}
 	CorrectedPath.PathAppend(*InPath, InPath.Len());
 
-	//We rely on IsValidLongPackageName to differentiate between a map file and "anything else" -- the only accepted
-	//format of which is a directory path.
+	// We rely on IsValidLongPackageName to differentiate between a map file and "anything else" -- the only accepted
+	// format of which is a directory path.
 	if (FPackageName::IsValidLongPackageName(CorrectedPath))
 	{
-		//Single Map
+		// Single Map
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Selecting direct map %s"), *InPath);
 		GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, CorrectedPath);
 	}
 	else
 	{
-		//Whole Directory
+		// Whole Directory
 		UObjectLibrary* ObjectLibrary = UObjectLibrary::CreateLibrary(UWorld::StaticClass(), false, true);
 
-		//Convert InPath into a format acceptable by LoadAssetDataFromPath().
-		FString DirPath = CorrectedPath.LeftChop(1);	//Remove the final '/' character
+		// Convert InPath into a format acceptable by LoadAssetDataFromPath().
+		FString DirPath = CorrectedPath.LeftChop(1);	// Remove the final '/' character
 
 		ObjectLibrary->LoadAssetDataFromPath(DirPath);
 
@@ -115,7 +116,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 
 void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName)
 {
-	//Check if this map path has already been generated and early exit if so
+	// Check if this map path has already been generated and early exit if so
 	if (GeneratedMapPaths.Contains(InMapName))
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Warning, TEXT("Map %s has already been generated against. Skipping duplicate generation."), *InMapName);
@@ -123,14 +124,14 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 	}
 	GeneratedMapPaths.Add(InMapName);
 
-	//Load persistent Level (this will load over any previously loaded levels)
-	if (!FEditorFileUtils::LoadMap(InMapName))	//This loads the world into GWorld
+	// Load persistent Level (this will load over any previously loaded levels)
+	if (!FEditorFileUtils::LoadMap(InMapName))	// This loads the world into GWorld
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to load map %s"), *InMapName);
 		return;
 	}
 
-	//Ensure all sub-levels are also loaded
+	// Ensure all sub-levels are also loaded
 	const TArray<ULevelStreaming*> StreamingLevels = GWorld->GetStreamingLevels();
 	for (ULevelStreaming* StreamingLevel : StreamingLevels)
 	{
@@ -138,7 +139,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 		UGameplayStatics::LoadStreamLevel(GWorld, StreamingLevel->GetWorldAssetPackageFName(), false, true, LatentInfo);
 	}
 
-	//Ensure all world composition tiles are also loaded
+	// Ensure all world composition tiles are also loaded
 	if (GWorld->WorldComposition != NULL)
 	{
 		TArray<ULevelStreaming*> StreamingTiles = GWorld->WorldComposition->TilesStreaming;
@@ -149,10 +150,10 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 		}
 	}
 
-	//Generate Schema Iteration
+	// Generate Schema Iteration
 	GenerateSchemaForLoadedMap(InSpatialGDKEditor);
 
-	//Generate Snapshot
+	// Generate Snapshot
 	GenerateSnapshotForLoadedMap(InSpatialGDKEditor, FPaths::GetCleanFilename(InMapName));
 }
 
@@ -168,7 +169,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaForLoadedMap(FSpatialG
 
 void UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshotForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& MapName)
 {
-	//Generate the Snapshot!
+	// Generate the Snapshot!
 	InSpatialGDKEditor.GenerateSnapshot(
 		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(MapName), TEXT(".snapshot")),
 		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Snapshot Generation Completed!")); }),
