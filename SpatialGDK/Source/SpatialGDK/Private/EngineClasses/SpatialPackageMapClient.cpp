@@ -14,6 +14,7 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 #include "Utils/SchemaOption.h"
+#include "UObject/UObjectGlobals.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
@@ -282,25 +283,15 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
-	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
-
-	AActor* Actor = Cast<AActor>(GetObjectFromNetGUID(EntityNetGUID, true));
-	if (Actor == nullptr)
-	{
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Trying to clean up Actor for EntityId %lld but Actor does not exist! Will not cleanup subobjects for this Entity"), EntityId);
-		return;
-	}
-
-	UClass* Class = Actor->GetClass();
-	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Class);
-
 	improbable::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
 	// There are times when the Editor is quitting out of PIE that this is nullptr.
-	if (UnrealMetadata == nullptr)
+	if (UnrealMetadata == nullptr || (IsInGameThread() && IsGarbageCollecting()))
 	{
 		return;
 	}
+
+	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
 
 	improbable::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
 
@@ -320,6 +311,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	}
 
 	// Remove actor.
+	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
 	FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
 	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
 	UnrealObjectRefToNetGUID.Remove(*ActorRef);

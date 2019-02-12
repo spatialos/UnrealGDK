@@ -81,11 +81,9 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 	USpatialClassInfoManager* ClassInfoManager = NetDriver->ClassInfoManager;
 	USpatialPackageMapClient* PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
 
-	FString TilePath = PackageName.ToString();
-	int32 Index = 0;
-	TilePath.FindLastChar('L', Index);
-	TilePath = TilePath.Mid(Index);
-	uint32 ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId[TilePath];
+	UPackage* TempPkg = FindPackage(nullptr, *PackageName.ToString());
+	UWorld* LevelWorld = (UWorld*)FindObjectWithOuter(TempPkg, UWorld::StaticClass());
+	uint32 ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId[LevelWorld->GetName()];
 
 	if (bIsVisible)
 	{
