@@ -131,6 +131,8 @@ public:
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
 
+	void OnDisconnect(Worker_DisconnectOp& Op);
+
 private:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();

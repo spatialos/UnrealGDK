@@ -216,22 +216,11 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 
 void USpatialNetDriver::Connect()
 {
-	Connection->OnConnected.BindLambda([this]
-	{
-		OnMapLoadedAndConnected();
-	});
-	Connection->OnConnectFailed.BindLambda([this](const FString& Reason)
-	{
-		OnConnectFailed(Reason);
-	});
-
 	Connection->Connect(bConnectAsClient);
 }
 
 void USpatialNetDriver::OnMapLoadedAndConnected()
 {
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS and map has been loaded."));
-
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 
 	Dispatcher = NewObject<USpatialDispatcher>();
@@ -305,11 +294,6 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 		// Once we've finished loading the snapshot we must update our bResponsibleForSnapshotLoading in-case we do not gain authority over the new GSM.
 		Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading = false;
 	}
-}
-
-void USpatialNetDriver::OnConnectFailed(const FString& Reason)
-{
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
 }
 
 void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
@@ -1491,4 +1475,23 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
+}
+
+void USpatialNetDriver::HandleOnConnected()
+{
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Succesfully connected to SpatialOS"));
+	OnMapLoadedAndConnected();
+	OnConnected.Broadcast();
+}
+
+void USpatialNetDriver::HandleOnDisconnected(const FString& Reason)
+{
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
+	OnDisconnected.Broadcast(Reason);
+}
+
+void USpatialNetDriver::HandleOnConnectionFailed(const FString& Reason)
+{
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
+	OnConnectionFailed.Broadcast(Reason);
 }

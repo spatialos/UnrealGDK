@@ -1189,6 +1189,11 @@ void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealOb
 	}
 }
 
+void USpatialReceiver::OnDisconnect(Worker_DisconnectOp& Op)
+{
+	NetDriver->HandleOnDisconnected(UTF8_TO_TCHAR(Op.reason));
+}
+
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)
 {
 	for (const FUnrealObjectRef& UnresolvedRef : UnresolvedRefs)

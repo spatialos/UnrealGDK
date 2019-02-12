@@ -2,6 +2,9 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Engine/World.h"
+#include "UnrealEngine.h"
 #include "Async/Async.h"
 #include "Misc/Paths.h"
 
@@ -51,7 +54,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 {
 	if (bIsConnected)
 	{
-		OnConnected.ExecuteIfBound();
+		OnConnectionSuccess();
 		return;
 	}
 
@@ -122,14 +125,16 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 			AsyncTask(ENamedThreads::GameThread, [this]
 			{
-				this->bIsConnected = true;
-				this->OnConnected.ExecuteIfBound();
+				this->OnConnectionSuccess();
 			});
 		}
 		else
 		{
-			GetAndPrintConnectionFailureMessage();
 			// TODO: Try to reconnect - UNR-576
+			AsyncTask(ENamedThreads::GameThread, [this]
+			{
+				this->OnConnectionFailure();
+			});
 		}
 	});
 }
@@ -168,16 +173,14 @@ void USpatialWorkerConnection::ConnectToLegacyLocator()
 		if (DeploymentList->error != nullptr)
 		{
 			const FString ErrorMessage = FString::Printf(TEXT("Error fetching deployment list: %s"), UTF8_TO_TCHAR(DeploymentList->error));
-			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), *ErrorMessage);
-			SpatialConnection->OnConnectFailed.ExecuteIfBound(ErrorMessage);
+			SpatialConnection->OnPreConnectionFailure(ErrorMessage);
 			return;
 		}
 
 		if (DeploymentList->deployment_count == 0)
 		{
 			const FString ErrorMessage = FString::Printf(TEXT("Received empty list of deployments."));
-			UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), *ErrorMessage);
-			SpatialConnection->OnConnectFailed.ExecuteIfBound(ErrorMessage);
+			SpatialConnection->OnPreConnectionFailure(ErrorMessage);
 			return;
 		}
 
@@ -213,14 +216,13 @@ void USpatialWorkerConnection::ConnectToLegacyLocator()
 			{
 				const FString ErrorMessage = FString::Printf(TEXT("Requested deployment name was not present in the deployment list: %s"),
 					*SpatialConnection->LegacyLocatorConfig.DeploymentName);
-				UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), *ErrorMessage);
-				SpatialConnection->OnConnectFailed.ExecuteIfBound(ErrorMessage);
+				SpatialConnection->OnPreConnectionFailure(ErrorMessage);
 				return;
 			}
 		}
 
 		Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(SpatialConnection->WorkerLegacyLocator, DeploymentList->deployments[DeploymentIndex].deployment_name,
-				&ConnectionParams, nullptr, nullptr);
+			&ConnectionParams, nullptr, nullptr);
 
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, SpatialConnection]
 		{
@@ -233,13 +235,15 @@ void USpatialWorkerConnection::ConnectToLegacyLocator()
 
 				AsyncTask(ENamedThreads::GameThread, [SpatialConnection]
 				{
-					SpatialConnection->bIsConnected = true;
-					SpatialConnection->OnConnected.ExecuteIfBound();
+					SpatialConnection->OnConnectionSuccess();
 				});
 			}
 			else
 			{
-				SpatialConnection->GetAndPrintConnectionFailureMessage();
+				AsyncTask(ENamedThreads::GameThread, [SpatialConnection]
+				{
+					SpatialConnection->OnConnectionFailure();
+				});
 			}
 		});
 	});
@@ -296,14 +300,16 @@ void USpatialWorkerConnection::ConnectToLocator()
 			CacheWorkerAttributes();
 			AsyncTask(ENamedThreads::GameThread, [this]
 			{
-				this->bIsConnected = true;
-				this->OnConnected.ExecuteIfBound();
+				this->OnConnectionSuccess();
 			});
 		}
 		else
 		{
-			GetAndPrintConnectionFailureMessage();
 			// TODO: Try to reconnect - UNR-576
+			AsyncTask(ENamedThreads::GameThread, [this]
+			{
+				this->OnConnectionFailure();
+			});
 		}
 	});
 }
@@ -323,24 +329,6 @@ SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 	else
 	{
 		return SpatialConnectionType::Receptionist;
-	}
-}
-
-void USpatialWorkerConnection::GetAndPrintConnectionFailureMessage()
-{
-	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
-	for (int i = 0; i < static_cast<int>(OpList->op_count); i++)
-	{
-		if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
-		{
-			const FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
-			AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
-			{
-				UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to connect to SpatialOS: %s"), *ErrorMessage);
-				OnConnectFailed.ExecuteIfBound(ErrorMessage);
-			});
-			break;
-		}
 	}
 }
 
@@ -430,5 +418,46 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	for (uint32 Index = 0; Index < Attributes->attribute_count; ++Index)
 	{
 		CachedWorkerAttributes.Add(UTF8_TO_TCHAR(Attributes->attributes[Index]));
+	}
+}
+
+USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
+{
+	check(GEngine);
+	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GEngine->GetWorldFromContextObjectChecked(this)->GetNetDriver());
+	checkf(NetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
+	return NetDriver;
+}
+
+
+// TODO: UNR-962 - move connection events in to native connection handling codepath (eg, UEngine::HandleNetworkFailure)
+void USpatialWorkerConnection::OnConnectionSuccess()
+{
+	bIsConnected = true;
+	GetSpatialNetDriverChecked()->HandleOnConnected();
+}
+
+void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
+{
+	bIsConnected = false;
+	GetSpatialNetDriverChecked()->HandleOnConnectionFailed(Reason);
+}
+
+void USpatialWorkerConnection::OnConnectionFailure()
+{
+	bIsConnected = false;
+
+	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
+	for (size_t i = 0; i < OpList->op_count; i++)
+	{
+		if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
+		{
+			const FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
+			AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
+			{
+				GetSpatialNetDriverChecked()->HandleOnConnectionFailed(ErrorMessage);
+			});
+			break;
+		}
 	}
 }
