@@ -64,7 +64,7 @@ private:
 	void ShowSuccessNotification(const FString& NotificationText);
 	void ShowFailedNotification(const FString& NotificationText);
 
-	bool GenerateDefaultLaunchConfig() const;
+	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
 	static void ShowCompileLog();
 

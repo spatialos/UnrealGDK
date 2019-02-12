@@ -290,13 +290,22 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const USpatialGDKEditorSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorSettings>();
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	GenerateDefaultLaunchConfig();
+	FString LaunchConfig;
+	if (SpatialGDKSettings->bGenerateDefaultLaunchConfig)
+	{
+		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
+		GenerateDefaultLaunchConfig(LaunchConfig);
+	}
+	else
+	{
+		LaunchConfig = SpatialGDKToolbarSettings->GetSpatialOSLaunchConfig();
+	}
 
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *SpatialGDKToolbarSettings->GetSpatialOSLaunchConfig());
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *LaunchConfig);
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
@@ -412,16 +421,15 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 	}
 }
 
-bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig() const
+bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const
 {
-	const FString FileName = FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir(), "Improbable/DefaultLaunchConfig.json");
 	FString Text;
 	TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
 
 	// Populate json file for launch config
-	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("template"), TEXT("small"));
-	Writer->WriteObjectStart(TEXT("world"));
+	Writer->WriteObjectStart(); // Start of json
+	Writer->WriteValue(TEXT("template"), TEXT("small")); // Template section
+	Writer->WriteObjectStart(TEXT("world")); // World section begin
 	Writer->WriteObjectStart(TEXT("dimensions"));
 	Writer->WriteValue(TEXT("x_meters"), 2000);
 	Writer->WriteValue(TEXT("z_meters"), 2000);
@@ -449,9 +457,8 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig() const
 	Writer->WriteObjectStart(TEXT("snapshots"));
 	Writer->WriteValue(TEXT("snapshot_write_period_seconds"), 0);
 	Writer->WriteObjectEnd();
-	Writer->WriteObjectEnd();
-
-	Writer->WriteObjectStart(TEXT("load_balancing"));
+	Writer->WriteObjectEnd(); // World section end
+	Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
 	Writer->WriteArrayStart("layer_configurations");
 	Writer->WriteObjectStart();
 	Writer->WriteValue(TEXT("layer"), TEXT("UnrealWorker"));
@@ -464,10 +471,8 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig() const
 	Writer->WriteObjectEnd();
 	Writer->WriteObjectEnd();
 	Writer->WriteArrayEnd();
-	Writer->WriteObjectEnd();
-
-	Writer->WriteArrayStart(TEXT("workers"));
-
+	Writer->WriteObjectEnd(); // Load balancing section end
+	Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
 	Writer->WriteObjectStart();
 	Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealWorker"));
 	Writer->WriteRawJSONValue("flags",  TEXT("[]"));
@@ -478,7 +483,6 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig() const
 	Writer->WriteObjectEnd();
 	Writer->WriteArrayEnd();
 	Writer->WriteObjectEnd();
-
 	Writer->WriteObjectStart();
 	Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealClient"));
 	Writer->WriteRawJSONValue("flags", TEXT("[]"));
@@ -489,19 +493,18 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig() const
 	Writer->WriteObjectEnd();
 	Writer->WriteArrayEnd();
 	Writer->WriteObjectEnd();
+	Writer->WriteArrayEnd(); // Worker section end
+	Writer->WriteObjectEnd(); // End of json
 
-	Writer->WriteArrayEnd();
-
-	Writer->WriteObjectEnd();
 	Writer->Close();
 
-	if (FFileHelper::SaveStringToFile(Text, *FileName))
+	if (FFileHelper::SaveStringToFile(Text, *LaunchConfigPath))
 	{
 		return true;
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '{0}'. Perhaps the file is Read-Only?"), *FileName);
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '{0}'. Perhaps the file is Read-Only?"), *LaunchConfigPath);
 		return false;
 	}
 }
