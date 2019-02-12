@@ -5,7 +5,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Gameframework/PlayerController.h"
-#include "Utils/EntityRegistry.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -102,6 +101,6 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 	NewInterest.ComponentInterest.Add(Info.SchemaComponents[SCHEMA_ClientRPC], CurrentInterest.CreateComponentInterest());
 	Worker_ComponentUpdate Update = NewInterest.CreateInterestUpdate();
 
-	Worker_EntityId EntityId = NetDriver->EntityRegistry->GetEntityIdFromActor(PlayerController);
+	Worker_EntityId EntityId = PackageMapClient->GetEntityIdFromObject(PlayerController);
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }

@@ -122,9 +122,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// Set the timer manager.
 	TimerManager = &LoadedWorld->GetTimerManager();
 
-	// Set up manager objects.
-	EntityRegistry = NewObject<UEntityRegistry>(this);
-
 	USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance());
 
 	if (!GameInstance)

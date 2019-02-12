@@ -57,7 +57,7 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_
 	// check we haven't already assigned a NetGUID to this object
 	if (!NetGUID.IsValid())
 	{
-		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
+		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor, EntityId);
 	}
 	return NetGUID;
 }
@@ -125,6 +125,18 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject*
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
+Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(UObject* Object)
+{
+	if (Object == nullptr)
+	{
+		return SpatialConstants::INVALID_ENTITY_ID;
+	}
+
+	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
+
+	return GetUnrealObjectRefFromNetGUID(NetGUID).Entity;
+}
+
 void USpatialPackageMapClient::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const
 {
 	static_cast<FSpatialNetGUIDCache*>(GuidCache.Get())->NetworkRemapObjectRefPaths(ObjectRef);
@@ -143,13 +155,11 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
-FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
+FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
-
-	Worker_EntityId EntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor);
 	check(EntityId > 0);
 
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 	USpatialReceiver* Receiver = SpatialNetDriver->Receiver;
 
 	FNetworkGUID NetGUID;
@@ -272,7 +282,9 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
-	AActor* Actor = SpatialNetDriver->EntityRegistry->GetActorFromEntityId(EntityId);
+	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
+
+	AActor* Actor = Cast<AActor>(GetObjectFromNetGUID(EntityNetGUID, true));
 	if (Actor == nullptr)
 	{
 		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Trying to clean up Actor for EntityId %lld but Actor does not exist! Will not cleanup subobjects for this Entity"), EntityId);
@@ -308,7 +320,6 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	}
 
 	// Remove actor.
-	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
 	FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
 	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
 	UnrealObjectRefToNetGUID.Remove(*ActorRef);

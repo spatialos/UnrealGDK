@@ -33,6 +33,7 @@ public:
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId& EntityId);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
+	Worker_EntityId GetEntityIdFromObject(UObject* Object);
 
 	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const;
 
@@ -48,7 +49,7 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 		
-	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
+	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId);
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);
 	void RemoveNetGUID(const FNetworkGUID& NetGUID);
 

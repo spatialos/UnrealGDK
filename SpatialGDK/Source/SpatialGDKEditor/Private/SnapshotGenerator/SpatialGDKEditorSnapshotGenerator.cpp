@@ -202,9 +202,6 @@ void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnect
 
 	NetDriver->ClassInfoManager = ClassInfoManager;
 
-	EntityRegistry = NewObject<UEntityRegistry>();
-	NetDriver->EntityRegistry = EntityRegistry;
-
 	NetConnection = NewObject<USpatialNetConnection>();
 	NetConnection->Driver = NetDriver;
 	NetConnection->State = USOCK_Closed;
@@ -423,7 +420,6 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	// Need to add all actors in the world to the package map so they have assigned UnrealObjRefs for the ComponentFactory to use
 	bSuccess &= ProcessSupportedActors(WorldActors, ClassInfoManager, [&PackageMap, &EntityRegistry, &ClassInfoManager](AActor* Actor, Worker_EntityId EntityId)
 	{
-		EntityRegistry->AddToRegistry(EntityId, Actor);
 		PackageMap->ResolveEntityActor(Actor, EntityId);
 		return true;
 	});
