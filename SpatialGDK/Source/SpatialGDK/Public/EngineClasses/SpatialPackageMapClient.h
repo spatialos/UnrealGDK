@@ -31,6 +31,7 @@ public:
 	FNetworkGUID GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const;
 
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
+	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId& EntityId);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
 
 	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const;

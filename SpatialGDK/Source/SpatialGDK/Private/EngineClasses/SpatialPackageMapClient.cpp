@@ -13,7 +13,6 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityRegistry.h"
 #include "Utils/SchemaOption.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
@@ -107,6 +106,11 @@ TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromUnrealObjectRef(c
 	}
 
 	return nullptr;
+}
+
+TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Worker_EntityId& EntityId)
+{
+	return GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, 0));
 }
 
 FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject* Object)

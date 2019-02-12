@@ -18,7 +18,6 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
-#include "Utils/EntityRegistry.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
@@ -395,9 +394,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
-		// Add to entity registry.
-		EntityRegistry->AddToRegistry(EntityId, EntityActor);
-
 		if (bDoingDeferredSpawn)
 		{
 			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
@@ -467,14 +463,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
-	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
-	TWeakObjectPtr<UObject> WeakActor(Actor);
+	TWeakObjectPtr<UObject> WeakActor = PackageMap->GetObjectFromEntityId(EntityId);
 
+	// Actor has been destroyed already. Clean up surrounding bookkeeping.
 	if (!WeakActor.IsValid())
 	{
-		DestroyActor(Actor, EntityId);
+		DestroyActor(nullptr, EntityId);
 		return;
 	}
+
+	AActor* Actor = Cast<AActor>(WeakActor.Get());
 
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
@@ -573,11 +571,6 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 
 void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 {
-	if (Actor == nullptr)
-	{
-		return;
-	}
-
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
 	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative
@@ -598,12 +591,16 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! Actor: %s %lld"), *Actor->GetName(), EntityId);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! EntityId: %lld"), EntityId);
 	}
 
 	// It is safe to call AActor::Destroy even if the destruction has already started.
+<<<<<<< Updated upstream
 	TWeakObjectPtr<UObject> WeakActor(Actor);
 	if (WeakActor.IsValid() && !Actor->Destroy(true))
+=======
+	if (Actor != nullptr && !Actor->Destroy(true))
+>>>>>>> Stashed changes
 	{
 		UE_LOG(LogSpatialReceiver, Error, TEXT("Failed to destroy actor in RemoveActor %s %lld"), *Actor->GetName(), EntityId);
 	}
@@ -617,7 +614,6 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 {
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
-	NetDriver->GetEntityRegistry()->RemoveFromRegistry(EntityId);
 	NetDriver->RemoveActorChannel(EntityId);
 }
 

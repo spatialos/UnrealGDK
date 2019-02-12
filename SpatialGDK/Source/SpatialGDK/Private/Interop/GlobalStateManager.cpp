@@ -22,7 +22,6 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
-#include "Utils/EntityRegistry.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 

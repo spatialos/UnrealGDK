@@ -14,7 +14,6 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
 #include "Utils/ComponentFactory.h"
-#include "Utils/EntityRegistry.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaUtils.h"

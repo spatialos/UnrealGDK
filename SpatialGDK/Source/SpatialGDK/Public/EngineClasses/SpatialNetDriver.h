@@ -68,8 +68,6 @@ public:
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
-	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
-
 	// When the AcceptingPlayers state on the GSM has changed this method will be called.
 	void OnAcceptingPlayersChanged(bool bAcceptingPlayers);
 
@@ -103,8 +101,6 @@ public:
 	USpatialPackageMapClient* PackageMap;
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
-	UPROPERTY()
-	UEntityRegistry* EntityRegistry;
 	UPROPERTY()
 	USnapshotManager* SnapshotManager;
 
