@@ -118,9 +118,9 @@ namespace SpatialConstants
 
 	const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 
-	const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID = 1;
+	const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID                      = 1;
 
-	const Schema_FieldId HEARTBEAT_EVENT_ID = 1;
+	const Schema_FieldId HEARTBEAT_EVENT_ID                                 = 1;
 
 	// TODO: Make these easily configurable: UNR-984
 	const float HEARTBEAT_INTERVAL_SECONDS = 2.0f;
