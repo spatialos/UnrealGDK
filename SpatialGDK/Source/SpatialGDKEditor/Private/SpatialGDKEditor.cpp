@@ -36,7 +36,7 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 	PreProcessSchemaMap();
 
-	LoadDefaultGameMode();
+	LoadDefaultGameModes();
 
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
 		[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()

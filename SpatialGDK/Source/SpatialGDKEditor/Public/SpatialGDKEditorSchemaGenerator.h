@@ -12,4 +12,4 @@ SPATIALGDKEDITOR_API void InitClassPathToSchemaMap();
 
 SPATIALGDKEDITOR_API void PreProcessSchemaMap();
 
-SPATIALGDKEDITOR_API void LoadDefaultGameMode();
+SPATIALGDKEDITOR_API void LoadDefaultGameModes();

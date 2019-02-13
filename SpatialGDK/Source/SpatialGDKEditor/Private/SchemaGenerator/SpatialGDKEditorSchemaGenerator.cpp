@@ -7,7 +7,6 @@
 #include "Components/SceneComponent.h"
 #include "CoreGlobals.h"
 #include "Engine/LevelScriptActor.h"
-#include "GameFramework/GameModeBase.h"
 #include "GeneralProjectSettings.h"
 #include "GenericPlatform/GenericPlatformFile.h"
 #include "GenericPlatform/GenericPlatformProcess.h"
@@ -30,11 +29,11 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
 TArray<UClass*> SchemaGeneratedClasses;
-TArray<UClass*> AdditionalSchemaGeneratedClasses; //Used to keep UClasses in memory whilst generating schema for them.
+TArray<UClass*> AdditionalSchemaGeneratedClasses; // Used to keep UClasses in memory whilst generating schema for them.
 TMap<FString, FSchemaData> ClassPathToSchema;
 uint32 NextAvailableComponentId;
 
-// Prevent name collisions
+// Prevent name collisions.
 TMap<UClass*, FString> ClassToSchemaName;
 TMap<FString, UClass*> UsedSchemaNames;
 
@@ -66,7 +65,7 @@ int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, TShared
 
 bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 {
-	// Check Replicated Data
+	// Check Replicated data.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -87,7 +86,7 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 		}
 	}
 
-	// Check Handover data
+	// Check Handover data.
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	TMap<FString, TSharedPtr<FUnrealProperty>> SchemaHandoverDataNames;
 	for (auto& Prop : HandoverData)
@@ -105,7 +104,7 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 		SchemaHandoverDataNames.Add(NextSchemaHandoverDataName, Prop.Value);
 	}
 
-	// Check RPC name validity
+	// Check RPC name validity.
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
 	for (auto Group : GetRPCTypes())
 	{
@@ -152,7 +151,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 		UsedSchemaNames.Add(SchemaName, Class);
 	}
 
-	// Check for duplicate names in the generated type info
+	// Check for duplicate names in the generated type info.
 	for (auto& TypeInfo : TypeInfos)
 	{
 		if (!CheckIdentifierNameValidity(TypeInfo))
@@ -168,7 +167,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 
 void  GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
 {
-	// Generate the actual schema
+	// Generate the actual schema.
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		NextAvailableComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, NextAvailableComponentId, TypeInfo);
@@ -214,29 +213,6 @@ void SaveSchemaDatabase()
 			FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to '%s'! Please make sure the file is writeable."), *FullPath)));
 		}
 	});
-}
-
-void LoadDefaultGameMode()
-{
-	// Get the default GameMode from the DefaultEngine.ini
-	FString DefaultGameModePath;
-	GConfig->GetString(
-		TEXT("/Script/EngineSettings.GameMapsSettings"),
-		TEXT("GlobalDefaultGameMode"),
-		DefaultGameModePath,
-		GEngineIni
-	);
-
-	if (DefaultGameModePath.IsEmpty())
-	{
-		return;
-	}
-
-	// Load the default GameMode so it is ready for schema generation.
-	if (StaticLoadClass(AGameModeBase::StaticClass(), NULL, *DefaultGameModePath) == nullptr)
-	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Could not load the default GameMode '%s'. Schema may not be generated for this class."), *DefaultGameModePath);
-	}
 }
 
 TArray<UClass*> GetAllSupportedClasses()
@@ -321,6 +297,39 @@ void InitClassPathToSchemaMap()
 	}
 }
 
+void LoadDefaultGameModes()
+{
+	TArray<FString> GameModesToLoad{ "GlobalDefaultGameMode", "GlobalDefaultServerGameMode" };
+
+	for (FString GameMode : GameModesToLoad)
+	{
+		// Get the GameMode from the DefaultEngine.ini.
+		FString GameModePath;
+		GConfig->GetString(
+			TEXT("/Script/EngineSettings.GameMapsSettings"),
+			*GameMode,
+			GameModePath,
+			GEngineIni
+		);
+
+		if (!GameModePath.IsEmpty())
+		{
+			const FSoftObjectPath ItemToReference(GameModePath);
+
+			// First check if the GameMode is already loaded into memory.
+			UObject* const ResolvedObject = ItemToReference.ResolveObject();
+			UClass*  const LoadedClass = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
+
+			// If the GameMode was not already loaded, prevent the garbage collector from deleting it until schema is generated.
+			if (LoadedClass)
+			{
+				LoadedClass->AddToRoot();
+				AdditionalSchemaGeneratedClasses.Add(LoadedClass);
+			}
+		}
+	}
+}
+
 void PreProcessSchemaMap()
 {
 	TArray<FString> EntriesToRemove;
@@ -336,7 +345,7 @@ void PreProcessSchemaMap()
 		// Only store classes that weren't currently loaded into memory.
 		if (LoadedClass)
 		{
-			// don't allow the Garbage Collector to delete these objects until we are done generating schema.
+			// Don't allow the Garbage Collector to delete these objects until we are done generating schema.
 			LoadedClass->AddToRoot();
 			AdditionalSchemaGeneratedClasses.Add(LoadedClass);
 		}
@@ -359,7 +368,7 @@ bool SpatialGDKGenerateSchema()
 	ClassToSchemaName.Empty();
 	UsedSchemaNames.Empty();
 
-	// gets the classes currently loaded into memory
+	// Gets the classes currently loaded into memory.
 	SchemaGeneratedClasses = GetAllSupportedClasses();
 	SchemaGeneratedClasses.Sort();
 
@@ -396,7 +405,7 @@ bool SpatialGDKGenerateSchema()
 
 	SaveSchemaDatabase();
 
-	//Allow the garbage collector to clean up classes that were manually loaded and forced to keep alive for the Schema Generator process.
+	// Allow the garbage collector to clean up classes that were manually loaded and forced to keep alive for the Schema Generator process.
 	for (const auto& EntryIn : AdditionalSchemaGeneratedClasses)
 	{
 		if (EntryIn)
