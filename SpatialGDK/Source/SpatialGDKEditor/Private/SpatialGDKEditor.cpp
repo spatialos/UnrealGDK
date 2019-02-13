@@ -16,7 +16,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 FSpatialGDKEditor::FSpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
 {
-	InitClassPathToSchemaMap();
+	TryLoadExistingSchemaDatabase();
 }
 
 void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
