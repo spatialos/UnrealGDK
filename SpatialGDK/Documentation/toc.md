@@ -6,7 +6,7 @@
     - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
     - [3: Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
     - Next steps - either:
-        - [Set up the SpatialOS GDK template]({{urlRoot}}/content/get-started/gdk-template)
+        - [Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
         - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
 - <h3>[- Feature list]({{urlRoot}}/features)</h3>
 - <h3>[- What's new in alpha]({{urlRoot}}/content/whatsnew)</h3>
