@@ -132,12 +132,9 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::INTEREST_COMPONENT_ID:
-<<<<<<< HEAD
 	case SpatialConstants::NOT_SPAWNED_COMPONENT_ID:
-=======
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
->>>>>>> 9aa87f97101184bab1766ded34b5a4e735eac321
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:

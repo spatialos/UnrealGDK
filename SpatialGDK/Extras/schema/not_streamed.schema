@@ -1,0 +1,7 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+// Actor that is a part of the PersistentLevel or created with SpawnActor
+component NotStreamed {
+    id = 100010;
+}
