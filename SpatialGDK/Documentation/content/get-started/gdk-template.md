@@ -48,8 +48,8 @@ Now you need to clone the SpatialOS GDK for Unreal into your project. To do this
 
 To use the Starter Template, you must build the GDK for Unreal module dependencies and then add the GDK to your project. To do this: 
 
-1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository, and double-click **`Setup.bat`**. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in.
-1. In the same directory, double-click **`<YourProject>`.sln** to open it with Visual Studio.
+1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository (`<Game>\Plugins\UnrealGDK\...`), and double-click **`Setup.bat`**. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in.
+1. In **File Explorer**, navigate to your <GameRoot> directory and double-click **`<YourProject>`.sln** to open it with Visual Studio.
 1. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
 1. Open **`<YourProject>`.uproject** in the Unreal Editor. 
 1. On the GDK for Unreal toolbar, select [**Schema**](https://docs.improbable.io/reference/latest/shared/glossary) to generate schema.<br/>
