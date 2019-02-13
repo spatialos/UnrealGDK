@@ -141,7 +141,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 	}
 
 	// Ensure all world composition tiles are also loaded
-	if (GWorld->WorldComposition != NULL)
+	if (GWorld->WorldComposition != nullptr)
 	{
 		TArray<ULevelStreaming*> StreamingTiles = GWorld->WorldComposition->TilesStreaming;
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Loading %d World Composition Tiles"), StreamingTiles.Num());
