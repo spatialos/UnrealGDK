@@ -21,7 +21,7 @@ public:
 
 private:
 	const FString MapPathsParamName = TEXT("MapPaths");	// Commandline Argument Name used to declare the paths to generate schema/snapshots against
-	const FString GameDirName = TEXT("/Game");			// Root directory name that maps will ultimately be found in
+	const FString AssetPathGameDirName = TEXT("/Game");	// Root asset path directory name that maps will ultimately be found in
 
 	TArray<FString> GeneratedMapPaths;
 

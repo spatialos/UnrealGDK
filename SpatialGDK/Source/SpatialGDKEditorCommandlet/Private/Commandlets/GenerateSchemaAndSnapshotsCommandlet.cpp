@@ -77,9 +77,9 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 	// will be consistent behaviour going forward).
 	// A single map is differentiated from a directory by the inclusion of "/" at the end of the path.
 	FString CorrectedPath;
-	if (!InPath.StartsWith(GameDirName))
+	if (!InPath.StartsWith(AssetPathGameDirName))
 	{
-		CorrectedPath = GameDirName;
+		CorrectedPath = AssetPathGameDirName;
 	}
 	CorrectedPath.PathAppend(*InPath, InPath.Len());
 
