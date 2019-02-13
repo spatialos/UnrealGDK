@@ -11,3 +11,5 @@ SPATIALGDKEDITOR_API bool SpatialGDKGenerateSchema();
 SPATIALGDKEDITOR_API void InitClassPathToSchemaMap();
 
 SPATIALGDKEDITOR_API void PreProcessSchemaMap();
+
+SPATIALGDKEDITOR_API void LoadDefaultGameMode();

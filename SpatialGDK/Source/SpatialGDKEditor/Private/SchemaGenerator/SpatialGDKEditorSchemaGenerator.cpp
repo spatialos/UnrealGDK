@@ -5,7 +5,9 @@
 #include "AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "Components/SceneComponent.h"
+#include "CoreGlobals.h"
 #include "Engine/LevelScriptActor.h"
+#include "GameFramework/GameModeBase.h"
 #include "GeneralProjectSettings.h"
 #include "GenericPlatform/GenericPlatformFile.h"
 #include "GenericPlatform/GenericPlatformProcess.h"
@@ -214,6 +216,24 @@ void SaveSchemaDatabase()
 	});
 }
 
+void LoadDefaultGameMode()
+{
+	// Get the default GameMode from the DefaultEngine.ini
+	FString DefaultGameModePath;
+	GConfig->GetString(
+		TEXT("/Script/EngineSettings.GameMapsSettings"),
+		TEXT("GlobalDefaultGameMode"),
+		DefaultGameModePath,
+		GEngineIni
+	);
+
+	// Load the default GameMode so it is ready for schema generation.
+	if (StaticLoadClass(AGameModeBase::StaticClass(), NULL, *DefaultGameModePath) == nullptr)
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Could not load the default GameMode '%s'. Schema may not be generated for this class."), *DefaultGameModePath);
+	}
+}
+
 TArray<UClass*> GetAllSupportedClasses()
 {
 	TSet<UClass*> Classes;
@@ -308,21 +328,21 @@ void PreProcessSchemaMap()
 		UObject* const ResolvedObject = ItemToReference.ResolveObject();
 		UClass*  const LoadedClass    = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
 
-		// only store classes that weren't currently loaded into memory
+		// Only store classes that weren't currently loaded into memory.
 		if (LoadedClass)
 		{
-			// don't allow the Garbage Collector to delete these objects until we are done generating schema
+			// don't allow the Garbage Collector to delete these objects until we are done generating schema.
 			LoadedClass->AddToRoot();
 			AdditionalSchemaGeneratedClasses.Add(LoadedClass);
 		}
-		// if the class isn't loaded then mark the entry for removal from the map
+		// If the class isn't loaded then mark the entry for removal from the map.
 		else if(!ResolvedObject && !LoadedClass)
 		{
 			EntriesToRemove.Add(ClassPath);
 		}
 	}
 
-	// this will prevent any garbage/unused classes from sticking around in the SchemaDatabase as clutter
+	// This will prevent any garbage/unused classes from sticking around in the SchemaDatabase as clutter.
 	for (const auto& EntryIn : EntriesToRemove)
 	{
 		ClassPathToSchema.Remove(EntryIn);
