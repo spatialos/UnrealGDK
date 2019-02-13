@@ -91,7 +91,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Selecting direct map %s"), *InPath);
 		GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, CorrectedPath);
 	}
-	else
+	else if (CorrectedPath.EndsWith(TEXT("/")))
 	{
 		// Whole Directory
 		UObjectLibrary* ObjectLibrary = UObjectLibrary::CreateLibrary(UWorld::StaticClass(), false, true);
@@ -111,6 +111,14 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Selecting map %s"), *MapPath);
 			GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, MapPath);
 		}
+	}
+	else
+	{
+		FString CorrectedLongPackageNameError;
+		FString Dummy;
+		FPackageName::TryConvertFilenameToLongPackageName(CorrectedPath, Dummy, &CorrectedLongPackageNameError);
+		UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("Requested path \"%s\" is not in the expected format. %s"), *InPath, *CorrectedLongPackageNameError);
+		return;	// Future-proofing
 	}
 }
 
