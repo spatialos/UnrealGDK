@@ -297,6 +297,26 @@ void InitClassPathToSchemaMap()
 	}
 }
 
+bool TryLoadClassForSchemaGeneration(FString ClassPath)
+{
+	const FSoftObjectPath ItemToReference(ClassPath);
+
+	// First check if the object is already loaded into memory.
+	UObject* const ResolvedObject = ItemToReference.ResolveObject();
+	UClass*  const LoadedClass = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
+
+	// Only store classes that weren't currently loaded into memory.
+	if (LoadedClass)
+	{
+		// Don't allow the Garbage Collector to delete these objects until we are done generating schema.
+		LoadedClass->AddToRoot();
+		AdditionalSchemaGeneratedClasses.Add(LoadedClass);
+	}
+
+	// Return true if the class exists.
+	return ResolvedObject || LoadedClass;
+}
+
 void LoadDefaultGameModes()
 {
 	TArray<FString> GameModesToLoad{ "GlobalDefaultGameMode", "GlobalDefaultServerGameMode" };
@@ -314,18 +334,7 @@ void LoadDefaultGameModes()
 
 		if (!GameModePath.IsEmpty())
 		{
-			const FSoftObjectPath ItemToReference(GameModePath);
-
-			// First check if the GameMode is already loaded into memory.
-			UObject* const ResolvedObject = ItemToReference.ResolveObject();
-			UClass*  const LoadedClass = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
-
-			// If the GameMode was not already loaded, prevent the garbage collector from deleting it until schema is generated.
-			if (LoadedClass)
-			{
-				LoadedClass->AddToRoot();
-				AdditionalSchemaGeneratedClasses.Add(LoadedClass);
-			}
+			TryLoadClassForSchemaGeneration(GameModePath);
 		}
 	}
 }
@@ -336,21 +345,11 @@ void PreProcessSchemaMap()
 	for (const auto& EntryIn : ClassPathToSchema)
 	{
 		const FString ClassPath = EntryIn.Key;
-		const FSoftObjectPath ItemToReference(ClassPath);
-		
-		// First check if the object is already loaded into memory.
-		UObject* const ResolvedObject = ItemToReference.ResolveObject();
-		UClass*  const LoadedClass    = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
 
-		// Only store classes that weren't currently loaded into memory.
-		if (LoadedClass)
-		{
-			// Don't allow the Garbage Collector to delete these objects until we are done generating schema.
-			LoadedClass->AddToRoot();
-			AdditionalSchemaGeneratedClasses.Add(LoadedClass);
-		}
+		bool ClassExists = TryLoadClassForSchemaGeneration(ClassPath);
+
 		// If the class isn't loaded then mark the entry for removal from the map.
-		else if(!ResolvedObject && !LoadedClass)
+		if(!ClassExists)
 		{
 			EntriesToRemove.Add(ClassPath);
 		}
