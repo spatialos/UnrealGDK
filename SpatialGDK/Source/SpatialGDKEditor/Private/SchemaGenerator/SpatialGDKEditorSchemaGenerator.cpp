@@ -227,6 +227,11 @@ void LoadDefaultGameMode()
 		GEngineIni
 	);
 
+	if (DefaultGameModePath.IsEmpty())
+	{
+		return;
+	}
+
 	// Load the default GameMode so it is ready for schema generation.
 	if (StaticLoadClass(AGameModeBase::StaticClass(), NULL, *DefaultGameModePath) == nullptr)
 	{
