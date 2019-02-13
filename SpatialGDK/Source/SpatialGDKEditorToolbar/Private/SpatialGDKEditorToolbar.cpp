@@ -463,8 +463,39 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 	Writer->WriteObjectStart();
 	Writer->WriteValue(TEXT("layer"), TEXT("UnrealWorker"));
 	Writer->WriteObjectStart("rectangle_grid");
-	Writer->WriteValue(TEXT("cols"), 1);
-	Writer->WriteValue(TEXT("rows"), 1);
+
+	int Cols = 1;
+	int Rows = 1;
+
+	if (const ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>())
+	{
+		int NumServers = 1;
+		PlayInSettings->GetPlayNumberOfServers(NumServers);
+		
+		if (NumServers < 2)
+		{
+			Cols = NumServers;
+			Rows = 1;
+		}
+		else
+		{
+			//Find greatest divisor.
+			int GreatestDivisor = 1;
+			for (int Divisor = 2; Divisor <= FMath::Sqrt(NumServers); Divisor++)
+			{
+				if (NumServers % Divisor == 0)
+				{
+					GreatestDivisor = NumServers / Divisor;
+				}
+			}
+
+			Cols = GreatestDivisor;
+			Rows = NumServers / GreatestDivisor;
+		}
+	}
+
+	Writer->WriteValue(TEXT("cols"), Cols);
+	Writer->WriteValue(TEXT("rows"), Rows);
 	Writer->WriteObjectEnd();
 	Writer->WriteObjectStart(TEXT("options"));
 	Writer->WriteValue(TEXT("manual_worker_connection_only"), true);
