@@ -98,16 +98,16 @@ namespace SpatialConstants
 	const Worker_ComponentId PERSISTENCE_COMPONENT_ID						= 55;
 	const Worker_ComponentId INTEREST_COMPONENT_ID							= 58;
 
-	const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 100001;
-	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 100002;
-	const Worker_ComponentId SINGLETON_COMPONENT_ID							= 100003;
-	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 100004;
-	const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 100005;
-	const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 100006;
-    const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 100007;
-	const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 100008;
-	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 100009;
-	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 100010;
+	const Worker_ComponentId SPAWN_DATA_COMPONENT_ID						= 9999;
+	const Worker_ComponentId PLAYER_SPAWNER_COMPONENT_ID					= 9998;
+	const Worker_ComponentId SINGLETON_COMPONENT_ID							= 9997;
+	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 9996;
+	const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 9995;
+	const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 9994;
+    const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 9993;
+	const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 9992;
+	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 9991;
+	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
 	const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
 
