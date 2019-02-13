@@ -5,7 +5,7 @@
 #include "AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "Components/SceneComponent.h"
-#include "CoreGlobals.h"
+#include "ConfigCacheIni.h"
 #include "Engine/LevelScriptActor.h"
 #include "GeneralProjectSettings.h"
 #include "GenericPlatform/GenericPlatformFile.h"
