@@ -36,11 +36,9 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 	PreProcessSchemaMap();
 
-	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
-		[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()
-	{
-		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
-		{
+	AsyncTask(ENamedThreads::GameThread, [this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]() {
+		auto SchemaGeneratorResult = SpatialGDKGenerateSchema();
+		if (!SchemaGeneratorResult) {
 			if (FailureCallback.IsBound())
 			{
 				FailureCallback.Execute();

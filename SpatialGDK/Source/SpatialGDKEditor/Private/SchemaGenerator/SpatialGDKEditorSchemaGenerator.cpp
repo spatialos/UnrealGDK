@@ -24,6 +24,7 @@
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
+#include "Editor/EditorEngine.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
@@ -331,6 +332,20 @@ void PreProcessSchemaMap()
 
 bool SpatialGDKGenerateSchema()
 {
+	// compile all changed blueprints
+	TArray<UBlueprint*> ErroredBlueprints;
+	FInternalPlayLevelUtils::ResolveDirtyBlueprints(false, ErroredBlueprints);
+
+	if (ErroredBlueprints.Num() != 0)
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("There were errors when compiling blueprints. Schema has not been generated."));
+		for (auto& Blueprint : ErroredBlueprints)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not compile %s"), *Blueprint->GetName());
+		}
+		return false;
+	}
+
 	ClassToSchemaName.Empty();
 	UsedSchemaNames.Empty();
 
