@@ -207,19 +207,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 
 void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 {
-<<<<<<< HEAD
 	if (Op.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
-=======
-	if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
-	{
-		if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-		{
-			HandlePlayerLifecycleAuthority(Op, PlayerController);
-		}
-	}
-
-	if (NetDriver->IsServer())
->>>>>>> 9aa87f97101184bab1766ded34b5a4e735eac321
 	{
 		GlobalStateManager->AuthorityChanged(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE, Op.entity_id);
 	}
@@ -235,6 +223,11 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	if (Actor == nullptr)
 	{
 		return;
+	}
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+	{
+		HandlePlayerLifecycleAuthority(Op, PlayerController);
 	}
 
 	if (NetDriver->IsServer())
@@ -765,11 +758,8 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-<<<<<<< HEAD
 	case SpatialConstants::NOT_SPAWNED_COMPONENT_ID:
-=======
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
->>>>>>> 9aa87f97101184bab1766ded34b5a4e735eac321
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:

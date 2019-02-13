@@ -127,7 +127,8 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 		{
 			if (NetDriver->IsServer() &&
 				NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-				NetDriver->GetWorld()->bIsTearingDown)
+				NetDriver->GetWorld()->bIsTearingDown &&
+				NetDriver->PackageMap->GetObjectFromEntityId(EntityId).IsValid())
 			{
 				// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 				DeleteEntityIfAuthoritative();
