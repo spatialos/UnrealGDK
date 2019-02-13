@@ -175,9 +175,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
 	}
 
-	if (StablyNamedObjectRef.IsSet())
+	if (Actor->HasAnyFlags(RF_WasLoaded))
 	{
-		if (uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId.Find(StablyNamedObjectRef->GetLevelReference().Outer->Path.GetValue()))
+		if (uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId.Find(Actor->GetLevel()->GetOuter()->GetName()))
 		{
 			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(*ComponentId));
 		}
