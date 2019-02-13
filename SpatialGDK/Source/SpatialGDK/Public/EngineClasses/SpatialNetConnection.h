@@ -5,10 +5,13 @@
 #include "CoreMinimal.h"
 #include "IpConnection.h"
 
-<<<<<<< HEAD
 #include "Schema/Interest.h"
 
+#include <WorkerSDK/improbable/c_worker.h>
+
 #include "SpatialNetConnection.generated.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetConnection, Log, All);
 
 using namespace improbable;
 
@@ -51,13 +54,6 @@ struct ClientInterest
 		return CurrentInterest;
 	}
 };
-=======
-#include <WorkerSDK/improbable/c_worker.h>
-
-#include "SpatialNetConnection.generated.h"
-
-DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetConnection, Log, All);
->>>>>>> 9aa87f97101184bab1766ded34b5a4e735eac321
 
 UCLASS(transient)
 class SPATIALGDK_API USpatialNetConnection : public UIpConnection
@@ -97,13 +93,11 @@ public:
 	UPROPERTY()
 	FString WorkerAttribute;
 
-<<<<<<< HEAD
 	ClientInterest CurrentInterest;
-=======
+
 	class FTimerManager* TimerManager;
 
 	// Player lifecycle
 	Worker_EntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
->>>>>>> 9aa87f97101184bab1766ded34b5a4e735eac321
 };
