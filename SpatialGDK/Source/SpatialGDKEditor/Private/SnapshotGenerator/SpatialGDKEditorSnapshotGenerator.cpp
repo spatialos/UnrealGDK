@@ -98,6 +98,14 @@ Worker_ComponentData CreateDeploymentData()
 	return DeploymentData;
 }
 
+Worker_ComponentData CreateGSMShutdownData()
+{
+	Worker_ComponentData GSMShutdownData;
+	GSMShutdownData.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
+	GSMShutdownData.schema_type = Schema_CreateComponentData(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID);
+	return GSMShutdownData;
+}
+
 Worker_ComponentData CreateStartupActorManagerData()
 {
 	Worker_ComponentData StartupActorManagerData{};
@@ -124,6 +132,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
@@ -131,7 +140,9 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(CreateSingletonManagerData());
 	Components.Add(CreateDeploymentData());
+	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
+
 	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();

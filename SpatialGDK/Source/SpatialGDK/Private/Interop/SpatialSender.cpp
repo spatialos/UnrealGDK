@@ -13,6 +13,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialDispatcher.h"
+#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
@@ -102,6 +103,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
+	if (Actor->IsA<APlayerController>())
+	{
+		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
+	}
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
@@ -185,6 +190,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	else
 	{
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_SPAWNED_COMPONENT_ID));
+	}
+
+	if (Actor->IsA<APlayerController>())
+	{
+		ComponentDatas.Add(improbable::Heartbeat().CreateHeartbeatData());
 	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
