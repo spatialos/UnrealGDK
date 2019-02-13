@@ -88,8 +88,21 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 	if (FPackageName::IsValidLongPackageName(CorrectedPath))
 	{
 		// Single Map
-		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Selecting direct map %s"), *InPath);
-		GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, CorrectedPath);
+		FString MapPathToLoad = CorrectedPath;
+		if (!InPath.Contains(TEXT("/")))
+		{
+			//We assume that a lack of '/' in InPath means the user is specifying only a map's name, which will need to be searched for
+			FString LongPackageName;
+			FString Filename;
+			if (!FPackageName::SearchForPackageOnDisk(*InPath, &LongPackageName, &Filename))
+			{
+				UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("Could not find map matching pattern %s"), *InPath);
+				return;
+			}
+			MapPathToLoad = LongPackageName;
+		}
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Selecting direct map %s"), *MapPathToLoad);
+		GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, MapPathToLoad);
 	}
 	else if (CorrectedPath.EndsWith(TEXT("/")))
 	{
