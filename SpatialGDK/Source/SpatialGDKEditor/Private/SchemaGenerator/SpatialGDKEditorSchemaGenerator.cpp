@@ -319,7 +319,7 @@ bool TryLoadClassForSchemaGeneration(FString ClassPath)
 
 void LoadDefaultGameModes()
 {
-	TArray<FString> GameModesToLoad{ "GlobalDefaultGameMode", "GlobalDefaultServerGameMode" };
+	TArray<FString> GameModesToLoad{ TEXT("GlobalDefaultGameMode"), TEXT("GlobalDefaultServerGameMode") };
 
 	for (FString GameMode : GameModesToLoad)
 	{
