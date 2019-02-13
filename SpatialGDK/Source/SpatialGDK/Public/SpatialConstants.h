@@ -104,8 +104,7 @@ namespace SpatialConstants
 	const Worker_ComponentId UNREAL_METADATA_COMPONENT_ID					= 100004;
 	const Worker_ComponentId SINGLETON_MANAGER_COMPONENT_ID					= 100005;
 	const Worker_ComponentId DEPLOYMENT_MAP_COMPONENT_ID					= 100006;
-	const Worker_ComponentId SERVER_ONLY_SINGLETON_COMPONENT_ID				= 100007;
-  const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID				= 100007;
+    const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 100007;
 	const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 100008;
 	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 100009;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 100010;
@@ -117,9 +116,9 @@ namespace SpatialConstants
 
 	const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
 
-	const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID = 1;
+	const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID                      = 1;
 
-	const Schema_FieldId HEARTBEAT_EVENT_ID = 1;
+	const Schema_FieldId HEARTBEAT_EVENT_ID                                 = 1;
 
 	// TODO: Make these easily configurable: UNR-984
 	const float HEARTBEAT_INTERVAL_SECONDS = 2.0f;
