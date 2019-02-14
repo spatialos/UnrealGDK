@@ -260,6 +260,9 @@ int64 USpatialActorChannel::ReplicateActor()
 		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
 	}
 
+	// Use spatial's bCreatingNewEntity to inform the replication flags.
+	RepFlags.bNetInitial = bCreatingNewEntity;
+
 	// Here, Unreal would have determined if this connection belongs to this actor's Outer.
 	// We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
 	// Setting this to true, but should not matter in the end.
