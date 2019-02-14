@@ -29,10 +29,12 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Generate default launch config"))
 	bool bGenerateDefaultLaunchConfig;
 
+private:
 	/** Launch configuration file used for `spatial local launch`. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "!bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration"))
-	FString SpatialOSLaunchConfig;
+	FFilePath SpatialOSLaunchConfig;
 
+public:
 	/** Stop `spatial local launch` when shutting down editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Stop on exit"))
 	bool bStopSpatialOnExit;
@@ -60,7 +62,9 @@ public:
 
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
-		return SpatialOSLaunchConfig.IsEmpty() ? FString(TEXT("default_launch.json")) : SpatialOSLaunchConfig;
+		return SpatialOSLaunchConfig.FilePath.IsEmpty()
+			? FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/default_launch.json"))) 
+			: SpatialOSLaunchConfig.FilePath;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotFile() const

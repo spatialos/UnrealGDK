@@ -3,9 +3,10 @@
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, bGenerateDefaultLaunchConfig(true)
 {
 	SpatialOSDirectory.Path = GetSpatialOSDirectory();
-	SpatialOSLaunchConfig = GetSpatialOSLaunchConfig();
+	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotPath();
 	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
 	GeneratedSchemaOutputFolder.Path = GetGeneratedSchemaOutputFolder();
@@ -16,7 +17,7 @@ FString USpatialGDKEditorSettings::ToString()
 	TArray<FStringFormatArg> Args;
 	Args.Add(SpatialOSDirectory.Path);
 	Args.Add(bGenerateDefaultLaunchConfig);
-	Args.Add(SpatialOSLaunchConfig);
+	Args.Add(SpatialOSLaunchConfig.FilePath);
 	Args.Add(bStopSpatialOnExit);
 	Args.Add(SpatialOSSnapshotPath.Path);
 	Args.Add(SpatialOSSnapshotFile);
