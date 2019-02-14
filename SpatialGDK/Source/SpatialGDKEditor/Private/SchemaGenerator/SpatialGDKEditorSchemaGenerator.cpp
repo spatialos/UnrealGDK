@@ -300,6 +300,19 @@ void TryLoadExistingSchemaDatabase()
 	}
 }
 
+void TryLoadExistingSchemaDatabaseInEditor()
+{
+	TPromise<void> Promise;
+	TFuture<void> Future = Promise.GetFuture();
+
+	AsyncTask(ENamedThreads::GameThread, [&Promise] {
+		TryLoadExistingSchemaDatabase();
+		Promise.SetValue();
+	});
+
+	Future.Get();
+}
+
 bool TryLoadClassForSchemaGeneration(FString ClassPath)
 {
 	const FSoftObjectPath ItemToReference(ClassPath);
@@ -369,6 +382,8 @@ bool SpatialGDKGenerateSchema()
 {
 	ClassToSchemaName.Empty();
 	UsedSchemaNames.Empty();
+
+	TryLoadExistingSchemaDatabaseInEditor();
 
 	// Gets the classes currently loaded into memory.
 	SchemaGeneratedClasses = GetAllSupportedClasses();
