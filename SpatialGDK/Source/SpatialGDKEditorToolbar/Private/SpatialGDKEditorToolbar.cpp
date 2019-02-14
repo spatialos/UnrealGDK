@@ -472,7 +472,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 		int NumServers = 1;
 		PlayInSettings->GetPlayNumberOfServers(NumServers);
 		
-		if (NumServers < 2)
+		if (NumServers <= 2)
 		{
 			Cols = NumServers;
 			Rows = 1;
@@ -489,8 +489,8 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 				}
 			}
 
-			Cols = GreatestDivisor;
-			Rows = NumServers / GreatestDivisor;
+			Cols = NumServers / GreatestDivisor;
+			Rows = GreatestDivisor;
 		}
 	}
 

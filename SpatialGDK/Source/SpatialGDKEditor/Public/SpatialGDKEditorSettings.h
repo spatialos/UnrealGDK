@@ -30,7 +30,7 @@ public:
 	bool bGenerateDefaultLaunchConfig;
 
 	/** Launch configuration file used for `spatial local launch`. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Launch configuration"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "!bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration"))
 	FString SpatialOSLaunchConfig;
 
 	/** Stop `spatial local launch` when shutting down editor. */
