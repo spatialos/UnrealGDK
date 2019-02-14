@@ -337,7 +337,7 @@ bool SpatialGDKGenerateSchema()
 	bool PromptForCompilation = false;
 	UEditorEngine::ResolveDirtyBlueprints(PromptForCompilation, ErroredBlueprints);
 
-	if (ErroredBlueprints.Num() != 0)
+	if (ErroredBlueprints.Num() > 0)
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("There were errors when compiling blueprints. Schema has not been generated."));
 		for (auto& Blueprint : ErroredBlueprints)
