@@ -340,7 +340,7 @@ bool SpatialGDKGenerateSchema()
 	if (ErroredBlueprints.Num() > 0)
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("There were errors when compiling blueprints. Schema has not been generated."));
-		for (auto& Blueprint : ErroredBlueprints)
+		for (const auto& Blueprint : ErroredBlueprints)
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not compile %s"), *Blueprint->GetName());
 		}
