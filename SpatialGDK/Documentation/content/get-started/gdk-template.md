@@ -67,7 +67,7 @@ Note: Ensure that your Visual Studio Solution Configuration is set to **Developm
 
 To test your project, you can launch a [local deployment (SpatialOS documentation)](https://docs.improbable.io/reference/13.5/shared/glossary#local-deployment) or a [cloud deployment (SpatialOS documentation)](https://docs.improbable.io/reference/13.5/shared/glossary#cloud-deployment).  
 
-#### Deploy locally
+#### Deploy locally with multiple clients
 
 To launch a local deployment: 
 
