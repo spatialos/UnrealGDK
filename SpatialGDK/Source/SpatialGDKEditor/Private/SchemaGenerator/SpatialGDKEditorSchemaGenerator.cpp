@@ -335,7 +335,7 @@ bool SpatialGDKGenerateSchema()
 	// compile all changed blueprints
 	TArray<UBlueprint*> ErroredBlueprints;
 	bool PromptForCompilation = false;
-	FInternalPlayLevelUtils::ResolveDirtyBlueprints(PromptForCompilation, ErroredBlueprints);
+	UEditorEngine::ResolveDirtyBlueprints(PromptForCompilation, ErroredBlueprints);
 
 	if (ErroredBlueprints.Num() != 0)
 	{
