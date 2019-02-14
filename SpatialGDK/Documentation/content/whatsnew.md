@@ -13,8 +13,6 @@ For example:
     ```
     "%UNREAL_HOME%\Engine\Binaries\Win64\UE4Editor-Win64-Debug.exe" "%~dp0%PROJECT_PATH%\%GAME_NAME%.uproject" 127.0.0.1
     ```
-
-- The GDK now saves [startup Actors]({{urlRoot}}/content/generating-a-snapshot#startup-actors) into the [snapshot]({{urlRoot}}/content/generating-a-snapshot).
 - Various stability fixes.
 
 ## New features
