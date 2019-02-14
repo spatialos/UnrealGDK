@@ -8,7 +8,7 @@ You can find out more about snapshots in the [SpatialOS snapshot documentation](
 
 You must generate a snapshot as the starting point for your [SpatialOS world]({{urlRoot}}/content/glossary#spatialos-world) when you create a new Unreal GDK project.
 
-To generate a snapshot, select the **Snapshot** button on the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbars.md) in the Unreal Editor.
+To generate a snapshot, on the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbars.md) in the Unreal Editor, select **Snapshot** .
 
 ![Snapshot]({{assetRoot}}assets/screen-grabs/snapshot.png)
 
