@@ -53,7 +53,10 @@ FString AlphanumericSanitization(const FString& InString)
 FString UnrealNameToSchemaComponentName(const FString& UnrealName)
 {
 	FString SchemaTypeName = UnrealNameToSchemaName(UnrealName);
-	SchemaTypeName[0] = FChar::ToUpper(SchemaTypeName[0]);
+	if (!SchemaTypeName.IsEmpty())
+	{
+		SchemaTypeName[0] = FChar::ToUpper(SchemaTypeName[0]);
+	}
 	return SchemaTypeName;
 }
 
