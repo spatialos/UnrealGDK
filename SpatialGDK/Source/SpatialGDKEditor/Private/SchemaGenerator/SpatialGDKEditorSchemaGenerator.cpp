@@ -63,7 +63,24 @@ int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, TShared
 	return NumComponents;
 }
 
-bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
+bool CheckSchemaNameValidity(FString Name, FString Identifier, FString Category)
+{
+	if (Name.IsEmpty())
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s %s is empty after removing non-alphanumeric characters, schema not generated."), *Category, *Identifier);
+		return false;
+	}
+
+	if (FChar::IsDigit(Name[0]))
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("%s names should not start with digits. %s %s (%s) has leading digits (potentially after removing non-alphanumeric characters), schema not generated."), *Category, *Category, *Name, *Identifier);
+		return false;
+	}
+
+	return true;
+}
+
+void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuccess)
 {
 	// Check Replicated data.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
@@ -73,16 +90,22 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 		for (auto& RepProp : RepData[Group])
 		{
 			FString NextSchemaReplicatedDataName = SchemaFieldName(RepProp.Value);
-			TSharedPtr<FUnrealProperty>* ExistingReplicatedProperty = SchemaReplicatedDataNames.Find(NextSchemaReplicatedDataName);
 
-			if (ExistingReplicatedProperty != nullptr)
+			if (!CheckSchemaNameValidity(NextSchemaReplicatedDataName, RepProp.Value->Property->GetPathName(), TEXT("Replicated property")))
+			{
+				bOutSuccess = false;
+			}
+
+			if (TSharedPtr<FUnrealProperty>* ExistingReplicatedProperty = SchemaReplicatedDataNames.Find(NextSchemaReplicatedDataName))
 			{
 				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated property name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
 					*NextSchemaReplicatedDataName, *ExistingReplicatedProperty->Get()->Property->GetPathName(), *RepProp.Value->Property->GetPathName());
-				return false;
+				bOutSuccess = false;
 			}
-
-			SchemaReplicatedDataNames.Add(NextSchemaReplicatedDataName, RepProp.Value);
+			else
+			{
+				SchemaReplicatedDataNames.Add(NextSchemaReplicatedDataName, RepProp.Value);
+			}
 		}
 	}
 
@@ -92,16 +115,22 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 	for (auto& Prop : HandoverData)
 	{
 		FString NextSchemaHandoverDataName = SchemaFieldName(Prop.Value);
-		TSharedPtr<FUnrealProperty>* ExistingHandoverData = SchemaHandoverDataNames.Find(NextSchemaHandoverDataName);
 
-		if (ExistingHandoverData != nullptr)
+		if (!CheckSchemaNameValidity(NextSchemaHandoverDataName, Prop.Value->Property->GetPathName(), TEXT("Handover property")))
+		{
+			bOutSuccess = false;
+		}
+
+		if (TSharedPtr<FUnrealProperty>* ExistingHandoverData = SchemaHandoverDataNames.Find(NextSchemaHandoverDataName))
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Handover data name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
 				*NextSchemaHandoverDataName, *ExistingHandoverData->Get()->Property->GetPathName(), *Prop.Value->Property->GetPathName());
-			return false;
+			bOutSuccess = false;
 		}
-
-		SchemaHandoverDataNames.Add(NextSchemaHandoverDataName, Prop.Value);
+		else
+		{
+			SchemaHandoverDataNames.Add(NextSchemaHandoverDataName, Prop.Value);
+		}
 	}
 
 	// Check RPC name validity.
@@ -112,31 +141,67 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 		for (auto& RPC : RPCsByType[Group])
 		{
 			FString NextSchemaRPCName = SchemaRPCName(RPC->Function);
-			TSharedPtr<FUnrealRPC>* ExistingRPC = SchemaRPCNames.Find(NextSchemaRPCName);
 
-			if (ExistingRPC != nullptr)
+			if (!CheckSchemaNameValidity(NextSchemaRPCName, RPC->Function->GetPathName(), TEXT("RPC")))
+			{
+				bOutSuccess = false;
+			}
+
+			if (TSharedPtr<FUnrealRPC>* ExistingRPC = SchemaRPCNames.Find(NextSchemaRPCName))
 			{
 				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("RPC name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
 					*NextSchemaRPCName, *ExistingRPC->Get()->Function->GetPathName(), *RPC->Function->GetPathName());
-				return false;
+				bOutSuccess = false;
 			}
-
-			SchemaRPCNames.Add(NextSchemaRPCName, RPC);
+			else
+			{
+				SchemaRPCNames.Add(NextSchemaRPCName, RPC);
+			}
 		}
 	}
 
-	return true;
+	// Check subobject name validity.
+	FSubobjectMap Subobjects = GetAllSubobjects(TypeInfo);
+	TMap<FString, TSharedPtr<FUnrealType>> SchemaSubobjectNames;
+	for (auto& It : Subobjects)
+	{
+		TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Value;
+		FString NextSchemaSubobjectName = UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString());
+
+		if (!CheckSchemaNameValidity(NextSchemaSubobjectName, SubobjectTypeInfo->Object->GetPathName(), TEXT("Subobject")))
+		{
+			bOutSuccess = false;
+		}
+
+		if (TSharedPtr<FUnrealType>* ExistingSubobject = SchemaSubobjectNames.Find(NextSchemaSubobjectName))
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Subobject name collision after removing non-alphanumeric characters, schema not generated. Name '%s' collides for '%s' and '%s'"),
+				*NextSchemaSubobjectName, *ExistingSubobject->Get()->Object->GetPathName(), *SubobjectTypeInfo->Object->GetPathName());
+			bOutSuccess = false;
+		}
+		else
+		{
+			SchemaSubobjectNames.Add(NextSchemaSubobjectName, SubobjectTypeInfo);
+		}
+	}
 }
 
 bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 {
-	// Remove all underscores from the class names, check for duplicates.
+	bool bSuccess = true;
+
+	// Remove all underscores from the class names, check for duplicates or invalid schema names.
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		UClass* Class = Cast<UClass>(TypeInfo->Type);
 		check(Class);
 		const FString& ClassName = Class->GetName();
 		FString SchemaName = UnrealNameToSchemaName(ClassName);
+
+		if (!CheckSchemaNameValidity(SchemaName, Class->GetPathName(), TEXT("Class")))
+		{
+			bSuccess = false;
+		}
 
 		int Suffix = 0;
 		while (UsedSchemaNames.Contains(SchemaName))
@@ -151,16 +216,13 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 		UsedSchemaNames.Add(SchemaName, Class);
 	}
 
-	// Check for duplicate names in the generated type info.
+	// Check for invalid/duplicate names in the generated type info.
 	for (auto& TypeInfo : TypeInfos)
 	{
-		if (!CheckIdentifierNameValidity(TypeInfo))
-		{
-			return false;
-		}
+		CheckIdentifierNameValidity(TypeInfo, bSuccess);
 	}
 
-	return true;
+	return bSuccess;
 }
 }// ::
 
