@@ -85,18 +85,18 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 			checkf(Op.result_count == 1, TEXT("There should never be more than one SpatialSpawner entity."));
 
 			// Construct and send the player spawn request.
-			FURL DummyURL;
+			FURL LoginURL;
+			FUniqueNetIdRepl UniqueId;
+			FName OnlinePlatformName;
+			ObtainPlayerParams(LoginURL, UniqueId, OnlinePlatformName);
+
 			Worker_CommandRequest CommandRequest = {};
 			CommandRequest.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 			CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
 			Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-			AddStringToSchema(RequestObject, 1, DummyURL.ToString(true));
+			AddStringToSchema(RequestObject, 1, LoginURL.ToString(true));
 
 			// Write player identity information.
-			FUniqueNetIdRepl UniqueId;
-			FName OnlinePlatformName;
-			ObtainPlayerId(UniqueId, OnlinePlatformName);
-
 			FNetBitWriter UniqueIdWriter(0);
 			UniqueIdWriter << UniqueId;
 			AddBytesToSchema(RequestObject, 2, UniqueIdWriter);
@@ -136,7 +136,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp&
 	}
 }
 
-void USpatialPlayerSpawner::ObtainPlayerId(FUniqueNetIdRepl& OutUniqueId, FName& OutOnlinePlatformName)
+void USpatialPlayerSpawner::ObtainPlayerParams(FURL& LoginURL, FUniqueNetIdRepl& OutUniqueId, FName& OutOnlinePlatformName)
 {
 	const FWorldContext* const WorldContext = GEngine->GetWorldContextFromWorld(NetDriver->GetWorld());
 	check(WorldContext->OwningGameInstance);
@@ -144,7 +144,19 @@ void USpatialPlayerSpawner::ObtainPlayerId(FUniqueNetIdRepl& OutUniqueId, FName&
 	// This code is adapted from PendingNetGame.cpp:242
 	if (ULocalPlayer* LocalPlayer = WorldContext->OwningGameInstance->GetFirstGamePlayer())
 	{
-		// TODO: Send nickname and game login options as a part of the URL. UNR-911
+		// Send the player nickname if available
+		FString OverrideName = LocalPlayer->GetNickname();
+		if (OverrideName.Len() > 0)
+		{
+			LoginURL.AddOption(*FString::Printf(TEXT("Name=%s"), *OverrideName));
+		}
+
+		// Send any game-specific url options for this player
+		FString GameUrlOptions = LocalPlayer->GetGameLoginOptions();
+		if (GameUrlOptions.Len() > 0)
+		{
+			LoginURL.AddOption(*FString::Printf(TEXT("%s"), *GameUrlOptions));
+		}
 
 		// Send the player unique Id at login
 		OutUniqueId = LocalPlayer->GetPreferredUniqueNetId();

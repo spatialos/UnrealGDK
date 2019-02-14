@@ -18,10 +18,10 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SnapshotManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
-#include "Interop/SpatialTypebindingManager.h"
 #include "Interop/SpatialDispatcher.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
@@ -49,10 +49,12 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	bConnectAsClient = bInitAsClient;
 	bAuthoritativeDestruction = true;
 
-	TypebindingManager = NewObject<USpatialTypebindingManager>();
-	TypebindingManager->Init(this);
+	ClassInfoManager = NewObject<USpatialClassInfoManager>();
+	ClassInfoManager->Init(this);
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
+
+	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
 
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
@@ -185,24 +187,40 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	Connect();
 }
 
+void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
+{
+	// Callback got called on a World that's not associated with this NetDriver.
+	// Don't do anything.
+	if (OwningWorld != World)
+	{
+		return;
+	}
+
+	// If we have authority over the GSM when loading a sublevel, make sure we have authority
+	// over the actors in the sublevel.
+	if (GlobalStateManager != nullptr)
+	{
+		if (GlobalStateManager->HasAuthority())
+		{
+			for (auto Actor : LoadedLevel->Actors)
+			{
+				if (Actor->GetIsReplicated())
+				{
+					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
+				}
+			}
+		}
+	}
+}
+
 void USpatialNetDriver::Connect()
 {
-	Connection->OnConnected.BindLambda([this]
-	{
-		OnMapLoadedAndConnected();
-	});
-	Connection->OnConnectFailed.BindLambda([this](const FString& Reason)
-	{
-		OnConnectFailed(Reason);
-	});
-
 	Connection->Connect(bConnectAsClient);
 }
 
 void USpatialNetDriver::OnMapLoadedAndConnected()
 {
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Connected to SpatialOS and map has been loaded."));
-
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 
 	Dispatcher = NewObject<USpatialDispatcher>();
@@ -276,11 +294,6 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 		// Once we've finished loading the snapshot we must update our bResponsibleForSnapshotLoading in-case we do not gain authority over the new GSM.
 		Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading = false;
 	}
-}
-
-void USpatialNetDriver::OnConnectFailed(const FString& Reason)
-{
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
 }
 
 void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
@@ -524,28 +537,15 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 
 			// the view target is what the player controller is looking at OR the owning actor itself when using beacons
 			SpatialConnection->ViewTarget = SpatialConnection->PlayerController ? SpatialConnection->PlayerController->GetViewTarget() : OwningActor;
-
-			for (int32 ChildIdx = 0; ChildIdx < SpatialConnection->Children.Num(); ChildIdx++)
-			{
-				UNetConnection *Child = SpatialConnection->Children[ChildIdx];
-				APlayerController* ChildPlayerController = Child->PlayerController;
-				if (ChildPlayerController != NULL)
-				{
-					Child->ViewTarget = ChildPlayerController->GetViewTarget();
-				}
-				else
-				{
-					Child->ViewTarget = NULL;
-				}
-			}
 		}
 		else
 		{
 			SpatialConnection->ViewTarget = NULL;
-			for (int32 ChildIdx = 0; ChildIdx < SpatialConnection->Children.Num(); ChildIdx++)
-			{
-				SpatialConnection->Children[ChildIdx]->ViewTarget = NULL;
-			}
+		}
+
+		if (SpatialConnection->Children.Num() > 0)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Child connections present on Spatial connection %s! We don't support splitscreen yet, so this will not function correctly."), *SpatialConnection->GetName());
 		}
 	}
 
@@ -598,26 +598,7 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 				Channel->StartBecomingDormant();
 			}
 
-			// SpatialGDK: This actor should only be replicated if GetNetworkConnection() matches this connection. However, if this actor doesn't have a connection
-			// (which implies that it's owned by the server rather than a client), then it should fall back to the "catch all" SpatialOS connection which is
-			// ClientConnections[0]. The below condition means that each actor should only be replicated once, unless "ClientConnections" contain duplicates,
-			// which should never happen.
-			UNetConnection* ActorConnection = Actor->GetNetConnection();
-			if (ActorConnection != InConnection)
-			{
-				if (ActorConnection == nullptr && InConnection == ClientConnections[0])
-				{
-					UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
-				}
-				else
-				{
-					continue;
-				}
-			}
-			else
-			{
-				UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the connection %s"), *Actor->GetName(), *InConnection->GetName());
-			}
+			UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Actor %s will be replicated on the catch-all connection"), *Actor->GetName());
 
 			// SpatialGDK: Here, Unreal does initial relevancy checking and level load checking.
 			// We have removed the level load check because it doesn't apply.
@@ -718,25 +699,10 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		// Normal actor replication
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(PriorityActors[j]->Channel);
 		UE_LOG(LogNetTraffic, Log, TEXT(" Maybe Replicate %s"), *PriorityActors[j]->ActorInfo->Actor->GetName());
-		if (Channel == nullptr || Channel->Actor) // Make sure didn't just close this channel.
+		if (Channel == nullptr || Channel->Actor != nullptr) // Make sure didn't just close this channel.
 		{
 			AActor* Actor = PriorityActors[j]->ActorInfo->Actor;
 			bool bIsRelevant = false;
-
-			// Workaround: If the actor channel can't be found in the current connection (e.g. if the actor was detached from the controller),
-			// then search through all the connections to find the actor's channel.
-			// Task to improve this: https://improbableio.atlassian.net/browse/UNR-842
-			if (Channel == nullptr)
-			{
-				for (auto& ClientConnection : ClientConnections)
-				{
-					Channel = Cast<USpatialActorChannel>(ClientConnection->ActorChannelMap().FindRef(Actor));
-					if (Channel != nullptr)
-					{
-						break;
-					}
-				}
-			}
 
 			// SpatialGDK: Here, Unreal would check (again) whether an actor is relevant. Removed such checks.
 			// only check visibility on already visible actors every 1.0 + 0.5R seconds
@@ -770,6 +736,13 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				// or it's an editor placed actor and the client hasn't initialized the level it's in
 				if (Channel == nullptr && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
+					if (!Actor->HasAuthority())
+					{
+						// Trying to replicate Actor which we don't have authority over.
+						// Remove after UNR-961
+						continue;
+					}
+
 					// If we're a singleton, and don't have a channel, defer to GSM
 					if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 					{
@@ -913,112 +886,76 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 
 	FMemMark Mark(FMemStack::Get());
 
-	for (int32 i = 0; i < ClientConnections.Num(); i++)
+	// Only process the fake spatial connection. It will be responsible for replicating all actors, regardless of whether they're owned by a client.
+	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(ClientConnections[0]);
+	check(SpatialConnection && SpatialConnection->bReliableSpatialConnection);
+
+	// Make a list of viewers this connection should consider
+	TArray<FNetViewer>& ConnectionViewers = WorldSettings->ReplicationViewers;
+
+	ConnectionViewers.Reset();
+
+	// The fake spatial connection will borrow the player controllers from other connections.
+	for (int i = 1; i < ClientConnections.Num(); i++)
 	{
-		USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(ClientConnections[i]);
-		check(SpatialConnection);
+		USpatialNetConnection* ClientConnection = Cast<USpatialNetConnection>(ClientConnections[i]);
+		check(ClientConnection);
 
-		if (SpatialConnection->bReliableSpatialConnection || SpatialConnection->ViewTarget)
+		if (ClientConnection->ViewTarget != nullptr)
 		{
-			// Make a list of viewers this connection should consider (this connection and children of this connection)
-			TArray<FNetViewer>& ConnectionViewers = WorldSettings->ReplicationViewers;
+			new(ConnectionViewers)FNetViewer(ClientConnection, DeltaSeconds);
 
-			if (SpatialConnection->ViewTarget)
+			if (ClientConnection->Children.Num() > 0)
 			{
-				ConnectionViewers.Reset();
-				new(ConnectionViewers)FNetViewer(SpatialConnection, DeltaSeconds);
-				for (int32 ViewerIndex = 0; ViewerIndex < SpatialConnection->Children.Num(); ViewerIndex++)
-				{
-					if (SpatialConnection->Children[ViewerIndex]->ViewTarget != NULL)
-					{
-						new(ConnectionViewers)FNetViewer(SpatialConnection->Children[ViewerIndex], DeltaSeconds);
-					}
-				}
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Child connections present on Spatial client connection %s! We don't support splitscreen yet, so this will not function correctly."), *ClientConnection->GetName());
 			}
-			else
-			{
-				ConnectionViewers.Reset();
-
-				// Not having a ViewTarget implies this must be the fake spatial connection and thus borrow the player controllers from other connections.
-				for (int j = 0; j < ClientConnections.Num(); j++)
-				{
-					USpatialNetConnection* OtherSpatialConnection = Cast<USpatialNetConnection>(ClientConnections[j]);
-					check(OtherSpatialConnection);
-
-					if (OtherSpatialConnection->ViewTarget)
-					{
-						new(ConnectionViewers)FNetViewer(OtherSpatialConnection, DeltaSeconds);
-
-						for (int32 ViewerIndex = 0; ViewerIndex < OtherSpatialConnection->Children.Num(); ViewerIndex++)
-						{
-							if (OtherSpatialConnection->Children[ViewerIndex]->ViewTarget != NULL)
-							{
-								new(ConnectionViewers)FNetViewer(OtherSpatialConnection->Children[ViewerIndex], DeltaSeconds);
-							}
-						}
-					}
-				}
-			}
-
-			FMemMark RelevantActorMark(FMemStack::Get());
-
-			FActorPriority* PriorityList = NULL;
-			FActorPriority** PriorityActors = NULL;
-
-			// Get a sorted list of actors for this connection
-			const int32 FinalSortedCount = ServerReplicateActors_PrioritizeActors(SpatialConnection, ConnectionViewers, ConsiderList, bCPUSaturated, PriorityList, PriorityActors);
-
-			// Process the sorted list of actors for this connection
-			const int32 LastProcessedActor = ServerReplicateActors_ProcessPrioritizedActors(SpatialConnection, ConnectionViewers, PriorityActors, FinalSortedCount, Updated);
-
-			// relevant actors that could not be processed this frame are marked to be considered for next frame
-			for (int32 k = LastProcessedActor; k < FinalSortedCount; k++)
-			{
-				if (!PriorityActors[k]->ActorInfo)
-				{
-					// A deletion entry, skip it because we dont have anywhere to store a 'better give higher priority next time'
-					continue;
-				}
-
-				AActor* Actor = PriorityActors[k]->ActorInfo->Actor;
-
-				UActorChannel* Channel = PriorityActors[k]->Channel;
-
-				UE_LOG(LogNetTraffic, Verbose, TEXT("Saturated. %s"), *Actor->GetName());
-				if (Channel != NULL && Time - Channel->RelevantTime <= 1.f)
-				{
-					UE_LOG(LogNetTraffic, Log, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
-					PriorityActors[k]->ActorInfo->bPendingNetUpdate = true;
-				}
-				else if (IsActorRelevantToConnection(Actor, ConnectionViewers))
-				{
-					// If this actor was relevant but didn't get processed, force another update for next frame
-					UE_LOG(LogNetTraffic, Log, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
-					PriorityActors[k]->ActorInfo->bPendingNetUpdate = true;
-					if (Channel != NULL)
-					{
-						Channel->RelevantTime = Time + 0.5f * FMath::SRand();
-					}
-				}
-			}
-			RelevantActorMark.Pop();
-			ConnectionViewers.Reset();
 		}
 	}
 
-	// shuffle the list of connections if not all connections were ticked
-	if (NumClientsToTick < ClientConnections.Num())
+	FMemMark RelevantActorMark(FMemStack::Get());
+
+	FActorPriority* PriorityList = NULL;
+	FActorPriority** PriorityActors = NULL;
+
+	// Get a sorted list of actors for this connection
+	const int32 FinalSortedCount = ServerReplicateActors_PrioritizeActors(SpatialConnection, ConnectionViewers, ConsiderList, bCPUSaturated, PriorityList, PriorityActors);
+
+	// Process the sorted list of actors for this connection
+	const int32 LastProcessedActor = ServerReplicateActors_ProcessPrioritizedActors(SpatialConnection, ConnectionViewers, PriorityActors, FinalSortedCount, Updated);
+
+	// relevant actors that could not be processed this frame are marked to be considered for next frame
+	for (int32 k = LastProcessedActor; k < FinalSortedCount; k++)
 	{
-		int32 NumConnectionsToMove = NumClientsToTick;
-		while (NumConnectionsToMove > 0)
+		if (!PriorityActors[k]->ActorInfo)
 		{
-			// move all the ticked connections to the end of the list so that the other connections are considered first for the next frame
-			UNetConnection *ClientConnection = ClientConnections[0];
-			ClientConnections.RemoveAt(0, 1);
-			ClientConnections.Add(ClientConnection);
-			NumConnectionsToMove--;
+			// A deletion entry, skip it because we don't have anywhere to store a 'better give higher priority next time'
+			continue;
+		}
+
+		AActor* Actor = PriorityActors[k]->ActorInfo->Actor;
+
+		UActorChannel* Channel = PriorityActors[k]->Channel;
+
+		UE_LOG(LogNetTraffic, Verbose, TEXT("Saturated. %s"), *Actor->GetName());
+		if (Channel != NULL && Time - Channel->RelevantTime <= 1.f)
+		{
+			UE_LOG(LogNetTraffic, Log, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
+			PriorityActors[k]->ActorInfo->bPendingNetUpdate = true;
+		}
+		else if (IsActorRelevantToConnection(Actor, ConnectionViewers))
+		{
+			// If this actor was relevant but didn't get processed, force another update for next frame
+			UE_LOG(LogNetTraffic, Log, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
+			PriorityActors[k]->ActorInfo->bPendingNetUpdate = true;
+			if (Channel != NULL)
+			{
+				Channel->RelevantTime = Time + 0.5f * FMath::SRand();
+			}
 		}
 	}
+	RelevantActorMark.Pop();
+	ConnectionViewers.Reset();
+
 	Mark.Pop();
 
 	if (DebugRelevantActors)
@@ -1538,4 +1475,23 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
+}
+
+void USpatialNetDriver::HandleOnConnected()
+{
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Succesfully connected to SpatialOS"));
+	OnMapLoadedAndConnected();
+	OnConnected.Broadcast();
+}
+
+void USpatialNetDriver::HandleOnDisconnected(const FString& Reason)
+{
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
+	OnDisconnected.Broadcast(Reason);
+}
+
+void USpatialNetDriver::HandleOnConnectionFailed(const FString& Reason)
+{
+	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
+	OnConnectionFailed.Broadcast(Reason);
 }

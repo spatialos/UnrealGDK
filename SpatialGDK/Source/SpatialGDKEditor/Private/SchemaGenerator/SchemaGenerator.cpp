@@ -7,10 +7,12 @@
 #include "Engine/SCS_Node.h"
 #include "UObject/TextProperty.h"
 
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
+
+DEFINE_LOG_CATEGORY(LogSchemaGenerator);
 
 ESchemaComponentType PropertyGroupToSchemaComponentType(EReplicatedPropertyGroup Group)
 {
@@ -252,14 +254,17 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 			continue;
 		}
 
-		if (Group == REP_MultiClient)
+		// If this class is an Actor Component, it MUST have bReplicates at field ID 1.
+		if (Group == REP_MultiClient && Class->IsChildOf<UActorComponent>())
 		{
-			auto ExpectedReplicatesPropData = RepData[Group].Find(SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID);
+			TSharedPtr<FUnrealProperty> ExpectedReplicatesPropData = RepData[Group].FindRef(SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID);
 			const UProperty* ReplicatesProp = UActorComponent::StaticClass()->FindPropertyByName("bReplicates");
-			if (!(ExpectedReplicatesPropData->IsValid() && ExpectedReplicatesPropData->Get()->Property == ReplicatesProp))
+
+			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
 			{
-				UE_LOG(LogTemp, Error, TEXT("Did not find ActorComponent->bReplicates at field ACTOR_COMPONENT_REPLICATES_ID[%d]. Modifying the base Actor Component class is currently not supported."),
-					SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID);
+				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find ActorComponent->bReplicates at field %d for class %s. Modifying the base Actor Component class is currently not supported."),
+					SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID,
+					*Class->GetName());
 			}
 		}
 
@@ -426,7 +431,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 			AllReliableMulticasts += FunctionName + TEXT("\n");					
 		}
 
-		UE_LOG(LogTemp, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
+		UE_LOG(LogSchemaGenerator, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
 	}
 
 	ClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);

@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "Interop/SpatialTypebindingManager.h"
+#include "Interop/SpatialClassInfoManager.h"
 
 #include "AssetRegistryModule.h"
 #include "Engine/Blueprint.h"
@@ -15,9 +15,9 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Utils/RepLayoutUtils.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialTypebindingManager);
+DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-void USpatialTypebindingManager::Init(USpatialNetDriver* InNetDriver)
+void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	
@@ -40,7 +40,7 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 	return Class;
 }
 
-void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
+void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 	checkf(IsSupportedClass(Class), TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
 
@@ -133,7 +133,7 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
 
-		FClassInfo& SubobjectInfo = FindClassInfoByClass(SubobjectClass);
+		const FClassInfo& SubobjectInfo = GetOrCreateClassInfoByClass(SubobjectClass);
 
 		// Make a copy of the already made FClassInfo for this specific subobject
 		TSharedRef<FClassInfo> ActorSubobjectInfo = MakeShared<FClassInfo>(SubobjectInfo);
@@ -155,139 +155,79 @@ void USpatialTypebindingManager::AddTypebindingsForClass(UClass* Class)
 	}
 }
 
-UClass* USpatialTypebindingManager::LoadClassForComponent(Worker_ComponentId ComponentId)
-{
-	// Only try to load classes for generated components
-	if (ComponentId < SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
-	{
-		return nullptr;
-	}
-
-	for (auto& ClassDataPair : SchemaDatabase->ClassPathToSchema)
-	{
-		for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
-		{
-			const Worker_ComponentId ObjectComponentId = ClassDataPair.Value.SchemaComponents[Type];
-			if (ComponentId == ObjectComponentId)
-			{
-				UClass* Class = ResolveClass(ClassDataPair.Key);
-				AddTypebindingsForClass(Class);
-				return Class;
-			}
-		}
-
-		for (auto& SubobjectClassDataPair : ClassDataPair.Value.SubobjectData)
-		{
-			for (int32 Type = SCHEMA_Begin; Type < SCHEMA_Count; Type++)
-			{
-				const Worker_ComponentId SubobjectComponentId = SubobjectClassDataPair.Value.SchemaComponents[Type];
-				if (ComponentId == SubobjectComponentId)
-				{
-					UClass* Class = ResolveClass(SubobjectClassDataPair.Value.ClassPath);
-					UClass* ActorClass = ResolveClass(ClassDataPair.Key);
-					AddTypebindingsForClass(ActorClass);
-					return Class;
-				}
-			};
-		}
-	}
-
-	UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Failed to find class for component %u in schema database"), ComponentId);
-	return nullptr;
-}
-
-bool USpatialTypebindingManager::IsSupportedClass(UClass* Class) const
+bool USpatialClassInfoManager::IsSupportedClass(UClass* Class) const
 {
 	return SchemaDatabase->ClassPathToSchema.Contains(Class->GetPathName());
 }
 
-FClassInfo& USpatialTypebindingManager::FindClassInfoByClass(UClass* Class)
+const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* Class)
 {
-	// This could be optimised to a single map lookup in all cases if we Find first, but we keep this pattern for readability
-	if (!ClassInfoMap.Contains(Class))
+	if (ClassInfoMap.Find(Class) == nullptr)
 	{
-		AddTypebindingsForClass(Class);
+		CreateClassInfoForClass(Class);
 	}
 	
 	return ClassInfoMap[Class].Get();
 }
 
-FClassInfo* USpatialTypebindingManager::FindClassInfoByActorClassAndOffset(UClass* Class, uint32 Offset)
+const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset)
 {
-	FClassInfo& Info = FindClassInfoByClass(Class);
+	const FClassInfo& Info = GetOrCreateClassInfoByClass(Class);
 
 	if (Offset == 0)
 	{
-		return &Info;
+		return Info;
 	}
 
-	if (TSharedRef<FClassInfo>* SubobjectInfo = Info.SubobjectInfo.Find(Offset))
-	{
-		return &SubobjectInfo->Get();
-	}
-
-	return nullptr;
+	TSharedRef<FClassInfo> SubobjectInfo = Info.SubobjectInfo.FindChecked(Offset);
+	return SubobjectInfo.Get();
 }
 
-FClassInfo* USpatialTypebindingManager::FindClassInfoByObject(UObject* Object)
+const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject* Object)
 {
 	if (AActor* Actor = Cast<AActor>(Object))
 	{
-		return &FindClassInfoByClass(Actor->GetClass());
+		return GetOrCreateClassInfoByClass(Actor->GetClass());
 	}
 	else
 	{
-		checkSlow(Cast<AActor>(Object->GetOuter()));
+		check(Cast<AActor>(Object->GetOuter()));
 
 		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
 
-		if (ObjectRef != SpatialConstants::NULL_OBJECT_REF && ObjectRef != SpatialConstants::UNRESOLVED_OBJECT_REF)
-		{
-			return FindClassInfoByActorClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
-		}
+		check(ObjectRef.IsValid())
+
+		return GetOrCreateClassInfoByClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
+	}
+}
+
+const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_ComponentId ComponentId) const
+{
+	TSharedRef<FClassInfo> Info = ComponentToClassInfoMap.FindChecked(ComponentId);
+	return Info.Get();
+}
+
+UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId ComponentId)
+{
+	TSharedRef<FClassInfo> Info = ComponentToClassInfoMap.FindChecked(ComponentId);
+	if (UClass* Class = Info->Class.Get())
+	{
+		return Class;
+	}
+	else
+	{
+		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
+
+		// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use it to clean up the old entry.
+		ClassInfoMap.Remove(Info->Class);
+
+		// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of LoadClassForComponent).
 	}
 
 	return nullptr;
 }
 
-FClassInfo* USpatialTypebindingManager::FindClassInfoByComponentId(Worker_ComponentId ComponentId)
-{
-	if (TSharedRef<FClassInfo>* Info = ComponentToClassInfoMap.Find(ComponentId))
-	{
-		return &Info->Get();
-	}
-
-	if (LoadClassForComponent(ComponentId) != nullptr)
-	{
-		return &ComponentToClassInfoMap[ComponentId].Get();
-	}
-
-	return nullptr;
-}
-
-UClass* USpatialTypebindingManager::FindClassByComponentId(Worker_ComponentId ComponentId)
-{
-	if (TSharedRef<FClassInfo>* Info = ComponentToClassInfoMap.Find(ComponentId))
-	{
-		if (UClass* Class = (*Info)->Class.Get())
-		{
-			return Class;
-		}
-		else
-		{
-			UE_LOG(LogSpatialTypebindingManager, Warning, TEXT("Class corresponding to component %d has been unloaded! Will try to reload based on the component id."), ComponentId);
-
-			// The weak pointer to the class stored in the FClassInfo will be the same as the one used as the key in ClassInfoMap, so we can use it to clean up the old entry.
-			ClassInfoMap.Remove((*Info)->Class);
-
-			// The old references in the other maps (ComponentToClassInfoMap etc) will be replaced by reloading the info (as a part of LoadClassForComponent).
-		}
-	}
-
-	return LoadClassForComponent(ComponentId);
-}
-
-bool USpatialTypebindingManager::FindOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
+bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {
 	if (uint32* Offset = ComponentToOffsetMap.Find(ComponentId))
 	{
@@ -295,25 +235,14 @@ bool USpatialTypebindingManager::FindOffsetByComponentId(Worker_ComponentId Comp
 		return true;
 	}
 
-	if (FindClassByComponentId(ComponentId) != nullptr)
-	{
-		OutOffset = ComponentToOffsetMap[ComponentId];
-		return true;
-	}
-
 	return false;
 }
 
-ESchemaComponentType USpatialTypebindingManager::FindCategoryByComponentId(Worker_ComponentId ComponentId)
+ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_ComponentId ComponentId)
 {
 	if (ESchemaComponentType* Category = ComponentToCategoryMap.Find(ComponentId))
 	{
 		return *Category;
-	}
-
-	if (FindClassByComponentId(ComponentId) != nullptr)
-	{
-		return ComponentToCategoryMap[ComponentId];
 	}
 
 	return ESchemaComponentType::SCHEMA_Invalid;

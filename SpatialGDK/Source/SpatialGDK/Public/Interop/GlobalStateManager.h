@@ -27,18 +27,20 @@ class SPATIALGDK_API UGlobalStateManager : public UObject
 	GENERATED_BODY()
 
 public:
-
 	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
 
-	void ApplyData(const Worker_ComponentData& Data);
-	void ApplyDeploymentMapURLData(const Worker_ComponentData& Data);
-	void ApplyUpdate(const Worker_ComponentUpdate& Update);
+	void ApplySingletonManagerData(const Worker_ComponentData& Data);
+	void ApplyDeploymentMapData(const Worker_ComponentData& Data);
+	void ApplyStartupActorManagerData(const Worker_ComponentData& Data);
+
+	void ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update);
 	void ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update);
+	void ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update);
+
+	bool IsSingletonEntity(Worker_EntityId EntityId) const;
 	void LinkAllExistingSingletonActors();
 	void ExecuteInitialSingletonActorReplication();
 	void UpdateSingletonEntityId(const FString& ClassName, const Worker_EntityId SingletonEntityId);
-
-	bool IsSingletonEntity(Worker_EntityId EntityId) const;
 
 	void QueryGSM(bool bRetryUntilAcceptingPlayers);
 	void RetryQueryGSM(bool bRetryUntilAcceptingPlayers);
@@ -47,18 +49,43 @@ public:
 	void SetDeploymentMapURL(const FString& MapURL);
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
+	void SetCanBeginPlay(bool bInCanBeginPlay);
+
 	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
+
+	void BeginDestroy() override;
+
+	bool HasAuthority();
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 
-	FString DeploymentMapURL;
-	bool bAcceptingPlayers = false;
-
 	Worker_EntityId GlobalStateManagerEntityId;
 
+	// Singleton Manager Component
+	StringToEntityMap SingletonNameToEntityId;
+
+	// Deployment Map Component
+	FString DeploymentMapURL;
+	bool bAcceptingPlayers;
+
+	// Startup Actor Manager Component
+	bool bCanBeginPlay;
+
+#if WITH_EDITOR
+	void OnPrePIEEnded(bool bValue);
+	void ReceiveShutdownMultiProcessRequest();
+#endif // WITH_EDITOR
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
+	void ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate);
+
+	void BecomeAuthoritativeOverAllActors();
+	void TriggerBeginPlay();
+
+#if WITH_EDITOR
+	void SendShutdownMultiProcessRequest();
+#endif // WITH_EDITOR
 
 private:
 	UPROPERTY()
@@ -73,7 +100,7 @@ private:
 	UPROPERTY()
 	USpatialReceiver* Receiver;
 
-	StringToEntityMap SingletonNameToEntityId;
-
 	FTimerManager* TimerManager;
+
+	bool bTriggeredBeginPlay;
 };

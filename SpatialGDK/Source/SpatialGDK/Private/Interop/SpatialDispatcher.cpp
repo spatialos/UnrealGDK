@@ -37,7 +37,6 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 		case WORKER_OP_TYPE_REMOVE_ENTITY:
 			Receiver->OnRemoveEntity(Op->remove_entity);
-			StaticComponentView->OnRemoveEntity(Op->remove_entity);
 			break;
 
 		// Components
@@ -92,7 +91,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 
 		case WORKER_OP_TYPE_DISCONNECT:
-			UE_LOG(LogSpatialView, Warning, TEXT("Disconnecting from SpatialOS: %s"), UTF8_TO_TCHAR(Op->disconnect.reason));
+			Receiver->OnDisconnect(Op->disconnect);
 			break;
 
 		default:

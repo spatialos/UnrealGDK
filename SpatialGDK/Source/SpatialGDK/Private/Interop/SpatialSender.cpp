@@ -13,6 +13,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialDispatcher.h"
+#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
@@ -61,7 +62,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 	Connection = InNetDriver->Connection;
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
-	TypebindingManager = InNetDriver->TypebindingManager;
+	ClassInfoManager = InNetDriver->ClassInfoManager;
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
@@ -96,13 +97,17 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ReadAcl = AnyUnrealServerOrClient;
 	}
 
-	FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Class);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
+	if (Actor->IsA<APlayerController>())
+	{
+		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
+	}
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
@@ -140,14 +145,28 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		});
 	}
 
+	// Only want to have a stably object ref if this Actor is stably named.
+	// We use this to indiciate if a new Actor should be created or to link a pre-existing Actor
+	// when receiving an AddEntityOp.
+	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
+	if (Actor->IsFullNameStableForNetworking())
+	{
+		FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
+		StablyNamedObjectRef = FUnrealObjectRef(0, 0, Actor->GetFName().ToString(), OuterObjectRef);
+	}
+
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(improbable::Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
 	ComponentDatas.Add(improbable::Interest().CreateInterestData());
+	if (Actor->IsA<APlayerController>())
+	{
+		ComponentDatas.Add(improbable::Heartbeat().CreateHeartbeatData());
+	}
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
@@ -229,7 +248,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	return CreateEntityRequestId;
 }
 
-void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
+void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
 	Worker_EntityId EntityId = Channel->GetEntityId();
@@ -289,7 +308,6 @@ void USpatialSender::SendComponentUpdates(UObject* Object, FClassInfo& Info, USp
 	}
 }
 
-
 // Apply (and clean up) any updates queued, due to being sent previously when they didn't have authority.
 void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId)
 {
@@ -303,7 +321,7 @@ void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId
 	}
 }
 
-void FillComponentInterests(FClassInfo& Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
+void FillComponentInterests(const FClassInfo& Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
 {
 	if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
 	{
@@ -322,7 +340,7 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 {
 	TArray<Worker_InterestOverride> ComponentInterest;
 
-	FClassInfo& ActorInfo = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 	FillComponentInterests(ActorInfo, bIsNetOwned, ComponentInterest);
 
 	for (auto& SubobjectInfoPair : ActorInfo.SubobjectInfo)
@@ -366,28 +384,21 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 
 	UObject* TargetObject = Params->TargetObject.Get();
-	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s on unresolved Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
 		QueueOutgoingRPC(TargetObject, Params);
 		return;
 	}
 
-	FClassInfo* Info = TypebindingManager->FindClassInfoByObject(TargetObject);
-
-	if (Info == nullptr)
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send RPC %s on unsupported Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
-		return;
-	}
-
-	const FRPCInfo* RPCInfo = Info->RPCInfoMap.Find(Params->Function);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Params->Function);
 
 	// We potentially have a parent function and need to find the child function.
 	// This exists as it's possible in blueprints to explicitly call the parent function.
 	if (RPCInfo == nullptr)
 	{
-		for (auto It = Info->RPCInfoMap.CreateConstIterator(); It; ++It)
+		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
 		{
 			if (It.Key()->GetName() == Params->Function->GetName())
 			{
@@ -414,7 +425,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		ReliableRPCIndex = Params->ReliableRPCIndex;
 #endif // !UE_BUILD_SHIPPING
 
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), Info->SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject, ReliableRPCIndex);
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), Info.SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject, ReliableRPCIndex);
 
 		if (!UnresolvedObject)
 		{
@@ -433,7 +444,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 	case SCHEMA_NetMulticastRPC:
 	{
-		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), Info->SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), Info.SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -609,7 +620,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-	if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
 		Schema_DestroyCommandRequest(CommandRequest.schema_type);
@@ -657,7 +668,7 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 	Schema_Object* EventData = Schema_AddObject(EventsObject, EventIndex);
 
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-	if (TargetObjectRef == SpatialConstants::UNRESOLVED_OBJECT_REF)
+	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
@@ -717,11 +728,7 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 		UObject* ReplicatingObject = ChannelObjectPair.Value.Get();
 		FHandleToUnresolved& HandleToUnresolved = ChannelProperties.Value;
 
-		FClassInfo* Info = TypebindingManager->FindClassInfoByObject(ReplicatingObject);
-		if (Info == nullptr)
-		{
-			continue;
-		}
+		const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(ReplicatingObject);
 
 		TArray<uint16> PropertyHandles;
 
@@ -755,14 +762,14 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 		{
 			if (bIsHandover)
 			{
-				SendComponentUpdates(ReplicatingObject, *Info, DependentChannel, nullptr, &PropertyHandles);
+				SendComponentUpdates(ReplicatingObject, Info, DependentChannel, nullptr, &PropertyHandles);
 			}
 			else
 			{
 				// End with zero to indicate the end of the list of handles.
 				PropertyHandles.Add(0);
 				FRepChangeState RepChangeState = { PropertyHandles, DependentChannel->GetObjectRepLayout(ReplicatingObject) };
-				SendComponentUpdates(ReplicatingObject, *Info, DependentChannel, &RepChangeState, nullptr);
+				SendComponentUpdates(ReplicatingObject, Info, DependentChannel, &RepChangeState, nullptr);
 			}
 		}
 	}
@@ -828,7 +835,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 		return false;
 	}
 
-	FClassInfo& Info = TypebindingManager->FindClassInfoByClass(Actor->GetClass());
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	FString OwnerWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
@@ -838,7 +845,7 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
-		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
+		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
 		if (SubobjectInfo.SchemaComponents[SCHEMA_ClientRPC] != SpatialConstants::INVALID_COMPONENT_ID)
 		{

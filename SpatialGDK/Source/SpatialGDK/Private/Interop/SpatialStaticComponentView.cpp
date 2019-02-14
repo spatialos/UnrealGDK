@@ -3,6 +3,7 @@
 #include "Interop/SpatialStaticComponentView.h"
 
 #include "Schema/Component.h"
+#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
@@ -55,6 +56,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 		Data = MakeUnique<improbable::ComponentStorage<improbable::Interest>>(Op.data);
 		break;
+	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
+		Data = MakeUnique<improbable::ComponentStorage<improbable::Heartbeat>>(Op.data);
+		break;
 	default:
 		return;
 	}
@@ -62,9 +66,9 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = std::move(Data);
 }
 
-void USpatialStaticComponentView::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
+void USpatialStaticComponentView::OnRemoveEntity(Worker_EntityId EntityId)
 {
-	EntityComponentMap.Remove(Op.entity_id);
+	EntityComponentMap.Remove(EntityId);
 }
 
 void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
