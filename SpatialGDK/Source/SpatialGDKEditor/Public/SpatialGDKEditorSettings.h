@@ -15,6 +15,8 @@ class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 public:
 	USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer);
 
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+
 private:
 	/** Path to the directory containing the SpatialOS-related files. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
