@@ -124,16 +124,17 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 #if WITH_EDITOR
 	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
 	{
-		if (GetDefault<ULevelEditorPlaySettings>()->IsDeleteDynamicEntitiesActive())
+		bool bDeleteDynamicEntities = true;
+		GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities(bDeleteDynamicEntities);
+
+		if (bDeleteDynamicEntities &&
+			NetDriver->IsServer() &&
+			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
+			NetDriver->GetWorld()->bIsTearingDown &&
+			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
 		{
-			if (NetDriver->IsServer() &&
-				NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-				NetDriver->GetWorld()->bIsTearingDown &&
-				NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
-			{
-				// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-				DeleteEntityIfAuthoritative();
-			}
+			// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+			DeleteEntityIfAuthoritative();
 		}
 	}
 #endif
