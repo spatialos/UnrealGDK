@@ -63,7 +63,7 @@ int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, TShared
 	return NumComponents;
 }
 
-bool CheckSchemaName(FString Name, FString Identifier, FString Category)
+bool CheckSchemaNameValidity(FString Name, FString Identifier, FString Category)
 {
 	if (Name.IsEmpty())
 	{
@@ -91,7 +91,7 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 		{
 			FString NextSchemaReplicatedDataName = SchemaFieldName(RepProp.Value);
 
-			if (!CheckSchemaName(NextSchemaReplicatedDataName, RepProp.Value->Property->GetPathName(), TEXT("Replicated property")))
+			if (!CheckSchemaNameValidity(NextSchemaReplicatedDataName, RepProp.Value->Property->GetPathName(), TEXT("Replicated property")))
 			{
 				bOutSuccess = false;
 			}
@@ -116,7 +116,7 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 	{
 		FString NextSchemaHandoverDataName = SchemaFieldName(Prop.Value);
 
-		if (!CheckSchemaName(NextSchemaHandoverDataName, Prop.Value->Property->GetPathName(), TEXT("Handover property")))
+		if (!CheckSchemaNameValidity(NextSchemaHandoverDataName, Prop.Value->Property->GetPathName(), TEXT("Handover property")))
 		{
 			bOutSuccess = false;
 		}
@@ -142,7 +142,7 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 		{
 			FString NextSchemaRPCName = SchemaRPCName(RPC->Function);
 
-			if (!CheckSchemaName(NextSchemaRPCName, RPC->Function->GetPathName(), TEXT("RPC")))
+			if (!CheckSchemaNameValidity(NextSchemaRPCName, RPC->Function->GetPathName(), TEXT("RPC")))
 			{
 				bOutSuccess = false;
 			}
@@ -168,7 +168,7 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 		TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Value;
 		FString NextSchemaSubobjectName = UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString());
 
-		if (!CheckSchemaName(NextSchemaSubobjectName, SubobjectTypeInfo->Object->GetPathName(), TEXT("Subobject")))
+		if (!CheckSchemaNameValidity(NextSchemaSubobjectName, SubobjectTypeInfo->Object->GetPathName(), TEXT("Subobject")))
 		{
 			bOutSuccess = false;
 		}
@@ -198,7 +198,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 		const FString& ClassName = Class->GetName();
 		FString SchemaName = UnrealNameToSchemaName(ClassName);
 
-		if (!CheckSchemaName(SchemaName, Class->GetPathName(), TEXT("Class")))
+		if (!CheckSchemaNameValidity(SchemaName, Class->GetPathName(), TEXT("Class")))
 		{
 			bSuccess = false;
 		}
