@@ -10,6 +10,7 @@
 #include "GenericPlatform/GenericPlatformFile.h"
 #include "GenericPlatform/GenericPlatformProcess.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Misc/ConfigCacheIni.h"
 #include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/MonitoredProcess.h"
@@ -28,11 +29,11 @@
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
 TArray<UClass*> SchemaGeneratedClasses;
-TArray<UClass*> AdditionalSchemaGeneratedClasses; //Used to keep UClasses in memory whilst generating schema for them.
+TArray<UClass*> AdditionalSchemaGeneratedClasses; // Used to keep UClasses in memory whilst generating schema for them.
 TMap<FString, FSchemaData> ClassPathToSchema;
 uint32 NextAvailableComponentId;
 
-// Prevent name collisions
+// Prevent name collisions.
 TMap<UClass*, FString> ClassToSchemaName;
 TMap<FString, UClass*> UsedSchemaNames;
 
@@ -64,7 +65,7 @@ int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, TShared
 
 bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 {
-	// Check Replicated Data
+	// Check Replicated data.
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
@@ -85,7 +86,7 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 		}
 	}
 
-	// Check Handover data
+	// Check Handover data.
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	TMap<FString, TSharedPtr<FUnrealProperty>> SchemaHandoverDataNames;
 	for (auto& Prop : HandoverData)
@@ -103,7 +104,7 @@ bool CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo)
 		SchemaHandoverDataNames.Add(NextSchemaHandoverDataName, Prop.Value);
 	}
 
-	// Check RPC name validity
+	// Check RPC name validity.
 	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
 	for (auto Group : GetRPCTypes())
 	{
@@ -150,7 +151,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 		UsedSchemaNames.Add(SchemaName, Class);
 	}
 
-	// Check for duplicate names in the generated type info
+	// Check for duplicate names in the generated type info.
 	for (auto& TypeInfo : TypeInfos)
 	{
 		if (!CheckIdentifierNameValidity(TypeInfo))
@@ -166,7 +167,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 
 void  GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
 {
-	// Generate the actual schema
+	// Generate the actual schema.
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		NextAvailableComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, NextAvailableComponentId, TypeInfo);
@@ -299,33 +300,78 @@ void TryLoadExistingSchemaDatabase()
 	}
 }
 
+void TryLoadExistingSchemaDatabaseInEditor()
+{
+	TPromise<void> Promise;
+	TFuture<void> Future = Promise.GetFuture();
+
+	AsyncTask(ENamedThreads::GameThread, [&Promise] {
+		TryLoadExistingSchemaDatabase();
+		Promise.SetValue();
+	});
+
+	Future.Get();
+}
+
+bool TryLoadClassForSchemaGeneration(FString ClassPath)
+{
+	const FSoftObjectPath ItemToReference(ClassPath);
+
+	// First check if the object is already loaded into memory.
+	UObject* const ResolvedObject = ItemToReference.ResolveObject();
+	UClass*  const LoadedClass = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
+
+	// Only store classes that weren't currently loaded into memory.
+	if (LoadedClass)
+	{
+		// Don't allow the Garbage Collector to delete these objects until we are done generating schema.
+		LoadedClass->AddToRoot();
+		AdditionalSchemaGeneratedClasses.Add(LoadedClass);
+	}
+
+	// Return true if the class exists.
+	return ResolvedObject || LoadedClass;
+}
+
+void LoadDefaultGameModes()
+{
+	TArray<FString> GameModesToLoad{ TEXT("GlobalDefaultGameMode"), TEXT("GlobalDefaultServerGameMode") };
+
+	for (FString GameMode : GameModesToLoad)
+	{
+		// Get the GameMode from the DefaultEngine.ini.
+		FString GameModePath;
+		GConfig->GetString(
+			TEXT("/Script/EngineSettings.GameMapsSettings"),
+			*GameMode,
+			GameModePath,
+			GEngineIni
+		);
+
+		if (!GameModePath.IsEmpty())
+		{
+			TryLoadClassForSchemaGeneration(GameModePath);
+		}
+	}
+}
+
 void PreProcessSchemaMap()
 {
 	TArray<FString> EntriesToRemove;
 	for (const auto& EntryIn : ClassPathToSchema)
 	{
 		const FString ClassPath = EntryIn.Key;
-		const FSoftObjectPath ItemToReference(ClassPath);
-		
-		// First check if the object is already loaded into memory.
-		UObject* const ResolvedObject = ItemToReference.ResolveObject();
-		UClass*  const LoadedClass    = ResolvedObject ? nullptr : Cast<UClass>(ItemToReference.TryLoad());
 
-		// only store classes that weren't currently loaded into memory
-		if (LoadedClass)
-		{
-			// don't allow the Garbage Collector to delete these objects until we are done generating schema
-			LoadedClass->AddToRoot();
-			AdditionalSchemaGeneratedClasses.Add(LoadedClass);
-		}
-		// if the class isn't loaded then mark the entry for removal from the map
-		else if(!ResolvedObject && !LoadedClass)
+		bool ClassExists = TryLoadClassForSchemaGeneration(ClassPath);
+
+		// If the class isn't loaded then mark the entry for removal from the map.
+		if(!ClassExists)
 		{
 			EntriesToRemove.Add(ClassPath);
 		}
 	}
 
-	// this will prevent any garbage/unused classes from sticking around in the SchemaDatabase as clutter
+	// This will prevent any garbage/unused classes from sticking around in the SchemaDatabase as clutter.
 	for (const auto& EntryIn : EntriesToRemove)
 	{
 		ClassPathToSchema.Remove(EntryIn);
@@ -337,9 +383,9 @@ bool SpatialGDKGenerateSchema()
 	ClassToSchemaName.Empty();
 	UsedSchemaNames.Empty();
 
-	TryLoadExistingSchemaDatabase();
+	TryLoadExistingSchemaDatabaseInEditor();
 
-	// gets the classes currently loaded into memory
+	// Gets the classes currently loaded into memory.
 	SchemaGeneratedClasses = GetAllSupportedClasses();
 	SchemaGeneratedClasses.Sort();
 
@@ -376,7 +422,7 @@ bool SpatialGDKGenerateSchema()
 
 	SaveSchemaDatabase();
 
-	//Allow the garbage collector to clean up classes that were manually loaded and forced to keep alive for the Schema Generator process.
+	// Allow the garbage collector to clean up classes that were manually loaded and forced to keep alive for the Schema Generator process.
 	for (const auto& EntryIn : AdditionalSchemaGeneratedClasses)
 	{
 		if (EntryIn)
