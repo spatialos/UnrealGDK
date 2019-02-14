@@ -5,6 +5,6 @@ type HeartbeatEvent {
 }
 
 component Heartbeat {
-    id = 100009;
+    id = 9991;
     event HeartbeatEvent heartbeat;
 }
