@@ -31,7 +31,9 @@ After [building the Unreal Engine fork]({{urlRoot}}/content/get-started/build-un
 
 *Image: The Unreal Engine Project Browser, with the project file path and project name highlighted.*
 
-After you have selected **Create Project**, the Unreal Engine generates the necessary project files and directories, it then closes the Editor and automatically opens Visual Studio.
+After you have selected **Create Project**, the Unreal Engine generates the necessary project files and directories, it then closes the Editor and automatically opens Visual Studio. 
+
+After Visual Studio has opened, save your solution then close Visual Studio before proceeding to the Clone the GDK step.
 
 ### Clone the GDK
 
@@ -48,27 +50,39 @@ Now you need to clone the SpatialOS GDK for Unreal into your project. To do this
 
 To use the Starter Template, you must build the GDK for Unreal module dependencies and then add the GDK to your project. To do this: 
 
-1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository (`<Game>\Plugins\UnrealGDK\...`), and double-click **`Setup.bat`**. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in.
-1. In **File Explorer**, navigate to your <Game> directory and double-click **`<YourProject>`.sln** to open it with Visual Studio.
+1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository (`<Game>\Plugins\UnrealGDK\...`), and double-click **`Setup.bat`**. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in. 
+1. In **File Explorer**, navigate to your `<Game>` directory, right-click `<YourProject>`.uproject and select Generate Visual Studio Project files.
+1. In the same directory, double-click **`<YourProject>`.sln** to open it with Visual Studio.
 1. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
-1. Open **`<YourProject>`.uproject** in the Unreal Editor. 
-1. On the GDK for Unreal toolbar, select [**Schema**](https://docs.improbable.io/reference/latest/shared/glossary) to generate schema.<br/>
+1. When Visual Studio has finished building your project, right-click on **`<YourProject>`** and select **Set as StartUp Project**.
+1. Press F5 on your keyboard or select **Local Windows Debugger** in the Visual Studio toolbar to open your project in the Unreal Editor.<br/>
+![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)
+_Image: The Visual Studio toolbar_
+
+Note: Ensure that your Visual Studio Solution Configuration is set to **Development Editor**.
+
+
+
+### Deploy your project 
+
+To test your project, you can launch a [local deployment (SpatialOS documentation)](https://docs.improbable.io/reference/13.5/shared/glossary#local-deployment) or a [cloud deployment (SpatialOS documentation)](https://docs.improbable.io/reference/13.5/shared/glossary#cloud-deployment).  
+
+#### Deploy locally
+
+To launch a local deployment: 
+
+1. In the Unreal Editor, on the GDK toolbar, select [**Schema**](https://docs.improbable.io/reference/latest/shared/glossary) to generate schema.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
 1. Select [**Snapshot**]({{urlRoot}}/content/generating-a-snapshot) to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
-
-
-### Deploy your project 
-
-#### Deploy locally
-
-1. In the Unreal Editor, on the SpatialOS GDK toolbar, select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
+1. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
 ![Toolbar]({{assetRoot}}assets/set-up-template/template-start.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
-1. Under **Multiplayer Options**, set the number of players to **2** and check the box next to **Run Dedicated Server**. Then, under **Modes**, select **New Editor Window (PIE)**.<br/>
+2. Under **Modes**, select **New Editor Window (PIE)**.<br/>
+1. Under **Multiplayer Options**, set the number of players to **2** and ensure that the check box next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)
 ![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
 _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
 1. On the Unreal Engine toolbar, select **Play** to run the game.<br/>
@@ -79,7 +93,7 @@ If you want to run multiple server-workers in the Editor, see the [Toolbar docum
 
 #### Deploy in the cloud
 
-To run a cloud deployment, you need to prepare your server-worker and client-worker [assemblies](https://docs.improbable.io/reference/latest/shared/glossary), and upload them to the cloud.        
+To launch a cloud deployment, you need to prepare your server-worker and client-worker [assemblies](https://docs.improbable.io/reference/latest/shared/glossary), and upload them to the cloud.        
 
 > **TIP:** Building the assemblies can take a while - we recommend installing <a href="https://www.incredibuild.com/" data-track-link="Incredibuild|product=Docs|platform=Win|label=Win" target="_blank">IncrediBuild</a> to speed up build times.
 
@@ -103,8 +117,10 @@ An assembly is what’s created when you run `BuildWorker.bat`. Assemblies are `
 
 ### Upload your game
 
-1. In a terminal window, navigate to your `<ProjectRoot>\spatial\` directory and run the following command:<br/>
-`spatial cloud upload <assembly_name>`<br/>Where `<assembly_name>` is a name of your choice (for example `myassembly`). A valid upload command looks like this:
+1. In a terminal window, navigate to your `<ProjectRoot>\spatial\` directory and run the following command: 
+`spatial cloud upload <assembly_name>`<br/>Where `<assembly_name>` is a name of your choice (for example `myassembly`).
+
+A valid upload command looks like this:
 
 ```
 spatial cloud upload myassembly
