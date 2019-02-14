@@ -16,6 +16,7 @@ public:
 	USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer);
 
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual void PostInitProperties() override;
 
 private:
 	/** Path to the directory containing the SpatialOS-related files. */
@@ -23,8 +24,8 @@ private:
 	FDirectoryPath SpatialOSDirectory;
 
 public:
-	/** Delete dynamic entities on shutdown. */
-	UPROPERTY(EditAnywhere, config, Category = "Play in editor settings", meta = (ConfigRestartRequired = false, DisplayName = "Delete dynamic entities"))
+	/** If checked, all dynamically spawned entities will be deleted when server workers disconnect. */
+	UPROPERTY(EditAnywhere, config, Category = "Play in editor settings", meta = (ConfigRestartRequired = false, DisplayName = "Delete Dynamically Spawned Entities"))
 	bool bDeleteDynamicEntities;
 
 	/** Generate default launch config. */

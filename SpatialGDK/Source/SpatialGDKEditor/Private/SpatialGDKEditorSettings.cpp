@@ -3,12 +3,10 @@
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, bStopSpatialOnExit(false)
 {
-	ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
-	PlayInSettings->GetDeleteDynamicEntities(bDeleteDynamicEntities);
-
 	SpatialOSDirectory.Path = GetSpatialOSDirectory();
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotPath();
@@ -31,6 +29,17 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
+}
+
+void USpatialGDKEditorSettings::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+	PlayInSettings->SetDeleteDynamicEntities(!bDeleteDynamicEntities);
+
+	PlayInSettings->PostEditChange();
+	PlayInSettings->SaveConfig();
 }
 
 FString USpatialGDKEditorSettings::ToString()
