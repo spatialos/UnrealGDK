@@ -269,7 +269,7 @@ void DeleteGeneratedSchemaFiles()
 	PlatformFile.CreateDirectory(*SchemaOutputPath);
 }
 
-void InitClassPathToSchemaMap()
+void TryLoadExistingSchemaDatabase()
 {
 	TSoftObjectPtr<USchemaDatabase> SchemaDatabasePtr(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")));
 	SchemaDatabasePtr.LoadSynchronous();
@@ -291,10 +291,26 @@ void InitClassPathToSchemaMap()
 	else
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("SchemaDatabase not found on Engine startup so the generated schema directory will be cleared out if it exists."));
+
+		ClassPathToSchema.Empty();
 		NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+
 		// As a safety precaution, if the SchemaDatabase.uasset doesn't exist then make sure the schema generated folder is cleared as well. 
 		DeleteGeneratedSchemaFiles();
 	}
+}
+
+void TryLoadExistingSchemaDatabaseInEditor()
+{
+	TPromise<void> Promise;
+	TFuture<void> Future = Promise.GetFuture();
+
+	AsyncTask(ENamedThreads::GameThread, [&Promise] {
+		TryLoadExistingSchemaDatabase();
+		Promise.SetValue();
+	});
+
+	Future.Get();
 }
 
 bool TryLoadClassForSchemaGeneration(FString ClassPath)
@@ -366,6 +382,8 @@ bool SpatialGDKGenerateSchema()
 {
 	ClassToSchemaName.Empty();
 	UsedSchemaNames.Empty();
+
+	TryLoadExistingSchemaDatabaseInEditor();
 
 	// Gets the classes currently loaded into memory.
 	SchemaGeneratedClasses = GetAllSupportedClasses();
