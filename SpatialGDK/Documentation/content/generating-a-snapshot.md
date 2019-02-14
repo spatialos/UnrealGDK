@@ -45,7 +45,7 @@ This creates a snapshot called `default.snapshot` which you can find in `spatial
 If you want your snapshots to be exported to a different path you can specify the output path and file name of the snapshot using the [GDK toolbar settings]({{urlRoot}}/content/toolbars.md).
 
 ## When to generate a snapshot
-You need to regenerate a snapshot when:
+You need to regenerate a snapshot when you have:
 
 * Generating [schema]({{urlRoot}}/content/schema) for a new class.
 * Modifying replicated properties or RPC signatures for any class whose schema was previously generated.
