@@ -1,36 +1,28 @@
 # Schema
 
-SpatialOS uses [schema (SpatialOS documentation)](https://docs.improbable.io/reference/13.6/shared/concepts/schema#schema) to generate APIs specific to the components in your game world. These APIs define how you can operate on entity components within SpatialOS. 
+SpatialOS uses [schema (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/concepts/schema#schema) to generate APIs specific to the entity components in your game world. These APIs define how you can operate on entity components within SpatialOS. 
 
 ## Generating schema
 
-To generate schema, select the **Schema** button in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through objects with replicated properties to generate the required schema files and then updates the [`SchemaDatabase`(Unreal GDK Glossary)]({{urlRoot}}/content/glossary#schemadatabase).
+To generate schema, select the **Schema** button in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through objects with replicated properties to generate the required schema files and then updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).
 
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)
 
-*Image: In the GDK toolbar in the Unreal Editor, select the* ***Schema*** *button.*
+_Image: In the GDK toolbar in the Unreal Editor, select **Schema**_
 
 As the GDK automatically generates all the schema you need, you do not have to write or edit schema manually when using the GDK.
 
 ### When to generate schema
 
-You must generate schema:
-
-- When you add or change any replicated properties that you want to deploy to SpatialOS.
-- When you create a new map. This ensures that you generate schema for any unique objects on this map. 
-- When you open a map and you haven’t generated schema for it yet. 
-
-You must also generate a snapshot after generating schema by selecting the **Snapshot** button on the GDK toolbar. For more information about snapshots, refer to the [snapshot documentation]({{urlRoot}}/content/generating-a-snapshot).
+You must generate schema when you add or change any replicated properties that you want to deploy to SpatialOS.
 
 The GDK only generates schema for objects currently loaded into memory. This means if your project uses [sublevels](<https://docs.unrealengine.com/en-us/Engine/Levels/LevelsWindow>), you’ll need to load them in addition to your map, before generating schema.
 
-Schema [component IDs](https://docs.improbable.io/reference/13.5/shared/schema/reference#ids) persist between runs of the schema generator. This means that as long as you have generated schema for a particular map at least once, and have not modified any classes or maps since you last generated schema, then you only need to generate a snapshot for the current level before you start a SpatialOS deployment. 
-
 ## Deleting schema
 
-Whenever you generate schema, the GDK checks the [`SchemaDatabase`(Unreal GDK Glossary)]({{urlRoot}}/content/glossary#schemadatabase) and all the relevant objects in your project and removes any references to missing objects from the `SchemaDatabase`. 
+Whenever you generate schema, the GDK checks the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase) and all the relevant objects in your project and removes any references to missing objects from the SchemaDatabase. 
 
-If you delete any objects in your project, the GDK removes them from the `SchemaDatabase` the next time you generate schema.
+If you delete any objects in your project, the GDK removes them from the SchemaDatabase the next time you generate schema.
 
 # Schema and source control 
 
