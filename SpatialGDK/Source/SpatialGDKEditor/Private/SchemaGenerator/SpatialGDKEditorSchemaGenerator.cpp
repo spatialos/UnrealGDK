@@ -188,13 +188,20 @@ void CheckIdentifierNameValidity(TSharedPtr<FUnrealType> TypeInfo, bool& bOutSuc
 
 bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 {
-	// Remove all underscores from the class names, check for duplicates.
+	bool bSuccess = true;
+
+	// Remove all underscores from the class names, check for duplicates or invalid schema names.
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		UClass* Class = Cast<UClass>(TypeInfo->Type);
 		check(Class);
 		const FString& ClassName = Class->GetName();
 		FString SchemaName = UnrealNameToSchemaName(ClassName);
+
+		if (!CheckSchemaName(SchemaName, Class->GetPathName(), TEXT("Class")))
+		{
+			bSuccess = false;
+		}
 
 		int Suffix = 0;
 		while (UsedSchemaNames.Contains(SchemaName))
@@ -210,7 +217,6 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	}
 
 	// Check for invalid/duplicate names in the generated type info.
-	bool bSuccess = true;
 	for (auto& TypeInfo : TypeInfos)
 	{
 		CheckIdentifierNameValidity(TypeInfo, bSuccess);
