@@ -1,0 +1,93 @@
+param(
+  [string] $gdk_home = (get-item "$($PSScriptRoot)").parent.FullName, ## The root of the UnrealGDK repo
+  [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production"
+)
+
+$ErrorActionPreference = 'Stop'
+
+function Write-Log() {
+  param(
+    [string] $msg,
+    [Parameter(Mandatory=$false)] [bool] $expand = $false
+  )
+  if ($expand) {
+      Write-Output "+++ $($msg)"
+  } else {
+      Write-Output "--- $($msg)"
+  }
+}
+
+function Start-Event() {
+    param(
+        [string] $event_name,
+        [string] $event_parent
+    )
+
+    # Start this tracing span.
+    Start-Process -NoNewWindow "imp-ci" -ArgumentList @(`
+        "events", "new", `
+        "--name", "$($event_name)", `
+        "--child-of", "$($event_parent)"
+    ) | Out-Null
+
+    Write-Log "--- $($event_name)"
+}
+
+function Finish-Event() {
+    param(
+        [string] $event_name,
+        [string] $event_parent
+    )
+
+    # Emit the end marker for this tracing span.
+    Start-Process -NoNewWindow "imp-ci"  -ArgumentList @(`
+        "events", "new", `
+        "--name", "$($event_name)", `
+        "--child-of", "$($event_parent)"
+    ) | Out-Null
+}
+
+pushd "$($gdk_home)"
+
+    # Fetch the version of Unreal Engine we need
+    pushd "ci"
+        $unreal_version = Get-Content -Path "unreal-engine.version" -Raw
+        Write-Log "Using Unreal Engine version: $($unreal_version)"
+    popd
+
+    ## Create an UnrealEngine directory if it doesn't already exist
+    New-Item -Name "UnrealEngine" -ItemType Directory -Force
+
+
+    Start-Event "download-unreal-engine" "build-unreal-gdk-:windows:"
+    pushd "UnrealEngine"
+        Write-Log "Downloading the Unreal Engine artifacts from GCS"
+        $gcs_unreal_location = "$($unreal_version).zip"
+
+        $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
+            "cp", `
+            "gs://$($gcs_publish_bucket)/$($gcs_unreal_location)", `
+            "$($unreal_version).zip" `
+        )
+        if ($gsu_proc.ExitCode -ne 0) {
+            Write-Log "Failed to download Engine artifacts. Error: $($gsu_proc.ExitCode)"
+            Throw "Failed to download Engine artifacts"
+        }
+
+        Write-Log "Unzipping Unreal Engine"
+        $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
+        "x", `  
+        "$($unreal_version).zip" `    
+        )   
+        if ($zip_proc.ExitCode -ne 0) { 
+            Write-Log "Failed to unzip Unreal Engine. Error: $($zip_proc.ExitCode)" 
+            Throw "Failed to unzip Unreal Engine."  
+        }
+    popd
+    Finish-Event "download-unreal-engine" "build-unreal-gdk-:windows:"
+
+
+    $unreal_path = "$($gdk_home)\UnrealEngine"
+    Write-Log "Setting UNREAL_HOME environment variable to $($unreal_path)"
+    [Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($unreal_path)", "Machine")
+popd
