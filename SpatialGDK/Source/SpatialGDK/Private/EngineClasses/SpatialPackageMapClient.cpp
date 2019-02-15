@@ -14,6 +14,7 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityRegistry.h"
+#include "Utils/SchemaOption.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
 
@@ -120,6 +121,11 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject*
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
+void USpatialPackageMapClient::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const
+{
+	static_cast<FSpatialNetGUIDCache*>(GuidCache.Get())->NetworkRemapObjectRefPaths(ObjectRef);
+}
+
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
 {
 	// Super::SerializeObject is not called here on purpose
@@ -142,13 +148,33 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 
 	USpatialReceiver* Receiver = SpatialNetDriver->Receiver;
 
-	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	const SubobjectToOffsetMap& SubobjectToOffset = improbable::CreateOffsetMapFromActor(Actor, Info);
+	FNetworkGUID NetGUID;
+	FUnrealObjectRef EntityObjectRef(EntityId, 0);
 
-	// Set up the NetGUID and ObjectRef for this actor.
-	FNetworkGUID NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
-	FUnrealObjectRef ObjectRef(EntityId, 0);
-	RegisterObjectRef(NetGUID, ObjectRef);
+	// Valid if Actor is stably named. Used for stably named subobject assignment further below
+	FUnrealObjectRef StablyNamedRef;
+
+	if (Actor->IsNameStableForNetworking())
+	{
+		// Startup Actors have two valid UnrealObjectRefs: the entity id and the path.
+		// AssignNewStablyNamedObjectNetGUID will register the path ref.
+		NetGUID = AssignNewStablyNamedObjectNetGUID(Actor);
+
+		// We register the entity id ref here.
+		UnrealObjectRefToNetGUID.Emplace(EntityObjectRef, NetGUID);
+
+		// Once we have an entity id, we should always be using it to refer to entities.
+		// Since the path ref may have been registered previously, we first try to remove it
+		// and then register the entity id ref.
+		StablyNamedRef = NetGUIDToUnrealObjectRef[NetGUID];
+		NetGUIDToUnrealObjectRef.Emplace(NetGUID, EntityObjectRef);
+	}
+	else
+	{
+		NetGUID = GetOrAssignNetGUID_SpatialGDK(Actor);
+		RegisterObjectRef(NetGUID, EntityObjectRef);
+	}
+
 	UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for actor: %s. NetGUID: %s, entity ID: %lld"),
 		*Actor->GetName(), *NetGUID.ToString(), EntityId);
 
@@ -157,27 +183,48 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
 	if (Receiver != nullptr)
 #endif
 	{
-		Receiver->ResolvePendingOperations(Actor, ObjectRef);
+		Receiver->ResolvePendingOperations(Actor, EntityObjectRef);
 	}
+
+	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	const SubobjectToOffsetMap& SubobjectToOffset = improbable::CreateOffsetMapFromActor(Actor, Info);
 
 	for (auto& Pair : SubobjectToOffset)
 	{
 		UObject* Subobject = Pair.Key;
 		uint32 Offset = Pair.Value;
 
+		// AssignNewStablyNamedObjectNetGUID is not used due to using the wrong ObjectRef as the outer of the subobject.
+		// So it is ok to use RegisterObjectRef in both cases since no prior bookkeeping was done (unlike Actors)
 		FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
-		FUnrealObjectRef SubobjectRef(EntityId, Offset);
-		RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
+		FUnrealObjectRef EntityIdSubobjectRef(EntityId, Offset);
+
+		if (Subobject->IsNameStableForNetworking())
+		{
+			if (Subobject->GetFName().ToString().Equals(TEXT("PersistentLevel")) && !Subobject->IsA<ULevel>())
+			{
+				UE_LOG(LogSpatialPackageMap, Fatal, TEXT("Found object called PersistentLevel which isn't a Level! This is not allowed when using the GDK"));
+			}
+
+			// Using StablyNamedRef for the outer since referencing ObjectRef in the map
+			// will have the EntityId
+			FUnrealObjectRef StablyNamedSubobjectRef(0, 0, Subobject->GetFName().ToString(), StablyNamedRef);
+
+			// This is the only extra object ref that has to be registered for the subobject.
+			UnrealObjectRefToNetGUID.Emplace(StablyNamedSubobjectRef, SubobjectNetGUID);
+		}
+
+		RegisterObjectRef(SubobjectNetGUID, EntityIdSubobjectRef);
 
 		UE_LOG(LogSpatialPackageMap, Verbose, TEXT("Registered new object ref for subobject %s inside actor %s. NetGUID: %s, object ref: %s"),
-			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *SubobjectRef.ToString());
+			*Subobject->GetName(), *Actor->GetName(), *SubobjectNetGUID.ToString(), *EntityIdSubobjectRef.ToString());
 
 			// This will be null when being used in the snapshot generator
 #if WITH_EDITOR
 			if (Receiver != nullptr)
 #endif
 			{
-				Receiver->ResolvePendingOperations(Subobject, SubobjectRef);
+				Receiver->ResolvePendingOperations(Subobject, EntityIdSubobjectRef);
 			}
 	}
 
@@ -204,6 +251,12 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 		OuterGUID = AssignNewStablyNamedObjectNetGUID(OuterObject);
 	}
 
+
+	if (Object->GetFName().ToString().Equals(TEXT("PersistentLevel")) && !Object->IsA<ULevel>())
+	{
+		UE_LOG(LogSpatialPackageMap, Fatal, TEXT("Found object called PersistentLevel which isn't a Level! This is not allowed when using the GDK"));
+	}
+
 	FUnrealObjectRef StablyNamedObjRef(0, 0, Object->GetFName().ToString(), (OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef());
 	RegisterObjectRef(NetGUID, StablyNamedObjRef);
 
@@ -225,6 +278,16 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	UClass* Class = Actor->GetClass();
 	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
+	improbable::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
+
+	// There are times when the Editor is quitting out of PIE that this is nullptr.
+	if (UnrealMetadata == nullptr)
+	{
+		return;
+	}
+
+	improbable::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
+
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
 		FUnrealObjectRef SubobjectRef(EntityId, SubobjectInfoPair.Key);
@@ -232,14 +295,26 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 		{
 			NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
 			UnrealObjectRefToNetGUID.Remove(SubobjectRef);
+
+			if (StablyNamedRefOption.IsSet())
+			{
+				UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+			}
 		}
 	}
 
 	// Remove actor.
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
-	FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID);
+	// TODO: Figure out why NetGUIDToUnrealObjectRef might not have this GUID. UNR-989
+	if (FUnrealObjectRef* ActorRef = NetGUIDToUnrealObjectRef.Find(EntityNetGUID))
+	{
+		UnrealObjectRefToNetGUID.Remove(*ActorRef);
+	}
 	NetGUIDToUnrealObjectRef.Remove(EntityNetGUID);
-	UnrealObjectRefToNetGUID.Remove(*ActorRef);
+	if (StablyNamedRefOption.IsSet())
+	{
+		UnrealObjectRefToNetGUID.Remove(StablyNamedRefOption.GetValue());
+	}
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)
@@ -289,7 +364,6 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 		}
 		Iterator = &Iterator->Outer.GetValue();
 	}
-
 }
 
 FUnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
@@ -344,11 +418,12 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(UObject* Object
 		CacheObject.Object = MakeWeakObjectPtr(const_cast<UObject*>(Object));
 		CacheObject.PathName = Object->GetFName();
 		CacheObject.OuterGUID = GetOrAssignNetGUID_SpatialGDK(Object->GetOuter());
+		CacheObject.bIgnoreWhenMissing = true;
 		RegisterNetGUID_Internal(NetGUID, CacheObject);
 
 		UE_LOG(LogSpatialPackageMap, Log, TEXT("%s: NetGUID for object %s was not found in the cache. Generated new NetGUID %s."),
 			*Cast<USpatialNetDriver>(Driver)->Connection->GetWorkerId(),
-			*Object->GetName(),
+			*Object->GetPathName(),
 			*NetGUID.ToString());
 	}
 
