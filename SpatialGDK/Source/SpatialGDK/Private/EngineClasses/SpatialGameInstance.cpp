@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
+#pragma optimize("", off)
 #include "EngineClasses/SpatialGameInstance.h"
 
 #include "Engine/Engine.h"
@@ -170,7 +170,8 @@ void USpatialGameInstance::StartGameInstance()
 		// The new locator uses the same param for the LoginToken, so this will notice LocatorConfig launches as well.
 		// NOTE: When we remove the LegacyLocatorConfig, this should be updated to check LocatorConfig instead of be removed.
 		FLegacyLocatorConfig LegacyLocatorConfig;
-		if (!LegacyLocatorConfig.LoginToken.IsEmpty() && GIsClient)
+
+		if (GIsClient)
 		{
 			FString Error;
 			if (!StartGameInstance_SpatialGDKClient(Error))
