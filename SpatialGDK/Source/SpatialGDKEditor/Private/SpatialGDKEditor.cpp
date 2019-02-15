@@ -44,6 +44,12 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	if (ErroredBlueprints.Num() > 0)
 	{
 		UE_LOG(LogSpatialGDKEditor, Error, TEXT("There were errors when compiling blueprints. Schema has not been generated."));
+		if (FailureCallback.IsBound())
+		{
+			FailureCallback.Execute();
+		}
+		GeneralProjectSettings->bSpatialNetworking = bCachedSpatialNetworking;
+		bSchemaGeneratorRunning = false;
 		return;
 	}
 
