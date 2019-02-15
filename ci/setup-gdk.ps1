@@ -1,7 +1,6 @@
 param(
   [string] $gdk_home = (get-item "$($PSScriptRoot)").parent.FullName, ## The root of the UnrealGDK repo
-  [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production",
-  [string] $msbuild_exe = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\MSBuild.exe"
+  [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -31,7 +30,7 @@ function Start-Event() {
         "--child-of", "$($event_parent)"
     ) | Out-Null
 
-    Write-Log "$($event_name)"
+    Write-Log "--- $($event_name)"
 }
 
 function Finish-Event() {
@@ -64,7 +63,6 @@ pushd "$($gdk_home)"
     New-Item -Path "$($core_sdk_dir)\tools" -ItemType Directory -Force
     New-Item -Path "$($core_sdk_dir)\worker_sdk" -ItemType Directory -Force
     New-Item -Path "$($binaries_dir)" -ItemType Directory -Force
-    New-Item -Path "$($binaries_dir)\Programs" -ItemType Directory -Force
 
 
     Start-Event "download-spatial-packages" "build-unreal-gdk-:windows:"
@@ -124,16 +122,17 @@ pushd "$($gdk_home)"
     # Copy from binaries_dir
     Copy-Item "$($binaries_dir)\Win64\include\*" "$($worker_sdk_dir)\" -Force -Recurse
 
+    Write-Log "Fetch MSBUILD_EXE location"
+    $msbuild_exe = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\MSBuild.exe"
+
+
     Start-Event "build-utilities" "build-unreal-gdk-:windows:"
-    $msbuild_proc = Start-Process -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
+    #%MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
+    $msbuild_proc = Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
         "/nologo", `
         "SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln", `
         "/property:Configuration=Release" `
     )
-
-    # Working around a powershell bug
-	$msbuild_handle = $msbuild_proc.Handle
-    Wait-Process -Id (Get-Process -InputObject $msbuild_proc).id
     if ($msbuild_proc.ExitCode -ne 0) { 
         Write-Log "Failed to build utilities. Error: $($msbuild_proc.ExitCode)" 
         Throw "Failed to build utilities."  
