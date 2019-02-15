@@ -1,3 +1,5 @@
-&.\get-engine.ps1
-&.\setup-gdk.ps1
-&.\build-gdk.ps1
+$PSScriptRoot+"\goodbuy.ps1"
+
+&$PSScriptRoot+"\get-engine.ps1"
+&$PSScriptRoot+"\setup-gdk.ps1"
+&$PSScriptRoot+"\build-gdk.ps1"
