@@ -34,6 +34,8 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
 	GeneralProjectSettings->bSpatialNetworking = true;
 
+	TryLoadExistingSchemaDatabase();
+
 	PreProcessSchemaMap();
 
 	LoadDefaultGameModes();
