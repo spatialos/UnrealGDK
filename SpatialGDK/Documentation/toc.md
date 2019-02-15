@@ -26,6 +26,7 @@
 - <h3>[- Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)</h3>
 - <h3>[- Map travel]({{urlRoot}}/content/map-travel)</h3>
 - <h3>[- Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)</h3>
+- <h3>[- Schema]({{urlRoot}}/content/schema)</h3>
 - <h3>[- Snapshots]({{urlRoot}}/content/generating-a-snapshot)</h3>
 - <h3>[- Helper scripts]({{urlRoot}}/content/helper-scripts)</h3>
 - <h3>[- Directory structure]({{urlRoot}}/content/directory-structure)</h3>
