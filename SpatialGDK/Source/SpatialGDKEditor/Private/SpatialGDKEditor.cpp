@@ -43,13 +43,15 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 	if (ErroredBlueprints.Num() > 0)
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("There were errors when compiling blueprints. Schema has not been generated."));
+		UE_LOG(LogSpatialGDKEditor, Error, TEXT("There were errors when compiling blueprints. Schema has not been generated."));
 		return;
 	}
 
-	AsyncTask(ENamedThreads::GameThread, [this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]() {
-		auto SchemaGeneratorResult = SpatialGDKGenerateSchema();
-		if (!SchemaGeneratorResult) {
+	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
+		[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()
+	{
+		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
+		{
 			if (FailureCallback.IsBound())
 			{
 				FailureCallback.Execute();
