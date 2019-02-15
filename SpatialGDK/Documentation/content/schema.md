@@ -20,10 +20,7 @@ The GDK only generates schema for classes currently loaded into memory. This mea
 
 ## Deleting schema
 
-Whenever you generate schema, the GDK checks the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase) and all of your project classes currently loaded into memory, and removes any classes referenced in the `SchemaDatabase` that no longer exist.
-
-If you delete any classes in your project, the GDK removes them from the SchemaDatabase the next time you generate schema.
-
+When you generate schema, the GDK verifies that any classes referenced in the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase) still exist. If you delete a class, the GDK removes it from the SchemaDatabase the next time you generate schema. 
 # Schema and source control 
 
 ### Checking out the `SchemaDatabase`
