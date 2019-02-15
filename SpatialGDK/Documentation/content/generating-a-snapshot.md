@@ -20,7 +20,7 @@ If you want your snapshots to be exported to a different path you can specify th
 
 ## What’s listed in snapshots
 
-The GDK snapshots contain three kinds of [SpatialOS entities]({{urlRoot}}/content/glossary#spatialos-entity): 
+The GDK snapshots contain two kinds of [SpatialOS entities]({{urlRoot}}/content/glossary#spatialos-entity): 
 Critical entities, and placeholder entities.
 
 ### Critical entities
