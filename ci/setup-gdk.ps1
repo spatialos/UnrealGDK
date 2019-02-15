@@ -128,11 +128,12 @@ pushd "$($gdk_home)"
 
     Start-Event "build-utilities" "build-unreal-gdk-:windows:"
     #%MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
-    $msbuild_proc = Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
+    $msbuild_proc = Start-Process -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
         "/nologo", `
         "SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln", `
         "/property:Configuration=Release" `
     )
+    Wait-Process -Id (Get-Process -InputObject $msbuild_proc).id
     if ($msbuild_proc.ExitCode -ne 0) { 
         Write-Log "Failed to build utilities. Error: $($msbuild_proc.ExitCode)" 
         Throw "Failed to build utilities."  
