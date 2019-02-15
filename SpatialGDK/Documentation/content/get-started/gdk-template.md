@@ -5,15 +5,15 @@ Before setting up the SpatialOS GDK Starter Template, you need to have followed:
 * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
 * [Getting started: 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/tutorial).
 
-If you haven't already, follow our [Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/dependencies) to try out the SpatialOS for Unreal GDK development experience by adding a new feature to a project and testing it across two servers.
+If you haven't already, follow our [Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/dependencies) to try out the SpatialOS for Unreal GDK development experience by adding a new feature to a project and testing it across two server-workers.
 
 If you are ready to start developing your own game with the GDK, follow the steps below. 
 
 ### Terms used on this page
 
-* `<Game>` - The directory that contains your project’s .uproject file and Source folder.
-* `<ProjectRoot>` - The directory that contains your `<Game>` directory.
-* `<YourProject>` - The name of your project and .uproject file (for example, `\<Game>\YourProject.uproject`).
+* `<GameRoot>` - The directory that contains your project’s .uproject file and Source folder.
+* `<ProjectRoot>` - The directory that contains your `<GameRoot>` directory.
+* `<YourProject>` - The name of your project and .uproject file (for example, `\<GameRoot>\YourProject.uproject`).
 
 ### Create a new project using the Starter Template
 
@@ -39,19 +39,19 @@ After Visual Studio has opened, save your solution then close Visual Studio befo
 
 Now you need to clone the SpatialOS GDK for Unreal into your project. To do this: 
 
-1. In **File Explorer**, navigate to the `<Game>` directory and create a `Plugins` folder in this directory.
-2. In a Git Bash terminal window, navigate to `<Game>\Plugins` and clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
+1. In **File Explorer**, navigate to the `<GameRoot>` directory and create a `Plugins` folder in this directory.
+2. In a Git Bash terminal window, navigate to `<GameRoot>\Plugins` and clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`
 
-**Note:** You need to ensure that the root directory of the GDK for Unreal repository is called `UnrealGDK` so the file path is: `<Game>\Plugins\UnrealGDK\...`
+**Note:** You need to ensure that the root directory of the GDK for Unreal repository is called `UnrealGDK` so the file path is: `<GameRoot>\Plugins\UnrealGDK\...`
 
 ### Build the dependencies 
 
 To use the Starter Template, you must build the GDK for Unreal module dependencies and then add the GDK to your project. To do this: 
 
-1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository (`<Game>\Plugins\UnrealGDK\...`), and double-click **`Setup.bat`**. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in. 
-1. In **File Explorer**, navigate to your `<Game>` directory, right-click `<YourProject>`.uproject and select Generate Visual Studio Project files.
+1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository (`<GameRoot>\Plugins\UnrealGDK\...`), and double-click **`Setup.bat`**. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in. 
+1. In **File Explorer**, navigate to your `<GameRoot>` directory, right-click `<YourProject>`.uproject and select Generate Visual Studio Project files.
 1. In the same directory, double-click **`<YourProject>`.sln** to open it with Visual Studio.
 1. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
 1. When Visual Studio has finished building your project, right-click on **`<YourProject>`** and select **Set as StartUp Project**.
