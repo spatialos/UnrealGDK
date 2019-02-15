@@ -330,32 +330,8 @@ void PreProcessSchemaMap()
 	}
 }
 
-// Compile all dirty blueprints. Returns true if blueprints could be successfully compiled and false otherwise.
-bool CompileBlueprints(bool PromptForCompilation = false)
-{
-	TArray<UBlueprint*> ErroredBlueprints;
-	UEditorEngine::ResolveDirtyBlueprints(PromptForCompilation, ErroredBlueprints);
-
-	if (ErroredBlueprints.Num() > 0)
-	{
-		for (const auto& Blueprint : ErroredBlueprints)
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not compile %s"), *Blueprint->GetName());
-		}
-		return false;
-	}
-	return true;
-}
-
 bool SpatialGDKGenerateSchema()
 {
-	bool BlueprintCompilationSuccessful = CompileBlueprints();
-	if (!BlueprintCompilationSuccessful)
-	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("There were errors when compiling blueprints. Schema has not been generated."));
-		return false;
-	}
-
 	ClassToSchemaName.Empty();
 	UsedSchemaNames.Empty();
 
