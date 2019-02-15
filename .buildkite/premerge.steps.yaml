@@ -20,7 +20,6 @@ common: &common
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
 
 steps:
-  - label: "setup-and-build-GDKStarterProject-:windows:"
+  - label: "setup-GDK-:windows:"
     command: "powershell ./ci/setup-and-build.ps1"
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
-    
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede. 

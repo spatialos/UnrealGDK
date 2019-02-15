@@ -49,50 +49,6 @@ function Finish-Event() {
 
 pushd "$($gdk_home)"
 
-    # Fetch the version of Unreal Engine we need
-    pushd "ci"
-        $unreal_version = Get-Content -Path "unreal-engine.version" -Raw
-        Write-Log "Using Unreal Engine version: $($unreal_version)"
-    popd
-
-    ## Create an UnrealEngine directory if it doesn't already exist
-    New-Item -Name "UnrealEngine" -ItemType Directory -Force
-
-
-    Start-Event "download-unreal-engine" "build-unreal-gdk-:windows:"
-    pushd "UnrealEngine"
-        Write-Log "Downloading the Unreal Engine artifacts from GCS"
-        $gcs_unreal_location = "$($unreal_version).zip"
-
-        $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
-            "cp", `
-            "gs://$($gcs_publish_bucket)/$($gcs_unreal_location)", `
-            "$($unreal_version).zip" `
-        )
-        if ($gsu_proc.ExitCode -ne 0) {
-            Write-Log "Failed to download Engine artifacts. Error: $($gsu_proc.ExitCode)"
-            Throw "Failed to download Engine artifacts"
-        }
-
-        Write-Log "Unzipping Unreal Engine"
-        $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
-        "x", `  
-        "$($unreal_version).zip" `    
-        )   
-        if ($zip_proc.ExitCode -ne 0) { 
-            Write-Log "Failed to unzip Unreal Engine. Error: $($zip_proc.ExitCode)" 
-            Throw "Failed to unzip Unreal Engine."  
-        }
-    popd
-    Finish-Event "download-unreal-engine" "build-unreal-gdk-:windows:"
-
-
-    $unreal_path = "$($gdk_home)\UnrealEngine"
-    Write-Log "Setting UNREAL_HOME environment variable to $($unreal_path)"
-    [Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($unreal_path)", "Machine")
-
-    ## THIS REPLACES THE OLD SETUP.BAT SCRIPT
-
     # Setup variables
     $pinned_core_sdk_version = Get-Content -Path "$($gdk_home)\SpatialGDK\Extras\core-sdk.version" -Raw
     $build_dir = "$($gdk_home)\SpatialGDK\Build"
@@ -182,21 +138,4 @@ pushd "$($gdk_home)"
         Throw "Failed to build utilities."  
     }
     Finish-Event "build-utilities" "build-unreal-gdk-:windows:"
-
-
-    Start-Event "build-unreal-gdk" "build-unreal-gdk-:windows:"
-    pushd "SpatialGDK"
-        $build_proc = Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
-            "BuildPlugin", `
-            " -Plugin=`"$($gdk_home)/SpatialGDK/SpatialGDK.uplugin`"", `
-            "-TargetPlatforms=Win64", `
-            "-Package=`"$gdk_home/SpatialGDK/Intermediate/BuildPackage/Win64`"" `
-        )
-        if ($build_proc.ExitCode -ne 0) { 
-            Write-Log "Failed to build the Unreal GDK. Error: $($build_proc.ExitCode)" 
-            Throw "Failed to build the Unreal GDK."  
-        }
-    popd
-    Finish-Event "build-unreal-gdk" "build-unreal-gdk-:windows:"
-
 popd
