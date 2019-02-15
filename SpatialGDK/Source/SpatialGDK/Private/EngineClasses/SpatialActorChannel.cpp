@@ -253,15 +253,13 @@ int64 USpatialActorChannel::ReplicateActor()
 	FReplicationFlags RepFlags;
 
 	// Send initial stuff.
-	if (OpenPacketId.First == INDEX_NONE)
+	if (bCreatingNewEntity)
 	{
 		RepFlags.bNetInitial = true;
+		// Include changes to Bunch, despite us not using it, since these are passed to the virtual OnSerializeNewActor, whose implementations could use them.
 		Bunch.bClose = Actor->bNetTemporary;
 		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
 	}
-
-	// Use spatial's bCreatingNewEntity to inform the replication flags.
-	RepFlags.bNetInitial = bCreatingNewEntity;
 
 	// Here, Unreal would have determined if this connection belongs to this actor's Outer.
 	// We don't have this concept when it comes to connections, our ownership-based logic is in the interop layer.
