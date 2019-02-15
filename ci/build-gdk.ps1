@@ -51,7 +51,7 @@ pushd "$($gdk_home)"
 
     Start-Event "build-unreal-gdk" "build-unreal-gdk-:windows:"
     pushd "SpatialGDK"
-        $build_proc = Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
+        $build_proc = Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($gdk_home)\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
             "BuildPlugin", `
             " -Plugin=`"$($gdk_home)/SpatialGDK/SpatialGDK.uplugin`"", `
             "-TargetPlatforms=Win64", `
