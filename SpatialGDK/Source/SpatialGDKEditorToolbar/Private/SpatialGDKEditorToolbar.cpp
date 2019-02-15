@@ -287,7 +287,6 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 
 void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 {
-	const USpatialGDKEditorSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorSettings>();
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString LaunchConfig;
@@ -298,7 +297,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	}
 	else
 	{
-		LaunchConfig = SpatialGDKToolbarSettings->GetSpatialOSLaunchConfig();
+		LaunchConfig = SpatialGDKSettings->GetSpatialOSLaunchConfig();
 	}
 
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
@@ -428,116 +427,113 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 
 	// Populate json file for launch config
 	Writer->WriteObjectStart(); // Start of json
-	Writer->WriteValue(TEXT("template"), TEXT("small")); // Template section
-	Writer->WriteObjectStart(TEXT("world")); // World section begin
-	Writer->WriteObjectStart(TEXT("dimensions"));
-	Writer->WriteValue(TEXT("x_meters"), 2000);
-	Writer->WriteValue(TEXT("z_meters"), 2000);
-	Writer->WriteObjectEnd();
-	Writer->WriteValue(TEXT("chunk_edge_length_meters"), 50);
-	Writer->WriteValue(TEXT("streaming_query_interval"), 4);
-	Writer->WriteArrayStart(TEXT("legacy_flags"));
-	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("name"), TEXT("streaming_query_diff"));
-	Writer->WriteValue(TEXT("value"), TEXT("true"));
-	Writer->WriteObjectEnd();
-	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("name"), TEXT("bridge_qos_max_timeout"));
-	Writer->WriteValue(TEXT("value"), TEXT("0"));
-	Writer->WriteObjectEnd();
-	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("name"), TEXT("bridge_soft_handover_enabled"));
-	Writer->WriteValue(TEXT("value"), TEXT("false"));
-	Writer->WriteObjectEnd();
-	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("name"), TEXT("qos_max_unacked_pings_rate"));
-	Writer->WriteValue(TEXT("value"), TEXT("10"));
-	Writer->WriteObjectEnd();
-	Writer->WriteArrayEnd();
-	Writer->WriteObjectStart(TEXT("snapshots"));
-	Writer->WriteValue(TEXT("snapshot_write_period_seconds"), 0);
-	Writer->WriteObjectEnd();
-	Writer->WriteObjectEnd(); // World section end
-	Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
-	Writer->WriteArrayStart("layer_configurations");
-	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("layer"), TEXT("UnrealWorker"));
-	Writer->WriteObjectStart("rectangle_grid");
+		Writer->WriteValue(TEXT("template"), TEXT("small")); // Template section
+		Writer->WriteObjectStart(TEXT("world")); // World section begin
+			Writer->WriteObjectStart(TEXT("dimensions"));
+				Writer->WriteValue(TEXT("x_meters"), 2000);
+				Writer->WriteValue(TEXT("z_meters"), 2000);
+			Writer->WriteObjectEnd();
+			Writer->WriteValue(TEXT("chunk_edge_length_meters"), 50);
+			Writer->WriteValue(TEXT("streaming_query_interval"), 4);
+			Writer->WriteArrayStart(TEXT("legacy_flags"));
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("name"), TEXT("streaming_query_diff"));
+					Writer->WriteValue(TEXT("value"), TEXT("true"));
+				Writer->WriteObjectEnd();
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("name"), TEXT("bridge_qos_max_timeout"));
+					Writer->WriteValue(TEXT("value"), TEXT("0"));
+				Writer->WriteObjectEnd();
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("name"), TEXT("bridge_soft_handover_enabled"));
+					Writer->WriteValue(TEXT("value"), TEXT("false"));
+				Writer->WriteObjectEnd();
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("name"), TEXT("qos_max_unacked_pings_rate"));
+					Writer->WriteValue(TEXT("value"), TEXT("10"));
+				Writer->WriteObjectEnd();
+			Writer->WriteArrayEnd();
+			Writer->WriteObjectStart(TEXT("snapshots"));
+				Writer->WriteValue(TEXT("snapshot_write_period_seconds"), 0);
+			Writer->WriteObjectEnd();
+		Writer->WriteObjectEnd(); // World section end
+		Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
+			Writer->WriteArrayStart("layer_configurations");
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("layer"), TEXT("UnrealWorker"));
+					Writer->WriteObjectStart("rectangle_grid");
 
-	int Cols = 1;
-	int Rows = 1;
+						int Cols = 1;
+						int Rows = 1;
 
-	if (const ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>())
-	{
-		int NumServers = 1;
-		PlayInSettings->GetPlayNumberOfServers(NumServers);
+						if (const ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>())
+						{
+							int NumServers = 1;
+							PlayInSettings->GetPlayNumberOfServers(NumServers);
 		
-		if (NumServers <= 2)
-		{
-			Cols = NumServers;
-			Rows = 1;
-		}
-		else
-		{
-			//Find greatest divisor.
-			int GreatestDivisor = 1;
-			for (int Divisor = 2; Divisor <= FMath::Sqrt(NumServers); Divisor++)
-			{
-				if (NumServers % Divisor == 0)
-				{
-					GreatestDivisor = NumServers / Divisor;
-				}
-			}
+							if (NumServers <= 2)
+							{
+								Cols = NumServers;
+								Rows = 1;
+							}
+							else
+							{
+								// Find greatest divisor.
+								for (int Divisor = FMath::Sqrt(NumServers); Divisor <= 2; Divisor--)
+								{
+									if (NumServers % Divisor == 0)
+									{
+										int GreatestDivisor = NumServers / Divisor;
+										Cols = NumServers / GreatestDivisor;
+										Rows = GreatestDivisor;
+										break;
+									}
+								}								
+							}
+						}
 
-			Cols = NumServers / GreatestDivisor;
-			Rows = GreatestDivisor;
-		}
-	}
-
-	Writer->WriteValue(TEXT("cols"), Cols);
-	Writer->WriteValue(TEXT("rows"), Rows);
-	Writer->WriteObjectEnd();
-	Writer->WriteObjectStart(TEXT("options"));
-	Writer->WriteValue(TEXT("manual_worker_connection_only"), true);
-	Writer->WriteObjectEnd();
-	Writer->WriteObjectEnd();
-	Writer->WriteArrayEnd();
-	Writer->WriteObjectEnd(); // Load balancing section end
-	Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
-	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealWorker"));
-	Writer->WriteRawJSONValue("flags",  TEXT("[]"));
-	Writer->WriteArrayStart("permissions");
-	Writer->WriteObjectStart();
-	Writer->WriteObjectStart(TEXT("all"));
-	Writer->WriteObjectEnd();
-	Writer->WriteObjectEnd();
-	Writer->WriteArrayEnd();
-	Writer->WriteObjectEnd();
-	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealClient"));
-	Writer->WriteRawJSONValue("flags", TEXT("[]"));
-	Writer->WriteArrayStart("permissions");
-	Writer->WriteObjectStart();
-	Writer->WriteObjectStart(TEXT("all"));
-	Writer->WriteObjectEnd();
-	Writer->WriteObjectEnd();
-	Writer->WriteArrayEnd();
-	Writer->WriteObjectEnd();
-	Writer->WriteArrayEnd(); // Worker section end
+						Writer->WriteValue(TEXT("cols"), Cols);
+						Writer->WriteValue(TEXT("rows"), Rows);
+					Writer->WriteObjectEnd();
+					Writer->WriteObjectStart(TEXT("options"));
+						Writer->WriteValue(TEXT("manual_worker_connection_only"), true);
+					Writer->WriteObjectEnd();
+				Writer->WriteObjectEnd();
+			Writer->WriteArrayEnd();
+		Writer->WriteObjectEnd(); // Load balancing section end
+		Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
+			Writer->WriteObjectStart();
+				Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealWorker"));
+				Writer->WriteRawJSONValue("flags", TEXT("[]"));
+				Writer->WriteArrayStart("permissions");
+					Writer->WriteObjectStart();
+						Writer->WriteObjectStart(TEXT("all"));
+						Writer->WriteObjectEnd();
+					Writer->WriteObjectEnd();
+				Writer->WriteArrayEnd();
+			Writer->WriteObjectEnd();
+			Writer->WriteObjectStart();
+				Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealClient"));
+				Writer->WriteRawJSONValue("flags", TEXT("[]"));
+				Writer->WriteArrayStart("permissions");
+					Writer->WriteObjectStart();
+						Writer->WriteObjectStart(TEXT("all"));
+						Writer->WriteObjectEnd();
+					Writer->WriteObjectEnd();
+				Writer->WriteArrayEnd();
+			Writer->WriteObjectEnd();
+		Writer->WriteArrayEnd(); // Worker section end
 	Writer->WriteObjectEnd(); // End of json
 
 	Writer->Close();
 
-	if (FFileHelper::SaveStringToFile(Text, *LaunchConfigPath))
-	{
-		return true;
-	}
-	else
+	if (!FFileHelper::SaveStringToFile(Text, *LaunchConfigPath))
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '{0}'. Perhaps the file is Read-Only?"), *LaunchConfigPath);
 		return false;
 	}
+
+	return true;
 }
 
 #undef LOCTEXT_NAMESPACE

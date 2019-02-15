@@ -49,36 +49,43 @@ private:
 
 	/** Name of your SpatialOS snapshot file. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
-	FString SpatialOSSnapshotFile;
+	FFilePath SpatialOSSnapshotFile;
 
 	/** Generated schema output path */
 	UPROPERTY(EditAnywhere, config, Category = "Schema", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
 	FDirectoryPath GeneratedSchemaOutputFolder;
 
 public:
+
+	/** If checked, placeholder entities will be added to the snapshot on generation */
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Generate placeholder entities in snapshot"))
+	bool bGeneratePlaceholderEntitiesInSnapshot;
+
 	FORCEINLINE FString GetSpatialOSDirectory() const
 	{
 		return SpatialOSDirectory.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/")))
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")))
 			: SpatialOSDirectory.Path;
 	}
 
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::GetPath(FPaths::GetProjectFilePath()) + FString(TEXT("/../spatial/default_launch.json"))) 
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/default_launch.json")))
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotFile() const
 	{
-		return SpatialOSSnapshotFile.IsEmpty() ? FString(TEXT("default.snapshot")) : SpatialOSSnapshotFile;
+		return SpatialOSSnapshotFile.FilePath.IsEmpty()
+			? FPaths::ConvertRelativePathToFull(GetSpatialOSSnapshotFolderPath() + FString(TEXT("/default.snapshot")))
+			: SpatialOSSnapshotFile.FilePath;
 	}
 
-	FORCEINLINE FString GetSpatialOSSnapshotPath() const
+	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
 	{
 		return SpatialOSSnapshotPath.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("../spatial/snapshots/"))))
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), TEXT("../spatial/snapshots/")))
 			: SpatialOSSnapshotPath.Path;
 	}
 
