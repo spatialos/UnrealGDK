@@ -9,19 +9,19 @@ type UnrealPayload {
     bytes rpc_payload = 3;
 }
 
-component UnrealClientRPCs {
+component UnrealClientRPCEndpoint {
     id = 100008;
-    event UnrealPayload server_unreliable_rpcs;
-    command UnrealRPCCommandResponse unreal_client_reliable_rpcs(UnrealPayload);
+    event UnrealPayload unreliable_client_to_server_rpc;
+    command UnrealRPCCommandResponse reliable_server_to_client_rpc(UnrealPayload);
 }
 
-component UnrealServerRPCs {
+component UnrealServerRPCEndPoint {
     id = 100009;
-    event UnrealPayload client_unreliable_rpcs;
-    command UnrealRPCCommandResponse unreal_server_reliable_rpcs(UnrealPayload);
+    event UnrealPayload unreliable_server_to_client_rpc;
+    command UnrealRPCCommandResponse reliable_client_to_server_rpc(UnrealPayload);
 }
 
-component UnrealNetMulticastRPCs {
+component UnrealMulticastRPCEndpoint {
     id = 100010;
-    event UnrealPayload netmulticast_rpcs;
+    event UnrealPayload unreliable_multicast_rpc;
 }
