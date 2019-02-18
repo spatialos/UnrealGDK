@@ -51,7 +51,7 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
 	FFilePath SpatialOSSnapshotFile;
 
-	/** Generated schema output path */
+	/** If checked, the GDK creates a launch configuration file by default when you launch a local deployment through the toolbar. */
 	UPROPERTY(EditAnywhere, config, Category = "Schema", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
 	FDirectoryPath GeneratedSchemaOutputFolder;
 

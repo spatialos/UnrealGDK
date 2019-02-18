@@ -468,8 +468,8 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 
 						if (const ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>())
 						{
-							int NumServers = 1;
-							PlayInSettings->GetPlayNumberOfServers(NumServers);
+							int NumServers = 10;
+							//PlayInSettings->GetPlayNumberOfServers(NumServers);
 		
 							if (NumServers <= 2)
 							{
@@ -479,13 +479,13 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 							else
 							{
 								// Find greatest divisor.
-								for (int Divisor = FMath::Sqrt(NumServers); Divisor <= 2; Divisor--)
+								for (int Divisor = FMath::Sqrt(NumServers); Divisor >= 2; Divisor--)
 								{
 									if (NumServers % Divisor == 0)
 									{
 										int GreatestDivisor = NumServers / Divisor;
-										Cols = NumServers / GreatestDivisor;
-										Rows = GreatestDivisor;
+										Cols = GreatestDivisor;
+										Rows = NumServers / GreatestDivisor;
 										break;
 									}
 								}								
