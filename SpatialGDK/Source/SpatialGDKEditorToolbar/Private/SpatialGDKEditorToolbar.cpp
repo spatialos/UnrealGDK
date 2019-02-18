@@ -468,8 +468,8 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 
 						if (const ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>())
 						{
-							int NumServers = 10;
-							//PlayInSettings->GetPlayNumberOfServers(NumServers);
+							int NumServers = 1;
+							PlayInSettings->GetPlayNumberOfServers(NumServers);
 		
 							if (NumServers <= 2)
 							{
