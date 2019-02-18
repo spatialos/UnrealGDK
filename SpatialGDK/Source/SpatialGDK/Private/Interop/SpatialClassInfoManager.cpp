@@ -40,6 +40,44 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 	return Class;
 }
 
+ESchemaComponentType GetRpcType(UFunction* RemoteFunction)
+{
+	EFunctionFlags Flags = RemoteFunction->FunctionFlags;
+
+	if (Flags & FUNC_NetMulticast)
+	{
+		return SCHEMA_NetMulticastRPC;
+	}
+	if (Flags & FUNC_NetCrossServer)
+	{
+		return SCHEMA_CrossServerRPC;
+	}
+	if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable))
+	{
+		if (Flags & FUNC_NetClient)
+		{
+			return SCHEMA_ClientRPC;
+		}
+		if (Flags & FUNC_NetServer)
+		{
+			return SCHEMA_ServerRPC;
+		}
+	}
+	else
+	{
+		if (Flags & FUNC_NetClient)
+		{
+			return SCHEMA_ClientUnreliableRPC;
+		}
+		if (Flags & FUNC_NetServer)
+		{
+			return SCHEMA_ServerUnreliableRPC;
+		}
+	}
+
+	return SCHEMA_Invalid;
+}
+
 void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 	checkf(IsSupportedClass(Class), TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
@@ -51,40 +89,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
-		ESchemaComponentType RPCType = SCHEMA_Invalid;
-		bool bReliable = RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable);
-
-		if (RemoteFunction->FunctionFlags & FUNC_NetClient && bReliable)
-		{
-			RPCType = SCHEMA_ClientRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetClient && !bReliable)
-		{
-			RPCType = SCHEMA_ClientUnreliableRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetServer && bReliable)
-		{
-			RPCType = SCHEMA_ServerRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetServer && !bReliable)
-		{
-			RPCType = SCHEMA_ServerUnreliableRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
-		{
-			RPCType = SCHEMA_CrossServerRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetMulticast)
-		{
-			RPCType = SCHEMA_NetMulticastRPC;
-		}
-		else
-		{
-			checkNoEntry();
-		}
-
-		//TArray<UFunction*>& RPCArray = Info->RPCs.FindOrAdd(RPCType);
-
+		ESchemaComponentType RPCType = GetRpcType(RemoteFunction);
+		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
+		
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
 		RPCInfo.bReliable = RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable);
