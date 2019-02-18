@@ -849,10 +849,6 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	else if (Category == ESchemaComponentType::SCHEMA_NetMulticastRPC)
 	{
 		checkNoEntry();
-		//if (const TArray<UFunction*>* RPCArray = Info.RPCs.Find(SCHEMA_NetMulticastRPC))
-		//{
-		//	ReceiveMulticastUpdate(Op.update, TargetObject, *RPCArray);
-		//}
 	}
 	else
 	{
@@ -918,13 +914,6 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	uint32 Offset = 0;
 	Offset = Schema_GetUint32(RequestObject, 1);
-	//bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.request.component_id, Offset);
-	//if (!bFoundOffset)
-	//{
-	//	UE_LOG(LogSpatialReceiver, Warning, TEXT("No offset found for ComponentId %d"), Op.request.component_id);
-	//	Sender->SendCommandResponse(Op.request_id, Response);
-	//	return;
-	//}
 
 	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get();
 	if (TargetObject == nullptr)
@@ -936,18 +925,9 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-	//ESchemaComponentType RPCType = ClassInfoManager->GetCategoryByComponentId(Op.request.component_id);
-	//check(RPCType >= SCHEMA_FirstRPC && RPCType <= SCHEMA_LastRPC);
-
 	uint32 Index = Schema_GetUint32(RequestObject, 2);
 
 	UFunction* Function = Info.RPCs[Index];
-
-	//const TArray<UFunction*>* RPCArray = Info.RPCs.Find(RPCType);
-	//check(RPCArray);
-	//check((int)CommandIndex - 1 < RPCArray->Num());
-
-	//UFunction* Function = (*RPCArray)[CommandIndex - 1];
 
 	ReceiveRPCCommandRequest(Op.request, TargetObject, Function, UTF8_TO_TCHAR(Op.caller_worker_id));
 
@@ -996,7 +976,7 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 				return;
 			}
 
-			//Queue retry
+			// Queue retry
 			FTimerHandle RetryTimer;
 			TimerManager->SetTimer(RetryTimer, [this, ReliableRPC]()
 			{

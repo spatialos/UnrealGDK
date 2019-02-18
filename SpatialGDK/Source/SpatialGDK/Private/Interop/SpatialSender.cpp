@@ -120,7 +120,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			return;
 		}
 
-		//WorkerRequirementSet& RequirementSet = Type == SCHEMA_ClientRPC ? OwningClientOnly : ServersOnly;
 		ComponentWriteAcl.Add(ComponentId, ServersOnly);
 	});
 
@@ -143,7 +142,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 				return;
 			}
 
-			//WorkerRequirementSet& RequirementSet = Type == SCHEMA_ClientRPC ? OwningClientOnly : ServersOnly;
 			ComponentWriteAcl.Add(ComponentId, ServersOnly);
 		});
 	}
@@ -238,14 +236,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		{
 			QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 		}
-
-		//for (int32 RPCType = SCHEMA_ClientRPC; RPCType < SCHEMA_Count; RPCType++)
-		//{
-		//	if (SubobjectInfo.SchemaComponents[RPCType] != SpatialConstants::INVALID_COMPONENT_ID)
-		//	{
-		//		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo.SchemaComponents[RPCType]));
-		//	}
-		//}
 	}
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
@@ -871,17 +861,6 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
 	EntityACL->ComponentWriteAcl.Add(Info.SchemaComponents[SCHEMA_ClientRPC], OwningClientOnly);
-
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
-
-		if (SubobjectInfo.SchemaComponents[SCHEMA_ClientRPC] != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			EntityACL->ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_ClientRPC], OwningClientOnly);
-		}
-	}
-
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 
 	Connection->SendComponentUpdate(EntityId, &Update);
