@@ -105,7 +105,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 
 | Setting | Description |
 | --- | --- |
-| Delete dynamically spawned entites | If checked, the GDK (delete as appropriate) deletes any dynamically spawned entities (from your game world?) when you end the PIE session. |
+| Delete dynamically spawned entities | If checked, the GDK deletes any dynamically spawned entities from your game world when you end the PIE session. |
 
 ##### Launch
 
