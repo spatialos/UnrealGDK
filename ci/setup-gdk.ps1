@@ -30,7 +30,7 @@ function Start-Event() {
         "--child-of", "$($event_parent)"
     ) | Out-Null
 
-    Write-Log "--- $($event_name)"
+    Write-Log "$($event_name)"
 }
 
 function Finish-Event() {
