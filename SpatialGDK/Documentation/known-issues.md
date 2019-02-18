@@ -18,3 +18,4 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 | Sometimes the player is unable to move when spawning | 2018-10-30 | [UNR-691](https://improbableio.atlassian.net/browse/UNR-691) | Reconnect| 
 | Seamless Travel is not supported | 2019-01-22 | [UNR-897](https://improbableio.atlassian.net/browse/UNR-897) | Disable Seamless travel |  
 | Gameplay Ability System is not fully supported | 2019-02-01 | | Use the workarounds detailed on the [Gameplay Ability System]({{urlRoot}}/content/ability-system) reference page. |  
+| Blueprint RPCs with "by reference" arguments are not serialized correctly | 2019-02-18 | [UNR-1011](https://improbableio.atlassian.net/browse/UNR-1011) | Change any "by reference" arguments to "by value" (default). |
