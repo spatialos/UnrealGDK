@@ -18,3 +18,4 @@ Known issue = any major user-facing bug or lack of user-facing feature that:
 | Sometimes the player is unable to move when spawning | 2018-10-30 | [UNR-691](https://improbableio.atlassian.net/browse/UNR-691) | Reconnect| 
 | Seamless Travel is not supported | 2019-01-22 | [UNR-897](https://improbableio.atlassian.net/browse/UNR-897) | Disable Seamless travel |  
 | Gameplay Ability System is not fully supported | 2019-02-01 | | Use the workarounds detailed on the [Gameplay Ability System]({{urlRoot}}/content/ability-system) reference page. |  
+| Launching the editor whilst uploading or deploying to cloud blocks the in-editor 'Start' button, and can be stopped from the in-editor 'Stop' | 2019-02-18 | [UNR-1006](https://improbableio.atlassian.net/browse/UNR-1006) | Wait for the cloud launch to finish, or start the cloud launch whilst the editor is already active. |  
