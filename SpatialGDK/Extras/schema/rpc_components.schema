@@ -10,18 +10,18 @@ type UnrealPayload {
 }
 
 component UnrealClientRPCEndpoint {
-    id = 100008;
+    id = 9990;
     event UnrealPayload unreliable_client_to_server_rpc;
     command UnrealRPCCommandResponse reliable_server_to_client_rpc(UnrealPayload);
 }
 
 component UnrealServerRPCEndPoint {
-    id = 100009;
+    id = 9989;
     event UnrealPayload unreliable_server_to_client_rpc;
     command UnrealRPCCommandResponse reliable_client_to_server_rpc(UnrealPayload);
 }
 
 component UnrealMulticastRPCEndpoint {
-    id = 100010;
+    id = 9987;
     event UnrealPayload unreliable_multicast_rpc;
 }
