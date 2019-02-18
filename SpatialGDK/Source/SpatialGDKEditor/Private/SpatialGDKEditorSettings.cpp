@@ -1,5 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialGDKEditorSettings.h"
+#include "Settings/LevelEditorPlaySettings.h"
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

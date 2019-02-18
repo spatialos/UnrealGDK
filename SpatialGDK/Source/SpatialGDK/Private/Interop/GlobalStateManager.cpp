@@ -429,7 +429,7 @@ void UGlobalStateManager::BeginDestroy()
 	if (NetDriver != nullptr && NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 	{
 		// If we are deleting dynamically spawned entities, we need to
-		if (GetDefault<ULevelEditorPlaySettings>()->IsDeleteDynamicEntitiesActive())
+		if (GetDefault<ULevelEditorPlaySettings>()->DeleteDynamicEntities)
 		{
 			// Reset the BeginPlay flag so Startup Actors are properly managed.
 			SetCanBeginPlay(false);
