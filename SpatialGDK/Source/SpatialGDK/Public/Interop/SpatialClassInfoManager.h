@@ -95,7 +95,7 @@ public:
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
-	void QuitGame(UObject* a_worldContext, UClass* Class);
+	void QuitGame(UObject* WorldContext, UClass* Class);
 
 private:
 	UPROPERTY()
