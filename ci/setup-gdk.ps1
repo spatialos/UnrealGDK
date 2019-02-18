@@ -1,6 +1,7 @@
 param(
   [string] $gdk_home = (get-item "$($PSScriptRoot)").parent.FullName, ## The root of the UnrealGDK repo
   [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production"
+  [string] $msbuild_exe = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\MSBuild.exe"
 )
 
 $ErrorActionPreference = 'Stop'
@@ -122,10 +123,6 @@ pushd "$($gdk_home)"
 
     # Copy from binaries_dir
     Copy-Item "$($binaries_dir)\Win64\include\*" "$($worker_sdk_dir)\" -Force -Recurse
-
-    Write-Log "Fetch MSBUILD_EXE location"
-    $msbuild_exe = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\MSBuild.exe"
-
 
     Start-Event "build-utilities" "build-unreal-gdk-:windows:"
     $msbuild_proc = Start-Process -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
