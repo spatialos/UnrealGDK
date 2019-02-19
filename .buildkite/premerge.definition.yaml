@@ -1,8 +1,7 @@
 agent_queue_id: trigger-pipelines
 description: Build Unreal GDK
 github:
-  branch_configuration:
-    - feature/buildkite-setup
+  branch_configuration: []
   default_branch: "master"
   pull_request_branch_filter_configuration: []
 teams:
