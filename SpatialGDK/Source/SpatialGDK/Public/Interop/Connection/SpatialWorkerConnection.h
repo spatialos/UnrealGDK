@@ -10,8 +10,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
-DECLARE_DELEGATE(FOnConnectedDelegate);
-DECLARE_DELEGATE_OneParam(FOnConnectFailedDelegate, const FString&);
+class UWorld;
 
 enum class SpatialConnectionType
 {
@@ -50,9 +49,6 @@ public:
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
-	FOnConnectedDelegate OnConnected;
-	FOnConnectFailedDelegate OnConnectFailed;
-
 	FReceptionistConfig ReceptionistConfig;
 	FLegacyLocatorConfig LegacyLocatorConfig;
 	FLocatorConfig LocatorConfig;
@@ -62,12 +58,16 @@ private:
 	void ConnectToLegacyLocator();
 	void ConnectToLocator();
 
+	void OnConnectionSuccess();
+	void OnPreConnectionFailure(const FString& Reason);
+	void OnConnectionFailure();
+
 	Worker_ConnectionParameters CreateConnectionParameters(FConnectionConfig& Config);
 	SpatialConnectionType GetConnectionType() const;
 
-	void GetAndPrintConnectionFailureMessage();
-
 	void CacheWorkerAttributes();
+
+	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLegacyLocator;

@@ -91,6 +91,7 @@ using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
 DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
+DECLARE_DELEGATE_OneParam(HeartbeatDelegate, Worker_ComponentUpdateOp&);
 
 UCLASS()
 class USpatialReceiver : public UObject
@@ -121,12 +122,16 @@ public:
 	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
 	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
 
+	void AddHeartbeatDelegate(Worker_EntityId EntityId, HeartbeatDelegate Delegate);
+
 	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
+
+	void OnDisconnect(Worker_DisconnectOp& Op);
 
 private:
 	void EnterCriticalSection();
@@ -141,6 +146,7 @@ private:
 
 	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
 
+	void HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
@@ -208,4 +214,6 @@ private:
 
 	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
 	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
+
+	TMap<Worker_EntityId_Key, HeartbeatDelegate> HeartbeatDelegates;
 };
