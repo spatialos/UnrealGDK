@@ -859,35 +859,6 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 {
 	Worker_EntityId EntityId = Op.entity_id;
-	if (StaticComponentView->HasAuthority(EntityId, Op.update.component_id))
-	{
-		// If we have authority over the component then we sent the event, so ignore.
-		return;
-	}
-
-	switch (Op.update.component_id)
-	{
-		case SpatialConstants::CLIENT_RPCS_COMPONENT_ID:
-		{
-			if (!StaticComponentView->HasAuthority(EntityId, SpatialConstants::SERVER_RPCS_COMPONENT_ID))
-			{
-				// We do not have We are not the server this RPC is looking for
-				return;
-			}
-			break;
-		}
-		case SpatialConstants::SERVER_RPCS_COMPONENT_ID:
-		{
-			if (!StaticComponentView->HasAuthority(EntityId, SpatialConstants::CLIENT_RPCS_COMPONENT_ID))
-			{
-				// We are not the client this RPC is looking for.
-				return;
-			}
-		}
-		break;
-		default:
-		break;
-	}
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 
 	uint32 EventCount = Schema_GetObjectCount(EventsObject, 1);
