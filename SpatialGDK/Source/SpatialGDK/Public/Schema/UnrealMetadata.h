@@ -66,6 +66,13 @@ struct UnrealMetadata : Component
 				return Class;
 			}
 		}
+		if (UClass* Class = LoadObject<UClass>(nullptr, *ClassPath))
+		{
+			if (Class->IsChildOf<AActor>())
+			{
+				return Class;
+			}
+		}
 
 		return nullptr;
 	}
