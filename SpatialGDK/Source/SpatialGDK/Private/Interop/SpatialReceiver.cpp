@@ -846,10 +846,6 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 
 		ApplyComponentUpdate(Op.update, TargetObject, Channel, /* bIsHandover */ true);
 	}
-	else if (Category == ESchemaComponentType::SCHEMA_NetMulticastRPC)
-	{
-		checkNoEntry();
-	}
 	else
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because it's an empty component update from an RPC component. (most likely as a result of gaining authority)"), Op.entity_id, Op.update.component_id);
