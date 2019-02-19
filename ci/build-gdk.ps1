@@ -49,7 +49,7 @@ function Finish-Event() {
 
 pushd "$($gdk_home)"
 
-    Start-Event "build-unreal-gdk" "build-unreal-gdk-:windows:"
+    Start-Event "build-unreal-gdk-windows" "build-unreal-gdk-:windows:"
     pushd "SpatialGDK"
         $win_build_proc = Start-Process -PassThru -NoNewWindow -FilePath "$($gdk_home)\UnrealEngine\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
             "BuildPlugin", `
@@ -63,9 +63,9 @@ pushd "$($gdk_home)"
             Write-Log "Failed to build Unreal GDK. Error: $($win_build_proc.ExitCode)"
             Throw "Failed to build the Unreal GDK for Windows"
         }
-    Finish-Event "build-unreal-gdk" "build-unreal-gdk-:windows:"
+    Finish-Event "build-unreal-gdk-windows" "build-unreal-gdk-:windows:"
 
-    Start-Event "build-unreal-gdk" "build-unreal-gdk-:linux:"
+    Start-Event "build-unreal-gdk-linux" "build-unreal-gdk-:linux:"
         $linux_build_proc = Start-Process -PassThru -NoNewWindow -FilePath "$($gdk_home)\UnrealEngine\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
             "BuildPlugin", `
             " -Plugin=`"$($gdk_home)/SpatialGDK/SpatialGDK.uplugin`"", `
@@ -78,7 +78,7 @@ pushd "$($gdk_home)"
             Write-Log "Failed to build Unreal GDK. Error: $($linux_build_proc.ExitCode)"
             Throw "Failed to build the Unreal GDK for Linux"
         }
-    Finish-Event "build-unreal-gdk" "build-unreal-gdk-:linux:"   
+    Finish-Event "build-unreal-gdk-linux" "build-unreal-gdk-:linux:"   
     popd
 
 popd
