@@ -595,12 +595,18 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		bCreatingNewEntity = true;
 		// Sender->SendReserveEntityIdRequest(this);
 
-		NetDriver->SetupActorEntity(InActor, this);
+		EntityId = NetDriver->SetupActorEntity(InActor, this);
 	}
 	else
 	{
 		UE_LOG(LogSpatialActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), EntityId);
 
+		// If the actor has been assigned an entity ID already and we are authoritative, we need to create the entity
+		if (InActor->Role == ROLE_Authority)
+		{
+			bCreatingNewEntity = true;
+		}
+		
 		// Inform USpatialNetDriver of this new actor channel/entity pairing
 		NetDriver->AddActorChannel(EntityId, this);
 	}

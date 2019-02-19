@@ -1365,7 +1365,7 @@ void USpatialPendingNetGame::SendJoin()
 	bSentJoinRequest = true;
 }
 
-void USpatialNetDriver::SetupActorEntity(AActor* Actor, USpatialActorChannel* Channel)
+Worker_EntityId USpatialNetDriver::SetupActorEntity(AActor* Actor, USpatialActorChannel* Channel)
 {
 	Worker_EntityId EntityId = EntityPool->Pop();
 	GetEntityRegistry()->AddToRegistry(EntityId, Actor);
@@ -1380,6 +1380,10 @@ void USpatialNetDriver::SetupActorEntity(AActor* Actor, USpatialActorChannel* Ch
 
 	// Register Actor with package map since we know what the entity id is.
 	PackageMap->ResolveEntityActor(Actor, EntityId);
+
+	ForceNetUpdate(Actor);
+
+	return EntityId;
 }
 
 void USpatialNetDriver::AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel)
