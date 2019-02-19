@@ -1,6 +1,6 @@
 param(
   [string] $gdk_home = (get-item "$($PSScriptRoot)").parent.FullName, ## The root of the UnrealGDK repo
-  [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production"
+  [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine"
 )
 
 $ErrorActionPreference = 'Stop'
