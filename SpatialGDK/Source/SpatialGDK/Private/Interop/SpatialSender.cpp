@@ -346,6 +346,9 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
 	}
 
+	ComponentInterest.Add({ SpatialConstants::CLIENT_RPCS_COMPONENT_ID, bIsNetOwned });
+	ComponentInterest.Add({ SpatialConstants::SERVER_RPCS_COMPONENT_ID, bIsNetOwned });
+
 	return ComponentInterest;
 }
 
