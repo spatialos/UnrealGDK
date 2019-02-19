@@ -104,9 +104,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPCS_COMPONENT_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPCS_COMPONENT_ID, OwningClientOnly);
+	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
@@ -202,8 +202,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		}
 	}
 
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPCS_COMPONENT_ID));
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPCS_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
@@ -346,8 +346,8 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
 	}
 
-	ComponentInterest.Add({ SpatialConstants::CLIENT_RPCS_COMPONENT_ID, bIsNetOwned });
-	ComponentInterest.Add({ SpatialConstants::SERVER_RPCS_COMPONENT_ID, bIsNetOwned });
+	ComponentInterest.Add({ SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, bIsNetOwned });
+	ComponentInterest.Add({ SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, bIsNetOwned });
 
 	return ComponentInterest;
 }
@@ -425,7 +425,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		ReliableRPCIndex = Params->ReliableRPCIndex;
 #endif // !UE_BUILD_SHIPPING
 
-		Worker_ComponentId ComponentId = RPCInfo->Type == SCHEMA_ClientRPC ? SpatialConstants::CLIENT_RPCS_COMPONENT_ID : SpatialConstants::SERVER_RPCS_COMPONENT_ID;
+		Worker_ComponentId ComponentId = RPCInfo->Type == SCHEMA_ClientRPC ? SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
 
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, ReliableRPCIndex);
 
@@ -451,11 +451,11 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		Worker_ComponentId ComponentId;
 		if (RPCInfo->Type == SCHEMA_ClientUnreliableRPC)
 		{
-			ComponentId = SpatialConstants::SERVER_RPCS_COMPONENT_ID;
+			ComponentId = SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
 		}
 		else if (RPCInfo->Type == SCHEMA_ServerUnreliableRPC)
 		{
-			ComponentId = SpatialConstants::CLIENT_RPCS_COMPONENT_ID;
+			ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
 		}
 		else
 		{

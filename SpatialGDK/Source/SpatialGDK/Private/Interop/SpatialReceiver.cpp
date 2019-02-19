@@ -135,8 +135,8 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::INTEREST_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-	case SpatialConstants::CLIENT_RPCS_COMPONENT_ID:
-	case SpatialConstants::SERVER_RPCS_COMPONENT_ID:
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
@@ -287,7 +287,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		{
 			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPCS_COMPONENT_ID)
+			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 			{
 				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 			}
@@ -789,8 +789,8 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		NetDriver->GlobalStateManager->ApplyStartupActorManagerUpdate(Op.update);
 		return;
-	case SpatialConstants::CLIENT_RPCS_COMPONENT_ID:
-	case SpatialConstants::SERVER_RPCS_COMPONENT_ID:
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 		HandleUnreliableRPC(Op);
 		return;
@@ -857,15 +857,15 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 	Worker_EntityId EntityId = Op.entity_id;
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 
-	uint32 EventCount = Schema_GetObjectCount(EventsObject, 1);
+	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID);
 
 	for (uint32 i = 0; i < EventCount; i++)
 	{
-		Schema_Object* EventData = Schema_IndexObject(EventsObject, 1, i);
+		Schema_Object* EventData = Schema_IndexObject(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID, i);
 
-		uint32 Offset = Schema_GetUint32(EventData, 1);
-		uint32 Index = Schema_GetUint32(EventData, 2);
-		TArray<uint8> PayloadData = GetBytesFromSchema(EventData, 3);
+		uint32 Offset = Schema_GetUint32(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
+		uint32 Index = Schema_GetUint32(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
+		TArray<uint8> PayloadData = GetBytesFromSchema(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
 		int64 CountBits = PayloadData.Num() * 8;
 
 		FUnrealObjectRef ObjectRef(EntityId, Offset);

@@ -110,8 +110,8 @@ namespace SpatialConstants
 	const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 9993;
 	const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 9992;
 	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 9991;
-	const Worker_ComponentId CLIENT_RPCS_COMPONENT_ID						= 9990;
-	const Worker_ComponentId SERVER_RPCS_COMPONENT_ID						= 9989;
+	const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID				= 9990;
+	const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID				= 9989;
 	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9987;
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -125,6 +125,14 @@ namespace SpatialConstants
 	const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID                      = 1;
 
 	const Schema_FieldId HEARTBEAT_EVENT_ID                                 = 1;
+
+	// UnrealRPCPayload Field IDs
+	const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID = 1;
+	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID = 2;
+	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID = 3;
+
+	// Unreal(Client|Server)RPCEndpoint Unreliable Event Field ID
+	const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID = 1;
 
 	// TODO: Make these easily configurable: UNR-984
 	const float HEARTBEAT_INTERVAL_SECONDS = 2.0f;
