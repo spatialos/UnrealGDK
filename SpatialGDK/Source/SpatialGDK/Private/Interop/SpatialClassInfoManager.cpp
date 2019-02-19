@@ -7,13 +7,13 @@
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
 #include "GameFramework/Actor.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "Misc/MessageDialog.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "SpatialGameInstance.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
@@ -41,18 +41,6 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 	return Class;
 }
 
-void USpatialClassInfoManager::QuitGame(UObject* WorldContext, UClass* Class)
-{
-#if WITH_EDITOR
-	// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
-	// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
-	UKismetSystemLibrary::QuitGame(WorldContext, nullptr, EQuitPreference::Quit);
-#else
-	const bool bForce = false;
-	FGenericPlatformMisc::RequestExit(bForce);
-#endif
-}
-
 void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 
@@ -64,7 +52,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is explicitly referenced from the starting scene and schema has been generated."), *Class->GetPathName());
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *Class->GetPathName());
 
-		QuitGame(NetDriver->GetWorld(), Class);
+		(Cast<USpatialGameInstance>(NetDriver->GetWorld()->GetGameInstance()))->QuitGame();
 		return;
 	}
 
