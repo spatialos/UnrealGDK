@@ -22,7 +22,8 @@ class SPATIALGDK_API UEntityPool : public UObject
 public:
 	void Init(USpatialNetDriver* InNetDriver);
 	void ReserveEntityIDs(int32 EntitiesToSpawn);
-	//Worker_EntityId GetEntityID();
+	Worker_EntityId Pop();
+	bool IsReady();
 
 private:
 	UPROPERTY()
@@ -32,4 +33,6 @@ private:
 	USpatialReceiver* Receiver;
 
 	TArray<Worker_EntityId> ReservedIDs;
+
+	bool bIsReady;
 };

@@ -21,6 +21,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
+#include "Utils/EntityPool.h"
 #include "Utils/EntityRegistry.h"
 #include "Utils/RepLayoutUtils.h"
 
@@ -383,6 +384,7 @@ int64 USpatialActorChannel::ReplicateActor()
 
 		for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
 		{
+			// We must have already resolved the actor and its subobjects when either creating it or checking out from spatial
 			const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
 
 			if (ObjectRef.IsValid())
@@ -478,6 +480,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
 
+	// If this is supported, it would've been mapped already
 	if (!NetDriver->PackageMap->GetUnrealObjectRefFromObject(Obj).IsValid())
 	{
 		// Not supported for Spatial replication
@@ -590,7 +593,9 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	if (EntityId == 0)
 	{
 		bCreatingNewEntity = true;
-		Sender->SendReserveEntityIdRequest(this);
+		// Sender->SendReserveEntityIdRequest(this);
+
+		NetDriver->SetupActorEntity(InActor, this);
 	}
 	else
 	{

@@ -6,15 +6,25 @@ DEFINE_LOG_CATEGORY(LogEntityPool);
 
 using namespace improbable;
 
+const uint32 INITIAL_RESERVATION_COUNT = 1000;
+const uint32 REFRESH_THRESHOLD = 100;
+const uint32 REFRESH_COUNT = 500;
+
 void UEntityPool::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	Receiver = InNetDriver->Receiver;
-	ReserveEntityIDs(1000);
+	bIsReady = false;
+	if (NetDriver->IsServer())
+	{
+		ReserveEntityIDs(INITIAL_RESERVATION_COUNT);
+	}
 }
 
 void UEntityPool::ReserveEntityIDs(int32 EntitiesToSpawn)
 {
+	UE_LOG(LogEntityPool, Log, TEXT("Sending bulk entity ID Reservation Request"));
+
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
 	CacheEntityIDsDelegate.BindLambda([EntitiesToSpawn, this](Worker_ReserveEntityIdsResponseOp& Op)
@@ -28,8 +38,10 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToSpawn)
 		{
 			// Get an entity to spawn and a reserved EntityID
 			Worker_EntityId ReservedEntityID = Op.first_entity_id + i;
-			ReservedIDs.Add(ReservedEntityID);
+			ReservedIDs.Insert(ReservedEntityID, 0);
 		}
+
+		bIsReady = true;
 	});
 
 	// Reserve the Entity IDs
@@ -39,10 +51,21 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToSpawn)
 	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, CacheEntityIDsDelegate);
 }
 
-// UEntityPool::Pop()
+bool UEntityPool::IsReady()
+{
+	return bIsReady;
+}
 
-//
-//Worker_EntityId UEntityPool::GetEntityID()
-//{
-//	
-//}
+Worker_EntityId UEntityPool::Pop()
+{
+	Worker_EntityId NextId = ReservedIDs.Pop(true);
+	UE_LOG(LogEntityPool, Log, TEXT("Popped ID, %i IDs remaining"), ReservedIDs.Num());
+
+	if (ReservedIDs.Num() < REFRESH_THRESHOLD)
+	{
+		UE_LOG(LogEntityPool, Log, TEXT("Pool under threshold, reserving more entity IDs"));
+		ReserveEntityIDs(REFRESH_COUNT);
+	}
+
+	return NextId;
+}

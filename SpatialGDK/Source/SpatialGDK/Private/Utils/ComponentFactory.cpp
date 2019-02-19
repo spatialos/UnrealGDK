@@ -13,6 +13,8 @@
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/EntityPool.h"
+#include "Utils/EntityRegistry.h"
 
 namespace improbable
 {
@@ -116,7 +118,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
 		UScriptStruct* Struct = StructProperty->Struct;
-		FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
+		FSpatialNetBitWriter ValueDataWriter(NetDriver, PackageMap, UnresolvedObjects);
 		bool bHasUnmapped = false;
 
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
@@ -201,6 +203,43 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					if (ObjectValue->IsFullNameStableForNetworking())
 					{
 						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
+					}
+					else if(NetDriver->IsServer()) // We want to assign an entity id to this if we're a server authoritative over the actor and it doesn't have an entity id yet.
+					{
+						//if (AActor* Actor = Cast<AActor>(ObjectValue))
+						//{
+						//	// resolve this actor
+						//	PackageMap->ResolveEntityActor(Actor, NetDriver->EntityPool->Pop());
+						//}
+						//else if (AActor* OuterActor = Cast<AActor>(ObjectValue->GetOuter()))
+						//{
+						//	// resolve outer
+						//	PackageMap->ResolveEntityActor(OuterActor, NetDriver->EntityPool->Pop());
+						//}
+						if (ObjectValue->IsA<AActor>())
+						{
+							// resolve this actor
+							AActor* Actor = Cast<AActor>(ObjectValue);
+							if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == 0)
+							{
+								Worker_EntityId EntityId = NetDriver->EntityPool->Pop();
+								NetDriver->GetEntityRegistry()->AddToRegistry(EntityId, Actor);
+								PackageMap->ResolveEntityActor(Actor, EntityId);
+							}
+						}
+						else if (ObjectValue->GetOuter()->IsA<AActor>())
+						{
+							// resolve outer
+
+							AActor* OuterActor = Cast<AActor>(ObjectValue->GetOuter());
+							if (OuterActor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(OuterActor) == 0)
+							{
+								Worker_EntityId EntityId = NetDriver->EntityPool->Pop();
+								NetDriver->GetEntityRegistry()->AddToRegistry(EntityId, OuterActor);
+								PackageMap->ResolveEntityActor(OuterActor, NetDriver->EntityPool->Pop());
+							}
+						}
+						// If we are a server authoritative over the actor, assign an entity ID and resolve in package map
 					}
 				}
 			}
@@ -499,6 +538,7 @@ void ComponentFactory::AddObjectToComponentInterest(UObject* Object, UObjectProp
 
 	improbable::ComponentInterest::Query NewQuery;
 
+	// For this to work, the entity corresponding to the ObjectOfInterest must have been created and checked out first?
 	FUnrealObjectRef UnrealObjectRef = PackageMap->GetUnrealObjectRefFromObject(ObjectOfInterest);
 
 	check(UnrealObjectRef != FUnrealObjectRef::NULL_OBJECT_REF);

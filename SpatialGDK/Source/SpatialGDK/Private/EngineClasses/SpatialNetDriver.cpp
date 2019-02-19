@@ -987,9 +987,39 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		Worker_OpList* OpList = Connection->GetOpList();
 
-		Dispatcher->ProcessOps(OpList);
+		if (IsServer())
+		{
+			if (!EntityPool->IsReady()) // We haven't received the first batch of Entity IDs yet so we need to hold on to ops until we process the ReserveEntityIDsResponse
+			{
+				UnprocessedOps.Insert(OpList, 0);
+				for (size_t i = 0; i < OpList->op_count; ++i)
+				{
+					Worker_Op* Op = &OpList->ops[i];
+					if (Op->op_type == WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE)
+					{
+						Receiver->OnReserveEntityIdsResponse(Op->reserve_entity_ids_response);
+						i = OpList->op_count;
+					}
+				}
+			}
+			else
+			{
+				while (UnprocessedOps.Num() > 0)
+				{
+					Worker_OpList* UnprocessedOpList = UnprocessedOps.Pop(true);
+					Dispatcher->ProcessOps(UnprocessedOpList);
+					Worker_OpList_Destroy(UnprocessedOpList);
+				}
 
-		Worker_OpList_Destroy(OpList);
+				Dispatcher->ProcessOps(OpList);
+				Worker_OpList_Destroy(OpList);
+			}
+		}
+		else
+		{
+			Dispatcher->ProcessOps(OpList);
+			Worker_OpList_Destroy(OpList);
+		}
 	}
 }
 
@@ -1051,7 +1081,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #if USE_SERVER_PERF_COUNTERS
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
-	if (IsServer() && ClientConnections.Num() > 0 && Connection->IsConnected())
+	if (IsServer() && ClientConnections.Num() > 0 && Connection->IsConnected() && EntityPool->IsReady())
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
@@ -1333,6 +1363,23 @@ void USpatialPendingNetGame::InitNetDriver()
 void USpatialPendingNetGame::SendJoin()
 {
 	bSentJoinRequest = true;
+}
+
+void USpatialNetDriver::SetupActorEntity(AActor* Actor, USpatialActorChannel* Channel)
+{
+	Worker_EntityId EntityId = EntityPool->Pop();
+	GetEntityRegistry()->AddToRegistry(EntityId, Actor);
+
+	AddActorChannel(EntityId, Channel);
+
+	// If a Singleton was created, update the GSM with the proper Id.
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
+	}
+
+	// Register Actor with package map since we know what the entity id is.
+	PackageMap->ResolveEntityActor(Actor, EntityId);
 }
 
 void USpatialNetDriver::AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel)

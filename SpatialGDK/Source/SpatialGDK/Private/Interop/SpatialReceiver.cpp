@@ -18,6 +18,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
+#include "Utils/EntityPool.h"
 #include "Utils/EntityRegistry.h"
 #include "Utils/RepLayoutUtils.h"
 
@@ -818,7 +819,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 	else
 	{
-		TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), Offset)).Get();
+		TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get();
 	}
 
 	if (TargetObject == nullptr)
@@ -901,6 +902,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 
+	// Command is on an entity, so it already exists
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
 	ESchemaComponentType RPCType = ClassInfoManager->GetCategoryByComponentId(Op.request.component_id);
@@ -1079,7 +1081,16 @@ void USpatialReceiver::OnReserveEntityIdsResponse(Worker_ReserveEntityIdsRespons
 		if (ReserveEntityIDsDelegate* RequestDelegate = ReserveEntityIDsDelegates.Find(Op.request_id))
 		{
 			UE_LOG(LogSpatialReceiver, Log, TEXT("Executing ReserveEntityIdsResponse with delegate, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
+			bool bFirstBulkRequest = !NetDriver->EntityPool->IsReady();
+
 			RequestDelegate->ExecuteIfBound(Op);
+			ReserveEntityIDsDelegates.Remove(Op.request_id);
+
+			if (bFirstBulkRequest)
+			{
+				ReserveEntityIDsDelegate EmptyDelegate;
+				AddReserveEntityIdsDelegate(Op.request_id, EmptyDelegate);
+			}
 		}
 		else
 		{

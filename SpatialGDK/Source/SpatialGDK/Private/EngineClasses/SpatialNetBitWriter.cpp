@@ -4,12 +4,16 @@
 
 #include "UObject/WeakObjectPtr.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
+#include "Utils/EntityPool.h"
+#include "Utils/EntityRegistry.h"
 
-FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects)
-	: FNetBitWriter(InPackageMap, 0)
+FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects)
+	: NetDriver(InNetDriver)
+	, FNetBitWriter(InPackageMap, 0)
 	, UnresolvedObjects(InUnresolvedObjects)
 {}
 
@@ -40,12 +44,43 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 	if (Value != nullptr && !Value->IsPendingKill())
 	{
 		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
+		// How do we make sure we don't assign entity ids to non-replicated actors?
+		// This is one of the places we want to assign an entity id to something that needs it (if we're a server authoritative over that actor)
 		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
 		if (!NetGUID.IsValid())
 		{
 			if (Value->IsFullNameStableForNetworking())
 			{
 				NetGUID = PackageMapClient->ResolveStablyNamedObject(Value);
+			}
+			else if (NetDriver->IsServer()) // We want to assign an entity id to this if we're a server authoritative over the actor and it doesn't have an entity id yet.
+			{
+				UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
+
+				if (Value->IsA<AActor>())
+				{
+					// resolve this actor
+					AActor* Actor = Cast<AActor>(Value);
+					if (Actor->Role == ROLE_Authority && EntityRegistry->GetEntityIdFromActor(Actor) == 0)
+					{
+						Worker_EntityId EntityId = NetDriver->EntityPool->Pop();
+						EntityRegistry->AddToRegistry(EntityId, Actor);
+						PackageMapClient->ResolveEntityActor(Actor, EntityId);
+					}
+				}
+				else if (Value->GetOuter()->IsA<AActor>())
+				{
+					// resolve outer
+
+					AActor* OuterActor = Cast<AActor>(Value->GetOuter());
+					if (OuterActor->Role == ROLE_Authority && EntityRegistry->GetEntityIdFromActor(OuterActor) == 0)
+					{
+						Worker_EntityId EntityId = NetDriver->EntityPool->Pop();
+						EntityRegistry->AddToRegistry(EntityId, OuterActor);
+						PackageMapClient->ResolveEntityActor(OuterActor, NetDriver->EntityPool->Pop());
+					}
+				}
+				// If we are a server authoritative over the actor, assign an entity ID and resolve in package map
 			}
 		}
 		ObjectRef = FUnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));
