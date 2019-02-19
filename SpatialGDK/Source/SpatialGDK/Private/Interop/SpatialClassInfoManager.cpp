@@ -42,34 +42,32 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 
 ESchemaComponentType GetRpcType(UFunction* RemoteFunction)
 {
-	EFunctionFlags Flags = RemoteFunction->FunctionFlags;
-
-	if (Flags & FUNC_NetMulticast)
+	if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetMulticast))
 	{
 		return SCHEMA_NetMulticastRPC;
 	}
-	if (Flags & FUNC_NetCrossServer)
+	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer))
 	{
 		return SCHEMA_CrossServerRPC;
 	}
-	if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable))
+	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable))
 	{
-		if (Flags & FUNC_NetClient)
+		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
 		{
 			return SCHEMA_ClientRPC;
 		}
-		if (Flags & FUNC_NetServer)
+		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
 			return SCHEMA_ServerRPC;
 		}
 	}
 	else
 	{
-		if (Flags & FUNC_NetClient)
+		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
 		{
 			return SCHEMA_ClientUnreliableRPC;
 		}
-		if (Flags & FUNC_NetServer)
+		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
 			return SCHEMA_ServerUnreliableRPC;
 		}
