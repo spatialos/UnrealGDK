@@ -1,24 +1,24 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-import "unreal/gdk/core_types.schema";
-
 type UnrealPayload {
     uint32 offset = 1;
     uint32 rpc_index = 2;
     bytes rpc_payload = 3;
 }
 
+type Void {}
+
 component UnrealClientRPCEndpoint {
     id = 9990;
     event UnrealPayload unreliable_client_to_server_rpc;
-    command UnrealRPCCommandResponse reliable_server_to_client_rpc(UnrealPayload);
+    command Void reliable_server_to_client_rpc(UnrealPayload);
 }
 
 component UnrealServerRPCEndPoint {
     id = 9989;
     event UnrealPayload unreliable_server_to_client_rpc;
-    command UnrealRPCCommandResponse reliable_client_to_server_rpc(UnrealPayload);
+    command Void reliable_client_to_server_rpc(UnrealPayload);
 }
 
 component UnrealMulticastRPCEndpoint {
