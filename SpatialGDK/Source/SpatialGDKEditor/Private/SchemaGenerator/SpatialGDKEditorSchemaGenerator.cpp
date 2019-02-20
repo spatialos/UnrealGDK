@@ -325,10 +325,7 @@ TArray<UClass*> GetAllSupportedClasses()
 
 		for (TFieldIterator<UFunction> FunctionIt(*ClassIt); FunctionIt; ++FunctionIt)
 		{
-			if (FunctionIt->FunctionFlags & FUNC_NetClient ||
-				FunctionIt->FunctionFlags & FUNC_NetServer ||
-				FunctionIt->FunctionFlags & FUNC_NetCrossServer ||
-				FunctionIt->FunctionFlags & FUNC_NetMulticast)
+			if (FunctionIt->HasAnyFunctionFlags(FUNC_NetFuncFlags))
 			{
 				SupportedClass = *ClassIt;
 				break;
