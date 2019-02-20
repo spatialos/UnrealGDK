@@ -5,7 +5,6 @@
 #include "Engine/Engine.h"
 #include "Engine/NetConnection.h"
 #include "GeneralProjectSettings.h"
-#include "Kismet/KismetSystemLibrary.h"
 #if WITH_EDITOR
 #include "Editor/EditorEngine.h"
 #include "Settings/LevelEditorPlaySettings.h"
@@ -180,18 +179,6 @@ void USpatialGameInstance::StartGameInstance()
 	}
 
 	Super::StartGameInstance();
-}
-
-void USpatialGameInstance::QuitGame()
-{
-#if WITH_EDITOR
-	// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
-	// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
-	UKismetSystemLibrary::QuitGame(WorldContext->World(), nullptr, EQuitPreference::Quit);
-#else
-	const bool bForce = false;
-	FGenericPlatformMisc::RequestExit(bForce);
-#endif
 }
 
 void USpatialGameInstance::Shutdown()

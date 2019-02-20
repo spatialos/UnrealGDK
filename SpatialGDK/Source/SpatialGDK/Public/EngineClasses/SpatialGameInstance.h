@@ -22,7 +22,6 @@ public:
 #endif
 	virtual void StartGameInstance() override;
 	virtual void Shutdown() override;
-	void QuitGame();
 
 	// bResponsibleForSnapshotLoading exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
 	bool bResponsibleForSnapshotLoading = false;
