@@ -7,10 +7,12 @@
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SCS_Node.h"
 #include "GameFramework/Actor.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "Misc/MessageDialog.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
+#if WITH_EDITOR
+#include "Kismet/KismetSystemLibrary.h"
+#endif
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
