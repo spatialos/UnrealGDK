@@ -593,9 +593,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	if (EntityId == 0)
 	{
 		bCreatingNewEntity = true;
-		// Sender->SendReserveEntityIdRequest(this);
-
-		EntityId = NetDriver->SetupActorEntity(InActor, this);
+		EntityId = NetDriver->SetupActorEntity(InActor);
 	}
 	else
 	{
@@ -606,10 +604,10 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		{
 			bCreatingNewEntity = true;
 		}
-		
-		// Inform USpatialNetDriver of this new actor channel/entity pairing
-		NetDriver->AddActorChannel(EntityId, this);
 	}
+
+	// Inform USpatialNetDriver of this new actor channel/entity pairing
+	NetDriver->AddActorChannel(EntityId, this);
 
 	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
 	check(!HandoverShadowDataMap.Contains(InActor));

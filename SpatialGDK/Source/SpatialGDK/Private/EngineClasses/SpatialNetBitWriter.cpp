@@ -63,9 +63,7 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 					AActor* Actor = Cast<AActor>(Value);
 					if (Actor->Role == ROLE_Authority && EntityRegistry->GetEntityIdFromActor(Actor) == 0)
 					{
-						Worker_EntityId EntityId = NetDriver->EntityPool->Pop();
-						EntityRegistry->AddToRegistry(EntityId, Actor);
-						PackageMapClient->ResolveEntityActor(Actor, EntityId);
+						NetDriver->SetupActorEntity(Actor);
 					}
 				}
 				else if (Value->GetOuter()->IsA<AActor>())
@@ -75,9 +73,7 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 					AActor* OuterActor = Cast<AActor>(Value->GetOuter());
 					if (OuterActor->Role == ROLE_Authority && EntityRegistry->GetEntityIdFromActor(OuterActor) == 0)
 					{
-						Worker_EntityId EntityId = NetDriver->EntityPool->Pop();
-						EntityRegistry->AddToRegistry(EntityId, OuterActor);
-						PackageMapClient->ResolveEntityActor(OuterActor, NetDriver->EntityPool->Pop());
+						NetDriver->SetupActorEntity(OuterActor);
 					}
 				}
 				// If we are a server authoritative over the actor, assign an entity ID and resolve in package map

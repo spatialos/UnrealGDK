@@ -1365,23 +1365,19 @@ void USpatialPendingNetGame::SendJoin()
 	bSentJoinRequest = true;
 }
 
-Worker_EntityId USpatialNetDriver::SetupActorEntity(AActor* Actor, USpatialActorChannel* Channel)
+Worker_EntityId USpatialNetDriver::SetupActorEntity(AActor* Actor)
 {
 	Worker_EntityId EntityId = EntityPool->Pop();
 	GetEntityRegistry()->AddToRegistry(EntityId, Actor);
 
-	AddActorChannel(EntityId, Channel);
+	// Register Actor with package map since we know what the entity id is.
+	PackageMap->ResolveEntityActor(Actor, EntityId);
 
 	// If a Singleton was created, update the GSM with the proper Id.
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
 	}
-
-	// Register Actor with package map since we know what the entity id is.
-	PackageMap->ResolveEntityActor(Actor, EntityId);
-
-	ForceNetUpdate(Actor);
 
 	return EntityId;
 }

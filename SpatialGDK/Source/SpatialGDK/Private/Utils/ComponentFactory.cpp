@@ -204,27 +204,15 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					{
 						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 					}
-					else if(NetDriver->IsServer()) // We want to assign an entity id to this if we're a server authoritative over the actor and it doesn't have an entity id yet.
+					else if (NetDriver->IsServer()) // We want to assign an entity id to this if we're a server authoritative over the actor and it doesn't have an entity id yet.
 					{
-						//if (AActor* Actor = Cast<AActor>(ObjectValue))
-						//{
-						//	// resolve this actor
-						//	PackageMap->ResolveEntityActor(Actor, NetDriver->EntityPool->Pop());
-						//}
-						//else if (AActor* OuterActor = Cast<AActor>(ObjectValue->GetOuter()))
-						//{
-						//	// resolve outer
-						//	PackageMap->ResolveEntityActor(OuterActor, NetDriver->EntityPool->Pop());
-						//}
 						if (ObjectValue->IsA<AActor>())
 						{
 							// resolve this actor
 							AActor* Actor = Cast<AActor>(ObjectValue);
 							if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == 0)
 							{
-								Worker_EntityId EntityId = NetDriver->EntityPool->Pop();
-								NetDriver->GetEntityRegistry()->AddToRegistry(EntityId, Actor);
-								PackageMap->ResolveEntityActor(Actor, EntityId);
+								NetDriver->SetupActorEntity(Actor);
 							}
 						}
 						else if (ObjectValue->GetOuter()->IsA<AActor>())
@@ -234,9 +222,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 							AActor* OuterActor = Cast<AActor>(ObjectValue->GetOuter());
 							if (OuterActor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(OuterActor) == 0)
 							{
-								Worker_EntityId EntityId = NetDriver->EntityPool->Pop();
-								NetDriver->GetEntityRegistry()->AddToRegistry(EntityId, OuterActor);
-								PackageMap->ResolveEntityActor(OuterActor, NetDriver->EntityPool->Pop());
+								NetDriver->SetupActorEntity(OuterActor);
 							}
 						}
 						// If we are a server authoritative over the actor, assign an entity ID and resolve in package map
