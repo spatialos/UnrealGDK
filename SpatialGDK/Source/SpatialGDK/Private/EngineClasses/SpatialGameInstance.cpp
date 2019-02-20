@@ -90,11 +90,8 @@ bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
 		GetEngine()->ShutdownWorldNetDriver(GetWorldContext()->World());
 	}
 
-	FURL URL = WorldContext->LastURL;
-	URL.Host = SpatialConstants::LOCAL_HOST;
-
 	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
-	WorldContext->PendingNetGame->Initialize(URL);
+	WorldContext->PendingNetGame->Initialize(WorldContext->LastURL);
 	WorldContext->PendingNetGame->InitNetDriver();
 	bool bOk = true;
 
@@ -165,10 +162,15 @@ void USpatialGameInstance::StartGameInstance()
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialWorkerConnection();
 
-		if (GIsClient)
+		// Initialize a legacy locator configuration which will parse command line arguments.
+		// If there is a legacy locator token present in the command line arguments then connect to deployment automatically.
+		// The new locator uses the same param for the LoginToken, so this will notice LocatorConfig launches as well.
+		// NOTE: When we remove the LegacyLocatorConfig, this should be updated to check LocatorConfig instead of be removed.
+		FLegacyLocatorConfig LegacyLocatorConfig;
+		if (!LegacyLocatorConfig.LoginToken.IsEmpty() && GIsClient)
 		{
 			FString Error;
-			if (!StartGameInstance_SpatialGDKClient(Error))
+			if (!StartGameInstance_SpatialGDKClient(Error)) // This is required since there is no IP specified when using locator.
 			{
 				UE_LOG(LogSpatialGameInstance, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
 				FPlatformMisc::RequestExit(false);

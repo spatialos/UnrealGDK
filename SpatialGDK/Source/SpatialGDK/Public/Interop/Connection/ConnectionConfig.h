@@ -61,12 +61,21 @@ struct FConnectionConfig
 struct FReceptionistConfig : public FConnectionConfig
 {
 	FReceptionistConfig()
-		: ReceptionistHost(SpatialConstants::LOCAL_HOST)
-		, ReceptionistPort(SpatialConstants::DEFAULT_PORT)
+		: ReceptionistPort(SpatialConstants::DEFAULT_PORT)
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
-		FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost);
+		// Parse the commandline for receptionistHost, if it exists then use this as the host IP.
+		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost))
+		{
+			// If receptionistHost is not specified then parse for a traditional IP.
+			if(!FParse::Token(CommandLine, ReceptionistHost, 0) || **ReceptionistHost == '-')
+			{
+				// If an IP is not specified then use default.
+				ReceptionistHost = SpatialConstants::LOCAL_HOST;
+			}
+		}
+
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
 	}
 
