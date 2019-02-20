@@ -51,8 +51,14 @@ pushd "$($gdk_home)"
 
     # Fetch the version of Unreal Engine we need
     pushd "ci"
-        $unreal_version = Get-Content -Path "unreal-engine.version" -Raw
-        Write-Log "Using Unreal Engine version: $($unreal_version)"
+        if (Test-Path env:ENGINE_COMMIT_HASH)
+        {
+            $unreal_version = Get-Item env:ENGINE_COMMIT_HASH
+            Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($unreal_version)"
+        } else {
+            $unreal_version = Get-Content -Path "unreal-engine.version" -Raw
+            Write-Log "Using engine version found in unreal-engine.version file: $($unreal_version)"
+        }
     popd
 
     ## Create an UnrealEngine directory if it doesn't already exist
