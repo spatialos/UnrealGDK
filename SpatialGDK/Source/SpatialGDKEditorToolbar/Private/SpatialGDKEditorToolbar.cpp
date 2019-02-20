@@ -24,7 +24,7 @@
 #include "AssetRegistryModule.h"
 #include "Misc/FileHelper.h"
 #include "GeneralProjectSettings.h"
-#include "JsonWriter.h"
+#include "Serialization/JsonWriter.h"
 #include "LevelEditor.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
