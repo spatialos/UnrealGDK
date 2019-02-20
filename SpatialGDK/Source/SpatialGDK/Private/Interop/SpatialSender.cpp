@@ -6,7 +6,6 @@
 #include "GameFramework/PlayerState.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
-#include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -663,10 +662,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		}
 	}
 
-	Schema_AddUint32(RequestObject, 1, TargetObjectRef.Offset);
-	Schema_AddUint32(RequestObject, 2, CommandIndex);
-	AddBytesToSchema(RequestObject, 3, PayloadWriter);
-
+	WriteRpcPayload(RequestObject, TargetObjectRef.Offset, CommandIndex, PayloadWriter);
 	return CommandRequest;
 }
 
@@ -706,11 +702,16 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 		}
 	}
 
-	Schema_AddUint32(EventData, 1, TargetObjectRef.Offset);
-	Schema_AddUint32(EventData, 2, EventIndex);
-	AddBytesToSchema(EventData, 3, PayloadWriter);
+	WriteRpcPayload(EventData, TargetObjectRef.Offset, EventIndex, PayloadWriter);
 
 	return ComponentUpdate;
+}
+
+void USpatialSender::WriteRpcPayload(Schema_Object* Object, uint32 Offset, Schema_FieldId Index, FSpatialNetBitWriter PayloadWriter)
+{
+	Schema_AddUint32(Object, 1, Offset);
+	Schema_AddUint32(Object, 2, Index);
+	AddBytesToSchema(Object, 3, PayloadWriter);
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)
