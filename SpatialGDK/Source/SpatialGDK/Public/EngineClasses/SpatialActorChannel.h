@@ -59,7 +59,7 @@ public:
 
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info.SchemaComponents[SCHEMA_ClientRPC]);
+		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info.SchemaComponents[SCHEMA_ClientReliableRPC]);
 	}
 
 	FORCEINLINE bool IsOwnedByWorker() const

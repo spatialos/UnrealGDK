@@ -35,11 +35,11 @@ ESchemaComponentType RPCTypeToSchemaComponentType(ERPCType RPC)
 {
 	if (RPC == RPC_Client)
 	{
-		return SCHEMA_ClientRPC;
+		return SCHEMA_ClientReliableRPC;
 	}
 	else if (RPC == RPC_Server)
 	{
-		return SCHEMA_ServerRPC;
+		return SCHEMA_ServerReliableRPC;
 	}
 	else if (RPC == RPC_NetMulticast)
 	{

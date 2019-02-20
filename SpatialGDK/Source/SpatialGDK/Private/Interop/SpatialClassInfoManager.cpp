@@ -54,11 +54,11 @@ ESchemaComponentType GetRpcType(UFunction* RemoteFunction)
 	{
 		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
 		{
-			return SCHEMA_ClientRPC;
+			return SCHEMA_ClientReliableRPC;
 		}
 		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
 		{
-			return SCHEMA_ServerRPC;
+			return SCHEMA_ServerReliableRPC;
 		}
 	}
 	else

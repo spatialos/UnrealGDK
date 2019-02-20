@@ -309,7 +309,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 			return;
 		}
 
-		if (Type == SCHEMA_ClientRPC)
+		if (Type == SCHEMA_ClientReliableRPC)
 		{
 			// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
 			return;
@@ -338,7 +338,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 				return;
 			}
 
-			if (Type == SCHEMA_ClientRPC)
+			if (Type == SCHEMA_ClientReliableRPC)
 			{
 				// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
 				return;

@@ -26,9 +26,9 @@ enum ESchemaComponentType : int32
 	SCHEMA_Count,
 
 	// RPCs
-	SCHEMA_ClientRPC,
+	SCHEMA_ClientReliableRPC,
 	SCHEMA_ClientUnreliableRPC,
-	SCHEMA_ServerRPC,
+	SCHEMA_ServerReliableRPC,
 	SCHEMA_ServerUnreliableRPC,
 	SCHEMA_NetMulticastRPC,
 	SCHEMA_CrossServerRPC,
@@ -42,11 +42,11 @@ FORCEINLINE ESchemaComponentType FunctionFlagsToRPCSchemaType(EFunctionFlags Fun
 {
 	if (FunctionFlags & FUNC_NetClient)
 	{
-		return SCHEMA_ClientRPC;
+		return SCHEMA_ClientReliableRPC;
 	}
 	else if (FunctionFlags & FUNC_NetServer)
 	{
-		return SCHEMA_ServerRPC;
+		return SCHEMA_ServerReliableRPC;
 	}
 	else if (FunctionFlags & FUNC_NetMulticast)
 	{
@@ -66,9 +66,9 @@ FORCEINLINE FString RPCSchemaTypeToString(ESchemaComponentType RPCType)
 {
 	switch (RPCType)
 	{
-	case SCHEMA_ClientRPC:
+	case SCHEMA_ClientReliableRPC:
 		return TEXT("Client");
-	case SCHEMA_ServerRPC:
+	case SCHEMA_ServerReliableRPC:
 		return TEXT("Server");
 	case SCHEMA_NetMulticastRPC:
 		return TEXT("Multicast");
