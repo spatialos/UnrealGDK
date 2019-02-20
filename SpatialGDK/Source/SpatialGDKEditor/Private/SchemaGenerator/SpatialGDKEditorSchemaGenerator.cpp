@@ -323,6 +323,18 @@ TArray<UClass*> GetAllSupportedClasses()
 			}
 		}
 
+		for (TFieldIterator<UFunction> FunctionIt(*ClassIt); FunctionIt; ++FunctionIt)
+		{
+			if (FunctionIt->FunctionFlags & FUNC_NetClient ||
+				FunctionIt->FunctionFlags & FUNC_NetServer ||
+				FunctionIt->FunctionFlags & FUNC_NetCrossServer ||
+				FunctionIt->FunctionFlags & FUNC_NetMulticast)
+			{
+				SupportedClass = *ClassIt;
+				break;
+			}
+		}
+
 		// No replicated/handover properties found
 		if (SupportedClass == nullptr) continue;
 
