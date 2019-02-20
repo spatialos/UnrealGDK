@@ -206,23 +206,20 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					}
 					else if (NetDriver->IsServer()) // We want to assign an entity id to this if we're a server authoritative over the actor and it doesn't have an entity id yet.
 					{
-						if (ObjectValue->IsA<AActor>())
+						if (AActor* Actor = Cast<AActor>(ObjectValue))
 						{
-							// resolve this actor
-							AActor* Actor = Cast<AActor>(ObjectValue);
 							if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == 0)
 							{
 								NetDriver->SetupActorEntity(Actor);
+								NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
 							}
 						}
-						else if (ObjectValue->GetOuter()->IsA<AActor>())
+						else if (AActor* OuterActor = Cast<AActor>(ObjectValue->GetOuter()))
 						{
-							// resolve outer
-
-							AActor* OuterActor = Cast<AActor>(ObjectValue->GetOuter());
 							if (OuterActor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(OuterActor) == 0)
 							{
 								NetDriver->SetupActorEntity(OuterActor);
+								NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
 							}
 						}
 						// If we are a server authoritative over the actor, assign an entity ID and resolve in package map

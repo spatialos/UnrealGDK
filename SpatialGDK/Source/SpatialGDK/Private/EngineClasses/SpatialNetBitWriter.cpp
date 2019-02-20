@@ -55,25 +55,20 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 			}
 			else if (NetDriver->IsServer()) // We want to assign an entity id to this if we're a server authoritative over the actor and it doesn't have an entity id yet.
 			{
-				UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
-
-				if (Value->IsA<AActor>())
+				if (AActor* Actor = Cast<AActor>(Value))
 				{
-					// resolve this actor
-					AActor* Actor = Cast<AActor>(Value);
-					if (Actor->Role == ROLE_Authority && EntityRegistry->GetEntityIdFromActor(Actor) == 0)
+					if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == 0)
 					{
 						NetDriver->SetupActorEntity(Actor);
+						NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
 					}
 				}
-				else if (Value->GetOuter()->IsA<AActor>())
+				else if (AActor* OuterActor = Cast<AActor>(Value->GetOuter()))
 				{
-					// resolve outer
-
-					AActor* OuterActor = Cast<AActor>(Value->GetOuter());
-					if (OuterActor->Role == ROLE_Authority && EntityRegistry->GetEntityIdFromActor(OuterActor) == 0)
+					if (OuterActor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(OuterActor) == 0)
 					{
 						NetDriver->SetupActorEntity(OuterActor);
+						NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
 					}
 				}
 				// If we are a server authoritative over the actor, assign an entity ID and resolve in package map
