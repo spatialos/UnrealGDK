@@ -92,7 +92,6 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
-		RPCInfo.bReliable = RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable);
 
 		// Index is guaranteed to be the same on Clients & Servers since we process remote functions in the same order.
 		RPCInfo.Index = Info->RPCs.Num();

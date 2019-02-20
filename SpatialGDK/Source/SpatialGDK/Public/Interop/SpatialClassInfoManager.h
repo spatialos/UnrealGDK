@@ -33,7 +33,6 @@ struct FRPCInfo
 {
 	ESchemaComponentType Type;
 	uint32 Index;
-	bool bReliable;
 };
 
 struct FHandoverPropertyInfo
