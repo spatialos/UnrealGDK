@@ -129,8 +129,9 @@ namespace SpatialConstants
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID = 2;
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID = 3;
 
-	// Unreal(Client|Server)RPCEndpoint Unreliable Event Field ID
+	// Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID = 1;
+	const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID = 1;
 
 	// TODO: Make these easily configurable: UNR-984
 	const float HEARTBEAT_INTERVAL_SECONDS = 2.0f;

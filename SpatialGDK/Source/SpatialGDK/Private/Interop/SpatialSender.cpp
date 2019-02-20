@@ -626,7 +626,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 {
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = ComponentId;
-	CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, 1);
+	CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
