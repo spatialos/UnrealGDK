@@ -22,10 +22,10 @@
 #include "Sound/SoundBase.h"
 
 #include "AssetRegistryModule.h"
-#include "Misc/FileHelper.h"
 #include "GeneralProjectSettings.h"
-#include "Serialization/JsonWriter.h"
 #include "LevelEditor.h"
+#include "Misc/FileHelper.h"
+#include "Serialization/JsonWriter.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
