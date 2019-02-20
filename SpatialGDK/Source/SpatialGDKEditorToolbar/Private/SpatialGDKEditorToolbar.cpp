@@ -22,7 +22,7 @@
 #include "Sound/SoundBase.h"
 
 #include "AssetRegistryModule.h"
-#include "FileHelper.h"
+#include "Misc/FileHelper.h"
 #include "GeneralProjectSettings.h"
 #include "JsonWriter.h"
 #include "LevelEditor.h"
