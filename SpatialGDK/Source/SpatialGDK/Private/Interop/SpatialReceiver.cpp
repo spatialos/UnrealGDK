@@ -300,7 +300,9 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
-			if (ComponentType >= SCHEMA_FirstRPC && ComponentType <= SCHEMA_LastRPC)
+			if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
+				Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
+				Op.component_id == SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
 			{
 				// This could be either an RPC component on the actor or the subobject, but we assume
 				// they will be received together, so resetting multiple times should not be a problem.

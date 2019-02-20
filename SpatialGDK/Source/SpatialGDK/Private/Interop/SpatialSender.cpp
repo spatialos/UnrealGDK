@@ -194,14 +194,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		QueueOutgoingUpdate(Channel, Actor, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 	}
 
-	for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
-	{
-		if (Info.SchemaComponents[RPCType] != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Info.SchemaComponents[RPCType]));
-		}
-	}
-
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));

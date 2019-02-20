@@ -36,8 +36,6 @@ enum ESchemaComponentType : int32
 
 	// Iteration helpers
 	SCHEMA_Begin = SCHEMA_Data,
-	SCHEMA_FirstRPC = SCHEMA_ClientRPC,
-	SCHEMA_LastRPC = SCHEMA_CrossServerRPC,
 };
 
 FORCEINLINE ESchemaComponentType FunctionFlagsToRPCSchemaType(EFunctionFlags FunctionFlags)
