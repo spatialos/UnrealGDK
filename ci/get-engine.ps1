@@ -4,9 +4,10 @@ pushd "$($gdk_home)"
 
     # Fetch the version of Unreal Engine we need
     pushd "ci"
+        # Allow users to override the engine version if required
         if (Test-Path env:ENGINE_COMMIT_HASH)
         {
-            $unreal_version = Get-Item env:ENGINE_COMMIT_HASH
+            $unreal_version = (Get-Item -Path env:ENGINE_COMMIT_HASH).Value
             Write-Log "Using engine version defined by ENGINE_COMMIT_HASH: $($unreal_version)"
         } else {
             $unreal_version = Get-Content -Path "unreal-engine.version" -Raw
