@@ -11,7 +11,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
 class USpatialWorkerConnection;
 
-UCLASS()
+UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
