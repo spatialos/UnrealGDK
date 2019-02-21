@@ -13,6 +13,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Utils/EntityPool.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
@@ -68,6 +69,11 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
 	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
+}
+
+void USpatialGameInstance::CreateEntityPool()
+{
+	EntityPool = NewObject<UEntityPool>();
 }
 
 bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)

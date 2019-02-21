@@ -10,6 +10,7 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
 class USpatialWorkerConnection;
+class UEntityPool;
 
 UCLASS()
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
@@ -28,6 +29,8 @@ public:
 
 	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
 	void CreateNewSpatialWorkerConnection();
+	// EntityPool must exist on GameInstance instead of NetDriver so it isn't lost during server travel
+	void CreateEntityPool();
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
@@ -42,4 +45,6 @@ private:
 	friend class USpatialNetDriver;
 	UPROPERTY()
 	USpatialWorkerConnection* SpatialConnection;
+	UPROPERTY()
+	UEntityPool* EntityPool;
 };

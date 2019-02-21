@@ -147,6 +147,10 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	// Grab the SpatialWorkerConnection from the SpatialGameInstance (stored there for persistence in server travel).
 	Connection = GameInstance->SpatialConnection;
 
+	// Create the entity pool on the game instance and store a pointer to it in NetDriver
+	GameInstance->CreateEntityPool();
+	EntityPool = GameInstance->EntityPool;
+
 	if (LoadedWorld->URL.HasOption(TEXT("legacylocator")))
 	{
 		Connection->LegacyLocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
@@ -231,7 +235,6 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
-	EntityPool = NewObject<UEntityPool>();
 
 	PlayerSpawner->Init(this, TimerManager);
 
