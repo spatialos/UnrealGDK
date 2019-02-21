@@ -1,10 +1,9 @@
 param(
   [string] $gdk_home = (get-item "$($PSScriptRoot)").parent.FullName, ## The root of the UnrealGDK repo
-  [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine"
+  [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production/UnrealEngine",
   [string] $msbuild_exe = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\MSBuild.exe"
 )
 
-$ErrorActionPreference = 'Stop'
 &$PSScriptRoot"\common.ps1"
 
 # Download Unreal Engine 
