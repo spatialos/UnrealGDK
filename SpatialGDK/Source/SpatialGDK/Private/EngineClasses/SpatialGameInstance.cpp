@@ -102,7 +102,7 @@ void USpatialGameInstance::StartGameInstance()
 				// Modify the commandline args to have a Host IP to force a NetDriver to be used.
 				const TCHAR* CommandLineArgs = FCommandLine::Get();
 
-				FString NewCommandLineArgs = LocatorConfig.LocatorHost + " ";
+				FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
 				NewCommandLineArgs.Append(FString(CommandLineArgs));
 
 				FCommandLine::Set(*NewCommandLineArgs);
