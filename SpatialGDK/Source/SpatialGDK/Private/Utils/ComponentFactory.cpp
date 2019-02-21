@@ -204,7 +204,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					{
 						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 					}
-					else if (NetDriver->IsServer()) // We want to assign an entity id to this if we're a server authoritative over the actor and it doesn't have an entity id yet.
+					else if (NetDriver->IsServer())
 					{
 						if (AActor* Actor = Cast<AActor>(ObjectValue))
 						{
@@ -222,7 +222,6 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 								NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
 							}
 						}
-						// If we are a server authoritative over the actor, assign an entity ID and resolve in package map
 					}
 				}
 			}

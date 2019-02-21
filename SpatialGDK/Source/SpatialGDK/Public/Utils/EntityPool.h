@@ -10,9 +10,14 @@
 
 #include "EntityPool.generated.h"
 
+struct EntityRange {
+	Worker_EntityId CurrentEntityId;
+	Worker_EntityId LastEntityId;
+};
+
 class USpatialReceiver;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogEntityPool, Log, All)
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEntityPool, Log, All)
 
 UCLASS()
 class SPATIALGDK_API UEntityPool : public UObject
@@ -32,7 +37,7 @@ private:
 	UPROPERTY()
 	USpatialReceiver* Receiver;
 
-	TArray<Worker_EntityId> ReservedIDs;
+	TArray<EntityRange> ReservedIDs;
 
 	bool bIsReady;
 	bool bIsAwaitingResponse;

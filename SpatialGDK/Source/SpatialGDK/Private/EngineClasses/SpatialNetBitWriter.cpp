@@ -44,8 +44,6 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 	if (Value != nullptr && !Value->IsPendingKill())
 	{
 		auto PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
-		// How do we make sure we don't assign entity ids to non-replicated actors?
-		// This is one of the places we want to assign an entity id to something that needs it (if we're a server authoritative over that actor)
 		FNetworkGUID NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
 		if (!NetGUID.IsValid())
 		{
@@ -53,7 +51,7 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 			{
 				NetGUID = PackageMapClient->ResolveStablyNamedObject(Value);
 			}
-			else if (NetDriver->IsServer()) // We want to assign an entity id to this if we're a server authoritative over the actor and it doesn't have an entity id yet.
+			else if (NetDriver->IsServer())
 			{
 				if (AActor* Actor = Cast<AActor>(Value))
 				{
@@ -71,7 +69,6 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 						NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
 					}
 				}
-				// If we are a server authoritative over the actor, assign an entity ID and resolve in package map
 			}
 		}
 		ObjectRef = FUnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));
