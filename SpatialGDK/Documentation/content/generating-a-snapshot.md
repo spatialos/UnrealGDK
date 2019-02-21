@@ -35,7 +35,7 @@ The critical entities are:
 * `GlobalStateManager` - an entity with the `GlobalStateManager` component which has a map of [singleton]({{urlRoot}}/content/singleton-actors.md) classes to entity IDs (see [Global State manager]({{urlRoot}}/content/glossary#global-state-manager) glossary entry). The GDK uses this entity to orchestrate the replication of [Singleton Actors]({{urlRoot}}/content/singleton-actors.md).
 
 ### Placeholder entities
-Placeholder entities are listed in snapshots by default.
+Placeholder entities are listed in snapshots by default. You can opt to exclude them when generating a snapshot via the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbars.md).
 
 These entities exists only to set up server-worker boundaries in a way that is easy to test with multiple server-workers. These entities do not spawn as Actors when [checked out]({{urlRoot}}/content/glossary#check-out) by a worker and serve no purpose within the GDK. In most cases you can safely ignore them.
 
