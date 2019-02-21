@@ -314,12 +314,19 @@ TArray<UClass*> GetAllSupportedClasses()
 		}
 
 		UClass* SupportedClass = nullptr;
-		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt; ++PropertyIt)
+		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt && SupportedClass == nullptr; ++PropertyIt)
 		{
 			if (PropertyIt->HasAnyPropertyFlags(CPF_Net | CPF_Handover))
 			{
 				SupportedClass = *ClassIt;
-				break;
+			}
+		}
+
+		for (TFieldIterator<UFunction> FunctionIt(*ClassIt); FunctionIt && SupportedClass == nullptr; ++FunctionIt)
+		{
+			if (FunctionIt->HasAnyFunctionFlags(FUNC_NetFuncFlags))
+			{
+				SupportedClass = *ClassIt;
 			}
 		}
 
