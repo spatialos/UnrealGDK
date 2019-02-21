@@ -66,7 +66,7 @@ pushd "$($gdk_home)"
     New-Item -Path "$($binaries_dir)" -ItemType Directory -Force
     New-Item -Path "$($binaries_dir)\Programs" -ItemType Directory -Force
 
-
+    # Download GDK dependencies through the spatial package manager 
     Start-Event "download-spatial-packages" "build-unreal-gdk-:windows:"
     Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
         "package", `
