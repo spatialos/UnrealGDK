@@ -29,7 +29,7 @@ public:
 	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
 	void CreateNewSpatialWorkerConnection();
 
-	// If this flag is set to true standalone clients will attempt to connect to a deployment automatically if a 'loginToken' exists in arguments.
+	// If this flag is set to true standalone clients will not attempt to connect to a deployment automatically if a 'loginToken' exists in arguments.
 	UPROPERTY(Config)
 	bool PreventAutoConnectWithLocator;
 
