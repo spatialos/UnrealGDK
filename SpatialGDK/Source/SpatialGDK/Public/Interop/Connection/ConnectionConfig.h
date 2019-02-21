@@ -69,11 +69,13 @@ struct FReceptionistConfig : public FConnectionConfig
 		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost))
 		{
 			// If receptionistHost is not specified then parse for a traditional IP.
-			if(!FParse::Token(CommandLine, ReceptionistHost, 0) || **ReceptionistHost == '-')
+			if (!FParse::Token(CommandLine, ReceptionistHost, 0) || **ReceptionistHost == '-' || **ReceptionistHost == '/')
 			{
 				// If an IP is not specified then use default.
+				UE_LOG(LogTemp, Warning, TEXT("Could not find 'receptionistHost' or IP address in arguments for ReceptionistConfig. Using default: %s"), *SpatialConstants::LOCAL_HOST);
 				ReceptionistHost = SpatialConstants::LOCAL_HOST;
 			}
+			
 		}
 
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
