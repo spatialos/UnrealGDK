@@ -480,10 +480,14 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 		return false;
 	}
 
-	if (!CreatePlaceholders(OutputStream))
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKSettings->bGeneratePlaceholderEntitiesInSnapshot)
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		return false;
+		if (!CreatePlaceholders(OutputStream))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+			return false;
+		}
 	}
 
 	return true;
@@ -492,7 +496,7 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
 {
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), SnapshotFilename);
+	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotFolderPath(), SnapshotFilename);
 	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
 	{
 		return false;

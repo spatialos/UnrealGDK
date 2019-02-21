@@ -262,7 +262,7 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 
 			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
 			{
-				UE_LOG(LogSchemaGenerator, Warning, TEXT("Did not find ActorComponent->bReplicates at field %d for class %s"),
+				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find ActorComponent->bReplicates at field %d for class %s. Modifying the base Actor Component class is currently not supported."),
 					SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID,
 					*Class->GetName());
 			}
@@ -541,47 +541,31 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 	GenerateActorIncludes(Writer, TypeInfo);
 
+	FSubobjectMap Subobjects = GetAllSubobjects(TypeInfo);
+
 	bool bHasComponents = false;
-	TSet<UObject*> SeenComponents;
-	int32 CurrentOffset = 1;
 
-	for (auto& PropertyPair : TypeInfo->Properties)
+	for (auto& It : Subobjects)
 	{
-		UProperty* Property = PropertyPair.Key;
-		UObjectProperty* ObjectProperty = Cast<UObjectProperty>(Property);
+		uint32 Offset = It.Key;
+		TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Value;
+		UClass* SubobjectClass = Cast<UClass>(SubobjectTypeInfo->Type);
 
-		TSharedPtr<FUnrealType>& PropertyTypeInfo = PropertyPair.Value->Type;
+		FSubobjectSchemaData SubobjectData;
 
-		if (ObjectProperty && PropertyTypeInfo.IsValid())
+		if (IsReplicatedSubobject(SubobjectTypeInfo) && SchemaGeneratedClasses.Contains(SubobjectClass))
 		{
-			UObject* Value = PropertyTypeInfo->Object;
-
-			if (Value != nullptr && !Value->IsEditorOnly())
-			{
-				if (!SeenComponents.Contains(Value))
-				{
-					SeenComponents.Add(Value);
-
-					FSubobjectSchemaData SubobjectData;
-
-					if (IsReplicatedSubobject(PropertyTypeInfo) && SchemaGeneratedClasses.Contains(Value->GetClass()))
-					{
-						bHasComponents = true;
-						SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(PropertyTypeInfo->Name.ToString()), PropertyTypeInfo, Value->GetClass(), ActorClass, CurrentOffset);
-					}
-					else
-					{
-						SubobjectData.ClassPath = Value->GetClass()->GetPathName();
-					}
-
-					SubobjectData.Name = PropertyTypeInfo->Name;
-					ActorSchemaData.SubobjectData.Add(CurrentOffset, SubobjectData);
-					ClassPathToSchema.Add(Value->GetClass()->GetPathName(), FSchemaData());
-				}
-
-				CurrentOffset++;
-			}
+			bHasComponents = true;
+			SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, Offset);
 		}
+		else
+		{
+			SubobjectData.ClassPath = SubobjectClass->GetPathName();
+		}
+
+		SubobjectData.Name = SubobjectTypeInfo->Name;
+		ActorSchemaData.SubobjectData.Add(Offset, SubobjectData);
+		ClassPathToSchema.Add(SubobjectClass->GetPathName(), FSchemaData());
 	}
 
 	if (bHasComponents)

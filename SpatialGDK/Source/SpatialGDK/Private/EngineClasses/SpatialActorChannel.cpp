@@ -123,16 +123,16 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 #if WITH_EDITOR
 	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
 	{
-		if (GetDefault<ULevelEditorPlaySettings>()->IsDeleteDynamicEntitiesActive())
+		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
+
+		if (bDeleteDynamicEntities &&
+			NetDriver->IsServer() &&
+			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
+			NetDriver->GetWorld()->bIsTearingDown &&
+			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
 		{
-			if (NetDriver->IsServer() &&
-				NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-				NetDriver->GetWorld()->bIsTearingDown &&
-				NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
-			{
-				// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-				DeleteEntityIfAuthoritative();
-			}
+			// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+			DeleteEntityIfAuthoritative();
 		}
 	}
 #endif
@@ -251,9 +251,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	FReplicationFlags RepFlags;
 
 	// Send initial stuff.
-	if (OpenPacketId.First == INDEX_NONE)
+	if (bCreatingNewEntity)
 	{
 		RepFlags.bNetInitial = true;
+		// Include changes to Bunch (duplicating existing logic in DataChannel), despite us not using it,
+		// since these are passed to the virtual OnSerializeNewActor, whose implementations could use them.
 		Bunch.bClose = Actor->bNetTemporary;
 		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
 	}

@@ -165,12 +165,7 @@ void USpatialGameInstance::StartGameInstance()
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialWorkerConnection();
 
-		// Initialize a legacy locator configuration which will parse command line arguments.
-		// If there is a legacy locator token present in the command line arguments then connect to deployment automatically.
-		// The new locator uses the same param for the LoginToken, so this will notice LocatorConfig launches as well.
-		// NOTE: When we remove the LegacyLocatorConfig, this should be updated to check LocatorConfig instead of be removed.
-		FLegacyLocatorConfig LegacyLocatorConfig;
-		if (!LegacyLocatorConfig.LoginToken.IsEmpty() && GIsClient)
+		if (GIsClient)
 		{
 			FString Error;
 			if (!StartGameInstance_SpatialGDKClient(Error))
@@ -191,7 +186,10 @@ void USpatialGameInstance::Shutdown()
 	UWorld* World = GetWorld();
 	if (World != nullptr && SpatialConnection != nullptr && SpatialConnection->IsConnected())
 	{
-		Cast<USpatialNetDriver>(World->GetNetDriver())->HandleOnDisconnected(TEXT("Client shutdown"));
+		if (World->GetNetDriver() != nullptr)
+		{
+			Cast<USpatialNetDriver>(World->GetNetDriver())->HandleOnDisconnected(TEXT("Client shutdown"));
+		}
 	}
 
 	Super::Shutdown();

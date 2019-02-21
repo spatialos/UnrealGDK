@@ -481,7 +481,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		// Taken from PostNetInit
-		if (!EntityActor->HasActorBegunPlay())
+		if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 		{
 			EntityActor->DispatchBeginPlay();
 		}

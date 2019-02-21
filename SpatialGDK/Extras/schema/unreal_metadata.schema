@@ -4,7 +4,7 @@ package unreal;
 import "unreal/gdk/core_types.schema";
 
 component UnrealMetadata {
-    id = 100004;
+    id = 9996;
     option<UnrealObjectRef> stably_named_ref = 1; // Exists when entity represents a stably named Actor
     option<string> owner_worker_attribute = 2;
     string class_path = 3;

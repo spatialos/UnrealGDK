@@ -64,7 +64,7 @@ struct UnrealMetadata : Component
 			return NativeClass;
 		}
 
-		if (UClass* Class = FindObject<UClass>(ANY_PACKAGE, *ClassPath))
+		if (UClass* Class = LoadObject<UClass>(nullptr, *ClassPath))
 		{
 			if (Class->IsChildOf<AActor>())
 			{
