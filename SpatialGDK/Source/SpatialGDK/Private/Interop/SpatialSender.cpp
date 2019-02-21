@@ -709,9 +709,9 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 
 void USpatialSender::WriteRpcPayload(Schema_Object* Object, uint32 Offset, Schema_FieldId Index, FSpatialNetBitWriter PayloadWriter)
 {
-	Schema_AddUint32(Object, 1, Offset);
-	Schema_AddUint32(Object, 2, Index);
-	AddBytesToSchema(Object, 3, PayloadWriter);
+	Schema_AddUint32(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
+	Schema_AddUint32(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
+	AddBytesToSchema(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadWriter);
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)
