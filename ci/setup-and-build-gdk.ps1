@@ -4,8 +4,6 @@ param(
   [string] $msbuild_exe = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\MSBuild.exe"
 )
 
-&$PSScriptRoot"\common.ps1"
-
 # Download Unreal Engine 
 &$PSScriptRoot"\get-engine.ps1"
 

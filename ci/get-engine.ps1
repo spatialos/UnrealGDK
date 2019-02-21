@@ -1,3 +1,4 @@
+&$PSScriptRoot"\common.ps1"
 
 pushd "$($gdk_home)"
 
