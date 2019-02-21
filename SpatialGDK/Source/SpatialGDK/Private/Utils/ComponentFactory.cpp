@@ -188,6 +188,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		FUnrealObjectRef ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
+
 		if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
 		{
 			FNetworkGUID NetGUID;
@@ -204,7 +205,8 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 				}
 			}
 
-			if (NetGUID.IsValid())
+			// The secondary part of the check is only necessary until we have bulk reservation of entity ids
+			if (NetGUID.IsValid() || (ObjectValue->IsSupportedForNetworking() && !ObjectValue->IsFullNameStableForNetworking()))
 			{
 				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 			}

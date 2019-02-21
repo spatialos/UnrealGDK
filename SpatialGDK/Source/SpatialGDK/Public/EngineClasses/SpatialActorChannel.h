@@ -132,6 +132,9 @@ public:
 	
 	void UpdateShadowData();
 
+	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
+	bool bCreatedNewEntity;
+
 protected:
 	// UChannel Interface
 	virtual bool CleanUp(const bool bForDestroy) override;

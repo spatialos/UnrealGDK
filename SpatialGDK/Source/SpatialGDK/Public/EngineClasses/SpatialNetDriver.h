@@ -158,13 +158,13 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
+	// Timer manager.
+	FTimerManager* TimerManager;
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
-
-	// Timer manager.
-	FTimerManager* TimerManager;
 
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;

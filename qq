@@ -1,0 +1,122 @@
+[1mdiff --git a/SpatialGDK/Source/SpatialGDK/Private/EngineClasses/SpatialActorChannel.cpp b/SpatialGDK/Source/SpatialGDK/Private/EngineClasses/SpatialActorChannel.cpp[m
+[1mindex 03dfb80b..a42b970c 100644[m
+[1m--- a/SpatialGDK/Source/SpatialGDK/Private/EngineClasses/SpatialActorChannel.cpp[m
+[1m+++ b/SpatialGDK/Source/SpatialGDK/Private/EngineClasses/SpatialActorChannel.cpp[m
+[36m@@ -73,6 +73,7 @@[m [mUSpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti[m
+ 	, NetDriver(nullptr)[m
+ 	, LastSpatialPosition(FVector::ZeroVector)[m
+ 	, bCreatingNewEntity(false)[m
+[32m+[m	[32m, bCreatedNewEntity(false)[m
+ {[m
+ }[m
+ [m
+[36m@@ -161,6 +162,15 @@[m [mvoid USpatialActorChannel::UpdateShadowData()[m
+ {[m
+ 	check(Actor);[m
+ [m
+[32m+[m	[32m// If this channel was responsible for creating the channel, we do not want to initialize our shadow data[m
+[32m+[m	[32m// to the latest state since there could have been state that has changed between creation of the entity[m
+[32m+[m	[32m// and gaining of authority. Revisit this with UNR-1034[m
+[32m+[m	[32m// TODO: UNR-1029 - log when the shadow data differs from the current state of the Actor.[m
+[32m+[m	[32mif (bCreatedNewEntity)[m
+[32m+[m	[32m{[m
+[32m+[m		[32mreturn;[m
+[32m+[m	[32m}[m
+[32m+[m
+ 	// Refresh shadow data when crossing over servers to prevent stale/out-of-date data.[m
+ 	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);[m
+ [m
+[36m@@ -715,6 +725,7 @@[m [mvoid USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo[m
+ 		return;[m
+ 	}[m
+ [m
+[32m+[m	[32mbCreatedNewEntity = true;[m
+ 	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), Op.entity_id, *Actor->GetName());[m
+ }[m
+ [m
+[1mdiff --git a/SpatialGDK/Source/SpatialGDK/Private/Interop/SpatialReceiver.cpp b/SpatialGDK/Source/SpatialGDK/Private/Interop/SpatialReceiver.cpp[m
+[1mindex 55e2af7e..ae8fe135 100644[m
+[1m--- a/SpatialGDK/Source/SpatialGDK/Private/Interop/SpatialReceiver.cpp[m
+[1m+++ b/SpatialGDK/Source/SpatialGDK/Private/Interop/SpatialReceiver.cpp[m
+[36m@@ -268,6 +268,12 @@[m [mvoid USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)[m
+ 				}[m
+ 				else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)[m
+ 				{[m
+[32m+[m					[32mUSpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);[m
+[32m+[m					[32mif (ActorChannel != nullptr)[m
+[32m+[m					[32m{[m
+[32m+[m						[32mActorChannel->bCreatedNewEntity = false;[m
+[32m+[m					[32m}[m
+[32m+[m
+ 					Actor->Role = ROLE_SimulatedProxy;[m
+ 					Actor->RemoteRole = ROLE_Authority;[m
+ [m
+[1mdiff --git a/SpatialGDK/Source/SpatialGDK/Private/Utils/ComponentFactory.cpp b/SpatialGDK/Source/SpatialGDK/Private/Utils/ComponentFactory.cpp[m
+[1mindex 5c4a66fb..28654ec9 100644[m
+[1m--- a/SpatialGDK/Source/SpatialGDK/Private/Utils/ComponentFactory.cpp[m
+[1m+++ b/SpatialGDK/Source/SpatialGDK/Private/Utils/ComponentFactory.cpp[m
+[36m@@ -45,6 +45,11 @@[m [mbool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*[m
+ 				const uint8* Data = (uint8*)Object + Cmd.Offset;[m
+ 				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;[m
+ [m
+[32m+[m				[32mif (!bIsInitialData && Object->GetClass()->GetName().Contains("BP_PlayerCharacter") && Cmd.Property->GetName().ToLower().Contains(TEXT("weapon")))[m
+[32m+[m				[32m{[m
+[32m+[m					[32mUE_LOG(LogTemp, Log, TEXT("Whoa"));[m
+[32m+[m				[32m}[m
+[32m+[m
+ 				AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);[m
+ [m
+ 				if (UnresolvedObjects.Num() == 0)[m
+[36m@@ -188,6 +193,7 @@[m [mvoid ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId[m
+ 		FUnrealObjectRef ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;[m
+ [m
+ 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);[m
+[32m+[m
+ 		if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())[m
+ 		{[m
+ 			FNetworkGUID NetGUID;[m
+[36m@@ -204,7 +210,7 @@[m [mvoid ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId[m
+ 				}[m
+ 			}[m
+ [m
+[31m-			if (NetGUID.IsValid())[m
+[32m+[m			[32mif (NetGUID.IsValid() || (ObjectValue->IsSupportedForNetworking() && !ObjectValue->IsFullNameStableForNetworking()))[m
+ 			{[m
+ 				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);[m
+ 			}[m
+[1mdiff --git a/SpatialGDK/Source/SpatialGDK/Public/EngineClasses/SpatialActorChannel.h b/SpatialGDK/Source/SpatialGDK/Public/EngineClasses/SpatialActorChannel.h[m
+[1mindex 7b7480f3..9541c6ad 100644[m
+[1m--- a/SpatialGDK/Source/SpatialGDK/Public/EngineClasses/SpatialActorChannel.h[m
+[1m+++ b/SpatialGDK/Source/SpatialGDK/Public/EngineClasses/SpatialActorChannel.h[m
+[36m@@ -132,6 +132,9 @@[m [mpublic:[m
+ 	[m
+ 	void UpdateShadowData();[m
+ [m
+[32m+[m	[32m// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.[m
+[32m+[m	[32mbool bCreatedNewEntity;[m
+[32m+[m
+ protected:[m
+ 	// UChannel Interface[m
+ 	virtual bool CleanUp(const bool bForDestroy) override;[m
+[1mdiff --git a/SpatialGDK/Source/SpatialGDK/Public/EngineClasses/SpatialNetDriver.h b/SpatialGDK/Source/SpatialGDK/Public/EngineClasses/SpatialNetDriver.h[m
+[1mindex ee09032c..d263f904 100644[m
+[1m--- a/SpatialGDK/Source/SpatialGDK/Public/EngineClasses/SpatialNetDriver.h[m
+[1m+++ b/SpatialGDK/Source/SpatialGDK/Public/EngineClasses/SpatialNetDriver.h[m
+[36m@@ -158,14 +158,14 @@[m [mpublic:[m
+ [m
+ 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);[m
+ [m
+[32m+[m	[32m// Timer manager.[m
+[32m+[m	[32mFTimerManager* TimerManager;[m
+[32m+[m
+ private:[m
+ 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;[m
+ [m
+ 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;[m
+ [m
+[31m-	// Timer manager.[m
+[31m-	FTimerManager* TimerManager;[m
+[31m-[m
+ 	bool bAuthoritativeDestruction;[m
+ 	bool bConnectAsClient;[m
+ 	bool bPersistSpatialConnection;[m

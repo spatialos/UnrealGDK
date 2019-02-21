@@ -268,6 +268,12 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				}
 				else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 				{
+					USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
+					if (ActorChannel != nullptr)
+					{
+						ActorChannel->bCreatedNewEntity = false;
+					}
+
 					Actor->Role = ROLE_SimulatedProxy;
 					Actor->RemoteRole = ROLE_Authority;
 
