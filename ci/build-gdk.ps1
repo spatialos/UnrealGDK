@@ -55,7 +55,7 @@ pushd "$($gdk_home)"
             "BuildPlugin", `
             " -Plugin=`"$($gdk_home)/SpatialGDK/SpatialGDK.uplugin`"", `
             "-TargetPlatforms=Win64", `
-            "-Package=`"$gdk_home/SpatialGDK/Intermediate/BuildPackage/Win64`"" `
+            "-Package=`"$($gdk_home)/SpatialGDK/Intermediate/BuildPackage/Win64`"" `
         )
         $win_build_handle = $win_build_proc.Handle
         Wait-Process -Id (Get-Process -InputObject $win_build_proc).id

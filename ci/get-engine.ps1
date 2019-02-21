@@ -66,12 +66,12 @@ pushd "$($gdk_home)"
 
     Start-Event "download-unreal-engine" "build-unreal-gdk-:windows:"
     pushd "UnrealEngine"
-        Write-Log "Downloading the Unreal Engine artifacts from GCS"
-        $gcs_unreal_location = "$($unreal_version).zip"
+        $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
+        Write-Log "Downloading Unreal Engine artifacts from $($engine_gcs_path)"
 
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
             "cp", `
-            "gs://$($gcs_publish_bucket)/$($gcs_unreal_location)", `
+            "$($engine_gcs_path)", `
             "$($unreal_version).zip" `
         )
         if ($gsu_proc.ExitCode -ne 0) {

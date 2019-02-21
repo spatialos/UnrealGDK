@@ -131,7 +131,7 @@ pushd "$($gdk_home)"
         "/property:Configuration=Release" `
     )
 
-    # Working around a powershell bug
+    # Note: holding on to a handle solves an intermittent issue when waiting on the process id
 	$msbuild_handle = $msbuild_proc.Handle
     Wait-Process -Id (Get-Process -InputObject $msbuild_proc).id
     if ($msbuild_proc.ExitCode -ne 0) { 
