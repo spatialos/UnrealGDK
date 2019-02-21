@@ -68,11 +68,12 @@ struct FReceptionistConfig : public FConnectionConfig
 		// Parse the commandline for receptionistHost, if it exists then use this as the host IP.
 		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost))
 		{
-			// If receptionistHost is not specified then parse for a traditional IP.
-			if (!FParse::Token(CommandLine, ReceptionistHost, 0) || **ReceptionistHost == '-' || **ReceptionistHost == '/')
+			// If receptionistHost is not specified then parse for a traditional IP. Parsing is done the same as Unreal in PlayLevel.cpp.
+			// Unreal uses the first commandline argument as a host to decide whether to create a NetDriver and connect.
+			// Here we are checking that the first commandline argument is not prefixed with '-' indicating a flag or '/' indicating a map name.
+			if (!FParse::Token(CommandLine, ReceptionistHost, 0) || ReceptionistHost[0] == '-' || ReceptionistHost[0] == '/')
 			{
 				// If an IP is not specified then use default.
-				UE_LOG(LogTemp, Warning, TEXT("Could not find 'receptionistHost' or IP address in arguments for ReceptionistConfig. Using default: %s"), *SpatialConstants::LOCAL_HOST);
 				ReceptionistHost = SpatialConstants::LOCAL_HOST;
 			}
 			
