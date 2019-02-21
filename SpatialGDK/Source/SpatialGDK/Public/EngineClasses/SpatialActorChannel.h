@@ -133,7 +133,7 @@ public:
 	void UpdateShadowData();
 
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
-	bool bCreatedNewEntity;
+	bool bCreatedEntity;
 
 protected:
 	// UChannel Interface
