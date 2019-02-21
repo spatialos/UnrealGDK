@@ -7,7 +7,9 @@ type UnrealRPCPayload {
     bytes rpc_payload = 3;
 }
 
-type Void {}
+type Void {
+
+}
 
 component UnrealClientRPCEndpoint {
     id = 9990;
