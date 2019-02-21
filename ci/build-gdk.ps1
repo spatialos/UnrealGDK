@@ -2,7 +2,7 @@
 
 pushd "$($gdk_home)"
 
-    Start-Event "build-unreal-gdk-windows" "build-unreal-gdk-:windows:"
+    Start-Event "build-unreal-gdk" "build-unreal-gdk-:windows:"
     pushd "SpatialGDK"
         $win_build_proc = Start-Process -PassThru -NoNewWindow -FilePath "$($gdk_home)\UnrealEngine\Engine\Build\BatchFiles\RunUAT.bat" -ArgumentList @(`
             "BuildPlugin", `
@@ -16,6 +16,6 @@ pushd "$($gdk_home)"
             Write-Log "Failed to build Unreal GDK. Error: $($win_build_proc.ExitCode)"
             Throw "Failed to build the Unreal GDK for Windows"
         }
-    Finish-Event "build-unreal-gdk-windows" "build-unreal-gdk-:windows:"
+    Finish-Event "build-unreal-gdk" "build-unreal-gdk-:windows:"
     popd
 popd

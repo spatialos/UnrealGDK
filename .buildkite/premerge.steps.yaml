@@ -10,7 +10,7 @@ common: &common
     - "capable_of_building=gdk-for-unreal"
     - "environment=production"
     - "permission_set=pusher"
-    - "queue=v2-1550501909-6a4dedbb19b430d6-------z"
+    - "queue=v2-1550696629-578d33ded6eb9929-------z"
   retry:
     automatic:
       - <<: *agent_transients
@@ -23,3 +23,5 @@ steps:
   - label: "setup-GDK-:windows:"
     command: "powershell ./ci/setup-and-build-gdk.ps1"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede. 
+    artifact_paths:
+      - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
