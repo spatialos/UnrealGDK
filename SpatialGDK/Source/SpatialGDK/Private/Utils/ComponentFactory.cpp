@@ -205,7 +205,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 				}
 			}
 
-			// The secondary part of the check is only necessary until we have bulk reservation of entity ids
+			// The secondary part of the check is only necessary until we have bulk reservation of entity ids UNR-673
 			if (NetGUID.IsValid() || (ObjectValue->IsSupportedForNetworking() && !ObjectValue->IsFullNameStableForNetworking()))
 			{
 				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);

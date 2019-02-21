@@ -73,7 +73,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, NetDriver(nullptr)
 	, LastSpatialPosition(FVector::ZeroVector)
 	, bCreatingNewEntity(false)
-	, bCreatedNewEntity(false)
+	, bCreatedEntity(false)
 {
 }
 
@@ -166,7 +166,7 @@ void USpatialActorChannel::UpdateShadowData()
 	// to the latest state since there could have been state that has changed between creation of the entity
 	// and gaining of authority. Revisit this with UNR-1034
 	// TODO: UNR-1029 - log when the shadow data differs from the current state of the Actor.
-	if (bCreatedNewEntity)
+	if (bCreatedEntity)
 	{
 		return;
 	}
@@ -725,7 +725,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		return;
 	}
 
-	bCreatedNewEntity = true;
+	bCreatedEntity = true;
 	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 }
 
