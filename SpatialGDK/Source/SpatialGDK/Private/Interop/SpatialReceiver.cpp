@@ -874,6 +874,12 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 
 		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 
+		if (!TargetObject)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Index);
+			continue;
+		}
+
 		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
 		UFunction* Function = ClassInfo.RPCs[Index];
@@ -912,7 +918,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
 
 	uint32 Offset = 0;
-	Offset = Schema_GetUint32(RequestObject, 1);
+	Offset = Schema_GetUint32(RequestObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 
 	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get();
 	if (TargetObject == nullptr)
@@ -924,7 +930,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-	uint32 Index = Schema_GetUint32(RequestObject, 2);
+	uint32 Index = Schema_GetUint32(RequestObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
 
 	UFunction* Function = Info.RPCs[Index];
 
@@ -1462,7 +1468,7 @@ void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& Com
 {
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
-	TArray<uint8> PayloadData = GetBytesFromSchema(RequestObject, 3);
+	TArray<uint8> PayloadData = GetBytesFromSchema(RequestObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
 	// A bit hacky, we should probably include the number of bits with the data instead.
 	int64 CountBits = PayloadData.Num() * 8;
 

@@ -40,7 +40,7 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 	return Class;
 }
 
-ESchemaComponentType GetRpcType(UFunction* RemoteFunction)
+ESchemaComponentType GetRPCType(UFunction* RemoteFunction)
 {
 	if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetMulticast))
 	{
@@ -87,7 +87,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
-		ESchemaComponentType RPCType = GetRpcType(RemoteFunction);
+		ESchemaComponentType RPCType = GetRPCType(RemoteFunction);
 		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
 		
 		FRPCInfo RPCInfo;
