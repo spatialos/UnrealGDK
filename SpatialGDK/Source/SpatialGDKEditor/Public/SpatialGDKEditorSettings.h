@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "UnrealString.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
 
@@ -42,6 +43,10 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Schema", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
 	FDirectoryPath GeneratedSchemaOutputFolder;
 
+	/** Command line flags passed in to `spatial local launch`.*/
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Command line flags for local launch"))
+	TArray<FString> SpatialOSCommandLineLaunchFlags;
+
 public:
 	FORCEINLINE FString GetSpatialOSDirectory() const
 	{
@@ -73,6 +78,19 @@ public:
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
 			: GeneratedSchemaOutputFolder.Path;
 	}
-	
+
+	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
+	{
+		FString CommandLineLaunchFlags = "";
+
+		for (FString Flag : SpatialOSCommandLineLaunchFlags)
+		{
+			Flag = Flag.StartsWith("--") ? Flag : "--" + Flag;
+			CommandLineLaunchFlags += Flag + " ";
+		}
+
+		return CommandLineLaunchFlags;
+	}
+
 	virtual FString ToString();
 };

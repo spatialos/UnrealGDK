@@ -20,6 +20,7 @@ FString USpatialGDKEditorSettings::ToString()
 	Args.Add(SpatialOSSnapshotPath.Path);
 	Args.Add(SpatialOSSnapshotFile);
 	Args.Add(GeneratedSchemaOutputFolder.Path);
+	Args.Add(GetSpatialOSCommandLineLaunchFlags());
 
 	return FString::Format(TEXT(
 		"ProjectRootFolder={0}, "
@@ -27,7 +28,8 @@ FString USpatialGDKEditorSettings::ToString()
 		"bStopSpatialOnExit={2}, "
 		"SpatialOSSnapshotPath={3}, "
 		"SpatialOSSnapshotFile={4}, "
-		"GeneratedSchemaOutputFolder={5}")
+		"GeneratedSchemaOutputFolder={5}, "
+		"SpatialOSCommandLineLaunchFlags={6}")
 		, Args);
 }
 
