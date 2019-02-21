@@ -72,6 +72,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, NetDriver(nullptr)
 	, LastSpatialPosition(FVector::ZeroVector)
 	, bCreatingNewEntity(false)
+	, bCreatedEntity(false)
 {
 }
 
@@ -158,6 +159,15 @@ bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 void USpatialActorChannel::UpdateShadowData()
 {
 	check(Actor);
+
+	// If this channel was responsible for creating the channel, we do not want to initialize our shadow data
+	// to the latest state since there could have been state that has changed between creation of the entity
+	// and gaining of authority. Revisit this with UNR-1034
+	// TODO: UNR-1029 - log when the shadow data differs from the current state of the Actor.
+	if (bCreatedEntity)
+	{
+		return;
+	}
 
 	// Refresh shadow data when crossing over servers to prevent stale/out-of-date data.
 	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
@@ -709,6 +719,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		return;
 	}
 
+	bCreatedEntity = true;
 	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 }
 
