@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Schema
 
 SpatialOS uses [schema (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/concepts/schema#schema) to generate APIs specific to the components in your project. These APIs define how you can operate on entity components within SpatialOS.

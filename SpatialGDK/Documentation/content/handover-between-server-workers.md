@@ -1,5 +1,5 @@
-# Actor handover between server-workers
 <%(TOC)%>
+# Actor handover between server-workers
 
 Actor handover (`handover`) is a new `UPROPERTY` tag. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. 
 

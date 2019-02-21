@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Next steps: Set up the GDK with the Starter Project
 
 Before starting this, you need to have followed:

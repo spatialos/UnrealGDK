@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Welcome to the SpatialOS GDK for Unreal Alpha
 <%(Callout type="warn" message="This is an alpha release of the SpatialOS GDK for Unreal. The API may change as we learn from feedback. Although not fully ready in terms of performance, stability and documentation, this is a great time to get involved and shape it with us. We are committed to improving the GDK rapidly, aiming for a more stable release in Q2 2019: see [Development Roadmap](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap). If you are interested in developing with the GDK before this time, please contact us. For more information please see [Recommended Use]({{urlRoot}}/recommended-use).")%>
 

@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Dynamic Typebindings
 To allow Unreal to replicate through the SpatialOS network stack and combine multiple dedicated server instances across one seamless game world, the GDK has to adapt Unreal networking functionality to work with the [SpatialOS Worker API (SpatialOS documentation)](https://docs.improbable.io/reference/latest/capi/introduction). It does  this seamlessly using `Dynamic Typebindings`. 
 

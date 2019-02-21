@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Get started: 3 - Follow the Multiserver Shooter tutorial
 
 ### What will be covered?
