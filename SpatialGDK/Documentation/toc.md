@@ -1,5 +1,5 @@
-- <h3>SpatialOS GDK for Unreal<h3>
-    - [ Welcome]({{urlRoot}}/welcome)
+- <h3>SpatialOS GDK for Unreal</h3>
+    - [Welcome]({{urlRoot}}/welcome)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
@@ -8,31 +8,28 @@
         - Next steps - either:
             - [Set up and run the Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project)
             - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
-    - [- Feature list]({{urlRoot}}/features)
-    - [- What's new in alpha]({{urlRoot}}/content/whatsnew)
-
-- <h3>Concepts and terminology<h3>
-    - [- SpatialOS concepts]({{urlRoot}}/content/concepts)
-    - [- Glossary]({{urlRoot}}/content/glossary)
-    - [- Toolbar]({{urlRoot}}/content/toolbars)
-- <h3>Reference<h3>
-    - [- Spatial Type]({{urlRoot}}/content/spatial-type)
-    - [- Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
-    - [- Authority]({{urlRoot}}/content/authority)
-    - [- Singleton Actors]({{urlRoot}}/content/singleton-actors)
-    - [- Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
-    - [- Map travel]({{urlRoot}}/content/map-travel)
-    - [- Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
-    - [- Schema]({{urlRoot}}/content/schema)
-    - [- Snapshots]({{urlRoot}}/content/generating-a-snapshot)
-    - [- Helper scripts]({{urlRoot}}/content/helper-scripts)
-    - [- Directory structure]({{urlRoot}}/content/directory-structure)
-    - [- Gameplay Ability System]({{urlRoot}}/content/ability-system)
-
-<h3>Troubleshooting<h3>
-    - [- Troubleshooting]({{urlRoot}}/content/troubleshooting)
-    - [- Known issues]({{urlRoot}}/known-issues)
-
+    - [Feature list]({{urlRoot}}/features)
+    - [What's new in alpha]({{urlRoot}}/content/whatsnew)
+- <h3>Concepts and terminology</h3>
+    - [SpatialOS concepts]({{urlRoot}}/content/concepts)
+    - [Glossary]({{urlRoot}}/content/glossary)
+    - [Toolbar]({{urlRoot}}/content/toolbars)
+- <h3>Reference</h3>
+    - [Spatial Type]({{urlRoot}}/content/spatial-type)
+    - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
+    - [Authority]({{urlRoot}}/content/authority)
+    - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
+    - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
+    - [Map travel]({{urlRoot}}/content/map-travel)
+    - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
+    - [Schema]({{urlRoot}}/content/schema)
+    - [Snapshots]({{urlRoot}}/content/generating-a-snapshot)
+    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - [Directory structure]({{urlRoot}}/content/directory-structure)
+    - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
+- <h3>Troubleshooting</h3>
+    - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
+    - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Get involved</h3>
     - Contributing to the GDK
         - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)
