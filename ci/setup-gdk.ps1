@@ -1,52 +1,4 @@
-param(
-  [string] $gdk_home = (get-item "$($PSScriptRoot)").parent.FullName, ## The root of the UnrealGDK repo
-  [string] $gcs_publish_bucket = "io-internal-infra-unreal-artifacts-production",
-  [string] $msbuild_exe = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\MSBuild.exe"
-)
-
-$ErrorActionPreference = 'Stop'
-
-function Write-Log() {
-  param(
-    [string] $msg,
-    [Parameter(Mandatory=$false)] [bool] $expand = $false
-  )
-  if ($expand) {
-      Write-Output "+++ $($msg)"
-  } else {
-      Write-Output "--- $($msg)"
-  }
-}
-
-function Start-Event() {
-    param(
-        [string] $event_name,
-        [string] $event_parent
-    )
-
-    # Start this tracing span.
-    Start-Process -NoNewWindow "imp-ci" -ArgumentList @(`
-        "events", "new", `
-        "--name", "$($event_name)", `
-        "--child-of", "$($event_parent)"
-    ) | Out-Null
-
-    Write-Log "$($event_name)"
-}
-
-function Finish-Event() {
-    param(
-        [string] $event_name,
-        [string] $event_parent
-    )
-
-    # Emit the end marker for this tracing span.
-    Start-Process -NoNewWindow "imp-ci"  -ArgumentList @(`
-        "events", "new", `
-        "--name", "$($event_name)", `
-        "--child-of", "$($event_parent)"
-    ) | Out-Null
-}
+. "$PSScriptRoot\common.ps1"
 
 pushd "$($gdk_home)"
 
@@ -66,7 +18,7 @@ pushd "$($gdk_home)"
     New-Item -Path "$($binaries_dir)" -ItemType Directory -Force
     New-Item -Path "$($binaries_dir)\Programs" -ItemType Directory -Force
 
-
+    # Download GDK dependencies through the spatial package manager 
     Start-Event "download-spatial-packages" "build-unreal-gdk-:windows:"
     Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
         "package", `
@@ -131,7 +83,7 @@ pushd "$($gdk_home)"
         "/property:Configuration=Release" `
     )
 
-    # Working around a powershell bug
+    # Note: holding on to a handle solves an intermittent issue when waiting on the process id
 	$msbuild_handle = $msbuild_proc.Handle
     Wait-Process -Id (Get-Process -InputObject $msbuild_proc).id
     if ($msbuild_proc.ExitCode -ne 0) { 
