@@ -14,7 +14,10 @@ void UEntityPool::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	Receiver = InNetDriver->Receiver;
+
 	bIsReady = false;
+	bIsAwaitingResponse = false;
+
 	if (NetDriver->IsServer())
 	{
 		ReserveEntityIDs(INITIAL_RESERVATION_COUNT);
@@ -42,10 +45,12 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToSpawn)
 		}
 
 		bIsReady = true;
+		bIsAwaitingResponse = false;
 	});
 
 	// Reserve the Entity IDs
 	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToSpawn);
+	bIsAwaitingResponse = true;
 
 	// Add the spawn delegate
 	Receiver->AddReserveEntityIdsDelegate(ReserveRequestID, CacheEntityIDsDelegate);
@@ -58,10 +63,10 @@ bool UEntityPool::IsReady()
 
 Worker_EntityId UEntityPool::Pop()
 {
-	Worker_EntityId NextId = ReservedIDs.Pop(true);
+	Worker_EntityId NextId = ReservedIDs.Pop();
 	UE_LOG(LogEntityPool, Log, TEXT("Popped ID, %i IDs remaining"), ReservedIDs.Num());
 
-	if (ReservedIDs.Num() < REFRESH_THRESHOLD)
+	if (ReservedIDs.Num() < REFRESH_THRESHOLD && !bIsAwaitingResponse)
 	{
 		UE_LOG(LogEntityPool, Log, TEXT("Pool under threshold, reserving more entity IDs"));
 		ReserveEntityIDs(REFRESH_COUNT);

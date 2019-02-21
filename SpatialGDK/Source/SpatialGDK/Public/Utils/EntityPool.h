@@ -35,4 +35,5 @@ private:
 	TArray<Worker_EntityId> ReservedIDs;
 
 	bool bIsReady;
+	bool bIsAwaitingResponse;
 };

@@ -989,40 +989,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	if (Connection != nullptr && Connection->IsConnected())
 	{
 		Worker_OpList* OpList = Connection->GetOpList();
-
-		if (IsServer())
-		{
-			if (!EntityPool->IsReady()) // We haven't received the first batch of Entity IDs yet so we need to hold on to ops until we process the ReserveEntityIDsResponse
-			{
-				UnprocessedOps.Insert(OpList, 0);
-				for (size_t i = 0; i < OpList->op_count; ++i)
-				{
-					Worker_Op* Op = &OpList->ops[i];
-					if (Op->op_type == WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE)
-					{
-						Receiver->OnReserveEntityIdsResponse(Op->reserve_entity_ids_response);
-						i = OpList->op_count;
-					}
-				}
-			}
-			else
-			{
-				while (UnprocessedOps.Num() > 0)
-				{
-					Worker_OpList* UnprocessedOpList = UnprocessedOps.Pop(true);
-					Dispatcher->ProcessOps(UnprocessedOpList);
-					Worker_OpList_Destroy(UnprocessedOpList);
-				}
-
-				Dispatcher->ProcessOps(OpList);
-				Worker_OpList_Destroy(OpList);
-			}
-		}
-		else
-		{
-			Dispatcher->ProcessOps(OpList);
-			Worker_OpList_Destroy(OpList);
-		}
+		Dispatcher->ProcessOps(OpList);
+		Worker_OpList_Destroy(OpList);
 	}
 }
 

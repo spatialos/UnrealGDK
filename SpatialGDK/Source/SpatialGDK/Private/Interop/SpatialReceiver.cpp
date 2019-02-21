@@ -1081,16 +1081,9 @@ void USpatialReceiver::OnReserveEntityIdsResponse(Worker_ReserveEntityIdsRespons
 		if (ReserveEntityIDsDelegate* RequestDelegate = ReserveEntityIDsDelegates.Find(Op.request_id))
 		{
 			UE_LOG(LogSpatialReceiver, Log, TEXT("Executing ReserveEntityIdsResponse with delegate, request id: %d, first entity id: %lld, message: %s"), Op.request_id, Op.first_entity_id, UTF8_TO_TCHAR(Op.message));
-			bool bFirstBulkRequest = !NetDriver->EntityPool->IsReady();
 
 			RequestDelegate->ExecuteIfBound(Op);
 			ReserveEntityIDsDelegates.Remove(Op.request_id);
-
-			if (bFirstBulkRequest)
-			{
-				ReserveEntityIDsDelegate EmptyDelegate;
-				AddReserveEntityIdsDelegate(Op.request_id, EmptyDelegate);
-			}
 		}
 		else
 		{
