@@ -194,6 +194,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		{
 			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(*ComponentId));
 		}
+		else
+		{
+			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_SPAWNED_COMPONENT_ID));
+		}
 	}
 	else
 	{
