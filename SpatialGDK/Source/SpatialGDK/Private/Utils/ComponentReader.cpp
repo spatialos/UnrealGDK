@@ -145,20 +145,14 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 					if (UnresolvedRefs.Num() > 0)
 					{
-						__debugbreak();
+						//RootObjectReferencesMap.Add(FieldId, FObjectReferences(ValueData, CountBits, UnresolvedRefs, Cmd.ParentIndex, ArrayProperty, true));
+						RootObjectReferencesMap.Add(FieldId, FObjectReferences(ValueData, CountBits, UnresolvedRefs, Cmd.ParentIndex, Parent.Property, true));
+						UnresolvedRefs.Append(UnresolvedRefs);
 					}
-
-					//ReadStructProperty(ValueDataReader, StructProperty, NetDriver, Data, bHasUnmapped);
-					//
-					//if (bHasUnmapped)
-					//{
-					//	InObjectReferencesMap.Add(Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, ParentIndex, Property));
-					//	UnresolvedRefs.Append(NewUnresolvedRefs);
-					//}
-					//else if (InObjectReferencesMap.Find(Offset))
-					//{
-					//	InObjectReferencesMap.Remove(Offset);
-					//}
+					else if (RootObjectReferencesMap.Find(FieldId))
+					{
+						RootObjectReferencesMap.Remove(FieldId);
+					}
 				}
 				else
 				{

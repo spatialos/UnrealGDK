@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 
+#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -1452,6 +1453,31 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				check(ObjectProperty);
 
 				ObjectProperty->SetObjectPropertyValue(Data + AbsOffset, SinglePropObject);
+			}
+			else if (ObjectReferences.bFastArrayProp)
+			{
+				FSpatialNetDeltaSerializeInfo Parms;
+
+				SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
+
+				int64 CountBits = ObjectReferences.Buffer.Num() * 8;
+				TSet<FUnrealObjectRef> NewUnresolvedRefs;
+				FSpatialNetBitReader ValueDataReader(PackageMap, ObjectReferences.Buffer.GetData(), CountBits, NewUnresolvedRefs);
+
+				Parms.Reader = &ValueDataReader;
+				Parms.Map = PackageMap;
+				Parms.NetSerializeCB = &SerializeCB;
+
+				UStructProperty* ParentStruct = Cast<UStructProperty>(Property);
+				UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
+				check(CppStructOps);
+
+				CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(ReplicatedObject, Parent->ArrayIndex));
+
+				if (NewUnresolvedRefs.Num() > 0)
+				{
+					bOutStillHasUnresolved = true;
+				}
 			}
 			else
 			{
