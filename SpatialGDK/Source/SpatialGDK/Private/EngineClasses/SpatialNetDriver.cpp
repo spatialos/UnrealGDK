@@ -1337,7 +1337,15 @@ void USpatialPendingNetGame::SendJoin()
 
 Worker_EntityId USpatialNetDriver::SetupActorEntity(AActor* Actor)
 {
+	checkSlow(Actor);
+
 	Worker_EntityId EntityId = EntityPool->Pop();
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
+		return EntityId;
+	}
+
 	GetEntityRegistry()->AddToRegistry(EntityId, Actor);
 
 	// Register Actor with package map since we know what the entity id is.

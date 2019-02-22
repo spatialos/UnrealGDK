@@ -55,7 +55,7 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 			{
 				if (AActor* Actor = Cast<AActor>(Value))
 				{
-					if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == 0)
+					if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == SpatialConstants::INVALID_ENTITY_ID)
 					{
 						NetDriver->SetupActorEntity(Actor);
 						NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
@@ -63,7 +63,7 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 				}
 				else if (AActor* OuterActor = Cast<AActor>(Value->GetOuter()))
 				{
-					if (OuterActor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(OuterActor) == 0)
+					if (OuterActor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(OuterActor) == SpatialConstants::INVALID_ENTITY_ID)
 					{
 						NetDriver->SetupActorEntity(OuterActor);
 						NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);

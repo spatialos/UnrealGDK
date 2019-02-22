@@ -202,6 +202,4 @@ private:
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs
 	// in the correct order, if needed.
 	int NextRPCIndex;
-
-	TArray<Worker_OpList*> UnprocessedOps;
 };

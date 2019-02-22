@@ -208,7 +208,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					{
 						if (AActor* Actor = Cast<AActor>(ObjectValue))
 						{
-							if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == 0)
+							if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == SpatialConstants::INVALID_ENTITY_ID)
 							{
 								NetDriver->SetupActorEntity(Actor);
 								NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
@@ -216,7 +216,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 						}
 						else if (AActor* OuterActor = Cast<AActor>(ObjectValue->GetOuter()))
 						{
-							if (OuterActor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(OuterActor) == 0)
+							if (OuterActor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(OuterActor) == SpatialConstants::INVALID_ENTITY_ID)
 							{
 								NetDriver->SetupActorEntity(OuterActor);
 								NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
