@@ -78,7 +78,7 @@ public:
 	FORCEINLINE FString GetSpatialOSSnapshotFile() const
 	{
 		return SpatialOSSnapshotFile.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FString(TEXT("/default.snapshot")))
+			? FString(TEXT("default.snapshot"))
 			: SpatialOSSnapshotFile;
 	}
 
