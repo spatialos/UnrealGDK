@@ -61,12 +61,24 @@ struct FConnectionConfig
 struct FReceptionistConfig : public FConnectionConfig
 {
 	FReceptionistConfig()
-		: ReceptionistHost(SpatialConstants::LOCAL_HOST)
-		, ReceptionistPort(SpatialConstants::DEFAULT_PORT)
+		: ReceptionistPort(SpatialConstants::DEFAULT_PORT)
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
-		FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost);
+		// Parse the commandline for receptionistHost, if it exists then use this as the host IP.
+		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost))
+		{
+			// If receptionistHost is not specified then parse for a traditional IP. Parsing is done the same as Unreal in PlayLevel.cpp.
+			// Unreal uses the first commandline argument as a host to decide whether to create a NetDriver and connect.
+			// Here we are checking that the first commandline argument is not prefixed with '-' indicating a flag or '/' indicating a map name.
+			if (!FParse::Token(CommandLine, ReceptionistHost, 0) || ReceptionistHost[0] == '-' || ReceptionistHost[0] == '/')
+			{
+				// If an IP is not specified then use default.
+				ReceptionistHost = SpatialConstants::LOCAL_HOST;
+			}
+			
+		}
+
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
 	}
 

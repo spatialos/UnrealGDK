@@ -49,7 +49,7 @@ private:
 
 	/** Name of your SpatialOS snapshot file. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
-	FFilePath SpatialOSSnapshotFile;
+	FString SpatialOSSnapshotFile;
 
 	/** If checked, the GDK creates a launch configuration file by default when you launch a local deployment through the toolbar. */
 	UPROPERTY(EditAnywhere, config, Category = "Schema", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
@@ -77,9 +77,9 @@ public:
 
 	FORCEINLINE FString GetSpatialOSSnapshotFile() const
 	{
-		return SpatialOSSnapshotFile.FilePath.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(GetSpatialOSSnapshotFolderPath() + FString(TEXT("/default.snapshot")))
-			: SpatialOSSnapshotFile.FilePath;
+		return SpatialOSSnapshotFile.IsEmpty()
+			? FString(TEXT("default.snapshot"))
+			: SpatialOSSnapshotFile;
 	}
 
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
