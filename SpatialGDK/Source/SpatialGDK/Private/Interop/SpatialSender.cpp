@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 
+#include "Engine/Engine.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetConnection.h"
