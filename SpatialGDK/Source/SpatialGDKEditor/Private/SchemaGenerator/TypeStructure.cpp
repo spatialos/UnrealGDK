@@ -630,3 +630,35 @@ TArray<TSharedPtr<FUnrealProperty>> GetPropertyChain(TSharedPtr<FUnrealProperty>
 	Algo::Reverse(OutputChain);
 	return OutputChain;
 }
+
+FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
+{
+	FSubobjectMap Subobjects;
+
+	TSet<UObject*> SeenComponents;
+	uint32 CurrentOffset = 1;
+
+	for (auto& PropertyPair : TypeInfo->Properties)
+	{
+		UProperty* Property = PropertyPair.Key;
+		TSharedPtr<FUnrealType>& PropertyTypeInfo = PropertyPair.Value->Type;
+
+		if (Property->IsA<UObjectProperty>() && PropertyTypeInfo.IsValid())
+		{
+			UObject* Value = PropertyTypeInfo->Object;
+
+			if (Value != nullptr && !Value->IsEditorOnly())
+			{
+				if (!SeenComponents.Contains(Value))
+				{
+					SeenComponents.Add(Value);
+					Subobjects.Add(CurrentOffset, PropertyTypeInfo);
+				}
+
+				CurrentOffset++;
+			}
+		}
+	}
+
+	return Subobjects;
+}

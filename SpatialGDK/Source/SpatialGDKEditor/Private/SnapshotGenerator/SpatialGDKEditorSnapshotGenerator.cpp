@@ -99,6 +99,14 @@ Worker_ComponentData CreateDeploymentData()
 	return DeploymentData;
 }
 
+Worker_ComponentData CreateGSMShutdownData()
+{
+	Worker_ComponentData GSMShutdownData;
+	GSMShutdownData.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
+	GSMShutdownData.schema_type = Schema_CreateComponentData(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID);
+	return GSMShutdownData;
+}
+
 Worker_ComponentData CreateStartupActorManagerData()
 {
 	Worker_ComponentData StartupActorManagerData{};
@@ -125,6 +133,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
@@ -132,7 +141,9 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(CreateSingletonManagerData());
 	Components.Add(CreateDeploymentData());
+	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
+
 	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
@@ -474,10 +485,14 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 		return false;
 	}
 
-	if (!CreatePlaceholders(OutputStream))
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKSettings->bGeneratePlaceholderEntitiesInSnapshot)
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		return false;
+		if (!CreatePlaceholders(OutputStream))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+			return false;
+		}
 	}
 
 	return true;
@@ -486,7 +501,7 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
 {
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), SnapshotFilename);
+	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotFolderPath(), SnapshotFilename);
 	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
 	{
 		return false;

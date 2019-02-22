@@ -44,7 +44,7 @@ In this step, you're going to build the Unreal GDK's dependencies.
 1. In the same directory, open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
 1. Open **ThirdPersonShooter.uproject** in the Unreal Editor.
-1. In the [GDK toolbar (SpatialOS documentation)]({{urlRoot}}/content/toolbars), click [`Schema` (SpatialOS documentation)]({{urlRoot}}/content/glossary#schema) to generate schema and then [`Snapshot` (SpatialOS documentation)]({{urlRoot}}/content/glossary#snapshot) to generate a snapshot.
+1. In the [GDK toolbar]({{urlRoot}}/content/toolbars), click [`Schema`]({{urlRoot}}/content/schema) to generate schema and then [`Snapshot`]({{urlRoot}}/content/glossary#snapshot) to generate a snapshot.
 
 ### Deploy the project locally
 

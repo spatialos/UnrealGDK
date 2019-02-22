@@ -6,7 +6,7 @@ To allow Unreal to replicate through the SpatialOS network stack and combine mul
 At the heart of `Dynamic Typebindings` are the dynamically generated [SpatialOS schema]({{urlRoot}}/content/glossary#schema), which are the schema representation of any Unreal object, its replicated data, and RPCs. `Dynamic Typebindings` also include the binding code that is invoked when converting network-relevant data between native Unreal and SpatialOS.
 
 # Schema
-The [schema]({{urlRoot}}/content/glossary#schema) used in `Dynamic Typebindings` are generated via the Unreal Editor, for all classes tagged with the [Spatial Type]({{urlRoot}}/content/spatial-type) specifier. For each Unreal object that the GDK generates schema for, there are a number of possible schema components generated, each serving a different function.
+The [schema]({{urlRoot}}/content/schema) used in `Dynamic Typebindings` are generated via the Unreal Editor, for all classes tagged with the [Spatial Type]({{urlRoot}}/content/spatial-type) specifier. For each Unreal object that the GDK generates schema for, there are a number of possible schema components generated, each serving a different function.
 
 For Unreal Actors and sub-objects:
 
