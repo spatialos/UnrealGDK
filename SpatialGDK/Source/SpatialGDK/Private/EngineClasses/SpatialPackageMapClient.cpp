@@ -138,11 +138,6 @@ Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(UObject* Object)
 	return GetUnrealObjectRefFromNetGUID(NetGUID).Entity;
 }
 
-void USpatialPackageMapClient::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const
-{
-	static_cast<FSpatialNetGUIDCache*>(GuidCache.Get())->NetworkRemapObjectRefPaths(ObjectRef);
-}
-
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
 {
 	// Super::SerializeObject is not called here on purpose
@@ -326,9 +321,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)
 {
-	FUnrealObjectRef NetRemappedObjectRef = ObjectRef;
-	NetworkRemapObjectRefPaths(NetRemappedObjectRef);
-	return GetNetGUIDFromUnrealObjectRefInternal(NetRemappedObjectRef);
+	return GetNetGUIDFromUnrealObjectRefInternal(ObjectRef);
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const FUnrealObjectRef& ObjectRef)
@@ -348,7 +341,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const F
 	return NetGUID;
 }
 
-void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const
+void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef, bool bReading) const
 {
 	// If we have paths, network-sanitize all of them (e.g. removing PIE prefix).
 	if (!ObjectRef.Path.IsSet())
@@ -362,7 +355,7 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 		if (Iterator->Path.IsSet())
 		{
 			FString TempPath(*Iterator->Path);
-			GEngine->NetworkRemapPath(Driver, TempPath, true);
+			GEngine->NetworkRemapPath(Driver, TempPath, bReading);
 			Iterator->Path = TempPath;
 		}
 		if (!Iterator->Outer.IsSet())
@@ -388,9 +381,13 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(Worker_EntityId Entity
 
 FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const FString& PathName, const FNetworkGUID& OuterGUID)
 {
+	// Put the PIE prefix back (if applicable) so that the correct object can be found.
+	FString TempPath = PathName;
+	GEngine->NetworkRemapPath(Driver, TempPath, true);
+
 	// This function should only be called for stably named object references, not dynamic ones.
 	FNetGuidCacheObject CacheObject;
-	CacheObject.PathName = FName(*PathName);
+	CacheObject.PathName = FName(*TempPath);
 	CacheObject.OuterGUID = OuterGUID;
 	CacheObject.bNoLoad = false;				// allow worker to attempt to load object
 	CacheObject.bIgnoreWhenMissing = true;		// ensure we give workers time to load non-loaded assets
@@ -440,8 +437,12 @@ FNetworkGUID FSpatialNetGUIDCache::GetOrAssignNetGUID_SpatialGDK(UObject* Object
 
 void FSpatialNetGUIDCache::RegisterObjectRef(FNetworkGUID NetGUID, const FUnrealObjectRef& ObjectRef)
 {
-	checkSlow(!NetGUIDToUnrealObjectRef.Contains(NetGUID) || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == ObjectRef));
-	checkSlow(!UnrealObjectRefToNetGUID.Contains(ObjectRef) || (UnrealObjectRefToNetGUID.Contains(ObjectRef) && UnrealObjectRefToNetGUID.FindChecked(ObjectRef) == NetGUID));
-	NetGUIDToUnrealObjectRef.Emplace(NetGUID, ObjectRef);
-	UnrealObjectRefToNetGUID.Emplace(ObjectRef, NetGUID);
+	// Registered ObjectRefs should never have PIE.
+	FUnrealObjectRef RemappedObjectRef = ObjectRef;
+	NetworkRemapObjectRefPaths(RemappedObjectRef, false /*bIsReading*/);
+
+	checkSlow(!NetGUIDToUnrealObjectRef.Contains(NetGUID) || (NetGUIDToUnrealObjectRef.Contains(NetGUID) && NetGUIDToUnrealObjectRef.FindChecked(NetGUID) == RemappedObjectRef));
+	checkSlow(!UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) || (UnrealObjectRefToNetGUID.Contains(RemappedObjectRef) && UnrealObjectRefToNetGUID.FindChecked(RemappedObjectRef) == NetGUID));
+	NetGUIDToUnrealObjectRef.Emplace(NetGUID, RemappedObjectRef);
+	UnrealObjectRefToNetGUID.Emplace(RemappedObjectRef, NetGUID);
 }

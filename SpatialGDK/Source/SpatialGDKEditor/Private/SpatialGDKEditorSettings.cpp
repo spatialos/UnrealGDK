@@ -12,7 +12,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSDirectory.Path = GetSpatialOSDirectory();
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotFolderPath();
-	SpatialOSSnapshotFile.FilePath = GetSpatialOSSnapshotFile();
+	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
 	GeneratedSchemaOutputFolder.Path = GetGeneratedSchemaOutputFolder();
 }
 
@@ -53,7 +53,7 @@ FString USpatialGDKEditorSettings::ToString()
 	Args.Add(SpatialOSLaunchConfig.FilePath);
 	Args.Add(bStopSpatialOnExit);
 	Args.Add(SpatialOSSnapshotPath.Path);
-	Args.Add(SpatialOSSnapshotFile.FilePath);
+	Args.Add(SpatialOSSnapshotFile);
 	Args.Add(GeneratedSchemaOutputFolder.Path);
 	Args.Add(bGeneratePlaceholderEntitiesInSnapshot);
 

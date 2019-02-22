@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 
+#include "Engine/Engine.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -145,13 +146,20 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	}
 
 	// Only want to have a stably object ref if this Actor is stably named.
-	// We use this to indiciate if a new Actor should be created or to link a pre-existing Actor
+	// We use this to indicate if a new Actor should be created or to link a pre-existing Actor
 	// when receiving an AddEntityOp.
 	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
 	if (Actor->IsFullNameStableForNetworking())
 	{
+		// Since we've already received the EntityId for this Actor. It is guaranteed to be resolved
+		// with the package map by this point
 		FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
-		StablyNamedObjectRef = FUnrealObjectRef(0, 0, Actor->GetFName().ToString(), OuterObjectRef);
+
+		// No path in SpatialOS should contain a PIE prefix.
+		FString TempPath = Actor->GetFName().ToString();
+		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
+
+		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef);
 	}
 
 	TArray<Worker_ComponentData> ComponentDatas;
