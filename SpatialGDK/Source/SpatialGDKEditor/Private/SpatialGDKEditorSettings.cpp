@@ -12,7 +12,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSDirectory.Path = GetSpatialOSDirectory();
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotFolderPath();
-	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
+	SpatialOSSnapshotFile = GetSpatialOSSnapshotFilePath();
 	GeneratedSchemaOutputFolder.Path = GetGeneratedSchemaOutputFolder();
 }
 

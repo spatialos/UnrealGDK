@@ -501,7 +501,7 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
 {
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-	if (!ValidateAndCreateSnapshotGenerationPath(Settings->GetSpatialOSSnapshotFile()))
+	if (!ValidateAndCreateSnapshotGenerationPath(Settings->GetSpatialOSSnapshotFilePath()))
 	{
 		return false;
 	}

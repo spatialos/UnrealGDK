@@ -75,7 +75,7 @@ public:
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
-	FORCEINLINE FString GetSpatialOSSnapshotFile() const
+	FORCEINLINE FString GetSpatialOSSnapshotFilePath() const
 	{
 		const FString FileName = SpatialOSSnapshotFile.IsEmpty()
 							   ? FString(TEXT("/default.snapshot"))
