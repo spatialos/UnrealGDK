@@ -24,18 +24,18 @@ void UEntityPool::Init(USpatialNetDriver* InNetDriver)
 	}
 }
 
-void UEntityPool::ReserveEntityIDs(int32 EntitiesToSpawn)
+void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 {
 	UE_LOG(LogSpatialEntityPool, Log, TEXT("Sending bulk entity ID Reservation Request"));
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
-	CacheEntityIDsDelegate.BindLambda([EntitiesToSpawn, this](Worker_ReserveEntityIdsResponseOp& Op)
+	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](Worker_ReserveEntityIdsResponseOp& Op)
 	{
 		UE_LOG(LogSpatialEntityPool, Log, TEXT("Reserved %i entities, caching in pool"), Op.number_of_entity_ids);
 
 		// Ensure we have the same number of reserved IDs as we have entities to spawn
-		check(EntitiesToSpawn == Op.number_of_entity_ids);
+		check(EntitiesToReserve == Op.number_of_entity_ids);
 
 		EntityRange NewEntityRange;
 		NewEntityRange.CurrentEntityId = Op.first_entity_id;
@@ -48,7 +48,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToSpawn)
 	});
 
 	// Reserve the Entity IDs
-	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToSpawn);
+	Worker_RequestId ReserveRequestID = NetDriver->Connection->SendReserveEntityIdsRequest(EntitiesToReserve);
 	bIsAwaitingResponse = true;
 
 	// Add the spawn delegate
@@ -69,18 +69,16 @@ Worker_EntityId UEntityPool::Pop()
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 
-
-	EntityRange* CurrentEntityRange = &ReservedIDs[0];
-	Worker_EntityId NextId = CurrentEntityRange->CurrentEntityId;
+	EntityRange& CurrentEntityRange = ReservedIDs[0];
+	Worker_EntityId NextId = CurrentEntityRange.CurrentEntityId++;
 
 	uint32_t TotalRemainingEntityIds = 0;
 	for (EntityRange Range : ReservedIDs)
 	{
-		TotalRemainingEntityIds += Range.LastEntityId - Range.CurrentEntityId;
+		TotalRemainingEntityIds += Range.LastEntityId - Range.CurrentEntityId + 1;
 	}
 
-	CurrentEntityRange->CurrentEntityId++;
-
+	// TODO: make Verbose after testing
 	UE_LOG(LogSpatialEntityPool, Log, TEXT("Popped ID, %i IDs remaining"), TotalRemainingEntityIds);
 
 	if (TotalRemainingEntityIds < REFRESH_THRESHOLD && !bIsAwaitingResponse)
@@ -89,7 +87,7 @@ Worker_EntityId UEntityPool::Pop()
 		ReserveEntityIDs(REFRESH_COUNT);
 	}
 
-	if (CurrentEntityRange->CurrentEntityId > CurrentEntityRange->LastEntityId)
+	if (CurrentEntityRange.CurrentEntityId > CurrentEntityRange.LastEntityId)
 	{
 		ReservedIDs.RemoveAt(0);
 	}

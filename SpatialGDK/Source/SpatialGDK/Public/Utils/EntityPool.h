@@ -26,7 +26,7 @@ class SPATIALGDK_API UEntityPool : public UObject
 
 public:
 	void Init(USpatialNetDriver* InNetDriver);
-	void ReserveEntityIDs(int32 EntitiesToSpawn);
+	void ReserveEntityIDs(int32 EntitiesToReserve);
 	Worker_EntityId Pop();
 	bool IsReady();
 
