@@ -75,13 +75,18 @@ public:
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
-	FORCEINLINE FString GetSpatialOSSnapshotFilePath() const
+	FORCEINLINE FString GetSpatialOSSnapshotFile() const
 	{
-		const FString FileName = SpatialOSSnapshotFile.IsEmpty()
-							   ? FString(TEXT("/default.snapshot"))
-							   : SpatialOSSnapshotFile;
+		return SpatialOSSnapshotFile.IsEmpty()
+			? FPaths::ConvertRelativePathToFull(FString(TEXT("/default.snapshot")))
+			: SpatialOSSnapshotFile;
+	}
 
-		return FPaths::Combine(GetSpatialOSSnapshotFolderPath(), FileName);
+	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
+	{
+		return SpatialOSSnapshotPath.Path.IsEmpty()
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), TEXT("../spatial/snapshots/")))
+			: SpatialOSSnapshotPath.Path;
 	}
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
@@ -92,13 +97,4 @@ public:
 	}
 	
 	virtual FString ToString();
-
-private:
-
-	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
-	{
-		return SpatialOSSnapshotPath.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), TEXT("../spatial/snapshots/")))
-			: SpatialOSSnapshotPath.Path;
-	}
 };
