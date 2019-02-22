@@ -4,7 +4,7 @@ We welcome contributions, subject to the signing of our Contributor License Agre
 
 The terms of the CLA are set out [here](https://drive.google.com/file/d/0B6CKLzAF0ahqVURSTVdZS29MYXg5VWkzdFRHNmY2S25keHJj/view?usp=sharing), please ensure that you review these terms prior to submitting any contributions.
 
-If you wish to submit a contribution on the terms of our CLA, please contact [cla@improbable.io] to receive a copy of the CLA to sign and return to Improbable. 
+If you wish to submit a contribution on the terms of our CLA, please contact cla@improbable.io to receive a copy of the CLA to sign and return to Improbable. 
 
 ## Feedback
 
