@@ -41,7 +41,7 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	// Compile all dirty blueprints
 	TArray<UBlueprint*> ErroredBlueprints;
 	bool bPromptForCompilation = false;
-	UEditorEngine::ResolveDirtyBlueprints(PromptForCompilation, ErroredBlueprints);
+	UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
 
 	if (ErroredBlueprints.Num() > 0)
 	{
