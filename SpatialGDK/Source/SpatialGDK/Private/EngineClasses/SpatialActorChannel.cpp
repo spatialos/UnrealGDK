@@ -124,7 +124,7 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 #if WITH_EDITOR
 	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
 	{
-		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
+		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->IsDeleteDynamicEntitiesActive();
 
 		if (bDeleteDynamicEntities &&
 			NetDriver->IsServer() &&

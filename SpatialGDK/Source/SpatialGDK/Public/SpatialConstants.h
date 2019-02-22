@@ -107,6 +107,7 @@ namespace SpatialConstants
 	const Worker_ComponentId STARTUP_ACTOR_MANAGER_COMPONENT_ID			    = 9993;
 	const Worker_ComponentId GSM_SHUTDOWN_COMPONENT_ID						= 9992;
 	const Worker_ComponentId HEARTBEAT_COMPONENT_ID							= 9991;
+	const Worker_ComponentId NOT_SPAWNED_COMPONENT_ID						= 9990;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
