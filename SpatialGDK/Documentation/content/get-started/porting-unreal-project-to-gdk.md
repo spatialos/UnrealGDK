@@ -1,6 +1,6 @@
 # Get started: Port your own Unreal project to the GDK
 
-As an experienced UE4 developer, you likely have a prototype or a game already. The GDK allows you to port it over to SpatialOS. This guide allows you to kickstart your SpatialOS journey - by the end of it your game will run on a *single server-worker* on SpatialOS. You will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
+As an experienced UE4 developer, you likely have a prototype or a game already. The GDK allows you to port it over to SpatialOS. This guide shows you how to kickstart your SpatialOS journey - by the end of it your game will run on a *single server-worker* on SpatialOS. You will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
 
 <%(Callout type="alert" message="The GDK's porting workflow is currently in pre-alpha as we improve its stability. We do not recommend attempting to port your Unreal game now. If you need to port your game, please get in touch on our [forums](https://forums.improbable.io/), or on [Discord](https://discord.gg/vAT7RSU) so we can best support you. We intend have a stable porting workflow in Q1 2019. Thanks for your patience.")%>
 
@@ -11,7 +11,7 @@ Before porting your project:
 * If you haven't done this already, install SpatialOS and the GDK's dependencies and clone the SpatialOS Unreal Engine fork by following:
     * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     * [Getting started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-* If you haven't done this already, clone the GDK repository by following [our setup guide]({{urlRoot}}/content/get-started/gdk-and-starter-project). Later in this guide, you will copy some necessary files from Starter Project over to yours.
+* If you haven't done this already, clone the GDK repository by following [our SpatialOS GDK Starter template guide]({{urlRoot}}/content/get-started/gdk-template). Later in this guide, you will copy some necessary files from the template project over to yours.
 
 * Make sure your Spatial CLI is up to date: from a terminal window, run the command `spatial update`. 
 <!-- // TODO: Update the set up link when ready -->
@@ -21,7 +21,7 @@ Before porting your project:
 `<ProjectRoot>` - The folder containing your `<GameRoot>`.  
 `<YourProject>` - Name of your game project's `.uproject` (for example, `\<GameRoot>\StarterProject.uproject`).
 
-## Start porting!
+## Port your game to the GDK
 
 <%(TOC)%>
 
@@ -33,7 +33,7 @@ Before porting your project:
     `\StarterProject\Game\StarterProject.uproject`
     
     > This step is essential as the `spatial` folder must be located in the directory above your `<GameRoot>`. This is so that the GDK scripts work correctly with Unreal.
-1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the `StarterProject` repository that you cloned earlier in the [Before you start](#before-you-start) section.
+1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the template project that you set up earlier in the [Before you start](#before-you-start) section.
 
     To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders below to your `<ProjectRoot>`:  
 
@@ -204,5 +204,3 @@ You can now begin experimenting with the multiserver features offered by the GDK
 
 If you haven't already, check out the tutorial on how to implement [cross-server shooting]({{urlRoot}}/content/get-started/tutorial).  
 Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
-
-We will be releasing more tutorials and examples as the GDK matures. Stay tuned.
