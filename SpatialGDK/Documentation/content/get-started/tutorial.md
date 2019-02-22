@@ -44,7 +44,7 @@ In this step, you're going to build the Unreal GDK's dependencies.
 1. In the same directory, open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
 1. Open **ThirdPersonShooter.uproject** in the Unreal Editor.
-1. In the [GDK toolbar (SpatialOS documentation)]({{urlRoot}}/content/toolbars), click [`Schema` (SpatialOS documentation)]({{urlRoot}}/content/glossary#schema) to generate schema and then [`Snapshot` (SpatialOS documentation)]({{urlRoot}}/content/glossary#snapshot) to generate a snapshot.
+1. In the [GDK toolbar]({{urlRoot}}/content/toolbars), click [`Schema`]({{urlRoot}}/content/schema) to generate schema and then [`Snapshot`]({{urlRoot}}/content/glossary#snapshot) to generate a snapshot.
 
 ### Deploy the project locally
 
@@ -284,4 +284,4 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to halt your deployment.
 
 ### Next steps
-We hope you've enjoyed this tutorial. If you want to build a new game using the SpatialOS GDK, you should build it on top of the [Starter Project]({{urlRoot}}/content/get-started/gdk-and-starter-project). If you want to port your existing game to SpatialOS, follow the [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk).
+We hope you've enjoyed this tutorial. If you want to build a new game using the SpatialOS GDK, you should build it on top of the [SpatialOS GDK Starter template]({{urlRoot}}/content/get-started/gdk-template). If you want to port your existing game to SpatialOS, follow the [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk).

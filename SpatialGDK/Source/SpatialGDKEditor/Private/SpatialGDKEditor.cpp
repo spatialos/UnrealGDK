@@ -16,7 +16,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 FSpatialGDKEditor::FSpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
 {
-	InitClassPathToSchemaMap();
+	TryLoadExistingSchemaDatabase();
 }
 
 void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
@@ -34,6 +34,8 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
 	GeneralProjectSettings->bSpatialNetworking = true;
 
+	TryLoadExistingSchemaDatabase();
+
 	PreProcessSchemaMap();
 
 	// Compile all dirty blueprints
@@ -49,6 +51,8 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 		bSchemaGeneratorRunning = false;
 		return;
 	}
+
+	LoadDefaultGameModes();
 
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
 		[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()

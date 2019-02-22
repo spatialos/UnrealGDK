@@ -14,6 +14,6 @@ type SpawnPlayerResponse {
 }
 
 component PlayerSpawner {
-    id = 100002;
+    id = 9998;
     command SpawnPlayerResponse spawn_player(SpawnPlayerRequest);
 }
