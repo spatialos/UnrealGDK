@@ -7,6 +7,7 @@
 #include "Net/RepLayout.h"
 #include "UObject/TextProperty.h"
 
+#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
@@ -119,38 +120,47 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 			{
 				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
-				bool bProcessedArray = false;
 
-				// Check if this is a FastArraySerializer array so we can simulate the FFastArraySerializerItem PreReplicatedRemove and PostReplicatedAdd calls.
-				if (UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property))
+				// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
+				if (IsFastArraySerializeProperty(ArrayProperty, Parent.Property))
 				{
-					if (ParentStruct->Struct->IsChildOf(FFastArraySerializer::StaticStruct()))
+					FSpatialNetDeltaSerializeInfo Parms;
+
+					SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
+
+					TArray<uint8> ValueData = GetBytesFromSchema(ComponentObject, FieldId);
+					int64 CountBits = ValueData.Num() * 8;
+					TSet<FUnrealObjectRef> UnresolvedRefs;
+					FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, UnresolvedRefs);
+
+					Parms.Reader = &ValueDataReader;
+					Parms.Map = PackageMap;
+					Parms.NetSerializeCB = &SerializeCB;
+
+					UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property);
+					UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
+					check(CppStructOps);
+
+					CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
+
+					if (UnresolvedRefs.Num() > 0)
 					{
-						// Read array into a temporary array so the appropriate remove/add operations can be processed
-						FScriptArray TempArray;
-						// Populate array with existing data so compare will incorporate non-replicated entities
-						Cmd.Property->CopyCompleteValue((void*)&TempArray, Data);
-
-						ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, (uint8*)&TempArray, SwappedCmd.Offset, Cmd.ParentIndex);
-						bProcessedArray = true;
-
-						if (!Cmd.Property->Identical((void*)&TempArray, Data))
-						{
-							FSpatialNetDeltaSerializeInfo Parms;
-							Parms.NewArray = &TempArray;
-							Parms.ArrayProperty = ArrayProperty;
-
-							UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
-							check(CppStructOps);
-
-							// This call resolves into FFastArraySerializer::SpatialFastArrayDeltaSerialize where our custom FFastArraySerializerItem
-							// callback are triggered.
-							CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
-						}
+						__debugbreak();
 					}
-				}
 
-				if (!bProcessedArray)
+					//ReadStructProperty(ValueDataReader, StructProperty, NetDriver, Data, bHasUnmapped);
+					//
+					//if (bHasUnmapped)
+					//{
+					//	InObjectReferencesMap.Add(Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, ParentIndex, Property));
+					//	UnresolvedRefs.Append(NewUnresolvedRefs);
+					//}
+					//else if (InObjectReferencesMap.Find(Offset))
+					//{
+					//	InObjectReferencesMap.Remove(Offset);
+					//}
+				}
+				else
 				{
 					ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, Cmd.ParentIndex);
 				}

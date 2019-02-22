@@ -7,6 +7,7 @@
 #include "UObject/TextProperty.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -45,7 +46,41 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				const uint8* Data = (uint8*)Object + Cmd.Offset;
 				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 
-				AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
+				bool bProcessedProperty = false;
+
+				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
+				{
+					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+
+					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
+					if (IsFastArraySerializeProperty(ArrayProperty, Parent.Property))
+					{
+						FSpatialNetDeltaSerializeInfo Parms;
+
+						SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
+
+						FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
+
+						Parms.Writer = &ValueDataWriter;
+						Parms.Map = PackageMap;
+						Parms.NetSerializeCB = &SerializeCB;
+
+						UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property);
+						UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
+						check(CppStructOps);
+
+						CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
+
+						AddBytesToSchema(ComponentObject, HandleIterator.Handle, ValueDataWriter);
+
+						bProcessedProperty = true;
+					}
+				}
+
+				if (bProcessedProperty == false)
+				{
+					AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
+				}
 
 				if (UnresolvedObjects.Num() == 0)
 				{
@@ -87,7 +122,7 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		const FHandoverPropertyInfo& PropertyInfo = Info.HandoverProperties[ChangedHandle - 1];
 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
-		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+		FUnresolvedObjectsSet UnresolvedObjects;
 
 		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, UnresolvedObjects, ClearedIds);
 

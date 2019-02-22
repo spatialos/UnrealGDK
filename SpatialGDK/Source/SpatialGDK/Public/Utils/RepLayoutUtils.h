@@ -188,4 +188,23 @@ inline TArray<UFunction*> GetClassRPCFunctions(const UClass* Class)
 	return RelevantClassFunctions;
 }
 
+inline bool IsFastArraySerializeProperty(UArrayProperty* Property, UProperty* ParentProperty)
+{
+	if (UStructProperty* ParentStruct = Cast<UStructProperty>(ParentProperty))
+	{
+		if (ParentStruct->Struct->IsChildOf(FFastArraySerializer::StaticStruct()))
+		{
+			if (UStructProperty* ArrayInnerProperty = Cast<UStructProperty>(Property->Inner))
+			{
+				if (ArrayInnerProperty->Struct->IsChildOf(FFastArraySerializerItem::StaticStruct()))
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 }
