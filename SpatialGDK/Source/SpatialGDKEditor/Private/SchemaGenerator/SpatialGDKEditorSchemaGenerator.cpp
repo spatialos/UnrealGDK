@@ -224,6 +224,30 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 
 	return bSuccess;
 }
+
+bool ValidateRPCArguments(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
+{
+	bool bSuccess = true;
+
+	for (const auto& TypeInfo : TypeInfos)
+	{
+		FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
+		for (auto Group : GetRPCTypes())
+		{
+			for (const auto& RPC : RPCsByType[Group])
+			{
+				const UFunction* Function = RPC->Function;
+				if (Function->HasAnyFunctionFlags(FUNC_HasOutParms))
+				{
+					UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("RPC %s: Some of the arguments are passed by reference. This will cause serialization problems. Please change those arguments to be passed by value."), *Function->GetPathName());
+					bSuccess = false;
+				}
+			}
+		}
+	}
+
+	return bSuccess;
+}
 }// ::
 
 
@@ -290,12 +314,19 @@ TArray<UClass*> GetAllSupportedClasses()
 		}
 
 		UClass* SupportedClass = nullptr;
-		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt; ++PropertyIt)
+		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt && SupportedClass == nullptr; ++PropertyIt)
 		{
 			if (PropertyIt->HasAnyPropertyFlags(CPF_Net | CPF_Handover))
 			{
 				SupportedClass = *ClassIt;
-				break;
+			}
+		}
+
+		for (TFieldIterator<UFunction> FunctionIt(*ClassIt); FunctionIt && SupportedClass == nullptr; ++FunctionIt)
+		{
+			if (FunctionIt->HasAnyFunctionFlags(FUNC_NetFuncFlags))
+			{
+				SupportedClass = *ClassIt;
 			}
 		}
 
@@ -446,6 +477,11 @@ bool SpatialGDKGenerateSchema()
 	}
 
 	if (!ValidateIdentifierNames(TypeInfos))
+	{
+		return false;
+	}
+
+	if (!ValidateRPCArguments(TypeInfos))
 	{
 		return false;
 	}

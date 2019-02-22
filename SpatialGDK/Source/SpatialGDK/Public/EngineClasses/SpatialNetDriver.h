@@ -163,7 +163,6 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 
-	// Timer manager.
 	FTimerManager* TimerManager;
 
 	bool bAuthoritativeDestruction;
