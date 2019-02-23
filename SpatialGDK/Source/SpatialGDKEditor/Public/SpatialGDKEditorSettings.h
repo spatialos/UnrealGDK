@@ -48,8 +48,8 @@ private:
 	FDirectoryPath SpatialOSSnapshotPath;
 
 	/** Name snapshot file like current level. */
-	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Name Snapshots like levels"))
-	bool bSnapshotUseCurrentLevelName = true;
+	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Name Snapshots like current level instead of default.snapshot"))
+	bool bSnapshotUseCurrentLevelName = false;
 
 	/** Name of your SpatialOS snapshot file. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
