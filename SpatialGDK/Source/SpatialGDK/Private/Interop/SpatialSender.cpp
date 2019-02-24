@@ -5,6 +5,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerState.h"
 
+#include "Engine/Engine.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetConnection.h"
@@ -13,6 +14,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialDispatcher.h"
+#include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
@@ -103,6 +105,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
+	if (Actor->IsA<APlayerController>())
+	{
+		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
+	}
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
@@ -140,14 +146,35 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		});
 	}
 
+	// Only want to have a stably object ref if this Actor is stably named.
+	// We use this to indicate if a new Actor should be created or to link a pre-existing Actor
+	// when receiving an AddEntityOp.
+	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
+	if (Actor->IsFullNameStableForNetworking())
+	{
+		// Since we've already received the EntityId for this Actor. It is guaranteed to be resolved
+		// with the package map by this point
+		FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
+
+		// No path in SpatialOS should contain a PIE prefix.
+		FString TempPath = Actor->GetFName().ToString();
+		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
+
+		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef);
+	}
+
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(improbable::Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	ComponentDatas.Add(improbable::UnrealMetadata({}, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
 	ComponentDatas.Add(improbable::Interest().CreateInterestData());
+	if (Actor->IsA<APlayerController>())
+	{
+		ComponentDatas.Add(improbable::Heartbeat().CreateHeartbeatData());
+	}
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{

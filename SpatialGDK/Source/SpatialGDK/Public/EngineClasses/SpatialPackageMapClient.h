@@ -55,8 +55,9 @@ public:
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
 	FNetworkGUID GetNetGUIDFromEntityId(Worker_EntityId EntityId) const;
 
+	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef, bool bReading) const;
+
 private:
-	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef) const;
 	FNetworkGUID GetNetGUIDFromUnrealObjectRefInternal(const FUnrealObjectRef& ObjectRef);
 
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(UObject* Object);

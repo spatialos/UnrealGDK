@@ -33,7 +33,7 @@ We are not currently accepting public contributions - see our [contributions](ht
 * [Known issues](https://docs.improbable.io/unreal/latest/known-issues)
 
 ## Unreal Engine changes
-In order to transform Unreal from a single server engine to a distributed model, we had to make a small number of changes to UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo, `4.20-SpatialOSUnrealGDK` branch](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK).
+In order to transform Unreal from a single server engine to a distributed model, we had to make a small number of changes to UE4 code. We will attempt to consolidate and remove (or submit as PR to Epic) as many of these changes as possible. You can see the changes in our forked [Unreal Engine repo](https://github.com/improbableio/UnrealEngine).
 > You may get a 404 error from this link. To get access, see [these instructions](https://docs.improbable.io/unreal/latest/setup-and-installing#unreal-engine-eula) <br/>
 
 ## Give us feedback
@@ -42,7 +42,7 @@ We have released the GDK for Unreal this early in development because we want yo
 ## Where to get the GDK and related projects
 The GDK and its related projects are available on GitHub.
 * [GDK: github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
-* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK)
+* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine)
 **NOTE:** This link may give you a 404.
 
 In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).

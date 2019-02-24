@@ -8,14 +8,14 @@ To get access to our fork, you need to link your GitHub account to a verified Ep
 
 ### Step 2: Get the Unreal Engine fork source code and Unreal Linux cross-platform support
 
-1\.  Open a terminal and run either of these commands to clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine/tree/4.20-SpatialOSUnrealGDK) repository.
+1\.  Open a terminal and run either of these commands to clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) repository.
 
 > **TIPS:** <br/> * Clone the Unreal Engine fork into your root directory to avoid file path length errors. For example: C:\GitHub\UnrealEngine <br/> * You may get a 404 from this link. See  the instructions above, under _Unreal Engine EULA_, on how to get access to this repository. 
 
 |     |     |
 | --- | --- |
-| HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git -b 4.20-SpatialOSUnrealGDK` |
-| SSH |`git clone git@github.com:improbableio/UnrealEngine.git -b 4.20-SpatialOSUnrealGDK`
+| HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |
+| SSH |`git clone git@github.com:improbableio/UnrealEngine.git`
 
 2\.  To build Unreal server-workers for SpatialOS deployments you need to build the Unreal Engine fork targeting Linux. This requires cross-compilation of your SpatialOS project and the Unreal Engine fork.
 

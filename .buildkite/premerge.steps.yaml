@@ -1,0 +1,27 @@
+---
+agent_transients: &agent_transients
+  # This is designed to trap and retry failures because agent lost
+  # connection. Agent exits with -1 in this case.
+  exit_status: -1
+  limit: 3
+  
+common: &common
+  agents:
+    - "capable_of_building=gdk-for-unreal"
+    - "environment=production"
+    - "permission_set=pusher"
+    - "queue=v2-1550696629-578d33ded6eb9929-------z"
+  retry:
+    automatic:
+      - <<: *agent_transients
+  timeout_in_minutes: 60
+
+# NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
+# These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
+
+steps:
+  - label: "setup-GDK-:windows:"
+    command: "powershell ./ci/setup-and-build-gdk.ps1"
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede. 
+    artifact_paths:
+      - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"

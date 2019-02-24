@@ -24,6 +24,8 @@
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
+#include "Misc/FileHelper.h"
+#include "Serialization/JsonWriter.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -285,14 +287,24 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 
 void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 {
-	const USpatialGDKEditorSettings* SpatialGDKToolbarSettings = GetDefault<USpatialGDKEditorSettings>();
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	FString LaunchConfig;
+	if (SpatialGDKSettings->bGenerateDefaultLaunchConfig)
+	{
+		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
+		GenerateDefaultLaunchConfig(LaunchConfig);
+	}
+	else
+	{
+		LaunchConfig = SpatialGDKSettings->GetSpatialOSLaunchConfig();
+	}
 
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *SpatialGDKToolbarSettings->GetSpatialOSLaunchConfig());
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *LaunchConfig);
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
@@ -406,6 +418,122 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
 	}
+}
+
+bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const
+{
+	FString Text;
+	TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
+
+	// Populate json file for launch config
+	Writer->WriteObjectStart(); // Start of json
+		Writer->WriteValue(TEXT("template"), TEXT("small")); // Template section
+		Writer->WriteObjectStart(TEXT("world")); // World section begin
+			Writer->WriteObjectStart(TEXT("dimensions"));
+				Writer->WriteValue(TEXT("x_meters"), 2000);
+				Writer->WriteValue(TEXT("z_meters"), 2000);
+			Writer->WriteObjectEnd();
+			Writer->WriteValue(TEXT("chunk_edge_length_meters"), 50);
+			Writer->WriteValue(TEXT("streaming_query_interval"), 4);
+			Writer->WriteArrayStart(TEXT("legacy_flags"));
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("name"), TEXT("streaming_query_diff"));
+					Writer->WriteValue(TEXT("value"), TEXT("true"));
+				Writer->WriteObjectEnd();
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("name"), TEXT("bridge_qos_max_timeout"));
+					Writer->WriteValue(TEXT("value"), TEXT("0"));
+				Writer->WriteObjectEnd();
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("name"), TEXT("bridge_soft_handover_enabled"));
+					Writer->WriteValue(TEXT("value"), TEXT("false"));
+				Writer->WriteObjectEnd();
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("name"), TEXT("qos_max_unacked_pings_rate"));
+					Writer->WriteValue(TEXT("value"), TEXT("10"));
+				Writer->WriteObjectEnd();
+			Writer->WriteArrayEnd();
+			Writer->WriteObjectStart(TEXT("snapshots"));
+				Writer->WriteValue(TEXT("snapshot_write_period_seconds"), 0);
+			Writer->WriteObjectEnd();
+		Writer->WriteObjectEnd(); // World section end
+		Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
+			Writer->WriteArrayStart("layer_configurations");
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("layer"), TEXT("UnrealWorker"));
+					Writer->WriteObjectStart("rectangle_grid");
+
+						int Cols = 1;
+						int Rows = 1;
+
+						if (const ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>())
+						{
+							int NumServers = 1;
+							PlayInSettings->GetPlayNumberOfServers(NumServers);
+		
+							if (NumServers <= 2)
+							{
+								Cols = NumServers;
+								Rows = 1;
+							}
+							else
+							{
+								// Find greatest divisor.
+								for (int Divisor = FMath::Sqrt(NumServers); Divisor >= 2; Divisor--)
+								{
+									if (NumServers % Divisor == 0)
+									{
+										int GreatestDivisor = NumServers / Divisor;
+										Cols = GreatestDivisor;
+										Rows = NumServers / GreatestDivisor;
+										break;
+									}
+								}								
+							}
+						}
+
+						Writer->WriteValue(TEXT("cols"), Cols);
+						Writer->WriteValue(TEXT("rows"), Rows);
+					Writer->WriteObjectEnd();
+					Writer->WriteObjectStart(TEXT("options"));
+						Writer->WriteValue(TEXT("manual_worker_connection_only"), true);
+					Writer->WriteObjectEnd();
+				Writer->WriteObjectEnd();
+			Writer->WriteArrayEnd();
+		Writer->WriteObjectEnd(); // Load balancing section end
+		Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
+			Writer->WriteObjectStart();
+				Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealWorker"));
+				Writer->WriteRawJSONValue("flags", TEXT("[]"));
+				Writer->WriteArrayStart("permissions");
+					Writer->WriteObjectStart();
+						Writer->WriteObjectStart(TEXT("all"));
+						Writer->WriteObjectEnd();
+					Writer->WriteObjectEnd();
+				Writer->WriteArrayEnd();
+			Writer->WriteObjectEnd();
+			Writer->WriteObjectStart();
+				Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealClient"));
+				Writer->WriteRawJSONValue("flags", TEXT("[]"));
+				Writer->WriteArrayStart("permissions");
+					Writer->WriteObjectStart();
+						Writer->WriteObjectStart(TEXT("all"));
+						Writer->WriteObjectEnd();
+					Writer->WriteObjectEnd();
+				Writer->WriteArrayEnd();
+			Writer->WriteObjectEnd();
+		Writer->WriteArrayEnd(); // Worker section end
+	Writer->WriteObjectEnd(); // End of json
+
+	Writer->Close();
+
+	if (!FFileHelper::SaveStringToFile(Text, *LaunchConfigPath))
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '%s'. Perhaps the file is Read-Only?"), *LaunchConfigPath);
+		return false;
+	}
+
+	return true;
 }
 
 #undef LOCTEXT_NAMESPACE

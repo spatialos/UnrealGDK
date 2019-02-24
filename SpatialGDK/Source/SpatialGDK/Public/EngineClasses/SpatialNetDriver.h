@@ -37,6 +37,10 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet,);
 
+DECLARE_EVENT(USpatialNetDriver, FOnConnectedEvent);
+DECLARE_EVENT_OneParam(USpatialNetDriver, FOnDisconnectedEvent, const FString&);
+DECLARE_EVENT_OneParam(USpatialNetDriver, FOnConnectionFailedEvent, const FString&);
+
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 {
@@ -84,6 +88,17 @@ public:
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
+
+	void HandleOnConnected();
+	void HandleOnDisconnected(const FString& Reason);
+	void HandleOnConnectionFailed(const FString& Reason);
+
+	// Invoked when this worker has successfully connected to SpatialOS
+	FOnConnectedEvent OnConnected;
+	// Invoked when this worker has disconnected from SpatialOS, both when initiated by this worker and when disconnected by the runtime
+	FOnDisconnectedEvent OnDisconnected;
+	// Invoked when this worker fails to initiate a connection to SpatialOS
+	FOnConnectionFailedEvent OnConnectionFailed;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -148,7 +163,6 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 
-	// Timer manager.
 	FTimerManager* TimerManager;
 
 	bool bAuthoritativeDestruction;
@@ -160,13 +174,13 @@ private:
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
+	UFUNCTION()
+	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
+
 	void Connect();
 
 	UFUNCTION()
 	void OnMapLoadedAndConnected();
-
-	UFUNCTION()
-	void OnConnectFailed(const FString& Reason);
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 

@@ -38,7 +38,7 @@ public:
 	}
 
 	void OnAddComponent(const Worker_AddComponentOp& Op);
-	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
+	void OnRemoveEntity(Worker_EntityId EntityId);
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 

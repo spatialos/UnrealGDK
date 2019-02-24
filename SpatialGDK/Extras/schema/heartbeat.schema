@@ -1,0 +1,10 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+type HeartbeatEvent {
+}
+
+component Heartbeat {
+    id = 9991;
+    event HeartbeatEvent heartbeat;
+}

@@ -67,90 +67,19 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 
 void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
-	SpatialConnection = NewObject<USpatialWorkerConnection>();
-}
-
-bool USpatialGameInstance::StartGameInstance_SpatialGDKClient(FString& Error)
-{
-	if (WorldContext->PendingNetGame)
-	{
-		if (WorldContext->PendingNetGame->NetDriver && WorldContext->PendingNetGame->NetDriver->ServerConnection)
-		{
-			WorldContext->PendingNetGame->NetDriver->ServerConnection->Close();
-			GetEngine()->DestroyNamedNetDriver(WorldContext->PendingNetGame, WorldContext->PendingNetGame->NetDriver->NetDriverName);
-			WorldContext->PendingNetGame->NetDriver = nullptr;
-		}
-
-		WorldContext->PendingNetGame = nullptr;
-	}
-
-	// Clean up the netdriver/socket so that the pending level succeeds
-	if (GetWorldContext()->World())
-	{
-		GetEngine()->ShutdownWorldNetDriver(GetWorldContext()->World());
-	}
-
-	FURL URL = WorldContext->LastURL;
-	URL.Host = SpatialConstants::LOCAL_HOST;
-
-	WorldContext->PendingNetGame = NewObject<USpatialPendingNetGame>();
-	WorldContext->PendingNetGame->Initialize(URL);
-	WorldContext->PendingNetGame->InitNetDriver();
-	bool bOk = true;
-
-	if (!WorldContext->PendingNetGame->NetDriver)
-	{
-		// UPendingNetGame will set the appropriate error code and connection lost type, so
-		// we just have to propagate that message to the game.
-		GetEngine()->BroadcastTravelFailure(WorldContext->World(), ETravelFailure::PendingNetGameCreateFailure, WorldContext->PendingNetGame->ConnectionError);
-		Error = WorldContext->PendingNetGame->ConnectionError;
-		WorldContext->PendingNetGame = NULL;
-		bOk = false;
-	}
-
-	return bOk;
+	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
 }
 
 #if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {
-	if (!HasSpatialNetDriver())
+	if (HasSpatialNetDriver())
 	{
-		// If we are not using USpatialNetDriver, revert to the regular Unreal codepath.
-		// Allows you to switch between SpatialOS and Unreal networking at game launch.
-		// e.g. to enable Unreal networking, add to your cmdline: -NetDriverOverrides=/Script/OnlineSubsystemUtils.IpNetDriver
-		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
+		// If we are using spatial networking then prepare a spatial connection.
+		CreateNewSpatialWorkerConnection();
 	}
 
-	// If we are using spatial networking then prepare a spatial connection.
-	CreateNewSpatialWorkerConnection();
-
-	// This is sadly hacky to avoid a larger engine change. It borrows code from UGameInstance::StartPlayInEditorGameInstance() and 
-	// UEngine::Browse().
-	check(WorldContext);
-
-	ULevelEditorPlaySettings const* PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
-	const EPlayNetMode PlayNetMode = [&PlayInSettings] { EPlayNetMode NetMode(PIE_Standalone); return (PlayInSettings->GetPlayNetMode(NetMode) ? NetMode : PIE_Standalone); }();
-
-	// For clients, just connect to the server
-	bool bOk = true;
-
-	if (PlayNetMode != PIE_Client)
-	{
-		return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
-	}
-
-	FString Error;
-
-	if (StartGameInstance_SpatialGDKClient(Error))
-	{
-		GetEngine()->TransitionType = TT_WaitingToConnect;
-		return FGameInstancePIEResult::Success();
-	}
-	else
-	{
-		return FGameInstancePIEResult::Failure(FText::Format(NSLOCTEXT("UnrealEd", "Error_CouldntLaunchPIEClient", "Couldn't Launch PIE Client: {0}"), FText::FromString(Error)));
-	}
+	return Super::StartPlayInEditorGameInstance(LocalPlayer, Params);
 }
 #endif
 
@@ -161,23 +90,39 @@ void USpatialGameInstance::StartGameInstance()
 		// If we are using spatial networking then prepare a spatial connection.
 		CreateNewSpatialWorkerConnection();
 
-		// Initialize a legacy locator configuration which will parse command line arguments.
-		// If there is a legacy locator token present in the command line arguments then connect to deployment automatically.
-		// The new locator uses the same param for the LoginToken, so this will notice LocatorConfig launches as well.
-		// NOTE: When we remove the LegacyLocatorConfig, this should be updated to check LocatorConfig instead of be removed.
-		FLegacyLocatorConfig LegacyLocatorConfig;
-		if (!LegacyLocatorConfig.LoginToken.IsEmpty() && GIsClient)
+		// Native Unreal creates a NetDriver and attempts to automatically connect if a Host is specified as the first commandline argument.
+		// Since the SpatialOS Launcher does not specify this, we need to check for a locator loginToken to allow automatic connection to provide parity with native.
+		// If a developer wants to use the Launcher and NOT automatically connect they will have to set the `PreventAutoConnectWithLocator` flag to true.
+		if (!bPreventAutoConnectWithLocator)
 		{
-			FString Error;
-			if (!StartGameInstance_SpatialGDKClient(Error))
+			// Initialize a locator configuration which will parse command line arguments.
+			FLocatorConfig LocatorConfig;
+			if (!LocatorConfig.LoginToken.IsEmpty())
 			{
-				UE_LOG(LogSpatialGameInstance, Fatal, TEXT("Unable to browse to starting map: %s. Application will now exit."), *Error);
-				FPlatformMisc::RequestExit(false);
-			}
+				// Modify the commandline args to have a Host IP to force a NetDriver to be used.
+				const TCHAR* CommandLineArgs = FCommandLine::Get();
 
-			return;
+				FString NewCommandLineArgs = LocatorConfig.LocatorHost + TEXT(" ");
+				NewCommandLineArgs.Append(FString(CommandLineArgs));
+
+				FCommandLine::Set(*NewCommandLineArgs);
+			}
 		}
 	}
 
 	Super::StartGameInstance();
+}
+
+void USpatialGameInstance::Shutdown()
+{
+	UWorld* World = GetWorld();
+	if (World != nullptr && SpatialConnection != nullptr && SpatialConnection->IsConnected())
+	{
+		if (World->GetNetDriver() != nullptr)
+		{
+			Cast<USpatialNetDriver>(World->GetNetDriver())->HandleOnDisconnected(TEXT("Client shutdown"));
+		}
+	}
+
+	Super::Shutdown();
 }
