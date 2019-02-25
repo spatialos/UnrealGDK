@@ -166,7 +166,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		if (!LoadedWorld->URL.Host.IsEmpty())
 		{
 			Connection->ReceptionistConfig.ReceptionistHost = LoadedWorld->URL.Host;
-			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
 		}
 
 		bool bHasUseExternalIpOption = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
