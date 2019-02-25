@@ -5,7 +5,7 @@
 #include "Containers/UnrealString.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
-#include "Regex.h"
+#include "Internationalization/Regex.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
