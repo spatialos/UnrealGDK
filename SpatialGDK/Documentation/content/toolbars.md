@@ -95,15 +95,33 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 
  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbar-settings.png)
 
-##### Configuration
+##### General
 
 | Setting | Description |
 | --- | --- |
 | SpatialOS directory | If you're using a non-standard structure, you'll need to set this yourself. This is empty by default. If you leave it empty, it defaults to `<GameRoot>/../spatial`. |
+
+##### Play In Editor Settings
+
+| Setting | Description |
+| --- | --- |
+| Delete dynamically spawned entities | If checked, the GDK deletes any dynamically spawned entities from your SpatialOS deployment when you end the PIE session. |
+
+##### Launch
+
+| Setting | Description |
+| --- | --- |
+| Generate default launch config | If checked, the GDK creates a [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file) by default when you launch a local deployment through the toolbar. |
 | Launch configuration | The [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file) to use when running `spatial local launch` using the **Start** button. |
 | Stop on exit |  If enabled, shuts down running deployments when you close the Unreal Editor. |
+
+##### Snapshots
+
+| Setting | Description |
+| --- | --- |
 | Snapshot path | Use this to specify the filepath of your [snapshot]({{urlRoot}}/content/glossary#snapshot). If you leave this empty, it defaults to `<GameRoot>/../spatial/snapshots`. |
 | Snapshot file name |  Name of your snapshot file. |
+| Generate placeholder entities in snapshot | If checked, the GDK adds [placeholder entities]({{urlRoot}}/content/generating-a-snapshot#placeholder-entities) to the snapshot when it is generated |
 
 ##### Schema Generation
 
