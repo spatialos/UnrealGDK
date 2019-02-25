@@ -265,7 +265,7 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 	Receiver->Init(this, TimerManager);
 	GlobalStateManager->Init(this, TimerManager);
 	SnapshotManager->Init(this);
-	EntityPool->Init(this);
+	EntityPool->Init(this, TimerManager);
 
 	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and Spatial networking is enabled, we can travel properly.
 	GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);

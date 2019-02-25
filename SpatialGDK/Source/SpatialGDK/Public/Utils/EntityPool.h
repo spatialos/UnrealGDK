@@ -10,12 +10,17 @@
 
 #include "EntityPool.generated.h"
 
-struct EntityRange {
+struct EntityRange
+{
 	Worker_EntityId CurrentEntityId;
 	Worker_EntityId LastEntityId;
+	bool bExpired;
+	// Used to identify an entity range when it has expired.
+	uint32 EntityRangeId;
 };
 
 class USpatialReceiver;
+class FTimerManager;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialEntityPool, Log, All)
 
@@ -25,20 +30,25 @@ class SPATIALGDK_API UEntityPool : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* TimerManager);
 	void ReserveEntityIDs(int32 EntitiesToReserve);
 	Worker_EntityId Pop();
 	bool IsReady();
 
 private:
+	void OnEntityRangeExpired(uint32 ExpiringEntityRangeId);
+
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
 	UPROPERTY()
 	USpatialReceiver* Receiver;
 
-	TArray<EntityRange> ReservedIDs;
+	FTimerManager* TimerManager;
+	TArray<EntityRange> ReservedEntityIDRanges;
 
 	bool bIsReady;
 	bool bIsAwaitingResponse;
+
+	uint32 NextEntityRangeId;
 };
