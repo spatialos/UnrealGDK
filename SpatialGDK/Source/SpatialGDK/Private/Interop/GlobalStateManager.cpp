@@ -481,17 +481,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 		return;
 	}
 
-	// Copied from UWorld::BeginPlay
-	UWorld* World = NetDriver->World;
-	AGameModeBase* const GameMode = World->GetAuthGameMode();
-	if (GameMode)
-	{
-		GameMode->StartPlay();
-		if (World->GetAISystem())
-		{
-			World->GetAISystem()->StartPlay();
-		}
-	}
+	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 
 	bTriggeredBeginPlay = true;
 }
