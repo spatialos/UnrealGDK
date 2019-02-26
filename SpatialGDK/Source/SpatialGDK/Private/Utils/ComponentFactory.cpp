@@ -55,15 +55,9 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
 					if (IsFastArraySerializeProperty(ArrayProperty, Parent.Property))
 					{
-						FSpatialNetDeltaSerializeInfo Parms;
-
-						SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
-
 						FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
-
-						Parms.Writer = &ValueDataWriter;
-						Parms.Map = PackageMap;
-						Parms.NetSerializeCB = &SerializeCB;
+						SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
+						FSpatialNetDeltaSerializeInfo Parms = FSpatialNetDeltaSerializeInfo::CreateWriter(ValueDataWriter, SerializeCB);
 
 						UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property);
 						UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();

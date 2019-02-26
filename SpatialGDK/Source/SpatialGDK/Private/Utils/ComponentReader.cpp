@@ -124,18 +124,14 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 				// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
 				if (IsFastArraySerializeProperty(ArrayProperty, Parent.Property))
 				{
-					FSpatialNetDeltaSerializeInfo Parms;
+					TArray<uint8> ValueData = GetBytesFromSchema(ComponentObject, FieldId);
+					int64 CountBits = ValueData.Num() * 8;
+					TSet<FUnrealObjectRef> NewUnresolvedRefs;
+					FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
 
 					SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
 
-					TArray<uint8> ValueData = GetBytesFromSchema(ComponentObject, FieldId);
-					int64 CountBits = ValueData.Num() * 8;
-					TSet<FUnrealObjectRef> UnresolvedRefs;
-					FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, UnresolvedRefs);
-
-					Parms.Reader = &ValueDataReader;
-					Parms.Map = PackageMap;
-					Parms.NetSerializeCB = &SerializeCB;
+					FSpatialNetDeltaSerializeInfo Parms = FSpatialNetDeltaSerializeInfo::CreateReader(ValueDataReader, SerializeCB);
 
 					UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property);
 					UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
@@ -143,11 +139,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 					CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
 
-					if (UnresolvedRefs.Num() > 0)
+					if (NewUnresolvedRefs.Num() > 0)
 					{
-						//RootObjectReferencesMap.Add(FieldId, FObjectReferences(ValueData, CountBits, UnresolvedRefs, Cmd.ParentIndex, ArrayProperty, true));
-						RootObjectReferencesMap.Add(FieldId, FObjectReferences(ValueData, CountBits, UnresolvedRefs, Cmd.ParentIndex, Parent.Property, true));
-						UnresolvedRefs.Append(UnresolvedRefs);
+						RootObjectReferencesMap.Add(FieldId, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, Cmd.ParentIndex, Parent.Property, true));
+						UnresolvedRefs.Append(NewUnresolvedRefs);
 					}
 					else if (RootObjectReferencesMap.Find(FieldId))
 					{

@@ -1456,17 +1456,13 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			}
 			else if (ObjectReferences.bFastArrayProp)
 			{
-				FSpatialNetDeltaSerializeInfo Parms;
-
-				SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
-
 				int64 CountBits = ObjectReferences.Buffer.Num() * 8;
 				TSet<FUnrealObjectRef> NewUnresolvedRefs;
 				FSpatialNetBitReader ValueDataReader(PackageMap, ObjectReferences.Buffer.GetData(), CountBits, NewUnresolvedRefs);
 
-				Parms.Reader = &ValueDataReader;
-				Parms.Map = PackageMap;
-				Parms.NetSerializeCB = &SerializeCB;
+				SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
+
+				FSpatialNetDeltaSerializeInfo Parms = FSpatialNetDeltaSerializeInfo::CreateReader(ValueDataReader, SerializeCB);
 
 				UStructProperty* ParentStruct = Cast<UStructProperty>(Property);
 				UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
