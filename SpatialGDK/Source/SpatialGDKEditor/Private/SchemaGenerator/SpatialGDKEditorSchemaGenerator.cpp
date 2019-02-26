@@ -239,7 +239,8 @@ bool ValidateRPCArguments(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 				const UFunction* Function = RPC->Function;
 				if (Function->HasAnyFunctionFlags(FUNC_HasOutParms))
 				{
-					UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("RPC %s: Some of the arguments are passed by reference. This will cause serialization problems. Please change those arguments to be passed by value."), *Function->GetPathName());
+					UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("RPC %s: Some of the arguments are passed by reference. This will cause serialization problems. Please change those arguments to be passed by value."
+						" Please note that array arguments are treated as by-reference, and currently need to be wrapped in a struct to be serialized correctly."), *Function->GetPathName());
 					bSuccess = false;
 				}
 			}
@@ -519,7 +520,7 @@ bool SpatialGDKGenerateSchema()
 
 	if (bHasByRefRPCArgs)
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Pass-by-reference arguments detected in some RPCs. Please check previous log messages for more details."));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Pass-by-reference or array arguments detected in some blueprint RPCs. Please check previous log messages for more details."));
 	}
 
 	return true;
