@@ -10,8 +10,6 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-const FRegexPattern Ipv4RegexPattern(TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"));
-
 struct FConnectionConfig
 {
 	FConnectionConfig()
@@ -74,6 +72,8 @@ struct FReceptionistConfig : public FConnectionConfig
 			// If a receptionistHost is not specified then parse for an IP address as the first argument and use this instead.
 			// This is how native Unreal handles connecting to other IPs, a map name can also be specified, in this case we use the default IP.
 			FParse::Token(CommandLine, ReceptionistHost, 0);
+
+			FRegexPattern Ipv4RegexPattern(TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"));
 
 			FRegexMatcher IpV4RegexMatcher(Ipv4RegexPattern, *ReceptionistHost);
 			if (!IpV4RegexMatcher.FindNext())
