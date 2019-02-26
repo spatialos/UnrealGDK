@@ -3,11 +3,14 @@
 #pragma once
 
 #include "Containers/UnrealString.h"
+#include "Internationalization/Regex.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
+
+const FRegexPattern Ipv4RegexPattern(TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"));
 
 struct FConnectionConfig
 {
@@ -68,15 +71,16 @@ struct FReceptionistConfig : public FConnectionConfig
 		// Parse the commandline for receptionistHost, if it exists then use this as the host IP.
 		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost))
 		{
-			// If receptionistHost is not specified then parse for a traditional IP. Parsing is done the same as Unreal in PlayLevel.cpp.
-			// Unreal uses the first commandline argument as a host to decide whether to create a NetDriver and connect.
-			// Here we are checking that the first commandline argument is not prefixed with '-' indicating a flag or '/' indicating a map name.
-			if (!FParse::Token(CommandLine, ReceptionistHost, 0) || ReceptionistHost[0] == '-' || ReceptionistHost[0] == '/')
+			// If a receptionistHost is not specified then parse for an IP address as the first argument and use this instead.
+			// This is how native Unreal handles connecting to other IPs, a map name can also be specified, in this case we use the default IP.
+			FParse::Token(CommandLine, ReceptionistHost, 0);
+
+			FRegexMatcher IpV4RegexMatcher(Ipv4RegexPattern, *ReceptionistHost);
+			if (!IpV4RegexMatcher.FindNext())
 			{
 				// If an IP is not specified then use default.
 				ReceptionistHost = SpatialConstants::LOCAL_HOST;
 			}
-			
 		}
 
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
