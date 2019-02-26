@@ -3,9 +3,9 @@
 #pragma once
 
 #include "Containers/UnrealString.h"
+#include "Internationalization/Regex.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
-#include "Internationalization/Regex.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
