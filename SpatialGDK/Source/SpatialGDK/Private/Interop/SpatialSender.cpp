@@ -162,13 +162,18 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef);
 	}
 
+	// Classes can have a PIE prefix added to them. This needs to be removed
+	// to be able to properly look the class up in the schema database.
+	FString RemappedClassName = Class->GetPathName();
+	GEngine->NetworkRemapPath(NetDriver, RemappedClassName, false);
+
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(improbable::Metadata(Class->GetName()).CreateMetadataData());
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, RemappedClassName).CreateUnrealMetadataData());
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
@@ -188,9 +193,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
 	}
 
+	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	if (Actor->HasAnyFlags(RF_WasLoaded))
 	{
-		if (uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId.Find(Actor->GetLevel()->GetOuter()->GetName()))
+		if (uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId.Find(Actor->GetTypedOuter<UWorld>()->GetName()))
 		{
 			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(*ComponentId));
 		}

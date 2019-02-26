@@ -42,7 +42,11 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 
 void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
-	checkf(IsSupportedClass(Class), TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
+	// Remove PIE prefix on class if it exists to properly look up the class.
+	FString ClassPath = Class->GetPathName();
+	GEngine->NetworkRemapPath(NetDriver, ClassPath, false);
+
+	checkf(IsSupportedClass(ClassPath), TEXT("Could not find class in schema database: %s"), *ClassPath);
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
@@ -116,7 +120,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SchemaComponents[Type];
+		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[ClassPath].SchemaComponents[Type];
 		if (ComponentId != 0)
 		{
 			Info->SchemaComponents[Type] = ComponentId;
@@ -126,7 +130,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	});
 
-	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SubobjectData)
+	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[ClassPath].SubobjectData)
 	{
 		int32 Offset = SubobjectClassDataPair.Key;
 		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
@@ -155,9 +159,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	}
 }
 
-bool USpatialClassInfoManager::IsSupportedClass(UClass* Class) const
+bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const
 {
-	return SchemaDatabase->ClassPathToSchema.Contains(Class->GetPathName());
+	return SchemaDatabase->ClassPathToSchema.Contains(PathName);
 }
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* Class)

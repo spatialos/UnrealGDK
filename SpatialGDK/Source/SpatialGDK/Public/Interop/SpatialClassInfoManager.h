@@ -82,7 +82,7 @@ public:
 	void Init(USpatialNetDriver* NetDriver);
 
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
-	bool IsSupportedClass(UClass* Class) const;
+	bool IsSupportedClass(const FString& PathName) const;
 
 	const FClassInfo& GetOrCreateClassInfoByClass(UClass* Class);
 	const FClassInfo& GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset);
