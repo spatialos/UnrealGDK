@@ -1,6 +1,10 @@
 # Get started: Port your own Unreal project to the GDK
 
-As an experienced UE4 developer, you likely have a prototype or a game already. The GDK allows you to port it over to SpatialOS. This guide shows you how to kickstart your SpatialOS journey - by the end of it your game will run on a *single server-worker* on SpatialOS. You will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
+<%(TOC)%>
+
+As an experienced UE4 developer, you likely have a prototype or a game already. The GDK for Unreal allows you to port you game over to SpatialOS. 
+
+This guide shows you how to kickstart your SpatialOS journey - by the end of it your game will run on a *single server-worker* on SpatialOS and you will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
 
 <%(Callout type="alert" message="The GDK's porting workflow is currently in pre-alpha as we improve its stability. We do not recommend attempting to port your Unreal game now. If you need to port your game, please get in touch on our [forums](https://forums.improbable.io/), or on [Discord](https://discord.gg/vAT7RSU) so we can best support you. We intend have a stable porting workflow in Q1 2019. Thanks for your patience.")%>
 
@@ -13,8 +17,7 @@ Before porting your project:
     * [Getting started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 * If you haven't done this already, clone the GDK repository by following [our SpatialOS GDK Starter template guide]({{urlRoot}}/content/get-started/gdk-template). Later in this guide, you will copy some necessary files from the template project over to yours.
 
-* Make sure your Spatial CLI is up to date: from a terminal window, run the command `spatial update`. 
-<!-- // TODO: Update the set up link when ready -->
+* Open a terminal window and run the command `spatial update` to ensure your Spatial CLI installation is up to date. 
 
 ### Terms used in this guide
 `<GameRoot>` - The folder containing your project's `.uproject` file and `Source` folder.  
@@ -23,19 +26,20 @@ Before porting your project:
 
 ## Port your game to the GDK
 
-<%(TOC)%>
-
 ### 1. Set up the project structure
-1. Ensure you have a `<ProjectRoot>`. If your `<GameRoot>` lives inside of a self-contained folder already, this is your `<ProjectRoot>`. If not, you should create a new folder to represent your `<ProjectRoot>` and move your `<GameRoot>` inside of it.  
+
+
+1. Create a new directory to represent your `<ProjectRoot>` and move your `<GameRoot>` directory inside of it.  
    
-    Your project structure should take the form of `\<ProjectRoot>\<GameRoot>\<YourProject>.uproject`
+    Your project structure should be:  `\<ProjectRoot>\<GameRoot>\<YourProject>.uproject`<br/>
+    
     For example:
     `\StarterProject\Game\StarterProject.uproject`
     
-    > This step is essential as the `spatial` folder must be located in the directory above your `<GameRoot>`. This is so that the GDK scripts work correctly with Unreal.
-1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the template project that you set up earlier in the [Before you start](#before-you-start) section.
+    **Note**: This step is essential as the `spatial` folder must be located in the directory above your `<GameRoot>`.
+1. Your project needs some extra files and folders to run with the GDK; you can copy these from the template project that you set up earlier in the [Before you start](#before-you-start) section.
 
-    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders below to your `<ProjectRoot>`:  
+    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and directories below to your `<ProjectRoot>`:  
 
     ``` cpp
     \StarterProject\spatial\
@@ -43,7 +47,7 @@ Before porting your project:
     \StarterProject\LaunchServer.bat
     \StarterProject\ProjectPaths.bat
     ```
-    Your game's folder structure should now resemble:
+    Your project's directory structure should now resemble:
 
     ``` cpp
     \<ProjectRoot>\<GameRoot>\
@@ -54,23 +58,28 @@ Before porting your project:
     etc...
     ```
 
+1. You need to configure the GDK helper scripts so they work correctly. 
 
-1. Our helper scripts require configuration to work correctly. Set up your project paths:  
-   Open **`\<ProjectRoot>\ProjectPaths.bat`** for editing and:  
+Follow this step to set up your project paths: 
+   
+   * Open **`\<ProjectRoot>\ProjectPaths.bat`** in a text editor.  
 
     * In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.  
     * In `set GAME_NAME=StarterProject`, replace `StarterProject` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
     
-    > Doing this incorrectly will result in the helper scripts `LaunchClient.bat` and `LaunchServer.bat` not working and printing that the path specified does not exist when trying to use them.
+**Note**: The helper scripts `LaunchClient.bat` and `LaunchServer.bat` will not work if you do not follow this step correctly. 
 
 1. Run `Setup.bat` which is in the root directory of the GDK repository you cloned (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
     - In a terminal window, navigate to the root directory of the GDK and run: `Setup.bat` or
-    - In your file manager, double-click the file.
+    - In your file manager, double-click the `Setup.bat` file.
   
-    > Note: This requires authorization with your SpatialOS account via a web browser. `Setup.bat` will launch the authorization page.
+    **Note**:`Setup.bat` will automatically open the SpatialOS authorization page in your default browser. You may be prompted to sign into your SpatialOS account if you have not already. 
 
 ### 2. Add the SpatialGDK module to your project
-1. In your project's `*.build.cs` file, add `"SpatialGDK"` to the `PublicDependencyModuleNames`.
+
+1. In File Explorer, navigate to `\<ProjectRoot>\<GameRoot>\Source\<YourProject>\`.
+2. Open the `<YourProject>.build.cs` file in a code editor and add add `"SpatialGDK"` to `PublicDependencyModuleNames`.
+    
     For example:  
 
     ``` csharp
@@ -90,26 +99,32 @@ Before porting your project:
     ```
 
 ### 3. Build your project
-Set up your Unreal game project to work with the GDK for Unreal fork of the Unreal Engine, which you cloned and installed in the [Before you start](#before-you-start) section. To do this:
+Set up your Unreal project to work with the GDK for Unreal fork of the Unreal Engine, which you cloned and installed in the [Before you start](#before-you-start) section. To do this:
 
 1. In File Explorer, navigate to `<ProjectRoot>\<GameRoot>`.
 1. Right-click your `.uproject` file and select **Switch Unreal Engine version**.
 1. Select the path to the Unreal Engine fork you cloned earlier.
-1. In File Explorer, right-click your `.uproject` file and select **Generate Visual Studio project files**.
-1. Open the generated solution file in Visual Studio and in the Development Editor build configuration, compile and run the project.
+1. In **File Explorer**, right-click `<YourProject>`.uproject and select Generate Visual Studio Project files.
+1. In the same directory, double-click **`<YourProject>`.sln** to open it with Visual Studio.
+1. On the Visual Studio toolbar, set your Solution configuration to **Development Editor**. <br/>
+    ![our SpatialOS GDK Starter template guide]({{AssetRoot}}/porting-solution-config.png)<br/>
+    _Image: The Visual Studio toolbar, with the Development Editor Solution configuration highlighted in red._
+1. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
+
 
 ### 4. Modify Unreal classes for GDK compatibility
-It is necessary to modify your `GameInstance` class to work properly with the GDK.  
+You must modify your `GameInstance` class to work properly with the GDK.  
 
 1. Make your `GameInstance` inherit from `SpatialGameInstance`.  <br/>
 
-   > If you have not yet made a `GameInstance` for your game and are still using the default, you must either create a Blueprint or a native `GameInstance` class now. Remember to configure your `Project Settings` to use this new `GameInstance` as default, under **Project Settings > Project Maps and Modes > Game Instance > Game Instance Class**. <br/>
+   > If you have not yet made a `GameInstance` for your game and are still using the default `GameInstance`, you must either create a Blueprint or a native `GameInstance` class now. Remember to configure your `Project Settings` to use this new `GameInstance` by default, under **Project Settings > Project Maps and Modes > Game Instance > Game Instance Class**. <br/>
 
 
 * If your game's `GameInstance` is a C++ class, locate its header file and add the following `#include`:
     `"SpatialGameInstance.h"`
 
     For example:
+    
     ``` cpp
     #include "CoreMinimal.h"
     #include "SpatialGameInstance.h"
@@ -131,29 +146,7 @@ It is necessary to modify your `GameInstance` class to work properly with the GD
 
     ![spatial game instance reparent]({{assetRoot}}assets/screen-grabs/spatial-game-instance-reparent.png)
 
-
-### 5. Add GDK configurations
-The steps below reference and introduce the following SpatialOS terms: [workers]({{urlRoot}}/content/glossary#workers), [schema]({{urlRoot}}/content/glossary#schema), [Schema Generation]({{urlRoot}}/content/glossary#schema-generation) [SpatialOS components]({{urlRoot}}/content/glossary#spatialos-component), [checking out]({{urlRoot}}/content/glossary#check-out), [streaming queries]({{urlRoot}}/content/glossary#streaming-queries), [Singleton Actor]({{urlRoot}}/content/glossary#singleton-actor), [deployment]({{urlRoot}}/content/glossary#deployment), [launch configuration]({{urlRoot}}/content/glossary#launch-configuration), [snapshot]({{urlRoot}}/content/glossary#snapshot), [worker configuration]({{urlRoot}}/content/glossary#worker-configuration).
-<br/>You can find out about them in the [glossary]({{urlRoot}}/content/glossary) but you don't need to know about them in detail to complete the port.
-
-1. In `<GameRoot>\Config`, open `DefaultEngine.ini` and add:
-
-    ``` ini
-    [/Script/Engine.Engine]
-    !NetDriverDefinitions=ClearArray
-    +NetDriverDefinitions=(DefName="GameNetDriver",DriverClassName="/Script/SpatialGDK.SpatialNetDriver",DriverClassNameFallback="/Script/SpatialGDK.SpatialNetDriver")
-
-    [/Script/SpatialGDK.SpatialNetDriver]
-    NetConnectionClassName="/Script/SpatialGDK.SpatialNetConnection"
-    ```
-
-    > These lines ensure that the GDK can override Unreal's network replication.
-    >
-    > If you ever need to run with default Unreal networking for workflow or validation reasons, you can switch networking in the Unreal Editor: from the Editor menu, click the down arrow on the **Play** button and from the drop-down menu un-check `Spatial Networking`. This setting is valid for Editor and command-line builds. It is stored in your game project's Unreal config file; `<GameRoot>\Config\DefaultGame.ini` under `/Script/EngineSettings.GeneralProjectSettings`.
-    >
-    > **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to check for any divergence between GDK behavior and the default Unreal behavior. This can be helpful in isolating the root cause of issues you see while debugging. However, you lose access to the multiserver features of the GDK in Unreal default networking mode which may lead to erratic behavior.
-
-### 6. Generate schema and a snapshot
+### 5. Generate schema and a snapshot
 You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate a [snapshot]({{urlRoot}}/content/glossary#snapshot) to get your game's deployment started. To do this:
 
 1. In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars), click the **Schema** button to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
@@ -161,7 +154,7 @@ You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate 
 
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars-basic.png)
 
-### 7. Launch your game
+### 6. Launch your game
 1. Switch your game project to use the SpatialOS networking. To do this: in the Unreal Editor, from the toolbar, open the **Play** drop-down menu and check two checkboxes:
     * Check the box for **Run Dedicated Server**
     * Check the box for **Spatial Networking**
@@ -178,7 +171,7 @@ You need to generate [schema]({{urlRoot}}/content/glossary#schema) and generate 
 
 **For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{urlRoot}}/content/glossary#deployment)**
 
-**Job done!** You have ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
+You have now ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in your inspector.
 
 If you have encountered any problems please check out our [troubleshooting]({{urlRoot}}/content/troubleshooting) and [known-issues]({{urlRoot}}/known-issues).
 

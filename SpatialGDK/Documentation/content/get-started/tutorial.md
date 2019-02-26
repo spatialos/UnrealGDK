@@ -50,7 +50,6 @@ In this step, you're going to build the Unreal GDK's dependencies.
 
 In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will [cloud deploy](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
 
-1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and in the `layer_configurations` section set `rows` to `2`. This instructs SpatialOS that you will be launching two server-workers.
 1. In the Unreal Editor, in the Unreal toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2**
 1. Enter the number of servers as **2**
