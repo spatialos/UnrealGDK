@@ -32,6 +32,22 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
 	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](Worker_ReserveEntityIdsResponseOp& Op)
 	{
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+		{
+			// UNR-630 - Temporary hack to avoid failure to reserve entities due to timeout on large maps
+			if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
+			{
+				UE_LOG(LogSpatialEntityPool, Warning, TEXT("Failed to reserve entity IDs Reason: %s. Retrying..."), UTF8_TO_TCHAR(Op.message));
+				ReserveEntityIDs(EntitiesToReserve);
+			}
+			else
+			{
+				UE_LOG(LogSpatialEntityPool, Error, TEXT("Failed to reserve entity IDs Reason: %s."), UTF8_TO_TCHAR(Op.message));
+			}
+
+			return;
+		}
+
 		// Ensure we have the same number of reserved IDs as we have entities to spawn
 		check(EntitiesToReserve == Op.number_of_entity_ids);
 
