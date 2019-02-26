@@ -162,7 +162,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		if (!LoadedWorld->URL.Host.IsEmpty())
 		{
 			Connection->ReceptionistConfig.ReceptionistHost = LoadedWorld->URL.Host;
-			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
 		}
 
 		bool bHasUseExternalIpOption = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
@@ -317,6 +316,7 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 			RedirectURL.Host = WorldContext->LastURL.Host;
 			RedirectURL.Port = WorldContext->LastURL.Port;
 			RedirectURL.Op.Append(WorldContext->LastURL.Op);
+			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
 
 			WorldContext->TravelURL = RedirectURL.ToString();
 		}

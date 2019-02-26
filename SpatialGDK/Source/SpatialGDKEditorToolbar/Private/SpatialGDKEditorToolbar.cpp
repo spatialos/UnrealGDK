@@ -448,10 +448,6 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 					Writer->WriteValue(TEXT("name"), TEXT("bridge_soft_handover_enabled"));
 					Writer->WriteValue(TEXT("value"), TEXT("false"));
 				Writer->WriteObjectEnd();
-				Writer->WriteObjectStart();
-					Writer->WriteValue(TEXT("name"), TEXT("qos_max_unacked_pings_rate"));
-					Writer->WriteValue(TEXT("value"), TEXT("10"));
-				Writer->WriteObjectEnd();
 			Writer->WriteArrayEnd();
 			Writer->WriteObjectStart(TEXT("snapshots"));
 				Writer->WriteValue(TEXT("snapshot_write_period_seconds"), 0);
