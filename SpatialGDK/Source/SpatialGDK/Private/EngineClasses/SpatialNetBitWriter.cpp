@@ -53,6 +53,7 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 			}
 			else if (NetDriver->IsServer())
 			{
+				// Resolve 'Value' as an entity if it is an unregistered actor
 				if (AActor* Actor = Cast<AActor>(Value))
 				{
 					if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == SpatialConstants::INVALID_ENTITY_ID)
@@ -61,6 +62,7 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 						NetGUID = PackageMapClient->GetNetGUIDFromObject(Value);
 					}
 				}
+				// Resolve the parent of 'Value' if it is an unregistered actor
 				else if (AActor* OuterActor = Cast<AActor>(Value->GetOuter()))
 				{
 					if (OuterActor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(OuterActor) == SpatialConstants::INVALID_ENTITY_ID)

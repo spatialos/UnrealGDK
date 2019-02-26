@@ -2,6 +2,7 @@
 
 #include "SpatialGDKEditorModule.h"
 
+#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 
 #include "ISettingsModule.h"
@@ -32,14 +33,24 @@ void FSpatialGDKEditorModule::RegisterSettings()
 		SettingsContainer->DescribeCategory("SpatialGDKEditor", LOCTEXT("RuntimeWDCategoryName", "SpatialOS GDK for Unreal"),
 			LOCTEXT("RuntimeWDCategoryDescription", "Configuration for the SpatialOS GDK for Unreal"));
 
-		ISettingsSectionPtr SettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Settings",
-			LOCTEXT("RuntimeGeneralSettingsName", "Settings"),
-			LOCTEXT("RuntimeGeneralSettingsDescription", "Configuration for the SpatialOS GDK for Unreal"),
+		ISettingsSectionPtr EditorSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Editor Settings",
+			LOCTEXT("SpatialEditorGeneralSettingsName", "Editor Settings"),
+			LOCTEXT("SpatialEditorGeneralSettingsDescription", "Editor configuration for the SpatialOS GDK for Unreal"),
 			GetMutableDefault<USpatialGDKEditorSettings>());
 
-		if (SettingsSection.IsValid())
+		if (EditorSettingsSection.IsValid())
 		{
-			SettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorModule::HandleSettingsSaved);
+			EditorSettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorModule::HandleEditorSettingsSaved);
+		}
+
+		ISettingsSectionPtr RuntimeSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Runtime Settings",
+			LOCTEXT("SpatialRuntimeGeneralSettingsName", "Runtime Settings"),
+			LOCTEXT("SpatialRuntimeGeneralSettingsDescription", "Runtime configuration for the SpatialOS GDK for Unreal"),
+			GetMutableDefault<USpatialGDKSettings>());
+
+		if (RuntimeSettingsSection.IsValid())
+		{
+			RuntimeSettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorModule::HandleRuntimeSettingsSaved);
 		}
 	}
 }
@@ -48,13 +59,21 @@ void FSpatialGDKEditorModule::UnregisterSettings()
 {
 	if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
 	{
-		SettingsModule->UnregisterSettings("Project", "SpatialGDKEditor", "Settings");
+		SettingsModule->UnregisterSettings("Project", "SpatialGDKEditor", "Editor Settings");
+		SettingsModule->UnregisterSettings("Project", "SpatialGDKEditor", "Runtime Settings");
 	}
 }
 
-bool FSpatialGDKEditorModule::HandleSettingsSaved()
+bool FSpatialGDKEditorModule::HandleEditorSettingsSaved()
 {
 	GetMutableDefault<USpatialGDKEditorSettings>()->SaveConfig();
+
+	return true;
+}
+
+bool FSpatialGDKEditorModule::HandleRuntimeSettingsSaved()
+{
+	GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
 
 	return true;
 }

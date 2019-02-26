@@ -1,4 +1,7 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "Utils/EntityPool.h"
+#include "SpatialGDKSettings.h"
 #include "TimerManager.h"
 
 #include "Interop/SpatialReceiver.h"
@@ -6,10 +9,6 @@
 DEFINE_LOG_CATEGORY(LogSpatialEntityPool);
 
 using namespace improbable;
-
-const uint32 INITIAL_RESERVATION_COUNT = 1000;
-const uint32 REFRESH_THRESHOLD = 100;
-const uint32 REFRESH_COUNT = 500;
 
 void UEntityPool::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
@@ -19,7 +18,7 @@ void UEntityPool::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerMan
 
 	if (NetDriver->IsServer())
 	{
-		ReserveEntityIDs(INITIAL_RESERVATION_COUNT);
+		ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolInitialReservationCount);
 	}
 }
 
@@ -105,7 +104,7 @@ void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
 		// Reserve then cleanup
 		if (!bIsAwaitingResponse)
 		{
-			ReserveEntityIDs(REFRESH_COUNT);
+			ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolRefreshCount);
 		}
 		// Mark this entity range as expired, so it gets cleaned up when we receive a new entity range from Spatial.
 		ReservedEntityIDRanges[FoundEntityRangeIndex].bExpired = true;
@@ -117,7 +116,7 @@ Worker_EntityId UEntityPool::Pop()
 	if (ReservedEntityIDRanges.Num() == 0)
 	{
 		// TODO: Improve error message
-		UE_LOG(LogSpatialEntityPool, Error, TEXT("Tried to pop an entity from the pool when there were no entity IDs. Try altering your Entity Pool configuration"));
+		UE_LOG(LogSpatialEntityPool, Error, TEXT("Tried to pop an entity ID from the pool when there were no entity IDs. Try altering your Entity Pool configuration"));
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 
@@ -133,10 +132,10 @@ Worker_EntityId UEntityPool::Pop()
 	// TODO: make Verbose after testing
 	UE_LOG(LogSpatialEntityPool, Log, TEXT("Popped ID, %i IDs remaining"), TotalRemainingEntityIds);
 
-	if (TotalRemainingEntityIds < REFRESH_THRESHOLD && !bIsAwaitingResponse)
+	if (TotalRemainingEntityIds < GetDefault<USpatialGDKSettings>()->EntityPoolRefreshThreshold && !bIsAwaitingResponse)
 	{
 		UE_LOG(LogSpatialEntityPool, Log, TEXT("Pool under threshold, reserving more entity IDs"));
-		ReserveEntityIDs(REFRESH_COUNT);
+		ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolRefreshCount);
 	}
 
 	if (CurrentEntityRange.CurrentEntityId > CurrentEntityRange.LastEntityId)

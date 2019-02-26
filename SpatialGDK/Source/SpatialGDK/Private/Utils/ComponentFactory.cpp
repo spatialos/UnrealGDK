@@ -206,6 +206,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					}
 					else if (NetDriver->IsServer())
 					{
+						// Resolve 'Value' as an entity if it is an unregistered actor
 						if (AActor* Actor = Cast<AActor>(ObjectValue))
 						{
 							if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == SpatialConstants::INVALID_ENTITY_ID)
@@ -214,6 +215,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 								NetGUID = PackageMap->GetNetGUIDFromObject(ObjectValue);
 							}
 						}
+						// Resolve the parent of 'Value' if it is an unregistered actor
 						else if (AActor* OuterActor = Cast<AActor>(ObjectValue->GetOuter()))
 						{
 							if (OuterActor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(OuterActor) == SpatialConstants::INVALID_ENTITY_ID)
