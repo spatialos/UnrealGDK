@@ -72,7 +72,7 @@ struct FReceptionistConfig : public FConnectionConfig
 		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost))
 		{
 			// If a receptionistHost is not specified then parse for an IP address as the first argument and use this instead.
-			// This is how native Unreal handles connecting to other IP's, a map name can also be specified, in this case we use the default IP.
+			// This is how native Unreal handles connecting to other IPs, a map name can also be specified, in this case we use the default IP.
 			FParse::Token(CommandLine, ReceptionistHost, 0);
 
 			FRegexMatcher IpV4RegexMatcher(Ipv4RegexPattern, *ReceptionistHost);
