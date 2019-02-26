@@ -239,7 +239,7 @@ bool ValidateRPCArguments(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 				const UFunction* Function = RPC->Function;
 				if (Function->HasAnyFunctionFlags(FUNC_HasOutParms))
 				{
-					UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("RPC %s: Some of the arguments are passed by reference. This will cause serialization problems. Please change those arguments to be passed by value."), *Function->GetPathName());
+					UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("RPC %s: Some of the arguments are passed by reference. This will cause serialization problems. Please change those arguments to be passed by value."), *Function->GetPathName());
 					bSuccess = false;
 				}
 			}
@@ -481,9 +481,10 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
+	bool bHasByRefRPCArgs = false;
 	if (!ValidateRPCArguments(TypeInfos))
 	{
-		return false;
+		bHasByRefRPCArgs = true;
 	}
 
 	FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
@@ -515,6 +516,11 @@ bool SpatialGDKGenerateSchema()
 	}
 
 	AdditionalSchemaGeneratedClasses.Empty();
+
+	if (bHasByRefRPCArgs)
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Pass-by-reference arguments detected in some RPCs. Please check previous log messages for more details."));
+	}
 
 	return true;
 }
