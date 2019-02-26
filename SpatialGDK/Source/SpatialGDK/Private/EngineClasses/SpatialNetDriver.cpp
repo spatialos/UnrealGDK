@@ -320,6 +320,7 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 			RedirectURL.Host = WorldContext->LastURL.Host;
 			RedirectURL.Port = WorldContext->LastURL.Port;
 			RedirectURL.Op.Append(WorldContext->LastURL.Op);
+			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
 
 			WorldContext->TravelURL = RedirectURL.ToString();
 		}
