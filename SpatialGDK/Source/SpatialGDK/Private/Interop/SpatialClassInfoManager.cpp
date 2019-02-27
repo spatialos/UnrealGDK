@@ -10,6 +10,10 @@
 #include "Misc/MessageDialog.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
+#if WITH_EDITOR
+#include "Runtime/Engine/Classes/Engine/World.h"
+#include "Kismet/KismetSystemLibrary.h"
+#endif
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -78,10 +82,23 @@ ESchemaComponentType GetRPCType(UFunction* RemoteFunction)
 
 void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
-	checkf(IsSupportedClass(Class), TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
-
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
+  
+  // Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
+	if (!IsSupportedClass(Class))
+	{
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is explicitly referenced from the starting scene and schema has been generated."), *Class->GetPathName());
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *Class->GetPathName());
+#if WITH_EDITOR
+		// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
+		// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
+		UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit);
+#else
+		FGenericPlatformMisc::RequestExit(false);
+#endif
+		return;
+	}
 
 	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
 
