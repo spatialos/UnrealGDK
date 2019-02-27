@@ -11,6 +11,7 @@
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
 #if WITH_EDITOR
+#include "Runtime/Engine/Classes/Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #endif
 
