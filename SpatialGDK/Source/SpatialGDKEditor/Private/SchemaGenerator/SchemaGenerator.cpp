@@ -35,11 +35,11 @@ ESchemaComponentType RPCTypeToSchemaComponentType(ERPCType RPC)
 {
 	if (RPC == RPC_Client)
 	{
-		return SCHEMA_ClientRPC;
+		return SCHEMA_ClientReliableRPC;
 	}
 	else if (RPC == RPC_Server)
 	{
-		return SCHEMA_ServerRPC;
+		return SCHEMA_ServerReliableRPC;
 	}
 	else if (RPC == RPC_NetMulticast)
 	{
@@ -378,61 +378,7 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 		Writer.Outdent().Print("}");
 	}
 
-	// RPC components.
-	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
-
-	TArray<FString> ReliableMulticasts;
-
-	for (auto Group : GetRPCTypes())
-	{
-		if (RPCsByType[Group].Num() == 0 && Group != RPC_Client)
-		{
-			continue;
-		}
-
-		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[RPCTypeToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
-
-		Writer.PrintNewLine();
-
-		Writer.Printf("component {0} {", *SchemaRPCComponentName(Group, Class));
-		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
-
-		ActorSchemaData.SchemaComponents[RPCTypeToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
-
-		for (auto& RPC : RPCsByType[Group])
-		{
-			if (Group == ERPCType::RPC_NetMulticast)
-			{
-				if (RPC->bReliable)
-				{
-					ReliableMulticasts.Add(FString::Printf(TEXT("%s::%s"), *GetFullCPPName(Class), *RPC->Function->GetName()));
-				}
-
-				Writer.Printf("event UnrealRPCCommandRequest {0};",
-					*SchemaRPCName(RPC->Function));
-			}
-			else
-			{
-				Writer.Printf("command UnrealRPCCommandResponse {0}(UnrealRPCCommandRequest);",
-					*SchemaRPCName(RPC->Function));
-			}
-		}
-		Writer.Outdent().Print("}");
-	}
-
 	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData);
-
-	if (ReliableMulticasts.Num() > 0)
-	{
-		FString AllReliableMulticasts;
-		for (const FString& FunctionName : ReliableMulticasts)
-		{
-			AllReliableMulticasts += FunctionName + TEXT("\n");					
-		}
-
-		UE_LOG(LogSchemaGenerator, Warning, TEXT("Unreal GDK currently does not support Reliable Multicast RPCs. These RPC will be treated as unreliable:\n%s"), *AllReliableMulticasts);
-	}
 
 	ClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
 
@@ -487,41 +433,6 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		Writer.Outdent().Print("}");
 
 		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = IdGenerator.GetCurrentId();
-	}
-
-	FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
-
-	for (auto Group : GetRPCTypes())
-	{
-		if (RPCsByType[Group].Num() == 0)
-		{
-			continue;
-		}
-
-		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[RPCTypeToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
-
-		Writer.PrintNewLine();
-
-		FString ComponentName = PropertyName + GetRPCTypeName(Group) + TEXT("RPCs");
-		Writer.Printf("component {0} {", *ComponentName);
-		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
-		for (auto& RPC : RPCsByType[Group])
-		{
-			if (Group == ERPCType::RPC_NetMulticast)
-			{
-				Writer.Printf("event UnrealRPCCommandRequest {0};",
-					*SchemaRPCName(RPC->Function));
-			}
-			else
-			{
-				Writer.Printf("command UnrealRPCCommandResponse {0}(UnrealRPCCommandRequest);",
-					*SchemaRPCName(RPC->Function));
-			}
-		}
-		Writer.Outdent().Print("}");
-
-		SubobjectData.SchemaComponents[RPCTypeToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
 	}
 
 	return SubobjectData;
