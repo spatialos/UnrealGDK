@@ -671,6 +671,7 @@ void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId
 
 void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityIdResponseOp& Op)
 {
+	// TODO: This is no longer used with Bulk entity ID reservation taking place
 	if (Actor == nullptr || Actor->IsPendingKill())
 	{
 		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to reserve entity id"));
