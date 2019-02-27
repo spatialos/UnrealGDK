@@ -40,6 +40,42 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 	return Class;
 }
 
+ESchemaComponentType GetRPCType(UFunction* RemoteFunction)
+{
+	if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetMulticast))
+	{
+		return SCHEMA_NetMulticastRPC;
+	}
+	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer))
+	{
+		return SCHEMA_CrossServerRPC;
+	}
+	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable))
+	{
+		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
+		{
+			return SCHEMA_ClientReliableRPC;
+		}
+		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
+		{
+			return SCHEMA_ServerReliableRPC;
+		}
+	}
+	else
+	{
+		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
+		{
+			return SCHEMA_ClientUnreliableRPC;
+		}
+		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
+		{
+			return SCHEMA_ServerUnreliableRPC;
+		}
+	}
+
+	return SCHEMA_Invalid;
+}
+
 void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
 	checkf(IsSupportedClass(Class), TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
@@ -51,35 +87,16 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
-		ESchemaComponentType RPCType = SCHEMA_Invalid;
-		if (RemoteFunction->FunctionFlags & FUNC_NetClient)
-		{
-			RPCType = SCHEMA_ClientRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetServer)
-		{
-			RPCType = SCHEMA_ServerRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
-		{
-			RPCType = SCHEMA_CrossServerRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetMulticast)
-		{
-			RPCType = SCHEMA_NetMulticastRPC;
-		}
-		else
-		{
-			checkNoEntry();
-		}
-
-		TArray<UFunction*>& RPCArray = Info->RPCs.FindOrAdd(RPCType);
-
+		ESchemaComponentType RPCType = GetRPCType(RemoteFunction);
+		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
+		
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
-		RPCInfo.Index = RPCArray.Num();
 
-		RPCArray.Add(RemoteFunction);
+		// Index is guaranteed to be the same on Clients & Servers since we process remote functions in the same order.
+		RPCInfo.Index = Info->RPCs.Num();
+
+		Info->RPCs.Add(RemoteFunction);
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
