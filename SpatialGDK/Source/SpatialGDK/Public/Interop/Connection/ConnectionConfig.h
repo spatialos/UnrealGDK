@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Containers/UnrealString.h"
+#include "Internationalization/Regex.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "SpatialConstants.h"
@@ -61,12 +62,27 @@ struct FConnectionConfig
 struct FReceptionistConfig : public FConnectionConfig
 {
 	FReceptionistConfig()
-		: ReceptionistHost(SpatialConstants::LOCAL_HOST)
-		, ReceptionistPort(SpatialConstants::DEFAULT_PORT)
+		: ReceptionistPort(SpatialConstants::DEFAULT_PORT)
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
-		FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost);
+		// Parse the commandline for receptionistHost, if it exists then use this as the host IP.
+		if (!FParse::Value(CommandLine, TEXT("receptionistHost"), ReceptionistHost))
+		{
+			// If a receptionistHost is not specified then parse for an IP address as the first argument and use this instead.
+			// This is how native Unreal handles connecting to other IPs, a map name can also be specified, in this case we use the default IP.
+			FParse::Token(CommandLine, ReceptionistHost, 0);
+
+			FRegexPattern Ipv4RegexPattern(TEXT("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"));
+
+			FRegexMatcher IpV4RegexMatcher(Ipv4RegexPattern, *ReceptionistHost);
+			if (!IpV4RegexMatcher.FindNext())
+			{
+				// If an IP is not specified then use default.
+				ReceptionistHost = SpatialConstants::LOCAL_HOST;
+			}
+		}
+
 		FParse::Value(CommandLine, TEXT("receptionistPort"), ReceptionistPort);
 	}
 
