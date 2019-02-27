@@ -4,7 +4,6 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
-#include "UnrealString.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
 
