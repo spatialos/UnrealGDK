@@ -27,6 +27,7 @@
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
+    - [Multi-layer development]({{urlRoot}}/content/multi-layer)
 - <h3>Troubleshooting</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Known issues]({{urlRoot}}/known-issues)

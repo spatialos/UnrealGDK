@@ -9,6 +9,8 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 
+#include "Utils/OpCallbackTemplate.h"
+
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -38,4 +40,6 @@ private:
 
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
+
+	TMap<Worker_ComponentId, UOpCallbackTemplate*> UserOpCallbacks;
 };
