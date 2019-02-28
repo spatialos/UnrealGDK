@@ -282,7 +282,7 @@ void GenerateSchemaFromSublevels(UWorld* World, const FString& SchemaPath)
 	{
 		for (const auto& LevelStreamingObject : World->GetStreamingLevels())
 		{
-			StreamingLevels.Add(LevelStreamingObject->GetLoadedLevel()->GetName());
+			StreamingLevelNames.Add(LevelStreamingObject->GetLoadedLevel()->GetName());
 		}
 	}
 

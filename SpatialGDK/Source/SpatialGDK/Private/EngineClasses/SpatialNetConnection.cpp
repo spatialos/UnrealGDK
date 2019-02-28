@@ -102,7 +102,7 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(PlayerController->GetClass());
 	Interest NewInterest;
-	NewInterest.ComponentInterest.Add(Info.SchemaComponents[SCHEMA_ClientRPC], CurrentInterest.CreateComponentInterest());
+	NewInterest.ComponentInterest.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, CurrentInterest.CreateComponentInterest());
 	Worker_ComponentUpdate Update = NewInterest.CreateInterestUpdate();
 
 	Worker_EntityId EntityId = PackageMapClient->GetEntityIdFromObject(PlayerController);
