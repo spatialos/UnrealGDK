@@ -381,6 +381,10 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		FOutBunch DummyOutBunch;
 
+		// Actor::ReplicateSubobjects is overridable and enables the Actor to replicate any subobjects directly, via a
+		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
+		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
+		// the same SpatialActorChannel::ReplicateSubobject.
 		bWroteSomethingImportant |= Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 
 		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
