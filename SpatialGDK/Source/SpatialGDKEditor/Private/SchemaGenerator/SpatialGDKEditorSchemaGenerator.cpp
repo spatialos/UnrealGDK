@@ -280,10 +280,10 @@ void GenerateSchemaFromSublevels(UWorld* World, const FString& SchemaPath)
 	}
 	else
 	{
-		//for (const auto& LevelStreamingObject : World->GetStreamingLevels())
-		//{
-		//	StreamingLevels.Add(LevelStreamingObject->GetLoadedLevel());
-		//}
+		for (const auto& LevelStreamingObject : World->GetStreamingLevels())
+		{
+			StreamingLevels.Add(LevelStreamingObject->GetLoadedLevel()->GetName());
+		}
 	}
 
 	if (StreamingLevelNames.Num() == 0)
