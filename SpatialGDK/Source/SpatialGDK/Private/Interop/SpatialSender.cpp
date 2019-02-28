@@ -21,6 +21,8 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
+#include "Utils/InterestFactory.h"
+#include "Utils/PlayerInterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
@@ -175,19 +177,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, RemappedClassName).CreateUnrealMetadataData());
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-	{
-		USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(PlayerController->NetConnection);
-
-		Interest CurrentInterest;
-		CurrentInterest.ComponentInterest.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, NetConnection->CurrentInterest.CreateComponentInterest());
-		ComponentDatas.Add(CurrentInterest.CreateInterestData());
-	}
-	else
-	{
-		ComponentDatas.Add(improbable::Interest().CreateInterestData());
-	}
-
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
@@ -234,6 +223,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	{
 		QueueOutgoingUpdate(Channel, Actor, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 	}
+
+	InterestFactory InterestDataFactory(Actor, Info, NetDriver);
+	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));

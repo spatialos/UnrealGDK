@@ -10,6 +10,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
+#include "Utils/InterestFactory.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 
@@ -87,25 +88,10 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 	USpatialClassInfoManager* ClassInfoManager = NetDriver->ClassInfoManager;
 	USpatialPackageMapClient* PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
 
-	UPackage* TempPkg = FindPackage(nullptr, *PackageName.ToString());
-	UWorld* LevelWorld = (UWorld*)FindObjectWithOuter(TempPkg, UWorld::StaticClass());
-	uint32 ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId[LevelWorld->GetName()];
-
-	if (bIsVisible)
-	{
-		CurrentInterest.LoadedLevels.Add(ComponentId);
-	}
-	else
-	{
-		CurrentInterest.LoadedLevels.Remove(ComponentId);
-	}
-
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(PlayerController->GetClass());
-	Interest NewInterest;
-	NewInterest.ComponentInterest.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, CurrentInterest.CreateComponentInterest());
-	Worker_ComponentUpdate Update = NewInterest.CreateInterestUpdate();
-
 	Worker_EntityId EntityId = PackageMapClient->GetEntityIdFromObject(PlayerController);
+
+	improbable::InterestFactory InterestUpdateFactory(PlayerController, ClassInfoManager->GetOrCreateClassInfoByObject(PlayerController), NetDriver);
+	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
 

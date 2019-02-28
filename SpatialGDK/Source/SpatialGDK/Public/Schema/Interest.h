@@ -9,85 +9,135 @@ namespace improbable
 
 using EdgeLength = Coordinates;
 
+struct SphereConstraint
+{
+	Coordinates Center;
+	double Radius;
+};
+
+struct CylinderConstraint
+{
+	Coordinates Center;
+	double Radius;
+};
+
+struct BoxConstraint
+{
+	Coordinates Center;
+	EdgeLength EdgeLength;
+};
+
+struct RelativeSphereConstraint
+{
+	double Radius;
+};
+
+struct RelativeCylinderConstraint
+{
+	double Radius;
+};
+
+struct RelativeBoxConstraint
+{
+	EdgeLength EdgeLength;
+};
+
+struct QueryConstraint
+{
+	TSchemaOption<SphereConstraint> SphereConstraint;
+	TSchemaOption<CylinderConstraint> CylinderConstraint;
+	TSchemaOption<BoxConstraint> BoxConstraint;
+	TSchemaOption<RelativeSphereConstraint> RelativeSphereConstraint;
+	TSchemaOption<RelativeCylinderConstraint> RelativeCylinderConstraint;
+	TSchemaOption<RelativeBoxConstraint> RelativeBoxConstraint;
+	TSchemaOption<int64> EntityIdConstraint;
+	TSchemaOption<uint32> ComponentConstraint;
+	TArray<QueryConstraint> AndConstraint;
+	TArray<QueryConstraint> OrConstraint;
+
+	FORCEINLINE bool IsValid()
+	{
+		if (SphereConstraint.IsSet())
+		{
+			return true;
+		}
+
+		if (CylinderConstraint.IsSet())
+		{
+			return true;
+		}
+
+		if (BoxConstraint.IsSet())
+		{
+			return true;
+		}
+
+		if (RelativeSphereConstraint.IsSet())
+		{
+			return true;
+		}
+
+		if (RelativeCylinderConstraint.IsSet())
+		{
+			return true;
+		}
+
+		if (EntityIdConstraint.IsSet())
+		{
+			return true;
+		}
+
+		if (ComponentConstraint.IsSet())
+		{
+			return true;
+		}
+
+		if (AndConstraint.Num() > 0)
+		{
+			return true;
+		}
+
+		if (OrConstraint.Num() > 0)
+		{
+			return true;
+		}
+
+		return false;
+	}
+};
+
+struct Query
+{
+	QueryConstraint Constraint;
+
+	// Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid.
+	TSchemaOption<bool> FullSnapshotResult; // Whether all components should be included or none.
+	TArray<uint32> ResultComponentId; // Which components should be included.
+
+	// Used for frequency-based rate limiting. Represents the maximum frequency of updates for this
+	// particular query. An empty option represents no rate-limiting (ie. updates are received
+	// as soon as possible). Frequency is measured in Hz.
+	//
+	// If set, the time between consecutive updates will be at least 1/frequency. This is determined
+	// at the time that updates are sent from the Runtime and may not necessarily correspond to the
+	// time updates are received by the worker.
+	//
+	// If after an update has been sent, multiple updates are applied to a component, they will be
+	// merged and sent as a single update after 1/frequency of the last sent update. When components
+	// with events are merged, the resultant component will contain a concatenation of all the
+	// events.
+	//
+	// If multiple queries match the same Entity-Component then the highest of all frequencies is
+	// used.
+	TSchemaOption<float> Frequency;
+};
+
 struct ComponentInterest
 {
-	struct SphereConstraint
-	{
-		Coordinates Center;
-		double Radius;
-	};
-
-	struct CylinderConstraint
-	{
-		Coordinates Center;
-		double Radius;
-	};
-
-	struct BoxConstraint
-	{
-		Coordinates Center;
-		EdgeLength EdgeLength;
-	};
-
-	struct RelativeSphereConstraint
-	{
-		double Radius;
-	};
-
-	struct RelativeCylinderConstraint
-	{
-		double Radius;
-	};
-
-	struct RelativeBoxConstraint
-	{
-		EdgeLength EdgeLength;
-	};
-
-	struct QueryConstraint
-	{
-		TSchemaOption<SphereConstraint> SphereConstraint;
-		TSchemaOption<CylinderConstraint> CylinderConstraint;
-		TSchemaOption<BoxConstraint> BoxConstraint;
-		TSchemaOption<RelativeSphereConstraint> RelativeSphereConstraint;
-		TSchemaOption<RelativeCylinderConstraint> RelativeCylinderConstraint;
-		TSchemaOption<RelativeBoxConstraint> RelativeBoxConstraint;
-		TSchemaOption<int64> EntityIdConstraint;
-		TSchemaOption<uint32> ComponentConstraint;
-		TArray<QueryConstraint> AndConstraint;
-		TArray<QueryConstraint> OrConstraint;
-	};
-
-	struct Query
-	{
-		QueryConstraint Constraint;
-
-		// Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid.
-		TSchemaOption<bool> FullSnapshotResult; // Whether all components should be included or none.
-		TArray<uint32> ResultComponentId; // Which components should be included.
-
-		// Used for frequency-based rate limiting. Represents the maximum frequency of updates for this
-		// particular query. An empty option represents no rate-limiting (ie. updates are received
-		// as soon as possible). Frequency is measured in Hz.
-		//
-		// If set, the time between consecutive updates will be at least 1/frequency. This is determined
-		// at the time that updates are sent from the Runtime and may not necessarily correspond to the
-		// time updates are received by the worker.
-		//
-		// If after an update has been sent, multiple updates are applied to a component, they will be
-		// merged and sent as a single update after 1/frequency of the last sent update. When components
-		// with events are merged, the resultant component will contain a concatenation of all the
-		// events.
-		//
-		// If multiple queries match the same Entity-Component then the highest of all frequencies is
-		// used.
-		TSchemaOption<float> Frequency;
-	};
-
 	TArray<Query> Queries;
 };
 
-inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_FieldId Id, const ComponentInterest::QueryConstraint& Constraint)
+inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_FieldId Id, const QueryConstraint& Constraint)
 {
 	Schema_Object* QueryConstraintObject = Schema_AddObject(QueryObject, Id);
 
@@ -154,7 +204,7 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 	//list<QueryConstraint> and_constraint = 9;
 	if (Constraint.AndConstraint.Num() > 0)
 	{
-		for (const ComponentInterest::QueryConstraint& AndConstraintEntry : Constraint.AndConstraint)
+		for (const QueryConstraint& AndConstraintEntry : Constraint.AndConstraint)
 		{
 			AddQueryConstraintToQuerySchema(QueryConstraintObject, 9, AndConstraintEntry);
 		}
@@ -163,14 +213,14 @@ inline void AddQueryConstraintToQuerySchema(Schema_Object* QueryObject, Schema_F
 	//list<QueryConstraint> or_constraint = 10;
 	if (Constraint.OrConstraint.Num() > 0)
 	{
-		for (const ComponentInterest::QueryConstraint& OrConstraintEntry : Constraint.OrConstraint)
+		for (const QueryConstraint& OrConstraintEntry : Constraint.OrConstraint)
 		{
 			AddQueryConstraintToQuerySchema(QueryConstraintObject, 10, OrConstraintEntry);
 		}
 	}
 }
 
-inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestObject, Schema_FieldId Id, const ComponentInterest::Query& Query)
+inline void AddQueryToComponentInterestSchema(Schema_Object* ComponentInterestObject, Schema_FieldId Id, const Query& Query)
 {
 	checkf(!(Query.FullSnapshotResult.IsSet() && Query.ResultComponentId.Num() > 0), TEXT("Either full_snapshot_result or a list of result_component_id should be provided. Providing both is invalid."));
 
@@ -198,15 +248,15 @@ inline void AddComponentInterestToInterestSchema(Schema_Object* InterestObject, 
 {
 	Schema_Object* ComponentInterestObject = Schema_AddObject(InterestObject, Id);
 
-	for (const ComponentInterest::Query& QueryEntry : Value.Queries)
+	for (const Query& QueryEntry : Value.Queries)
 	{
 		AddQueryToComponentInterestSchema(ComponentInterestObject, 1, QueryEntry);
 	}
 }
 
-inline ComponentInterest::QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline QueryConstraint IndexQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	ComponentInterest::QueryConstraint NewQueryConstraint;
+	QueryConstraint NewQueryConstraint;
 
 	Schema_Object* QueryConstraintObject = Schema_IndexObject(Object, Id, Index);
 
@@ -298,14 +348,14 @@ inline ComponentInterest::QueryConstraint IndexQueryConstraintFromSchema(Schema_
 	return NewQueryConstraint;
 }
 
-inline ComponentInterest::QueryConstraint GetQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id)
+inline QueryConstraint GetQueryConstraintFromSchema(Schema_Object* Object, Schema_FieldId Id)
 {
 	return IndexQueryConstraintFromSchema(Object, Id, 1);
 }
 
-inline ComponentInterest::Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
+inline Query IndexQueryFromSchema(Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
-	ComponentInterest::Query NewQuery;
+	Query NewQuery;
 
 	Schema_Object* QueryObject = Schema_IndexObject(Object, Id, Index);
 
