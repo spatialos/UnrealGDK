@@ -72,7 +72,7 @@ markStartOfBlock "Setup variables"
     PINNED_CORE_SDK_VERSION=$(cat ./SpatialGDK/Extras/core-sdk.version)
     BUILD_DIR="$(dirname "$0")/SpatialGDK/Build"
     CORE_SDK_DIR="$BUILD_DIR/core_sdk"
-    WORKER_SDK_DIR="$(dirname "$0")/SpatialGDK/Source/SpatialGDK/Public/WorkerSdk"
+    WORKER_SDK_DIR="$(dirname "$0")/SpatialGDK/Source/SpatialGDK/Public/WorkerSDK"
     BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
     SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
     SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
