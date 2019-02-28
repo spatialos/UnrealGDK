@@ -14,6 +14,10 @@
 // These are not a type of key supported by TMap.
 using Worker_EntityId_Key = int64;
 
+using WorkerAttributeSet = TArray<FString>;
+using WorkerRequirementSet = TArray<WorkerAttributeSet>;
+using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
+
 enum ESchemaComponentType : int32
 {
 	SCHEMA_Invalid = -1,
@@ -127,8 +131,15 @@ namespace SpatialConstants
 	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;
 	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
-	static const FString ClientWorkerType = TEXT("UnrealClient");
 	static const FString ServerWorkerType = TEXT("UnrealWorker");
+	static const FString ClientWorkerType = TEXT("UnrealClient");
+
+	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ServerWorkerType};
+	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ClientWorkerType};
+
+	const WorkerRequirementSet UnrealServerPermission{ {UnrealServerAttributeSet} };
+	const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
+	const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
 	static const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 	static const FString SnapshotURLOption = TEXT("snapshot=");

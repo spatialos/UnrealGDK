@@ -30,6 +30,7 @@
 - <h3>[- Helper scripts]({{urlRoot}}/content/helper-scripts)</h3>
 - <h3>[- Directory structure]({{urlRoot}}/content/directory-structure)</h3>
 - <h3>[- Gameplay Ability System]({{urlRoot}}/content/ability-system)</h3>
+- <h3>[- Multi-layer development]({{urlRoot}}/content/multi-layer)</h3>
 
  ***
 - <h3>[- Troubleshooting]({{urlRoot}}/content/troubleshooting)</h3>

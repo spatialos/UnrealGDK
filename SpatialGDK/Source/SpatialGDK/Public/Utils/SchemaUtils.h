@@ -6,12 +6,10 @@
 #include "Serialization/BitWriter.h"
 
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-using WorkerAttributeSet = TArray<FString>;
-using WorkerRequirementSet = TArray<WorkerAttributeSet>;
 
 using StringToEntityMap = TMap<FString, Worker_EntityId>;
 

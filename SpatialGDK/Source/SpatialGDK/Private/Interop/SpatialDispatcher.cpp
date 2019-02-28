@@ -15,6 +15,18 @@ void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 	NetDriver = InNetDriver;
 	Receiver = InNetDriver->Receiver;
 	StaticComponentView = InNetDriver->StaticComponentView;
+
+	// Collect all OpCallbackTemplate subclasses to register user callbacks in pipeline.
+	for (TObjectIterator<UClass> OpCallbackClass; OpCallbackClass; ++OpCallbackClass)
+	{
+		if (OpCallbackClass->IsChildOf(UOpCallbackTemplate::StaticClass()) && *OpCallbackClass != UOpCallbackTemplate::StaticClass())
+		{
+			UOpCallbackTemplate* callbackObject = NewObject<UOpCallbackTemplate>(this, *OpCallbackClass);
+			callbackObject->Init(GetWorld());
+			UE_LOG(LogSpatialView, Log, TEXT("Registered dispatcher callback class %s to handle component ID %d."), *OpCallbackClass->GetName(), callbackObject->GetComponentId());
+			UserOpCallbacks.Add(callbackObject->GetComponentId(), callbackObject);
+		}
+	}
 }
 
 void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
@@ -41,30 +53,75 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
-			StaticComponentView->OnAddComponent(Op->add_component);
-			Receiver->OnAddComponent(Op->add_component);
+			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->add_component.data.component_id))
+			{
+				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
+				UserCallback->OnAddComponent(Op->add_component);
+			}
+			else
+			{
+				StaticComponentView->OnAddComponent(Op->add_component);
+				Receiver->OnAddComponent(Op->add_component);
+			}
 			break;
+
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
+			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->remove_component.component_id))
+			{
+				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
+				UserCallback->OnRemoveComponent(Op->remove_component);
+			}
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			QueuedComponentUpdateOps.Add(Op);
-			StaticComponentView->OnComponentUpdate(Op->component_update);
+			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->component_update.update.component_id))
+			{
+				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
+				UserCallback->OnComponentUpdate(Op->component_update);
+			}
+			else
+			{
+				QueuedComponentUpdateOps.Add(Op);
+				StaticComponentView->OnComponentUpdate(Op->component_update);
+			}
 			break;
 
 		// Commands
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			Receiver->OnCommandRequest(Op->command_request);
+			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->command_request.request.component_id))
+			{
+				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
+				UserCallback->OnCommandRequest(Op->command_request);
+			}
+			else
+			{
+				Receiver->OnCommandRequest(Op->command_request);
+			}
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			Receiver->OnCommandResponse(Op->command_response);
+			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->command_response.response.component_id))
+			{
+				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
+				UserCallback->OnCommandResponse(Op->command_response);
+			}
+			else
+			{
+				Receiver->OnCommandResponse(Op->command_response);
+			}
 			break;
 
 		// Authority Change
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			StaticComponentView->OnAuthorityChange(Op->authority_change);
-			Receiver->OnAuthorityChange(Op->authority_change);
+			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->authority_change.component_id))
+			{
+				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
+				UserCallback->OnAuthorityChange(Op->authority_change);
+			}
+			else
+			{
+				StaticComponentView->OnAuthorityChange(Op->authority_change);
+				Receiver->OnAuthorityChange(Op->authority_change);
+			}
 			break;
-
 		// World Command Responses
 		case WORKER_OP_TYPE_RESERVE_ENTITY_ID_RESPONSE:
 			Receiver->OnReserveEntityIdResponse(Op->reserve_entity_id_response);
