@@ -57,9 +57,7 @@ public:
 			return false;
 		}
 
-		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
-		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info.SchemaComponents[SCHEMA_ClientReliableRPC]);
+		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID);
 	}
 
 	FORCEINLINE bool IsOwnedByWorker() const
