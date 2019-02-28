@@ -179,7 +179,6 @@ void UGlobalStateManager::ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate)
 	// For now, this will only be called on non-authoritative workers.
 	if (bCanBeginPlay)
 	{
-		NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 		TriggerBeginPlay();
 	}
 }
@@ -402,11 +401,6 @@ void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
 
 	bCanBeginPlay = bInCanBeginPlay;
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
-
-	if (bCanBeginPlay)
-	{
-		NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
-	}
 }
 
 void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID)
@@ -481,6 +475,7 @@ void UGlobalStateManager::TriggerBeginPlay()
 		return;
 	}
 
+	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 
 	bTriggeredBeginPlay = true;
