@@ -189,7 +189,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (SingletonEntityIdPtr == nullptr)
 	{
 		// No entry in SingletonNameToEntityId for this singleton class type
-		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor %s failed to find entry"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Verbose, TEXT("LinkExistingSingletonActor %s failed to find entry"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -217,7 +217,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	if (Channel != nullptr)
 	{
 		// Channel has already been setup
-		UE_LOG(LogGlobalStateManager, Log, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
+		UE_LOG(LogGlobalStateManager, Verbose, TEXT("UGlobalStateManager::LinkExistingSingletonActor channel already setup"), *SingletonActorClass->GetName());
 		return;
 	}
 
@@ -300,7 +300,14 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		// Otherwise SetChannelActor will issue a new entity id request
 		if (const Worker_EntityId* SingletonEntityId = SingletonNameToEntityId.Find(SingletonActorClass->GetPathName()))
 		{
+			check(NetDriver->GetEntityRegistry()->GetActorFromEntityId(*SingletonEntityId) == nullptr);
 			NetDriver->GetEntityRegistry()->AddToRegistry(*SingletonEntityId, SingletonActor);
+			NetDriver->PackageMap->ResolveEntityActor(SingletonActor, *SingletonEntityId);
+			if (StaticComponentView->GetAuthority(*SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) != WORKER_AUTHORITY_AUTHORITATIVE)
+			{
+				SingletonActor->Role = ROLE_SimulatedProxy;
+				SingletonActor->RemoteRole = ROLE_Authority;
+			}
 		}
 
 		Channel->SetChannelActor(SingletonActor);

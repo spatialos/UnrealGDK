@@ -1351,13 +1351,37 @@ Worker_EntityId USpatialNetDriver::SetupActorEntity(AActor* Actor)
 	// Register Actor with package map since we know what the entity id is.
 	PackageMap->ResolveEntityActor(Actor, EntityId);
 
-	// If a Singleton was created, update the GSM with the proper Id.
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	return EntityId;
+}
+
+FNetworkGUID USpatialNetDriver::TryResolveObjectAsEntity(UObject* Value)
+{
+	FNetworkGUID NetGUID;
+
+	if (!Value->IsA<AActor>() && !Value->GetOuter()->IsA<AActor>())
 	{
-		GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
+		return NetGUID;
 	}
 
-	return EntityId;
+	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Cast<AActor>(Value->GetOuter());
+
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		// Singletons will always go through GlobalStateManager first.
+		return NetGUID;
+	}
+
+	// Resolve as an entity if it is an unregistered actor
+	if (Actor->Role == ROLE_Authority && GetEntityRegistry()->GetEntityIdFromActor(Actor) == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		Worker_EntityId EntityId = SetupActorEntity(Actor);
+		// Mark this entity ID as pending creation (checked in USpatialActorChannel::SetChannelActor).
+		PendingCreationEntityIds.Add(EntityId);
+
+		NetGUID = PackageMap->GetNetGUIDFromObject(Value);
+	}
+
+	return NetGUID;
 }
 
 void USpatialNetDriver::AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel)
@@ -1379,6 +1403,16 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId)
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
+}
+
+bool USpatialNetDriver::IsEntityIdPendingCreation(Worker_EntityId EntityId) const
+{
+	return PendingCreationEntityIds.Contains(EntityId);
+}
+
+void USpatialNetDriver::RemovePendingCreationEntityId(Worker_EntityId EntityId)
+{
+	PendingCreationEntityIds.Remove(EntityId);
 }
 
 void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe)

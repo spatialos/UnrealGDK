@@ -107,12 +107,14 @@ void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
 	if (FoundEntityRangeIndex == INDEX_NONE)
 	{
 		// This entity range has already been cleaned up as a result of running out of Entity IDs.
+		UE_LOG(LogSpatialEntityPool, Log, TEXT("Entity range ID: %d has already been depleted"), ExpiringEntityRangeId);
 		return;
 	}
 
 	if (FoundEntityRangeIndex < ReservedEntityIDRanges.Num() - 1)
 	{
 		// This is not the most recent entity range, just clean up without requesting additional IDs.
+		UE_LOG(LogSpatialEntityPool, Log, TEXT("Newer range detected, cleaning up Entity range ID: %d without new request"), ExpiringEntityRangeId);
 		ReservedEntityIDRanges.RemoveAt(FoundEntityRangeIndex);
 	}
 	else
@@ -120,6 +122,7 @@ void UEntityPool::OnEntityRangeExpired(uint32 ExpiringEntityRangeId)
 		// Reserve then cleanup
 		if (!bIsAwaitingResponse)
 		{
+			UE_LOG(LogSpatialEntityPool, Log, TEXT("Reserving new Entity range to replace Entity range ID: %d"), ExpiringEntityRangeId);
 			ReserveEntityIDs(GetDefault<USpatialGDKSettings>()->EntityPoolRefreshCount);
 		}
 		// Mark this entity range as expired, so it gets cleaned up when we receive a new entity range from Spatial.

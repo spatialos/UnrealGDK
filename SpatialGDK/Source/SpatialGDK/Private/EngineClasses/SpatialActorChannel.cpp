@@ -588,19 +588,25 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	EntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor);
 
 	// If the entity registry has no entry for this actor, this means we need to create it.
-	if (EntityId == 0)
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		bCreatingNewEntity = true;
 		EntityId = NetDriver->SetupActorEntity(InActor);
+
+		// If a Singleton was created, update the GSM with the proper Id.
+		if (InActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+		{
+			NetDriver->GlobalStateManager->UpdateSingletonEntityId(InActor->GetClass()->GetPathName(), EntityId);
+		}
 	}
 	else
 	{
 		UE_LOG(LogSpatialActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), EntityId);
 
-		// If the actor has been assigned an entity ID already and we are authoritative, we need to create the entity
-		if (InActor->Role == ROLE_Authority)
+		if (NetDriver->IsEntityIdPendingCreation(EntityId))
 		{
 			bCreatingNewEntity = true;
+			NetDriver->RemovePendingCreationEntityId(EntityId);
 		}
 	}
 
