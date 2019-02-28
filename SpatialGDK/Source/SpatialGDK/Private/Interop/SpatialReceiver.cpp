@@ -1010,6 +1010,22 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
 	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel, bIsHandover);
 
+	// This is a temporary workaround, see UNR-841:
+	// If the update includes tearoff, close the channel.
+	if (TargetObject->IsA<AActor>() && ClassInfoManager->GetCategoryByComponentId(ComponentUpdate.component_id) == SCHEMA_Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+		TArray<uint32> UpdatedIds;
+		UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
+		Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
+		// The third Id is btearoff on an actor.
+		if (UpdatedIds.Contains(3))
+		{
+			Channel->ConditionalCleanUp();
+		}
+	}
+
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
