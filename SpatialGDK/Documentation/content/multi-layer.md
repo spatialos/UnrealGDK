@@ -24,7 +24,7 @@ void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandRespons
 which are accessible via a reference to the net driver:
 
 ```
-SpatialWorkerConnection connection = Cast<USpatialNetDriver>(World->GetNetDriver())->Connection;
+SpatialWorkerConnection* Connection = Cast<USpatialNetDriver>(World->GetNetDriver())->Connection;
 ```
 
 There is a basic example in the section below, and for more examples of how to construct component updates, command requests, and more, check the [C API page on serialization](https://docs.improbable.io/reference/latest/capi/serialization).
