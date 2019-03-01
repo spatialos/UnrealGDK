@@ -56,7 +56,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 	});
 }
 
-Worker_EntityId USpatialPackageMapClient::SetupActorEntity(AActor* Actor)
+Worker_EntityId USpatialPackageMapClient::AllocateEntityIdForActor(AActor* Actor)
 {
 	check(Actor);
 
@@ -100,9 +100,12 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 	// Resolve as an entity if it is an unregistered actor
 	if (Actor->Role == ROLE_Authority && NetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor) == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		Worker_EntityId EntityId = SetupActorEntity(Actor);
-		// Mark this entity ID as pending creation (checked in USpatialActorChannel::SetChannelActor).
-		PendingCreationEntityIds.Add(EntityId);
+		Worker_EntityId EntityId = AllocateEntityIdForActor(Actor);
+		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			// Mark this entity ID as pending creation (checked in USpatialActorChannel::SetChannelActor).
+			PendingCreationEntityIds.Add(EntityId);
+		}
 
 		NetGUID = GetNetGUIDFromObject(Value);
 	}

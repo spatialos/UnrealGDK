@@ -383,7 +383,6 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 
 	UObject* TargetObject = Params->TargetObject.Get();
-	// Is it possible in native unreal to send an RPC before having replicated an actor?
 	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s on unresolved Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());

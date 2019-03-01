@@ -69,7 +69,7 @@ void UpdateChangelistHistory(TSharedPtr<FRepState>& RepState)
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
-	, EntityId(0)
+	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bFirstTick(true)
 	, NetDriver(nullptr)
 	, LastSpatialPosition(FVector::ZeroVector)
@@ -584,13 +584,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		bCreatingNewEntity = true;
-		EntityId = NetDriver->PackageMap->SetupActorEntity(InActor);
-
-		// If a Singleton was created, update the GSM with the proper Id.
-		if (InActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-		{
-			NetDriver->GlobalStateManager->UpdateSingletonEntityId(InActor->GetClass()->GetPathName(), EntityId);
-		}
+		TryAllocateEntityId();
 	}
 	else
 	{
@@ -601,10 +595,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 			bCreatingNewEntity = true;
 			NetDriver->PackageMap->RemovePendingCreationEntityId(EntityId);
 		}
+		NetDriver->AddActorChannel(EntityId, this);
 	}
-
-	// Inform USpatialNetDriver of this new actor channel/entity pairing
-	NetDriver->AddActorChannel(EntityId, this);
 
 	// Set up the shadow data for the handover properties. This is used later to compare the properties and send only changed ones.
 	check(!HandoverShadowDataMap.Contains(InActor));
@@ -624,6 +616,26 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		check(!HandoverShadowDataMap.Contains(Subobject));
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
+}
+
+bool USpatialActorChannel::TryAllocateEntityId()
+{
+	EntityId = NetDriver->PackageMap->AllocateEntityIdForActor(Actor);
+
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		// If a Singleton was created, update the GSM with the proper Id.
+		if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+		{
+			NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
+		}
+		// Inform USpatialNetDriver of this new actor channel/entity pairing
+		NetDriver->AddActorChannel(EntityId, this);
+
+		return true;
+	}
+
+	return false;
 }
 
 FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)

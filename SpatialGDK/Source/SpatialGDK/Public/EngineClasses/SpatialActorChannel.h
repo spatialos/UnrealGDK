@@ -37,16 +37,23 @@ public:
 		EntityId = InEntityId;
 	}
 
-	FORCEINLINE bool IsReadyForReplication() const
+	FORCEINLINE bool IsReadyForReplication()
 	{
-		// Wait until we've reserved an entity ID.		
-		if (EntityId == 0)
+		// Make sure we have authority
+		if (Actor->Role != ROLE_Authority)
 		{
 			return false;
 		}
 
-		// Make sure we have authority
-		return Actor->Role == ROLE_Authority;
+		// Make sure we've reserved an entity ID.		
+		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			return true;
+		}
+
+		// This could happen if we've run out of entity ids at the time we called SetChannelActor.
+		// If that is the case, keep trying to allocate an entity ID until we succeed.
+		return TryAllocateEntityId();
 	}
 
 	// Called on the client when receiving an update.
@@ -102,6 +109,8 @@ public:
 	virtual int64 Close() override;
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
+
+	bool TryAllocateEntityId();
 
 	bool ReplicateSubobject(UObject* Obj, const FClassInfo& Info, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;

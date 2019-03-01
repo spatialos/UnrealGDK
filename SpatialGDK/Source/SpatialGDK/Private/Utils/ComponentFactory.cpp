@@ -211,7 +211,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 				}
 			}
 
-			// The secondary part of the check is only necessary until we have bulk reservation of entity ids UNR-673
+			// The secondary part of the check is needed if we couldn't assign an entity id (e.g. ran out of entity ids)
 			if (NetGUID.IsValid() || (ObjectValue->IsSupportedForNetworking() && !ObjectValue->IsFullNameStableForNetworking()))
 			{
 				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
@@ -505,7 +505,6 @@ void ComponentFactory::AddObjectToComponentInterest(UObject* Object, UObjectProp
 
 	improbable::ComponentInterest::Query NewQuery;
 
-	// For this to work, the entity corresponding to the ObjectOfInterest must have been created and checked out first?
 	FUnrealObjectRef UnrealObjectRef = PackageMap->GetUnrealObjectRefFromObject(ObjectOfInterest);
 
 	check(UnrealObjectRef != FUnrealObjectRef::NULL_OBJECT_REF);
