@@ -81,15 +81,10 @@ public:
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, FUniqueNetIdRepl UniqueId, FName OnlinePlatformName, bool bExistingPlayer);
 
-	Worker_EntityId SetupActorEntity(AActor* Actor);
-	FNetworkGUID TryResolveObjectAsEntity(UObject* Value);
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId);
 
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
-
-	bool IsEntityIdPendingCreation(Worker_EntityId EntityId) const;
-	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
@@ -170,9 +165,6 @@ private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
-
-	// Entities that have been assigned on this server and not created yet
-	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
 
 	FTimerManager* TimerManager;
 

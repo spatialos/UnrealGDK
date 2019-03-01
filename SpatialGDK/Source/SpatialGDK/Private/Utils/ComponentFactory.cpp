@@ -12,9 +12,9 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
-#include "Utils/RepLayoutUtils.h"
 #include "Utils/EntityPool.h"
 #include "Utils/EntityRegistry.h"
+#include "Utils/RepLayoutUtils.h"
 
 namespace improbable
 {
@@ -118,7 +118,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
 		UScriptStruct* Struct = StructProperty->Struct;
-		FSpatialNetBitWriter ValueDataWriter(NetDriver, PackageMap, UnresolvedObjects);
+		FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
 		bool bHasUnmapped = false;
 
 		if (Struct->StructFlags & STRUCT_NetSerializeNative)
@@ -204,9 +204,9 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					{
 						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 					}
-					else if (NetDriver->IsServer())
+					else
 					{
-						NetGUID = NetDriver->TryResolveObjectAsEntity(ObjectValue);
+						NetGUID = PackageMap->TryResolveObjectAsEntity(ObjectValue);
 					}
 				}
 			}

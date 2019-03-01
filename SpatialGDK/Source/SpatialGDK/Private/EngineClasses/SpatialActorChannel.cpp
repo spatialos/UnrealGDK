@@ -584,7 +584,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		bCreatingNewEntity = true;
-		EntityId = NetDriver->SetupActorEntity(InActor);
+		EntityId = NetDriver->PackageMap->SetupActorEntity(InActor);
 
 		// If a Singleton was created, update the GSM with the proper Id.
 		if (InActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
@@ -596,10 +596,10 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	{
 		UE_LOG(LogSpatialActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), EntityId);
 
-		if (NetDriver->IsEntityIdPendingCreation(EntityId))
+		if (NetDriver->PackageMap->IsEntityIdPendingCreation(EntityId))
 		{
 			bCreatingNewEntity = true;
-			NetDriver->RemovePendingCreationEntityId(EntityId);
+			NetDriver->PackageMap->RemovePendingCreationEntityId(EntityId);
 		}
 	}
 

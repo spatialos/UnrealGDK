@@ -29,8 +29,8 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityRegistry.h"
 #include "Utils/EntityPool.h"
+#include "Utils/EntityRegistry.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -230,7 +230,6 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
-	EntityPool = NewObject<UEntityPool>();
 
 	PlayerSpawner->Init(this, TimerManager);
 
@@ -243,6 +242,8 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 	// There may be more than one of these connections in the future for different replication conditions.
 	if (!ServerConnection)
 	{
+		EntityPool = NewObject<UEntityPool>();
+
 		USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 		check(NetConnection);
 
@@ -259,12 +260,12 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 
+	PackageMap->Init(this);
 	Dispatcher->Init(this);
 	Sender->Init(this);
 	Receiver->Init(this, TimerManager);
 	GlobalStateManager->Init(this, TimerManager);
 	SnapshotManager->Init(this);
-	EntityPool->Init(this, TimerManager);
 
 	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and Spatial networking is enabled, we can travel properly.
 	GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
@@ -286,7 +287,10 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 			GlobalStateManager->QueryGSM(true /*bRetryUntilAcceptingPlayers*/);
 		}
 	}
-
+	else
+	{
+		EntityPool->Init(this, TimerManager);
+	}
 	// Here if we are a server and this is server travel (there is a snapshot to load) we want to load the snapshot.
 	if (!ServerConnection && !SnapshotToLoad.IsEmpty() && Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading)
 	{
@@ -1335,55 +1339,6 @@ void USpatialPendingNetGame::SendJoin()
 	bSentJoinRequest = true;
 }
 
-Worker_EntityId USpatialNetDriver::SetupActorEntity(AActor* Actor)
-{
-	checkSlow(Actor);
-
-	Worker_EntityId EntityId = EntityPool->Pop();
-	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
-		return EntityId;
-	}
-
-	GetEntityRegistry()->AddToRegistry(EntityId, Actor);
-
-	// Register Actor with package map since we know what the entity id is.
-	PackageMap->ResolveEntityActor(Actor, EntityId);
-
-	return EntityId;
-}
-
-FNetworkGUID USpatialNetDriver::TryResolveObjectAsEntity(UObject* Value)
-{
-	FNetworkGUID NetGUID;
-
-	if (!Value->IsA<AActor>() && !Value->GetOuter()->IsA<AActor>())
-	{
-		return NetGUID;
-	}
-
-	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Cast<AActor>(Value->GetOuter());
-
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		// Singletons will always go through GlobalStateManager first.
-		return NetGUID;
-	}
-
-	// Resolve as an entity if it is an unregistered actor
-	if (Actor->Role == ROLE_Authority && GetEntityRegistry()->GetEntityIdFromActor(Actor) == SpatialConstants::INVALID_ENTITY_ID)
-	{
-		Worker_EntityId EntityId = SetupActorEntity(Actor);
-		// Mark this entity ID as pending creation (checked in USpatialActorChannel::SetChannelActor).
-		PendingCreationEntityIds.Add(EntityId);
-
-		NetGUID = PackageMap->GetNetGUIDFromObject(Value);
-	}
-
-	return NetGUID;
-}
-
 void USpatialNetDriver::AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel)
 {
 	EntityToActorChannel.Add(EntityId, Channel);
@@ -1403,16 +1358,6 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId)
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
-}
-
-bool USpatialNetDriver::IsEntityIdPendingCreation(Worker_EntityId EntityId) const
-{
-	return PendingCreationEntityIds.Contains(EntityId);
-}
-
-void USpatialNetDriver::RemovePendingCreationEntityId(Worker_EntityId EntityId)
-{
-	PendingCreationEntityIds.Remove(EntityId);
 }
 
 void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe)

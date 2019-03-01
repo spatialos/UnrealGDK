@@ -641,7 +641,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 	OutEntityId = TargetObjectRef.Entity;
 
 	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-	FSpatialNetBitWriter PayloadWriter(NetDriver, PackageMap, UnresolvedObjects);
+	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
 
 #if !UE_BUILD_SHIPPING
 	if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
@@ -688,7 +688,7 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 	OutEntityId = TargetObjectRef.Entity;
 
 	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-	FSpatialNetBitWriter PayloadWriter(NetDriver, PackageMap, UnresolvedObjects);
+	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);

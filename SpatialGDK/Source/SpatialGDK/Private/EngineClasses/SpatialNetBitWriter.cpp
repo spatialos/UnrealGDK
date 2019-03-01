@@ -11,9 +11,8 @@
 #include "Utils/EntityPool.h"
 #include "Utils/EntityRegistry.h"
 
-FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects)
-	: NetDriver(InNetDriver)
-	, FNetBitWriter(InPackageMap, 0)
+FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects)
+	: FNetBitWriter(InPackageMap, 0)
 	, UnresolvedObjects(InUnresolvedObjects)
 {}
 
@@ -51,9 +50,9 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 			{
 				NetGUID = PackageMapClient->ResolveStablyNamedObject(Value);
 			}
-			else if (NetDriver->IsServer())
+			else
 			{
-				NetGUID = NetDriver->TryResolveObjectAsEntity(Value);
+				NetGUID = PackageMapClient->TryResolveObjectAsEntity(Value);
 			}
 		}
 		ObjectRef = FUnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));

@@ -6,13 +6,12 @@
 #include "UObject/CoreNet.h"
 #include "Schema/UnrealObjectRef.h"
 
-class USpatialNetDriver;
 class USpatialPackageMapClient;
 
 class SPATIALGDK_API FSpatialNetBitWriter : public FNetBitWriter
 {
 public:
-	FSpatialNetBitWriter(USpatialNetDriver* InNetDriver, USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects);
+	FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects);
 
 	using FArchive::operator<<; // For visibility of the overloads we don't override
 
@@ -24,6 +23,4 @@ protected:
 	void SerializeObjectRef(FUnrealObjectRef& ObjectRef);
 
 	TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects;
-
-	USpatialNetDriver* NetDriver;
 };

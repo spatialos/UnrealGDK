@@ -15,12 +15,21 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
 class USpatialClassInfoManager;
+class USpatialNetDriver;
 
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
+	void Init(USpatialNetDriver* NetDriver);
+
+	Worker_EntityId SetupActorEntity(AActor* Actor);
+	FNetworkGUID TryResolveObjectAsEntity(UObject* Value);
+
+	bool IsEntityIdPendingCreation(Worker_EntityId EntityId) const;
+	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
+
 	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
 	void RemoveEntityActor(Worker_EntityId EntityId);
 
@@ -38,6 +47,12 @@ public:
 private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
+
+	UPROPERTY()
+	USpatialNetDriver* NetDriver;
+
+	// Entities that have been assigned on this server and not created yet
+	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
