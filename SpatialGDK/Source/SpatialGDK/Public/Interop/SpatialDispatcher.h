@@ -41,5 +41,6 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
+	UPROPERTY()
 	TMap<Worker_ComponentId, UOpCallbackTemplate*> UserOpCallbacks;
 };

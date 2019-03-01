@@ -6,7 +6,7 @@
 
 #include "Schema/Component.h"
 #include "Schema/UnrealObjectRef.h"
-#include "SpatialConstants.h"
+#include "SpatialCommonTypes.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/Package.h"
 #include "Utils/SchemaUtils.h"
