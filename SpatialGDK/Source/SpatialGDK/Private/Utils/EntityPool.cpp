@@ -76,7 +76,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 			}
 
 			WeakEntityPoolPtr->OnEntityRangeExpired(ExpiringEntityRangeId);
-		}, 180.0f, false); // 3 minute timeout for reserved Entity IDs, timeout for Runtime is 5 minutes
+		}, SpatialConstants::ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS, false);
 
 		bIsReady = true;
 		bIsAwaitingResponse = false;

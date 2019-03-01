@@ -29,6 +29,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/EntityRegistry.h"
 #include "Utils/EntityPool.h"
 
@@ -663,6 +664,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	int32 ActorUpdatesThisConnectionSent = 0;
 
 	// SpatialGDK - Actor replication rate limiting based on config value.
+	uint32 ActorReplicationRateLimit = GetDefault<USpatialGDKSettings>()->ActorReplicationRateLimit;
 	int32 RateLimit = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
 	int32 FinalReplicatedCount = 0;
 
