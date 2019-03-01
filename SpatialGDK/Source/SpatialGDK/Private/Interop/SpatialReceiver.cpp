@@ -1016,7 +1016,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	{
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
-		// The third Id is btearoff on an actor.
+		// Check if bTearOff has been set to true
 		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
 			Channel->ConditionalCleanUp();
