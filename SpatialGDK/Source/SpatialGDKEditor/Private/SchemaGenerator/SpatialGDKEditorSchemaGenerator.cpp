@@ -263,7 +263,7 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 	}
 }
 
-void GenerateSchemaFromSublevels(UWorld* World, const FString& SchemaPath)
+void GenerateSchemaForSublevels(UWorld* World, const FString& SchemaPath)
 {
 	TArray<FString> StreamingLevelNames;
 
