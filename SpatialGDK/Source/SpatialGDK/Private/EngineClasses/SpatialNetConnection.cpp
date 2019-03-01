@@ -9,8 +9,8 @@
 #include "Gameframework/PlayerController.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
-#include "Utils/InterestFactory.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 
@@ -83,16 +83,7 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
 {
 	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
-
-	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(Driver);
-	USpatialClassInfoManager* ClassInfoManager = NetDriver->ClassInfoManager;
-	USpatialPackageMapClient* PackageMapClient = Cast<USpatialPackageMapClient>(PackageMap);
-
-	Worker_EntityId EntityId = PackageMapClient->GetEntityIdFromObject(PlayerController);
-
-	improbable::InterestFactory InterestUpdateFactory(PlayerController, ClassInfoManager->GetOrCreateClassInfoByObject(PlayerController), NetDriver);
-	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+	Cast<USpatialNetDriver>(Driver)->Sender->UpdateInterestComponent(PlayerController);
 }
 
 void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)

@@ -61,8 +61,6 @@ Interest InterestFactory::CreateActorInterest()
 
 	// Server Interest
 	NewInterest.ComponentInterest.Add(SpatialConstants::POSITION_COMPONENT_ID, NewComponentInterest);
-	// Client Interest
-	NewInterest.ComponentInterest.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, NewComponentInterest);
 
 	return NewInterest;
 }
@@ -236,9 +234,9 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 		UWorld* LevelWorld = (UWorld*)FindObjectWithOuter(TempPkg, UWorld::StaticClass());
 		uint32 ComponentId = LevelNameToComponentId[LevelWorld->GetName()];
 
-		QueryConstraint LevelConstraint;
-		LevelConstraint.ComponentConstraint = ComponentId;
-		LevelConstraint.OrConstraint.Add(LevelConstraint);
+		QueryConstraint SpecificLevelConstraint;
+		SpecificLevelConstraint.ComponentConstraint = ComponentId;
+		LevelConstraint.OrConstraint.Add(SpecificLevelConstraint);
 	}
 
 	QueryConstraint DefaultConstraint;

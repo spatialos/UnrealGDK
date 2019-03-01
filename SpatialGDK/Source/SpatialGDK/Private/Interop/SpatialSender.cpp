@@ -22,7 +22,6 @@
 #include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
-#include "Utils/PlayerInterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
@@ -893,4 +892,13 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 
 	Connection->SendComponentUpdate(EntityId, &Update);
 	return true;
+}
+
+void USpatialSender::UpdateInterestComponent(AActor* Actor)
+{
+	improbable::InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver);
+	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
+
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	Connection->SendComponentUpdate(EntityId, &Update);
 }

@@ -62,8 +62,6 @@ public:
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
-	void EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params);
-	void FlushRetryRPCs();
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 
@@ -71,10 +69,13 @@ public:
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
 
+	void EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params);
+	void FlushRetryRPCs();
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
 	void ResolveOutgoingRPCs(UObject* Object);
 
 	bool UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId);
+	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 private:
