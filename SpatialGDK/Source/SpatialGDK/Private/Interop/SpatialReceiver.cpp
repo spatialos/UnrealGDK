@@ -213,6 +213,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	if (Op.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 	{
 		GlobalStateManager->AuthorityChanged(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE, Op.entity_id);
+		return;
 	}
 
 	if (Op.component_id == SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID
