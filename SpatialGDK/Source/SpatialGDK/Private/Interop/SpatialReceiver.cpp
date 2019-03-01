@@ -530,7 +530,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	// If entity is to be deleted after having been torn off, clean up the entity, but don't destroy the actor.
+	// If the entity is to be deleted after having been torn off, ignore the request (but clean up the channel if it has not been cleaned up already).
 	if (Actor->GetTearOff())
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
@@ -1011,7 +1011,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel, bIsHandover);
 
 	// This is a temporary workaround, see UNR-841:
-	// If the update includes tearoff, close the channel.
+	// If the update includes tearoff, close the channel and delete the entity.
 	if (TargetObject->IsA<AActor>() && ClassInfoManager->GetCategoryByComponentId(ComponentUpdate.component_id) == SCHEMA_Data)
 	{
 		TArray<uint32> UpdatedIds;
@@ -1023,6 +1023,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		if (UpdatedIds.Contains(SpatialConstants::ACTOR_TEAROFF_ID))
 		{
 			Channel->ConditionalCleanUp();
+			CleanupDeletedEntity(Channel->GetEntityId());
 		}
 	}
 
