@@ -1014,13 +1014,10 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	// If the update includes tearoff, close the channel and delete the entity.
 	if (TargetObject->IsA<AActor>() && ClassInfoManager->GetCategoryByComponentId(ComponentUpdate.component_id) == SCHEMA_Data)
 	{
-		TArray<uint32> UpdatedIds;
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
-		UpdatedIds.SetNumUninitialized(Schema_GetUniqueFieldIdCount(ComponentObject));
-		Schema_GetUniqueFieldIds(ComponentObject, UpdatedIds.GetData());
 
 		// The third Id is btearoff on an actor.
-		if (UpdatedIds.Contains(SpatialConstants::ACTOR_TEAROFF_ID))
+		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
 			Channel->ConditionalCleanUp();
 			CleanupDeletedEntity(Channel->GetEntityId());
