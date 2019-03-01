@@ -7,10 +7,3 @@ type UnrealObjectRef {
     option<string> path = 3;
     option<UnrealObjectRef> outer = 4;
 }
-
-type UnrealRPCCommandRequest {
-	bytes rpc_payload = 1;
-}
-
-type UnrealRPCCommandResponse {
-}

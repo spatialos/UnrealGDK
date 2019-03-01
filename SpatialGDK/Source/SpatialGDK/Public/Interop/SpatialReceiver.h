@@ -109,6 +109,7 @@ public:
 	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 
 	void OnComponentUpdate(Worker_ComponentUpdateOp& Op);
+	void HandleUnreliableRPC(Worker_ComponentUpdateOp& Op);
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
