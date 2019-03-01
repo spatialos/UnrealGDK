@@ -107,7 +107,6 @@ public:
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 
-	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
 	bool ReplicateSubobject(UObject* Obj, const FClassInfo& Info, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 
@@ -123,7 +122,6 @@ public:
 	FObjectReplicator& PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
 
-	void OnReserveEntityIdResponse(const struct Worker_ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityResponse(const struct Worker_CreateEntityResponseOp& Op);
 
 	FVector GetActorSpatialPosition(AActor* Actor);

@@ -661,57 +661,6 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	}
 }
 
-void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId)
-{
-	NetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
-
-	// Inform USpatialNetDriver of this new actor channel/entity pairing
-	NetDriver->AddActorChannel(ActorEntityId, this);
-
-	// If a Singleton was created, update the GSM with the proper Id.
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), ActorEntityId);
-	}
-}
-
-void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityIdResponseOp& Op)
-{
-	// TODO: This is no longer used with Bulk entity ID reservation taking place
-	if (Actor == nullptr || Actor->IsPendingKill())
-	{
-		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to reserve entity id"));
-		return;
-	}
-
-	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-	{
-		// UNR-630 - Temporary hack to avoid failure to reserve entities due to timeout on large maps
-		if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
-		{
-			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Failed to reserve entity for Actor %s Reason: %s. Retrying..."), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
-			Sender->SendReserveEntityIdRequest(this);
-		}
-		else
-		{
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to reserve entity id for Actor %s: Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
-		}
-
-		return;
-	}
-
-	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Reserved entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
-
-	EntityId = Op.entity_id;
-	RegisterEntityId(EntityId);
-
-	// Register Actor with package map since we know what the entity id is.
-	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId);
-
-	// Force an Update so that the entity will be created in the next batch of processed actors
-	NetDriver->ForceNetUpdate(Actor);
-}
-
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
 {
 	check(NetDriver->GetNetMode() < NM_Client);

@@ -496,13 +496,6 @@ void USpatialSender::FlushRetryRPCs()
 	RetryRPCs.Empty();
 }
 
-void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
-{
-	UE_LOG(LogSpatialSender, Log, TEXT("Sending reserve entity Id request for %s"), *Channel->Actor->GetName());
-	Worker_RequestId RequestId = Connection->SendReserveEntityIdRequest();
-	Receiver->AddPendingActorRequest(RequestId, Channel);
-}
-
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
 {
 	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s"), *Channel->Actor->GetName());

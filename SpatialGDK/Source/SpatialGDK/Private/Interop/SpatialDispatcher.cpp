@@ -66,9 +66,6 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 
 		// World Command Responses
-		case WORKER_OP_TYPE_RESERVE_ENTITY_ID_RESPONSE:
-			Receiver->OnReserveEntityIdResponse(Op->reserve_entity_id_response);
-			break;
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
 			Receiver->OnReserveEntityIdsResponse(Op->reserve_entity_ids_response);
 			break;

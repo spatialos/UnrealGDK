@@ -337,11 +337,6 @@ Worker_OpList* USpatialWorkerConnection::GetOpList()
 	return Worker_Connection_GetOpList(WorkerConnection, 0);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdRequest()
-{
-	return Worker_Connection_SendReserveEntityIdRequest(WorkerConnection, nullptr);
-}
-
 Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
 	return Worker_Connection_SendReserveEntityIdsRequest(WorkerConnection, NumOfEntities, nullptr);
