@@ -453,7 +453,8 @@ bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 }
 
 
-bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStream) {
+bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStream)
+{
 	Worker_EntityId NextEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
 	for (TObjectIterator<UClass> SnapshotGenerationClass; SnapshotGenerationClass; ++SnapshotGenerationClass)
 	{
