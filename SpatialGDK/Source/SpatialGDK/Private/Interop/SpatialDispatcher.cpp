@@ -21,10 +21,10 @@ void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 	{
 		if (OpCallbackClass->IsChildOf(UOpCallbackTemplate::StaticClass()) && *OpCallbackClass != UOpCallbackTemplate::StaticClass())
 		{
-			UOpCallbackTemplate* callbackObject = NewObject<UOpCallbackTemplate>(this, *OpCallbackClass);
-			callbackObject->Init(GetWorld());
+			UOpCallbackTemplate* CallbackObject = NewObject<UOpCallbackTemplate>(this, *OpCallbackClass);
+			CallbackObject->Init(GetWorld());
 			UE_LOG(LogSpatialView, Log, TEXT("Registered dispatcher callback class %s to handle component ID %d."), *OpCallbackClass->GetName(), callbackObject->GetComponentId());
-			UserOpCallbacks.Add(callbackObject->GetComponentId(), callbackObject);
+			UserOpCallbacks.Add(CallbackObject->GetComponentId(), CallbackObject);
 		}
 	}
 }
@@ -64,7 +64,6 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 				Receiver->OnAddComponent(Op->add_component);
 			}
 			break;
-
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
 			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->remove_component.component_id))
 			{
@@ -122,6 +121,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 				Receiver->OnAuthorityChange(Op->authority_change);
 			}
 			break;
+
 		// World Command Responses
 		case WORKER_OP_TYPE_RESERVE_ENTITY_ID_RESPONSE:
 			Receiver->OnReserveEntityIdResponse(Op->reserve_entity_id_response);

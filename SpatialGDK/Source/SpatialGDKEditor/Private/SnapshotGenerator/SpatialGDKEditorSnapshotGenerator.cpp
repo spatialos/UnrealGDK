@@ -461,7 +461,8 @@ bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStrea
 		{
 			UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Found user snapshot generation class: %s"), *SnapshotGenerationClass->GetName());
 			USnapshotGenerationTemplate *SnapshotGenerationObj = NewObject<USnapshotGenerationTemplate>(GetTransientPackage(), *SnapshotGenerationClass);
-			if (!SnapshotGenerationObj->WriteToSnapshotOutput(OutputStream, NextEntityId)) {
+			if (!SnapshotGenerationObj->WriteToSnapshotOutput(OutputStream, NextEntityId))
+			{
 				UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Failure returned in user snapshot generation override method from class: "), *SnapshotGenerationClass->GetName());
 				return false;
 			}
