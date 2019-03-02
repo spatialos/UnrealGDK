@@ -25,6 +25,8 @@
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
+#include "ISourceControlModule.h"
+#include "SourceControlHelpers.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
@@ -289,6 +291,18 @@ void SaveSchemaDatabase()
 		// if the metadata auto-creation branch needs to be taken. This is the case when generating the schema from the
 		// command line, so we just pre-empt it here.
 		Package->GetMetaData();
+
+		if (ISourceControlModule::Get().IsEnabled())
+		{
+			FString SchemaDatabaseFullPath = FPaths::ProjectContentDir() / TEXT("Spatial/SchemaDatabase.uasset");
+			FText ErrorMessage;
+
+			if (!SourceControlHelpers::CheckoutOrMarkForAdd(SchemaDatabaseFullPath, FText::FromString(SchemaDatabaseFullPath), NULL, ErrorMessage))
+			{
+				FMessageDialog::Debugf(ErrorMessage);
+				return;
+			}
+		}
 
 		FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
 		bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
