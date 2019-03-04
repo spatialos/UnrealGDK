@@ -15,13 +15,15 @@ struct FUnrealObjectRef
 	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset)
 		: Entity(Entity)
 		, Offset(Offset)
+		, bNoLoad(false)
 	{}
 
-	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset, FString Path, FUnrealObjectRef Outer)
+	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoad = false)
 		: Entity(Entity)
 		, Offset(Offset)
 		, Path(Path)
 		, Outer(Outer)
+		, bNoLoad(bNoLoad)
 	{}
 
 	FUnrealObjectRef(const FUnrealObjectRef& In)
@@ -29,6 +31,7 @@ struct FUnrealObjectRef
 		, Offset(In.Offset)
 		, Path(In.Path)
 		, Outer(In.Outer)
+		, bNoLoad(In.bNoLoad)
 	{}
 
 	FORCEINLINE FUnrealObjectRef& operator=(const FUnrealObjectRef& In)
@@ -37,6 +40,7 @@ struct FUnrealObjectRef
 		Offset = In.Offset;
 		Path = In.Path;
 		Outer = In.Outer;
+		bNoLoad = In.bNoLoad;
 		return *this;
 	}
 
@@ -68,6 +72,7 @@ struct FUnrealObjectRef
 			Offset == Other.Offset &&
 			((!Path && !Other.Path) || (Path && Other.Path && Path->Equals(*Other.Path))) &&
 			((!Outer && !Other.Outer) || (Outer && Other.Outer && *Outer == *Other.Outer));
+		// Intentionally don't compare bNoLoad since it does not affect equality.
 	}
 
 	FORCEINLINE bool operator!=(const FUnrealObjectRef& Other) const
@@ -87,6 +92,7 @@ struct FUnrealObjectRef
 	uint32 Offset;
 	improbable::TSchemaOption<FString> Path;
 	improbable::TSchemaOption<FUnrealObjectRef> Outer;
+	bool bNoLoad;
 };
 
 inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
@@ -96,5 +102,6 @@ inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Offset);
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Path);
 	Result = (Result * 977u) + GetTypeHash(ObjectRef.Outer);
+	// Intentionally don't hash bNoLoad.
 	return Result;
 }

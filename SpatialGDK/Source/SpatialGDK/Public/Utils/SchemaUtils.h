@@ -111,7 +111,9 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 	Schema_AddUint32(ObjectRefObject, 2, ObjectRef.Offset);
 	if (ObjectRef.Path)
 	{
-		AddStringToSchema(ObjectRefObject, 3, *ObjectRef.Path);
+		Schema_Object* LoadInfoObject = Schema_AddObject(ObjectRefObject, 3);
+		AddStringToSchema(LoadInfoObject, 1, *ObjectRef.Path);
+		Schema_AddBool(LoadInfoObject, 2, ObjectRef.bNoLoad);
 	}
 	if (ObjectRef.Outer)
 	{
@@ -129,13 +131,15 @@ inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_F
 
 	ObjectRef.Entity = Schema_GetEntityId(ObjectRefObject, 1);
 	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, 2);
-	if (Schema_GetBytesCount(ObjectRefObject, 3) > 0)
+	if (Schema_GetObjectCount(ObjectRefObject, 3) > 0)
 	{
-		ObjectRef.Path = GetStringFromSchema(ObjectRefObject, 3);
+		Schema_Object* LoadInfoObject = Schema_GetObject(ObjectRefObject, 3);
+		ObjectRef.Path = GetStringFromSchema(LoadInfoObject, 1);
+		ObjectRef.bNoLoad = GetBoolFromSchema(LoadInfoObject, 2);
 	}
 	if (Schema_GetObjectCount(ObjectRefObject, 4) > 0)
 	{
-		ObjectRef.Outer = FUnrealObjectRef(GetObjectRefFromSchema(ObjectRefObject, 4));
+		ObjectRef.Outer = GetObjectRefFromSchema(ObjectRefObject, 4);
 	}
 
 	return ObjectRef;

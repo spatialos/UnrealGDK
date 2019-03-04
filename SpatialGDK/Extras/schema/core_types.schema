@@ -1,9 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
+type LoadInfo {
+    string path = 1;
+    bool no_load = 2;
+}
+
 type UnrealObjectRef {
     EntityId entity = 1;
     uint32 offset = 2;
-    option<string> path = 3;
+    option<LoadInfo> load_info = 3;
     option<UnrealObjectRef> outer = 4;
 }

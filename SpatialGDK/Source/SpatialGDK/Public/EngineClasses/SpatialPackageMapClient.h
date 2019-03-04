@@ -63,7 +63,7 @@ private:
 	FNetworkGUID GetOrAssignNetGUID_SpatialGDK(UObject* Object);
 	void RegisterObjectRef(FNetworkGUID NetGUID, const FUnrealObjectRef& ObjectRef);
 	
-	FNetworkGUID RegisterNetGUIDFromPathForStaticObject(const FString& PathName, const FNetworkGUID& OuterGUID);
+	FNetworkGUID RegisterNetGUIDFromPathForStaticObject(const FString& PathName, const FNetworkGUID& OuterGUID, bool bNoLoad);
 	FNetworkGUID GenerateNewNetGUID(const int32 IsStatic);
 
 	TMap<FNetworkGUID, FUnrealObjectRef> NetGUIDToUnrealObjectRef;
