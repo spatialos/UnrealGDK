@@ -251,7 +251,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				Actor->Role = ROLE_Authority;
 				Actor->RemoteRole = ROLE_SimulatedProxy;
 
-				if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+				if (Actor->IsA<APlayerController>())
 				{
 					Actor->RemoteRole = ROLE_AutonomousProxy;
 				}
@@ -293,7 +293,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 
 		if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
-			Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
 	}
 
@@ -305,8 +305,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
 			Op.component_id == SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
 		{
-			// This could be either an RPC component on the actor or the subobject, but we assume
-			// they will be received together, so resetting multiple times should not be a problem.
+			// This will be called multiple times on each RPC component.
 			NetDriver->OnRPCAuthorityGained(Actor, ComponentType);
 		}
 	}

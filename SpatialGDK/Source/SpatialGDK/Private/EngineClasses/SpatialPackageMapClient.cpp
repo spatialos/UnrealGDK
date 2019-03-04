@@ -378,7 +378,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(Worker_EntityId Entity
 {
 	FUnrealObjectRef ObjRef(EntityId, 0);
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRef);
-	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
+	return (NetGUID == nullptr) ? FNetworkGUID(0) : *NetGUID;
 }
 
 FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const FString& PathName, const FNetworkGUID& OuterGUID)
