@@ -280,7 +280,9 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 
 	improbable::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
-	// There are times when the Editor is quitting out of PIE that this is nullptr.
+	// There are times when the Editor is quitting out of PIE that UnrealMetadata is nullptr.
+	// Due to GetNativeEntityClass using LoadObject, if we are shutting down and garbage collecting, this will crash the editor.
+	// In this case, just return since everything will be cleaned up anyways.
 	if (UnrealMetadata == nullptr || (IsInGameThread() && IsGarbageCollecting()))
 	{
 		return;

@@ -559,7 +559,7 @@ bool SpatialGDKGenerateSchema()
 
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath);
 
-	GenerateSchemaFromSublevels(GEditor->GetEditorWorldContext().World(), SchemaOutputPath);
+	GenerateSchemaForSublevels(GEditor->GetEditorWorldContext().World(), SchemaOutputPath);
 
 	SaveSchemaDatabase();
 

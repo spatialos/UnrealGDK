@@ -94,7 +94,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	if (!IsSupportedClass(ClassPath))
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is explicitly referenced from the starting scene and schema has been generated."), *ClassPath);
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *Class->GetPathName());
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *ClassPath);
 #if WITH_EDITOR
 		// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
 		// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
