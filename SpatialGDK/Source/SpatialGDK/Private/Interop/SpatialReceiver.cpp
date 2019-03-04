@@ -630,7 +630,14 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! EntityId: %lld"), EntityId);
+		if (Actor == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! EntityId: %lld"), EntityId);
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
+		}
 	}
 
 	// It is safe to call AActor::Destroy even if the destruction has already started.

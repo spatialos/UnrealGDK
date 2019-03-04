@@ -2,6 +2,7 @@
 
 #include "Utils/InterestFactory.h"
 
+#include "Engine/World.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"

@@ -126,7 +126,7 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject*
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
-Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(UObject* Object)
+Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* Object)
 {
 	if (Object == nullptr)
 	{

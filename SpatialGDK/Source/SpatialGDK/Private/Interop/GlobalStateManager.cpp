@@ -240,10 +240,6 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 	// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
 	NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId);
 
-	//// Add to entity registry
-	//// This indirectly causes SetChannelActor to not create a new entity for this actor
-	//NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
-
 	Channel->SetChannelActor(SingletonActor);
 
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
