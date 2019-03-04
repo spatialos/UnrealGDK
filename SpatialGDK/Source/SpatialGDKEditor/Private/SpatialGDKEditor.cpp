@@ -48,6 +48,7 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
 		[this, bCachedSpatialNetworking, ErroredBlueprints, SuccessCallback, FailureCallback]()
 	{
+		// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
 		if (ErroredBlueprints.Num() > 0)
 		{
 			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Errors compiling blueprints during schema generation! The following blueprints did not have schema generated for them:"));
