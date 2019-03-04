@@ -51,7 +51,7 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 		if (ErroredBlueprints.Num() > 0)
 		{
 			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Errors compiling blueprints during schema generation! The following blueprints did not have schema generated for them:"));
-			for (auto const& Blueprint : ErroredBlueprints)
+			for (const auto& Blueprint : ErroredBlueprints)
 			{
 				UE_LOG(LogSpatialGDKEditor, Error, TEXT("%s"), *GetPathNameSafe(Blueprint));
 			}
