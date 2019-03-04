@@ -241,7 +241,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 	}
 
 	QueryConstraint DefaultConstraint;
-	DefaultConstraint.ComponentConstraint = SpatialConstants::NOT_SPAWNED_COMPONENT_ID;
+	DefaultConstraint.ComponentConstraint = SpatialConstants::NOT_STREAMED_COMPONENT_ID;
 	LevelConstraint.OrConstraint.Add(DefaultConstraint);
 
 	return LevelConstraint;

@@ -190,12 +190,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		}
 		else
 		{
-			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_SPAWNED_COMPONENT_ID));
+			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID));
 		}
 	}
 	else
 	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_SPAWNED_COMPONENT_ID));
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID));
 	}
 
 	if (Actor->IsA<APlayerController>())
