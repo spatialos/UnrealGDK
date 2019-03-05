@@ -654,7 +654,15 @@ AActor* USpatialReceiver::GetOrCreateActor(improbable::UnrealMetadata* UnrealMet
 	}
 
 	// Otherwise, this Actor already exists in the map, get it from the package map.
-	return Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(UnrealMetadata->StablyNamedRef.GetValue()));
+	const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef.GetValue();
+	AActor* StaticActor = Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(StablyNamedRef));
+	// An unintended side effect of GetObjectFromUnrealObjectRef is that this ref
+	// will be registered with this Actor. It can be the case that this Actor is not
+	// stably named (due to bNetLoadOnCliwent = false) so we should let
+	// SpatialPackageMapClient::ResolveEntityActor to handle it properly.
+	PackageMap->UnregisterActorObjectRefOnly(StablyNamedRef);
+
+	return StaticActor;
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
