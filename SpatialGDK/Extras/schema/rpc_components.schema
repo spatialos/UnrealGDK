@@ -1,0 +1,28 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+type UnrealRPCPayload {
+    uint32 offset = 1;
+    uint32 rpc_index = 2;
+    bytes rpc_payload = 3;
+}
+
+type Void {
+}
+
+component UnrealClientRPCEndpoint {
+    id = 9990;
+    event UnrealRPCPayload unreliable_client_to_server_rpc;
+    command Void reliable_server_to_client_rpc(UnrealRPCPayload);
+}
+
+component UnrealServerRPCEndPoint {
+    id = 9989;
+    event UnrealRPCPayload unreliable_server_to_client_rpc;
+    command Void reliable_client_to_server_rpc(UnrealRPCPayload);
+}
+
+component UnrealMulticastRPCEndpoint {
+    id = 9987;
+    event UnrealRPCPayload unreliable_multicast_rpc;
+}

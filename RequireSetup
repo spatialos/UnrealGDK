@@ -1,4 +1,4 @@
 Increment the below number whenever it is required to run Setup.bat as part of a new commit.
 Our git hooks will detect this file has been updated and automatically run Setup.bat on pull.
 
-8
+9
