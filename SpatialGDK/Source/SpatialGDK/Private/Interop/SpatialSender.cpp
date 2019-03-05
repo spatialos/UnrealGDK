@@ -184,7 +184,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
 	if (Actor->HasAnyFlags(RF_WasLoaded))
 	{
-		if (uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelNameToComponentId.Find(Actor->GetTypedOuter<UWorld>()->GetName()))
+		if (uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelPathToLevelData[NetDriver->World->GetMapName()].SublevelNameToComponentId.Find(Actor->GetTypedOuter<UWorld>()->GetName()))
 		{
 			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(*ComponentId));
 		}

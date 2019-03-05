@@ -34,7 +34,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 TArray<UClass*> SchemaGeneratedClasses;
 TArray<UClass*> AdditionalSchemaGeneratedClasses; // Used to keep UClasses in memory whilst generating schema for them.
 TMap<FString, FSchemaData> ClassPathToSchema;
-TMap<FString, uint32> LevelNameToComponentId;
+TMap<FString, FLevelData> LevelPathToLevelData;
 uint32 NextAvailableComponentId;
 
 // Prevent name collisions.
@@ -265,9 +265,10 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 	}
 }
 
-void GenerateSchemaForSublevels(UWorld* World, const FString& SchemaPath)
+FLevelData GenerateSchemaForSublevel(UWorld* World)
 {
-	TArray<FString> StreamingLevelNames;
+	FLevelData LevelData;
+	FComponentIdGenerator IdGenerator(NextAvailableComponentId);
 
 	if (UWorldComposition* WorldComposition = World->WorldComposition)
 	{
@@ -277,42 +278,51 @@ void GenerateSchemaForSublevels(UWorld* World, const FString& SchemaPath)
 			int32 Index = 0;
 			TilePath.FindLastChar('/', Index);
 			TilePath = TilePath.Mid(Index + 1);
-			StreamingLevelNames.Add(TilePath);
+			LevelData.SublevelNameToComponentId.Add(TilePath, IdGenerator.GetNextAvailableId());
 		}
 	}
 	else
 	{
 		for (const auto& LevelStreamingObject : World->GetStreamingLevels())
 		{
-			StreamingLevelNames.Add(LevelStreamingObject->GetLoadedLevel()->GetName());
+			LevelData.SublevelNameToComponentId.Add(LevelStreamingObject->GetName(), IdGenerator.GetNextAvailableId());
 		}
 	}
 
-	if (StreamingLevelNames.Num() == 0)
+	return LevelData;
+}
+
+void GenerateSchemaForSublevels(const FString& SchemaPath)
+{
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+
+	FLevelData LevelData = GenerateSchemaForSublevel(EditorWorld);
+	if (LevelData.SublevelNameToComponentId.Num() > 0)
 	{
-		return;
+		LevelPathToLevelData.Add(EditorWorld->GetMapName(), LevelData);
 	}
 
-	FCodeWriter Writer;
-	FComponentIdGenerator IdGenerator(NextAvailableComponentId);
-
-	Writer.Printf(R"""(
-		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-		// Note that this file has been generated automatically
-		package unreal.generated.sublevels;)""");
-
-	for (const auto& LevelName : StreamingLevelNames)
+	for (const auto& LevelPathToLevelDataPair : LevelPathToLevelData)
 	{
-		Writer.PrintNewLine();
-		Writer.Printf("component {0} {", *UnrealNameToSchemaName(LevelName));
-		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId());
-		Writer.Outdent().Print("}");
+		FCodeWriter Writer;
 
-		LevelNameToComponentId.Add(LevelName, IdGenerator.GetCurrentId());
+		Writer.Printf(R"""(
+			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+			// Note that this file has been generated automatically
+			package unreal.sublevels;)""");
+
+		for (const auto& SublevelToComponentIdPair : LevelPathToLevelDataPair.Value.SublevelNameToComponentId)
+		{
+			Writer.PrintNewLine();
+			Writer.Printf("component {0} {", *SublevelToComponentIdPair.Key);
+			Writer.Indent();
+			Writer.Printf("id = {0};", SublevelToComponentIdPair.Value);
+			Writer.Outdent().Print("}");
+		}
+
+		Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *(SchemaPath + TEXT("Sublevels/")), *LevelPathToLevelDataPair.Key));
 	}
 
-	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels.schema"), *SchemaPath));
 }
 
 FString GenerateIntermediateDirectory()
@@ -333,7 +343,7 @@ void SaveSchemaDatabase()
 		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 		SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
 		SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
-		SchemaDatabase->LevelNameToComponentId = LevelNameToComponentId;
+		SchemaDatabase->LevelPathToLevelData = LevelPathToLevelData;
 
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
@@ -559,7 +569,7 @@ bool SpatialGDKGenerateSchema()
 
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath);
 
-	GenerateSchemaForSublevels(GEditor->GetEditorWorldContext().World(), SchemaOutputPath);
+	GenerateSchemaForSublevels(SchemaOutputPath);
 
 	SaveSchemaDatabase();
 

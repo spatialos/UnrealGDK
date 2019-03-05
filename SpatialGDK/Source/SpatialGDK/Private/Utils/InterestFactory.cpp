@@ -226,7 +226,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 	check(PlayerController);
 
 	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
-	const TMap<FString, uint32>& LevelNameToComponentId = NetDriver->ClassInfoManager->SchemaDatabase->LevelNameToComponentId;
+	const TMap<FString, uint32>& LevelNameToComponentId = NetDriver->ClassInfoManager->SchemaDatabase->LevelPathToLevelData[NetDriver->World->GetMapName()].SublevelNameToComponentId;
 
 	// Create component constraints for every loaded sublevel
 	for (const auto& LevelPath : LoadedLevels)

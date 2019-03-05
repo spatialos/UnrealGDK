@@ -33,6 +33,15 @@ struct FSchemaData
 	TMap<uint32, FSubobjectSchemaData> SubobjectData;
 };
 
+USTRUCT()
+struct FLevelData
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	TMap<FString, uint32> SublevelNameToComponentId;
+};
+
 UCLASS()
 class SPATIALGDK_API USchemaDatabase : public UDataAsset
 {
@@ -46,7 +55,7 @@ public:
 	TMap<FString, FSchemaData> ClassPathToSchema;
 
 	UPROPERTY(VisibleAnywhere)
-	TMap<FString, uint32> LevelNameToComponentId;
+	TMap<FString, FLevelData> LevelPathToLevelData;
 
 	UPROPERTY(VisibleAnywhere)
 	uint32 NextAvailableComponentId;
