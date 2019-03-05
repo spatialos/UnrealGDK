@@ -22,7 +22,7 @@ void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 		if (OpCallbackClass->IsChildOf(UOpCallbackTemplate::StaticClass()) && *OpCallbackClass != UOpCallbackTemplate::StaticClass())
 		{
 			UOpCallbackTemplate* CallbackObject = NewObject<UOpCallbackTemplate>(this, *OpCallbackClass);
-			CallbackObject->Init(NetDriver->GetWorld());
+			CallbackObject->Init(NetDriver->GetWorld(), StaticComponentView);
 			UE_LOG(LogSpatialView, Log, TEXT("Registered dispatcher callback class %s to handle component ID %d."), *OpCallbackClass->GetName(), CallbackObject->GetComponentId());
 			UserOpCallbacks.Add(CallbackObject->GetComponentId(), CallbackObject);
 		}

@@ -19,8 +19,9 @@ public:
 	  * Called by SpatialDispatcher on initialization, this is to allow the user to write more useful callbacks.
 	  * @param World the UWorld top level hierarchy object.
 	  */
-	void Init(UWorld* InWorld) {
+	void Init(UWorld* InWorld, USpatialStaticComponentView* InStaticComponentView) {
 		World = InWorld;
+		StaticComponentView = InStaticComponentView;
 	}
 
 	/**
@@ -42,4 +43,5 @@ public:
 
 protected:
 	UWorld* World;
+	USpatialStaticComponentView* StaticComponentView;
 };
