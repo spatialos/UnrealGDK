@@ -7,6 +7,7 @@
 #include "Schema/Component.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
+#include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
 
 #include "Utils/OpCallbackTemplate.h"
@@ -32,6 +33,10 @@ public:
 	void ProcessOps(Worker_OpList* OpList);
 
 private:
+	bool IsExternalSchemaOp(Worker_Op* Op);
+	void ProcessExternalSchemaOp(Worker_Op* Op);
+	Worker_ComponentId GetComponentId(Worker_Op* Op);
+
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
@@ -42,5 +47,5 @@ private:
 	USpatialStaticComponentView* StaticComponentView;
 
 	UPROPERTY()
-	TMap<Worker_ComponentId, UOpCallbackTemplate*> UserOpCallbacks;
+	TMap <uint32, UOpCallbackTemplate* > UserOpCallbacks; // key has to be explicit primitive or UHT complains
 };
