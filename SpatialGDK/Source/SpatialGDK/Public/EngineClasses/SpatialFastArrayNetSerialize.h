@@ -6,8 +6,9 @@
 
 #include "Utils/RepLayoutUtils.h"
 
-class FSpatialNetBitWriter;
 class FSpatialNetBitReader;
+class FSpatialNetBitWriter;
+class USpatialNetDriver;
 
 namespace improbable
 {
@@ -32,8 +33,8 @@ struct FSpatialNetDeltaSerializeInfo : FNetDeltaSerializeInfo
 		bIsSpatialType = true;
 	}
 
-	static FSpatialNetDeltaSerializeInfo CreateWriter(FSpatialNetBitWriter& Writer, SpatialFastArrayNetSerializeCB& Callback);
-	static FSpatialNetDeltaSerializeInfo CreateReader(FSpatialNetBitReader& Reader, SpatialFastArrayNetSerializeCB& Callback);
+	static bool DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object, int32 ArrayIndex, UProperty* ParentProperty, UScriptStruct* NetDeltaStruct);
+	static bool DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object, int32 ArrayIndex, UProperty* ParentProperty, UScriptStruct* NetDeltaStruct);
 };
 
 }

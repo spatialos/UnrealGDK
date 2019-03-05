@@ -1456,19 +1456,13 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			}
 			else if (ObjectReferences.bFastArrayProp)
 			{
-				int64 CountBits = ObjectReferences.Buffer.Num() * 8;
 				TSet<FUnrealObjectRef> NewUnresolvedRefs;
-				FSpatialNetBitReader ValueDataReader(PackageMap, ObjectReferences.Buffer.GetData(), CountBits, NewUnresolvedRefs);
+				FSpatialNetBitReader ValueDataReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits, NewUnresolvedRefs);
 
-				SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
+				check(Property->IsA<UArrayProperty>());
+				UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(Cast<UArrayProperty>(Property));
 
-				FSpatialNetDeltaSerializeInfo Parms = FSpatialNetDeltaSerializeInfo::CreateReader(ValueDataReader, SerializeCB);
-
-				UStructProperty* ParentStruct = Cast<UStructProperty>(Property);
-				UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
-				check(CppStructOps);
-
-				CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(ReplicatedObject, Parent->ArrayIndex));
+				FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, ReplicatedObject, Parent->ArrayIndex, Property, NetDeltaStruct);
 
 				if (NewUnresolvedRefs.Num() > 0)
 				{

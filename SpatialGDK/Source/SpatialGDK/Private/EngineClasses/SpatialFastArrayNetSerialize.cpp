@@ -8,30 +8,49 @@
 namespace improbable
 {
 
-FSpatialNetDeltaSerializeInfo FSpatialNetDeltaSerializeInfo::CreateWriter(FSpatialNetBitWriter& Writer, SpatialFastArrayNetSerializeCB& Callback)
+bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object, int32 ArrayIndex, UProperty* ParentProperty, UScriptStruct* NetDeltaStruct)
 {
 	FSpatialNetDeltaSerializeInfo NetDeltaInfo;
 
-	NetDeltaInfo.Writer = &Writer;
-	NetDeltaInfo.Map = Writer.PackageMap;
-	NetDeltaInfo.NetSerializeCB = &Callback;
-
-	return NetDeltaInfo;
-}
-
-FSpatialNetDeltaSerializeInfo FSpatialNetDeltaSerializeInfo::CreateReader(FSpatialNetBitReader& Reader, SpatialFastArrayNetSerializeCB& Callback)
-{
-	FSpatialNetDeltaSerializeInfo NetDeltaInfo;
+	SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
 
 	NetDeltaInfo.Reader = &Reader;
 	NetDeltaInfo.Map = Reader.PackageMap;
-	NetDeltaInfo.NetSerializeCB = &Callback;
+	NetDeltaInfo.NetSerializeCB = &SerializeCB;
 
-	return NetDeltaInfo;
+	UStructProperty* ParentStruct = Cast<UStructProperty>(ParentProperty);
+	check(ParentStruct);
+	void* Destination = ParentStruct->ContainerPtrToValuePtr<void>(Object, ArrayIndex);
+
+	UScriptStruct::ICppStructOps* CppStructOps = NetDeltaStruct->GetCppStructOps();
+	check(CppStructOps);
+
+	return CppStructOps->NetDeltaSerialize(NetDeltaInfo, Destination);
+}
+
+bool FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object, int32 ArrayIndex, UProperty* ParentProperty, UScriptStruct* NetDeltaStruct)
+{
+	FSpatialNetDeltaSerializeInfo NetDeltaInfo;
+
+	SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
+
+	NetDeltaInfo.Writer = &Writer;
+	NetDeltaInfo.Map = Writer.PackageMap;
+	NetDeltaInfo.NetSerializeCB = &SerializeCB;
+
+	UStructProperty* ParentStruct = Cast<UStructProperty>(ParentProperty);
+	check(ParentStruct);
+	void* Source = ParentStruct->ContainerPtrToValuePtr<void>(Object, ArrayIndex);
+
+	UScriptStruct::ICppStructOps* CppStructOps = NetDeltaStruct->GetCppStructOps();
+	check(CppStructOps);
+
+	return CppStructOps->NetDeltaSerialize(NetDeltaInfo, Source);
 }
 
 void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, FBitArchive& Ar, UPackageMap* PackageMap, void* Data, bool& bHasUnmapped)
 {
+	// Check if struct has custom NetSerialize function, otherwise call standard struct replication
 	if (Struct->StructFlags & STRUCT_NetSerializeNative)
 	{
 		UScriptStruct::ICppStructOps* CppStructOps = Struct->GetCppStructOps();

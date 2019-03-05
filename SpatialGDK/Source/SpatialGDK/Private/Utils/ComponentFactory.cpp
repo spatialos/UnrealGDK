@@ -46,32 +46,26 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				const uint8* Data = (uint8*)Object + Cmd.Offset;
 				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 
-				bool bProcessedProperty = false;
+				bool bProcessedFastArrayProperty = false;
 
 				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 				{
 					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
 
 					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
-					if (IsFastArraySerializeProperty(ArrayProperty, Parent.Property))
+					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
 					{
 						FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
-						SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
-						FSpatialNetDeltaSerializeInfo Parms = FSpatialNetDeltaSerializeInfo::CreateWriter(ValueDataWriter, SerializeCB);
 
-						UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property);
-						UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
-						check(CppStructOps);
-
-						CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
+						FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct);
 
 						AddBytesToSchema(ComponentObject, HandleIterator.Handle, ValueDataWriter);
 
-						bProcessedProperty = true;
+						bProcessedFastArrayProperty = true;
 					}
 				}
 
-				if (bProcessedProperty == false)
+				if (!bProcessedFastArrayProperty)
 				{
 					AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
 				}

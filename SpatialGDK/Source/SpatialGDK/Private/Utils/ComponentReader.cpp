@@ -122,26 +122,18 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
 
 				// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
-				if (IsFastArraySerializeProperty(ArrayProperty, Parent.Property))
+				if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
 				{
 					TArray<uint8> ValueData = GetBytesFromSchema(ComponentObject, FieldId);
 					int64 CountBits = ValueData.Num() * 8;
 					TSet<FUnrealObjectRef> NewUnresolvedRefs;
 					FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
 
-					SpatialFastArrayNetSerializeCB SerializeCB(NetDriver);
-
-					FSpatialNetDeltaSerializeInfo Parms = FSpatialNetDeltaSerializeInfo::CreateReader(ValueDataReader, SerializeCB);
-
-					UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property);
-					UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
-					check(CppStructOps);
-
-					CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
+					FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct);
 
 					if (NewUnresolvedRefs.Num() > 0)
 					{
-						RootObjectReferencesMap.Add(FieldId, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, Cmd.ParentIndex, Parent.Property, true));
+						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, Cmd.ParentIndex, ArrayProperty, true));
 						UnresolvedRefs.Append(NewUnresolvedRefs);
 					}
 					else if (RootObjectReferencesMap.Find(FieldId))
