@@ -111,13 +111,12 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 	Schema_AddUint32(ObjectRefObject, 2, ObjectRef.Offset);
 	if (ObjectRef.Path)
 	{
-		Schema_Object* LoadInfoObject = Schema_AddObject(ObjectRefObject, 3);
-		AddStringToSchema(LoadInfoObject, 1, *ObjectRef.Path);
-		Schema_AddBool(LoadInfoObject, 2, ObjectRef.bNoLoad);
+		AddStringToSchema(ObjectRefObject, 3, *ObjectRef.Path);
+		Schema_AddBool(ObjectRefObject, 4, ObjectRef.bNoLoadOnClient);
 	}
 	if (ObjectRef.Outer)
 	{
-		AddObjectRefToSchema(ObjectRefObject, 4, *ObjectRef.Outer);
+		AddObjectRefToSchema(ObjectRefObject, 5, *ObjectRef.Outer);
 	}
 }
 
@@ -133,13 +132,15 @@ inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_F
 	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, 2);
 	if (Schema_GetObjectCount(ObjectRefObject, 3) > 0)
 	{
-		Schema_Object* LoadInfoObject = Schema_GetObject(ObjectRefObject, 3);
-		ObjectRef.Path = GetStringFromSchema(LoadInfoObject, 1);
-		ObjectRef.bNoLoad = GetBoolFromSchema(LoadInfoObject, 2);
+		ObjectRef.Path = GetStringFromSchema(ObjectRefObject, 3);
 	}
-	if (Schema_GetObjectCount(ObjectRefObject, 4) > 0)
+	if (Schema_GetBoolCount(ObjectRefObject, 4) > 0)
 	{
-		ObjectRef.Outer = GetObjectRefFromSchema(ObjectRefObject, 4);
+		ObjectRef.bNoLoadOnClient = GetBoolFromSchema(ObjectRefObject, 4);
+	}
+	if (Schema_GetObjectCount(ObjectRefObject, 5) > 0)
+	{
+		ObjectRef.Outer = GetObjectRefFromSchema(ObjectRefObject, 5);
 	}
 
 	return ObjectRef;

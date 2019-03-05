@@ -1,14 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
-type LoadInfo {
-    string path = 1;
-    bool no_load = 2;
-}
-
 type UnrealObjectRef {
     EntityId entity = 1;
     uint32 offset = 2;
-    option<LoadInfo> load_info = 3;
-    option<UnrealObjectRef> outer = 4;
+    option<string> path = 3;
+    // Not all objects should be loaded on clients as a result of resolving
+    // a reference, e.g. anything inside streaming levels should not be loaded.
+    option<bool> no_load_on_client = 4;
+    option<UnrealObjectRef> outer = 5;
 }
