@@ -118,7 +118,7 @@ markEndOfBlock "Unpack dependencies"
 
 markStartOfBlock "Copy standard library schema"
     echo "Copying standard library schemas to $SCHEMA_STD_COPY_DIR"
-    cp -R $BINARIES_DIR/Programs/schema $SCHEMA_STD_COPY_DIR
+    cp -R $BINARIES_DIR/Programs/schema/* $SCHEMA_STD_COPY_DIR
 markEndOfBlock "Copy standard library schema"
 
 markStartOfBlock "Copy GDK schema"
@@ -126,7 +126,7 @@ markStartOfBlock "Copy GDK schema"
     mkdir -p $SCHEMA_COPY_DIR >/dev/null 2>/dev/null
 
     echo "Copying schemas to $SCHEMA_COPY_DIR."
-    cp -R $(dirname %0)/SpatialGDK/Extras/schema $SCHEMA_COPY_DIR
+    cp -R $(dirname %0)/SpatialGDK/Extras/schema/* $SCHEMA_COPY_DIR
 markEndOfBlock "Copy GDK schema"
 
 markStartOfBlock "Build C# utilities"
