@@ -22,8 +22,8 @@ void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 		if (OpCallbackClass->IsChildOf(UOpCallbackTemplate::StaticClass()) && *OpCallbackClass != UOpCallbackTemplate::StaticClass())
 		{
 			UOpCallbackTemplate* CallbackObject = NewObject<UOpCallbackTemplate>(this, *OpCallbackClass);
-			CallbackObject->Init(GetWorld());
-			UE_LOG(LogSpatialView, Log, TEXT("Registered dispatcher callback class %s to handle component ID %d."), *OpCallbackClass->GetName(), callbackObject->GetComponentId());
+			CallbackObject->Init(NetDriver->GetWorld());
+			UE_LOG(LogSpatialView, Log, TEXT("Registered dispatcher callback class %s to handle component ID %d."), *OpCallbackClass->GetName(), CallbackObject->GetComponentId());
 			UserOpCallbacks.Add(CallbackObject->GetComponentId(), CallbackObject);
 		}
 	}
@@ -36,6 +36,12 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	for (size_t i = 0; i < OpList->op_count; ++i)
 	{
 		Worker_Op* Op = &OpList->ops[i];
+
+		if (IsExternalSchemaOp(Op)) {
+			ProcessExternalSchemaOp(Op);
+			continue;
+		}
+
 		switch (Op->op_type)
 		{
 		// Critical Section
@@ -53,73 +59,28 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
-			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->add_component.data.component_id))
-			{
-				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
-				UserCallback->OnAddComponent(Op->add_component);
-			}
-			else
-			{
-				StaticComponentView->OnAddComponent(Op->add_component);
-				Receiver->OnAddComponent(Op->add_component);
-			}
+			StaticComponentView->OnAddComponent(Op->add_component);
+			Receiver->OnAddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
-			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->remove_component.component_id))
-			{
-				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
-				UserCallback->OnRemoveComponent(Op->remove_component);
-			}
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->component_update.update.component_id))
-			{
-				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
-				UserCallback->OnComponentUpdate(Op->component_update);
-			}
-			else
-			{
-				QueuedComponentUpdateOps.Add(Op);
-				StaticComponentView->OnComponentUpdate(Op->component_update);
-			}
+			QueuedComponentUpdateOps.Add(Op);
+			StaticComponentView->OnComponentUpdate(Op->component_update);
 			break;
 
 		// Commands
 		case WORKER_OP_TYPE_COMMAND_REQUEST:
-			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->command_request.request.component_id))
-			{
-				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
-				UserCallback->OnCommandRequest(Op->command_request);
-			}
-			else
-			{
-				Receiver->OnCommandRequest(Op->command_request);
-			}
+			Receiver->OnCommandRequest(Op->command_request);
 			break;
 		case WORKER_OP_TYPE_COMMAND_RESPONSE:
-			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->command_response.response.component_id))
-			{
-				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
-				UserCallback->OnCommandResponse(Op->command_response);
-			}
-			else
-			{
-				Receiver->OnCommandResponse(Op->command_response);
-			}
+			Receiver->OnCommandResponse(Op->command_response);
 			break;
 
 		// Authority Change
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(Op->authority_change.component_id))
-			{
-				UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
-				UserCallback->OnAuthorityChange(Op->authority_change);
-			}
-			else
-			{
-				StaticComponentView->OnAuthorityChange(Op->authority_change);
-				Receiver->OnAuthorityChange(Op->authority_change);
-			}
+			StaticComponentView->OnAuthorityChange(Op->authority_change);
+			Receiver->OnAuthorityChange(Op->authority_change);
 			break;
 
 		// World Command Responses
@@ -171,5 +132,67 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 		{
 			Channel->SpatialViewTick();
 		}
+	}
+}
+
+bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) {
+	Worker_ComponentId ComponentId = GetComponentId(Op);
+	return  SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID;
+}
+
+void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op) {
+	auto TryUserCallback = [&](Worker_ComponentId ComponentId, TFunction<void(UOpCallbackTemplate*)>& OpCallback) {
+		if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(ComponentId))
+		{
+			UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
+			OpCallback(UserCallback);
+		}
+	};
+
+	Worker_ComponentId ComponentId = GetComponentId(Op);
+	TFunction<void(UOpCallbackTemplate*)> UserCallback;
+	switch (Op->op_type)
+	{
+	case WORKER_OP_TYPE_ADD_COMPONENT:
+		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnAddComponent(Op->add_component); };
+		break;
+	case WORKER_OP_TYPE_REMOVE_COMPONENT:
+		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnRemoveComponent(Op->remove_component); };
+		break;
+	case WORKER_OP_TYPE_COMPONENT_UPDATE:
+		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnComponentUpdate(Op->component_update); };
+		break;
+	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnAuthorityChange(Op->authority_change); };
+		break;
+	case WORKER_OP_TYPE_COMMAND_REQUEST:
+		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnCommandRequest(Op->command_request); };
+		break;
+	case WORKER_OP_TYPE_COMMAND_RESPONSE:
+		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnCommandResponse(Op->command_response); };
+		break;
+	default:
+		return;
+	}
+	TryUserCallback(ComponentId, UserCallback);
+}
+
+Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op) {
+	switch (Op->op_type)
+	{
+	case WORKER_OP_TYPE_ADD_COMPONENT:
+		return Op->add_component.data.component_id;
+	case WORKER_OP_TYPE_REMOVE_COMPONENT:
+		return Op->remove_component.component_id;
+	case WORKER_OP_TYPE_COMPONENT_UPDATE:
+		return Op->component_update.update.component_id;
+	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+		return Op->authority_change.component_id;
+	case WORKER_OP_TYPE_COMMAND_REQUEST:
+		return Op->command_request.request.component_id;
+	case WORKER_OP_TYPE_COMMAND_RESPONSE:
+		return Op->command_response.response.component_id;
+	default:
+		return SpatialConstants::INVALID_COMPONENT_ID;
 	}
 }

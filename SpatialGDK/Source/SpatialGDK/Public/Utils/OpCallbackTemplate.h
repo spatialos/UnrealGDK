@@ -3,6 +3,7 @@
 #pragma once
 
 #include <WorkerSDK/improbable/c_worker.h>
+#include "SpatialConstants.h"
 #include "OpCallbackTemplate.generated.h"
 
 UCLASS(abstract)
@@ -23,9 +24,10 @@ public:
 	}
 
 	/**
-	  * Component ID the callbacks should apply to
+	  * Component ID the callbacks should apply to.
+	  * Must be between SpatialConstants::MIN_EXTERNAL_SCHEMA_ID and SpatialConstants::MAX_EXTERNAL_SCHEMA_ID.
 	  */
-	virtual Worker_ComponentId GetComponentId() PURE_VIRTUAL(UOpCallbackTemplate::GetComponentId, return -1;);
+	virtual Worker_ComponentId GetComponentId() PURE_VIRTUAL(UOpCallbackTemplate::GetComponentId, return SpatialConstants::INVALID_COMPONENT_ID;);
 
 	/**
 	  * Add callbacks for the ops being processed by the SpatialDispatcher for component_id
