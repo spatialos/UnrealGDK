@@ -42,7 +42,9 @@ Now you need to clone the SpatialOS GDK for Unreal into your project. To do this
 1. In **File Explorer**, navigate to the `<GameRoot>` directory and create a `Plugins` folder in this directory.
 2. In a Git Bash terminal window, navigate to `<GameRoot>\Plugins` and clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
-    * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`
+    * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`<br>
+
+The GDK's [default branch (GitHub documentation)](https://help.github.com/en/articles/setting-the-default-branch) is `release`. This means that, at any point during the development of your game, you can get the latest release of the GDK by running `git pull` inside the `UnrealGDK` directory.
 
 **Note:** You need to ensure that the root directory of the GDK for Unreal repository is called `UnrealGDK` so the file path is: `<GameRoot>\Plugins\UnrealGDK\...`
 
