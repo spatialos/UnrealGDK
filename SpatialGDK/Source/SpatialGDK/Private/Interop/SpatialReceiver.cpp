@@ -374,17 +374,14 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		UNetConnection* Connection = nullptr;
-		improbable::UnrealMetadata* UnrealMetadataComponent = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
-		check(UnrealMetadataComponent);
-		bool bDoingDeferredSpawn = true;
 
 		// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 		if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
 		{
-			checkf(!UnrealMetadataComponent->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+			checkf(!UnrealMetadata->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
 
 			FString URLString = FURL().ToString();
-			URLString += TEXT("?workerAttribute=") + UnrealMetadataComponent->OwnerWorkerAttribute;
+			URLString += TEXT("?workerAttribute=") + UnrealMetadata->OwnerWorkerAttribute;
 
 			// TODO: Once we can checkout PlayerController and PlayerState atomically, we can grab the UniqueId and online subsystem type from PlayerState. UNR-933
 			Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), true);
