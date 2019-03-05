@@ -768,12 +768,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						continue;
 					}
 
-					if (!Actor->HasAuthority())
-					{
-						// Trying to replicate Actor which we don't have authority over.
-						// Remove after UNR-961
-						continue;
-					}
+					checkf(Actor->HasAuthority(), TEXT("Trying to replicate Actor which we don't have authority over."))
 
 					// If we're a singleton, and don't have a channel, defer to GSM
 					if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
