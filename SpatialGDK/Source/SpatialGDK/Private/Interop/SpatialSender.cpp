@@ -150,7 +150,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// We use this to indicate if a new Actor should be created or to link a pre-existing Actor
 	// when receiving an AddEntityOp.
 	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
-	if (Actor->IsFullNameStableForNetworking())
+	if (Actor->HasAnyFlags(RF_Load))
 	{
 		// Since we've already received the EntityId for this Actor. It is guaranteed to be resolved
 		// with the package map by this point

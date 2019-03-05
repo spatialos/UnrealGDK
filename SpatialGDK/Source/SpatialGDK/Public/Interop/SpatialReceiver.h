@@ -141,7 +141,9 @@ private:
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
-	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
+
+	AActor* GetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, UClass* ActorClass, improbable::SpawnData* SpawnData);
+	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 

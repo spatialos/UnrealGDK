@@ -376,7 +376,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		UNetConnection* Connection = nullptr;
 		improbable::UnrealMetadata* UnrealMetadataComponent = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 		check(UnrealMetadataComponent);
-		bool bDoingDeferredSpawn = false;
+		bool bDoingDeferredSpawn = true;
 
 		// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 		if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
@@ -396,22 +396,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			if (!UnrealMetadata->StablyNamedRef.IsSet())
+			EntityActor = GetOrCreateActor(UnrealMetadata, ActorClass, SpawnData);
+			if (EntityActor == nullptr)
 			{
-				EntityActor = CreateActor(SpawnData, ActorClass, true);
-				bDoingDeferredSpawn = true;
-			}
-			else
-			{
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(UnrealMetadata->StablyNamedRef.GetValue());
-				EntityActor = Cast<AActor>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
-				if (EntityActor == nullptr)
-				{
-					// In native networking, if Unreal tries to look up a stably named actor on the client
-					// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
-					// returning here does the same behavior.
-					return;
-				}
+				// In native networking, if Unreal tries to look up a stably named actor on the client
+				// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
+				// returning here does the same behavior.
+				return;
 			}
 
 			// Don't have authority over Actor until SpatialOS delegates authority
@@ -442,28 +433,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
-		// Add to entity registry.
 		EntityRegistry->AddToRegistry(EntityId, EntityActor);
-
-		if (bDoingDeferredSpawn)
-		{
-			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
-
-			// FinishSpawning takes a transform relative to the template transform, so we need to adjust it.
-			FTransform SpawnTransform = GetRelativeSpawnTransform(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation));
-			EntityActor->FinishSpawning(SpawnTransform);
-
-			// Imitate the behavior in UPackageMapClient::SerializeNewActor.
-			const float Epsilon = 0.001f;
-			if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
-			{
-				EntityActor->PostNetReceiveVelocity(SpawnData->Velocity);
-			}
-			if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
-			{
-				EntityActor->SetActorScale3D(SpawnData->Scale);
-			}
-		}
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId);
 
@@ -660,24 +630,62 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
+AActor* USpatialReceiver::GetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, UClass* ActorClass, improbable::SpawnData* SpawnData)
+{
+	// If no stable ref, Actor has been dynamically spawned, so spawn it.
+	if (!UnrealMetadata->StablyNamedRef.IsSet())
+	{
+		return CreateActor(SpawnData, ActorClass);
+	}
+
+	// If we are the client
+	if (!NetDriver->IsServer())
+	{
+		if (AActor* ActorCDO = Cast<AActor>(ActorClass->GetDefaultObject()))
+		{
+			// And this Actor is bNetLoadOnClient = false, the StablyNamedRef is set but
+			// the local representation does not exist (It's deleted in ULevel::InitializeNetworkActors()).
+			// Spawn the Actor on the client.
+			if (!ActorCDO->bNetLoadOnClient)
+			{
+				return CreateActor(SpawnData, ActorClass);
+			}
+		}
+	}
+
+	// Otherwise, this Actor already exists in the map, get it from the package map.
+	return Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(UnrealMetadata->StablyNamedRef.GetValue()));
+}
+
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass)
 {
 	AActor* NewActor = nullptr;
-	if (ActorClass)
+
+	if (ActorClass == nullptr)
 	{
-		//bRemoteOwned needs to be public in source code. This might be a controversial change.
-		FActorSpawnParameters SpawnInfo;
-		SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
-		SpawnInfo.bNoFail = true;
-		// We defer the construction in the GDK pipeline to allow initialization of replicated properties first.
-		SpawnInfo.bDeferConstruction = bDeferred;
+		return NewActor;
+	}
 
-		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
+	SpawnInfo.bNoFail = true;
 
-		NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
-		check(NewActor);
+	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
+
+	NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
+	check(NewActor);
+
+	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
+	const float Epsilon = 0.001f;
+	if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
+	{
+		NewActor->PostNetReceiveVelocity(SpawnData->Velocity);
+	}
+	if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
+	{
+		NewActor->SetActorScale3D(SpawnData->Scale);
 	}
 
 	return NewActor;
