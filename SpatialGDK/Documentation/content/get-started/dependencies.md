@@ -35,7 +35,7 @@ To build the GDK for Unreal you need the following software installed on your ma
   - You need to download and install Git for windows to clone the GDK and Unreal Engine GitHub repositories. 
 
 - <a href="https://console.improbable.io/installer/download/stable/latest/win" data-track-link="Clicked Download SpatialOS|product=Docs|platform=Win|label=Win" target="_blank">**SpatialOS version 13.2**</a>
-    - This installs the [SpatialOS CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli), the [SpatialOS Launcher]({{urlRoot}}/content/glossary#launcher), and 32-bit and 64-bit Visual C++ Redistributables.
+    - This installs the [`spatial` CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli), the [SpatialOS Launcher]({{urlRoot}}/content/glossary#launcher), and 32-bit and 64-bit Visual C++ Redistributables.
 
 - The <a href="https://developer.microsoft.com/en-us/windows/downloads/sdk-archive" data-track-link="Clicked Windows SDK 8.1|product=Docs|platform=Win|label=Win" target="_blank">**Windows SDK 8.1**</a>
 

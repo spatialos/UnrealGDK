@@ -56,7 +56,7 @@ To use the Starter Template, you must build the GDK for Unreal module dependenci
 1. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
 1. When Visual Studio has finished building your project, right-click on **`<YourProject>`** and select **Set as StartUp Project**.
 1. Press F5 on your keyboard or select **Local Windows Debugger** in the Visual Studio toolbar to open your project in the Unreal Editor.<br/>
-![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)
+![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
 _Image: The Visual Studio toolbar_
 
 Note: Ensure that your Visual Studio Solution Configuration is set to **Development Editor**.
@@ -78,7 +78,7 @@ _Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
 1. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
-![Toolbar]({{assetRoot}}assets/set-up-template/template-start.png)<br/>
+!![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 2. Under **Modes**, select **New Editor Window (PIE)**.<br/>
@@ -86,7 +86,7 @@ _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 ![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
 _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
 1. On the Unreal Engine toolbar, select **Play** to run the game.<br/>
-1. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/set-up-template/template-stop.png)<br/>
+1. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png))<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 
 If you want to run multiple server-workers in the Editor, see the [Toolbar documentation]({{urlRoot}}/content/toolbars#launching-multiple-pie-server-workers) for details on launching multiple PIE server-workers.
