@@ -179,14 +179,12 @@ exit /b !ERRORLEVEL!
                     "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
                 });
             }
-            else if (gameName == baseGameName + "SimulatedPlayer" || gameName == baseGameName + "FakeClient") // This is for internal use only. We do not support Linux clients.
+            else if (gameName == baseGameName + "FakeClient")
             {
-                var isUsingFakeClient = gameName == baseGameName + "FakeClient";
-                if (isUsingFakeClient)
-                {
-                    Common.WriteWarning("[Deprecated] 'FakeClient' is deprecated, please use 'SimulatedPlayer' instead. This will create the same assembly under a different name: UnrealSimulatedPlayer@Linux.zip.");
-                }
-
+                Common.WriteWarning("'FakeClient' has been renamed to 'SimulatedPlayer', please use this instead. It will create the same assembly under a different name: UnrealSimulatedPlayer@Linux.zip.");
+            }
+            else if (gameName == baseGameName + "SimulatedPlayer") // This is for internal use only. We do not support Linux clients.
+            {
                 Common.WriteHeading(" > Building simulated player.");
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
@@ -234,7 +232,7 @@ exit /b !ERRORLEVEL!
                     Console.WriteLine("worker coordinator path did not exist");
                 }
 
-                var archiveFileName = isUsingFakeClient ? "UnrealFakeClient@Linux.zip" : "UnrealSimulatedPlayer@Linux.zip";
+                var archiveFileName = "UnrealSimulatedPlayer@Linux.zip";
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
