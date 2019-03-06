@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialGDKSettings.h"
+#include "Utils/EntityPool.h"
 
 #include "TimerManager.h"
 
 #include "Interop/SpatialReceiver.h"
-#include "Utils/EntityPool.h"
+#include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialEntityPool);
 

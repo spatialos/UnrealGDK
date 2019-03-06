@@ -622,20 +622,20 @@ bool USpatialActorChannel::TryAllocateEntityId()
 {
 	EntityId = NetDriver->PackageMap->AllocateEntityIdForActor(Actor);
 
-	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		// If a Singleton was created, update the GSM with the proper Id.
-		if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-		{
-			NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
-		}
-		// Inform USpatialNetDriver of this new actor channel/entity pairing
-		NetDriver->AddActorChannel(EntityId, this);
-
-		return true;
+		return false;
 	}
+	
+	// If a Singleton was created, update the GSM with the proper Id.
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
+	}
+	// Inform USpatialNetDriver of this new actor channel/entity pairing
+	NetDriver->AddActorChannel(EntityId, this);
 
-	return false;
+	return true;
 }
 
 FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)

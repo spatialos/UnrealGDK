@@ -59,6 +59,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 Worker_EntityId USpatialPackageMapClient::AllocateEntityIdForActor(AActor* Actor)
 {
 	check(Actor);
+	checkf(NetDriver->IsServer(), TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
 
 	Worker_EntityId EntityId = NetDriver->EntityPool->GetNextEntityId();
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)

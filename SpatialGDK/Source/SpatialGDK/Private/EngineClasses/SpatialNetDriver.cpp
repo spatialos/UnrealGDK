@@ -288,6 +288,7 @@ void USpatialNetDriver::OnMapLoadedAndConnected()
 			GlobalStateManager->QueryGSM(true /*bRetryUntilAcceptingPlayers*/);
 		}
 	}
+	// Entity pool should only exist on server as clients cannot create entities
 	else
 	{
 		EntityPool->Init(this, TimerManager);
