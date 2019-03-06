@@ -526,6 +526,18 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 					Writer->WriteObjectEnd();
 				Writer->WriteArrayEnd();
 			Writer->WriteObjectEnd();
+
+			Writer->WriteObjectStart();
+				Writer->WriteValue(TEXT("worker_type"), TEXT("AIWorker"));
+				Writer->WriteRawJSONValue("flags", TEXT("[]"));
+				Writer->WriteArrayStart("permissions");
+					Writer->WriteObjectStart();
+						Writer->WriteObjectStart(TEXT("all"));
+						Writer->WriteObjectEnd();
+					Writer->WriteObjectEnd();
+				Writer->WriteArrayEnd();
+			Writer->WriteObjectEnd();
+
 		Writer->WriteArrayEnd(); // Worker section end
 	Writer->WriteObjectEnd(); // End of json
 
