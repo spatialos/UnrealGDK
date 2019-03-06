@@ -158,9 +158,9 @@ exit /b !ERRORLEVEL!
                 });
 
                 var windowsNoEditorPath = Path.Combine(stagingDir, "WindowsNoEditor");
-				
-				// Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher
-				var oldExe = Path.Combine(windowsNoEditorPath, $"{gameName}.exe");
+
+                // Add a _ to the start of the exe name, to ensure it is the exe selected by the launcher
+                var oldExe = Path.Combine(windowsNoEditorPath, $"{gameName}.exe");
                 var renamedExe = Path.Combine(windowsNoEditorPath, $"_{gameName}.exe");
                 if (File.Exists(oldExe))
                 {
@@ -170,7 +170,7 @@ exit /b !ERRORLEVEL!
                 {
                     Console.WriteLine("Could not find the executable to rename.");
                 }
-				
+
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
