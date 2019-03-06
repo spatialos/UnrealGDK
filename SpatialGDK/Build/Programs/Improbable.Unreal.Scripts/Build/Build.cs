@@ -184,8 +184,7 @@ exit /b !ERRORLEVEL!
                 var isUsingFakeClient = gameName == baseGameName + "FakeClient";
                 if (isUsingFakeClient)
                 {
-                    Console.Error.WriteLine("'FakeClient' GameName is deprecated and renamed to 'SimulatedPlayer'. Please run 'BuildWorker.bat <ProjectName>SimulatedPlayer ...' instead.");
-                    Console.Error.WriteLine("Warning: using `SimulatedPlayer` will output an assembly with a different name: UnrealSimulatedPlayer@Linux.zip. Make sure you change any reference to the old UnrealFakeClient@Linux.zip to this new assembly in your config files.");
+                    Common.WriteWarning("[Deprecated] 'FakeClient' is deprecated, please use 'SimulatedPlayer' instead. This will create the same assembly under a different name: UnrealSimulatedPlayer@Linux.zip.");
                 }
 
                 Common.WriteHeading(" > Building simulated player.");
