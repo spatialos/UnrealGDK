@@ -1,5 +1,5 @@
 - <h3>SpatialOS GDK for Unreal</h3>
-    - [Welcome]({{urlRoot}}/welcome)
+    - [Welcome]({{urlRoot}}/index)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
