@@ -1,4 +1,5 @@
 - <h3>SpatialOS GDK for Unreal</h3>
+<<<<<<< HEAD
     - [Welcome]({{urlRoot}}/welcome)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
@@ -10,6 +11,21 @@
             - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
     - [Feature list]({{urlRoot}}/features)
     - [What's new in alpha]({{urlRoot}}/content/whatsnew)
+=======
+- <h3>[- Welcome]({{urlRoot}}/welcome)</h3>
+- <h3>+ Get started</h3>
+    - [Introduction]({{urlRoot}}/content/get-started/introduction)
+    - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
+    - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+    - [3: Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
+    - Next steps - either:
+        - [Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
+        - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
+- <h3>[- Feature list]({{urlRoot}}/features)</h3>
+- <h3>[- What's new in alpha]({{urlRoot}}/content/whatsnew)</h3>
+
+ ***
+>>>>>>> master
 - <h3>Concepts and terminology</h3>
     - [SpatialOS concepts]({{urlRoot}}/content/concepts)
     - [Glossary]({{urlRoot}}/content/glossary)
