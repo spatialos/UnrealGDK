@@ -140,25 +140,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 	}
 
 	// Ensure all sub-levels are also loaded
-	const TArray<ULevelStreaming*> StreamingLevels = GWorld->GetStreamingLevels();
-	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Loading %d Streaming SubLevels"), StreamingLevels.Num());
-	for (ULevelStreaming* StreamingLevel : StreamingLevels)
-	{
-		FLatentActionInfo LatentInfo;
-		UGameplayStatics::LoadStreamLevel(GWorld, StreamingLevel->GetWorldAssetPackageFName(), false, true, LatentInfo);
-	}
-
-	// Ensure all world composition tiles are also loaded
-	if (GWorld->WorldComposition != nullptr)
-	{
-		TArray<ULevelStreaming*> StreamingTiles = GWorld->WorldComposition->TilesStreaming;
-		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Loading %d World Composition Tiles"), StreamingTiles.Num());
-		for (ULevelStreaming* StreamingTile : StreamingTiles)
-		{
-			FLatentActionInfo LatentInfo;
-			UGameplayStatics::LoadStreamLevel(GWorld, StreamingTile->GetWorldAssetPackageFName(), false, true, LatentInfo);
-		}
-	}
+	InSpatialGDKEditor.LoadAllStreamingLevels(GWorld);
 
 	// Generate Schema Iteration
 	GenerateSchemaForLoadedMap(InSpatialGDKEditor);

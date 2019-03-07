@@ -3,6 +3,8 @@
 #include "SpatialGDKEditor.h"
 
 #include "Async/Async.h"
+#include "Engine/WorldComposition.h"
+
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
 
@@ -35,6 +37,8 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	GeneralProjectSettings->bSpatialNetworking = true;
 
 	TryLoadExistingSchemaDatabase();
+
+	LoadAllStreamingLevels(GWorld);
 
 	PreProcessSchemaMap();
 
@@ -83,4 +87,35 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	{
 		FailureCallback.ExecuteIfBound();
 	}
+}
+
+void FSpatialGDKEditor::LoadAllStreamingLevels(UWorld* World)
+{
+	const TArray<ULevelStreaming*> StreamingLevels = World->GetStreamingLevels();
+	UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loading %d Streaming SubLevels"), StreamingLevels.Num());
+	for (ULevelStreaming* StreamingLevel : StreamingLevels)
+	{
+		StreamingLevel->SetShouldBeVisible(true);
+		StreamingLevel->SetShouldBeVisibleInEditor(false);
+		StreamingLevel->bShouldBlockOnLoad = true;
+		World->AddStreamingLevel(StreamingLevel);
+	}
+
+	// Ensure all world composition tiles are also loaded
+	if (World->WorldComposition != nullptr)
+	{
+		TArray<ULevelStreaming*> StreamingTiles = World->WorldComposition->TilesStreaming;
+
+		UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loading %d World Composition Tiles"), StreamingTiles.Num());
+		for (ULevelStreaming* StreamingLevel : StreamingTiles)
+		{
+			UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loading Level Tile %s"), *StreamingLevel->GetWorldAssetPackageName());
+			StreamingLevel->SetShouldBeVisible(true);
+			StreamingLevel->SetShouldBeVisibleInEditor(false);
+			StreamingLevel->bShouldBlockOnLoad = true;
+			World->AddStreamingLevel(StreamingLevel);
+		}
+	}
+
+	World->FlushLevelStreaming(EFlushLevelStreamingType::Full);
 }

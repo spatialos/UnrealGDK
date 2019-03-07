@@ -19,6 +19,8 @@ public:
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 
+	void LoadAllStreamingLevels(UWorld* World);
+
 private:
 	bool bSchemaGeneratorRunning;
 	TFuture<bool> SchemaGeneratorResult;
