@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Gameplay Ability System on the GDK for Unreal
 
 The [Gameplay Ability System](https://docs.unrealengine.com/en-us/Gameplay/GameplayAbilitySystem) is a flexible framework for building abilities and attributes of the type you might find in an RPG, MMO, or MOBA. However, as it makes use of lots of the advanced parts of the Unreal networking stack, the GDK for Unreal doesn't *currently* support it in it's entirety. 

@@ -68,12 +68,12 @@ void UpdateChangelistHistory(TSharedPtr<FRepState>& RepState)
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
+	, bCreatedEntity(false)
 	, EntityId(0)
 	, bFirstTick(true)
 	, NetDriver(nullptr)
 	, LastSpatialPosition(FVector::ZeroVector)
 	, bCreatingNewEntity(false)
-	, bCreatedEntity(false)
 {
 }
 
