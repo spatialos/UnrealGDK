@@ -7,6 +7,7 @@
 
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
+#include "SpatialGDKEditorSettings.h"
 
 #include "Editor.h"
 
@@ -38,7 +39,11 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 	TryLoadExistingSchemaDatabase();
 
-	LoadAllStreamingLevels(GWorld);
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKSettings->bLoadStreamingLevelsWhenGeneratingSchema)
+	{
+		LoadAllStreamingLevels(GWorld);
+	}
 
 	PreProcessSchemaMap();
 

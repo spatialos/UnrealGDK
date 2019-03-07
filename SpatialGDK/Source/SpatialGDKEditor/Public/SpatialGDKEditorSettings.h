@@ -42,6 +42,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Stop on exit"))
 	bool bStopSpatialOnExit;
 
+	/** if checked, the GDK will load all streaming levels and World Composition tiles before generating schema. */
+	UPROPERTY(EditAnywhere, config, Category = "Schema", meta = (ConfigRestartRequired = false, DisplayName = "Load streaming levels when generating schema"))
+	bool bLoadStreamingLevelsWhenGeneratingSchema;
+
 private:
 	/** Path to your SpatialOS snapshot. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
@@ -95,6 +99,6 @@ public:
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
 			: GeneratedSchemaOutputFolder.Path;
 	}
-	
+
 	virtual FString ToString();
 };

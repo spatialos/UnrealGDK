@@ -8,6 +8,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bGenerateDefaultLaunchConfig(true)
 	, bStopSpatialOnExit(false)
 	, bGeneratePlaceholderEntitiesInSnapshot(true)
+	, bLoadStreamingLevelsWhenGeneratingSchema(true)
 {
 	SpatialOSDirectory.Path = GetSpatialOSDirectory();
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
@@ -55,6 +56,7 @@ FString USpatialGDKEditorSettings::ToString()
 	Args.Add(SpatialOSSnapshotPath.Path);
 	Args.Add(SpatialOSSnapshotFile);
 	Args.Add(GeneratedSchemaOutputFolder.Path);
+	Args.Add(bLoadStreamingLevelsWhenGeneratingSchema);
 	Args.Add(bGeneratePlaceholderEntitiesInSnapshot);
 
 	return FString::Format(TEXT(
@@ -66,7 +68,8 @@ FString USpatialGDKEditorSettings::ToString()
 		"SpatialOSSnapshotPath={5}, "
 		"SpatialOSSnapshotFile={6}, "
 		"GeneratedSchemaOutputFolder={7}, "
-		"bGeneratePlaceholderEntitiesInSnapshot={8}")
+		"bLoadStreamingLevelsWhenGeneratingSchema={8}, "
+		"bGeneratePlaceholderEntitiesInSnapshot={9}")
 		, Args);
 }
 
