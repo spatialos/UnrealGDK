@@ -1,3 +1,4 @@
+<%(TOC)%>
 # SpatialOS concepts
 
 See the SpatialOS documentation for guidance on the SpatialOS core concepts.

@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Troubleshooting
 
 #### Q:
@@ -48,7 +49,7 @@ You're building against an unsupported version of Unreal Engine. Make sure you'r
 My game uses reliable multicast RPCs - why does the SpatialOS GDK for Unreal not support these?
 
 #### A: 
-The underlying implementation of multicast RPCs uses SpatialOS [events](https://docs.improbable.io/reference/latest/shared/glossary#event) (SpatialOS documentation). SpatialOS events can only be sent unreliably. Additionally, the cost of a multicast RPC scales with the number of client-workers present in a deployment, which means they can get very expensive. A better approach would be to send RPCs to only the workers that are close to the broadcasting worker.
+The underlying implementation of multicast RPCs uses SpatialOS [events](https://docs.improbable.io/reference/latest/shared/glossary#event). SpatialOS events can only be sent unreliably. Additionally, the cost of a multicast RPC scales with the number of client-workers present in a deployment, which means they can get very expensive. A better approach would be to send RPCs to only the workers that are close to the broadcasting worker.
 <br/>
 -----
 
