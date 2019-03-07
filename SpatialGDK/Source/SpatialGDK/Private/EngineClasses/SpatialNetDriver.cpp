@@ -60,6 +60,12 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// Extract the snapshot to load (if any) from the map URL so that once we are connected to a deployment we can load that snapshot into the Spatial deployment.
 	SnapshotToLoad = URL.GetOption(*SpatialConstants::SnapshotURLOption, TEXT(""));
 
+	if (URL.HasOption(TEXT("workertype=")))
+	{
+		WorkerType = URL.GetOption(TEXT("workertype="), TEXT(""));
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("WorkerType %s. Connecting to SpatialOS."), *WorkerType);
+	}
+
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)
 	{

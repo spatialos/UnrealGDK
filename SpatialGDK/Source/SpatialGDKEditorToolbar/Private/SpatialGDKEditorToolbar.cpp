@@ -25,7 +25,6 @@
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
-#include "Serialization/JsonWriter.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -429,6 +428,8 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 	FString Text;
 	TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
 
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
 	// Populate json file for launch config
 	Writer->WriteObjectStart(); // Start of json
 		Writer->WriteValue(TEXT("template"), TEXT("small")); // Template section
@@ -506,38 +507,13 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 			Writer->WriteArrayEnd();
 		Writer->WriteObjectEnd(); // Load balancing section end
 		Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
-			Writer->WriteObjectStart();
-				Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealWorker"));
-				Writer->WriteRawJSONValue("flags", TEXT("[]"));
-				Writer->WriteArrayStart("permissions");
-					Writer->WriteObjectStart();
-						Writer->WriteObjectStart(TEXT("all"));
-						Writer->WriteObjectEnd();
-					Writer->WriteObjectEnd();
-				Writer->WriteArrayEnd();
-			Writer->WriteObjectEnd();
-			Writer->WriteObjectStart();
-				Writer->WriteValue(TEXT("worker_type"), TEXT("UnrealClient"));
-				Writer->WriteRawJSONValue("flags", TEXT("[]"));
-				Writer->WriteArrayStart("permissions");
-					Writer->WriteObjectStart();
-						Writer->WriteObjectStart(TEXT("all"));
-						Writer->WriteObjectEnd();
-					Writer->WriteObjectEnd();
-				Writer->WriteArrayEnd();
-			Writer->WriteObjectEnd();
-
-			Writer->WriteObjectStart();
-				Writer->WriteValue(TEXT("worker_type"), TEXT("AIWorker"));
-				Writer->WriteRawJSONValue("flags", TEXT("[]"));
-				Writer->WriteArrayStart("permissions");
-					Writer->WriteObjectStart();
-						Writer->WriteObjectStart(TEXT("all"));
-						Writer->WriteObjectEnd();
-					Writer->WriteObjectEnd();
-				Writer->WriteArrayEnd();
-			Writer->WriteObjectEnd();
-
+			if (SpatialGDKSettings != nullptr)
+			{
+				for(auto& Worker : SpatialGDKSettings->LaunchConfigDesc.Workers)
+				{
+					WriteWorkerSection(Writer, Worker.WorkerTypeName);
+				}
+			}
 		Writer->WriteArrayEnd(); // Worker section end
 	Writer->WriteObjectEnd(); // End of json
 
@@ -548,6 +524,22 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '%s'. Perhaps the file is Read-Only?"), *LaunchConfigPath);
 		return false;
 	}
+
+	return true;
+}
+
+bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType) const
+{
+	Writer->WriteObjectStart();
+		Writer->WriteValue(TEXT("worker_type"), *WorkerType);
+		Writer->WriteRawJSONValue("flags", TEXT("[]"));
+		Writer->WriteArrayStart("permissions");
+			Writer->WriteObjectStart();
+				Writer->WriteObjectStart(TEXT("all"));
+				Writer->WriteObjectEnd();
+			Writer->WriteObjectEnd();
+		Writer->WriteArrayEnd();
+	Writer->WriteObjectEnd();
 
 	return true;
 }
