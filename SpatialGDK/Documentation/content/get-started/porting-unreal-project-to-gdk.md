@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Get started: Port your own Unreal project to the GDK
 
 As an experienced UE4 developer, you likely have a prototype or a game already. The GDK allows you to port it over to SpatialOS. This guide shows you how to kickstart your SpatialOS journey - by the end of it your game will run on a *single server-worker* on SpatialOS. You will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
@@ -22,8 +23,6 @@ Before porting your project:
 `<YourProject>` - Name of your game project's `.uproject` (for example, `\<GameRoot>\StarterProject.uproject`).
 
 ## Port your game to the GDK
-
-<%(TOC)%>
 
 ### 1. Set up the project structure
 1. Ensure you have a `<ProjectRoot>`. If your `<GameRoot>` lives inside of a self-contained folder already, this is your `<ProjectRoot>`. If not, you should create a new folder to represent your `<ProjectRoot>` and move your `<GameRoot>` inside of it.  
