@@ -9,7 +9,6 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
-
 #include "Utils/OpCallbackTemplate.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
