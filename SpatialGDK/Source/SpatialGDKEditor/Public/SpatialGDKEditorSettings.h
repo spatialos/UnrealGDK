@@ -7,6 +7,24 @@
 
 #include "SpatialGDKEditorSettings.generated.h"
 
+USTRUCT()
+struct FWorkerTypeLaunchSection
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker type name"))
+	FString WorkerTypeName;
+};
+
+USTRUCT()
+struct FSpatialLaunchConfigDescription
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Workers"))
+	TArray<FWorkerTypeLaunchSection> Workers;
+};
+
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
@@ -38,6 +56,10 @@ private:
 	FFilePath SpatialOSLaunchConfig;
 
 public:
+	/** Launch configuration description. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration description"))
+	FSpatialLaunchConfigDescription LaunchConfigDesc;
+
 	/** Stop `spatial local launch` when shutting down editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Stop on exit"))
 	bool bStopSpatialOnExit;
