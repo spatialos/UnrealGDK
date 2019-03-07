@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Get started: Introduction
 
 Get started with the SpatialOS GDK for Unreal by building the SpatialOS Unreal Engine Fork and following the Multiserver Shooter Tutorial. The tutorial shows you how to deploy a project to the cloud and lets you experience a simple shooter game running across two servers. 
