@@ -398,7 +398,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			{
 				// In native networking, if Unreal tries to look up a stably named actor on the client
 				// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
-				// returning here does the same behavior.
+				// Returning here does the same behavior.
 				return;
 			}
 
