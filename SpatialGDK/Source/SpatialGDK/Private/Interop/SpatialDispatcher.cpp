@@ -37,7 +37,8 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	{
 		Worker_Op* Op = &OpList->ops[i];
 
-		if (IsExternalSchemaOp(Op)) {
+		if (IsExternalSchemaOp(Op))
+		{
 			ProcessExternalSchemaOp(Op);
 			continue;
 		}
@@ -135,41 +136,62 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	}
 }
 
-bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) {
+bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op)
+{
 	Worker_ComponentId ComponentId = GetComponentId(Op);
 	return  SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID;
 }
 
-void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op) {
-	auto TryUserCallback = [&](Worker_ComponentId ComponentId, TFunction<void(UOpCallbackTemplate*)>& OpCallback) {
+void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
+{
+	auto TryUserCallback = [&](Worker_ComponentId ComponentId, TFunction<void(UOpCallbackTemplate*)>& OpCallback)
+	{
 		if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(ComponentId))
 		{
 			UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
 			OpCallback(UserCallback);
 		}
 	};
-
 	Worker_ComponentId ComponentId = GetComponentId(Op);
 	TFunction<void(UOpCallbackTemplate*)> UserCallback;
+	
 	switch (Op->op_type)
 	{
 	case WORKER_OP_TYPE_ADD_COMPONENT:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnAddComponent(Op->add_component); };
+		UserCallback = [&](UOpCallbackTemplate* UserCallback)
+		{
+			UserCallback->OnAddComponent(Op->add_component);
+		};
 		break;
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnRemoveComponent(Op->remove_component); };
+		UserCallback = [&](UOpCallbackTemplate* UserCallback)
+		{
+			UserCallback->OnRemoveComponent(Op->remove_component);
+		};
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnComponentUpdate(Op->component_update); };
+		UserCallback = [&](UOpCallbackTemplate* UserCallback)
+		{
+			UserCallback->OnComponentUpdate(Op->component_update);
+		};
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnAuthorityChange(Op->authority_change); };
+		UserCallback = [&](UOpCallbackTemplate* UserCallback)
+		{
+			UserCallback->OnAuthorityChange(Op->authority_change);
+		};
 		break;
 	case WORKER_OP_TYPE_COMMAND_REQUEST:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnCommandRequest(Op->command_request); };
+		UserCallback = [&](UOpCallbackTemplate* UserCallback)
+		{
+			UserCallback->OnCommandRequest(Op->command_request);
+		};
 		break;
 	case WORKER_OP_TYPE_COMMAND_RESPONSE:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback) {UserCallback->OnCommandResponse(Op->command_response); };
+		UserCallback = [&](UOpCallbackTemplate* UserCallback)
+		{
+			UserCallback->OnCommandResponse(Op->command_response);
+		};
 		break;
 	default:
 		return;
@@ -177,7 +199,8 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op) {
 	TryUserCallback(ComponentId, UserCallback);
 }
 
-Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op) {
+Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op)
+{
 	switch (Op->op_type)
 	{
 	case WORKER_OP_TYPE_ADD_COMPONENT:
