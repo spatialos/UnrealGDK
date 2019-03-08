@@ -152,6 +152,11 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		Connection->LegacyLocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
 		Connection->LegacyLocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
 		Connection->LegacyLocatorConfig.UseExternalIp = true;
+
+		if (!GameInstance->GetSpatialWorkerType().IsEmpty())
+		{
+			Connection->LegacyLocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType();
+		}
 	}
 	else if (LoadedWorld->URL.HasOption(TEXT("locator")))
 	{
@@ -159,6 +164,11 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		Connection->LocatorConfig.PlayerIdentityToken = LoadedWorld->URL.GetOption(TEXT("playeridentity="), TEXT(""));
 		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
+
+		if (!GameInstance->GetSpatialWorkerType().IsEmpty())
+		{
+			Connection->LocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType();
+		}
 	}
 	else
 	{
@@ -166,6 +176,11 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		if (!LoadedWorld->URL.Host.IsEmpty())
 		{
 			Connection->ReceptionistConfig.ReceptionistHost = LoadedWorld->URL.Host;
+		}
+
+		if (!GameInstance->GetSpatialWorkerType().IsEmpty())
+		{
+			Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType();
 		}
 
 		bool bHasUseExternalIpOption = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
