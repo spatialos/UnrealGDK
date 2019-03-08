@@ -14,6 +14,15 @@ struct FWorkerTypeLaunchSection
 
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker type name"))
 	FString WorkerTypeName;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid column count"))
+	int32 Columns;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid row count"))
+	int32 Rows;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Manual Worker Connection Only"))
+	bool ManualWorkerConnectionOnly;
 };
 
 USTRUCT()
