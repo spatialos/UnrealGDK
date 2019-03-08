@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 
+#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -1465,6 +1466,21 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				check(ObjectProperty);
 
 				ObjectProperty->SetObjectPropertyValue(Data + AbsOffset, SinglePropObject);
+			}
+			else if (ObjectReferences.bFastArrayProp)
+			{
+				TSet<FUnrealObjectRef> NewUnresolvedRefs;
+				FSpatialNetBitReader ValueDataReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits, NewUnresolvedRefs);
+
+				check(Property->IsA<UArrayProperty>());
+				UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(Cast<UArrayProperty>(Property));
+
+				FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, ReplicatedObject, Parent->ArrayIndex, Parent->Property, NetDeltaStruct);
+
+				if (NewUnresolvedRefs.Num() > 0)
+				{
+					bOutStillHasUnresolved = true;
+				}
 			}
 			else
 			{

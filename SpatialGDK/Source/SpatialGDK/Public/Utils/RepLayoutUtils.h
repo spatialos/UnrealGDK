@@ -188,4 +188,26 @@ inline TArray<UFunction*> GetClassRPCFunctions(const UClass* Class)
 	return RelevantClassFunctions;
 }
 
+inline UScriptStruct* GetFastArraySerializerProperty(UArrayProperty* Property)
+{
+	// Check if this array property conforms to the pattern of what we expect for a FFastArraySerializer. We do
+	// this be ensuring that the owner struct has the NetDeltaSerialize flag, and that the array's internal item
+	// type derives from FFastArraySerializerItem. We do this so we can special case handle replication of FFastArrays.
+	if (UScriptStruct* OwnerProperty = Cast<UScriptStruct>(Property->GetOwnerStruct()))
+	{
+		if (OwnerProperty->StructFlags & STRUCT_NetDeltaSerializeNative)
+		{
+			if (UStructProperty* ArrayInnerProperty = Cast<UStructProperty>(Property->Inner))
+			{
+				if (ArrayInnerProperty->Struct->IsChildOf(FFastArraySerializerItem::StaticStruct()))
+				{
+					return OwnerProperty;
+				}
+			}
+		}
+	}
+
+	return nullptr;
+}
+
 }
