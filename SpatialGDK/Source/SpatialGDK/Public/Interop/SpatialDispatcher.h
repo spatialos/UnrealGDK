@@ -32,9 +32,9 @@ public:
 	void ProcessOps(Worker_OpList* OpList);
 
 private:
-	bool IsExternalSchemaOp(Worker_Op* Op);
+	bool IsExternalSchemaOp(Worker_Op* Op) const;
 	void ProcessExternalSchemaOp(Worker_Op* Op);
-	Worker_ComponentId GetComponentId(Worker_Op* Op);
+	Worker_ComponentId GetComponentId(Worker_Op* Op) const;
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
