@@ -19,14 +19,21 @@ public:
 	~UOpCallbackTemplate() = default;
 
 	/**
-	  * Called by SpatialDispatcher on initialization, this is to allow the user to write more useful callbacks.
-	  * @param World the UWorld top level hierarchy object.
+	  * Called by SpatialDispatcher on initialization providing UWorld and USpatialStaticComponentView pointers to help the user write more meaningful callbacks.
+	  * @param InWorld the UWorld top level hierarchy object.
+	  * @param InStaticComponentView the static component view for the worker.
 	  */
-	void Init(UWorld* InWorld, USpatialStaticComponentView* InStaticComponentView)
+	void InternalInit(UWorld* InWorld, USpatialStaticComponentView* InStaticComponentView)
 	{
 		World = InWorld;
 		StaticComponentView = InStaticComponentView;
+		Init();
 	}
+
+	/**
+	  * Called by InternalInit on initialization to allow the user to write their own initialization logic.
+	  */
+	virtual void Init() {}
 
 	/**
 	  * Component ID the callbacks should apply to.
