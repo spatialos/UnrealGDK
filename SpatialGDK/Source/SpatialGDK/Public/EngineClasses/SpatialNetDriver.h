@@ -177,10 +177,15 @@ private:
 	UFUNCTION()
 	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
 
-	void Connect();
+	void SetupBeforeConnection(const FURL& URL, bool bInitAsClient);
 
 	UFUNCTION()
-	void OnMapLoadedAndConnected();
+	void OnConnectedToSpatialOS();
+
+	void Connect();
+
+	//UFUNCTION()
+	//void OnMapLoadedAndConnected();
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 

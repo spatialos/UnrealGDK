@@ -37,7 +37,10 @@ protected:
 private:
 
 	// TODO: Move SpatialConnection ownership to NetDriver
+	// TODO remove this
 	friend class USpatialNetDriver;
+
+	// SpatialConnection is stored here for persistence between map travels.
 	UPROPERTY()
 	USpatialWorkerConnection* SpatialConnection;
 

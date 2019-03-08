@@ -65,16 +65,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// We do this here straight away to trigger LoadMap.
 	if (bInitAsClient)
 	{
-		FWorldContext* WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriver(this);
-		check(WorldContext);
-
-		// Here we need to fake a few things to start ticking the level travel on client.
-		if (WorldContext->PendingNetGame)
-		{
-			WorldContext->PendingNetGame->bSuccessfullyConnected = true;
-			WorldContext->PendingNetGame->bSentJoinRequest = false;
-		}
-
 		// If the URL has not specified to keep the clients connection then we should create a new one.
 		bPersistSpatialConnection = URL.HasOption(*SpatialConstants::ClientsStayConnectedURLOption);
 	}
@@ -83,9 +73,11 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		// Servers should never disconnect from a deployment.
 		bPersistSpatialConnection = true;
 
-		// The server should already have a world.
-		OnMapLoaded(GetWorld());
+		//// The server should already have a world.
+		//OnMapLoaded(GetWorld());
 	}
+
+	SetupBeforeConnection(URL, bInitAsClient);
 
 	return true;
 }
@@ -101,38 +93,32 @@ void USpatialNetDriver::PostInitProperties()
 	}
 }
 
-void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
+void USpatialNetDriver::SetupBeforeConnection(const FURL& URL, bool bInitAsClient)
 {
-	if (LoadedWorld->GetNetDriver() != this)
+	USpatialGameInstance* GameInstance = nullptr;
+
+	if (bInitAsClient)
 	{
-		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
-		// As the delegate is a global variable, it triggers all 3 USpatialNetDriver::OnMapLoaded callbacks. As a result, we should
-		// make sure that the net driver of this world is in fact us.
-		return;
+		const FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
+		GameInstance = Cast<USpatialGameInstance>(WorldContext.OwningGameInstance);
+	}
+	else
+	{
+		UWorld* LoadedWorld = GetWorld();
+		GameInstance = Cast<USpatialGameInstance>(LoadedWorld->GetGameInstance());
 	}
 
-	if (Connection)
-	{
-		// If the connection already exists in this NetDriver we don't need to continue this function.
-		return;
-	}
-
-	// Handle Spatial connection configurations.
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
-
-	// Set the timer manager.
-	TimerManager = &LoadedWorld->GetTimerManager();
-
-	// Set up manager objects.
-	EntityRegistry = NewObject<UEntityRegistry>(this);
-
-	USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance());
-
-	if (!GameInstance)
+	if (GameInstance == nullptr)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("A SpatialGameInstance is required. Make sure your game's GameInstance inherits from SpatialGameInstance"));
 		return;
 	}
+
+	// Handle Spatial connection configurations.
+	//UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
+
+	// Set the timer manager.
+	TimerManager = &GameInstance->GetTimerManager();
 
 	if (!bPersistSpatialConnection)
 	{
@@ -143,35 +129,34 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		GameInstance->CreateNewSpatialWorkerConnection();
 	}
 
-	// Grab the SpatialWorkerConnection from the SpatialGameInstance (stored there for persistence in server travel).
 	Connection = GameInstance->SpatialConnection;
 
-	if (LoadedWorld->URL.HasOption(TEXT("legacylocator")))
+	if (URL.HasOption(TEXT("legacylocator")))
 	{
-		Connection->LegacyLocatorConfig.ProjectName = LoadedWorld->URL.GetOption(TEXT("project="), TEXT(""));
-		Connection->LegacyLocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
-		Connection->LegacyLocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
+		Connection->LegacyLocatorConfig.ProjectName = URL.GetOption(TEXT("project="), TEXT(""));
+		Connection->LegacyLocatorConfig.DeploymentName = URL.GetOption(TEXT("deployment="), TEXT(""));
+		Connection->LegacyLocatorConfig.LoginToken = URL.GetOption(TEXT("token="), TEXT(""));
 		Connection->LegacyLocatorConfig.UseExternalIp = true;
 	}
-	else if (LoadedWorld->URL.HasOption(TEXT("locator")))
+	else if (URL.HasOption(TEXT("locator")))
 	{
 		// Obtain PIT and LT.
-		Connection->LocatorConfig.PlayerIdentityToken = LoadedWorld->URL.GetOption(TEXT("playeridentity="), TEXT(""));
-		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("login="), TEXT(""));
+		Connection->LocatorConfig.PlayerIdentityToken = URL.GetOption(TEXT("playeridentity="), TEXT(""));
+		Connection->LocatorConfig.LoginToken = URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
 	}
 	else
 	{
 		// Check for overrides in the travel URL.
-		if (!LoadedWorld->URL.Host.IsEmpty())
+		if (!URL.Host.IsEmpty())
 		{
-			Connection->ReceptionistConfig.ReceptionistHost = LoadedWorld->URL.Host;
+			Connection->ReceptionistConfig.ReceptionistHost = URL.Host;
 		}
 
-		bool bHasUseExternalIpOption = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
+		bool bHasUseExternalIpOption = URL.HasOption(TEXT("useExternalIpForBridge"));
 		if (bHasUseExternalIpOption)
 		{
-			FString UseExternalIpOption = LoadedWorld->URL.GetOption(TEXT("useExternalIpForBridge"), TEXT(""));
+			FString UseExternalIpOption = URL.GetOption(TEXT("useExternalIpForBridge"), TEXT(""));
 			if (UseExternalIpOption.Equals(TEXT("false"), ESearchCase::IgnoreCase))
 			{
 				Connection->ReceptionistConfig.UseExternalIp = false;
@@ -182,8 +167,101 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 			}
 		}
 	}
-
 	Connect();
+}
+
+void USpatialNetDriver::OnConnectedToSpatialOS()
+{
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
+	Dispatcher = NewObject<USpatialDispatcher>();
+	Sender = NewObject<USpatialSender>();
+	Receiver = NewObject<USpatialReceiver>();
+	GlobalStateManager = NewObject<UGlobalStateManager>();
+	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
+	StaticComponentView = NewObject<USpatialStaticComponentView>();
+	SnapshotManager = NewObject<USnapshotManager>();
+	EntityRegistry = NewObject<UEntityRegistry>(this);
+
+	PlayerSpawner->Init(this, TimerManager);
+
+	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
+	// There may be more than one of these connections in the future for different replication conditions.
+	if (IsServer())
+	{
+		USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
+		check(NetConnection);
+
+		ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
+		TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
+
+		// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
+		// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
+		// So for now we just give the connection a dummy url, might change in the future.
+		FURL DummyURL;
+
+		NetConnection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
+		Notify->NotifyAcceptedConnection(NetConnection);
+		NetConnection->bReliableSpatialConnection = true;
+		AddClientConnection(NetConnection);
+		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
+		NetConnection->SetClientLoginState(EClientLoginState::Welcomed);
+
+		// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and Spatial networking is enabled, we can travel properly.
+		//GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
+	}
+
+	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+	Dispatcher->Init(this);
+	Sender->Init(this);
+	Receiver->Init(this, TimerManager);
+	GlobalStateManager->Init(this, TimerManager);
+	SnapshotManager->Init(this);
+
+	// Query the GSM to figure out what map to load
+	if (!IsServer())
+	{
+		// Register our interest in spawning.
+		bWaitingForAcceptingPlayersToSpawn = true;
+
+		// Begin querying the state of the GSM so we know the state of AcceptingPlayers.
+		GlobalStateManager->QueryGSM(true /*bRetryUntilAcceptingPlayers*/);
+	}
+
+	// Here if we are a server and this is server travel (there is a snapshot to load) we want to load the snapshot.
+	if (!ServerConnection && !SnapshotToLoad.IsEmpty() && Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Worker authoriative over the GSM is loading snapshot: %s"), *SnapshotToLoad);
+		SnapshotManager->LoadSnapshot(SnapshotToLoad);
+
+		// Once we've finished loading the snapshot we must update our bResponsibleForSnapshotLoading in-case we do not gain authority over the new GSM.
+		Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading = false;
+	}
+}
+
+void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
+{
+	if (LoadedWorld->GetNetDriver() != this)
+	{
+		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
+		// As the delegate is a global variable, it triggers all 3 USpatialNetDriver::OnMapLoaded callbacks. As a result, we should
+		// make sure that the net driver of this world is in fact us.
+		return;
+	}
+
+	// If we're the client, we can now ask the server to spawn our controller.
+	if (ServerConnection)
+	{
+		// If we know the GSM is already accepting players, simply spawn.
+		if (GlobalStateManager->bAcceptingPlayers && GetWorld()->RemovePIEPrefix(GlobalStateManager->DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
+		{
+			PlayerSpawner->SendPlayerSpawnRequest();
+			bWaitingForAcceptingPlayersToSpawn = false;
+		}
+		else
+		{
+			checkNoEntry();
+		}
+	}
 }
 
 void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld)
@@ -218,111 +296,39 @@ void USpatialNetDriver::Connect()
 	Connection->Connect(bConnectAsClient);
 }
 
-void USpatialNetDriver::OnMapLoadedAndConnected()
-{
-	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
-
-	Dispatcher = NewObject<USpatialDispatcher>();
-	Sender = NewObject<USpatialSender>();
-	Receiver = NewObject<USpatialReceiver>();
-	GlobalStateManager = NewObject<UGlobalStateManager>();
-	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
-	StaticComponentView = NewObject<USpatialStaticComponentView>();
-	SnapshotManager = NewObject<USnapshotManager>();
-
-	PlayerSpawner->Init(this, TimerManager);
-
-	// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
-	// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
-	// So for now we just give the connection a dummy url, might change in the future.
-	FURL DummyURL;
-
-	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
-	// There may be more than one of these connections in the future for different replication conditions.
-	if (!ServerConnection)
-	{
-		USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
-		check(NetConnection);
-
-		ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
-		TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
-
-		NetConnection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
-		Notify->NotifyAcceptedConnection(NetConnection);
-		NetConnection->bReliableSpatialConnection = true;
-		AddClientConnection(NetConnection);
-		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
-		NetConnection->SetClientLoginState(EClientLoginState::Welcomed);
-	}
-
-	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
-
-	Dispatcher->Init(this);
-	Sender->Init(this);
-	Receiver->Init(this, TimerManager);
-	GlobalStateManager->Init(this, TimerManager);
-	SnapshotManager->Init(this);
-
-	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and Spatial networking is enabled, we can travel properly.
-	GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
-
-	// If we're the client, we can now ask the server to spawn our controller.
-	if (ServerConnection)
-	{
-		// If we know the GSM is already accepting players, simply spawn.
-		if (GlobalStateManager->bAcceptingPlayers && GetWorld()->RemovePIEPrefix(GlobalStateManager->DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
-		{
-			PlayerSpawner->SendPlayerSpawnRequest();
-		}
-		else
-		{
-			// Register our interest in spawning.
-			bWaitingForAcceptingPlayersToSpawn = true;
-
-			// Begin querying the state of the GSM so we know the state of AcceptingPlayers.
-			GlobalStateManager->QueryGSM(true /*bRetryUntilAcceptingPlayers*/);
-		}
-	}
-
-	// Here if we are a server and this is server travel (there is a snapshot to load) we want to load the snapshot.
-	if (!ServerConnection && !SnapshotToLoad.IsEmpty() && Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Worker authoriative over the GSM is loading snapshot: %s"), *SnapshotToLoad);
-		SnapshotManager->LoadSnapshot(SnapshotToLoad);
-
-		// Once we've finished loading the snapshot we must update our bResponsibleForSnapshotLoading in-case we do not gain authority over the new GSM.
-		Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading = false;
-	}
-}
-
 void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 {
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
 	if (bWaitingForAcceptingPlayersToSpawn && bAcceptingPlayers)
 	{
 		// If we have the correct map loaded then ask to spawn.
-		if (GetWorld()->RemovePIEPrefix(GlobalStateManager->DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
+		if (GetWorld() != nullptr && GetWorld()->RemovePIEPrefix(GlobalStateManager->DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
 		{
 			PlayerSpawner->SendPlayerSpawnRequest();
 
 			// Unregister our interest in spawning on accepting players changing again.
 			bWaitingForAcceptingPlayersToSpawn = false;
 		}
-		else // Load the correct map based on the GSM URL
+		else
 		{
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Welcomed by server (Level: %s)"), *GlobalStateManager->DeploymentMapURL);
+			// Load the correct map based on the GSM URL
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Welcomed by SpatialOS (Level: %s)"), *GlobalStateManager->DeploymentMapURL);
 
 			// Extract map name and options
-			FWorldContext* WorldContext = GEngine->GetWorldContextFromWorld(GetWorld());
-			check(WorldContext);
+			FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
 
-			FURL RedirectURL = FURL(&WorldContext->LastURL, *GlobalStateManager->DeploymentMapURL, (ETravelType)WorldContext->TravelType);
-			RedirectURL.Host = WorldContext->LastURL.Host;
-			RedirectURL.Port = WorldContext->LastURL.Port;
-			RedirectURL.Op.Append(WorldContext->LastURL.Op);
+			FURL RedirectURL = FURL(&WorldContext.LastURL, *GlobalStateManager->DeploymentMapURL, (ETravelType)WorldContext.TravelType);
+			RedirectURL.Host = WorldContext.LastURL.Host;
+			RedirectURL.Port = WorldContext.LastURL.Port;
+			RedirectURL.Op.Append(WorldContext.LastURL.Op);
 			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
 
-			WorldContext->TravelURL = RedirectURL.ToString();
+			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
+			WorldContext.PendingNetGame->bSentJoinRequest = false;
+			WorldContext.PendingNetGame->URL = RedirectURL;
+
+			//// Travel to map. This will destroy the current NetDriver.
+			//WorldContext.TravelURL = RedirectURL.ToString();
 		}
 	}
 }
@@ -1480,7 +1486,7 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 void USpatialNetDriver::HandleOnConnected()
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Succesfully connected to SpatialOS"));
-	OnMapLoadedAndConnected();
+	OnConnectedToSpatialOS();
 	OnConnected.Broadcast();
 }
 
