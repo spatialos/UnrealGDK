@@ -7,6 +7,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
+#include "UObject/UObjectIterator.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
@@ -22,7 +23,7 @@ void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 		if (OpCallbackClass->IsChildOf(UOpCallbackTemplate::StaticClass()) && *OpCallbackClass != UOpCallbackTemplate::StaticClass())
 		{
 			UOpCallbackTemplate* CallbackObject = NewObject<UOpCallbackTemplate>(this, *OpCallbackClass);
-			CallbackObject->Init(NetDriver->GetWorld(), StaticComponentView);
+			CallbackObject->InternalInit(NetDriver->GetWorld(), StaticComponentView);
 			UE_LOG(LogSpatialView, Log, TEXT("Registered dispatcher callback class %s to handle component ID %d."), *OpCallbackClass->GetName(), CallbackObject->GetComponentId());
 			UserOpCallbacks.Add(CallbackObject->GetComponentId(), CallbackObject);
 		}
@@ -176,6 +177,7 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 		};
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
+		StaticComponentView->OnAuthorityChange(Op->authority_change);
 		UserCallback = [&](UOpCallbackTemplate* UserCallback)
 		{
 			UserCallback->OnAuthorityChange(Op->authority_change);
