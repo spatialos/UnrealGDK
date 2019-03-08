@@ -136,7 +136,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	}
 }
 
-bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op)
+bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) const
 {
 	Worker_ComponentId ComponentId = GetComponentId(Op);
 	return  SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID;
@@ -199,7 +199,7 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 	TryUserCallback(ComponentId, UserCallback);
 }
 
-Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op)
+Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op) const
 {
 	switch (Op->op_type)
 	{
