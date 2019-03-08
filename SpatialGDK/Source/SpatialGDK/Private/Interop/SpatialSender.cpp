@@ -146,9 +146,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		});
 	}
 
-	// Only want to have a stably object ref if this Actor is stably named.
-	// We use this to indicate if a new Actor should be created or to link a pre-existing Actor
-	// when receiving an AddEntityOp.
+	// We want to have a stably named ref if this is a loaded Actor.
+	// We use this to indicate if a new Actor should be created or to link a pre-existing Actor when receiving an AddEntityOp.
+	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient was true.
 	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
 	if (Actor->HasAnyFlags(RF_WasLoaded))
 	{

@@ -665,11 +665,9 @@ AActor* USpatialReceiver::GetOrCreateActor(improbable::UnrealMetadata* UnrealMet
 // This function is only called for client and server workers who did not spawn the Actor
 AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass)
 {
-	AActor* NewActor = nullptr;
-
 	if (ActorClass == nullptr)
 	{
-		return NewActor;
+		return nullptr;
 	}
 
 	FActorSpawnParameters SpawnInfo;
@@ -679,7 +677,7 @@ AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* 
 
 	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
 
-	NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
+	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
 	check(NewActor);
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
