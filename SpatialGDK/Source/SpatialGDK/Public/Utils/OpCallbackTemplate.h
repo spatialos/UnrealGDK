@@ -2,8 +2,11 @@
 
 #pragma once
 
-#include <WorkerSDK/improbable/c_worker.h>
+#include "Interop/SpatialStaticComponentView.h"
 #include "SpatialConstants.h"
+
+#include <WorkerSDK/improbable/c_worker.h>
+
 #include "OpCallbackTemplate.generated.h"
 
 UCLASS(abstract)
