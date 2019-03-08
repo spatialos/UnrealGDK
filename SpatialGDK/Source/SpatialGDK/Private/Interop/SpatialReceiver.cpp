@@ -374,7 +374,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		UNetConnection* Connection = nullptr;
-		bool bDoingDeferredSpawn = false;
 
 		// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 		if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
@@ -394,22 +393,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			if (!UnrealMetadata->StablyNamedRef.IsSet())
+			EntityActor = GetOrCreateActor(UnrealMetadata, ActorClass, SpawnData);
+			if (EntityActor == nullptr)
 			{
-				EntityActor = CreateActor(SpawnData, ActorClass, true);
-				bDoingDeferredSpawn = true;
-			}
-			else
-			{
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(UnrealMetadata->StablyNamedRef.GetValue());
-				EntityActor = Cast<AActor>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
-				if (EntityActor == nullptr)
-				{
-					// In native networking, if Unreal tries to look up a stably named actor on the client
-					// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
-					// returning here does the same behavior.
-					return;
-				}
+				// In native networking, if Unreal tries to look up a stably named actor on the client
+				// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
+				// Returning here does the same behavior.
+				return;
 			}
 
 			// Don't have authority over Actor until SpatialOS delegates authority
@@ -440,28 +430,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
-		// Add to entity registry.
 		EntityRegistry->AddToRegistry(EntityId, EntityActor);
-
-		if (bDoingDeferredSpawn)
-		{
-			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
-
-			// FinishSpawning takes a transform relative to the template transform, so we need to adjust it.
-			FTransform SpawnTransform = GetRelativeSpawnTransform(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation));
-			EntityActor->FinishSpawning(SpawnTransform);
-
-			// Imitate the behavior in UPackageMapClient::SerializeNewActor.
-			const float Epsilon = 0.001f;
-			if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
-			{
-				EntityActor->PostNetReceiveVelocity(SpawnData->Velocity);
-			}
-			if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
-			{
-				EntityActor->SetActorScale3D(SpawnData->Scale);
-			}
-		}
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId);
 
@@ -658,24 +627,68 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
-// This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::GetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, UClass* ActorClass, improbable::SpawnData* SpawnData)
 {
-	AActor* NewActor = nullptr;
-	if (ActorClass)
+	// If no stable ref, Actor has been dynamically spawned, so spawn it.
+	if (!UnrealMetadata->StablyNamedRef.IsSet())
 	{
-		//bRemoteOwned needs to be public in source code. This might be a controversial change.
-		FActorSpawnParameters SpawnInfo;
-		SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
-		SpawnInfo.bNoFail = true;
-		// We defer the construction in the GDK pipeline to allow initialization of replicated properties first.
-		SpawnInfo.bDeferConstruction = bDeferred;
+		return CreateActor(SpawnData, ActorClass);
+	}
 
-		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
+	// If we are the client
+	if (!NetDriver->IsServer())
+	{
+		if (AActor* ActorCDO = Cast<AActor>(ActorClass->GetDefaultObject()))
+		{
+			// And this Actor is bNetLoadOnClient = false, the StablyNamedRef is set but
+			// the local representation does not exist (It's deleted in ULevel::InitializeNetworkActors()).
+			// Spawn the Actor on the client.
+			if (!ActorCDO->bNetLoadOnClient)
+			{
+				return CreateActor(SpawnData, ActorClass);
+			}
+		}
+	}
 
-		NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
-		check(NewActor);
+	// Otherwise, this Actor already exists in the map, get it from the package map.
+	const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef.GetValue();
+	AActor* StaticActor = Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(StablyNamedRef));
+	// An unintended side effect of GetObjectFromUnrealObjectRef is that this ref
+	// will be registered with this Actor. It can be the case that this Actor is not
+	// stably named (due to bNetLoadOnClient = false) so we should let
+	// SpatialPackageMapClient::ResolveEntityActor handle it properly.
+	PackageMap->UnregisterActorObjectRefOnly(StablyNamedRef);
+
+	return StaticActor;
+}
+
+// This function is only called for client and server workers who did not spawn the Actor
+AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass)
+{
+	if (ActorClass == nullptr)
+	{
+		return nullptr;
+	}
+
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
+	SpawnInfo.bNoFail = true;
+
+	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
+
+	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
+	check(NewActor);
+
+	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
+	const float Epsilon = 0.001f;
+	if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
+	{
+		NewActor->PostNetReceiveVelocity(SpawnData->Velocity);
+	}
+	if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
+	{
+		NewActor->SetActorScale3D(SpawnData->Scale);
 	}
 
 	return NewActor;
