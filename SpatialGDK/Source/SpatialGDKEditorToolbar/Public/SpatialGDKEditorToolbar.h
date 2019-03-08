@@ -67,6 +67,7 @@ private:
 
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 	bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType) const;
+	bool WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, int32 Columns, int32 Rows, bool ManualWorkerConnectionOnly) const;
 
 	static void ShowCompileLog();
 

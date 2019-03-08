@@ -464,46 +464,57 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 		Writer->WriteObjectEnd(); // World section end
 		Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
 			Writer->WriteArrayStart("layer_configurations");
-				Writer->WriteObjectStart();
-					Writer->WriteValue(TEXT("layer"), TEXT("UnrealWorker"));
-					Writer->WriteObjectStart("rectangle_grid");
-
-						int Cols = 1;
-						int Rows = 1;
-
-						if (const ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>())
+				if (SpatialGDKSettings != nullptr)
+				{
+					for (auto& Worker : SpatialGDKSettings->LaunchConfigDesc.Workers)
+					{
+						if (Worker.WorkerTypeName == TEXT("UnrealClient"))
 						{
-							int NumServers = 1;
-							PlayInSettings->GetPlayNumberOfServers(NumServers);
-		
-							if (NumServers <= 2)
-							{
-								Cols = NumServers;
-								Rows = 1;
-							}
-							else
-							{
-								// Find greatest divisor.
-								for (int Divisor = FMath::Sqrt(NumServers); Divisor >= 1; Divisor--)
-								{
-									if (NumServers % Divisor == 0)
-									{
-										int GreatestDivisor = NumServers / Divisor;
-										Cols = GreatestDivisor;
-										Rows = NumServers / GreatestDivisor;
-										break;
-									}
-								}								
-							}
+							continue;
 						}
+						WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.ManualWorkerConnectionOnly);
+					}
+				}
+				//Writer->WriteObjectStart();
+				//	Writer->WriteValue(TEXT("layer"), TEXT("UnrealWorker"));
+				//	Writer->WriteObjectStart("rectangle_grid");
 
-						Writer->WriteValue(TEXT("cols"), Cols);
-						Writer->WriteValue(TEXT("rows"), Rows);
-					Writer->WriteObjectEnd();
-					Writer->WriteObjectStart(TEXT("options"));
-						Writer->WriteValue(TEXT("manual_worker_connection_only"), true);
-					Writer->WriteObjectEnd();
-				Writer->WriteObjectEnd();
+				//		int Cols = 1;
+				//		int Rows = 1;
+
+				//		if (const ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>())
+				//		{
+				//			int NumServers = 1;
+				//			PlayInSettings->GetPlayNumberOfServers(NumServers);
+		
+				//			if (NumServers <= 2)
+				//			{
+				//				Cols = NumServers;
+				//				Rows = 1;
+				//			}
+				//			else
+				//			{
+				//				// Find greatest divisor.
+				//				for (int Divisor = FMath::Sqrt(NumServers); Divisor >= 2; Divisor--)
+				//				{
+				//					if (NumServers % Divisor == 0)
+				//					{
+				//						int GreatestDivisor = NumServers / Divisor;
+				//						Cols = GreatestDivisor;
+				//						Rows = NumServers / GreatestDivisor;
+				//						break;
+				//					}
+				//				}								
+				//			}
+				//		}
+
+				//		Writer->WriteValue(TEXT("cols"), Cols);
+				//		Writer->WriteValue(TEXT("rows"), Rows);
+				//	Writer->WriteObjectEnd();
+				//	Writer->WriteObjectStart(TEXT("options"));
+				//		Writer->WriteValue(TEXT("manual_worker_connection_only"), true);
+				//	Writer->WriteObjectEnd();
+				//Writer->WriteObjectEnd();
 			Writer->WriteArrayEnd();
 		Writer->WriteObjectEnd(); // Load balancing section end
 		Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
@@ -539,6 +550,22 @@ bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<
 				Writer->WriteObjectEnd();
 			Writer->WriteObjectEnd();
 		Writer->WriteArrayEnd();
+	Writer->WriteObjectEnd();
+
+	return true;
+}
+
+bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, int32 Columns, int32 Rows, bool ManualWorkerConnectionOnly) const
+{
+	Writer->WriteObjectStart();
+	Writer->WriteValue(TEXT("layer"), WorkerType);
+	Writer->WriteObjectStart("rectangle_grid");
+	Writer->WriteValue(TEXT("cols"), Columns);
+	Writer->WriteValue(TEXT("rows"), Rows);
+	Writer->WriteObjectEnd();
+	Writer->WriteObjectStart(TEXT("options"));
+	Writer->WriteValue(TEXT("manual_worker_connection_only"), ManualWorkerConnectionOnly);
+	Writer->WriteObjectEnd();
 	Writer->WriteObjectEnd();
 
 	return true;
