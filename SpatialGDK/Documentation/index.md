@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Welcome to the SpatialOS GDK for Unreal Alpha
 <%(Callout type="warn" message="This is an alpha release of the SpatialOS GDK for Unreal. The API may change as we learn from feedback. Although not fully ready in terms of performance, stability and documentation, this is a great time to get involved and shape it with us. We are committed to improving the GDK rapidly, aiming for a more stable release in Q2 2019: see [Development Roadmap](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap). If you are interested in developing with the GDK before this time, please contact us. For more information please see [Recommended Use]({{urlRoot}}/recommended-use).")%>
 
@@ -15,7 +16,7 @@ The GDK offers:<br/>
 
 #### Want to get going with SpatialOS?
 
-* **[GET STARTED]({{urlRoot}}/content/get-started/introduction) with the SpatialOS GDK for Unreal.** If you’re an Unreal game developer and you're ready to get started with SpatialOS, the _Get started_  guide takes you through setting up the GDK and launching the  FPS Starter Project. (Note that the GDK is aimed at users comfortable with programming in Unreal.) 
+* **[Get started]({{urlRoot}}/content/get-started/introduction) with the SpatialOS GDK for Unreal.** If you’re an Unreal game developer and you're ready to get started with SpatialOS, the _Get started_  guide takes you through setting up the GDK and launching the  FPS Starter Project. (Note that the GDK is aimed at users comfortable with programming in Unreal.) 
 
 #### Want to find out more? 
 

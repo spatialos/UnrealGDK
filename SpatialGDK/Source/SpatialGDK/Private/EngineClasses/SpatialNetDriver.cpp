@@ -166,7 +166,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		if (!LoadedWorld->URL.Host.IsEmpty())
 		{
 			Connection->ReceptionistConfig.ReceptionistHost = LoadedWorld->URL.Host;
-			Connection->ReceptionistConfig.ReceptionistPort = LoadedWorld->URL.Port;
 		}
 
 		bool bHasUseExternalIpOption = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
@@ -321,6 +320,7 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 			RedirectURL.Host = WorldContext->LastURL.Host;
 			RedirectURL.Port = WorldContext->LastURL.Port;
 			RedirectURL.Op.Append(WorldContext->LastURL.Op);
+			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
 
 			WorldContext->TravelURL = RedirectURL.ToString();
 		}
@@ -736,6 +736,12 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				// or it's an editor placed actor and the client hasn't initialized the level it's in
 				if (Channel == nullptr && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
+					if (!ClassInfoManager->IsSupportedClass(Actor->GetClass()))
+					{
+						// Trying to replicate an actor that isn't supported by Spatial (e.g. marked NotSpatial)
+						continue;
+					}
+
 					if (!Actor->HasAuthority())
 					{
 						// Trying to replicate Actor which we don't have authority over.

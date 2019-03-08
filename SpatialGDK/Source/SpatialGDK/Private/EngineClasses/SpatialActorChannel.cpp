@@ -68,6 +68,7 @@ void UpdateChangelistHistory(TSharedPtr<FRepState>& RepState)
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
+	, bCreatedEntity(false)
 	, EntityId(0)
 	, bFirstTick(true)
 	, NetDriver(nullptr)
@@ -124,16 +125,16 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 #if WITH_EDITOR
 	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
 	{
-		if (GetDefault<ULevelEditorPlaySettings>()->IsDeleteDynamicEntitiesActive())
+		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
+
+		if (bDeleteDynamicEntities &&
+			NetDriver->IsServer() &&
+			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
+			NetDriver->GetWorld()->bIsTearingDown &&
+			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
 		{
-			if (NetDriver->IsServer() &&
-				NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-				NetDriver->GetWorld()->bIsTearingDown &&
-				NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
-			{
-				// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
-				DeleteEntityIfAuthoritative();
-			}
+			// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+			DeleteEntityIfAuthoritative();
 		}
 	}
 #endif
@@ -159,6 +160,15 @@ bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 void USpatialActorChannel::UpdateShadowData()
 {
 	check(Actor);
+
+	// If this channel was responsible for creating the channel, we do not want to initialize our shadow data
+	// to the latest state since there could have been state that has changed between creation of the entity
+	// and gaining of authority. Revisit this with UNR-1034
+	// TODO: UNR-1029 - log when the shadow data differs from the current state of the Actor.
+	if (bCreatedEntity)
+	{
+		return;
+	}
 
 	// Refresh shadow data when crossing over servers to prevent stale/out-of-date data.
 	ActorReplicator->RepLayout->InitShadowData(ActorReplicator->ChangelistMgr->GetRepChangelistState()->StaticBuffer, Actor->GetClass(), (uint8*)Actor);
@@ -252,9 +262,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	FReplicationFlags RepFlags;
 
 	// Send initial stuff.
-	if (OpenPacketId.First == INDEX_NONE)
+	if (bCreatingNewEntity)
 	{
 		RepFlags.bNetInitial = true;
+		// Include changes to Bunch (duplicating existing logic in DataChannel), despite us not using it,
+		// since these are passed to the virtual OnSerializeNewActor, whose implementations could use them.
 		Bunch.bClose = Actor->bNetTemporary;
 		Bunch.bReliable = true; // Net temporary sends need to be reliable as well to force them to retry
 	}
@@ -369,18 +381,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		FOutBunch DummyOutBunch;
 
-		for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
-		{
-			const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
-
-			if (ObjectRef.IsValid())
-			{
-				FClassInfo& SubobjectInfo = Info.SubobjectInfo[ObjectRef.Offset].Get();
-
-				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, SubobjectInfo, RepFlags);
-				bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-			}
-		}
+		// Actor::ReplicateSubobjects is overridable and enables the Actor to replicate any subobjects directly, via a
+		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
+		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
+		// the same SpatialActorChannel::ReplicateSubobject.
+		bWroteSomethingImportant |= Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 
 		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 		{
@@ -712,6 +717,7 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 		return;
 	}
 
+	bCreatedEntity = true;
 	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 }
 

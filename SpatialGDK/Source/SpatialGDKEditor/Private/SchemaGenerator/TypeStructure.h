@@ -156,6 +156,7 @@ struct FUnrealHandoverData
 using FUnrealFlatRepData = TMap<EReplicatedPropertyGroup, TMap<uint16, TSharedPtr<FUnrealProperty>>>;
 using FUnrealRPCsByType = TMap<ERPCType, TArray<TSharedPtr<FUnrealRPC>>>;
 using FCmdHandlePropertyMap = TMap<uint16, TSharedPtr<FUnrealProperty>>;
+using FSubobjectMap = TMap<uint32, TSharedPtr<FUnrealType>>;
 
 // Given a UClass, returns either "AFoo" or "UFoo" depending on whether Foo is a subclass of actor.
 FString GetFullCPPName(UClass* Class);
@@ -223,3 +224,6 @@ FUnrealRPCsByType GetAllRPCsByType(TSharedPtr<FUnrealType> TypeInfo);
 // Given a property, traverse up to the root property and create a list of properties needed to reach the leaf property.
 // For example: foo->bar->baz becomes {"foo", "bar", "baz"}.
 TArray<TSharedPtr<FUnrealProperty>> GetPropertyChain(TSharedPtr<FUnrealProperty> LeafProperty);
+
+// Get all default subobjects for an actor.
+FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo);

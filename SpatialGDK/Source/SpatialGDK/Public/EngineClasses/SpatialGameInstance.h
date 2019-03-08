@@ -11,7 +11,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
 class USpatialWorkerConnection;
 
-UCLASS()
+UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
@@ -33,8 +33,6 @@ protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
 	bool HasSpatialNetDriver() const;
-	// Helper function that bypasses some of the Unreal flow (which won't work with the SpatialOS model) when launching a new game as a client.
-	bool StartGameInstance_SpatialGDKClient(FString& Error);
 
 private:
 
@@ -42,4 +40,8 @@ private:
 	friend class USpatialNetDriver;
 	UPROPERTY()
 	USpatialWorkerConnection* SpatialConnection;
+
+	// If this flag is set to true standalone clients will not attempt to connect to a deployment automatically if a 'loginToken' exists in arguments.
+	UPROPERTY(Config)
+	bool bPreventAutoConnectWithLocator;
 };

@@ -57,17 +57,13 @@ public:
 			return false;
 		}
 
-		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
-		return NetDriver->StaticComponentView->HasAuthority(EntityId, Info.SchemaComponents[SCHEMA_ClientRPC]);
+		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID);
 	}
 
 	FORCEINLINE bool IsOwnedByWorker() const
 	{
-		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
-		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(Info.SchemaComponents[SCHEMA_ClientRPC]))
+		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID))
 		{
 			for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
 			{
@@ -131,6 +127,9 @@ public:
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
 	void UpdateShadowData();
+
+	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
+	bool bCreatedEntity;
 
 protected:
 	// UChannel Interface

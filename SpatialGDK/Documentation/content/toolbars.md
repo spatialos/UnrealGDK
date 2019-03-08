@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Toolbars
 
 There are two toolbars you can use in the Unreal Editor: the main Unreal toolbar, and the SpatialOS GDK toolbar. Once enabled, the GDK toolbar sits alongside the main Unreal toolbar:
@@ -85,7 +86,7 @@ You can also access these from the **Window** menu:
 | --- | --- |
 | Snapshot | Generates a [SpatialOS snapshot]({{urlRoot}}/content/glossary#snapshot). | 
 | Schema | Creates [schema]({{urlRoot}}/content/glossary#schema) for your Unreal project. |
-| Start | Runs [`spatial worker build build-config` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)). |
+| Start | Runs [`spatial worker build build-config`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)). |
 | Stop | Stops `spatial local launch`. |
 | Inspector | Opens the [Inspector]({{urlRoot}}/content/glossary#inspector) in a browser. |
 
@@ -95,15 +96,33 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 
  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbar-settings.png)
 
-##### Configuration
+##### General
 
 | Setting | Description |
 | --- | --- |
 | SpatialOS directory | If you're using a non-standard structure, you'll need to set this yourself. This is empty by default. If you leave it empty, it defaults to `<GameRoot>/../spatial`. |
+
+##### Play In Editor Settings
+
+| Setting | Description |
+| --- | --- |
+| Delete dynamically spawned entities | If checked, the GDK deletes any dynamically spawned entities from your SpatialOS deployment when you end the PIE session. |
+
+##### Launch
+
+| Setting | Description |
+| --- | --- |
+| Generate default launch config | If checked, the GDK creates a [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file) by default when you launch a local deployment through the toolbar. |
 | Launch configuration | The [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file) to use when running `spatial local launch` using the **Start** button. |
 | Stop on exit |  If enabled, shuts down running deployments when you close the Unreal Editor. |
+
+##### Snapshots
+
+| Setting | Description |
+| --- | --- |
 | Snapshot path | Use this to specify the filepath of your [snapshot]({{urlRoot}}/content/glossary#snapshot). If you leave this empty, it defaults to `<GameRoot>/../spatial/snapshots`. |
 | Snapshot file name |  Name of your snapshot file. |
+| Generate placeholder entities in snapshot | If checked, the GDK adds [placeholder entities]({{urlRoot}}/content/generating-a-snapshot#placeholder-entities) to the snapshot when it is generated |
 
 ##### Schema Generation
 

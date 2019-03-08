@@ -20,8 +20,15 @@ public:
 	virtual int32 Main(const FString& Params) override;
 
 private:
-	void GenerateSchema(FSpatialGDKEditor& SpatialGDKEditor);
-	void GenerateSnapshots(FSpatialGDKEditor& SpatialGDKEditor);
-	TArray<FString> GetAllMapPaths(FString InMapsPath);
-	void GenerateSnapshotForMap(FSpatialGDKEditor& SpatialGDKEditor, FString WorldPath);
+	const FString MapPathsParamName = TEXT("MapPaths");	// Commandline Argument Name used to declare the paths to generate schema/snapshots against
+	const FString AssetPathGameDirName = TEXT("/Game");	// Root asset path directory name that maps will ultimately be found in
+
+	TArray<FString> GeneratedMapPaths;
+
+private:
+	void GenerateSchemaAndSnapshotForPath(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InPath);
+	void GenerateSchemaAndSnapshotForMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName);
+
+	void GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor);
+	void GenerateSnapshotForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName);
 };

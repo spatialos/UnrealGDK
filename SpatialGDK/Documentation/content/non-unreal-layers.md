@@ -1,4 +1,4 @@
-# Multi-layer development
+# Non-Unreal layers
 <%(TOC)%>
 
 Having multiple layers in a SpatialOS game means using multiple worker types to simulate different aspects of the same deployment. For example, your game could use Unreal servers workers developed with the GDK *and* a separate Python Database worker built using the [C API](https://docs.improbable.io/reference/latest/capi/introduction) in coordination with a 3rd party service. This lets you modularize game elements, and reuse these separate worker types across multiple games.
