@@ -133,7 +133,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 					if (NewUnresolvedRefs.Num() > 0)
 					{
-						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, Cmd.ParentIndex, ArrayProperty, true));
+						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
 						UnresolvedRefs.Append(NewUnresolvedRefs);
 					}
 					else if (RootObjectReferencesMap.Find(FieldId))
