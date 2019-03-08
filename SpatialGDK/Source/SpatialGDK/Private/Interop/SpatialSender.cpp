@@ -155,12 +155,18 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		// Since we've already received the EntityId for this Actor. It is guaranteed to be resolved
 		// with the package map by this point
 		FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
+		if (OuterObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+		{
+			FNetworkGUID NetGUID = PackageMap->ResolveStablyNamedObject(Actor->GetOuter());
+			OuterObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		}
 
 		// No path in SpatialOS should contain a PIE prefix.
 		FString TempPath = Actor->GetFName().ToString();
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
 
-		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef);
+		bool bNoLoadOnClient = !PackageMap->CanClientLoadObject(Actor);
+		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 	}
 
 	TArray<Worker_ComponentData> ComponentDatas;

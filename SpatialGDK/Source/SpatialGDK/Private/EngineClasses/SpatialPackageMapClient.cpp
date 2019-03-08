@@ -127,6 +127,12 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject*
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
 }
 
+bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)
+{
+	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
+	return GuidCache->CanClientLoadObject(Object, NetGUID);
+}
+
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
 {
 	// Super::SerializeObject is not called here on purpose

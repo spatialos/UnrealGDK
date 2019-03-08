@@ -37,6 +37,9 @@ public:
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
 
+	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
+	bool CanClientLoadObject(UObject* Object);
+
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
 private:
