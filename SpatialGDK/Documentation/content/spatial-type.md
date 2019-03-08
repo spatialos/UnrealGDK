@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Spatial Type
 
  Spatial Type (`SpatialType`) is a SpatialOS-specific [class specifier (Unreal documentation)](https://docs.unrealengine.com/en-US/Programming/UnrealArchitecture/Reference/Classes/Specifiers). The GDK uses `SpatialType` to expose network-relevant class information to SpatialOS.

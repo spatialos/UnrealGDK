@@ -1,6 +1,7 @@
+<%(TOC)%>
 # Snapshots
 
-A snapshot is a representation of the state of a [SpatialOS world]({{urlRoot}}/content/glossary#spatialos-world) at a given point in time. It stores each [persistent]({{urlRoot}}/content/glossary##persistence) [SpatialOS entity]({{urlRoot}}/content/glossary##spatialos-entity) and the values of their [SpatialOS components]({{urlRoot}}/content/glossary#spatialos-component)' [properties (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#property).
+A snapshot is a representation of the state of a [SpatialOS world]({{urlRoot}}/content/glossary#spatialos-world) at a given point in time. It stores each [persistent]({{urlRoot}}/content/glossary##persistence) [SpatialOS entity]({{urlRoot}}/content/glossary##spatialos-entity) and the values of their [SpatialOS components]({{urlRoot}}/content/glossary#spatialos-component)' [properties](https://docs.improbable.io/reference/latest/shared/glossary#property).
 
 You can find out more about snapshots in the [SpatialOS snapshot documentation](https://docs.improbable.io/reference/latest/shared/operate/snapshot) but note that this documentation concentrates on working with snapshots using the [SpatialOS SDK]({{urlRoot}}/content/glossary#spatialos-sdk).
 
