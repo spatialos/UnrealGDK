@@ -73,6 +73,12 @@ void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 	}
 }
 
+void USpatialPackageMapClient::UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef)
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	SpatialGuidCache->UnregisterActorObjectRefOnly(ObjectRef);
+}
+
 FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(UObject* Object)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
@@ -119,6 +125,12 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject*
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
 
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
+}
+
+bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)
+{
+	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
+	return GuidCache->CanClientLoadObject(Object, NetGUID);
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
@@ -365,6 +377,14 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 		}
 		Iterator = &Iterator->Outer.GetValue();
 	}
+}
+
+void FSpatialNetGUIDCache::UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef)
+{
+	FNetworkGUID& NetGUID = UnrealObjectRefToNetGUID.FindChecked(ObjectRef);
+	// Remove ObjectRef first so the reference above isn't destroyed
+	NetGUIDToUnrealObjectRef.Remove(NetGUID);
+	UnrealObjectRefToNetGUID.Remove(ObjectRef);
 }
 
 FUnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
