@@ -505,10 +505,19 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 
 	// Find the handover properties.
 	uint16 HandoverDataHandle = 1;
-	VisitAllProperties(TypeNode, [&HandoverDataHandle](TSharedPtr<FUnrealProperty> PropertyInfo)
+	VisitAllProperties(TypeNode, [&HandoverDataHandle, &Class](TSharedPtr<FUnrealProperty> PropertyInfo)
 	{
 		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
 		{
+			if (UStructProperty* StructProp = Cast<UStructProperty>(PropertyInfo->Property))
+			{
+				if (StructProp->Struct->StructFlags & STRUCT_NetDeltaSerializeNative)
+				{
+					// Warn about delta serialization
+					UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s in %s uses delta serialization. " \
+						"This is not supported and standard serialization will be used instead."), *PropertyInfo->Property->GetName(), *Class->GetName());
+				}
+			}
 			PropertyInfo->HandoverData = MakeShared<FUnrealHandoverData>();
 			PropertyInfo->HandoverData->Handle = HandoverDataHandle++;
 		}

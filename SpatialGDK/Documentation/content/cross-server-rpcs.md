@@ -1,5 +1,5 @@
-# Cross-server RPCs
 <%(TOC)%>
+# Cross-server RPCs
 
 In native-Unreal networking, [RPCs (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs) are functions which either the client or the server use to send messages to each other over a network connection. 
 
