@@ -1028,6 +1028,39 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		return;
 	}
 
+	// Copied from UNetDriver::ProcessRemoteFunctionForChannel to copy pass-by-ref
+	// parameters from OutParms into Parameters's memory.
+	if (Stack == nullptr)
+	{
+		// Look for CPF_OutParm's, we'll need to copy these into the local parameter memory manually
+		// The receiving side will pull these back out when needed
+		for (TFieldIterator<UProperty> It(Function); It && (It->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm; ++It)
+		{
+			if (It->HasAnyPropertyFlags(CPF_OutParm))
+			{
+				if (OutParms == NULL)
+				{
+					continue;
+				}
+
+				FOutParmRec* Out = OutParms;
+
+				while (Out->Property != *It)
+				{
+					Out = Out->NextOutParm;
+				}
+
+				void* Dest = It->ContainerPtrToValuePtr< void >(Parameters);
+
+				const int32 CopySize = It->ElementSize * It->ArrayDim;
+
+				check(((uint8*)Dest - (uint8*)Parameters) + CopySize <= Function->ParmsSize);
+
+				It->CopyCompleteValue(Dest, Out->PropAddr);
+			}
+		}
+	}
+
 	// The RPC might have been called by an actor directly, or by a subobject on that actor
 	UObject* CallingObject = SubObject ? SubObject : Actor;
 

@@ -225,30 +225,6 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	return bSuccess;
 }
 
-bool ValidateRPCArguments(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
-{
-	bool bSuccess = true;
-
-	for (const auto& TypeInfo : TypeInfos)
-	{
-		FUnrealRPCsByType RPCsByType = GetAllRPCsByType(TypeInfo);
-		for (auto Group : GetRPCTypes())
-		{
-			for (const auto& RPC : RPCsByType[Group])
-			{
-				const UFunction* Function = RPC->Function;
-				if (Function->HasAnyFunctionFlags(FUNC_HasOutParms))
-				{
-					UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("RPC %s: Some of the arguments are passed by reference. This will cause serialization problems. Please change those arguments to be passed by value."
-						" Please note that array arguments are treated as by-reference, and currently need to be wrapped in a struct to be serialized correctly."), *Function->GetPathName());
-					bSuccess = false;
-				}
-			}
-		}
-	}
-
-	return bSuccess;
-}
 }// ::
 
 
@@ -482,12 +458,6 @@ bool SpatialGDKGenerateSchema()
 		return false;
 	}
 
-	bool bHasByRefRPCArgs = false;
-	if (!ValidateRPCArguments(TypeInfos))
-	{
-		bHasByRefRPCArgs = true;
-	}
-
 	FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Schema path %s"), *SchemaOutputPath);
@@ -517,11 +487,6 @@ bool SpatialGDKGenerateSchema()
 	}
 
 	AdditionalSchemaGeneratedClasses.Empty();
-
-	if (bHasByRefRPCArgs)
-	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Pass-by-reference or array arguments detected in some blueprint RPCs. Please check previous log messages for more details."));
-	}
 
 	return true;
 }
