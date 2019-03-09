@@ -24,6 +24,10 @@ public:
 	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
 	void RemoveEntityActor(Worker_EntityId EntityId);
 
+	// This function is ONLY used in SpatialReceiver::GetOrCreateActor to undo
+	// the unintended registering of objects when looking them up with static paths.
+	void UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef);
+
 	FNetworkGUID ResolveStablyNamedObject(UObject* Object);
 	
 	FUnrealObjectRef GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const;
@@ -32,6 +36,9 @@ public:
 
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
+
+	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
+	bool CanClientLoadObject(UObject* Object);
 
 	virtual bool SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID = NULL) override;
 
@@ -47,7 +54,6 @@ public:
 		
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);
-	void RemoveNetGUID(const FNetworkGUID& NetGUID);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(UObject* Object);
 	
@@ -56,6 +62,10 @@ public:
 	FNetworkGUID GetNetGUIDFromEntityId(Worker_EntityId EntityId) const;
 
 	void NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRef, bool bReading) const;
+
+	// This function is ONLY used in SpatialPackageMapClient::UnregisterActorObjectRefOnly
+	// to undo the unintended registering of objects when looking them up with static paths.
+	void UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef);
 
 private:
 	FNetworkGUID GetNetGUIDFromUnrealObjectRefInternal(const FUnrealObjectRef& ObjectRef);
