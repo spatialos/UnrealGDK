@@ -49,9 +49,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	bConnectAsClient = bInitAsClient;
 	bAuthoritativeDestruction = true;
 
-	ClassInfoManager = NewObject<USpatialClassInfoManager>();
-	ClassInfoManager->Init(this);
-
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
 	FWorldDelegates::LevelAddedToWorld.AddUObject(this, &USpatialNetDriver::OnLevelAddedToWorld);
@@ -72,12 +69,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	{
 		// Servers should never disconnect from a deployment.
 		bPersistSpatialConnection = true;
-
-		//// The server should already have a world.
-		//OnMapLoaded(GetWorld());
 	}
 
-	SetupBeforeConnection(URL, bInitAsClient);
+	InitiateConnectionToSpatialOS(URL);
 
 	return true;
 }
@@ -93,19 +87,20 @@ void USpatialNetDriver::PostInitProperties()
 	}
 }
 
-void USpatialNetDriver::SetupBeforeConnection(const FURL& URL, bool bInitAsClient)
+void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 {
 	USpatialGameInstance* GameInstance = nullptr;
 
-	if (bInitAsClient)
+	// A client does not have a world at this point, so we use the WorldContext
+	// to get a reference to the GameInstance
+	if (bConnectAsClient)
 	{
 		const FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
 		GameInstance = Cast<USpatialGameInstance>(WorldContext.OwningGameInstance);
 	}
 	else
 	{
-		UWorld* LoadedWorld = GetWorld();
-		GameInstance = Cast<USpatialGameInstance>(LoadedWorld->GetGameInstance());
+		GameInstance = Cast<USpatialGameInstance>(GetWorld()->GetGameInstance());
 	}
 
 	if (GameInstance == nullptr)
@@ -113,9 +108,6 @@ void USpatialNetDriver::SetupBeforeConnection(const FURL& URL, bool bInitAsClien
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("A SpatialGameInstance is required. Make sure your game's GameInstance inherits from SpatialGameInstance"));
 		return;
 	}
-
-	// Handle Spatial connection configurations.
-	//UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Loaded Map %s. Connecting to SpatialOS."), *LoadedWorld->GetName());
 
 	// Set the timer manager.
 	TimerManager = &GameInstance->GetTimerManager();
@@ -145,7 +137,7 @@ void USpatialNetDriver::SetupBeforeConnection(const FURL& URL, bool bInitAsClien
 		Connection->LocatorConfig.LoginToken = URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
 	}
-	else
+	else // Using Receptionist
 	{
 		// Check for overrides in the travel URL.
 		if (!URL.Host.IsEmpty())
@@ -167,10 +159,34 @@ void USpatialNetDriver::SetupBeforeConnection(const FURL& URL, bool bInitAsClien
 			}
 		}
 	}
-	Connect();
+
+	Connection->Connect(bConnectAsClient);
 }
 
 void USpatialNetDriver::OnConnectedToSpatialOS()
+{
+	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
+	// There may be more than one of these connections in the future for different replication conditions.
+	if (IsServer())
+	{
+		CreateServerSpatialOSNetConnection();
+	}
+
+	CreateAndInitializeCoreClasses();
+
+	// Query the GSM to figure out what map to load
+	if (!IsServer())
+	{
+		QueryGSMToLoadMap();
+	}
+
+	if (IsServer())
+	{
+		HandleOngoingServerTravel();
+	}
+}
+
+void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
 	Dispatcher = NewObject<USpatialDispatcher>();
@@ -181,51 +197,58 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
 	EntityRegistry = NewObject<UEntityRegistry>(this);
-
-	PlayerSpawner->Init(this, TimerManager);
-
-	// If we're the server, we will spawn the special Spatial connection that will route all updates to SpatialOS.
-	// There may be more than one of these connections in the future for different replication conditions.
-	if (IsServer())
-	{
-		USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
-		check(NetConnection);
-
-		ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
-		TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
-
-		// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
-		// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
-		// So for now we just give the connection a dummy url, might change in the future.
-		FURL DummyURL;
-
-		NetConnection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
-		Notify->NotifyAcceptedConnection(NetConnection);
-		NetConnection->bReliableSpatialConnection = true;
-		AddClientConnection(NetConnection);
-		//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
-		NetConnection->SetClientLoginState(EClientLoginState::Welcomed);
-
-		// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and Spatial networking is enabled, we can travel properly.
-		//GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
-	}
+	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+	ClassInfoManager->Init(this);
 	Dispatcher->Init(this);
 	Sender->Init(this);
 	Receiver->Init(this, TimerManager);
 	GlobalStateManager->Init(this, TimerManager);
 	SnapshotManager->Init(this);
+	PlayerSpawner->Init(this, TimerManager);
+}
 
-	// Query the GSM to figure out what map to load
-	if (!IsServer())
-	{
-		// Register our interest in spawning.
-		bWaitingForAcceptingPlayersToSpawn = true;
+void USpatialNetDriver::CreateServerSpatialOSNetConnection()
+{
+	check(!bConnectAsClient);
 
-		// Begin querying the state of the GSM so we know the state of AcceptingPlayers.
-		GlobalStateManager->QueryGSM(true /*bRetryUntilAcceptingPlayers*/);
-	}
+	USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
+	check(NetConnection);
+
+	ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
+	TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
+
+	// Each connection stores a URL with various optional settings (host, port, map, netspeed...)
+	// We currently don't make use of any of these as some are meaningless in a SpatialOS world, and some are less of a priority.
+	// So for now we just give the connection a dummy url, might change in the future.
+	FURL DummyURL;
+
+	NetConnection->InitRemoteConnection(this, nullptr, DummyURL, *FromAddr, USOCK_Open);
+	Notify->NotifyAcceptedConnection(NetConnection);
+	NetConnection->bReliableSpatialConnection = true;
+	AddClientConnection(NetConnection);
+	//Since this is not a "real" client connection, we immediately pretend that it is fully logged on.
+	NetConnection->SetClientLoginState(EClientLoginState::Welcomed);
+
+	// Bind the ProcessServerTravel delegate to the spatial variant. This ensures that if ServerTravel is called and Spatial networking is enabled, we can travel properly.
+	GetWorld()->SpatialProcessServerTravelDelegate.BindStatic(SpatialProcessServerTravel);
+}
+
+void USpatialNetDriver::QueryGSMToLoadMap()
+{
+	check(bConnectAsClient);
+
+	// Register our interest in spawning.
+	bWaitingForAcceptingPlayersToSpawn = true;
+
+	// Begin querying the state of the GSM so we know the state of AcceptingPlayers.
+	GlobalStateManager->QueryGSM(true /*bRetryUntilAcceptingPlayers*/);
+}
+
+void USpatialNetDriver::HandleOngoingServerTravel()
+{
+	check(!bConnectAsClient);
 
 	// Here if we are a server and this is server travel (there is a snapshot to load) we want to load the snapshot.
 	if (!ServerConnection && !SnapshotToLoad.IsEmpty() && Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->bResponsibleForSnapshotLoading)
@@ -249,7 +272,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 	}
 
 	// If we're the client, we can now ask the server to spawn our controller.
-	if (ServerConnection)
+	if (!IsServer())
 	{
 		// If we know the GSM is already accepting players, simply spawn.
 		if (GlobalStateManager->bAcceptingPlayers && GetWorld()->RemovePIEPrefix(GlobalStateManager->DeploymentMapURL) == GetWorld()->RemovePIEPrefix(GetWorld()->URL.Map))
@@ -291,11 +314,6 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	}
 }
 
-void USpatialNetDriver::Connect()
-{
-	Connection->Connect(bConnectAsClient);
-}
-
 void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 {
 	// If the deployment is now accepting players and we are waiting to spawn. Spawn.
@@ -326,9 +344,6 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;
 			WorldContext.PendingNetGame->bSentJoinRequest = false;
 			WorldContext.PendingNetGame->URL = RedirectURL;
-
-			//// Travel to map. This will destroy the current NetDriver.
-			//WorldContext.TravelURL = RedirectURL.ToString();
 		}
 	}
 }
