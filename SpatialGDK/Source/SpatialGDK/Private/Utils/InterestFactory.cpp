@@ -171,21 +171,21 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraint()
 
 QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint()
 {
-	QueryConstraint AlwaysInterestConstraint;
+	QueryConstraint AlwaysInterestedConstraint;
 
 	for (const FInterestPropertyInfo& PropertyInfo : Info.InterestProperties)
 	{
 		uint8* Data = (uint8*)Actor + PropertyInfo.Offset;
 		if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(PropertyInfo.Property))
 		{
-			AddObjectToConstraint(ObjectProperty, Data, AlwaysInterestConstraint);
+			AddObjectToConstraint(ObjectProperty, Data, AlwaysInterestedConstraint);
 		}
 		else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
 		{
 			FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
 			for (int i = 0; i < ArrayHelper.Num(); i++)
 			{
-				AddObjectToConstraint(Cast<UObjectPropertyBase>(ArrayProperty->Inner), ArrayHelper.GetRawPtr(i), AlwaysInterestConstraint);
+				AddObjectToConstraint(Cast<UObjectPropertyBase>(ArrayProperty->Inner), ArrayHelper.GetRawPtr(i), AlwaysInterestedConstraint);
 			}
 		}
 		else
@@ -194,7 +194,7 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint()
 		}
 	}
 
-	return AlwaysInterestConstraint;
+	return AlwaysInterestedConstraint;
 }
 
 void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint)

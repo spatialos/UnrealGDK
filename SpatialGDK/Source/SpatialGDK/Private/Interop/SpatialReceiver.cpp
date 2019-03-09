@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 
+#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -365,17 +366,14 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		UNetConnection* Connection = nullptr;
-		improbable::UnrealMetadata* UnrealMetadataComponent = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
-		check(UnrealMetadataComponent);
-		bool bDoingDeferredSpawn = false;
 
 		// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 		if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
 		{
-			checkf(!UnrealMetadataComponent->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+			checkf(!UnrealMetadata->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
 
 			FString URLString = FURL().ToString();
-			URLString += TEXT("?workerAttribute=") + UnrealMetadataComponent->OwnerWorkerAttribute;
+			URLString += TEXT("?workerAttribute=") + UnrealMetadata->OwnerWorkerAttribute;
 
 			// TODO: Once we can checkout PlayerController and PlayerState atomically, we can grab the UniqueId and online subsystem type from PlayerState. UNR-933
 			Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), true);
@@ -387,22 +385,13 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-			if (!UnrealMetadata->StablyNamedRef.IsSet())
+			EntityActor = GetOrCreateActor(UnrealMetadata, ActorClass, SpawnData);
+			if (EntityActor == nullptr)
 			{
-				EntityActor = CreateActor(SpawnData, ActorClass, true);
-				bDoingDeferredSpawn = true;
-			}
-			else
-			{
-				FNetworkGUID NetGUID = PackageMap->GetNetGUIDFromUnrealObjectRef(UnrealMetadata->StablyNamedRef.GetValue());
-				EntityActor = Cast<AActor>(PackageMap->GetObjectFromNetGUID(NetGUID, true));
-				if (EntityActor == nullptr)
-				{
-					// In native networking, if Unreal tries to look up a stably named actor on the client
-					// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
-					// returning here does the same behavior.
-					return;
-				}
+				// In native networking, if Unreal tries to look up a stably named actor on the client
+				// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
+				// Returning here does the same behavior.
+				return;
 			}
 
 			// Don't have authority over Actor until SpatialOS delegates authority
@@ -431,26 +420,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
 			EntityActor->Destroy(true);
 			return;
-		}
-
-		if (bDoingDeferredSpawn)
-		{
-			FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
-
-			// FinishSpawning takes a transform relative to the template transform, so we need to adjust it.
-			FTransform SpawnTransform = GetRelativeSpawnTransform(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation));
-			EntityActor->FinishSpawning(SpawnTransform);
-
-			// Imitate the behavior in UPackageMapClient::SerializeNewActor.
-			const float Epsilon = 0.001f;
-			if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
-			{
-				EntityActor->PostNetReceiveVelocity(SpawnData->Velocity);
-			}
-			if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
-			{
-				EntityActor->SetActorScale3D(SpawnData->Scale);
-			}
 		}
 
 		PackageMap->ResolveEntityActor(EntityActor, EntityId);
@@ -527,7 +496,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	// If entity is to be deleted after having been torn off, clean up the entity, but don't destroy the actor.
+	// If the entity is to be deleted after having been torn off, ignore the request (but clean up the channel if it has not been cleaned up already).
 	if (Actor->GetTearOff())
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
@@ -655,27 +624,72 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 {
 	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
+	PackageMap->RemoveEntityActor(EntityId);
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
-// This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred)
+AActor* USpatialReceiver::GetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, UClass* ActorClass, improbable::SpawnData* SpawnData)
 {
-	AActor* NewActor = nullptr;
-	if (ActorClass)
+	// If no stable ref, Actor has been dynamically spawned, so spawn it.
+	if (!UnrealMetadata->StablyNamedRef.IsSet())
 	{
-		//bRemoteOwned needs to be public in source code. This might be a controversial change.
-		FActorSpawnParameters SpawnInfo;
-		SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
-		SpawnInfo.bNoFail = true;
-		// We defer the construction in the GDK pipeline to allow initialization of replicated properties first.
-		SpawnInfo.bDeferConstruction = bDeferred;
+		return CreateActor(SpawnData, ActorClass);
+	}
 
-		FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
+	// If we are the client
+	if (!NetDriver->IsServer())
+	{
+		if (AActor* ActorCDO = Cast<AActor>(ActorClass->GetDefaultObject()))
+		{
+			// And this Actor is bNetLoadOnClient = false, the StablyNamedRef is set but
+			// the local representation does not exist (It's deleted in ULevel::InitializeNetworkActors()).
+			// Spawn the Actor on the client.
+			if (!ActorCDO->bNetLoadOnClient)
+			{
+				return CreateActor(SpawnData, ActorClass);
+			}
+		}
+	}
 
-		NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
-		check(NewActor);
+	// Otherwise, this Actor already exists in the map, get it from the package map.
+	const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef.GetValue();
+	AActor* StaticActor = Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(StablyNamedRef));
+	// An unintended side effect of GetObjectFromUnrealObjectRef is that this ref
+	// will be registered with this Actor. It can be the case that this Actor is not
+	// stably named (due to bNetLoadOnClient = false) so we should let
+	// SpatialPackageMapClient::ResolveEntityActor handle it properly.
+	PackageMap->UnregisterActorObjectRefOnly(StablyNamedRef);
+
+	return StaticActor;
+}
+
+// This function is only called for client and server workers who did not spawn the Actor
+AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass)
+{
+	if (ActorClass == nullptr)
+	{
+		return nullptr;
+	}
+
+	FActorSpawnParameters SpawnInfo;
+	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
+	SpawnInfo.bNoFail = true;
+
+	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
+
+	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
+	check(NewActor);
+
+	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
+	const float Epsilon = 0.001f;
+	if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
+	{
+		NewActor->PostNetReceiveVelocity(SpawnData->Velocity);
+	}
+	if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
+	{
+		NewActor->SetActorScale3D(SpawnData->Scale);
 	}
 
 	return NewActor;
@@ -1008,6 +1022,20 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 	ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
 	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel, bIsHandover);
+
+	// This is a temporary workaround, see UNR-841:
+	// If the update includes tearoff, close the channel and clean up the entity.
+	if (TargetObject->IsA<AActor>() && ClassInfoManager->GetCategoryByComponentId(ComponentUpdate.component_id) == SCHEMA_Data)
+	{
+		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
+
+		// Check if bTearOff has been set to true
+		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
+		{
+			Channel->ConditionalCleanUp();
+			CleanupDeletedEntity(Channel->GetEntityId());
+		}
+	}
 
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
@@ -1439,6 +1467,21 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				check(ObjectProperty);
 
 				ObjectProperty->SetObjectPropertyValue(Data + AbsOffset, SinglePropObject);
+			}
+			else if (ObjectReferences.bFastArrayProp)
+			{
+				TSet<FUnrealObjectRef> NewUnresolvedRefs;
+				FSpatialNetBitReader ValueDataReader(PackageMap, ObjectReferences.Buffer.GetData(), ObjectReferences.NumBufferBits, NewUnresolvedRefs);
+
+				check(Property->IsA<UArrayProperty>());
+				UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(Cast<UArrayProperty>(Property));
+
+				FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, ReplicatedObject, Parent->ArrayIndex, Parent->Property, NetDeltaStruct);
+
+				if (NewUnresolvedRefs.Num() > 0)
+				{
+					bOutStillHasUnresolved = true;
+				}
 			}
 			else
 			{

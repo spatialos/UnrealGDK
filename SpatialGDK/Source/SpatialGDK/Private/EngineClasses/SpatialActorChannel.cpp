@@ -67,12 +67,12 @@ void UpdateChangelistHistory(TSharedPtr<FRepState>& RepState)
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
+	, bCreatedEntity(false)
 	, EntityId(0)
 	, bFirstTick(true)
 	, NetDriver(nullptr)
 	, LastSpatialPosition(FVector::ZeroVector)
 	, bCreatingNewEntity(false)
-	, bCreatedEntity(false)
 {
 }
 
@@ -122,17 +122,19 @@ bool USpatialActorChannel::IsSingletonEntity()
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 #if WITH_EDITOR
-	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
+	if (NetDriver != nullptr)
 	{
 		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
+		UWorld* World = NetDriver->GetWorld();
+		const bool bPIEShutdown = World != nullptr && World->WorldType == EWorldType::PIE && World->bIsTearingDown;
+
 		if (bDeleteDynamicEntities &&
 			NetDriver->IsServer() &&
-			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-			NetDriver->GetWorld()->bIsTearingDown &&
+			(bPIEShutdown || GIsRequestingExit) &&
 			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
 		{
-			// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 			DeleteEntityIfAuthoritative();
 		}
 	}
@@ -380,18 +382,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		FOutBunch DummyOutBunch;
 
-		for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
-		{
-			const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
-
-			if (ObjectRef.IsValid())
-			{
-				FClassInfo& SubobjectInfo = Info.SubobjectInfo[ObjectRef.Offset].Get();
-
-				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, SubobjectInfo, RepFlags);
-				bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-			}
-		}
+		// Actor::ReplicateSubobjects is overridable and enables the Actor to replicate any subobjects directly, via a
+		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
+		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
+		// the same SpatialActorChannel::ReplicateSubobject.
+		bWroteSomethingImportant |= Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 
 		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 		{
