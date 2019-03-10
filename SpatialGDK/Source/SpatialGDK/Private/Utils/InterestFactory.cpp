@@ -62,6 +62,8 @@ Interest InterestFactory::CreateActorInterest()
 
 	// Server Interest
 	NewInterest.ComponentInterest.Add(SpatialConstants::POSITION_COMPONENT_ID, NewComponentInterest);
+	// Client Interest
+	NewInterest.ComponentInterest.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, NewComponentInterest);
 
 	return NewInterest;
 }
