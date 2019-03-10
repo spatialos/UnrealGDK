@@ -314,7 +314,7 @@ void GenerateSchemaForSublevels(const FString& SchemaPath)
 		for (const auto& SublevelToComponentIdPair : LevelPathToLevelDataPair.Value.SublevelNameToComponentId)
 		{
 			Writer.PrintNewLine();
-			Writer.Printf("component {0} {", *SublevelToComponentIdPair.Key);
+			Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(SublevelToComponentIdPair.Key));
 			Writer.Indent();
 			Writer.Printf("id = {0};", SublevelToComponentIdPair.Value);
 			Writer.Outdent().Print("}");

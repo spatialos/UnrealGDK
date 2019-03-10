@@ -188,21 +188,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	}
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
-	if (Actor->HasAnyFlags(RF_WasLoaded))
-	{
-		if (uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelPathToLevelData[NetDriver->World->GetMapName()].SublevelNameToComponentId.Find(Actor->GetTypedOuter<UWorld>()->GetName()))
-		{
-			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(*ComponentId));
-		}
-		else
-		{
-			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID));
-		}
-	}
-	else
-	{
-		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID));
-	}
+	ComponentDatas.Add(CreateLevelComponentData(Actor));
 
 	if (Actor->IsA<APlayerController>())
 	{
@@ -273,6 +259,19 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	PendingActorRequests.Add(CreateEntityRequestId, Channel);
 
 	return CreateEntityRequestId;
+}
+
+Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
+{
+	if (FLevelData* LevelData = ClassInfoManager->SchemaDatabase->LevelPathToLevelData.Find(NetDriver->World->GetMapName()))
+	{
+		if (uint32* ComponentId = LevelData->SublevelNameToComponentId.Find(Actor->GetTypedOuter<UWorld>()->GetName()))
+		{
+			return ComponentFactory::CreateEmptyComponentData(*ComponentId);
+		}
+	}
+
+	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
