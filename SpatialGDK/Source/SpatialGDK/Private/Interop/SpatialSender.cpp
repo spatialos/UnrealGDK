@@ -99,14 +99,22 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
+	WorkerRequirementSet AuthoritativeWorkerType = ServersOnly;
+	if (Class->HasMetaData(TEXT("WorkerAssociation")))
+	{
+		const WorkerAttributeSet WorkerAttribute{ Class->GetMetaData(TEXT("WorkerAssociation")) };
+		AuthoritativeWorkerType = { WorkerAttribute };
+	}
+
 	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerType);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
+
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
@@ -120,7 +128,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			return;
 		}
 
-		ComponentWriteAcl.Add(ComponentId, ServersOnly);
+		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerType);
 	});
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
@@ -134,6 +142,13 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			continue;
 		}
 
+		WorkerRequirementSet SubobjectAuthoritativeWorkerType = ServersOnly;
+		if (Class->HasMetaData(TEXT("WorkerAssociation")))
+		{
+			const WorkerAttributeSet WorkerAttribute{ SubobjectInfo.Class->GetMetaData(TEXT("WorkerAssociation")) };
+			AuthoritativeWorkerType = { WorkerAttribute };
+		}
+
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
 			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
@@ -142,7 +157,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 				return;
 			}
 
-			ComponentWriteAcl.Add(ComponentId, ServersOnly);
+			ComponentWriteAcl.Add(ComponentId, SubobjectAuthoritativeWorkerType);
 		});
 	}
 
