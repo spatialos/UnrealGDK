@@ -140,7 +140,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) const
 {
 	Worker_ComponentId ComponentId = GetComponentId(Op);
-	return  SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID;
+	return SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID;
 }
 
 void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
