@@ -37,7 +37,7 @@ gosu $NEW_USER ""${{SCRIPT}}"" ""$@""";
 
 
         // This is for internal use only. We do not support Linux clients.
-        private const string FakeClientWorkerShellScript =
+        private const string SimulatedPlayerWorkerShellScript =
 @"#!/bin/bash
 NEW_USER=unrealworker
 WORKER_ID=$1
@@ -179,9 +179,13 @@ exit /b !ERRORLEVEL!
                     "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
                 });
             }
-            else if (gameName == baseGameName + "FakeClient") // This is for internal use only. We do not support Linux clients.
+            else if (gameName == baseGameName + "FakeClient")
             {
-                Common.WriteHeading(" > Building fakeclient.");
+                Common.WriteWarning("'FakeClient' has been renamed to 'SimulatedPlayer', please use this instead. It will create the same assembly under a different name: UnrealSimulatedPlayer@Linux.zip.");
+            }
+            else if (gameName == baseGameName + "SimulatedPlayer") // This is for internal use only. We do not support Linux clients.
+            {
+                Common.WriteHeading(" > Building simulated player.");
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "BuildCookRun",
@@ -210,8 +214,8 @@ exit /b !ERRORLEVEL!
                     additionalUATArgs
                 });
 
-                var linuxFakeClientPath = Path.Combine(stagingDir, "LinuxNoEditor");
-                File.WriteAllText(Path.Combine(linuxFakeClientPath, "StartWorker.sh"), FakeClientWorkerShellScript.Replace("\r\n", "\n"), new UTF8Encoding(false));
+                var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
+                File.WriteAllText(Path.Combine(linuxSimulatedPlayerPath, "StartWorker.sh"), SimulatedPlayerWorkerShellScript.Replace("\r\n", "\n"), new UTF8Encoding(false));
 
                 var workerCoordinatorPath = Path.GetFullPath(Path.Combine("../spatial", "build", "dependencies", "WorkerCoordinator"));
                 if (Directory.Exists(workerCoordinatorPath))
@@ -221,18 +225,19 @@ exit /b !ERRORLEVEL!
                         "/I",
                         "/Y",
                         workerCoordinatorPath,
-                        linuxFakeClientPath
+                        linuxSimulatedPlayerPath
                     });
                 } else
                 {
                     Console.WriteLine("worker coordinator path did not exist");
                 }
 
+                var archiveFileName = "UnrealSimulatedPlayer@Linux.zip";
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
-                    "-add=" + Quote(linuxFakeClientPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, "UnrealFakeClient@Linux.zip")),
+                    "-add=" + Quote(linuxSimulatedPlayerPath),
+                    "-archive=" + Quote(Path.Combine(outputDir, archiveFileName)),
                 });
             }
             else if (gameName == baseGameName + "Server")
