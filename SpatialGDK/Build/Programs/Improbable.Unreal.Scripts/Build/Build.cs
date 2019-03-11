@@ -65,7 +65,7 @@ exit /b !ERRORLEVEL!
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
 
             var exitCode = 0;
-            if (args.Length < 4 && !help)
+            if (args.Length < 5 && !help)
             {
                 help = true;
                 exitCode = 1;
@@ -83,14 +83,15 @@ exit /b !ERRORLEVEL!
             var platform = args[1];
             var configuration = args[2];
             var projectFile = Path.GetFullPath(args[3]);
+            var buildType = args[4];
             var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
-            var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => arg.ToLowerInvariant() != "-nocompile"));
+            var additionalUATArgs = string.Join(" ", args.Skip(5).Where(arg => arg.ToLowerInvariant() != "-nocompile"));
 
             var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
             var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));
             var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
 
-            if (gameName == baseGameName + "Editor")
+            if (buildType == "Editor")
             {
                 if (noCompile)
                 {
@@ -102,7 +103,7 @@ exit /b !ERRORLEVEL!
 
                     Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new[]
                     {
-                        gameName,
+                        baseGameName + "Editor",
                         platform,
                         configuration,
                         Quote(projectFile)
@@ -127,7 +128,7 @@ exit /b !ERRORLEVEL!
                     "-archive=" + Quote(Path.Combine(outputDir, "UnrealEditor@Windows.zip")),
                 });
             }
-            else if (gameName == baseGameName)
+            else if (buildType == "Client")
             {
                 Common.WriteHeading(" > Building client.");
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
@@ -179,11 +180,11 @@ exit /b !ERRORLEVEL!
                     "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
                 });
             }
-            else if (gameName == baseGameName + "FakeClient")
+            else if (buildType == "FakeClient")
             {
                 Common.WriteWarning("'FakeClient' has been renamed to 'SimulatedPlayer', please use this instead. It will create the same assembly under a different name: UnrealSimulatedPlayer@Linux.zip.");
             }
-            else if (gameName == baseGameName + "SimulatedPlayer") // This is for internal use only. We do not support Linux clients.
+            else if (buildType == "SimulatedPlayer") // This is for internal use only. We do not support Linux clients.
             {
                 Common.WriteHeading(" > Building simulated player.");
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
@@ -232,7 +233,7 @@ exit /b !ERRORLEVEL!
                     Console.WriteLine("worker coordinator path did not exist");
                 }
 
-                var archiveFileName = "UnrealSimulatedPlayer@Linux.zip";
+                var archiveFileName = gameName + SimulatedPlayer@Linux.zip";
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
@@ -240,7 +241,7 @@ exit /b !ERRORLEVEL!
                     "-archive=" + Quote(Path.Combine(outputDir, archiveFileName)),
                 });
             }
-            else if (gameName == baseGameName + "Server")
+            else if (buildType == "Server")
             {
                 Common.WriteHeading(" > Building worker.");
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
@@ -286,7 +287,7 @@ exit /b !ERRORLEVEL!
                 {
                     "ZipUtils",
                     "-add=" + Quote(serverPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, $"UnrealWorker@{assemblyPlatform}.zip"))
+                    "-archive=" + Quote(Path.Combine(outputDir, gameName + $"@{assemblyPlatform}.zip"))
                 });
             }
             else
@@ -295,7 +296,7 @@ exit /b !ERRORLEVEL!
                 Common.WriteHeading($" > Building ${gameName}.");
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new[]
                 {
-                    gameName,
+                    baseGameName,
                     platform,
                     configuration,
                     Quote(projectFile)
