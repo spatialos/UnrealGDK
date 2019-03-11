@@ -1038,7 +1038,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		{
 			if (It->HasAnyPropertyFlags(CPF_OutParm))
 			{
-				if (OutParms == NULL)
+				if (OutParms == nullptr)
 				{
 					continue;
 				}
