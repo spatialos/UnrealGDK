@@ -25,7 +25,6 @@ This repository contains a version of Unreal’s Third Person template that has 
 
 ### Clone the GDK into the `Plugins` directory
 
-
 1. Navigate to `UnrealGDKThirdPersonShooter\Game` and create a `Plugins` directory.
 1. In a terminal window,  change directory to the  `Plugins` directory and clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository using one of the following commands:
 
