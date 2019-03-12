@@ -47,22 +47,29 @@ In this step, you're going to build the Unreal GDK's dependencies.
 1. In the same directory, open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
 1. Open **ThirdPersonShooter.uproject** in the Unreal Editor.
-1. On the GDK toolbar, select [**Schema**](https://docs.improbable.io/reference/latest/shared/glossary) to generate the SpatialOS schema (a definition of the components and entities your SpatialOS world can have) based on your Unreal project. <br/>
+1. On the GDK toolbar, select [**Schema**](https://docs.improbable.io/reference/latest/shared/glossary) to generate the SpatialOS schema (a definition of the components and entities your SpatialOS world can have) based on your Unreal project.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
+_Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
 1. Select [**Snapshot**]({{urlRoot}}/content/generating-a-snapshot) to generate a snapshot (a representation of the state of the SpatialOS world) which will be used to start the deployment.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
+_Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
 
 ### Deploy the project locally
 
 In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will [cloud deploy](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
 
 1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and in the `layer_configurations` section set `rows` to `2`. This instructs SpatialOS that you will be launching two server-workers.
-1. In the Unreal Editor, in the Unreal toolbar, open the **Play** drop-down menu.
-1. Under **Multiplayer Options**, enter the number of players as **2**
-1. Enter the number of servers as **2**
-1. Check the box next to **Run Dedicated Server**
-1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**, the green play icon. This will open a terminal window and run the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime). It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
-1. From the Unreal Editor toolbar, click **Play** to run the game. This starts two headless server-workers and two [client-workers](https://docs.improbable.io/reference/latest/shared/glossary#client-worker).
+1. In the Unreal Editor, in the Unreal toolbar, open the **Play** drop-down menu.<br/>
+2. Under **Multiplayer Options**, enter the number of players as **2**
+3. Enter the number of servers as **2**
+4. Ensure the box next to **Run Dedicated Server** is checked<br/>
+![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
+_Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
+1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**, the green play icon. This will open a terminal window and run the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime).<br/>
+![Toolbar]({{assetRoot}}assets/set-up-template/template-start.png)<br/>
+_Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
+6. It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
+7. From the Unreal Editor toolbar, click **Play** to run the game. This starts two headless server-workers and two [client-workers](https://docs.improbable.io/reference/latest/shared/glossary#client-worker).
 
 Notice that when players shoot each other, their health does not go down. It's not much fun with no skin in the game is it? Let’s fix the health system.
 
