@@ -82,6 +82,7 @@ public:
 	void Init(USpatialNetDriver* NetDriver);
 
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
+	// In PIE, PathName must be NetworkRemapped (bReading = false)
 	bool IsSupportedClass(const FString& PathName) const;
 
 	const FClassInfo& GetOrCreateClassInfoByClass(UClass* Class);

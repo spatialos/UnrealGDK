@@ -249,7 +249,7 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	// Created just to satisfy the ComponentFactory constructor
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
-	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
+	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, false, NetDriver);
 
 	// Create component data from initial state of Actor (which is the state the Actor is in before running the level)
 	TArray<Worker_ComponentData> ComponentData = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);

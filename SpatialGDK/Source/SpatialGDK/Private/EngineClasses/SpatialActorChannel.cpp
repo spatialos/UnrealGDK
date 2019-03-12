@@ -183,11 +183,6 @@ void USpatialActorChannel::UpdateShadowData()
 	}
 }
 
-void USpatialActorChannel::MarkInterestDirty()
-{
-	bInterestDirty = true;
-}
-
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
 	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
@@ -367,6 +362,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
 			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState);
+			bInterestDirty = false;
 		}
 
 		bWroteSomethingImportant = true;
@@ -413,12 +409,6 @@ int64 USpatialActorChannel::ReplicateActor()
 			{
 				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState);
 			}
-		}
-
-		if (bInterestDirty)
-		{
-			Sender->UpdateInterestComponent(Actor);
-			bInterestDirty = false;
 		}
 	}
 

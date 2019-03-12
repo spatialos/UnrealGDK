@@ -531,7 +531,7 @@ void PreProcessSchemaMap()
 
 		FString ObjectPath = EntryIn.Key;
 		int32 Index = 0;
-		ObjectPath.FindLastChar('_', Index); // Blueprints will always be prefixed by "_C"
+		ObjectPath.FindLastChar('_', Index); // Blueprints will always be suffixed by "_C"
 		if (Index != -1)
 		{
 			ObjectPath = ObjectPath.Mid(0, Index);

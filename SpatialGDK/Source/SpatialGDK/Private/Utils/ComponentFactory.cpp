@@ -19,13 +19,13 @@
 namespace improbable
 {
 
-ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
+ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, bool bInterestDirty, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, PendingRepUnresolvedObjectsMap(RepUnresolvedObjectsMap)
 	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
-	, bInterestHasChanged(false)
+	, bInterestHasChanged(bInterestDirty)
 { }
 
 bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
@@ -405,7 +405,7 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	}
 
 	// Only support Interest for Actors for now.
-	if (bInterestHasChanged && Object->IsA<AActor>())
+	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
 		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver);
 		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());

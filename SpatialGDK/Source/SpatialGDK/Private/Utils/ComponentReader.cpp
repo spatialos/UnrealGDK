@@ -305,7 +305,8 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 				if (ObjectValue == nullptr)
 				{
 					// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
-					// it's part of a streaming level that hasn't been streamed in. In this case, queue the actor based on it's level.
+					// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
+					// So we do the same.
 					FString FullPath;
 					improbable::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
 					UE_LOG(LogSpatialComponentReader, Verbose, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),

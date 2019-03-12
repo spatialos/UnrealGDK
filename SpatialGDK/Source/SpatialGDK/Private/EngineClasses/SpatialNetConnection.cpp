@@ -84,12 +84,19 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 {
 	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
 
+	// We want to update our interest as fast as possible
+	// So we send an Interest update immiedately.
 	UpdateActorInterest(PlayerController);
 	UpdateActorInterest(PlayerController->GetPawn());
 }
 
 void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
 {
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
 	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
 
 	Sender->UpdateInterestComponent(Actor);
