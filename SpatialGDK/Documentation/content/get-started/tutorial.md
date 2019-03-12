@@ -23,7 +23,7 @@ This repository contains a version of Unreal’s Third Person template that has 
 
 > **Note:**  A completed version of this tutorial is available in the `tutorial-complete` branch.
 
-### Move the GDK into the `Plugins` directory
+### Clone the GDK into the `Plugins` directory
 
 
 1. Navigate to `UnrealGDKThirdPersonShooter\Game` and create a `Plugins` directory.
