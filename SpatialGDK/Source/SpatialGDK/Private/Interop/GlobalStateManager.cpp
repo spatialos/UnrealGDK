@@ -412,9 +412,12 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 		// Make sure we update our known entity id for the GSM when we receive authority.
 		GlobalStateManagerEntityId = CurrentEntityID;
 
-		SetCanBeginPlay(true);
-		BecomeAuthoritativeOverAllActors();
-		TriggerBeginPlay();
+		if (!bCanBeginPlay)
+		{
+			SetCanBeginPlay(true);
+			BecomeAuthoritativeOverAllActors();
+			TriggerBeginPlay();
+		}
 
 		// Start accepting players only AFTER we've triggered BeginPlay
 		SetAcceptingPlayers(true);

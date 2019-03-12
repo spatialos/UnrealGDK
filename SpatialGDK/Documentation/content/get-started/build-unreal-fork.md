@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Get started: 2 - Get and build the SpatialOS Unreal Engine fork
 
 To use the SpatialOS GDK for Unreal, you first need to build the SpatialOS fork of Unreal Engine.
