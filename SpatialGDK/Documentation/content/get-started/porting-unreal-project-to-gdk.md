@@ -158,7 +158,7 @@ You must modify your `GameInstance` class to work properly with the GDK.
 You need to generate [schema]({{urlRoot}}/content/schema) and generate a [snapshot]({{urlRoot}}/content/generating-a-snapshot) before you start your deployment. To do this:
 
 1. In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars), select **Schema** to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
-1. On the same toolbar, select **Snapshot*, which will generate a snapshot for the map currently open in the editor.
+1. On the same toolbar, select **Snapshot**, which will generate a snapshot for the map currently open in the editor.
 
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars-basic.png)<br/>_Image: The GDK for Unreal toolbar_<br/>
 
