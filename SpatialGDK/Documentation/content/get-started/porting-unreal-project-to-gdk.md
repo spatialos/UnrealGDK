@@ -9,17 +9,17 @@ This guide shows you how to port your own Unreal project to SpatialOS using the 
 
 Before porting your project: 
  
-* If you haven't done this already, install SpatialOS and the GDK's dependencies, and clone the SpatialOS Unreal Engine fork by following:
-    * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
-    * [Getting started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-* If you haven't done this already, set up the SpatialOS GDK Starter Template by following [Starter Template guide]({{urlRoot}}/content/get-started/gdk-template). Later in this guide, you will copy some necessary files from the template project over to your project.
+* If you haven't done this already, follow our Get Started guide before porting your game:
+    * [Get started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
+    * [Get started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+    * [Get Started: 3 - Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
 
 * Open a terminal window and run the command `spatial update` to ensure your [spatial CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) installation is up to date. 
 
 ### Terms used in this guide
 `<GameRoot>` - The directory containing your project's `.uproject` file and `Source` directory.  
 `<ProjectRoot>` - The directory containing your `<GameRoot>`.  
-`<YourProject>` - The name of your project's `.uproject` file (for example, `\<GameRoot>\StarterProject.uproject`).
+`<YourProject>` - The name of your project's `.uproject` file (for example, `\<GameRoot>\TP_SpatialGDK.uproject`).
 
 ## Port your game to the GDK
 
@@ -31,17 +31,17 @@ Before porting your project:
     Your project structure should be:  `\<ProjectRoot>\<GameRoot>\<YourProject>.uproject`<br/>
     
     For example:
-    `\StarterProject\Game\StarterProject.uproject`
+    `\MyProject\Game\TP_SpatialGDK.uproject`
     
 1. Your project needs some extra files and folders to run with the GDK. Copy these files from the template project that you set up earlier in the [Before you start](#before-you-start) section.
 
-    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and directories below to your `<ProjectRoot>`:  
+    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterTemplate` repository and copy all of the files and directories below to your `<ProjectRoot>`:  
 
     ``` cpp
-    \StarterProject\spatial\
-    \StarterProject\LaunchClient.bat 
-    \StarterProject\LaunchServer.bat
-    \StarterProject\ProjectPaths.bat
+    \TP_SpatialGDK\spatial\
+    \TP_SpatialGDK\LaunchClient.bat 
+    \TP_SpatialGDK\LaunchServer.bat
+    \TP_SpatialGDK\ProjectPaths.bat
     ```
     Your project's directory structure should now resemble:
 
@@ -64,7 +64,7 @@ Follow this step to set up your project paths:
    * Open **`\<ProjectRoot>\ProjectPaths.bat`** in a text editor.  
 
     * In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.  
-    * In `set GAME_NAME=StarterProject`, replace `StarterProject` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
+    * In `set GAME_NAME= TP_SpatialGDK `, replace `TP_SpatialGDK ` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
 
     **Note**: The helper scripts `LaunchClient.bat` and `LaunchServer.bat` will not work if you do not follow this step correctly. 
     

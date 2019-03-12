@@ -1,4 +1,4 @@
-# Next steps: Set up the SpatialOS GDK Starter Template
+# Get started: 3 - Set up the SpatialOS GDK Starter Template
 
 Before setting up the SpatialOS GDK Starter Template, you need to have followed:
 
