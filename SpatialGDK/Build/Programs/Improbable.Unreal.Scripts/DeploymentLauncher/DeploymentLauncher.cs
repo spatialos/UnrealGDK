@@ -14,6 +14,8 @@ namespace Improbable
     {
         private const string SIM_PLAYER_DEPLOYMENT_TAG = "simulated_players";
 
+        private const string CoordinatorWorkerName = "SimulatedPlayerCoordinator";
+
         private static string UploadSnapshot(SnapshotServiceClient client, string snapshotPath, string projectName,
             string deploymentName)
         {
@@ -167,17 +169,23 @@ namespace Improbable
 
                     for (var i = 0; i < simWorkerConfig.workers.Count; ++i)
                     {
-                        if (simWorkerConfig.workers[i].worker_type == "SimulatedPlayerCoordinator")
+                        if (simWorkerConfig.workers[i].worker_type == CoordinatorWorkerName)
                         {
                             simWorkerConfig.workers[i].flags.Add(devAuthTokenIdFlag);
                             simWorkerConfig.workers[i].flags.Add(targetDeploymentFlag);
                         }
                     }
 
+                    // Specify the number of managed coordinator workers to start by editing
+                    // the load balancing options in the launch config. It creates a rectangular
+                    // launch config of N cols X 1 row, N being the number of coordinators
+                    // to create.
+                    // This assumes the launch config contains a rectangular load balancing
+                    // layer configuration already for the coordinator worker.
                     var lbLayerConfigurations = simWorkerConfig.load_balancing.layer_configurations;
                     for (var i = 0; i < lbLayerConfigurations.Count; ++i)
                     {
-                        if (lbLayerConfigurations[i].layer == "SimulatedPlayerCoordinator")
+                        if (lbLayerConfigurations[i].layer == CoordinatorWorkerName)
                         {
                             var rectangleGrid = lbLayerConfigurations[i].rectangle_grid;
                             rectangleGrid.cols = simNumPlayers;
@@ -197,6 +205,7 @@ namespace Improbable
                         },
                         Name = simDeploymentName,
                         ProjectName = projectName
+                        // No snapshot included for the simulated player deployment
                     };
 
                     simDeploymentConfig.Tag.Add(SIM_PLAYER_DEPLOYMENT_TAG);
@@ -299,8 +308,7 @@ namespace Improbable
         private static void ShowUsage()
         {
             Console.WriteLine("Usage:");
-            Console.WriteLine(
-                "DeploymentLauncher create <project-name> <assembly-name> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> [<sim-deployment-name> <sim-deployment-json> <num-sim-players>]");
+            Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> [<sim-deployment-name> <sim-deployment-json> <num-sim-players>]");
             Console.WriteLine("DeploymentLauncher stop <project-name> <deployment-id>");
             Console.WriteLine("DeploymentLauncher list <project-name>");
         }
