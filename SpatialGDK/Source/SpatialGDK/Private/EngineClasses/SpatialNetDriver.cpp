@@ -129,6 +129,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		Connection->LegacyLocatorConfig.DeploymentName = URL.GetOption(TEXT("deployment="), TEXT(""));
 		Connection->LegacyLocatorConfig.LoginToken = URL.GetOption(TEXT("token="), TEXT(""));
 		Connection->LegacyLocatorConfig.UseExternalIp = true;
+		Connection->LegacyLocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType();
 	}
 	else if (URL.HasOption(TEXT("locator")))
 	{
@@ -136,9 +137,12 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		Connection->LocatorConfig.PlayerIdentityToken = URL.GetOption(TEXT("playeridentity="), TEXT(""));
 		Connection->LocatorConfig.LoginToken = URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
+		Connection->LocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType();
 	}
 	else // Using Receptionist
 	{
+		Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType();
+
 		// Check for overrides in the travel URL.
 		if (!URL.Host.IsEmpty())
 		{
@@ -146,6 +150,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		}
 
 		bool bHasUseExternalIpOption = URL.HasOption(TEXT("useExternalIpForBridge"));
+
 		if (bHasUseExternalIpOption)
 		{
 			FString UseExternalIpOption = URL.GetOption(TEXT("useExternalIpForBridge"), TEXT(""));
