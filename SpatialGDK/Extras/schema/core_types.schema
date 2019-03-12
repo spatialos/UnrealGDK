@@ -5,5 +5,8 @@ type UnrealObjectRef {
     EntityId entity = 1;
     uint32 offset = 2;
     option<string> path = 3;
-    option<UnrealObjectRef> outer = 4;
+    // Not all objects should be loaded on clients as a result of resolving
+    // a reference, e.g. anything inside streaming levels should not be loaded.
+    option<bool> no_load_on_client = 4;
+    option<UnrealObjectRef> outer = 5;
 }

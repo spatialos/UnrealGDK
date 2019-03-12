@@ -152,6 +152,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		Connection->LegacyLocatorConfig.DeploymentName = LoadedWorld->URL.GetOption(TEXT("deployment="), TEXT(""));
 		Connection->LegacyLocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("token="), TEXT(""));
 		Connection->LegacyLocatorConfig.UseExternalIp = true;
+		Connection->LegacyLocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType();
 	}
 	else if (LoadedWorld->URL.HasOption(TEXT("locator")))
 	{
@@ -159,6 +160,7 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		Connection->LocatorConfig.PlayerIdentityToken = LoadedWorld->URL.GetOption(TEXT("playeridentity="), TEXT(""));
 		Connection->LocatorConfig.LoginToken = LoadedWorld->URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
+		Connection->LocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType();
 	}
 	else
 	{
@@ -167,6 +169,8 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		{
 			Connection->ReceptionistConfig.ReceptionistHost = LoadedWorld->URL.Host;
 		}
+
+		Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType();
 
 		bool bHasUseExternalIpOption = LoadedWorld->URL.HasOption(TEXT("useExternalIpForBridge"));
 		if (bHasUseExternalIpOption)
@@ -736,6 +740,12 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				// or it's an editor placed actor and the client hasn't initialized the level it's in
 				if (Channel == nullptr && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
+					if (!ClassInfoManager->IsSupportedClass(Actor->GetClass()))
+					{
+						// Trying to replicate an actor that isn't supported by Spatial (e.g. marked NotSpatial)
+						continue;
+					}
+
 					if (!Actor->HasAuthority())
 					{
 						// Trying to replicate Actor which we don't have authority over.

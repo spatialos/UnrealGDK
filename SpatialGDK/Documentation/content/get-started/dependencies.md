@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Get started: 1 - Get the dependencies
 
 To start using the GDK for Unreal, you need to ensure you have the correct software installed and that your machine is capable of running Unreal Engine. 

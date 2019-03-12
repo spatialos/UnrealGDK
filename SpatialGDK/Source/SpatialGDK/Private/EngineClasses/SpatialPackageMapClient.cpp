@@ -73,6 +73,12 @@ void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 	}
 }
 
+void USpatialPackageMapClient::UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef)
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	SpatialGuidCache->UnregisterActorObjectRefOnly(ObjectRef);
+}
+
 FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(UObject* Object)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
@@ -119,6 +125,12 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject*
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
 
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
+}
+
+bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)
+{
+	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
+	return GuidCache->CanClientLoadObject(Object, NetGUID);
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
@@ -252,7 +264,15 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 		UE_LOG(LogSpatialPackageMap, Fatal, TEXT("Found object called PersistentLevel which isn't a Level! This is not allowed when using the GDK"));
 	}
 
-	FUnrealObjectRef StablyNamedObjRef(0, 0, Object->GetFName().ToString(), (OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef());
+	bool bNoLoadOnClient = false;
+	if (IsNetGUIDAuthority())
+	{
+		// If the server is replicating references to things inside levels, it needs to indicate
+		// that the client should not load these. Once the level is streamed in, the client will
+		// resolve the references.
+		bNoLoadOnClient = !CanClientLoadObject(Object, NetGUID);
+	}
+	FUnrealObjectRef StablyNamedObjRef(0, 0, Object->GetFName().ToString(), (OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef(), bNoLoadOnClient);
 	RegisterObjectRef(NetGUID, StablyNamedObjRef);
 
 	return NetGUID;
@@ -328,7 +348,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const F
 		{
 			OuterGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef.Outer.GetValue());
 		}
-		NetGUID = RegisterNetGUIDFromPathForStaticObject(ObjectRef.Path.GetValue(), OuterGUID);
+		NetGUID = RegisterNetGUIDFromPathForStaticObject(ObjectRef.Path.GetValue(), OuterGUID, ObjectRef.bNoLoadOnClient);
 		RegisterObjectRef(NetGUID, ObjectRef);
 	}
 	return NetGUID;
@@ -359,6 +379,14 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 	}
 }
 
+void FSpatialNetGUIDCache::UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef)
+{
+	FNetworkGUID& NetGUID = UnrealObjectRefToNetGUID.FindChecked(ObjectRef);
+	// Remove ObjectRef first so the reference above isn't destroyed
+	NetGUIDToUnrealObjectRef.Remove(NetGUID);
+	UnrealObjectRefToNetGUID.Remove(ObjectRef);
+}
+
 FUnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
 	const FUnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
@@ -372,7 +400,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(Worker_EntityId Entity
 	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
 }
 
-FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const FString& PathName, const FNetworkGUID& OuterGUID)
+FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const FString& PathName, const FNetworkGUID& OuterGUID, bool bNoLoadOnClient)
 {
 	// Put the PIE prefix back (if applicable) so that the correct object can be found.
 	FString TempPath = PathName;
@@ -382,8 +410,8 @@ FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const 
 	FNetGuidCacheObject CacheObject;
 	CacheObject.PathName = FName(*TempPath);
 	CacheObject.OuterGUID = OuterGUID;
-	CacheObject.bNoLoad = false;				// allow worker to attempt to load object
-	CacheObject.bIgnoreWhenMissing = true;		// ensure we give workers time to load non-loaded assets
+	CacheObject.bNoLoad = bNoLoadOnClient;		// server decides whether the client should load objects (e.g. don't load levels)
+	CacheObject.bIgnoreWhenMissing = bNoLoadOnClient;
 	FNetworkGUID NetGUID = GenerateNewNetGUID(0);
 	RegisterNetGUID_Internal(NetGUID, CacheObject);
 	return NetGUID;
