@@ -7,6 +7,7 @@
 #include "Components/SceneComponent.h"
 #include "Editor.h"
 #include "Engine/LevelScriptActor.h"
+#include "Engine/LevelStreaming.h"
 #include "Engine/World.h"
 #include "GeneralProjectSettings.h"
 #include "GenericPlatform/GenericPlatformFile.h"
