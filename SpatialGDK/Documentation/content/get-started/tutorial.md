@@ -33,6 +33,8 @@ This repository contains a version of Unreal’s Third Person template that has 
 
 **HTTPS:** `git clone https://github.com/spatialos/UnrealGDK.git`
 
+The GDK's [default branch (GitHub documentation)](https://help.github.com/en/articles/setting-the-default-branch) is `release`. This means that, at any point during the development of your game, you can get the latest release of the GDK by running `git pull` inside the `UnrealGDK` directory. When you pull the latest changes, you must also run `git pull` inside the `UnrealEngine` directory, so that your GDK and your Unreal Engine fork remain in sync.
+
 > **Note:**  You need to ensure that the root folder of the Unreal GDK repository is called `UnrealGDK` so its path is: `UnrealGDKThirdPersonShooter\Game\Plugins\UnrealGDK\`.
 
 ### Build Dependencies 
@@ -51,6 +53,7 @@ In this step, you're going to build the Unreal GDK's dependencies.
 
 In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will [cloud deploy](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
 
+1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and in the `layer_configurations` section set `rows` to `2`. This instructs SpatialOS that you will be launching two server-workers.
 1. In the Unreal Editor, in the Unreal toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, enter the number of players as **2**
 1. Enter the number of servers as **2**
