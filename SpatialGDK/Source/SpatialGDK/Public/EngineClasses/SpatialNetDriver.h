@@ -171,16 +171,24 @@ private:
 	bool bWaitingForAcceptingPlayersToSpawn;
 	FString SnapshotToLoad;
 
+	void InitiateConnectionToSpatialOS(const FURL& URL);
+
+	UFUNCTION()
+	void OnConnectedToSpatialOS();
+
+	void CreateAndInitializeCoreClasses();
+
+	void CreateServerSpatialOSNetConnection();
+
+	void QueryGSMToLoadMap();
+
+	void HandleOngoingServerTravel();
+
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
 	UFUNCTION()
 	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
-
-	void Connect();
-
-	UFUNCTION()
-	void OnMapLoadedAndConnected();
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 

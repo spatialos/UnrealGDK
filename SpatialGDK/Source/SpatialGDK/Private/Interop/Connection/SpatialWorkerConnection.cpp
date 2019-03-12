@@ -48,6 +48,8 @@ void USpatialWorkerConnection::DestroyConnection()
 
 		WorkerLocator = nullptr;
 	}
+
+	bIsConnected = false;
 }
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
@@ -426,10 +428,19 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
-	check(GEngine);
-	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GEngine->GetWorldFromContextObjectChecked(this)->GetNetDriver());
-	checkf(NetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
-	return NetDriver;
+	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
+	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
+
+	// On the client, the world might not be completely set up.
+	// in this case we can use the PendingNetGame to get the NetDriver
+	if (NetDriver == nullptr)
+	{
+		NetDriver = GameInstance->GetWorldContext()->PendingNetGame->GetNetDriver();
+	}
+
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
+	checkf(SpatialNetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
+	return SpatialNetDriver;
 }
 
 
