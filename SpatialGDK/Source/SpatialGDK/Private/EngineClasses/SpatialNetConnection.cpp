@@ -86,8 +86,8 @@ void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool
 
 	// We want to update our interest as fast as possible
 	// So we send an Interest update immiedately.
-	UpdateActorInterest(PlayerController);
-	UpdateActorInterest(PlayerController->GetPawn());
+	UpdateActorInterest(Cast<AActor>(PlayerController));
+	UpdateActorInterest(Cast<AActor>(PlayerController->GetPawn()));
 }
 
 void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
