@@ -428,7 +428,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
-	check(GEngine);
 	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
 	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
 
