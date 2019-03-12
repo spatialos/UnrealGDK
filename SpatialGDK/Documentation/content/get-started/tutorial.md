@@ -149,12 +149,12 @@ Notice that health now decrements when you are shot.
 
 ### View your SpatialOS world in the Inspector
 
-![]({{assetRoot}}assets/tutorial/inspector.png)
+![]({{assetRoot}}assets/tutorial/inspector-two-workers.png)
 
 [The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s use the Inspector to visualise the areas that each of our server-workers have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
 
 1. Access the inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
-1. In the **View** tab, click the checkboxes next to both of the **UnrealWorkers**. This will cause the Inspector to display the areas that the server-workers have authority over as two coloured zones.
+1. In the **View** tab, click the checkboxes next to both of the **UnrealWorkers**. In the top right section of the viewport, select Show me: **Authority / Interest**. This will cause the Inspector to display the areas that the server-workers have authority over as two coloured zones.
 1. Back in your two Unreal game clients, run around and shoot.
 1. Using the Inspector to track the location of your two players, notice that if you position them in the same area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
 
@@ -232,7 +232,10 @@ Now let’s test our new cross-server functionality in another local deployment.
 
 1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
 1. From the Unreal Editor toolbar, click **Play** to run the game.
-1. Using the Inspector to track the location of your two players, notice that you can now shoot across servers and cause damage.
+2. Using the Inspector to track the location of your two players, notice that you can now shoot across servers and cause damage (provided the two players are on different teams!)
+
+![]({{assetRoot}}assets/tutorial/unreal_running_and_shooting_across_server_boundries.gif)<br/>
+*Image: Players Running and Shooting across two Unreal Servers*
 
 Now that you're free of the single-server paradigm, have a think about the huge, seamless multiplayer worlds you can build and host using the Unreal GDK.
 
@@ -243,8 +246,8 @@ Speaking of hosting, let’s upload your game.
 An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip files that contains all the files that your game uses when running in the cloud.
 
 1. In a terminal window, change directory to the root directory of the Third Person Shooter repository.
-1. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`
-1. Build a client-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooter Win64 Development ThirdPersonShooter.uproject`
+2. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`
+3. Build a client-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooter Win64 Development ThirdPersonShooter.uproject`
 
 ### Upload your game
 
