@@ -438,8 +438,9 @@ USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 		NetDriver = GameInstance->GetWorldContext()->PendingNetGame->GetNetDriver();
 	}
 
-	checkf(NetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
-	return Cast<USpatialNetDriver>(NetDriver);
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
+	checkf(SpatialNetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
+	return SpatialNetDriver;
 }
 
 
