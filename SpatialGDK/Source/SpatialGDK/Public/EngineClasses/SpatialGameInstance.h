@@ -29,6 +29,8 @@ public:
 	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
 	void CreateNewSpatialWorkerConnection();
 
+	USpatialWorkerConnection* GetSpatialWorkerConnection();
+
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
 	// Can be used to decide whether to use Unreal networking or SpatialOS networking.
@@ -36,8 +38,7 @@ protected:
 
 private:
 
-	// TODO: Move SpatialConnection ownership to NetDriver
-	friend class USpatialNetDriver;
+	// SpatialConnection is stored here for persistence between map travels.
 	UPROPERTY()
 	USpatialWorkerConnection* SpatialConnection;
 
