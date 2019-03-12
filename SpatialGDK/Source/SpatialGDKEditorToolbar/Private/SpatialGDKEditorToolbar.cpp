@@ -479,7 +479,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 							else
 							{
 								// Find greatest divisor.
-								for (int Divisor = FMath::Sqrt(NumServers); Divisor >= 2; Divisor--)
+								for (int Divisor = FMath::Sqrt(NumServers); Divisor >= 1; Divisor--)
 								{
 									if (NumServers % Divisor == 0)
 									{
