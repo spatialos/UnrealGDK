@@ -61,6 +61,8 @@ public:
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
 	// End UNetDriver interface.
 
+	virtual void OnOwnerUpdated(AActor* Actor);
+
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
 #endif

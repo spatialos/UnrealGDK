@@ -464,6 +464,23 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	RenamedStartupActors.Remove(ThisActor->GetFName());
 }
 
+void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
+{
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return;
+	}
+
+	USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId);
+	if (Channel == nullptr)
+	{
+		return;
+	}
+
+	Channel->MarkInterestDirty();
+}
+
 //SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
 #if WITH_SERVER_CODE
 

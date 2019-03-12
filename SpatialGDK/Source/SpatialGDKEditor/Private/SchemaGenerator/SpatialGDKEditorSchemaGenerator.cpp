@@ -34,8 +34,12 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 TArray<UClass*> SchemaGeneratedClasses;
 TArray<UClass*> AdditionalSchemaGeneratedClasses; // Used to keep UClasses in memory whilst generating schema for them.
 TMap<FString, FSchemaData> ClassPathToSchema;
-TMap<FString, FLevelData> LevelPathToLevelData;
 uint32 NextAvailableComponentId;
+
+// Sublevels
+TMap<FString, FLevelData> LevelPathToLevelData;
+uint32 FirstSublevelComponentId;
+uint32 LastSublevelComponentId;
 
 // Prevent name collisions.
 TMap<UClass*, FString> ClassToSchemaName;
@@ -268,7 +272,6 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 FLevelData GenerateSchemaForSublevel(UWorld* World)
 {
 	FLevelData LevelData;
-	FComponentIdGenerator IdGenerator(NextAvailableComponentId);
 
 	if (UWorldComposition* WorldComposition = World->WorldComposition)
 	{
@@ -278,14 +281,14 @@ FLevelData GenerateSchemaForSublevel(UWorld* World)
 			int32 Index = 0;
 			TilePath.FindLastChar('/', Index);
 			TilePath = TilePath.Mid(Index + 1);
-			LevelData.SublevelNameToComponentId.Add(TilePath, IdGenerator.GetNextAvailableId());
+			LevelData.SublevelNameToComponentId.Add(TilePath, SpatialConstants::INVALID_COMPONENT_ID);
 		}
 	}
 	else
 	{
 		for (const auto& LevelStreamingObject : World->GetStreamingLevels())
 		{
-			LevelData.SublevelNameToComponentId.Add(LevelStreamingObject->GetName(), IdGenerator.GetNextAvailableId());
+			LevelData.SublevelNameToComponentId.Add(LevelStreamingObject->GetName(), SpatialConstants::INVALID_COMPONENT_ID);
 		}
 	}
 
@@ -302,7 +305,18 @@ void GenerateSchemaForSublevels(const FString& SchemaPath)
 		LevelPathToLevelData.Add(EditorWorld->GetMapName(), LevelData);
 	}
 
-	for (const auto& LevelPathToLevelDataPair : LevelPathToLevelData)
+	if (LevelPathToLevelData.Num() == 0)
+	{
+		FirstSublevelComponentId = SpatialConstants::INVALID_COMPONENT_ID;
+		LastSublevelComponentId = SpatialConstants::INVALID_COMPONENT_ID;
+		return;
+	}
+
+	FComponentIdGenerator IdGenerator(NextAvailableComponentId);
+
+	FirstSublevelComponentId = IdGenerator.GetCurrentId();
+
+	for (auto& LevelPathToLevelDataPair : LevelPathToLevelData)
 	{
 		FCodeWriter Writer;
 
@@ -311,8 +325,10 @@ void GenerateSchemaForSublevels(const FString& SchemaPath)
 			// Note that this file has been generated automatically
 			package unreal.sublevels;)""");
 
-		for (const auto& SublevelToComponentIdPair : LevelPathToLevelDataPair.Value.SublevelNameToComponentId)
+		for (auto& SublevelToComponentIdPair : LevelPathToLevelDataPair.Value.SublevelNameToComponentId)
 		{
+			SublevelToComponentIdPair.Value = IdGenerator.GetNextAvailableId();
+
 			Writer.PrintNewLine();
 			Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(SublevelToComponentIdPair.Key));
 			Writer.Indent();
@@ -323,6 +339,8 @@ void GenerateSchemaForSublevels(const FString& SchemaPath)
 		Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *(SchemaPath + TEXT("Sublevels/")), *LevelPathToLevelDataPair.Key));
 	}
 
+	LastSublevelComponentId = IdGenerator.GetCurrentId();
+	NextAvailableComponentId = IdGenerator.GetNextAvailableId();
 }
 
 FString GenerateIntermediateDirectory()
@@ -344,6 +362,8 @@ void SaveSchemaDatabase()
 		SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
 		SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
 		SchemaDatabase->LevelPathToLevelData = LevelPathToLevelData;
+		SchemaDatabase->FirstSublevelComponentId = FirstSublevelComponentId;
+		SchemaDatabase->LastSublevelComponentId = LastSublevelComponentId;
 
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
@@ -502,10 +522,28 @@ void LoadDefaultGameModes()
 
 void PreProcessSchemaMap()
 {
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
 	TArray<FString> EntriesToRemove;
 	for (const auto& EntryIn : ClassPathToSchema)
 	{
 		const FString ClassPath = EntryIn.Key;
+
+		FString ObjectPath = EntryIn.Key;
+		int32 Index = 0;
+		ObjectPath.FindLastChar('_', Index); // Blueprints will always be prefixed by "_C"
+		if (Index != -1)
+		{
+			ObjectPath = ObjectPath.Mid(0, Index);
+			FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath(FName(*ObjectPath));
+
+			// Skip over level blueprints since we can't load them.
+			if (AssetData.AssetClass.IsEqual(FName(TEXT("World"))))
+			{
+				EntriesToRemove.Add(ClassPath);
+				continue;
+			}
+		}
 
 		bool ClassExists = TryLoadClassForSchemaGeneration(ClassPath);
 

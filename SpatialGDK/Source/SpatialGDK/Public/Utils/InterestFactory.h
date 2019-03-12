@@ -28,7 +28,7 @@ private:
 	// Only uses Defined Constraint
 	Interest CreateActorInterest();
 	// Defined Constraint AND Level Constraint
-	Interest CreatePlayerControllerInterest();
+	Interest CreatePlayerOwnedActorInterest();
 
 private:
 	// System Constraint OR User Constraint

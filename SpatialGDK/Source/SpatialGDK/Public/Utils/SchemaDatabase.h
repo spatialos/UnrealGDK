@@ -58,6 +58,12 @@ public:
 	TMap<FString, FLevelData> LevelPathToLevelData;
 
 	UPROPERTY(VisibleAnywhere)
+	uint32 FirstSublevelComponentId;
+
+	UPROPERTY(VisibleAnywhere)
+	uint32 LastSublevelComponentId;
+
+	UPROPERTY(VisibleAnywhere)
 	uint32 NextAvailableComponentId;
 };
 

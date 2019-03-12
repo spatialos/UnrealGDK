@@ -263,7 +263,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 {
-	if (FLevelData* LevelData = ClassInfoManager->SchemaDatabase->LevelPathToLevelData.Find(NetDriver->World->GetMapName()))
+	if (FLevelData* LevelData = ClassInfoManager->SchemaDatabase->LevelPathToLevelData.Find(NetDriver->World->GetName()))
 	{
 		if (uint32* ComponentId = LevelData->SublevelNameToComponentId.Find(Actor->GetTypedOuter<UWorld>()->GetName()))
 		{

@@ -83,7 +83,20 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
 {
 	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
-	Cast<USpatialNetDriver>(Driver)->Sender->UpdateInterestComponent(PlayerController);
+
+	UpdateActorInterest(PlayerController);
+	UpdateActorInterest(PlayerController->GetPawn());
+}
+
+void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
+{
+	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
+
+	Sender->UpdateInterestComponent(Actor);
+	for (const auto& Child : Actor->Children)
+	{
+		UpdateActorInterest(Child);
+	}
 }
 
 void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)

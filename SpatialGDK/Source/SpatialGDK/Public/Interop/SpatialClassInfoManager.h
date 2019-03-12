@@ -93,6 +93,8 @@ public:
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 
+	bool IsSublevelComponent(Worker_ComponentId ComponentId);
+
 	UPROPERTY()
 	USchemaDatabase* SchemaDatabase;
 
@@ -103,9 +105,7 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
-
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;

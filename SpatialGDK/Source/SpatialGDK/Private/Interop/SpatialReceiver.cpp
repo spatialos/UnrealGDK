@@ -431,6 +431,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Potentially we could split out the initial actor state and the initial component state
 		for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 		{
+			if (ClassInfoManager->IsSublevelComponent(PendingAddComponent.ComponentId))
+			{
+				continue;
+			}
+
 			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic)
 			{
 				ApplyComponentData(EntityId, *static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data, Channel);
@@ -816,6 +821,11 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
+	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))
+	{
+		return;
+	}
+
 	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
 	if (Channel == nullptr)
 	{
@@ -846,7 +856,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 
 	if (TargetObject == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Entity: %d Component: %d - Couldn't find target object for update"), Op.entity_id, Op.update.component_id);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Couldn't find target object for update"), Op.entity_id, Op.update.component_id);
 		return;
 	}
 

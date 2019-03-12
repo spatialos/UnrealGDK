@@ -70,6 +70,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bCreatedEntity(false)
 	, EntityId(0)
 	, bFirstTick(true)
+	, bInterestDirty(false)
 	, NetDriver(nullptr)
 	, LastSpatialPosition(FVector::ZeroVector)
 	, bCreatingNewEntity(false)
@@ -180,6 +181,11 @@ void USpatialActorChannel::UpdateShadowData()
 		FObjectReplicator& ComponentReplicator = FindOrCreateReplicator(ActorComponent).Get();
 		ComponentReplicator.RepLayout->InitShadowData(ComponentReplicator.ChangelistMgr->GetRepChangelistState()->StaticBuffer, ActorComponent->GetClass(), (uint8*)ActorComponent);
 	}
+}
+
+void USpatialActorChannel::MarkInterestDirty()
+{
+	bInterestDirty = true;
 }
 
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
@@ -407,6 +413,12 @@ int64 USpatialActorChannel::ReplicateActor()
 			{
 				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState);
 			}
+		}
+
+		if (bInterestDirty)
+		{
+			Sender->UpdateInterestComponent(Actor);
+			bInterestDirty = false;
 		}
 	}
 

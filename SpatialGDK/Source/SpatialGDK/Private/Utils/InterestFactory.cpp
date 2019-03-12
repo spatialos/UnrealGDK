@@ -30,9 +30,9 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate()
 
 Interest InterestFactory::CreateInterest()
 {
-	if (Actor->IsA<APlayerController>())
+	if (Actor->GetNetConnection() != nullptr)
 	{
-		return CreatePlayerControllerInterest();
+		return CreatePlayerOwnedActorInterest();
 	}
 	else
 	{
@@ -62,13 +62,11 @@ Interest InterestFactory::CreateActorInterest()
 
 	// Server Interest
 	NewInterest.ComponentInterest.Add(SpatialConstants::POSITION_COMPONENT_ID, NewComponentInterest);
-	// Client Interest
-	NewInterest.ComponentInterest.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, NewComponentInterest);
 
 	return NewInterest;
 }
 
-Interest InterestFactory::CreatePlayerControllerInterest()
+Interest InterestFactory::CreatePlayerOwnedActorInterest()
 {
 	QueryConstraint DefinedConstraints = CreateDefinedConstraints();
 
@@ -224,12 +222,18 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 {
 	QueryConstraint LevelConstraint;
 
-	APlayerController* PlayerController = Cast<APlayerController>(Actor);
+	QueryConstraint DefaultConstraint;
+	DefaultConstraint.ComponentConstraint = SpatialConstants::NOT_STREAMED_COMPONENT_ID;
+	LevelConstraint.OrConstraint.Add(DefaultConstraint);
+
+	UNetConnection* Connection = Actor->GetNetConnection();
+	check(Connection);
+	APlayerController* PlayerController = Connection->GetPlayerController(nullptr);
 	check(PlayerController);
 
 	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
 
-	FLevelData* LevelData = NetDriver->ClassInfoManager->SchemaDatabase->LevelPathToLevelData.Find(NetDriver->World->GetMapName());
+	FLevelData* LevelData = NetDriver->ClassInfoManager->SchemaDatabase->LevelPathToLevelData.Find(NetDriver->World->GetName());
 	if (LevelData == nullptr)
 	{
 		return LevelConstraint;
@@ -246,10 +250,6 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 		SpecificLevelConstraint.ComponentConstraint = ComponentId;
 		LevelConstraint.OrConstraint.Add(SpecificLevelConstraint);
 	}
-
-	QueryConstraint DefaultConstraint;
-	DefaultConstraint.ComponentConstraint = SpatialConstants::NOT_STREAMED_COMPONENT_ID;
-	LevelConstraint.OrConstraint.Add(DefaultConstraint);
 
 	return LevelConstraint;
 }
