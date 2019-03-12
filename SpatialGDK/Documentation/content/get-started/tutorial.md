@@ -234,7 +234,7 @@ Now let’s test our new cross-server functionality in another local deployment.
 1. From the Unreal Editor toolbar, click **Play** to run the game.
 2. Using the Inspector to track the location of your two players, notice that you can now shoot across servers and cause damage (provided the two players are on different teams!)
 
-![]({{assetRoot}}assets/tutorial/unreal_running_and_shooting_across_server_boundries.gif)<br/>
+![]({{assetRoot}}assets/tutorial/shooting-across-boundaries.gif)<br/>
 *Image: Players Running and Shooting across two Unreal Servers*
 
 Now that you're free of the single-server paradigm, have a think about the huge, seamless multiplayer worlds you can build and host using the Unreal GDK.
