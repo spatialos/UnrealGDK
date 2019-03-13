@@ -8,8 +8,11 @@
 #include "UnrealEngine.h"
 #include "Async/Async.h"
 #include "Misc/Paths.h"
+#include "SNotificationList.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
+
+//TArray<FString> USpatialWorkerConnection::WorkerIds;
 
 void USpatialWorkerConnection::FinishDestroy()
 {
@@ -87,6 +90,48 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	{
 		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
 	}
+
+ 	static TArray<FString> WorkerIds;
+ 
+ 	if (!bConnectAsClient)
+ 	{
+ 		FString OldWorkerId;
+ 
+ 		if (GPlayInEditorID <= WorkerIds.Num())
+ 		{
+ 			OldWorkerId = WorkerIds[GPlayInEditorID - 1];
+ 
+ 			//const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+ 
+ 			//const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
+			const FString ExecuteAbsolutePath(TEXT("C:/dev/UnrealGDKTestSuite/spatial/"));
+			const FString CmdExecutable = TEXT("cmd.exe");
+
+			const FString SpatialCmdArgument = FString::Printf(
+				TEXT("/c cmd.exe /c spatial.exe local worker replace "
+					"--existing_worker_id %s "
+					"--local_service_grpc_port 22000 "
+					"--replacing_worker_id %s ^& pause"), *ReceptionistConfig.WorkerId, *OldWorkerId);
+  
+  			//UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
+  			// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
+  			// execute it. We currently can't use pipes to capture output as it doesn't work properly with current
+  			// spatial.exe.
+  			uint32 SpatialOSStackProcessID = 0;
+  			//FProcHandle SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
+  			//	*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
+  			//	*ExecuteAbsolutePath, nullptr, nullptr);
+//  
+//  			FNotificationInfo Info(SpatialOSStackProcHandle.IsValid() == true
+//  				? FText::FromString(TEXT("SpatialOS Starting..."))
+//  				: FText::FromString(TEXT("Failed to start SpatialOS")));
+ 		}
+ 		else
+ 		{
+			WorkerIds.AddDefaulted();
+ 			WorkerIds[GPlayInEditorID - 1] = ReceptionistConfig.WorkerId;
+ 		}
+ 	}
 
 	// TODO: Move creation of connection parameters into a function somehow - UNR:579
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
@@ -339,6 +384,11 @@ SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 	{
 		return SpatialConnectionType::Receptionist;
 	}
+}
+
+void USpatialWorkerConnection::ClearWorkerIds()
+{
+	//WorkerIds.Empty();
 }
 
 Worker_OpList* USpatialWorkerConnection::GetOpList()
