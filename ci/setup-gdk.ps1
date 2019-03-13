@@ -77,11 +77,13 @@ pushd "$($gdk_home)"
     Copy-Item "$($binaries_dir)\Win64\include\*" "$($worker_sdk_dir)\" -Force -Recurse
 
     Start-Event "build-utilities" "build-unreal-gdk-:windows:"
+	Start-Process -Wait -PassThru -NoNewWindow -FilePath "nuget" -ArgumentList @(`
+	    "restore" `
+	)
     $msbuild_proc = Start-Process -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
         "/nologo", `
         "SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln", `
-        "/property:Configuration=Release", `
-		"/restore" `
+        "/property:Configuration=Release" `
     )
 
     # Note: holding on to a handle solves an intermittent issue when waiting on the process id
