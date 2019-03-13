@@ -248,7 +248,7 @@ Speaking of hosting, let’s upload your game.
 An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip files that contains all the files that your game uses when running in the cloud.
 
 1. In a terminal window, change directory to the root directory of the Third Person Shooter repository.
-2. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`
+1. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`
 3. Build a client-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooter Win64 Development ThirdPersonShooter.uproject`
 
 ### Upload your game
