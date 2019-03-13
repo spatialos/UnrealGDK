@@ -188,7 +188,6 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 
 	if (IsServer())
 	{
-		EntityPool->Init(this, TimerManager);
 		HandleOngoingServerTravel();
 	}
 }
@@ -214,6 +213,12 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	GlobalStateManager->Init(this, TimerManager);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, TimerManager);
+
+	// Entity Pools should never exist on clients
+	if (IsServer())
+	{
+		EntityPool->Init(this, TimerManager);
+	}
 }
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()

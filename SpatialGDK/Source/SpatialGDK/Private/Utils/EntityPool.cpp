@@ -128,7 +128,7 @@ Worker_EntityId UEntityPool::GetNextEntityId()
 	if (ReservedEntityIDRanges.Num() == 0)
 	{
 		// TODO: Improve error message
-		UE_LOG(LogSpatialEntityPool, Error, TEXT("Tried to pop an entity ID from the pool when there were no entity IDs. Try altering your Entity Pool configuration"));
+		UE_LOG(LogSpatialEntityPool, Warning, TEXT("Tried to pop an entity ID from the pool when there were no entity IDs. Try altering your Entity Pool configuration"));
 		return SpatialConstants::INVALID_ENTITY_ID;
 	}
 

@@ -31,7 +31,6 @@ class USpatialStaticComponentView;
 class USnapshotManager;
 
 class UEntityPool;
-class UEntityRegistry;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 

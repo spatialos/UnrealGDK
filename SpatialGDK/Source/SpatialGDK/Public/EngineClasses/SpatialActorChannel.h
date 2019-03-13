@@ -45,7 +45,6 @@ public:
 			return false;
 		}
 
-		// Make sure we've reserved an entity ID.		
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			return true;

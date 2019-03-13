@@ -633,6 +633,7 @@ bool USpatialActorChannel::TryResolveActor()
 	{
 		NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
 	}
+
 	// Inform USpatialNetDriver of this new actor channel/entity pairing
 	NetDriver->AddActorChannel(EntityId, this);
 

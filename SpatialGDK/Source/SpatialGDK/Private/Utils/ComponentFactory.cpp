@@ -13,7 +13,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityPool.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/InterestFactory.h"
 
