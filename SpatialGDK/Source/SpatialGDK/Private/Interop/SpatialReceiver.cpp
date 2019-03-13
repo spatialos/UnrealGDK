@@ -249,24 +249,32 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
+				if (IsValid(NetDriver->GetActorChannelByEntityId(Op.entity_id)))
+				{
+					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
 
-				if (Actor->IsA<APlayerController>())
-				{
-					Actor->RemoteRole = ROLE_AutonomousProxy;
-				}
-				else if (APawn* Pawn = Cast<APawn>(Actor))
-				{
-					if (Pawn->IsPlayerControlled())
+					if (Actor->IsA<APlayerController>())
 					{
-						Pawn->RemoteRole = ROLE_AutonomousProxy;
+						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
+					else if (APawn* Pawn = Cast<APawn>(Actor))
+					{
+						if (Pawn->IsPlayerControlled())
+						{
+							Pawn->RemoteRole = ROLE_AutonomousProxy;
+						}
+					}
+
+					UpdateShadowData(Op.entity_id);
+
+					Actor->OnAuthorityGained();
 				}
-
-				UpdateShadowData(Op.entity_id);
-
-				Actor->OnAuthorityGained();
+				else
+				{
+					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to delete it earlier, when it had no authority. Retrying to delete now."), *Actor->GetName(), Op.entity_id);
+					Sender->SendDeleteEntityRequest(Op.entity_id);
+				}
 			}
 			else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 			{
@@ -391,6 +399,14 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				// In native networking, if Unreal tries to look up a stably named actor on the client
 				// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
 				// Returning here does the same behavior.
+				return;
+			}
+
+			// If the received actor is torn off, don't bother receiving it.
+			if (EntityActor->GetTearOff())
+			{
+				UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity id %lld was already torn off. The actor will not be spawned."), EntityId);
+				EntityActor->Destroy(true);
 				return;
 			}
 
@@ -606,11 +622,11 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	{
 		if (Actor == nullptr)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! EntityId: %lld"), EntityId);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. EntityId: %lld"), EntityId);
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
 		}
 	}
 
@@ -1176,7 +1192,7 @@ void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: request id: %d, entity id: %lld. This should only happen in the case where we attempt to delete the entity before we have authority. The entity will therefore be deleted once authority is gained."), Op.request_id, Op.entity_id);
 	}
 }
 
