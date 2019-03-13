@@ -585,7 +585,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		bCreatingNewEntity = true;
-		TryAllocateEntityId();
+		TryResolveActor();
 	}
 	else
 	{
@@ -619,7 +619,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	}
 }
 
-bool USpatialActorChannel::TryAllocateEntityId()
+bool USpatialActorChannel::TryResolveActor()
 {
 	EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
 

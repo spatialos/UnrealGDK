@@ -53,7 +53,7 @@ public:
 
 		// This could happen if we've run out of entity ids at the time we called SetChannelActor.
 		// If that is the case, keep trying to allocate an entity ID until we succeed.
-		return TryAllocateEntityId();
+		return TryResolveActor();
 	}
 
 	// Called on the client when receiving an update.
@@ -110,7 +110,7 @@ public:
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 
-	bool TryAllocateEntityId();
+	bool TryResolveActor();
 
 	bool ReplicateSubobject(UObject* Obj, const FClassInfo& Info, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
