@@ -29,7 +29,6 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityRegistry.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -201,7 +200,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
-	EntityRegistry = NewObject<UEntityRegistry>(this);
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
@@ -494,6 +492,23 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	RenamedStartupActors.Remove(ThisActor->GetFName());
 }
 
+void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
+{
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return;
+	}
+
+	USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId);
+	if (Channel == nullptr)
+	{
+		return;
+	}
+
+	Channel->MarkInterestDirty();
+}
+
 //SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
 #if WITH_SERVER_CODE
 
@@ -762,7 +777,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				// or it's an editor placed actor and the client hasn't initialized the level it's in
 				if (Channel == nullptr && GuidCache->SupportsObject(Actor->GetClass()) && GuidCache->SupportsObject(Actor->IsNetStartupActor() ? Actor : Actor->GetArchetype()))
 				{
-					if (!ClassInfoManager->IsSupportedClass(Actor->GetClass()))
+					if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 					{
 						// Trying to replicate an actor that isn't supported by Spatial (e.g. marked NotSpatial)
 						continue;

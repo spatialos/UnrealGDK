@@ -5,6 +5,7 @@
 #include "AssetRegistryModule.h"
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
+#include "Engine/Engine.h"
 #include "Engine/SCS_Node.h"
 #include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
@@ -82,14 +83,18 @@ ESchemaComponentType GetRPCType(UFunction* RemoteFunction)
 
 void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
+	// Remove PIE prefix on class if it exists to properly look up the class.
+	FString ClassPath = Class->GetPathName();
+	GEngine->NetworkRemapPath(NetDriver, ClassPath, false);
+
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
   
-  // Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
-	if (!IsSupportedClass(Class))
+	// Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
+	if (!IsSupportedClass(ClassPath))
 	{
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is explicitly referenced from the starting scene and schema has been generated."), *Class->GetPathName());
-		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *Class->GetPathName());
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is explicitly referenced from the starting scene and schema has been generated."), *ClassPath);
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *ClassPath);
 #if WITH_EDITOR
 		// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
 		// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
@@ -150,7 +155,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SchemaComponents[Type];
+		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[ClassPath].SchemaComponents[Type];
 		if (ComponentId != 0)
 		{
 			Info->SchemaComponents[Type] = ComponentId;
@@ -160,7 +165,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	});
 
-	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SubobjectData)
+	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[ClassPath].SubobjectData)
 	{
 		int32 Offset = SubobjectClassDataPair.Key;
 		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
@@ -189,9 +194,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	}
 }
 
-bool USpatialClassInfoManager::IsSupportedClass(UClass* Class) const
+bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const
 {
-	return SchemaDatabase->ClassPathToSchema.Contains(Class->GetPathName());
+	return SchemaDatabase->ClassPathToSchema.Contains(PathName);
 }
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* Class)
@@ -280,4 +285,10 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 	}
 
 	return ESchemaComponentType::SCHEMA_Invalid;
+}
+
+FORCEINLINE bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
+{
+	return SchemaDatabase->FirstSublevelComponentId <= ComponentId &&
+		SchemaDatabase->LastSublevelComponentId >= ComponentId;
 }

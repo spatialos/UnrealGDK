@@ -19,7 +19,6 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
-#include "Utils/EntityRegistry.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
@@ -134,6 +133,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::INTEREST_COMPONENT_ID:
+	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
@@ -211,28 +211,32 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 
 void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 {
-	if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
+	if (Op.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 	{
-		if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-		{
-			HandlePlayerLifecycleAuthority(Op, PlayerController);
-		}
+		GlobalStateManager->AuthorityChanged(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE, Op.entity_id);
+		return;
+	}
+
+	if (Op.component_id == SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID
+		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		GlobalStateManager->ExecuteInitialSingletonActorReplication();
+		return;
+	}
+
+	AActor* Actor = Cast<AActor>(NetDriver->PackageMap->GetObjectFromEntityId(Op.entity_id));
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+	{
+		HandlePlayerLifecycleAuthority(Op, PlayerController);
 	}
 
 	if (NetDriver->IsServer())
 	{
-		if (Op.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
-		{
-			GlobalStateManager->AuthorityChanged(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE, Op.entity_id);
-		}
-
-		if (Op.component_id == SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID
-			&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-		{
-			GlobalStateManager->ExecuteInitialSingletonActorReplication();
-			return;
-		}
-
 		// TODO UNR-955 - Remove this once batch reservation of EntityIds are in.
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
@@ -243,77 +247,67 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		// and set our RemoteRole to be ROLE_AutonomousProxy if the actor has an owning connection.
 		if (Op.component_id == SpatialConstants::POSITION_COMPONENT_ID)
 		{
-			if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
+			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+				Actor->Role = ROLE_Authority;
+				Actor->RemoteRole = ROLE_SimulatedProxy;
+
+				if (Actor->IsA<APlayerController>())
 				{
-					Actor->Role = ROLE_Authority;
-					Actor->RemoteRole = ROLE_SimulatedProxy;
-
-					if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
-					{
-						Actor->RemoteRole = ROLE_AutonomousProxy;
-					}
-					else if (APawn* Pawn = Cast<APawn>(Actor))
-					{
-						if (Pawn->IsPlayerControlled())
-						{
-							Pawn->RemoteRole = ROLE_AutonomousProxy;
-						}
-					}
-				
-					UpdateShadowData(Op.entity_id);
-
-					Actor->OnAuthorityGained();
+					Actor->RemoteRole = ROLE_AutonomousProxy;
 				}
-				else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
+				else if (APawn* Pawn = Cast<APawn>(Actor))
 				{
-					Actor->OnAuthorityLossImminent();
-				}
-				else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
-				{
-					if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+					if (Pawn->IsPlayerControlled())
 					{
-						ActorChannel->bCreatedEntity = false;
+						Pawn->RemoteRole = ROLE_AutonomousProxy;
 					}
-
-					Actor->Role = ROLE_SimulatedProxy;
-					Actor->RemoteRole = ROLE_Authority;
-
-					Actor->OnAuthorityLost();
 				}
+
+				UpdateShadowData(Op.entity_id);
+
+				Actor->OnAuthorityGained();
+			}
+			else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
+			{
+				Actor->OnAuthorityLossImminent();
+			}
+			else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+			{
+				if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+				{
+					ActorChannel->bCreatedEntity = false;
+				}
+
+				Actor->Role = ROLE_SimulatedProxy;
+				Actor->RemoteRole = ROLE_Authority;
+
+				Actor->OnAuthorityLost();
 			}
 		}
 	}
 	else
 	{
-		// Check to see if we became authoritative over the ClientRPC component over this entity
+		// Check to see if we became authoritative over the UnrealClientRPCEndpoint component over this entity
 		// If we did, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-		if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
-		{
-			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+		const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
-			{
-				Actor->Role = Op.authority == WORKER_AUTHORITY_AUTHORITATIVE ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
-			}
+		if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+		{
+			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
 	}
 
 #if !UE_BUILD_SHIPPING
-	if (AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(Op.entity_id))
+	if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
+		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
+			Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
+			Op.component_id == SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
 		{
-			ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
-			if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
-				Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
-				Op.component_id == SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
-			{
-				// This could be either an RPC component on the actor or the subobject, but we assume
-				// they will be received together, so resetting multiple times should not be a problem.
-				NetDriver->OnRPCAuthorityGained(Actor, ComponentType);
-			}
+			// This will be called multiple times on each RPC component.
+			NetDriver->OnRPCAuthorityGained(Actor, ComponentType);
 		}
 	}
 #endif // !UE_BUILD_SHIPPING
@@ -324,9 +318,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
 	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
 
-	UEntityRegistry* EntityRegistry = NetDriver->GetEntityRegistry();
-	check(EntityRegistry);
-
 	improbable::SpawnData* SpawnData = StaticComponentView->GetComponentData<improbable::SpawnData>(EntityId);
 	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
@@ -336,7 +327,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	if (AActor* EntityActor = EntityRegistry->GetActorFromEntityId(EntityId))
+	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
 	{
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker"), \
 			*EntityActor->GetName());
@@ -431,8 +422,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			return;
 		}
 
-		EntityRegistry->AddToRegistry(EntityId, EntityActor);
-
 		PackageMap->ResolveEntityActor(EntityActor, EntityId);
 
 		Channel->SetChannelActor(EntityActor);
@@ -442,6 +431,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Potentially we could split out the initial actor state and the initial component state
 		for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 		{
+			if (ClassInfoManager->IsSublevelComponent(PendingAddComponent.ComponentId))
+			{
+				continue;
+			}
+
 			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic)
 			{
 				ApplyComponentData(EntityId, *static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data, Channel);
@@ -482,7 +476,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 {
-	AActor* Actor = NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId);
+	TWeakObjectPtr<UObject> WeakActor = PackageMap->GetObjectFromEntityId(EntityId);
+
+	// Actor has been destroyed already. Clean up surrounding bookkeeping.
+	if (!WeakActor.IsValid())
+	{
+		DestroyActor(nullptr, EntityId);
+		return;
+	}
+
+	AActor* Actor = Cast<AActor>(WeakActor.Get());
 
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
@@ -581,11 +584,6 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 
 void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 {
-	if (Actor == nullptr)
-	{
-		return;
-	}
-
 	// Destruction of actors can cause the destruction of associated actors (eg. Character > Controller). Actor destroy
 	// calls will eventually find their way into USpatialActorChannel::DeleteEntityIfAuthoritative() which checks if the entity
 	// is currently owned by this worker before issuing an entity delete request. If the associated entity is still authoritative
@@ -606,11 +604,18 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! Actor: %s %lld"), *Actor->GetName(), EntityId);
+		if (Actor == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! EntityId: %lld"), EntityId);
+		}
+		else
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
+		}
 	}
 
 	// It is safe to call AActor::Destroy even if the destruction has already started.
-	if (!Actor->Destroy(true))
+	if (Actor != nullptr && !Actor->Destroy(true))
 	{
 		UE_LOG(LogSpatialReceiver, Error, TEXT("Failed to destroy actor in RemoveActor %s %lld"), *Actor->GetName(), EntityId);
 	}
@@ -623,8 +628,8 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 {
+	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 	PackageMap->RemoveEntityActor(EntityId);
-	NetDriver->GetEntityRegistry()->RemoveFromRegistry(EntityId);
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
@@ -789,6 +794,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID:
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
+	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
@@ -812,6 +818,11 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 		HandleUnreliableRPC(Op);
+		return;
+	}
+
+	if (ClassInfoManager->IsSublevelComponent(Op.update.component_id))
+	{
 		return;
 	}
 
