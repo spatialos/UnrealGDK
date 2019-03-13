@@ -66,7 +66,7 @@ The GDK toolbar provides several functions required for building and launching y
 
 ### Add the GDK toolbar to your Unreal project
 
-> Note: If you based your project off the [StarterProject](https://github.com/spatialos/UnrealGDKStarterProject), the toolbar is already enabled.
+> Note: If you based your project off the [Starter Template]({{urlRoot}}/content/get-started/gdk-template), the toolbar is already enabled.
 
 To enable the GDK toolbar, navigate to **Edit** > **Plugins** inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS** section and enable the toolbar:
 

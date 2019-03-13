@@ -5,7 +5,7 @@ The GDK offers:
 * **Multiserver support**: leveraging our cloud platform [SpatialOS (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/concepts/spatialos), the GDK allows you to run multiple game servers in a single game instance so your Unreal-developed games can have more players, more Actors, and better gameplay systems than previously possible.
 
 * **An Unreal-native experience:** keeping traditional workflows and networking APIs that Unreal Engine developers are familiar with, the GDK introduces new native-feeling concepts that turn a single-server engine into a distributed one. This enables the GDK to retain the functionality of the networking features which Unreal offers out of the box, including transform synchronization, character movement, and map travel.
-* **An easy onboarding experience**: we have made sure it’s easy to get started with the GDK by including a Starter Project which you can use as a tour of SpatialOS and a base for your own game, as well as a guide to porting your current multiplayer Unreal game to run on SpatialOS.
+* **An easy onboarding experience**: we have made sure it’s easy to get started with the GDK by including a Starter Template which you can use as a tour of SpatialOS and a base for your own game, as well as a guide to porting your current multiplayer Unreal game to run on SpatialOS.
 
 >This is an [alpha (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal, pending stability and performance improvements. The API may change as we learn from feedback  - see the guidance on [Recommended use](#recommended-use), below.
 
@@ -46,7 +46,6 @@ The GDK and its related projects are available on GitHub.
 **NOTE:** This link may give you a 404.
 
 In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
-* [Starter Project](https://github.com/spatialos/UnrealGDKStarterProject)
 * [Third-Person Shooter game](https://github.com/spatialos/UnrealGDKThirdPersonShooter) (Not actively developed)
 * [The Test Suite](https://github.com/spatialos/UnrealGDKTestSuite)</br>
 

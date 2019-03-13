@@ -65,7 +65,7 @@ When I build my project, I get the following error: `Unknown class specifier 'Sp
 When I launch my SpatialOS deployment, I receive error messages similar to: `uses component ID 100005 which conflicts with components defined elsewhere.`
 
 #### A:  
-This means you were using the GDK since pre-alpha. To fix the issue, delete the contents of your `spatial/schema` folder, run `Setup.bat` again in the GDK folder, and generate the schemas again. You may also need to update your streaming queries in `spatialos.json`. Refer to our [StarterProject repo](https://github.com/spatialos/UnrealGDKStarterProject) to see an example.
+This means you were using the GDK since pre-alpha. To fix the issue, delete the contents of your `spatial/schema` folder, run `Setup.bat` again in the GDK folder, and generate the schemas again. You may also need to update your streaming queries in `spatialos.json`. Refer to our [Starter Template]({{urlRoot}}/content/get-started/gdk-template) to see an example.
 <br/>
 -----
 
