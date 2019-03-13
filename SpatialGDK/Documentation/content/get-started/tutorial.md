@@ -154,7 +154,9 @@ Notice that health now decrements when you are shot.
 [The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s use the Inspector to visualise the areas that each of our server-workers have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
 
 1. Access the inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
-1. In the **View** tab, click the checkboxes next to both of the **UnrealWorkers**. In the top right section of the viewport, select Show me: **Authority / Interest**. This will cause the Inspector to display the areas that the server-workers have authority over as two coloured zones.
+1. In the **View** tab, click the checkboxes next to both of the **UnrealWorkers**.
+1. In the top right section of the viewport, in the “Show me” box, select **Authority / interest**.<br>
+This will cause the Inspector to display the areas that each server-worker has authority over as two coloured zones.
 1. Back in your two Unreal game clients, run around and shoot.
 1. Using the Inspector to track the location of your two players, notice that if you position them in the same area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
 
