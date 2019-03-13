@@ -112,7 +112,7 @@ Set up your Unreal project to work with the GDK for Unreal fork of the Unreal En
 1. In **File Explorer**, navigate to `<ProjectRoot>\<GameRoot>`.
 1. Right-click your `<YourProject>.uproject` file and select **Switch Unreal Engine version**.
 1. Select the path to the Unreal Engine fork you cloned earlier.
-1. In **File Explorer**, right-click `<YourProject>`.uproject and select **Generate Visual Studio Project files**.
+1. In **File Explorer**, right-click `<YourProject>`.uproject and select **Generate Visual Studio Project files**. This automatically generates a Visual Studio solution file for your project called `<YourProject.sln>`
 1. In the same directory, double-click `<YourProject>`.sln to open it with Visual Studio.
 1. On the Visual Studio toolbar, set your Solution configuration to **Development Editor**. <br/>
     ![Visual studio toolbar]({{assetRoot}}assets/screen-grabs/porting-solution-config.png)<br/>
