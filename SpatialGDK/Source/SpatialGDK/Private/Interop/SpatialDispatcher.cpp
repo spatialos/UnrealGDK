@@ -151,51 +151,39 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 		}
 	};
 	Worker_ComponentId ComponentId = GetComponentId(Op);
-	TFunction<void(UOpCallbackTemplate*)> UserCallback;
+	check(ComponentId != SpatialConstants::INVALID_COMPONENT_ID);
+
+	UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(ComponentId);
+	if (UserCallbackWrapper == nullptr)
+	{
+		return;
+	}
+	UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
 	
 	switch (Op->op_type)
 	{
 	case WORKER_OP_TYPE_ADD_COMPONENT:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback)
-		{
-			UserCallback->OnAddComponent(Op->add_component);
-		};
+		UserCallback->OnAddComponent(Op->add_component);
 		break;
 	case WORKER_OP_TYPE_REMOVE_COMPONENT:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback)
-		{
-			UserCallback->OnRemoveComponent(Op->remove_component);
-		};
+		UserCallback->OnRemoveComponent(Op->remove_component);
 		break;
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback)
-		{
-			UserCallback->OnComponentUpdate(Op->component_update);
-		};
+		UserCallback->OnComponentUpdate(Op->component_update);
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		StaticComponentView->OnAuthorityChange(Op->authority_change);
-		UserCallback = [&](UOpCallbackTemplate* UserCallback)
-		{
-			UserCallback->OnAuthorityChange(Op->authority_change);
-		};
+		UserCallback->OnAuthorityChange(Op->authority_change);
 		break;
 	case WORKER_OP_TYPE_COMMAND_REQUEST:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback)
-		{
-			UserCallback->OnCommandRequest(Op->command_request);
-		};
+		UserCallback->OnCommandRequest(Op->command_request);
 		break;
 	case WORKER_OP_TYPE_COMMAND_RESPONSE:
-		UserCallback = [&](UOpCallbackTemplate* UserCallback)
-		{
-			UserCallback->OnCommandResponse(Op->command_response);
-		};
+		UserCallback->OnCommandResponse(Op->command_response);
 		break;
 	default:
+		checkNoEntry();
 		return;
 	}
-	TryUserCallback(ComponentId, UserCallback);
 }
 
 Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op) const

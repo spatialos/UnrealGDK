@@ -210,20 +210,19 @@ The Launcher downloads the client executable from the [SpatialOS assembly](#asse
 
 ### Layers
 
-Layers are a concept that
-organises both the [SpatialOS components](#spatialos-component) in your
-[game world](#game-world), and the [workers](#workers) that
-simulate the world.
+In SpatialOS, you can split up [server-worker](#workers) computation into layers, with each layer of server-worker instances handling a specific and unique aspect of your game.
 
-You can look at layers in two ways:
+A SpatialOS layer has two elements;
 
-* A layer is a group of SpatialOS components on entities in the game world.
-* A layer comprises the worker instances that have authority over one of those groups.
+* a group of SpatialOS entity components,
+* server-worker instances of a worker type that have write access authority over the group of components.
 
 By default, the GDK for Unreal uses a single Unreal server-worker layer to handle all server-side computation.
-However, you can set up additional [non-Unreal layers]({{urlRoot}}/content/non-unreal-layers.md), made up of server-worker instances that do not use Unreal or the GDK.
+However, you can set up additional non-Unreal layers, made up of server-worker instances that do not use Unreal or the GDK.
 
-For details, see [Layers](https://docs.improbable.io/reference/latest/shared/worker-configuration/layers).
+For more information:
+* See documentation on [non-Unreal layers]({{urlRoot}}/content/non-unreal-layers.md)
+* See SpatialOS documentation for [layers](https://docs.improbable.io/reference/latest/shared/worker-configuration/layers).
 
 ### Load balancing
 One of the features of SpatialOS is load balancing: dynamically adjusting how many [components](#spatialos-component) on [entities](#spatialos-entity) in the [world](#spatialos-world) each [worker](#workers) has [write access](#authority) to, so that workers don’t get overloaded.
@@ -237,6 +236,14 @@ This means that an [entity](#spatialos-entity) won’t necessarily stay on the s
 >
 > [Configuring load balancing](https://docs.improbable.io/reference/latest/shared/worker-configuration/loadbalancer-config)
 
+### Network Operations
+
+Also known as "ops".
+
+Network operations are network messages sent between a worker instance and the SpatialOS Runtime. They carry information about updates to worker instances, entities, entity components, commands, and more.
+
+For more information, see the SpatialOS documentation on [operations](https://docs.improbable.io/reference/latest/shared/design/operations).
+
 ### Node
 
 >Not to be confused with [worker](#workers).
@@ -245,11 +252,7 @@ A node refers to a single machine used by a [cloud deployment](#deployment). Its
 
 ### Ops
 
-Also known as "network operations".
-
-Ops are network messages sent between each worker and SpatialOS, carrying information about updates to workers, entities and components.
-
-For more information, see [operations](https://docs.improbable.io/reference/latest/shared/design/operations).
+See [Network operations](#network-operations).
 
 ### Persistence
 Most [entities](#spatialos-entity) in your [game world](#game-world) need to keep existing if you stop a game [deployment](#deployment) and start a new one. However,  some entities don’t need to keep existing from one deployment to another; you may want per-deployment player abilities and a per-deployment score, for example.
