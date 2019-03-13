@@ -50,10 +50,17 @@ void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSock
 	}
 }
 
+#if ENGINE_MINOR_VERSION <= 20
 void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
 {
 	//Intentionally does not call Super::
 }
+#else
+void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBits, FOutPacketTraits& Traits)
+{
+	//Intentionally does not call Super::
+}
+#endif
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor) const
 {
