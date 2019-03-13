@@ -5,7 +5,10 @@
 #include "AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "Components/SceneComponent.h"
+#include "Editor.h"
 #include "Engine/LevelScriptActor.h"
+#include "Engine/LevelStreaming.h"
+#include "Engine/World.h"
 #include "GeneralProjectSettings.h"
 #include "GenericPlatform/GenericPlatformFile.h"
 #include "GenericPlatform/GenericPlatformProcess.h"
@@ -25,6 +28,7 @@
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
+#include "Engine/WorldComposition.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 
@@ -32,6 +36,11 @@ TArray<UClass*> SchemaGeneratedClasses;
 TArray<UClass*> AdditionalSchemaGeneratedClasses; // Used to keep UClasses in memory whilst generating schema for them.
 TMap<FString, FSchemaData> ClassPathToSchema;
 uint32 NextAvailableComponentId;
+
+// Sublevels
+TMap<FString, FLevelData> LevelPathToLevelData;
+uint32 FirstSublevelComponentId;
+uint32 LastSublevelComponentId;
 
 // Prevent name collisions.
 TMap<UClass*, FString> ClassToSchemaName;
@@ -228,7 +237,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 }// ::
 
 
-void  GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
+void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
 {
 	// Generate the actual schema.
 	for (const auto& TypeInfo : TypeInfos)
@@ -237,6 +246,79 @@ void  GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos
 	}
 }
 
+FLevelData GenerateSchemaForSublevel(UWorld* World)
+{
+	FLevelData LevelData;
+
+	if (UWorldComposition* WorldComposition = World->WorldComposition)
+	{
+		for (const auto& Tile : WorldComposition->GetTilesList())
+		{
+			FString TilePath = Tile.PackageName.ToString();
+			int32 Index = 0;
+			TilePath.FindLastChar('/', Index);
+			TilePath = TilePath.Mid(Index + 1);
+			LevelData.SublevelNameToComponentId.Add(TilePath, SpatialConstants::INVALID_COMPONENT_ID);
+		}
+	}
+	else
+	{
+		for (const auto& LevelStreamingObject : World->GetStreamingLevels())
+		{
+			LevelData.SublevelNameToComponentId.Add(LevelStreamingObject->GetName(), SpatialConstants::INVALID_COMPONENT_ID);
+		}
+	}
+
+	return LevelData;
+}
+
+void GenerateSchemaForSublevels(const FString& SchemaPath)
+{
+	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+
+	FLevelData LevelData = GenerateSchemaForSublevel(EditorWorld);
+	if (LevelData.SublevelNameToComponentId.Num() > 0)
+	{
+		LevelPathToLevelData.Add(EditorWorld->GetMapName(), LevelData);
+	}
+
+	if (LevelPathToLevelData.Num() == 0)
+	{
+		FirstSublevelComponentId = SpatialConstants::INVALID_COMPONENT_ID;
+		LastSublevelComponentId = SpatialConstants::INVALID_COMPONENT_ID;
+		return;
+	}
+
+	FComponentIdGenerator IdGenerator(NextAvailableComponentId);
+
+	FirstSublevelComponentId = IdGenerator.GetCurrentId();
+
+	for (auto& LevelPathToLevelDataPair : LevelPathToLevelData)
+	{
+		FCodeWriter Writer;
+
+		Writer.Printf(R"""(
+			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+			// Note that this file has been generated automatically
+			package unreal.sublevels;)""");
+
+		for (auto& SublevelToComponentIdPair : LevelPathToLevelDataPair.Value.SublevelNameToComponentId)
+		{
+			SublevelToComponentIdPair.Value = IdGenerator.GetNextAvailableId();
+
+			Writer.PrintNewLine();
+			Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(SublevelToComponentIdPair.Key));
+			Writer.Indent();
+			Writer.Printf("id = {0};", SublevelToComponentIdPair.Value);
+			Writer.Outdent().Print("}");
+		}
+
+		Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *(SchemaPath + TEXT("Sublevels/")), *LevelPathToLevelDataPair.Key));
+	}
+
+	LastSublevelComponentId = IdGenerator.GetCurrentId();
+	NextAvailableComponentId = IdGenerator.GetNextAvailableId();
+}
 
 FString GenerateIntermediateDirectory()
 {
@@ -256,6 +338,9 @@ void SaveSchemaDatabase()
 		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 		SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
 		SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
+		SchemaDatabase->LevelPathToLevelData = LevelPathToLevelData;
+		SchemaDatabase->FirstSublevelComponentId = FirstSublevelComponentId;
+		SchemaDatabase->LastSublevelComponentId = LastSublevelComponentId;
 
 		FAssetRegistryModule::AssetCreated(SchemaDatabase);
 		SchemaDatabase->MarkPackageDirty();
@@ -414,10 +499,28 @@ void LoadDefaultGameModes()
 
 void PreProcessSchemaMap()
 {
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
 	TArray<FString> EntriesToRemove;
 	for (const auto& EntryIn : ClassPathToSchema)
 	{
 		const FString ClassPath = EntryIn.Key;
+
+		FString ObjectPath = EntryIn.Key;
+		int32 Index = 0;
+		ObjectPath.FindLastChar('_', Index); // Blueprints will always be suffixed by "_C"
+		if (Index != -1)
+		{
+			ObjectPath = ObjectPath.Mid(0, Index);
+			FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath(FName(*ObjectPath));
+
+			// Skip over level blueprints since we can't load them.
+			if (AssetData.AssetClass.IsEqual(FName(TEXT("World"))))
+			{
+				EntriesToRemove.Add(ClassPath);
+				continue;
+			}
+		}
 
 		bool ClassExists = TryLoadClassForSchemaGeneration(ClassPath);
 
@@ -474,6 +577,8 @@ bool SpatialGDKGenerateSchema()
 	DeleteGeneratedSchemaFiles();
 
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath);
+
+	GenerateSchemaForSublevels(SchemaOutputPath);
 
 	SaveSchemaDatabase();
 

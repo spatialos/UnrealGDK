@@ -59,10 +59,16 @@ struct UnrealMetadata : Component
 
 	FORCEINLINE UClass* GetNativeEntityClass()
 	{
+		if (NativeClass != nullptr)
+		{
+			return NativeClass;
+		}
+
 		if (UClass* Class = LoadObject<UClass>(nullptr, *ClassPath))
 		{
 			if (Class->IsChildOf<AActor>())
 			{
+				NativeClass = Class;
 				return Class;
 			}
 		}
@@ -73,6 +79,8 @@ struct UnrealMetadata : Component
 	TSchemaOption<FUnrealObjectRef> StablyNamedRef;
 	FString OwnerWorkerAttribute;
 	FString ClassPath;
+
+	UClass* NativeClass = nullptr;
 };
 
 FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const FClassInfo& Info)
