@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Toolbars
 
 There are two toolbars you can use in the Unreal Editor: the main Unreal toolbar, and the SpatialOS GDK toolbar. Once enabled, the GDK toolbar sits alongside the main Unreal toolbar:
@@ -65,7 +66,7 @@ The GDK toolbar provides several functions required for building and launching y
 
 ### Add the GDK toolbar to your Unreal project
 
-> Note: If you based your project off the [StarterProject](https://github.com/spatialos/UnrealGDKStarterProject), the toolbar is already enabled.
+> Note: If you based your project off the [Starter Template]({{urlRoot}}/content/get-started/gdk-template), the toolbar is already enabled.
 
 To enable the GDK toolbar, navigate to **Edit** > **Plugins** inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS** section and enable the toolbar:
 
@@ -85,7 +86,7 @@ You can also access these from the **Window** menu:
 | --- | --- |
 | Snapshot | Generates a [SpatialOS snapshot]({{urlRoot}}/content/glossary#snapshot). | 
 | Schema | Creates [schema]({{urlRoot}}/content/glossary#schema) for your Unreal project. |
-| Start | Runs [`spatial worker build build-config` (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)). |
+| Start | Runs [`spatial worker build build-config`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)). |
 | Stop | Stops `spatial local launch`. |
 | Inspector | Opens the [Inspector]({{urlRoot}}/content/glossary#inspector) in a browser. |
 

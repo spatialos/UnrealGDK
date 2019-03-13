@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "IpConnection.h"
 
+#include "Schema/Interest.h"
+
 #include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialNetConnection.generated.h"
@@ -26,6 +28,9 @@ public:
 	virtual void Tick() override;
 	virtual int32 IsNetReady(bool Saturate) override;
 
+	/** Called by PlayerController to tell connection about client level visibility change */
+	virtual void UpdateLevelVisibility(const FName& PackageName, bool bIsVisible) override;
+
 	// These functions don't make a lot of sense in a SpatialOS implementation.
 	virtual FString LowLevelGetRemoteAddress(bool bAppendPort = false) override { return TEXT(""); }
 	virtual FString LowLevelDescribe() override { return TEXT(""); }
@@ -39,6 +44,7 @@ public:
 	void DisableHeartbeat();
 
 	void OnHeartbeat();
+	void UpdateActorInterest(AActor* Actor);
 
 	UPROPERTY()
 	bool bReliableSpatialConnection;

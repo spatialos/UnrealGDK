@@ -40,6 +40,7 @@ struct FObjectReferences
 	FObjectReferences(FObjectReferences&& Other)
 		: UnresolvedRefs(MoveTemp(Other.UnresolvedRefs))
 		, bSingleProp(Other.bSingleProp)
+		, bFastArrayProp(Other.bFastArrayProp)
 		, Buffer(MoveTemp(Other.Buffer))
 		, NumBufferBits(Other.NumBufferBits)
 		, Array(MoveTemp(Other.Array))
@@ -48,22 +49,23 @@ struct FObjectReferences
 
 	// Single property constructor
 	FObjectReferences(const FUnrealObjectRef& InUnresolvedRef, int32 InParentIndex, UProperty* InProperty)
-		: bSingleProp(true), ParentIndex(InParentIndex), Property(InProperty)
+		: bSingleProp(true), bFastArrayProp(false), ParentIndex(InParentIndex), Property(InProperty)
 	{
 		UnresolvedRefs.Add(InUnresolvedRef);
 	}
 
 	// Struct (memory stream) constructor
-	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, const TSet<FUnrealObjectRef>& InUnresolvedRefs, int32 InParentIndex, UProperty* InProperty)
-		: UnresolvedRefs(InUnresolvedRefs), bSingleProp(false), Buffer(InBuffer), NumBufferBits(InNumBufferBits), ParentIndex(InParentIndex), Property(InProperty) {}
+	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, const TSet<FUnrealObjectRef>& InUnresolvedRefs, int32 InParentIndex, UProperty* InProperty, bool InFastArrayProp = false)
+		: UnresolvedRefs(InUnresolvedRefs), bSingleProp(false), bFastArrayProp(InFastArrayProp), Buffer(InBuffer), NumBufferBits(InNumBufferBits), ParentIndex(InParentIndex), Property(InProperty) {}
 
 	// Array constructor
 	FObjectReferences(FObjectReferencesMap* InArray, int32 InParentIndex, UProperty* InProperty)
-		: bSingleProp(false), Array(InArray), ParentIndex(InParentIndex), Property(InProperty) {}
+		: bSingleProp(false), bFastArrayProp(false), Array(InArray), ParentIndex(InParentIndex), Property(InProperty) {}
 
 	TSet<FUnrealObjectRef>				UnresolvedRefs;
 
 	bool								bSingleProp;
+	bool								bFastArrayProp;
 	TArray<uint8>						Buffer;
 	int32								NumBufferBits;
 
@@ -140,7 +142,9 @@ private:
 	void ReceiveActor(Worker_EntityId EntityId);
 	void RemoveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
-	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass, bool bDeferred);
+
+	AActor* GetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, UClass* ActorClass, improbable::SpawnData* SpawnData);
+	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 

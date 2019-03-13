@@ -135,6 +135,9 @@ public:
 	
 	void UpdateShadowData();
 
+	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
+	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
+
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
 	bool bCreatedEntity;
 
@@ -154,6 +157,7 @@ private:
 private:
 	Worker_EntityId EntityId;
 	bool bFirstTick;
+	bool bInterestDirty;
 	bool bNetOwned;
 
 	UPROPERTY(transient)

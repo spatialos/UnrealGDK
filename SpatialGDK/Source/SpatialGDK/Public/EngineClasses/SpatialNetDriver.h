@@ -62,6 +62,8 @@ public:
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
 	// End UNetDriver interface.
 
+	virtual void OnOwnerUpdated(AActor* Actor);
+
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
 #endif
@@ -72,8 +74,6 @@ public:
 	// Note: you should only call this after we have connected to Spatial.
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
-
-	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
 
 	// When the AcceptingPlayers state on the GSM has changed this method will be called.
 	void OnAcceptingPlayersChanged(bool bAcceptingPlayers);
@@ -120,8 +120,6 @@ public:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 	UPROPERTY()
-	UEntityRegistry* EntityRegistry;
-	UPROPERTY()
 	USnapshotManager* SnapshotManager;
 	UPROPERTY()
 	UEntityPool* EntityPool;
@@ -167,16 +165,24 @@ private:
 	bool bWaitingForAcceptingPlayersToSpawn;
 	FString SnapshotToLoad;
 
+	void InitiateConnectionToSpatialOS(const FURL& URL);
+
+	UFUNCTION()
+	void OnConnectedToSpatialOS();
+
+	void CreateAndInitializeCoreClasses();
+
+	void CreateServerSpatialOSNetConnection();
+
+	void QueryGSMToLoadMap();
+
+	void HandleOngoingServerTravel();
+
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
 	UFUNCTION()
 	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
-
-	void Connect();
-
-	UFUNCTION()
-	void OnMapLoadedAndConnected();
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 

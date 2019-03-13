@@ -9,7 +9,6 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 #include "Utils/EntityPool.h"
-#include "Utils/EntityRegistry.h"
 
 FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects)
 	: FNetBitWriter(InPackageMap, 0)

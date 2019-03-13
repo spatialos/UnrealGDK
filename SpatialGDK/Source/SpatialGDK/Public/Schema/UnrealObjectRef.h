@@ -15,7 +15,6 @@ struct FUnrealObjectRef
 	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset)
 		: Entity(Entity)
 		, Offset(Offset)
-		, bNoLoadOnClient(false)
 	{}
 
 	FUnrealObjectRef(Worker_EntityId Entity, uint32 Offset, FString Path, FUnrealObjectRef Outer, bool bNoLoadOnClient = false)
@@ -92,7 +91,7 @@ struct FUnrealObjectRef
 	uint32 Offset;
 	improbable::TSchemaOption<FString> Path;
 	improbable::TSchemaOption<FUnrealObjectRef> Outer;
-	bool bNoLoadOnClient;
+	bool bNoLoadOnClient = false;
 };
 
 inline uint32 GetTypeHash(const FUnrealObjectRef& ObjectRef)

@@ -21,7 +21,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
-#include "Utils/EntityRegistry.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
@@ -146,22 +146,33 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		});
 	}
 
-	// Only want to have a stably object ref if this Actor is stably named.
-	// We use this to indicate if a new Actor should be created or to link a pre-existing Actor
-	// when receiving an AddEntityOp.
+	// We want to have a stably named ref if this is a loaded Actor.
+	// We use this to indicate if a new Actor should be created or to link a pre-existing Actor when receiving an AddEntityOp.
+	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient was true.
 	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
-	if (Actor->IsFullNameStableForNetworking())
+	if (Actor->HasAnyFlags(RF_WasLoaded))
 	{
 		// Since we've already received the EntityId for this Actor. It is guaranteed to be resolved
 		// with the package map by this point
 		FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
+		if (OuterObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+		{
+			FNetworkGUID NetGUID = PackageMap->ResolveStablyNamedObject(Actor->GetOuter());
+			OuterObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		}
 
 		// No path in SpatialOS should contain a PIE prefix.
 		FString TempPath = Actor->GetFName().ToString();
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
 
-		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef);
+		bool bNoLoadOnClient = !PackageMap->CanClientLoadObject(Actor);
+		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
 	}
+
+	// Classes can have a PIE prefix added to them. This needs to be removed
+	// to be able to properly look the class up in the schema database.
+	FString RemappedClassName = Class->GetPathName();
+	GEngine->NetworkRemapPath(NetDriver, RemappedClassName, false);
 
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
@@ -169,21 +180,24 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
-	ComponentDatas.Add(improbable::Interest().CreateInterestData());
-	if (Actor->IsA<APlayerController>())
-	{
-		ComponentDatas.Add(improbable::Heartbeat().CreateHeartbeatData());
-	}
+	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, RemappedClassName).CreateUnrealMetadataData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
 	}
 
+	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
+	ComponentDatas.Add(CreateLevelComponentData(Actor));
+
+	if (Actor->IsA<APlayerController>())
+	{
+		ComponentDatas.Add(improbable::Heartbeat().CreateHeartbeatData());
+	}
+
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
-	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
+	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, false, NetDriver);
 
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
@@ -200,6 +214,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	{
 		QueueOutgoingUpdate(Channel, Actor, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 	}
+
+	InterestFactory InterestDataFactory(Actor, Info, NetDriver);
+	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
@@ -244,6 +261,19 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	return CreateEntityRequestId;
 }
 
+Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
+{
+	if (FLevelData* LevelData = ClassInfoManager->SchemaDatabase->LevelPathToLevelData.Find(NetDriver->World->GetName()))
+	{
+		if (uint32* ComponentId = LevelData->SublevelNameToComponentId.Find(Actor->GetTypedOuter<UWorld>()->GetName()))
+		{
+			return ComponentFactory::CreateEmptyComponentData(*ComponentId);
+		}
+	}
+
+	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
+}
+
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderSendComponentUpdates);
@@ -253,7 +283,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
-	ComponentFactory UpdateFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
+	ComponentFactory UpdateFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, Channel->GetInterestDirty(), NetDriver);
 
 	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges);
 
@@ -860,4 +890,13 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 
 	Connection->SendComponentUpdate(EntityId, &Update);
 	return true;
+}
+
+void USpatialSender::UpdateInterestComponent(AActor* Actor)
+{
+	improbable::InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver);
+	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
+
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	Connection->SendComponentUpdate(EntityId, &Update);
 }

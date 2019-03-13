@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Get started: Port your own Unreal project to the GDK
 
 As an experienced UE4 developer, you likely have a prototype or a game already. The GDK allows you to port it over to SpatialOS. This guide shows you how to kickstart your SpatialOS journey - by the end of it your game will run on a *single server-worker* on SpatialOS. You will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
@@ -19,29 +20,27 @@ Before porting your project:
 ### Terms used in this guide
 `<GameRoot>` - The folder containing your project's `.uproject` file and `Source` folder.  
 `<ProjectRoot>` - The folder containing your `<GameRoot>`.  
-`<YourProject>` - Name of your game project's `.uproject` (for example, `\<GameRoot>\StarterProject.uproject`).
+`<YourProject>` - Name of your game project's `.uproject` (for example, `\<GameRoot>\TP_SpatialGDK.uproject`).
 
 ## Port your game to the GDK
-
-<%(TOC)%>
 
 ### 1. Set up the project structure
 1. Ensure you have a `<ProjectRoot>`. If your `<GameRoot>` lives inside of a self-contained folder already, this is your `<ProjectRoot>`. If not, you should create a new folder to represent your `<ProjectRoot>` and move your `<GameRoot>` inside of it.  
    
     Your project structure should take the form of `\<ProjectRoot>\<GameRoot>\<YourProject>.uproject`
     For example:
-    `\StarterProject\Game\StarterProject.uproject`
+    `\MyProject\Game\TP_SpatialGDK.uproject`
     
     > This step is essential as the `spatial` folder must be located in the directory above your `<GameRoot>`. This is so that the GDK scripts work correctly with Unreal.
 1. Your game's project needs some extra files and folders to run with the GDK; you can copy these from the template project that you set up earlier in the [Before you start](#before-you-start) section.
 
-    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterProject` repository and copy all of the files and folders below to your `<ProjectRoot>`:  
+    To do this: either in a terminal window or your file manager, navigate to the root of the `StarterTemplate` and copy all of the files and folders below to your `<ProjectRoot>`:  
 
     ``` cpp
-    \StarterProject\spatial\
-    \StarterProject\LaunchClient.bat 
-    \StarterProject\LaunchServer.bat
-    \StarterProject\ProjectPaths.bat
+    \TP_SpatialGDK\spatial-resources\spatial\
+    \TP_SpatialGDK\spatial-resources\LaunchClient.bat 
+    \TP_SpatialGDK\spatial-resources\LaunchServer.bat
+    \TP_SpatialGDK\spatial-resources\ProjectPaths.bat
     ```
     Your game's folder structure should now resemble:
 
@@ -59,7 +58,7 @@ Before porting your project:
    Open **`\<ProjectRoot>\ProjectPaths.bat`** for editing and:  
 
     * In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.  
-    * In `set GAME_NAME=StarterProject`, replace `StarterProject` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
+    * In `set GAME_NAME=TP_SpatialGDK`, replace `TP_SpatialGDK` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
     
     > Doing this incorrectly will result in the helper scripts `LaunchClient.bat` and `LaunchServer.bat` not working and printing that the path specified does not exist when trying to use them.
 
