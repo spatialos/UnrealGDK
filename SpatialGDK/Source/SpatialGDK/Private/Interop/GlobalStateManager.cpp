@@ -23,7 +23,6 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
-#include "Utils/EntityRegistry.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
@@ -238,14 +237,10 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		SingletonActor->RemoteRole = ROLE_Authority;
 	}
 
-	// Add to entity registry
-	// This indirectly causes SetChannelActor to not create a new entity for this actor
-	NetDriver->GetEntityRegistry()->AddToRegistry(SingletonEntityId, SingletonActor);
-
-	Channel->SetChannelActor(SingletonActor);
-
 	// Since the entity already exists, we have to handle setting up the PackageMap properly for this Actor
 	NetDriver->PackageMap->ResolveEntityActor(SingletonActor, SingletonEntityId);
+
+	Channel->SetChannelActor(SingletonActor);
 
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Linked Singleton Actor %s with id %d"), *SingletonActor->GetClass()->GetName(), SingletonEntityId);
 }
@@ -300,7 +295,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 		// Otherwise SetChannelActor will issue a new entity id request
 		if (const Worker_EntityId* SingletonEntityId = SingletonNameToEntityId.Find(SingletonActorClass->GetPathName()))
 		{
-			NetDriver->GetEntityRegistry()->AddToRegistry(*SingletonEntityId, SingletonActor);
+			NetDriver->PackageMap->ResolveEntityActor(SingletonActor, *SingletonEntityId);
 		}
 
 		Channel->SetChannelActor(SingletonActor);
