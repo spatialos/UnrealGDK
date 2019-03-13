@@ -29,7 +29,10 @@ public:
 	// The SpatialWorkerConnection must always be owned by the SpatialGameInstance and so must be created here to prevent TrimMemory from deleting it during Browse.
 	void CreateNewSpatialWorkerConnection();
 
-	USpatialWorkerConnection* GetSpatialWorkerConnection();
+	FORCEINLINE USpatialWorkerConnection* USpatialGameInstance::GetSpatialWorkerConnection()
+	{
+		return SpatialConnection;
+	}
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.
