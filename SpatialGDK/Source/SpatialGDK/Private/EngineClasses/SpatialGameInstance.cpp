@@ -70,6 +70,11 @@ void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
 }
 
+FORCEINLINE USpatialWorkerConnection* USpatialGameInstance::GetSpatialWorkerConnection()
+{
+	return SpatialConnection;
+}
+
 #if WITH_EDITOR
 FGameInstancePIEResult USpatialGameInstance::StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params)
 {

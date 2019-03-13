@@ -35,7 +35,9 @@ public:
 	FNetworkGUID GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const;
 
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
+	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId& EntityId);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
+	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
 
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
@@ -52,7 +54,7 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 		
-	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
+	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId);
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(UObject* Object);

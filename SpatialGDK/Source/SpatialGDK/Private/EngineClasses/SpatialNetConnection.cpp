@@ -6,7 +6,11 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Gameframework/PlayerController.h"
+#include "Gameframework/Pawn.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -77,6 +81,32 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 	return true;
 }
 
+void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
+{
+	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
+
+	// We want to update our interest as fast as possible
+	// So we send an Interest update immediately.
+	UpdateActorInterest(Cast<AActor>(PlayerController));
+	UpdateActorInterest(Cast<AActor>(PlayerController->GetPawn()));
+}
+
+void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
+{
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
+
+	Sender->UpdateInterestComponent(Actor);
+	for (const auto& Child : Actor->Children)
+	{
+		UpdateActorInterest(Child);
+	}
+}
+
 void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
 {
 	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID, TEXT("InitHeartbeat: PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
@@ -133,7 +163,11 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 		Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
 
-		Cast<USpatialNetDriver>(Driver)->Connection->SendComponentUpdate(PlayerControllerEntity, &ComponentUpdate);
+		USpatialWorkerConnection* Connection = Cast<USpatialNetDriver>(Driver)->Connection;
+		if (Connection->IsConnected())
+		{
+			Connection->SendComponentUpdate(PlayerControllerEntity, &ComponentUpdate);
+		}
 	}, SpatialConstants::HEARTBEAT_INTERVAL_SECONDS, true, 0.0f);
 }
 
