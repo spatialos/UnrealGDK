@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "IpConnection.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #include "Schema/Interest.h"
 
