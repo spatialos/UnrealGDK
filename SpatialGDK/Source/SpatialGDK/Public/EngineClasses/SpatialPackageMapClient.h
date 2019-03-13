@@ -24,7 +24,7 @@ class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 public:
 	void Init(USpatialNetDriver* NetDriver);
 
-	Worker_EntityId AllocateEntityIdForActor(AActor* Actor);
+	Worker_EntityId AllocateEntityIdAndResolveActor(AActor* Actor);
 	FNetworkGUID TryResolveObjectAsEntity(UObject* Value);
 
 	bool IsEntityIdPendingCreation(Worker_EntityId EntityId) const;

@@ -56,7 +56,7 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 	});
 }
 
-Worker_EntityId USpatialPackageMapClient::AllocateEntityIdForActor(AActor* Actor)
+Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor* Actor)
 {
 	check(Actor);
 	checkf(NetDriver->IsServer(), TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
@@ -99,7 +99,7 @@ FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
 	// Resolve as an entity if it is an unregistered actor
 	if (Actor->Role == ROLE_Authority && NetDriver->PackageMap->GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
 	{
-		Worker_EntityId EntityId = AllocateEntityIdForActor(Actor);
+		Worker_EntityId EntityId = AllocateEntityIdAndResolveActor(Actor);
 		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
 		{
 			// Mark this entity ID as pending creation (checked in USpatialActorChannel::SetChannelActor).

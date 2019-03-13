@@ -577,8 +577,9 @@ FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
 	Super::SetChannelActor(InActor);
-
-	EntityId = NetDriver->PackageMap->GetEntityIdFromObject(InActor);
+	
+	USpatialPackageMapClient* PackageMap = NetDriver->PackageMap;
+	EntityId = PackageMap->GetEntityIdFromObject(InActor);
 
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
@@ -590,10 +591,10 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 	{
 		UE_LOG(LogSpatialActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), EntityId);
 
-		if (NetDriver->PackageMap->IsEntityIdPendingCreation(EntityId))
+		if (PackageMap->IsEntityIdPendingCreation(EntityId))
 		{
 			bCreatingNewEntity = true;
-			NetDriver->PackageMap->RemovePendingCreationEntityId(EntityId);
+			PackageMap->RemovePendingCreationEntityId(EntityId);
 		}
 		NetDriver->AddActorChannel(EntityId, this);
 	}
@@ -620,7 +621,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 
 bool USpatialActorChannel::TryAllocateEntityId()
 {
-	EntityId = NetDriver->PackageMap->AllocateEntityIdForActor(Actor);
+	EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
 
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
