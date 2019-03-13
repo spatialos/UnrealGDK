@@ -21,7 +21,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityRegistry.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
@@ -71,6 +70,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bCreatedEntity(false)
 	, EntityId(0)
 	, bFirstTick(true)
+	, bInterestDirty(false)
 	, NetDriver(nullptr)
 	, LastSpatialPosition(FVector::ZeroVector)
 	, bCreatingNewEntity(false)
@@ -123,17 +123,19 @@ bool USpatialActorChannel::IsSingletonEntity()
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 #if WITH_EDITOR
-	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
+	if (NetDriver != nullptr)
 	{
 		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
+		UWorld* World = NetDriver->GetWorld();
+		const bool bPIEShutdown = World != nullptr && World->WorldType == EWorldType::PIE && World->bIsTearingDown;
+
 		if (bDeleteDynamicEntities &&
 			NetDriver->IsServer() &&
-			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-			NetDriver->GetWorld()->bIsTearingDown &&
-			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
+			(bPIEShutdown || GIsRequestingExit) &&
+			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
 		{
-			// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 			DeleteEntityIfAuthoritative();
 		}
 	}
@@ -360,6 +362,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
 			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState);
+			bInterestDirty = false;
 		}
 
 		bWroteSomethingImportant = true;
@@ -575,9 +578,7 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
 	Super::SetChannelActor(InActor);
 
-	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
-	check(NetDriver->GetEntityRegistry());
-	EntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor);
+	EntityId = NetDriver->PackageMap->GetEntityIdFromObject(InActor);
 
 	// If the entity registry has no entry for this actor, this means we need to create it.
 	if (EntityId == 0)
@@ -643,8 +644,6 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 
 void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId)
 {
-	NetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
-
 	// Inform USpatialNetDriver of this new actor channel/entity pairing
 	NetDriver->AddActorChannel(ActorEntityId, this);
 

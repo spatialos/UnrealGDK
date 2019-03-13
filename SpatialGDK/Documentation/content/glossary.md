@@ -15,7 +15,7 @@ Note that this SpatialOS documentation assumes you are developing a SpatialOS ga
 ## GDK for Unreal documentation terms
 * `<GameRoot>` - The folder containing your project's `.uproject` and source folder.
 * `<ProjectRoot>` - The folder containing your `<GameRoot>`.
-* `<YourProject>` - Name of your project's `.uproject` (for example, `\<GameRoot>\StarterProject.uproject`).
+* `<YourProject>` - Name of your project's `.uproject` (for example, `\<GameRoot>\TP_SpatialGDK.uproject`).
 
 ## GDK for Unreal terms
 
