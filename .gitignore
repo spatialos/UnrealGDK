@@ -73,7 +73,6 @@ Generated/
 
 **/bin/
 **/obj/
-**/packages/*
 
 .spatialos/
 logs/
