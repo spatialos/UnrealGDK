@@ -63,9 +63,6 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="BeforeBuild">
-    <Exec Command='nuget restore -PackagesDirectory ../packages'/>
-  </Target>
   <PropertyGroup>
     <PostBuildEvent>mkdir "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\DeploymentLauncher\"
 copy "$(SolutionDir)\$(ProjectName)\$(OutDir)" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\DeploymentLauncher\" /Y</PostBuildEvent>
