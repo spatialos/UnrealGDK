@@ -596,7 +596,7 @@ AActor* USpatialReceiver::TryGetOrCreateActor(improbable::UnrealMetadata* Unreal
 {
 	if (UnrealMetadata->StablyNamedRef.IsSet())
 	{
-		if (NetDriver->IsServer() || UnrealMetadata->NetLoadOnClient.GetValue())
+		if (NetDriver->IsServer() || UnrealMetadata->bNetStartup.GetValue())
 		{
 			// This Actor already exists in the map, get it from the package map.
 			const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef.GetValue();
