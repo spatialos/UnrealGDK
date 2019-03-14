@@ -594,31 +594,24 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 
 AActor* USpatialReceiver::TryGetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData)
 {
-	// If no stable ref, Actor has been dynamically spawned, so spawn it.
-	if (!UnrealMetadata->StablyNamedRef.IsSet())
+	if (UnrealMetadata->StablyNamedRef.IsSet())
 	{
-		return CreateActor(UnrealMetadata, SpawnData);
+		if (NetDriver->IsServer() || UnrealMetadata->NetLoadOnClient.GetValue())
+		{
+			// This Actor already exists in the map, get it from the package map.
+			const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef.GetValue();
+			AActor* StaticActor = Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(StablyNamedRef));
+			// An unintended side effect of GetObjectFromUnrealObjectRef is that this ref
+			// will be registered with this Actor. It can be the case that this Actor is not
+			// stably named (due to bNetLoadOnClient = false) so we should let
+			// SpatialPackageMapClient::ResolveEntityActor handle it properly.
+			PackageMap->UnregisterActorObjectRefOnly(StablyNamedRef);
+
+			return StaticActor;
+		}
 	}
 
-	// If we have a path
-	// and are the client
-	// and we don't have a local representation of this Actor (i.e. bNetLoadOnClient = false)
-	// spawn it
-	if (!NetDriver->IsServer() && !UnrealMetadata->NetLoadOnClient.GetValue())
-	{
-		return CreateActor(UnrealMetadata, SpawnData);
-	}
-
-	// Otherwise, this Actor already exists in the map, get it from the package map.
-	const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef.GetValue();
-	AActor* StaticActor = Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(StablyNamedRef));
-	// An unintended side effect of GetObjectFromUnrealObjectRef is that this ref
-	// will be registered with this Actor. It can be the case that this Actor is not
-	// stably named (due to bNetLoadOnClient = false) so we should let
-	// SpatialPackageMapClient::ResolveEntityActor handle it properly.
-	PackageMap->UnregisterActorObjectRefOnly(StablyNamedRef);
-
-	return StaticActor;
+	return CreateActor(UnrealMetadata, SpawnData);
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
@@ -657,17 +650,6 @@ AActor* USpatialReceiver::CreateActor(improbable::UnrealMetadata* UnrealMetadata
 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
-	AActor* EntityActor = SpawnActor(SpawnData, ActorClass);
-
-	// Don't have authority over Actor until SpatialOS delegates authority
-	EntityActor->Role = ROLE_SimulatedProxy;
-	EntityActor->RemoteRole = ROLE_Authority;
-
-	return EntityActor;
-}
-
-AActor* USpatialReceiver::SpawnActor(improbable::SpawnData* SpawnData, UClass* Class)
-{
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
@@ -675,7 +657,7 @@ AActor* USpatialReceiver::SpawnActor(improbable::SpawnData* SpawnData, UClass* C
 
 	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
 
-	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(Class, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
+	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
 	check(NewActor);
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
@@ -688,6 +670,10 @@ AActor* USpatialReceiver::SpawnActor(improbable::SpawnData* SpawnData, UClass* C
 	{
 		NewActor->SetActorScale3D(SpawnData->Scale);
 	}
+
+	// Don't have authority over Actor until SpatialOS delegates authority
+	NewActor->Role = ROLE_SimulatedProxy;
+	NewActor->RemoteRole = ROLE_Authority;
 
 	return NewActor;
 }

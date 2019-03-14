@@ -146,7 +146,6 @@ private:
 
 	AActor* TryGetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData);
 	AActor* CreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData);
-	AActor* SpawnActor(improbable::SpawnData* SpawnData, UClass* Class);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
