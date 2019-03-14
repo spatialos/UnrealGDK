@@ -362,10 +362,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
+
 		if (NetDriver->IsServer())
 		{
 			if (APlayerController* PlayerController = Cast<APlayerController>(EntityActor))
 			{
+				// If entity is a PlayerController, create channel on the PlayerController's connection.
 				Connection = PlayerController->NetConnection;
 			}
 		}
@@ -626,6 +628,7 @@ AActor* USpatialReceiver::CreateActor(improbable::UnrealMetadata* UnrealMetadata
 
 	if (ActorClass == nullptr)
 	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Could not load class %s when spawning entity!"), *UnrealMetadata->ClassPath);
 		return nullptr;
 	}
 
