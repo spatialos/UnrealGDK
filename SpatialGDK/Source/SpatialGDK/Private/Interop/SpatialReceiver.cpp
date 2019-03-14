@@ -335,6 +335,30 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	// If the received actor is torn off, don't bother receiving it.
+	// Check the pending add components, to find the root component for the received entity.
+	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+	{
+		if (PendingAddComponent.EntityId != EntityId
+			|| ClassInfoManager->GetCategoryByComponentId(PendingAddComponent.ComponentId) != SCHEMA_Data)
+		{
+			continue;
+		}
+		uint32 componentOffset = 0;
+		if (!ClassInfoManager->GetOffsetByComponentId(PendingAddComponent.ComponentId, componentOffset) || componentOffset != 0)
+		{
+			continue;
+		}
+
+		Worker_ComponentData* ComponentData = static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data;
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
+		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
+		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was already torn off. The actor will not be spawned."), EntityId);
+			return;
+		}
+	}
+
 	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
 	{
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker"), \
@@ -399,14 +423,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				// In native networking, if Unreal tries to look up a stably named actor on the client
 				// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
 				// Returning here does the same behavior.
-				return;
-			}
-
-			// If the received actor is torn off, don't bother receiving it.
-			if (EntityActor->GetTearOff())
-			{
-				UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity id %lld was already torn off. The actor will not be spawned."), EntityId);
-				EntityActor->Destroy(true);
 				return;
 			}
 
