@@ -301,7 +301,7 @@ void GenerateSchemaForSublevels(const FString& SchemaPath)
 			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 			// Note that this file has been generated automatically
 			package unreal.sublevels.{0};)""",
-			*LevelPathToLevelDataPair.Key.ToLower());
+			*UnrealNameToSchemaComponentName(LevelPathToLevelDataPair.Key).ToLower());
 
 		for (auto& SublevelToComponentIdPair : LevelPathToLevelDataPair.Value.SublevelNameToComponentId)
 		{
