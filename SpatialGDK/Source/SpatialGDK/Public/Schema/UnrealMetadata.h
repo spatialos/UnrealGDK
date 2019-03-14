@@ -25,8 +25,8 @@ struct UnrealMetadata : Component
 
 	UnrealMetadata() = default;
 
-	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InOwnerWorkerAttribute, const FString& InClassPath)
-		: StablyNamedRef(InStablyNamedRef), OwnerWorkerAttribute(InOwnerWorkerAttribute), ClassPath(InClassPath) {}
+	UnrealMetadata(const TSchemaOption<FUnrealObjectRef>& InStablyNamedRef, const FString& InOwnerWorkerAttribute, const FString& InClassPath, const TSchemaOption<bool>& InNetLoadOnClient)
+		: StablyNamedRef(InStablyNamedRef), OwnerWorkerAttribute(InOwnerWorkerAttribute), ClassPath(InClassPath), NetLoadOnClient(InNetLoadOnClient) {}
 
 	UnrealMetadata(const Worker_ComponentData& Data)
 	{
@@ -38,6 +38,11 @@ struct UnrealMetadata : Component
 		}
 		OwnerWorkerAttribute = GetStringFromSchema(ComponentObject, 2);
 		ClassPath = GetStringFromSchema(ComponentObject, 3);
+
+		if (Schema_GetBoolCount(ComponentObject, 4) == 1)
+		{
+			NetLoadOnClient = GetBoolFromSchema(ComponentObject, 4);
+		}
 	}
 
 	Worker_ComponentData CreateUnrealMetadataData()
@@ -53,6 +58,10 @@ struct UnrealMetadata : Component
 		}
 		AddStringToSchema(ComponentObject, 2, OwnerWorkerAttribute);
 		AddStringToSchema(ComponentObject, 3, ClassPath);
+		if (NetLoadOnClient.IsSet())
+		{
+			Schema_AddBool(ComponentObject, 4, NetLoadOnClient.GetValue());
+		}
 
 		return Data;
 	}
@@ -79,6 +88,7 @@ struct UnrealMetadata : Component
 	TSchemaOption<FUnrealObjectRef> StablyNamedRef;
 	FString OwnerWorkerAttribute;
 	FString ClassPath;
+	TSchemaOption<bool> NetLoadOnClient;
 
 	UClass* NativeClass = nullptr;
 };
