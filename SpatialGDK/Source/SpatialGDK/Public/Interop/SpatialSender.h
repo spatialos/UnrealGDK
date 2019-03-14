@@ -65,7 +65,6 @@ public:
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 
-	void SendReserveEntityIdRequest(USpatialActorChannel* Channel);
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
 
