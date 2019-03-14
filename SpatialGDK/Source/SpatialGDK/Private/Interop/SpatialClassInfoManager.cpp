@@ -37,7 +37,7 @@ void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
 	}
 }
 
-FORCEINLINE UClass* ResolveClass(FString& ClassPath)
+UClass* ResolveClass(FString& ClassPath)
 {
 	FSoftClassPath SoftClassPath(ClassPath);
 	UClass* Class = SoftClassPath.ResolveClass();
@@ -287,7 +287,7 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 	return ESchemaComponentType::SCHEMA_Invalid;
 }
 
-FORCEINLINE bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
+bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
 	return SchemaDatabase->FirstSublevelComponentId <= ComponentId &&
 		SchemaDatabase->LastSublevelComponentId >= ComponentId;
