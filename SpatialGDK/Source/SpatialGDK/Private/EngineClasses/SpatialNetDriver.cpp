@@ -277,6 +277,11 @@ void USpatialNetDriver::HandleOngoingServerTravel()
 
 void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 {
+	if (LoadedWorld == nullptr)
+	{
+		return;
+	}
+
 	if (LoadedWorld->GetNetDriver() != this)
 	{
 		// In PIE, if we have more than 2 clients, then OnMapLoaded is going to be triggered once each client loads the world.
