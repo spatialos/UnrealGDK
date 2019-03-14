@@ -494,6 +494,13 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 {
+	// If PackageMap doesn't exist, we haven't connected yet, which means
+	// we don't need to update the interest at this point
+	if (PackageMap == nullptr)
+	{
+		return;
+	}
+
 	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
