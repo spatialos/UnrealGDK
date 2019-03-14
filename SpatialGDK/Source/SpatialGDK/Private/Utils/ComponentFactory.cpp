@@ -226,10 +226,14 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					{
 						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 					}
+					else
+					{
+						NetGUID = PackageMap->TryResolveObjectAsEntity(ObjectValue);
+					}
 				}
 			}
 
-			// The secondary part of the check is only necessary until we have bulk reservation of entity ids UNR-673
+			// The secondary part of the check is needed if we couldn't assign an entity id (e.g. ran out of entity ids)
 			if (NetGUID.IsValid() || (ObjectValue->IsSupportedForNetworking() && !ObjectValue->IsFullNameStableForNetworking()))
 			{
 				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
