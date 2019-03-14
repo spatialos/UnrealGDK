@@ -265,7 +265,7 @@ FLevelData GenerateSchemaForSublevel(UWorld* World)
 	{
 		for (const auto& LevelStreamingObject : World->GetStreamingLevels())
 		{
-			LevelData.SublevelNameToComponentId.Add(LevelStreamingObject->GetName(), SpatialConstants::INVALID_COMPONENT_ID);
+			LevelData.SublevelNameToComponentId.Add(LevelStreamingObject->GetLoadedLevel()->GetOuter()->GetName(), SpatialConstants::INVALID_COMPONENT_ID);
 		}
 	}
 
@@ -300,7 +300,8 @@ void GenerateSchemaForSublevels(const FString& SchemaPath)
 		Writer.Printf(R"""(
 			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 			// Note that this file has been generated automatically
-			package unreal.sublevels;)""");
+			package unreal.sublevels.{0};)""",
+			*UnrealNameToSchemaComponentName(LevelPathToLevelDataPair.Key).ToLower());
 
 		for (auto& SublevelToComponentIdPair : LevelPathToLevelDataPair.Value.SublevelNameToComponentId)
 		{
