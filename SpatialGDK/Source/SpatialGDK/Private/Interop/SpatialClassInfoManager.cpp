@@ -37,7 +37,7 @@ void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
 	}
 }
 
-UClass* ResolveClass(FString& ClassPath)
+FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 {
 	FSoftClassPath SoftClassPath(ClassPath);
 	UClass* Class = SoftClassPath.ResolveClass();
