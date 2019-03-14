@@ -430,7 +430,7 @@ void TryLoadExistingSchemaDatabase()
 	SchemaDatabasePtr.LoadSynchronous();
 	const USchemaDatabase* const SchemaDatabase = SchemaDatabasePtr.Get();
 
-	if (SchemaDatabase)
+	if (SchemaDatabase != nullptr)
 	{
 		ClassPathToSchema = SchemaDatabase->ClassPathToSchema;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
@@ -517,7 +517,6 @@ void PreProcessSchemaMap()
 			// Skip over level blueprints since we can't load them.
 			if (AssetData.AssetClass.IsEqual(FName(TEXT("World"))))
 			{
-				EntriesToRemove.Add(ClassPath);
 				continue;
 			}
 		}
@@ -573,8 +572,6 @@ bool SpatialGDKGenerateSchema()
 	}
 
 	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
-
-	DeleteGeneratedSchemaFiles();
 
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath);
 

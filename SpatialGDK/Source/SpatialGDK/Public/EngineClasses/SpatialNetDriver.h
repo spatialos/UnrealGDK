@@ -30,7 +30,7 @@ class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
 class USnapshotManager;
 
-class UEntityRegistry;
+class UEntityPool;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -120,13 +120,8 @@ public:
 	USpatialStaticComponentView* StaticComponentView;
 	UPROPERTY()
 	USnapshotManager* SnapshotManager;
-
-	// Limit the number of actors which are replicated per tick to the number specified.
-	// This acts as a hard limit to the number of actors per frame but nothing else. It's recommended to set this value to around 100~ (experimentation recommended).
-	// If not set SpatialOS will replicate every actor per frame (unbounded) and so large worlds will experience slowdown server-side and client-side.
-	// Use `stat SpatialNet` in editor builds to find the number of calls to 'ReplicateActor' and use this to inform the rate limit setting.
-	UPROPERTY(Config)
-	int32 ActorReplicationRateLimit;
+	UPROPERTY()
+	UEntityPool* EntityPool;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
