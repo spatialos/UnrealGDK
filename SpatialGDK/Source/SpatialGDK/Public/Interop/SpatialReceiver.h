@@ -115,7 +115,6 @@ public:
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
-	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
 	void OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op);
 	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
 

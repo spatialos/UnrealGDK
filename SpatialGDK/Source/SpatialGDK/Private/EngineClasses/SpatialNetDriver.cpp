@@ -29,6 +29,8 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
+#include "Utils/EntityPool.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -203,6 +205,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
+	PackageMap->Init(this);
 	ClassInfoManager->Init(this);
 	Dispatcher->Init(this);
 	Sender->Init(this);
@@ -210,11 +213,19 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	GlobalStateManager->Init(this, TimerManager);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, TimerManager);
+
+	// Entity Pools should never exist on clients
+	if (IsServer())
+	{
+		EntityPool->Init(this, TimerManager);
+	}
 }
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 {
 	check(!bConnectAsClient);
+
+	EntityPool = NewObject<UEntityPool>();
 
 	USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(NetConnection);
@@ -708,6 +719,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	int32 ActorUpdatesThisConnectionSent = 0;
 
 	// SpatialGDK - Actor replication rate limiting based on config value.
+	uint32 ActorReplicationRateLimit = GetDefault<USpatialGDKSettings>()->ActorReplicationRateLimit;
 	int32 RateLimit = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
 	int32 FinalReplicatedCount = 0;
 
@@ -1135,7 +1147,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #if USE_SERVER_PERF_COUNTERS
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
-	if (IsServer() && ClientConnections.Num() > 0 && Connection->IsConnected())
+	if (IsServer() && ClientConnections.Num() > 0 && Connection->IsConnected() && EntityPool->IsReady())
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE

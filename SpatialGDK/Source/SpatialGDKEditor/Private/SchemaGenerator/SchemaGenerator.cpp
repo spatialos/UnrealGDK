@@ -78,16 +78,7 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 	{
 		UStructProperty* StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct* Struct = StructProp->Struct;
-		if (Struct->StructFlags & STRUCT_NetSerializeNative)
-		{
-			// Specifically when NetSerialize is implemented for a struct we want to use 'bytes'.
-			// This includes RepMovement and UniqueNetId.
-			DataType = TEXT("bytes");
-		}
-		else
-		{
-			DataType = TEXT("bytes");
-		}
+		DataType = TEXT("bytes");
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
