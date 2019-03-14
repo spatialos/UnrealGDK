@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using Google.Protobuf.WellKnownTypes;
@@ -13,6 +15,7 @@ namespace Improbable
     internal class DeploymentLauncher
     {
         private const string SIM_PLAYER_DEPLOYMENT_TAG = "simulated_players";
+        private const string DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG = "unreal_deployment_launcher";
 
         private const string CoordinatorWorkerName = "SimulatedPlayerCoordinator";
 
@@ -127,6 +130,8 @@ namespace Improbable
                     StartingSnapshotId = mainSnapshotId
                 };
 
+                mainDeploymentConfig.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
+
                 if (launchSimPlayerDeployment)
                 {
                     // This tag needs to be added to allow simulated players to connect using login
@@ -208,6 +213,7 @@ namespace Improbable
                         // No snapshot included for the simulated player deployment
                     };
 
+                    simDeploymentConfig.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
                     simDeploymentConfig.Tag.Add(SIM_PLAYER_DEPLOYMENT_TAG);
 
                     Console.WriteLine(
@@ -237,16 +243,39 @@ namespace Improbable
             return 0;
         }
 
-        private static int StopDeployment(string[] args)
+        private static int StopDeployments(string[] args)
         {
             var projectName = args[1];
-            var deploymentId = args[2];
 
             var deploymentServiceClient = DeploymentServiceClient.Create();
 
+            if (args.Length == 3)
+            {
+                // Stop only the specified deployment.
+                var deploymentId = args[2];
+                StopDeployment(deploymentServiceClient, projectName, deploymentId);
+
+                return 0;
+            }
+
+            // Stop all active deployments launched by this launcher.
+            var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
+
+            foreach (var deployment in activeDeployments)
+            {
+                var deploymentId = deployment.Id;
+                StopDeployment(deploymentServiceClient, projectName, deploymentId);
+            }
+
+            return 0;
+        }
+
+        private static void StopDeployment(DeploymentServiceClient client, string projectName, string deploymentId)
+        {
             try
             {
-                deploymentServiceClient.StopDeployment(new StopDeploymentRequest
+                Console.WriteLine($"Stopping deployment with id {deploymentId}");
+                client.StopDeployment(new StopDeploymentRequest
                 {
                     Id = deploymentId,
                     ProjectName = projectName
@@ -263,38 +292,23 @@ namespace Improbable
                     throw;
                 }
             }
-
-            return 0;
         }
 
-        /**
-         * Prints a list of deployments within the specified project that
-         * are in state Starting or Running.
-         */
         private static int ListDeployments(string[] args)
         {
             var projectName = args[1];
 
             var deploymentServiceClient = DeploymentServiceClient.Create();
-            var listDeploymentsResult = deploymentServiceClient.ListDeployments(new ListDeploymentsRequest
-            {
-                View = ViewType.Basic,
-                ProjectName = projectName,
-                PageSize = 50
-            });
+            var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
 
-            foreach (var deployment in listDeploymentsResult)
+            foreach (var deployment in activeDeployments)
             {
                 var status = deployment.Status;
-                if (status != Deployment.Types.Status.Starting && status != Deployment.Types.Status.Running)
-                {
-                    continue;
-                }
-
                 var overviewPageUrl = $"https://console.improbable.io/projects/{projectName}/deployments/{deployment.Name}/overview/{deployment.Id}";
+
                 if (deployment.Tag.Contains(SIM_PLAYER_DEPLOYMENT_TAG))
                 {
-                    Console.WriteLine($"<simulated-player-deployment> {status} {deployment.Id} {deployment.Name} {overviewPageUrl} {status}");
+                    Console.WriteLine($"<simulated-player-deployment> {deployment.Id} {deployment.Name} {overviewPageUrl} {status}");
                 }
                 else
                 {
@@ -305,19 +319,51 @@ namespace Improbable
             return 0;
         }
 
+        private static IEnumerable<Deployment> ListLaunchedActiveDeployments(DeploymentServiceClient client, string projectName)
+        {
+            var listDeploymentsResult = client.ListDeployments(new ListDeploymentsRequest
+            {
+                View = ViewType.Basic,
+                ProjectName = projectName,
+                PageSize = 50
+            });
+
+            return listDeploymentsResult.Where(deployment =>
+            {
+                var status = deployment.Status;
+                if (status != Deployment.Types.Status.Starting && status != Deployment.Types.Status.Running)
+                {
+                    // Deployment not active - skip
+                    return false;
+                }
+
+                if (!deployment.Tag.Contains(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG))
+                {
+                    // Deployment not launched by this launcher - skip
+                    return false;
+                }
+
+                return true;
+            });
+        }
+
         private static void ShowUsage()
         {
             Console.WriteLine("Usage:");
             Console.WriteLine("DeploymentLauncher create <project-name> <assembly-name> <main-deployment-name> <main-deployment-json> <main-deployment-snapshot> [<sim-deployment-name> <sim-deployment-json> <num-sim-players>]");
-            Console.WriteLine("DeploymentLauncher stop <project-name> <deployment-id>");
+            Console.WriteLine($"  Starts a cloud deployment, with optionally a simulated player deployment.");
+            Console.WriteLine("DeploymentLauncher stop <project-name> [deployment-id]");
+            Console.WriteLine("  Stops the specified deployment within the project.");
+            Console.WriteLine("  If no deployment id argument is specified, all active deployments started by the deployment launcher in the project will be stopped.");
             Console.WriteLine("DeploymentLauncher list <project-name>");
+            Console.WriteLine("  Lists all active deployments within the specified project that are started by the deployment launcher.");
         }
 
         private static int Main(string[] args)
         {
             if (args.Length == 0 ||
                 args[0] == "create" && (args.Length != 9 && args.Length != 6) ||
-                args[0] == "stop" && args.Length != 3 ||
+                args[0] == "stop" && (args.Length != 2 && args.Length != 3) ||
                 args[0] == "list" && args.Length != 2)
             {
                 ShowUsage();
@@ -333,7 +379,7 @@ namespace Improbable
 
                 if (args[0] == "stop")
                 {
-                    return StopDeployment(args);
+                    return StopDeployments(args);
                 }
 
                 if (args[0] == "list")
