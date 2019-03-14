@@ -77,9 +77,6 @@ pushd "$($gdk_home)"
     Copy-Item "$($binaries_dir)\Win64\include\*" "$($worker_sdk_dir)\" -Force -Recurse
 
     Start-Event "build-utilities" "build-unreal-gdk-:windows:"
-	Start-Process -Wait -PassThru -NoNewWindow -FilePath "nuget" -ArgumentList @(`
-	    "restore" `
-	)
     $msbuild_proc = Start-Process -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
         "/nologo", `
         "SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln", `
