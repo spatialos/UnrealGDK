@@ -46,7 +46,7 @@ In this step, you're going to build the Unreal GDK's dependencies.
 1. In the same directory, open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
 1. Open **ThirdPersonShooter.uproject** in the Unreal Editor.
-1. On the GDK toolbar, select [**Schema**](https://docs.improbable.io/reference/latest/shared/glossary) to generate the SpatialOS schema (a definition of the components and entities your SpatialOS world can have) based on your Unreal project.<br/>
+1. In the GDK toolbar, select **Schema** to generate the SpatialOS schema based on your Unreal project. (Schema is a definition of the components and entities your SpatialOS world can have, see the glossary for more details on [schema](https://docs.improbable.io/reference/latest/shared/glossary).) <br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
 1. Select [**Snapshot**]({{urlRoot}}/content/generating-a-snapshot) to generate a snapshot (a representation of the state of the SpatialOS world) which will be used to start the deployment.<br/>
