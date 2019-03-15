@@ -948,7 +948,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	UFunction* Function = Info.RPCs[Index];
 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
-		Op.entity_id, Op.request.component_id, Function->GetName());
+		Op.entity_id, Op.request.component_id, *Function->GetName());
 	ReceiveRPCCommandRequest(Op.request, TargetObject, Function, UTF8_TO_TCHAR(Op.caller_worker_id));
 
 	Sender->SendCommandResponse(Op.request_id, Response);
