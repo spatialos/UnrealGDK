@@ -251,6 +251,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			{
 				if (IsValid(NetDriver->GetActorChannelByEntityId(Op.entity_id)))
 				{
+					UE_LOG(LogSpatialReceiver, Warning, TEXT("Spatial receiver line 250 Role authority for %s on %s"), *Actor->GetName(), *NetDriver->GetWorld()->GetGameInstance()->GetSpatialWorkerType());
 					Actor->Role = ROLE_Authority;
 					Actor->RemoteRole = ROLE_SimulatedProxy;
 

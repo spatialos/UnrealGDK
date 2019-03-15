@@ -73,20 +73,22 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
+	WorkerAttributeSet AIWorkerAttribute = { FString(TEXT("AIWorker")) };
 	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
 	WorkerAttributeSet OwningClientAttribute = { ClientWorkerAttribute };
 
 	WorkerRequirementSet ServersOnly = { ServerAttribute };
+	WorkerRequirementSet AllServerTypes = { ServerAttribute, AIWorkerAttribute };
 	WorkerRequirementSet ClientsOnly = { ClientAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	WorkerRequirementSet AnyUnrealServerOrClient = { ServerAttribute, ClientAttribute };
-	WorkerRequirementSet AnyUnrealServerOrOwningClient = { ServerAttribute, OwningClientAttribute };
+	WorkerRequirementSet AnyUnrealServerOrClient = { ServerAttribute, AIWorkerAttribute, ClientAttribute };
+	WorkerRequirementSet AnyUnrealServerOrOwningClient = { ServerAttribute, AIWorkerAttribute, OwningClientAttribute };
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
-		ReadAcl = ServersOnly;
+		ReadAcl = AllServerTypes;
 	}
 	else if (Actor->IsA<APlayerController>())
 	{
@@ -99,10 +101,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
+	UE_LOG(LogSpatialSender, Warning, TEXT("Attempting to Creating %s on worker %s"), *Actor->GetName(), *NetDriver->GetWorld()->GetGameInstance()->GetSpatialWorkerType());
+
 	WorkerRequirementSet AuthoritativeWorkerType = ServersOnly;
-	if (Class->HasMetaData(TEXT("WorkerAssociation")))
+	if (!Class->WorkerAssociation.IsEmpty())
 	{
-		const WorkerAttributeSet WorkerAttribute{ Class->GetMetaData(TEXT("WorkerAssociation")) };
+		const WorkerAttributeSet WorkerAttribute{ Class->WorkerAssociation };
 		AuthoritativeWorkerType = { WorkerAttribute };
 	}
 
@@ -142,13 +146,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			continue;
 		}
 
-		WorkerRequirementSet SubobjectAuthoritativeWorkerType = ServersOnly;
-		if (Class->HasMetaData(TEXT("WorkerAssociation")))
-		{
-			const WorkerAttributeSet WorkerAttribute{ SubobjectInfo.Class->GetMetaData(TEXT("WorkerAssociation")) };
-			AuthoritativeWorkerType = { WorkerAttribute };
-		}
-
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
 			Worker_ComponentId ComponentId = SubobjectInfo.SchemaComponents[Type];
@@ -157,7 +154,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 				return;
 			}
 
-			ComponentWriteAcl.Add(ComponentId, SubobjectAuthoritativeWorkerType);
+			ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerType);
 		});
 	}
 
