@@ -115,7 +115,6 @@ public:
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
-	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
 	void OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op);
 	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
 
@@ -144,8 +143,8 @@ private:
 	void RemoveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 
-	AActor* GetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, UClass* ActorClass, improbable::SpawnData* SpawnData);
-	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass);
+	AActor* TryGetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData);
+	AActor* CreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
