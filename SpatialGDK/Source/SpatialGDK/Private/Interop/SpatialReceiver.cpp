@@ -336,6 +336,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 
 	// If the received actor is torn off, don't bother receiving it.
+	// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
 	// Check the pending add components, to find the root component for the received entity.
 	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
 	{
@@ -344,8 +345,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			continue;
 		}
-		uint32 componentOffset = 0;
-		if (!ClassInfoManager->GetOffsetByComponentId(PendingAddComponent.ComponentId, componentOffset) || componentOffset != 0)
+		uint32 Offset = 0;
+		if (!ClassInfoManager->GetOffsetByComponentId(PendingAddComponent.ComponentId, Offset) || Offset != 0)
 		{
 			continue;
 		}
@@ -601,7 +602,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
 		}
 	}
 

@@ -259,6 +259,20 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 			}
 		}
 
+		// If this class is an Actor, it MUST have bTearOff at field ID 3.
+		if (Group == REP_MultiClient && Class->IsChildOf<AActor>())
+		{
+			TSharedPtr<FUnrealProperty> ExpectedReplicatesPropData = RepData[Group].FindRef(SpatialConstants::ACTOR_TEAROFF_ID);
+			const UProperty* ReplicatesProp = AActor::StaticClass()->FindPropertyByName("bTearOff");
+
+			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
+			{
+				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find Actor->bTearOff at field %d for class %s. Modifying the base Actor class is currently not supported."),
+					SpatialConstants::ACTOR_TEAROFF_ID,
+					*Class->GetName());
+			}
+		}
+
 		Writer.PrintNewLine();
 		Writer.Printf("type {0} {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
