@@ -68,7 +68,7 @@ _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** 
 ![Toolbar]({{assetRoot}}assets/set-up-template/template-start.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 6. It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
-7. From the Unreal Editor toolbar, click **Play** to run the game. This starts two headless server-workers and two [client-workers](https://docs.improbable.io/reference/latest/shared/glossary#client-worker) locally.
+7. From the Unreal Editor toolbar, click **Play** to run the game. This starts two server-worker instances and two [client-worker](https://docs.improbable.io/reference/latest/shared/glossary#client-worker) instances locally, in your Unreal Editor.
 
 Notice that when players shoot each other, their health does not go down. It's not much fun with no skin in the game is it? Let’s fix the health system.
 
