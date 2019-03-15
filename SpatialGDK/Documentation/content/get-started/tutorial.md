@@ -151,7 +151,7 @@ Notice that health now decrements when you are shot.
 
 ![]({{assetRoot}}assets/tutorial/inspector-two-workers.png)
 
-[The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s use the Inspector to visualise the areas that each of our server-workers have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
+[The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s use the Inspector to visualise the areas that each of our server-worker instances have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
 
 1. Access the inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
 1. In the **View** tab, click the checkboxes next to both of the **UnrealWorkers**.
