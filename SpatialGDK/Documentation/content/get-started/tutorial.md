@@ -238,7 +238,7 @@ Now let’s test our new cross-server functionality in another local deployment.
 
 1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
 1. From the Unreal Editor toolbar, click **Play** to run the game.
-2. Using the Inspector to track the location of your two players, notice that you can now shoot across servers and cause damage (provided the two players are on different teams!)
+2. Using the Inspector to track the location of your two players, notice that you can now shoot between two Unreal servers and cause damage across their boundaries (provided the two players are on different teams!).
 
 ![]({{assetRoot}}assets/tutorial/shooting-across-boundaries.gif)<br/>
 *Image: Players Running and Shooting across two Unreal Servers*
