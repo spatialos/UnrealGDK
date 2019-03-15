@@ -587,7 +587,6 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 {
-	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 	PackageMap->RemoveEntityActor(EntityId);
 	NetDriver->RemoveActorChannel(EntityId);
 }
