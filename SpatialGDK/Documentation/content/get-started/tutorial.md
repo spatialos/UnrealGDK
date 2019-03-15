@@ -69,7 +69,8 @@ _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** 
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 6. It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
 7. From the Unreal Editor toolbar, select **Play** to run the game. This starts two SpatialOS server-worker instances and two SpatialOS client-worker instances locally, in your Unreal Editor.
-<br/>The two server-worker instances are acting as two Unreal servers and the two client-worker instances are acting as two Unreal game clients (two game players).
+<br/>The two server-worker instances are acting as two Unreal servers and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
+<br/>(You can find out about workers in the [glossary](https://docs.improbable.io/unreal/alpha/content/glossary#workers).)
 
 Notice that when players shoot each other, their health does not go down. It's not much fun with no skin in the game is it? Let’s fix the health system.
 
