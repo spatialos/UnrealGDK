@@ -620,7 +620,6 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 {
-	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 	PackageMap->RemoveEntityActor(EntityId);
 	NetDriver->RemoveActorChannel(EntityId);
 }
@@ -897,14 +896,18 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 {
 	Worker_EntityId EntityId = Op.entity_id;
 
-	// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
-	// Ideally these events are never delivered to workers which are not able to handle them with clever interest management
-	const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
-		? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
-
-	if (StaticComponentView->GetAuthority(Op.entity_id, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
+	// Multicast RPCs should be executed by whoever receives them.
+	if (Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
 	{
-		return;
+		// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
+		// Ideally these events are never delivered to workers which are not able to handle them with clever interest management
+		const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
+			? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+
+		if (StaticComponentView->GetAuthority(Op.entity_id, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			return;
+		}
 	}
 
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
