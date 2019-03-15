@@ -64,7 +64,7 @@ In this section you’ll run a [local deployment](https://docs.improbable.io/ref
 4. Ensure the box next to **Run Dedicated Server** is checked<br/>
 ![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
 _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
-1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**, the green play icon. This will open a terminal window and run the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime).<br/>
+1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start** (the green play icon). This opens a terminal window and runs the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime).<br/>
 ![Toolbar]({{assetRoot}}assets/set-up-template/template-start.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 6. It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
