@@ -153,6 +153,8 @@ Notice that health now decrements when you are shot.
 
 ![]({{assetRoot}}assets/tutorial/inspector-two-workers.png)
 
+_Image: A local Inspector showing two server-worker instances (two Unreal servers) managing your game _<br/>
+
 [The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s use the Inspector to visualise the areas that each of our server-worker instances have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
 
 1. Access the Inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
