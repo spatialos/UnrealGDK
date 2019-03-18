@@ -102,7 +102,7 @@ public:
 
 	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
 	{
-		FString CommandLineLaunchFlags = "";
+		FString CommandLineLaunchFlags = TEXT("");
 
 		for (FString Flag : SpatialOSCommandLineLaunchFlags)
 		{
