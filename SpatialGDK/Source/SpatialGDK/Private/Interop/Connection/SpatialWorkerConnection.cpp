@@ -48,6 +48,8 @@ void USpatialWorkerConnection::DestroyConnection()
 
 		WorkerLocator = nullptr;
 	}
+
+	bIsConnected = false;
 }
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
@@ -77,6 +79,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
 		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::ClientWorkerType : SpatialConstants::ServerWorkerType;
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
 	}
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
@@ -144,6 +147,7 @@ void USpatialWorkerConnection::ConnectToLegacyLocator()
 	if (LegacyLocatorConfig.WorkerType.IsEmpty())
 	{
 		LegacyLocatorConfig.WorkerType = SpatialConstants::ClientWorkerType;
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LegacyLocatorConfig.WorkerType);
 	}
 
 	if (LegacyLocatorConfig.WorkerId.IsEmpty())
@@ -254,6 +258,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	if (LocatorConfig.WorkerType.IsEmpty())
 	{
 		LocatorConfig.WorkerType = SpatialConstants::ClientWorkerType;
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LocatorConfig.WorkerType);
 	}
 
 	if (LocatorConfig.WorkerId.IsEmpty())
@@ -337,11 +342,6 @@ Worker_OpList* USpatialWorkerConnection::GetOpList()
 	return Worker_Connection_GetOpList(WorkerConnection, 0);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdRequest()
-{
-	return Worker_Connection_SendReserveEntityIdRequest(WorkerConnection, nullptr);
-}
-
 Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
 	return Worker_Connection_SendReserveEntityIdsRequest(WorkerConnection, NumOfEntities, nullptr);
@@ -423,10 +423,19 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
-	check(GEngine);
-	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GEngine->GetWorldFromContextObjectChecked(this)->GetNetDriver());
-	checkf(NetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
-	return NetDriver;
+	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
+	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
+
+	// On the client, the world might not be completely set up.
+	// in this case we can use the PendingNetGame to get the NetDriver
+	if (NetDriver == nullptr)
+	{
+		NetDriver = GameInstance->GetWorldContext()->PendingNetGame->GetNetDriver();
+	}
+
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
+	checkf(SpatialNetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
+	return SpatialNetDriver;
 }
 
 

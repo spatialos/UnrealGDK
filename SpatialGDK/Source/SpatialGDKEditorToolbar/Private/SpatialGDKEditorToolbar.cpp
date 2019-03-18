@@ -452,6 +452,10 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 					Writer->WriteValue(TEXT("name"), TEXT("bridge_soft_handover_enabled"));
 					Writer->WriteValue(TEXT("value"), TEXT("false"));
 				Writer->WriteObjectEnd();
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("name"), TEXT("enable_chunk_interest"));
+					Writer->WriteValue(TEXT("value"), TEXT("false"));
+				Writer->WriteObjectEnd();
 			Writer->WriteArrayEnd();
 			Writer->WriteObjectStart(TEXT("snapshots"));
 				Writer->WriteValue(TEXT("snapshot_write_period_seconds"), 0);
@@ -479,7 +483,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 							else
 							{
 								// Find greatest divisor.
-								for (int Divisor = FMath::Sqrt(NumServers); Divisor >= 2; Divisor--)
+								for (int Divisor = FMath::Sqrt(NumServers); Divisor >= 1; Divisor--)
 								{
 									if (NumServers % Divisor == 0)
 									{

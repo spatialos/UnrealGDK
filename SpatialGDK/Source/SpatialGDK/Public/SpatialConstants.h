@@ -111,6 +111,8 @@ namespace SpatialConstants
 	const Worker_ComponentId CLIENT_RPC_ENDPOINT_COMPONENT_ID				= 9990;
 	const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID				= 9989;
 	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9987;
+	const Worker_ComponentId NOT_STREAMED_COMPONENT_ID						= 9986;
+
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
 	const Schema_FieldId SINGLETON_MANAGER_SINGLETON_NAME_TO_ENTITY_ID		= 1;
@@ -134,12 +136,10 @@ namespace SpatialConstants
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID = 1;
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID = 1;
 
-	// TODO: Make these easily configurable: UNR-984
-	const float HEARTBEAT_INTERVAL_SECONDS = 2.0f;
-	const float HEARTBEAT_TIMEOUT_SECONDS = 10.0f;
+	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
+	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
 
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
-	const float REPLICATED_STABLY_NAMED_ACTORS_DELETION_TIMEOUT_SECONDS = 5.0f;
 	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
 	static const FString ClientWorkerType = TEXT("UnrealClient");

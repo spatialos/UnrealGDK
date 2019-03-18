@@ -37,16 +37,22 @@ public:
 		EntityId = InEntityId;
 	}
 
-	FORCEINLINE bool IsReadyForReplication() const
+	FORCEINLINE bool IsReadyForReplication()
 	{
-		// Wait until we've reserved an entity ID.		
-		if (EntityId == 0)
+		// Make sure we have authority
+		if (Actor->Role != ROLE_Authority)
 		{
 			return false;
 		}
 
-		// Make sure we have authority
-		return Actor->Role == ROLE_Authority;
+		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			return true;
+		}
+
+		// This could happen if we've run out of entity ids at the time we called SetChannelActor.
+		// If that is the case, keep trying to allocate an entity ID until we succeed.
+		return TryResolveActor();
 	}
 
 	// Called on the client when receiving an update.
@@ -103,7 +109,8 @@ public:
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 
-	void RegisterEntityId(const Worker_EntityId& ActorEntityId);
+	bool TryResolveActor();
+
 	bool ReplicateSubobject(UObject* Obj, const FClassInfo& Info, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 
@@ -119,7 +126,6 @@ public:
 	FObjectReplicator& PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
 
-	void OnReserveEntityIdResponse(const struct Worker_ReserveEntityIdResponseOp& Op);
 	void OnCreateEntityResponse(const struct Worker_CreateEntityResponseOp& Op);
 
 	FVector GetActorSpatialPosition(AActor* Actor);
@@ -127,6 +133,9 @@ public:
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
 	void UpdateShadowData();
+
+	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
+	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
 
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
 	bool bCreatedEntity;
@@ -147,6 +156,7 @@ private:
 private:
 	Worker_EntityId EntityId;
 	bool bFirstTick;
+	bool bInterestDirty;
 	bool bNetOwned;
 
 	UPROPERTY(transient)

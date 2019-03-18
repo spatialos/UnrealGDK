@@ -78,16 +78,7 @@ FString PropertyToSchemaType(UProperty* Property, bool bIsRPCProperty)
 	{
 		UStructProperty* StructProp = Cast<UStructProperty>(Property);
 		UScriptStruct* Struct = StructProp->Struct;
-		if (Struct->StructFlags & STRUCT_NetSerializeNative)
-		{
-			// Specifically when NetSerialize is implemented for a struct we want to use 'bytes'.
-			// This includes RepMovement and UniqueNetId.
-			DataType = TEXT("bytes");
-		}
-		else
-		{
-			DataType = TEXT("bytes");
-		}
+		DataType = TEXT("bytes");
 	}
 	else if (Property->IsA(UBoolProperty::StaticClass()))
 	{
@@ -264,6 +255,20 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 			{
 				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find ActorComponent->bReplicates at field %d for class %s. Modifying the base Actor Component class is currently not supported."),
 					SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID,
+					*Class->GetName());
+			}
+		}
+
+		// If this class is an Actor, it MUST have bTearOff at field ID 3.
+		if (Group == REP_MultiClient && Class->IsChildOf<AActor>())
+		{
+			TSharedPtr<FUnrealProperty> ExpectedReplicatesPropData = RepData[Group].FindRef(SpatialConstants::ACTOR_TEAROFF_ID);
+			const UProperty* ReplicatesProp = AActor::StaticClass()->FindPropertyByName("bTearOff");
+
+			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
+			{
+				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find Actor->bTearOff at field %d for class %s. Modifying the base Actor class is currently not supported."),
+					SpatialConstants::ACTOR_TEAROFF_ID,
 					*Class->GetName());
 			}
 		}

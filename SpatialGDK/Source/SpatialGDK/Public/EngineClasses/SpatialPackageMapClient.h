@@ -15,12 +15,21 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialPackageMap, Log, All);
 
 class USpatialClassInfoManager;
+class USpatialNetDriver;
 
 UCLASS()
 class SPATIALGDK_API USpatialPackageMapClient : public UPackageMapClient
 {
 	GENERATED_BODY()		
 public:
+	void Init(USpatialNetDriver* NetDriver);
+
+	Worker_EntityId AllocateEntityIdAndResolveActor(AActor* Actor);
+	FNetworkGUID TryResolveObjectAsEntity(UObject* Value);
+
+	bool IsEntityIdPendingCreation(Worker_EntityId EntityId) const;
+	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
+
 	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
 	void RemoveEntityActor(Worker_EntityId EntityId);
 
@@ -35,7 +44,9 @@ public:
 	FNetworkGUID GetNetGUIDFromEntityId(const Worker_EntityId& EntityId) const;
 
 	TWeakObjectPtr<UObject> GetObjectFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef);
+	TWeakObjectPtr<UObject> GetObjectFromEntityId(const Worker_EntityId& EntityId);
 	FUnrealObjectRef GetUnrealObjectRefFromObject(UObject* Object);
+	Worker_EntityId GetEntityIdFromObject(const UObject* Object);
 
 	// Expose FNetGUIDCache::CanClientLoadObject so we can include this info with UnrealObjectRef.
 	bool CanClientLoadObject(UObject* Object);
@@ -45,6 +56,12 @@ public:
 private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
+
+	UPROPERTY()
+	USpatialNetDriver* NetDriver;
+
+	// Entities that have been assigned on this server and not created yet
+	TSet<Worker_EntityId_Key> PendingCreationEntityIds;
 };
 
 class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
@@ -52,7 +69,7 @@ class SPATIALGDK_API FSpatialNetGUIDCache : public FNetGUIDCache
 public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 		
-	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor);
+	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId);
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(UObject* Object);

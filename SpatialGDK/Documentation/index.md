@@ -10,13 +10,13 @@ The GDK offers:<br/>
 
 * **Multiserver support:** leveraging our cloud platform, the GDK enables you to use more than one Unreal game server in a single instance so that games can have more players, Actors, and gameplay systems than previously possible. <br/>
 * **An Unreal-native experience:** keeping traditional workflows and networking APIs that Unreal Engine developers are familiar with, the GDK introduces new native-feeling concepts that turn a single-server engine into a distributed one. This enables the GDK to retain the functionality of the networking features which Unreal offers out of the box, including transform synchronization, character movement, and map travel.<br/>
-* **An easy way to get started:** we have made sure it’s easy to [get started]({{urlRoot}}/content/get-started/introduction) with the GDK by including a Starter Project which you can use as a tour of SpatialOS and a base for your own game, as well as a guide to porting your current multiplayer Unreal game to run on SpatialOS.
+* **An easy way to get started:** we have made sure it’s easy to [get started]({{urlRoot}}/content/get-started/introduction) with the GDK by including a Starter Template which you can use as a tour of SpatialOS and a base for your own game, as well as a guide to porting your current multiplayer Unreal game to run on SpatialOS.
 
 ## What next?
 
 #### Want to get going with SpatialOS?
 
-* **[Get started]({{urlRoot}}/content/get-started/introduction) with the SpatialOS GDK for Unreal.** If you’re an Unreal game developer and you're ready to get started with SpatialOS, the _Get started_  guide takes you through setting up the GDK and launching the  FPS Starter Project. (Note that the GDK is aimed at users comfortable with programming in Unreal.) 
+* **[Get started]({{urlRoot}}/content/get-started/introduction) with the SpatialOS GDK for Unreal.** If you’re an Unreal game developer and you're ready to get started with SpatialOS, the _Get started_ guide takes you through setting up the SpatialOS Unreal Engine fork and the GDK. (Note that the GDK is aimed at users comfortable with programming in Unreal.) 
 
 #### Want to find out more? 
 
