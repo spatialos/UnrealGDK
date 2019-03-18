@@ -150,7 +150,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// We use this to indicate if a new Actor should be created or to link a pre-existing Actor when receiving an AddEntityOp.
 	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient was true.
 	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
-	if (Actor->HasAnyFlags(RF_WasLoaded))
+	TSchemaOption<bool> bNetStartup;
+	if (Actor->HasAnyFlags(RF_WasLoaded) || Actor->bNetStartup)
 	{
 		// Since we've already received the EntityId for this Actor. It is guaranteed to be resolved
 		// with the package map by this point
@@ -165,14 +166,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		FString TempPath = Actor->GetFName().ToString();
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
 
-		bool bNoLoadOnClient = !PackageMap->CanClientLoadObject(Actor);
 		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
+		bNetStartup = Actor->bNetStartup;
 	}
-
-	// Classes can have a PIE prefix added to them. This needs to be removed
-	// to be able to properly look the class up in the schema database.
-	FString RemappedClassName = Class->GetPathName();
-	GEngine->NetworkRemapPath(NetDriver, RemappedClassName, false);
 
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
@@ -180,7 +176,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, RemappedClassName).CreateUnrealMetadataData());
+	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{

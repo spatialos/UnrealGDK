@@ -249,24 +249,32 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		{
 			if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
+				if (IsValid(NetDriver->GetActorChannelByEntityId(Op.entity_id)))
+				{
+					Actor->Role = ROLE_Authority;
+					Actor->RemoteRole = ROLE_SimulatedProxy;
 
-				if (Actor->IsA<APlayerController>())
-				{
-					Actor->RemoteRole = ROLE_AutonomousProxy;
-				}
-				else if (APawn* Pawn = Cast<APawn>(Actor))
-				{
-					if (Pawn->IsPlayerControlled())
+					if (Actor->IsA<APlayerController>())
 					{
-						Pawn->RemoteRole = ROLE_AutonomousProxy;
+						Actor->RemoteRole = ROLE_AutonomousProxy;
 					}
+					else if (APawn* Pawn = Cast<APawn>(Actor))
+					{
+						if (Pawn->IsPlayerControlled())
+						{
+							Pawn->RemoteRole = ROLE_AutonomousProxy;
+						}
+					}
+
+					UpdateShadowData(Op.entity_id);
+
+					Actor->OnAuthorityGained();
 				}
-
-				UpdateShadowData(Op.entity_id);
-
-				Actor->OnAuthorityGained();
+				else
+				{
+					UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received authority over actor %s, with entity id %lld, which has no channel. This means it attempted to delete it earlier, when it had no authority. Retrying to delete now."), *Actor->GetName(), Op.entity_id);
+					Sender->SendDeleteEntityRequest(Op.entity_id);
+				}
 			}
 			else if (Op.authority == WORKER_AUTHORITY_AUTHORITY_LOSS_IMMINENT)
 			{
@@ -327,6 +335,31 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
+	// If the received actor is torn off, don't bother receiving it.
+	// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
+	// Check the pending add components, to find the root component for the received entity.
+	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+	{
+		if (PendingAddComponent.EntityId != EntityId
+			|| ClassInfoManager->GetCategoryByComponentId(PendingAddComponent.ComponentId) != SCHEMA_Data)
+		{
+			continue;
+		}
+		uint32 Offset = 0;
+		if (!ClassInfoManager->GetOffsetByComponentId(PendingAddComponent.ComponentId, Offset) || Offset != 0)
+		{
+			continue;
+		}
+
+		Worker_ComponentData* ComponentData = static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data;
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
+		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
+		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was already torn off. The actor will not be spawned."), EntityId);
+			return;
+		}
+	}
+
 	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
 	{
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker"), \
@@ -350,66 +383,25 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
-		UClass* ActorClass = UnrealMetadata->GetNativeEntityClass();
+		EntityActor = TryGetOrCreateActor(UnrealMetadata, SpawnData);
 
-		if (ActorClass == nullptr)
+		if (EntityActor == nullptr)
 		{
+			// This could be nullptr if:
+			// a stably named actor could not be found
+			// the Actor is a singleton
+			// the class couldn't be loaded
 			return;
 		}
 
-		// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
-		if (NetDriver->IsServer() && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+		UNetConnection* Connection = NetDriver->GetSpatialOSNetConnection();
+
+		if (NetDriver->IsServer())
 		{
-			// If GSM doesn't know of this entity id, queue up data for that entity id, and resolve it when the actor is created - UNR-734
-			// If the GSM does know of this entity id, we could just create the actor instead - UNR-735
-			return;
-		}
-
-		UNetConnection* Connection = nullptr;
-
-		// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
-		if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
-		{
-			checkf(!UnrealMetadata->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
-
-			FString URLString = FURL().ToString();
-			URLString += TEXT("?workerAttribute=") + UnrealMetadata->OwnerWorkerAttribute;
-
-			// TODO: Once we can checkout PlayerController and PlayerState atomically, we can grab the UniqueId and online subsystem type from PlayerState. UNR-933
-			Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), true);
-			check(Connection);
-
-			EntityActor = Connection->PlayerController;
-		}
-		else
-		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
-
-			EntityActor = GetOrCreateActor(UnrealMetadata, ActorClass, SpawnData);
-			if (EntityActor == nullptr)
+			if (APlayerController* PlayerController = Cast<APlayerController>(EntityActor))
 			{
-				// In native networking, if Unreal tries to look up a stably named actor on the client
-				// and it doesn't exist (e.g. streaming level hasn't loaded in) Unreal seems to not do anything.
-				// Returning here does the same behavior.
-				return;
-			}
-
-			// Don't have authority over Actor until SpatialOS delegates authority
-			EntityActor->Role = ROLE_SimulatedProxy;
-			EntityActor->RemoteRole = ROLE_Authority;
-
-			// Get the net connection for this actor.
-			if (NetDriver->IsServer())
-			{
-				// Currently, we just create an actor channel on the "catch-all" connection, then create a new actor channel once we check out the player controller
-				// and create a new connection. This is fine due to lazy actor channel creation in USpatialNetDriver::ServerReplicateActors. However, the "right" thing to do
-				// would be to make sure to create anything which depends on the PlayerController _after_ the PlayerController's connection is set up so we can use the right
-				// one here. We should revisit this after implementing working sets - UNR:411
-				Connection = NetDriver->GetSpatialOSNetConnection();
-			}
-			else
-			{
-				Connection = NetDriver->GetSpatialOSNetConnection();
+				// If entity is a PlayerController, create channel on the PlayerController's connection.
+				Connection = PlayerController->NetConnection;
 			}
 		}
 
@@ -606,11 +598,11 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	{
 		if (Actor == nullptr)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! EntityId: %lld"), EntityId);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. EntityId: %lld"), EntityId);
 		}
 		else
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op but cannot find the actor channel! Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Removing actor as a result of a remove entity op, which has a missing actor channel. Actor: %s EntityId: %lld"), *Actor->GetName(), EntityId);
 		}
 	}
 
@@ -628,53 +620,67 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 {
-	Cast<USpatialPackageMapClient>(NetDriver->GetSpatialOSNetConnection()->PackageMap)->RemoveEntityActor(EntityId);
 	PackageMap->RemoveEntityActor(EntityId);
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
-AActor* USpatialReceiver::GetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, UClass* ActorClass, improbable::SpawnData* SpawnData)
+AActor* USpatialReceiver::TryGetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData)
 {
-	// If no stable ref, Actor has been dynamically spawned, so spawn it.
-	if (!UnrealMetadata->StablyNamedRef.IsSet())
+	if (UnrealMetadata->StablyNamedRef.IsSet())
 	{
-		return CreateActor(SpawnData, ActorClass);
-	}
-
-	// If we are the client
-	if (!NetDriver->IsServer())
-	{
-		if (AActor* ActorCDO = Cast<AActor>(ActorClass->GetDefaultObject()))
+		if (NetDriver->IsServer() || UnrealMetadata->bNetStartup.GetValue())
 		{
-			// And this Actor is bNetLoadOnClient = false, the StablyNamedRef is set but
-			// the local representation does not exist (It's deleted in ULevel::InitializeNetworkActors()).
-			// Spawn the Actor on the client.
-			if (!ActorCDO->bNetLoadOnClient)
-			{
-				return CreateActor(SpawnData, ActorClass);
-			}
+			// This Actor already exists in the map, get it from the package map.
+			const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef.GetValue();
+			AActor* StaticActor = Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(StablyNamedRef));
+			// An unintended side effect of GetObjectFromUnrealObjectRef is that this ref
+			// will be registered with this Actor. It can be the case that this Actor is not
+			// stably named (due to bNetLoadOnClient = false) so we should let
+			// SpatialPackageMapClient::ResolveEntityActor handle it properly.
+			PackageMap->UnregisterActorObjectRefOnly(StablyNamedRef);
+
+			return StaticActor;
 		}
 	}
 
-	// Otherwise, this Actor already exists in the map, get it from the package map.
-	const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef.GetValue();
-	AActor* StaticActor = Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(StablyNamedRef));
-	// An unintended side effect of GetObjectFromUnrealObjectRef is that this ref
-	// will be registered with this Actor. It can be the case that this Actor is not
-	// stably named (due to bNetLoadOnClient = false) so we should let
-	// SpatialPackageMapClient::ResolveEntityActor handle it properly.
-	PackageMap->UnregisterActorObjectRefOnly(StablyNamedRef);
-
-	return StaticActor;
+	return CreateActor(UnrealMetadata, SpawnData);
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass)
+AActor* USpatialReceiver::CreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData)
 {
+	UClass* ActorClass = UnrealMetadata->GetNativeEntityClass();
+
 	if (ActorClass == nullptr)
 	{
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Could not load class %s when spawning entity!"), *UnrealMetadata->ClassPath);
 		return nullptr;
 	}
+
+	// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
+	if (NetDriver->IsServer() && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		// If GSM doesn't know of this entity id, queue up data for that entity id, and resolve it when the actor is created - UNR-734
+		// If the GSM does know of this entity id, we could just create the actor instead - UNR-735
+		return nullptr;
+	}
+
+	// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
+	if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
+	{
+		checkf(!UnrealMetadata->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+
+		FString URLString = FURL().ToString();
+		URLString += TEXT("?workerAttribute=") + UnrealMetadata->OwnerWorkerAttribute;
+
+		// TODO: Once we can checkout PlayerController and PlayerState atomically, we can grab the UniqueId and online subsystem type from PlayerState. UNR-933
+		UNetConnection* Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), true);
+		check(Connection);
+
+		return Connection->PlayerController;
+	}
+
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -696,6 +702,10 @@ AActor* USpatialReceiver::CreateActor(improbable::SpawnData* SpawnData, UClass* 
 	{
 		NewActor->SetActorScale3D(SpawnData->Scale);
 	}
+
+	// Don't have authority over Actor until SpatialOS delegates authority
+	NewActor->Role = ROLE_SimulatedProxy;
+	NewActor->RemoteRole = ROLE_Authority;
 
 	return NewActor;
 }
@@ -886,14 +896,18 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 {
 	Worker_EntityId EntityId = Op.entity_id;
 
-	// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
-	// Ideally these events are never delivered to workers which are not able to handle them with clever interest management
-	const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
-		? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
-
-	if (StaticComponentView->GetAuthority(Op.entity_id, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
+	// Multicast RPCs should be executed by whoever receives them.
+	if (Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
 	{
-		return;
+		// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
+		// Ideally these events are never delivered to workers which are not able to handle them with clever interest management
+		const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
+			? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+
+		if (StaticComponentView->GetAuthority(Op.entity_id, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			return;
+		}
 	}
 
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
@@ -1171,7 +1185,7 @@ void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: request id: %d, entity id: %lld"), Op.request_id, Op.entity_id);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received CreateEntityResponse for actor which no longer has an actor channel: request id: %d, entity id: %lld. This should only happen in the case where we attempt to delete the entity before we have authority. The entity will therefore be deleted once authority is gained."), Op.request_id, Op.entity_id);
 	}
 }
 
