@@ -10,6 +10,9 @@
 #include "SpatialGDKEditorSettings.h"
 
 #include "Editor.h"
+#include "Engine/AssetManager.h"
+#include "EditorLevelUtils.h"
+#include "Engine/LevelStreamingKismet.h"
 
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
@@ -40,9 +43,11 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	TryLoadExistingSchemaDatabase();
 
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	TArray<ULevelStreaming*> LoadedLevels;
 	if (SpatialGDKSettings->bLoadStreamingLevelsWhenGeneratingSchema)
 	{
-		LoadAllStreamingLevels(GWorld);
+		LoadedLevels = LoadAllStreamingLevels(GWorld);
 	}
 
 	PreProcessSchemaMap();
@@ -55,7 +60,7 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	LoadDefaultGameModes();
 
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
-		[this, bCachedSpatialNetworking, ErroredBlueprints, SuccessCallback, FailureCallback]()
+		[this, bCachedSpatialNetworking, ErroredBlueprints, LoadedLevels, SuccessCallback, FailureCallback]()
 	{
 		// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
 		if (ErroredBlueprints.Num() > 0)
@@ -66,6 +71,12 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 				UE_LOG(LogSpatialGDKEditor, Error, TEXT("%s"), *GetPathNameSafe(Blueprint));
 			}
 		}
+
+		FFunctionGraphTask::CreateAndDispatchWhenReady([this, LoadedLevels]() {
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Unloaded assets loaded for schema generation on gamethread..."));
+			UnloadLevels(LoadedLevels);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Unloaded assets: done."));
+		}, TStatId(), NULL, ENamedThreads::GameThread);
 
 		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
 		{
@@ -94,9 +105,25 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	}
 }
 
-void FSpatialGDKEditor::LoadAllStreamingLevels(UWorld* World)
+void FSpatialGDKEditor::UnloadLevels(TArray<ULevelStreaming*> LoadedLevels)
 {
-	const TArray<ULevelStreaming*> StreamingLevels = World->GetStreamingLevels();
+	for (ULevelStreaming* Level : LoadedLevels)
+	{
+		if (Level->HasLoadedLevel())
+		{
+			bool Success = EditorLevelUtils::RemoveLevelFromWorld(Level->GetLoadedLevel());
+			UE_LOG(LogSpatialGDKEditor, Display, TEXT("Unloading %s : %s"), *GetPathNameSafe(Level), Success ? TEXT("Success") : TEXT("Failure"));
+		}
+		else
+		{
+			UE_LOG(LogSpatialGDKEditor, Display, TEXT("%s has no loaded level, skipping"), *GetPathNameSafe(Level));
+		}
+	}
+}
+
+TArray<ULevelStreaming*> FSpatialGDKEditor::LoadAllStreamingLevels(UWorld* World)
+{
+	/*const TArray<ULevelStreaming*> StreamingLevels = World->GetStreamingLevels();
 	UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loading %d Streaming SubLevels"), StreamingLevels.Num());
 	for (ULevelStreaming* StreamingLevel : StreamingLevels)
 	{
@@ -104,7 +131,9 @@ void FSpatialGDKEditor::LoadAllStreamingLevels(UWorld* World)
 		StreamingLevel->SetShouldBeVisibleInEditor(false);
 		StreamingLevel->bShouldBlockOnLoad = true;
 		World->AddStreamingLevel(StreamingLevel);
-	}
+	}*/
+
+	TArray<ULevelStreaming*> LoadedLevels;
 
 	// Ensure all world composition tiles are also loaded
 	if (World->WorldComposition != nullptr)
@@ -114,13 +143,30 @@ void FSpatialGDKEditor::LoadAllStreamingLevels(UWorld* World)
 		UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loading %d World Composition Tiles"), StreamingTiles.Num());
 		for (ULevelStreaming* StreamingLevel : StreamingTiles)
 		{
-			UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loading Level Tile %s"), *StreamingLevel->GetWorldAssetPackageName());
+			TSharedPtr<FStreamableHandle> RequestHandle;
+
+			TSoftObjectPtr<UWorld> WorldPtr = StreamingLevel->GetWorldAsset();
+			if (WorldPtr.IsValid())
+			{
+				UE_LOG(LogSpatialGDKEditor, Display, TEXT("Level %s Already loaded, skipping"), *StreamingLevel->GetWorldAssetPackageName());
+				continue;
+			}
+			else
+			{
+				LoadedLevels.Add(EditorLevelUtils::AddLevelToWorld(World, *StreamingLevel->GetWorldAssetPackageName(), ULevelStreamingKismet::StaticClass()));
+				/*UObject* LoadedAsset = UAssetManager::GetStreamableManager().LoadSynchronous(StreamingLevel->GetWorldAsset(), false, &RequestHandle);
+				UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loading Level Tile %s [%s]"), *StreamingLevel->GetWorldAssetPackageName(), *GetNameSafe(LoadedAsset));*/
+				//LoadedAssets.Add(StreamingLevel->GetWorldAsset().ToSoftObjectPath());
+			}
+
+			/*
 			StreamingLevel->SetShouldBeVisible(true);
 			StreamingLevel->SetShouldBeVisibleInEditor(false);
 			StreamingLevel->bShouldBlockOnLoad = true;
-			World->AddStreamingLevel(StreamingLevel);
+			World->AddStreamingLevel(StreamingLevel);*/
 		}
 	}
 
-	World->FlushLevelStreaming(EFlushLevelStreamingType::Full);
+	/*World->FlushLevelStreaming(EFlushLevelStreamingType::Full);*/
+	return LoadedLevels;
 }

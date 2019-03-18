@@ -19,7 +19,8 @@ public:
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 
-	void LoadAllStreamingLevels(UWorld* World);
+	TArray<ULevelStreaming*> LoadAllStreamingLevels(UWorld* World);
+	void UnloadLevels(TArray<ULevelStreaming*> LoadedLevels);
 
 private:
 	bool bSchemaGeneratorRunning;
