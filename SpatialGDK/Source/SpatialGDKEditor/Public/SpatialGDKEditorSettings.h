@@ -106,7 +106,7 @@ public:
 
 		for (FString Flag : SpatialOSCommandLineLaunchFlags)
 		{
-			Flag = Flag.StartsWith("--") ? Flag : "--" + Flag;
+			Flag = Flag.StartsWith(TEXT("--")) ? Flag : TEXT("--") + Flag;
 			CommandLineLaunchFlags += Flag + " ";
 		}
 
