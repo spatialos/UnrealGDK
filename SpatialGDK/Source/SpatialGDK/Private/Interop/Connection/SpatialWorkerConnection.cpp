@@ -464,6 +464,8 @@ void USpatialWorkerConnection::OnConnectionFailure()
 			const FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
 			AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
 			{
+				UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
+				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::PendingConnectionFailure, *ErrorMessage);
 				GetSpatialNetDriverChecked()->HandleOnConnectionFailed(ErrorMessage);
 			});
 			break;
