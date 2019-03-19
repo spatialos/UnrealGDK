@@ -130,8 +130,6 @@ void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 
 void UGlobalStateManager::SendShutdownMultiProcessRequest()
 {
-	// TODO:UNR-964. An event will need to be sent from the server to notify all the non-authoritative servers to shutdown.
-
 	/** When running with Use Single Process unticked, send a shutdown command to the servers to allow SpatialOS to shutdown.
 	  * Standard UnrealEngine behavior is to call TerminateProc on external processes and there is no method to send any messaging
 	  * to those external process.
