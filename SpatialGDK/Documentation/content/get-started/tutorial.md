@@ -159,7 +159,7 @@ _Image: A local Inspector showing two server-worker instances (two Unreal server
 
 1. Access the Inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
 1. In the **View** tab, check the boxes next to both of the **UnrealWorkers**.
-1. In the top right section of the viewport, in the “Show me” box, select **Authority / interest**.<br>
+1. In the **Show me** option, select **Authority / interest**.<br>
 This causes the Inspector to display the areas that each server-worker instance has authority over as two colored zones.
 1. Back in your two Unreal game clients, run around and shoot.
 1. Using the Inspector to track the location of your two players, notice that if you position them in the same area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
