@@ -50,6 +50,8 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 		LoadedLevels = LoadAllStreamingLevels(GWorld);
 	}
 
+	PreProcessSchemaMap();
+
 	// Compile all dirty blueprints
 	TArray<UBlueprint*> ErroredBlueprints;
 	bool bPromptForCompilation = false;
@@ -61,6 +63,11 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 		[this, LoadedLevels]() {
 
 		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Begin Schema Gen for %d Levels"), LoadedLevels.Num());
+
+		if (LoadedLevels.Num() == 0)
+		{
+			return SpatialGDKGenerateSchema();
+		}
 
 		for (ULevelStreaming* Level : LoadedLevels)
 		{
