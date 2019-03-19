@@ -50,8 +50,6 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 		LoadedLevels = LoadAllStreamingLevels(GWorld);
 	}
 
-	PreProcessSchemaMap();
-
 	// Compile all dirty blueprints
 	TArray<UBlueprint*> ErroredBlueprints;
 	bool bPromptForCompilation = false;
@@ -59,8 +57,71 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 	LoadDefaultGameModes();
 
-	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
-		[this, bCachedSpatialNetworking, ErroredBlueprints, LoadedLevels, SuccessCallback, FailureCallback]()
+	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread,
+		[this, LoadedLevels]() {
+
+		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Begin Schema Gen for %d Levels"), LoadedLevels.Num());
+
+		for (ULevelStreaming* Level : LoadedLevels)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("---------- Begin Schema Gen for %s"), *GetPathNameSafe(Level));
+
+			ULevelStreaming* LoadedLevel;
+
+			FGraphEventRef LoadLevelEvent = FFunctionGraphTask::CreateAndDispatchWhenReady([&, Level]() {
+				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Loading Level %s"), *GetPathNameSafe(Level));
+				LoadedLevel = EditorLevelUtils::AddLevelToWorld(GWorld, *Level->GetWorldAssetPackageName(), ULevelStreamingKismet::StaticClass());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Loading Level %s: done"), *GetPathNameSafe(Level));
+			}, TStatId(), NULL, ENamedThreads::GameThread);
+
+			while (LoadedLevel == nullptr)
+			{
+				FPlatformProcess::Sleep(0.1f);
+			}
+
+			bool bPreprocessed = false;
+
+			FFunctionGraphTask::CreateAndDispatchWhenReady([&, Level]() {
+				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Preprocessing Map for Level %s"), *GetPathNameSafe(Level));
+				PreProcessSchemaMap();
+				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Preprocessing Map for level %s: done."), *GetPathNameSafe(Level));
+				bPreprocessed = true;
+			}, TStatId(), NULL, ENamedThreads::GameThread);
+
+			while (!bPreprocessed)
+			{
+				FPlatformProcess::Sleep(0.1f);
+			}
+
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Do Schema Gen for %s"), *GetPathNameSafe(Level));
+			
+			bool bResult = SpatialGDKGenerateSchema();
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Do Schema Gen for %s: done"), *GetPathNameSafe(Level));
+
+			bool LevelUnloaded = false;
+
+			FFunctionGraphTask::CreateAndDispatchWhenReady([&, LoadedLevel, Level]() {
+				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Unloading Level %s"), *GetPathNameSafe(Level));
+				EditorLevelUtils::RemoveLevelFromWorld(LoadedLevel->GetLoadedLevel());
+				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Unloaded level %s: done."), *GetPathNameSafe(Level));
+				LevelUnloaded = true;
+			}, TStatId(), NULL, ENamedThreads::GameThread);
+
+			while (!LevelUnloaded)
+			{
+				FPlatformProcess::Sleep(0.1f);
+			}
+
+			if (!bResult) {
+				return false;
+			}
+
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("---------- End Schema Gen for %s"), *GetPathNameSafe(Level));
+		}
+
+		return true;
+	},
+		[this, bCachedSpatialNetworking, ErroredBlueprints, SuccessCallback, FailureCallback]()
 	{
 		// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
 		if (ErroredBlueprints.Num() > 0)
@@ -71,13 +132,7 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 				UE_LOG(LogSpatialGDKEditor, Error, TEXT("%s"), *GetPathNameSafe(Blueprint));
 			}
 		}
-
-		FFunctionGraphTask::CreateAndDispatchWhenReady([this, LoadedLevels]() {
-			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Unloaded assets loaded for schema generation on gamethread..."));
-			UnloadLevels(LoadedLevels);
-			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Unloaded assets: done."));
-		}, TStatId(), NULL, ENamedThreads::GameThread);
-
+		
 		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
 		{
 			FailureCallback.ExecuteIfBound();
@@ -88,7 +143,7 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 		}
 		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
 		bSchemaGeneratorRunning = false;
-	});
+	});                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
 }
 
 void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
@@ -153,7 +208,8 @@ TArray<ULevelStreaming*> FSpatialGDKEditor::LoadAllStreamingLevels(UWorld* World
 			}
 			else
 			{
-				LoadedLevels.Add(EditorLevelUtils::AddLevelToWorld(World, *StreamingLevel->GetWorldAssetPackageName(), ULevelStreamingKismet::StaticClass()));
+				LoadedLevels.Add(StreamingLevel);
+				//LoadedLevels.Add(EditorLevelUtils::AddLevelToWorld(World, *StreamingLevel->GetWorldAssetPackageName(), ULevelStreamingKismet::StaticClass()));
 				/*UObject* LoadedAsset = UAssetManager::GetStreamableManager().LoadSynchronous(StreamingLevel->GetWorldAsset(), false, &RequestHandle);
 				UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loading Level Tile %s [%s]"), *StreamingLevel->GetWorldAssetPackageName(), *GetNameSafe(LoadedAsset));*/
 				//LoadedAssets.Add(StreamingLevel->GetWorldAsset().ToSoftObjectPath());
