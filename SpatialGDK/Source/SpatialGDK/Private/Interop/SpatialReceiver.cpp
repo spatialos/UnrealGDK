@@ -805,8 +805,12 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
-	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
+		return;
+	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+#if WITH_EDITOR
+		GlobalStateManager->OnShutdownComponentUpdate(Op.update);
+#endif // WITH_EDITOR
 		return;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 		if (HeartbeatDelegate* UpdateDelegate = HeartbeatDelegates.Find(Op.entity_id))
@@ -957,7 +961,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 #if WITH_EDITOR
-	else if (Op.request.component_id == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID && CommandIndex == 1)
+	else if (Op.request.component_id == SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID && CommandIndex == SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID)
 	{
 		NetDriver->GlobalStateManager->ReceiveShutdownMultiProcessRequest();
 		return;
