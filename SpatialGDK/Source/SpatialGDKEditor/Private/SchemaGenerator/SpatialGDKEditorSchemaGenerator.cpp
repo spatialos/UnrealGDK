@@ -553,6 +553,8 @@ bool SpatialGDKGenerateSchema()
 	for (const auto& Class : SchemaGeneratedClasses)
 	{
 		// Parent and static array index start at 0 for checksum calculations.
+		if (!Class || !Class->IsValidLowLevel()) continue;
+
 		TypeInfos.Add(CreateUnrealTypeInfo(Class, 0, 0, false));
 	}
 
