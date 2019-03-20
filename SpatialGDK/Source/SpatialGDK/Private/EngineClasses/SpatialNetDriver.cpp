@@ -113,7 +113,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	// Set the timer manager.
 	TimerManager = &GameInstance->GetTimerManager();
 
-	if (!bPersistSpatialConnection)
+	if (!bPersistSpatialConnection && GetWorld()) // GetWorld check as we do not want to destroy on our first time connecting.
 	{
 		// Destroy the old connection
 		GameInstance->GetSpatialWorkerConnection()->DestroyConnection();
