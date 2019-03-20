@@ -143,7 +143,20 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
 
-	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	WorkerRequirementSet ReadACL;
+	for (auto& Worker : SpatialGDKSettings->LaunchConfigDesc.Workers)
+	{
+		if (Worker.WorkerTypeName == TEXT("UnrealClient"))
+		{
+			continue;
+		}
+		const WorkerAttributeSet WorkerTypeAttributeSet{ TArray<FString>{Worker.WorkerTypeName} };
+		ReadACL.Add(WorkerTypeAttributeSet);
+	}
+
+	Components.Add(improbable::EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();
