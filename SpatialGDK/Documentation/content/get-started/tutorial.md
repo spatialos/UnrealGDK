@@ -23,8 +23,7 @@ This repository contains a version of Unreal’s Third Person template that has 
 
 > **Note:**  A completed version of this tutorial is available in the `tutorial-complete` branch.
 
-### Move the GDK into the `Plugins` directory
-
+### Clone the GDK into the `Plugins` directory
 
 1. Navigate to `UnrealGDKThirdPersonShooter\Game` and create a `Plugins` directory.
 1. In a terminal window,  change directory to the  `Plugins` directory and clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository using one of the following commands:
@@ -47,19 +46,31 @@ In this step, you're going to build the Unreal GDK's dependencies.
 1. In the same directory, open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
 1. Open **ThirdPersonShooter.uproject** in the Unreal Editor.
-1. In the [GDK toolbar]({{urlRoot}}/content/toolbars), click [`Schema`]({{urlRoot}}/content/schema) to generate schema and then [`Snapshot`]({{urlRoot}}/content/glossary#snapshot) to generate a snapshot.
+1. In the GDK toolbar, select **Schema** to generate the SpatialOS schema based on your Unreal project. (Schema is a definition of the components and entities your SpatialOS world can have, see the glossary for more details on [schema](https://docs.improbable.io/reference/latest/shared/glossary).) <br/>
+![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
+_Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
+1. Select [**Snapshot**]({{urlRoot}}/content/generating-a-snapshot) to generate a snapshot (a representation of the state of the SpatialOS world) which will be used to start the deployment.<br/>
+![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
+_Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
 
 ### Deploy the project locally
 
 In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will [cloud deploy](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
 
 1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and in the `layer_configurations` section set `rows` to `2`. This instructs SpatialOS that you will be launching two server-workers.
-1. In the Unreal Editor, in the Unreal toolbar, open the **Play** drop-down menu.
-1. Under **Multiplayer Options**, enter the number of players as **2**
-1. Enter the number of servers as **2**
-1. Check the box next to **Run Dedicated Server**
-1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**, the green play icon. This will open a terminal window and run the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime). It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
-1. From the Unreal Editor toolbar, click **Play** to run the game. This starts two headless server-workers and two [client-workers](https://docs.improbable.io/reference/latest/shared/glossary#client-worker).
+1. In the Unreal Editor, in the Unreal toolbar, open the **Play** drop-down menu.<br/>
+2. Under **Multiplayer Options**, enter the number of players as **2**
+3. Enter the number of servers as **2**
+4. Ensure the box next to **Run Dedicated Server** is checked<br/>
+![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
+_Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
+1. In the Unreal Editor, in the SpatialOS GDK toolbar, select **Start** (the green play icon). This opens a terminal window and runs the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime).<br/>
+![Toolbar]({{assetRoot}}assets/set-up-template/template-start.png)<br/>
+_Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
+6. It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
+7. From the Unreal Editor toolbar, select **Play** to run the game. This starts two SpatialOS server-worker instances and two SpatialOS client-worker instances locally, in your Unreal Editor.
+<br/>The two server-worker instances are acting as two Unreal servers and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
+<br/>(You can find out about workers in the [glossary](https://docs.improbable.io/unreal/alpha/content/glossary#workers).)
 
 Notice that when players shoot each other, their health does not go down. It's not much fun with no skin in the game is it? Let’s fix the health system.
 
@@ -140,12 +151,16 @@ Notice that health now decrements when you are shot.
 
 ### View your SpatialOS world in the Inspector
 
-![]({{assetRoot}}assets/tutorial/inspector.png)
+![]({{assetRoot}}assets/tutorial/inspector-two-workers.png)
 
-[The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s use the Inspector to visualise the areas that each of our server-workers have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
+_Image: A local Inspector showing two server-worker instances (two Unreal servers) managing your game_<br/>
 
-1. Access the inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
-1. In the **View** tab, click the checkboxes next to both of the **UnrealWorkers**. This will cause the Inspector to display the areas that the server-workers have authority over as two coloured zones.
+[The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s use the Inspector to visualise the areas that each of our server-worker instances have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
+
+1. Access the Inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
+1. In the **View** tab, check the boxes next to both of the **UnrealWorkers**.
+1. In the **Show me** option, select **Authority / interest**.<br>
+This causes the Inspector to display the areas that each server-worker instance has authority over as two colored zones.
 1. Back in your two Unreal game clients, run around and shoot.
 1. Using the Inspector to track the location of your two players, notice that if you position them in the same area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
 
@@ -223,7 +238,10 @@ Now let’s test our new cross-server functionality in another local deployment.
 
 1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
 1. From the Unreal Editor toolbar, click **Play** to run the game.
-1. Using the Inspector to track the location of your two players, notice that you can now shoot across servers and cause damage.
+2. Using the Inspector to track the location of your two players, notice that you can now shoot between two Unreal servers and cause damage across their boundaries (provided the two players are on different teams!).
+
+![]({{assetRoot}}assets/tutorial/shooting-across-boundaries.gif)<br/>
+*Image: Players running and shooting between two Unreal Servers*
 
 Now that you're free of the single-server paradigm, have a think about the huge, seamless multiplayer worlds you can build and host using the Unreal GDK.
 
@@ -288,3 +306,8 @@ When you’re done shooting your friends, you can click the **Stop** button in t
 
 ### Next steps
 We hope you've enjoyed this tutorial. If you want to build a new game using the SpatialOS GDK, you should build it on top of the [SpatialOS GDK Starter template]({{urlRoot}}/content/get-started/gdk-template). If you want to port your existing game to SpatialOS, follow the [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk).
+
+<br/>
+<br/>
+-------------
+2019-03-15 Page updated with limited editorial review
