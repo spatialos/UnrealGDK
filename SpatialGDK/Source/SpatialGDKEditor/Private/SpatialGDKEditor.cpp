@@ -195,7 +195,49 @@ TArray<ULevelStreaming*> FSpatialGDKEditor::LoadAllStreamingLevels(UWorld* World
 		World->AddStreamingLevel(StreamingLevel);
 	}*/
 
+	{
+		UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loading All Assets"));
+		FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+		TArray<ULevelStreaming*> StreamingTiles = World->WorldComposition->TilesStreaming;
+		TArray<FName> StreamingDependencies;
+
+		for (ULevelStreaming* Tile : StreamingTiles)
+		{
+			AssetRegistryModule.Get().GetDependencies(Tile->GetWorldAssetPackageFName(), StreamingDependencies);
+		}
+
+		TArray<FAssetData> AssetData;
+
+		for (FName Package : StreamingDependencies)
+		{
+			AssetRegistryModule.Get().GetAssetsByPackageName(Package, AssetData, true);
+		}
+
+		UE_LOG(LogSpatialGDKEditor, Display, TEXT("Got %d Assets from maps:"), AssetData.Num());
+
+		for (const FAssetData& Data : AssetData)
+		{
+			UE_LOG(LogSpatialGDKEditor, Display, TEXT("%s:"), *Data.AssetName.ToString());
+
+			if (Data.TagsAndValues.Contains("GeneratedClass") && !Data.IsAssetLoaded())
+			{
+				UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loading Blueprint Asset %s before schema gen"), *Data.AssetName.ToString());
+				UObject* Asset = Data.GetAsset();
+				UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loaded Asset %s"), *GetNameSafe(Asset));
+			}
+
+			/*for (TPair<FName, FString> KV : Data.TagsAndValues.GetMap())
+			{
+				UE_LOG(LogSpatialGDKEditor, Display, TEXT("-  %s = %s"), *KV.Key.ToString(), *KV.Value);
+			}*/
+		}
+	}
+
+
 	TArray<ULevelStreaming*> LoadedLevels;
+
+	return LoadedLevels;
 
 	// Ensure all world composition tiles are also loaded
 	if (World->WorldComposition != nullptr)
