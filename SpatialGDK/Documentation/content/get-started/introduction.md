@@ -3,7 +3,7 @@
 
 Get started with the SpatialOS GDK for Unreal by building the SpatialOS Unreal Engine Fork and setting up the GDK Starter Template which you can use as a base for your own project running on SpatialOS.
 
-After this, you can follow the Multiserver tutorial which shows you how to deploy a project to the cloud and demos a simple shooter game running across two servers or, if you have an existing Unreal multiplayer project, you can follow the porting guide to get it onto the GDK and running on SpatialOS.
+After this, you can follow the Multiserver Shooter Tutorial which shows you how to deploy a project to the cloud and demos a simple shooter game running across two servers or, if you have an existing Unreal multiplayer project, you can follow the porting guide to get it onto the GDK and running on SpatialOS.
 
 ## Your feedback and ideas
 
