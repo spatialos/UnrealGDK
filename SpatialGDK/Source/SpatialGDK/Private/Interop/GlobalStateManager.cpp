@@ -246,7 +246,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 		// No local actor has registered itself as replicatible on this worker
 		UE_LOG(LogGlobalStateManager, Log, TEXT("LinkExistingSingletonActor no actor registered"), *SingletonActorClass->GetName());
 		return;
-	} 
+	}
 
 	AActor* SingletonActor = ActorChannelPair->Key;
 	USpatialActorChannel*& Channel = ActorChannelPair->Value;
@@ -266,7 +266,6 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 
 	if (StaticComponentView->GetAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("GSM line 232 Role authority for %s on %s"), *SingletonActor->GetName(), *NetDriver->GetWorld()->GetGameInstance()->GetSpatialWorkerType());
 		SingletonActor->Role = ROLE_Authority;
 		SingletonActor->RemoteRole = ROLE_SimulatedProxy;
 	}
@@ -503,7 +502,6 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 		{
 			if (Actor->GetIsReplicated())
 			{
-				//UE_LOG(LogGlobalStateManager, Warning, TEXT("GSM line 476 Role authority for %s on %s"), *Actor->GetName(), *NetDriver->GetWorld()->GetGameInstance()->GetSpatialWorkerType());
 				Actor->Role = ROLE_Authority;
 				Actor->RemoteRole = ROLE_SimulatedProxy;
 			}
