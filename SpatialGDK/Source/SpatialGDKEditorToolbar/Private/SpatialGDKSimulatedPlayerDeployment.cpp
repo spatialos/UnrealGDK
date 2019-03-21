@@ -445,18 +445,18 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 
 		SpatialGDKEditorSharedPtr->LaunchCloudDeployment(
 			FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("We have liftoff")));
+				NotificationItem->SetText(FText::FromString(TEXT("Successfully initiated launching of the cloud deployment.")));
 				NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
 			}),
 			FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("We don't have liftoff")));
+				NotificationItem->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
 				NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 			})
 		);
 		return FReply::Handled();
 	}
 
-	FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployments.")));
+	FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployment.")));
 	Info.bUseSuccessFailIcons = true;
 	Info.ExpireDuration = 3.0f;
 
@@ -485,11 +485,11 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 
 		SpatialGDKEditorSharedPtr->StopCloudDeployment(
 				FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("We managed to stop something")));
+				NotificationItem->SetText(FText::FromString(TEXT("Successfully launched the stop cloud deployments command.")));
 				NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
 			}),
 				FSimpleDelegate::CreateLambda([NotificationItem]() {
-				NotificationItem->SetText(FText::FromString(TEXT("We couldn't even start stopping ;(")));
+				NotificationItem->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
 				NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
 			})
 		);
