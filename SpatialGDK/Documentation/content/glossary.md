@@ -456,3 +456,10 @@ Within these broad types, you can define your own worker sub-types to create mor
 
 ### Write access
 See [authority](#authority).
+
+<br/>
+------------
+2019-03-15 Page updated with full editorial review
+<br/>
+<br/>
+2019-03-15 Added layers, non-Unreal layers, network operations (ops)
