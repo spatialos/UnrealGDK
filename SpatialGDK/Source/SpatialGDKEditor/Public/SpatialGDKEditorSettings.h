@@ -8,6 +8,38 @@
 #include "SpatialGDKEditorSettings.generated.h"
 
 USTRUCT()
+struct FWorldLaunchSection
+{
+	GENERATED_BODY()
+
+	FWorldLaunchSection()
+		: Dimensions(2000, 2000)
+		, ChunkEdgeLenghtMeters(50)
+		, StreamingQueryInterval(4)
+		, SnapshotWritePeriodSeconds(0)
+	{
+		LegacyFlags.Add(TEXT("streaming_query_diff"), TEXT("true"));
+		LegacyFlags.Add(TEXT("bridge_qos_max_timeout"), TEXT("0"));
+		LegacyFlags.Add(TEXT("bridge_soft_handover_enabled"), TEXT("false"));
+	}
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Dimensions"))
+	FIntPoint Dimensions;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Chunk edge length in meters"))
+	int32 ChunkEdgeLenghtMeters;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Streaming query interval"))
+	int32 StreamingQueryInterval;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Snapshot write period in seconds"))
+	int32 SnapshotWritePeriodSeconds;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Legacy flags"))
+	TMap<FString, FString> LegacyFlags;
+};
+
+USTRUCT()
 struct FWorkerTypeLaunchSection
 {
 	GENERATED_BODY()
@@ -29,6 +61,20 @@ USTRUCT()
 struct FSpatialLaunchConfigDescription
 {
 	GENERATED_BODY()
+
+	FSpatialLaunchConfigDescription()
+		: Template(TEXT("small"))
+		, World()
+		, Workers()
+	{
+
+	}
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Template"))
+	FString Template;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "World"))
+	FWorldLaunchSection World;
 
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Workers"))
 	TArray<FWorkerTypeLaunchSection> Workers;
@@ -126,6 +172,4 @@ public:
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
 			: GeneratedSchemaOutputFolder.Path;
 	}
-	
-	virtual FString ToString();
 };

@@ -14,6 +14,7 @@
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
 
+#include "SpatialConstants.h"
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorSettings.h"
 
@@ -439,41 +440,29 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 
 	// Populate json file for launch config
 	Writer->WriteObjectStart(); // Start of json
-		Writer->WriteValue(TEXT("template"), TEXT("small")); // Template section
+		Writer->WriteValue(TEXT("template"), LaunchConfigDescription.Template); // Template section
 		Writer->WriteObjectStart(TEXT("world")); // World section begin
 			Writer->WriteObjectStart(TEXT("dimensions"));
-				Writer->WriteValue(TEXT("x_meters"), 2000);
-				Writer->WriteValue(TEXT("z_meters"), 2000);
+				Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);
+				Writer->WriteValue(TEXT("z_meters"), LaunchConfigDescription.World.Dimensions.Y);
 			Writer->WriteObjectEnd();
-			Writer->WriteValue(TEXT("chunk_edge_length_meters"), 50);
-			Writer->WriteValue(TEXT("streaming_query_interval"), 4);
+			Writer->WriteValue(TEXT("chunk_edge_length_meters"), LaunchConfigDescription.World.ChunkEdgeLenghtMeters);
+			Writer->WriteValue(TEXT("streaming_query_interval"), LaunchConfigDescription.World.StreamingQueryInterval);
 			Writer->WriteArrayStart(TEXT("legacy_flags"));
-				Writer->WriteObjectStart();
-					Writer->WriteValue(TEXT("name"), TEXT("streaming_query_diff"));
-					Writer->WriteValue(TEXT("value"), TEXT("true"));
-				Writer->WriteObjectEnd();
-				Writer->WriteObjectStart();
-					Writer->WriteValue(TEXT("name"), TEXT("bridge_qos_max_timeout"));
-					Writer->WriteValue(TEXT("value"), TEXT("0"));
-				Writer->WriteObjectEnd();
-				Writer->WriteObjectStart();
-					Writer->WriteValue(TEXT("name"), TEXT("bridge_soft_handover_enabled"));
-					Writer->WriteValue(TEXT("value"), TEXT("false"));
-				Writer->WriteObjectEnd();
-				Writer->WriteObjectStart();
-					Writer->WriteValue(TEXT("name"), TEXT("enable_chunk_interest"));
-					Writer->WriteValue(TEXT("value"), TEXT("false"));
-				Writer->WriteObjectEnd();
+			for (auto& Flag : LaunchConfigDescription.World.LegacyFlags)
+			{
+				WriteLegacyFlagSection(Writer, Flag.Key, Flag.Value);
+			}
 			Writer->WriteArrayEnd();
 			Writer->WriteObjectStart(TEXT("snapshots"));
-				Writer->WriteValue(TEXT("snapshot_write_period_seconds"), 0);
+				Writer->WriteValue(TEXT("snapshot_write_period_seconds"), LaunchConfigDescription.World.SnapshotWritePeriodSeconds);
 			Writer->WriteObjectEnd();
 		Writer->WriteObjectEnd(); // World section end
 		Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
 			Writer->WriteArrayStart("layer_configurations");
 			for (auto& Worker : LaunchConfigDescription.Workers)
 			{
-				if (Worker.WorkerTypeName == TEXT("UnrealClient"))
+				if (Worker.WorkerTypeName == SpatialConstants::ClientWorkerType)
 				{
 					continue;
 				}
@@ -496,6 +485,16 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '%s'. Perhaps the file is Read-Only?"), *LaunchConfigPath);
 		return false;
 	}
+
+	return true;
+}
+
+bool FSpatialGDKEditorToolbarModule::WriteLegacyFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const
+{
+	Writer->WriteObjectStart();
+		Writer->WriteValue(TEXT("name"), Key);
+		Writer->WriteValue(TEXT("value"), Value);
+	Writer->WriteObjectEnd();
 
 	return true;
 }

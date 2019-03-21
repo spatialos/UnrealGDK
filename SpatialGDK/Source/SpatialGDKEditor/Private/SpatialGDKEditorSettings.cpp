@@ -43,30 +43,3 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
 }
-
-FString USpatialGDKEditorSettings::ToString()
-{
-	TArray<FStringFormatArg> Args;
-	Args.Add(SpatialOSDirectory.Path);
-	Args.Add(bDeleteDynamicEntities);
-	Args.Add(bGenerateDefaultLaunchConfig);
-	Args.Add(SpatialOSLaunchConfig.FilePath);
-	Args.Add(bStopSpatialOnExit);
-	Args.Add(SpatialOSSnapshotPath.Path);
-	Args.Add(SpatialOSSnapshotFile);
-	Args.Add(GeneratedSchemaOutputFolder.Path);
-	Args.Add(bGeneratePlaceholderEntitiesInSnapshot);
-
-	return FString::Format(TEXT(
-		"ProjectRootFolder={0}, "
-		"bDeleteDynamicEntities={1}, "
-		"bGenerateDefaultLaunchConfig={2}, "
-		"SpatialOSLaunchArgument={3}, "
-		"bStopSpatialOnExit={4}, "
-		"SpatialOSSnapshotPath={5}, "
-		"SpatialOSSnapshotFile={6}, "
-		"GeneratedSchemaOutputFolder={7}, "
-		"bGeneratePlaceholderEntitiesInSnapshot={8}")
-		, Args);
-}
-
