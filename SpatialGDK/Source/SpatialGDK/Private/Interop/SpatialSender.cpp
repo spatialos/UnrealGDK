@@ -101,8 +101,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	//UE_LOG(LogSpatialSender, Warning, TEXT("Attempting to Creating %s on worker %s"), *Actor->GetName(), *NetDriver->GetWorld()->GetGameInstance()->GetSpatialWorkerType());
-
 	WorkerRequirementSet AuthoritativeWorkerType = ServersOnly;
 	if (!Class->WorkerAssociation.IsEmpty())
 	{
