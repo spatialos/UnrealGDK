@@ -20,7 +20,7 @@
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/RepLayoutUtils.h"
-#include "Utils/ErrorCodes.h"
+#include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
@@ -1271,12 +1271,7 @@ void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealOb
 
 void USpatialReceiver::OnDisconnect(Worker_DisconnectOp& Op)
 {
-	FRemappedNetworkFailure FailureType = ENetworkFailure::FromWorkerStatusCode(Op.connection_status_code);
-	if (FailureType.IsSet())
-	{
-		GEngine->BroadcastNetworkFailure(GetWorld(), NetDriver, FailureType.GetValue(), UTF8_TO_TCHAR(Op.reason));
-	}
-	NetDriver->HandleOnDisconnected(UTF8_TO_TCHAR(Op.reason));
+	GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver, ENetworkFailure::FromDisconnectOpStatusCode(Op.connection_status_code), UTF8_TO_TCHAR(Op.reason));
 }
 
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)

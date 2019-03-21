@@ -90,13 +90,10 @@ public:
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	void HandleOnConnected();
-	void HandleOnDisconnected(const FString& Reason);
 	void HandleOnConnectionFailed(const FString& Reason);
 
 	// Invoked when this worker has successfully connected to SpatialOS
 	FOnConnectedEvent OnConnected;
-	// Invoked when this worker has disconnected from SpatialOS, both when initiated by this worker and when disconnected by the runtime
-	FOnDisconnectedEvent OnDisconnected;
 	// Invoked when this worker fails to initiate a connection to SpatialOS
 	FOnConnectionFailedEvent OnConnectionFailed;
 

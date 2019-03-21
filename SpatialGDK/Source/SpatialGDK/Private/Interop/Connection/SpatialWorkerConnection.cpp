@@ -466,7 +466,6 @@ void USpatialWorkerConnection::OnConnectionFailure()
 			{
 				UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
 				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::PendingConnectionFailure, *ErrorMessage);
-				GetSpatialNetDriverChecked()->HandleOnConnectionFailed(ErrorMessage);
 			});
 			break;
 		}
