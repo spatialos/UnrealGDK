@@ -9,6 +9,7 @@
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonSerializer.h"
 #include "Misc/FileHelper.h"
+#include "..\Public\SpatialGDKEditorCloudLauncherSettings.h"
 
 USpatialGDKEditorCloudLauncherSettings::USpatialGDKEditorCloudLauncherSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -139,4 +140,23 @@ void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerLaunchConfigPath(
 void USpatialGDKEditorCloudLauncherSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 {
 	NumberOfSimulatedPlayers = Number;
+}
+
+bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValidSinceLastCheck() const
+{
+	return
+		ProjectNameIsValid &&
+		AssemblyNameIsValid &&
+		PrimaryDeploymentNameIsValid &&
+		!PrimaryLaunchConfigPath.FilePath.IsEmpty() &&
+		!SnapshotPath.FilePath.IsEmpty();
+}
+
+bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValidWithCheck()
+{
+	ValidateAssemblyName();
+	ValidateDeploymentName();
+	ValidateProjectName();
+
+	return IsDeploymentConfigurationValidSinceLastCheck();
 }

@@ -350,7 +350,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									[
 										SNew(SButton)
 										.HAlign(HAlign_Center)
-										.Text(FText::FromString(FString(TEXT("Launch Simulated Players Deployment"))))
+										.Text(FText::FromString(FString(TEXT("Launch Deployment"))))
 										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked)
 										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::IsDeploymentConfigurationValid)
 									]
@@ -421,6 +421,19 @@ void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerLaunchConfigPathPick
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 {
+	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
+
+	if (!SpatialGDKCloudLauncherSettings->IsDeploymentConfigurationValidWithCheck()) {
+		FNotificationInfo Info(FText::FromString(TEXT("Deployment configuration is not valid.")));
+		Info.bUseSuccessFailIcons = true;
+		Info.ExpireDuration = 3.0f;
+
+		TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+		NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+
+		return FReply::Handled();
+	}
+
 	if (TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorSharedPtr = SpatialGDKEditorPtr.Pin()) {
 		FNotificationInfo Info(FText::FromString(TEXT("Starting simulated player deployment...")));
 		Info.bUseSuccessFailIcons = true;
@@ -442,6 +455,14 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 		);
 		return FReply::Handled();
 	}
+
+	FNotificationInfo Info(FText::FromString(TEXT("Couldn't launch the deployments.")));
+	Info.bUseSuccessFailIcons = true;
+	Info.ExpireDuration = 3.0f;
+
+	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+	NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+
 	return FReply::Handled();
 }
 

@@ -130,7 +130,7 @@ public:
 
 	bool IsDeploymentConfigurationValidSinceLastCheck() const;
 
-	bool IsDeploymentConfigurationValidWithCheck() const;
+	bool IsDeploymentConfigurationValidWithCheck();
 
 	virtual FString ToString();
 };
