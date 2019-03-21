@@ -165,6 +165,7 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
 		UserCallback->OnAuthorityChange(Op->authority_change);
+		StaticComponentView->OnAuthorityChange(Op->authority_change);
 		break;
 	case WORKER_OP_TYPE_COMMAND_REQUEST:
 		UserCallback->OnCommandRequest(Op->command_request);
