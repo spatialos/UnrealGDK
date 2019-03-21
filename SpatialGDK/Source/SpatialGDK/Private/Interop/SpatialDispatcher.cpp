@@ -142,14 +142,6 @@ bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) const
 
 void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 {
-	auto TryUserCallback = [&](Worker_ComponentId ComponentId, TFunction<void(UOpCallbackTemplate*)>& OpCallback)
-	{
-		if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(ComponentId))
-		{
-			UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
-			OpCallback(UserCallback);
-		}
-	};
 	Worker_ComponentId ComponentId = GetComponentId(Op);
 	check(ComponentId != SpatialConstants::INVALID_COMPONENT_ID);
 
