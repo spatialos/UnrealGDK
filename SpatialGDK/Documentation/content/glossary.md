@@ -236,7 +236,7 @@ This means that an [entity](#spatialos-entity) won’t necessarily stay on the s
 >
 > [Configuring load balancing](https://docs.improbable.io/reference/latest/shared/worker-configuration/loadbalancer-config)
 
-### Network Operations
+### Network operations
 
 Also known as "ops".
 
