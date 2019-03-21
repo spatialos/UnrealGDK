@@ -505,10 +505,19 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 
 	// Find the handover properties.
 	uint16 HandoverDataHandle = 1;
-	VisitAllProperties(TypeNode, [&HandoverDataHandle](TSharedPtr<FUnrealProperty> PropertyInfo)
+	VisitAllProperties(TypeNode, [&HandoverDataHandle, &Class](TSharedPtr<FUnrealProperty> PropertyInfo)
 	{
 		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
 		{
+			if (UStructProperty* StructProp = Cast<UStructProperty>(PropertyInfo->Property))
+			{
+				if (StructProp->Struct->StructFlags & STRUCT_NetDeltaSerializeNative)
+				{
+					// Warn about delta serialization
+					UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s in %s uses delta serialization. " \
+						"This is not supported and standard serialization will be used instead."), *PropertyInfo->Property->GetName(), *Class->GetName());
+				}
+			}
 			PropertyInfo->HandoverData = MakeShared<FUnrealHandoverData>();
 			PropertyInfo->HandoverData->Handle = HandoverDataHandle++;
 		}
@@ -629,4 +638,36 @@ TArray<TSharedPtr<FUnrealProperty>> GetPropertyChain(TSharedPtr<FUnrealProperty>
 	// As we started at the leaf property and worked our way up, we need to reverse the list at the end.
 	Algo::Reverse(OutputChain);
 	return OutputChain;
+}
+
+FSubobjectMap GetAllSubobjects(TSharedPtr<FUnrealType> TypeInfo)
+{
+	FSubobjectMap Subobjects;
+
+	TSet<UObject*> SeenComponents;
+	uint32 CurrentOffset = 1;
+
+	for (auto& PropertyPair : TypeInfo->Properties)
+	{
+		UProperty* Property = PropertyPair.Key;
+		TSharedPtr<FUnrealType>& PropertyTypeInfo = PropertyPair.Value->Type;
+
+		if (Property->IsA<UObjectProperty>() && PropertyTypeInfo.IsValid())
+		{
+			UObject* Value = PropertyTypeInfo->Object;
+
+			if (Value != nullptr && !Value->IsEditorOnly())
+			{
+				if (!SeenComponents.Contains(Value))
+				{
+					SeenComponents.Add(Value);
+					Subobjects.Add(CurrentOffset, PropertyTypeInfo);
+				}
+
+				CurrentOffset++;
+			}
+		}
+	}
+
+	return Subobjects;
 }

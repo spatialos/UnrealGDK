@@ -7,6 +7,7 @@
 #include "Net/RepLayout.h"
 #include "UObject/TextProperty.h"
 
+#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "Interop/SpatialConditionMapFilter.h"
 #include "SpatialConstants.h"
@@ -119,38 +120,28 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 			if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
 			{
 				UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
-				bool bProcessedArray = false;
 
-				// Check if this is a FastArraySerializer array so we can simulate the FFastArraySerializerItem PreReplicatedRemove and PostReplicatedAdd calls.
-				if (UStructProperty* ParentStruct = Cast<UStructProperty>(Parent.Property))
+				// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
+				if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
 				{
-					if (ParentStruct->Struct->IsChildOf(FFastArraySerializer::StaticStruct()))
+					TArray<uint8> ValueData = GetBytesFromSchema(ComponentObject, FieldId);
+					int64 CountBits = ValueData.Num() * 8;
+					TSet<FUnrealObjectRef> NewUnresolvedRefs;
+					FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
+
+					FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct);
+
+					if (NewUnresolvedRefs.Num() > 0)
 					{
-						// Read array into a temporary array so the appropriate remove/add operations can be processed
-						FScriptArray TempArray;
-						// Populate array with existing data so compare will incorporate non-replicated entities
-						Cmd.Property->CopyCompleteValue((void*)&TempArray, Data);
-
-						ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, (uint8*)&TempArray, SwappedCmd.Offset, Cmd.ParentIndex);
-						bProcessedArray = true;
-
-						if (!Cmd.Property->Identical((void*)&TempArray, Data))
-						{
-							FSpatialNetDeltaSerializeInfo Parms;
-							Parms.NewArray = &TempArray;
-							Parms.ArrayProperty = ArrayProperty;
-
-							UScriptStruct::ICppStructOps* CppStructOps = ParentStruct->Struct->GetCppStructOps();
-							check(CppStructOps);
-
-							// This call resolves into FFastArraySerializer::SpatialFastArrayDeltaSerialize where our custom FFastArraySerializerItem
-							// callback are triggered.
-							CppStructOps->NetDeltaSerialize(Parms, ParentStruct->ContainerPtrToValuePtr<void>(Object, Parent.ArrayIndex));
-						}
+						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
+						UnresolvedRefs.Append(NewUnresolvedRefs);
+					}
+					else if (RootObjectReferencesMap.Find(FieldId))
+					{
+						RootObjectReferencesMap.Remove(FieldId);
 					}
 				}
-
-				if (!bProcessedArray)
+				else
 				{
 					ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, Cmd.ParentIndex);
 				}
@@ -314,10 +305,11 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 				if (ObjectValue == nullptr)
 				{
 					// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
-					// it's part of a streaming level that hasn't been streamed in. In this case, queue the actor based on it's level.
+					// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
+					// So we do the same.
 					FString FullPath;
 					improbable::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
-					UE_LOG(LogSpatialComponentReader, Warning, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
+					UE_LOG(LogSpatialComponentReader, Verbose, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
 						*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
 
 					ObjectProperty->SetObjectPropertyValue(Data, nullptr);

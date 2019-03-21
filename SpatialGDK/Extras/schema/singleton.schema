@@ -2,5 +2,5 @@
 package unreal;
 
 component Singleton {
-    id = 100003;
+    id = 9997;
 }

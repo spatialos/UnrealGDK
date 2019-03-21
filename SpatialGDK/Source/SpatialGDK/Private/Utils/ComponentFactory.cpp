@@ -7,23 +7,25 @@
 #include "UObject/TextProperty.h"
 
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Schema/Interest.h"
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/InterestFactory.h"
 
 namespace improbable
 {
 
-ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, USpatialNetDriver* InNetDriver)
+ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, bool bInterestDirty, USpatialNetDriver* InNetDriver)
 	: NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 	, ClassInfoManager(InNetDriver->ClassInfoManager)
 	, PendingRepUnresolvedObjectsMap(RepUnresolvedObjectsMap)
 	, PendingHandoverUnresolvedObjectsMap(HandoverUnresolvedObjectsMap)
-	, bInterestHasChanged(false)
+	, bInterestHasChanged(bInterestDirty)
 { }
 
 bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject* Object, const FRepChangeState& Changes, ESchemaComponentType PropertyGroup, bool bIsInitialData, TArray<Schema_FieldId>* ClearedIds /*= nullptr*/)
@@ -45,7 +47,29 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 				const uint8* Data = (uint8*)Object + Cmd.Offset;
 				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 
-				AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
+				bool bProcessedFastArrayProperty = false;
+
+				if (Cmd.Type == ERepLayoutCmdType::DynamicArray)
+				{
+					UArrayProperty* ArrayProperty = Cast<UArrayProperty>(Cmd.Property);
+
+					// Check if this is a FastArraySerializer array and if so, call our custom delta serialization
+					if (UScriptStruct* NetDeltaStruct = GetFastArraySerializerProperty(ArrayProperty))
+					{
+						FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
+
+						FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct);
+
+						AddBytesToSchema(ComponentObject, HandleIterator.Handle, ValueDataWriter);
+
+						bProcessedFastArrayProperty = true;
+					}
+				}
+
+				if (!bProcessedFastArrayProperty)
+				{
+					AddProperty(ComponentObject, HandleIterator.Handle, Cmd.Property, Data, UnresolvedObjects, ClearedIds);
+				}
 
 				if (UnresolvedObjects.Num() == 0)
 				{
@@ -87,7 +111,7 @@ bool ComponentFactory::FillHandoverSchemaObject(Schema_Object* ComponentObject, 
 		const FHandoverPropertyInfo& PropertyInfo = Info.HandoverProperties[ChangedHandle - 1];
 
 		const uint8* Data = (uint8*)Object + PropertyInfo.Offset;
-		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+		FUnresolvedObjectsSet UnresolvedObjects;
 
 		AddProperty(ComponentObject, ChangedHandle, PropertyInfo.Property, Data, UnresolvedObjects, ClearedIds);
 
@@ -188,6 +212,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 		FUnrealObjectRef ObjectRef = FUnrealObjectRef::NULL_OBJECT_REF;
 
 		UObject* ObjectValue = ObjectProperty->GetObjectPropertyValue(Data);
+
 		if (ObjectValue != nullptr && !ObjectValue->IsPendingKill())
 		{
 			FNetworkGUID NetGUID;
@@ -201,10 +226,15 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 					{
 						NetGUID = PackageMap->ResolveStablyNamedObject(ObjectValue);
 					}
+					else
+					{
+						NetGUID = PackageMap->TryResolveObjectAsEntity(ObjectValue);
+					}
 				}
 			}
 
-			if (NetGUID.IsValid())
+			// The secondary part of the check is needed if we couldn't assign an entity id (e.g. ran out of entity ids)
+			if (NetGUID.IsValid() || (ObjectValue->IsSupportedForNetworking() && !ObjectValue->IsFullNameStableForNetworking()))
 			{
 				ObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
 			}
@@ -302,12 +332,6 @@ TArray<Worker_ComponentData> ComponentFactory::CreateComponentDatas(UObject* Obj
 		ComponentDatas.Add(CreateHandoverComponentData(Info.SchemaComponents[SCHEMA_Handover], Object, Info, HandoverChangeState));
 	}
 
-	// Only support Interest for Actors for now.
-	if (Object->IsA<AActor>())
-	{
-		ComponentDatas.Add(CreateInterestComponentData(Object, Info));
-	}
-
 	return ComponentDatas;
 }
 
@@ -385,10 +409,10 @@ TArray<Worker_ComponentUpdate> ComponentFactory::CreateComponentUpdates(UObject*
 	}
 
 	// Only support Interest for Actors for now.
-	if (bInterestHasChanged && Object->IsA<AActor>())
+	if (Object->IsA<AActor>() && bInterestHasChanged)
 	{
-		Worker_ComponentUpdate InterestUpdate = CreateInterestComponentUpdate(Object, Info);
-		ComponentUpdates.Add(InterestUpdate);
+		InterestFactory InterestUpdateFactory(Cast<AActor>(Object), Info, NetDriver);
+		ComponentUpdates.Add(InterestUpdateFactory.CreateInterestUpdate());
 	}
 
 	return ComponentUpdates;
@@ -444,70 +468,4 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	return ComponentUpdate;
 }
 
-Worker_ComponentData ComponentFactory::CreateInterestComponentData(UObject* Object, const FClassInfo& Info)
-{
-	return CreateInterestComponent(Object, Info).CreateInterestData();
-}
-
-Worker_ComponentUpdate ComponentFactory::CreateInterestComponentUpdate(UObject* Object, const FClassInfo& Info)
-{
-	return CreateInterestComponent(Object, Info).CreateInterestUpdate();
-}
-
-improbable::Interest ComponentFactory::CreateInterestComponent(UObject* Object, const FClassInfo& Info)
-{
-	// Create a new component interest containing a query for every interested Object
-	improbable::ComponentInterest ComponentInterest;
-
-	for (const FInterestPropertyInfo& PropertyInfo : Info.InterestProperties)
-	{
-		uint8* Data = (uint8*)Object + PropertyInfo.Offset;
-		if (UObjectPropertyBase* ObjectProperty = Cast<UObjectPropertyBase>(PropertyInfo.Property))
-		{
-			AddObjectToComponentInterest(Object, ObjectProperty, Data, ComponentInterest);
-		}
-		else if (UArrayProperty* ArrayProperty = Cast<UArrayProperty>(PropertyInfo.Property))
-		{
-			FScriptArrayHelper ArrayHelper(ArrayProperty, Data);
-			for (int i = 0; i < ArrayHelper.Num(); i++)
-			{
-				AddObjectToComponentInterest(Object, Cast<UObjectPropertyBase>(ArrayProperty->Inner), ArrayHelper.GetRawPtr(i), ComponentInterest);
-			}
-		}
-		else
-		{
-			checkNoEntry();
-		}
-	}
-
-	improbable::Interest Interest;
-	Interest.ComponentInterest.Add(SpatialConstants::POSITION_COMPONENT_ID, ComponentInterest);
-
-	return Interest;
-}
-
-void ComponentFactory::AddObjectToComponentInterest(UObject* Object, UObjectPropertyBase* Property, uint8* Data, improbable::ComponentInterest& ComponentInterest)
-{
-	UObject* ObjectOfInterest = Property->GetObjectPropertyValue(Data);
-
-	if (ObjectOfInterest == nullptr)
-	{
-		return;
-	}
-
-	improbable::ComponentInterest::Query NewQuery;
-
-	FUnrealObjectRef UnrealObjectRef = PackageMap->GetUnrealObjectRefFromObject(ObjectOfInterest);
-
-	check(UnrealObjectRef != FUnrealObjectRef::NULL_OBJECT_REF);
-	if (UnrealObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-	{
-		return;
-	}
-
-	NewQuery.Constraint.EntityIdConstraint = UnrealObjectRef.Entity;
-	NewQuery.FullSnapshotResult = true;
-
-	ComponentInterest.Queries.Add(NewQuery);
-}
 }

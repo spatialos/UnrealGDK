@@ -1,0 +1,11 @@
+agent_queue_id: trigger-pipelines
+description: Build Unreal GDK
+github:
+  branch_configuration: []
+  default_branch: "master"
+  pull_request_branch_filter_configuration: []
+teams:
+- name: Everyone
+  permission: BUILD_AND_READ
+- name: gbu/develop/unreal
+  permission: MANAGE_BUILD_AND_READ

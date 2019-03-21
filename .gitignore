@@ -86,3 +86,5 @@ Scripts/spatialos.*.build.json
 !SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Build/
 
 _ReSharper.caches
+
+**/.DS_Store

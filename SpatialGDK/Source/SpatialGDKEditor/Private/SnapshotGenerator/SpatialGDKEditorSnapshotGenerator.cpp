@@ -14,7 +14,6 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
 #include "Utils/ComponentFactory.h"
-#include "Utils/EntityRegistry.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaUtils.h"
@@ -202,7 +201,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 
 // This function is not in use.
 // Set up classes needed for Startup Actor creation
-void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialClassInfoManager*& ClassInfoManager, UEntityRegistry*& EntityRegistry, UWorld* World)
+void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialClassInfoManager*& ClassInfoManager, UWorld* World)
 {
 	NetDriver = NewObject<USpatialNetDriver>();
 	NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
@@ -213,9 +212,6 @@ void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnect
 	ClassInfoManager->Init(NetDriver);
 
 	NetDriver->ClassInfoManager = ClassInfoManager;
-
-	EntityRegistry = NewObject<UEntityRegistry>();
-	NetDriver->EntityRegistry = EntityRegistry;
 
 	NetConnection = NewObject<USpatialNetConnection>();
 	NetConnection->Driver = NetDriver;
@@ -253,19 +249,15 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	// Created just to satisfy the ComponentFactory constructor
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
-	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
+	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, false, NetDriver);
 
 	// Create component data from initial state of Actor (which is the state the Actor is in before running the level)
 	TArray<Worker_ComponentData> ComponentData = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 
 	// Add Actor RPCs to entity
-	for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
-	{
-		if (Info.SchemaComponents[RPCType] != 0)
-		{
-			ComponentData.Add(ComponentFactory::CreateEmptyComponentData(Info.SchemaComponents[RPCType]));
-		}
-	}
+	ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID));
+	ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
+	ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
 	// Visit each supported subobject and create component data for initial state of each subobject
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
@@ -281,15 +273,6 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 
 			// Create component data for initial state of subobject
 			ComponentData.Append(DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges));
-
-			// Add subobject RPCs to entity
-			for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
-			{
-				if (SubobjectInfo.SchemaComponents[RPCType] != 0)
-				{
-					ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo.SchemaComponents[RPCType]));
-				}
-			}
 		}
 	}
 
@@ -322,7 +305,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 			return;
 		}
 
-		if (Type == SCHEMA_ClientRPC)
+		if (Type == SCHEMA_ClientReliableRPC)
 		{
 			// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
 			return;
@@ -351,7 +334,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 				return;
 			}
 
-			if (Type == SCHEMA_ClientRPC)
+			if (Type == SCHEMA_ClientReliableRPC)
 			{
 				// No write attribute for RPC_Client since a Startup Actor will have no owner on level start
 				return;
@@ -370,7 +353,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	Components.Add(improbable::UnrealMetadata({}, {}, ActorClass->GetPathName()).CreateUnrealMetadataData());
+	Components.Add(improbable::UnrealMetadata({}, {}, ActorClass->GetPathName(), Actor->bNetLoadOnClient).CreateUnrealMetadataData());
 	Components.Add(improbable::Interest().CreateInterestData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, ClassInfoManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
@@ -396,7 +379,7 @@ bool ProcessSupportedActors(const TSet<AActor*>& Actors, USpatialClassInfoManage
 			continue;
 		}
 
-		if (Actor->IsEditorOnly() || Actor->IsPendingKill() || !ClassInfoManager->IsSupportedClass(ActorClass) || !Actor->GetIsReplicated())
+		if (Actor->IsEditorOnly() || Actor->IsPendingKill() || !ClassInfoManager->IsSupportedClass(ActorClass->GetPathName()) || !Actor->GetIsReplicated())
 		{
 			continue;
 		}
@@ -419,9 +402,8 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	USpatialNetConnection* NetConnection = nullptr;
 	USpatialPackageMapClient* PackageMap = nullptr;
 	USpatialClassInfoManager* ClassInfoManager = nullptr;
-	UEntityRegistry* EntityRegistry = nullptr;
 
-	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, ClassInfoManager, EntityRegistry, World);
+	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, ClassInfoManager, World);
 
 	// Create set of world actors (World actor iterator returns same actor multiple times in some circumstances)
 	TSet<AActor*> WorldActors;
@@ -433,9 +415,8 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	bool bSuccess = true;
 
 	// Need to add all actors in the world to the package map so they have assigned UnrealObjRefs for the ComponentFactory to use
-	bSuccess &= ProcessSupportedActors(WorldActors, ClassInfoManager, [&PackageMap, &EntityRegistry, &ClassInfoManager](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(WorldActors, ClassInfoManager, [&PackageMap, &ClassInfoManager](AActor* Actor, Worker_EntityId EntityId)
 	{
-		EntityRegistry->AddToRegistry(EntityId, Actor);
 		PackageMap->ResolveEntityActor(Actor, EntityId);
 		return true;
 	});
@@ -485,10 +466,14 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 		return false;
 	}
 
-	if (!CreatePlaceholders(OutputStream))
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	if (SpatialGDKSettings->bGeneratePlaceholderEntitiesInSnapshot)
 	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		return false;
+		if (!CreatePlaceholders(OutputStream))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+			return false;
+		}
 	}
 
 	return true;
@@ -497,7 +482,7 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 bool SpatialGDKGenerateSnapshot(UWorld* World, FString SnapshotFilename)
 {
 	const USpatialGDKEditorSettings* Settings = GetDefault<USpatialGDKEditorSettings>();
-	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotPath(), SnapshotFilename);
+	FString SavePath = FPaths::Combine(Settings->GetSpatialOSSnapshotFolderPath(), SnapshotFilename);
 	if (!ValidateAndCreateSnapshotGenerationPath(SavePath))
 	{
 		return false;

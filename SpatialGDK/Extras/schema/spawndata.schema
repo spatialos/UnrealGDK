@@ -13,7 +13,7 @@ component SpawnData {
     // When Unreal replicates actors for the first time, it serializes their location, rotation,
     // scale, and velocity, regardless of whether the actor replicates movement. In our case,
     // location is represented by Spatial position, and this component contains the rest.
-    id = 100001;
+    id = 9999;
     improbable.Vector3f location = 1;
     Rotator rotation = 2;
     improbable.Vector3f scale = 3;

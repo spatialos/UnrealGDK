@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Feature list
 
 The SpatialOS GDK for Unreal works by approximating SpatialOS entities to Unreal Actors. Any properties and commands within an entity’s component work in the way properties and RPCs work when applied to Actors. (You can find out more about SpatialOS [entities, components and properties](https://docs.improbable.io/reference/latest/shared/concepts/entities) in the SpatialOS documentation.)
