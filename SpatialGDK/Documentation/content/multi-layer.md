@@ -110,7 +110,7 @@ You could serialize and send a command response in your Unreal project code in t
 
 
 ```
-Worker_RequestId SendSomeCommandRequest(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId, uint32_t CommandId) {
+Worker_RequestId SendSomeCommandRequest(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandId) {
     Worker_CommandResponse Response = {};
     Response.component_id = ComponentId;
     Response.schema_type = Schema_CreateCommandResponse(ComponentId, CommandId);
