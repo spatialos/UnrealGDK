@@ -4,6 +4,7 @@
 
 #include "Async/Async.h"
 #include "Engine/WorldComposition.h"
+#include "UObject/StrongObjectPtr.h"
 
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
@@ -47,7 +48,7 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	TArray<ULevelStreaming*> LoadedLevels;
 	if (SpatialGDKSettings->bLoadStreamingLevelsWhenGeneratingSchema)
 	{
-		LoadedLevels = LoadAllStreamingLevels(GWorld);
+		//LoadedLevels = LoadAllStreamingLevels(GWorld);
 	}
 
 	PreProcessSchemaMap();
@@ -59,74 +60,105 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 	LoadDefaultGameModes();
 
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread,
-		[this, LoadedLevels]() {
+		[&, this, LoadedLevels]() {
 
 		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Begin Schema Gen for %d Levels"), LoadedLevels.Num());
 
-		if (LoadedLevels.Num() == 0)
+		bool bFoundAssetsToLoad = false;
+		TArray<FAssetData> Assets;
+
+		FFunctionGraphTask::CreateAndDispatchWhenReady([&]() {
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Finding Assets To Load"));
+			//FARFilter Filter;
+			////Filter.ClassNames.Add(UWorld::StaticClass()->GetFName());
+			//AssetRegistryModule.Get().GetAssets(Filter, Assets);
+
+			AssetRegistryModule.Get().GetAllAssets(Assets, true);
+
+			for (FAssetData Data : Assets)
+			{
+				FString IsLoaded = Data.IsAssetLoaded() ? TEXT("True") : TEXT("False");
+				FString InGamePackage = Data.PackagePath.ToString().StartsWith("/Game") ? TEXT("True") : TEXT("False");
+				FString HasGeneratedClass = Data.TagsAndValues.Contains("GeneratedClass") ? TEXT("True") : TEXT("False");
+
+				UE_LOG(LogTemp, Log, TEXT("Found %s, Loaded: %s, GeneratedClass: %s, InGamePackage: %s (%s)"),
+					*Data.GetFullName(), *IsLoaded, *HasGeneratedClass, *InGamePackage, *Data.PackagePath.ToString());
+			}
+
+			// Filter assets to blueprint classes that are not loaded.
+			Assets = Assets.FilterByPredicate([](FAssetData Data) {
+				return (!Data.IsAssetLoaded() && Data.TagsAndValues.Contains("GeneratedClass") && Data.PackagePath.ToString().StartsWith("/Game"));	
+			});
+
+			UE_LOG(LogTemp, Log, TEXT("---Filtered---"));
+
+
+			for (FAssetData Data : Assets)
+			{
+				UE_LOG(LogTemp, Log, TEXT("Filtered %s"), *Data.GetFullName());
+			}
+
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Found %d assets to load."), Assets.Num());
+			bFoundAssetsToLoad = true;
+		}, TStatId(), NULL, ENamedThreads::BackgroundThreadPriority);
+
+		while (!bFoundAssetsToLoad)
 		{
-			return SpatialGDKGenerateSchema();
+			FPlatformProcess::Sleep(0.1f);
 		}
 
-		for (ULevelStreaming* Level : LoadedLevels)
+		TArray<TStrongObjectPtr<UObject>> AssetPointers;
+
+		for (FAssetData Data : Assets)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("---------- Begin Schema Gen for %s"), *GetPathNameSafe(Level));
-
-			ULevelStreaming* LoadedLevel;
-
-			FGraphEventRef LoadLevelEvent = FFunctionGraphTask::CreateAndDispatchWhenReady([&, Level]() {
-				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Loading Level %s"), *GetPathNameSafe(Level));
-				LoadedLevel = EditorLevelUtils::AddLevelToWorld(GWorld, *Level->GetWorldAssetPackageName(), ULevelStreamingKismet::StaticClass());
-				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Loading Level %s: done"), *GetPathNameSafe(Level));
+			FFunctionGraphTask::CreateAndDispatchWhenReady([&, Data]() {
+				AssetPointers.Add(TStrongObjectPtr<UObject>(Data.GetAsset()));
+				UE_LOG(LogTemp, Log, TEXT("Loaded %s"), *Data.GetFullName());
 			}, TStatId(), NULL, ENamedThreads::GameThread);
-
-			while (LoadedLevel == nullptr)
-			{
-				FPlatformProcess::Sleep(0.1f);
-			}
-
-			bool bPreprocessed = false;
-
-			FFunctionGraphTask::CreateAndDispatchWhenReady([&, Level]() {
-				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Preprocessing Map for Level %s"), *GetPathNameSafe(Level));
-				PreProcessSchemaMap();
-				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Preprocessing Map for level %s: done."), *GetPathNameSafe(Level));
-				bPreprocessed = true;
-			}, TStatId(), NULL, ENamedThreads::GameThread);
-
-			while (!bPreprocessed)
-			{
-				FPlatformProcess::Sleep(0.1f);
-			}
-
-			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Do Schema Gen for %s"), *GetPathNameSafe(Level));
-			
-			bool bResult = SpatialGDKGenerateSchema();
-			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Do Schema Gen for %s: done"), *GetPathNameSafe(Level));
-
-			bool LevelUnloaded = false;
-
-			FFunctionGraphTask::CreateAndDispatchWhenReady([&, LoadedLevel, Level]() {
-				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Unloading Level %s"), *GetPathNameSafe(Level));
-				EditorLevelUtils::RemoveLevelFromWorld(LoadedLevel->GetLoadedLevel());
-				UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Unloaded level %s: done."), *GetPathNameSafe(Level));
-				LevelUnloaded = true;
-			}, TStatId(), NULL, ENamedThreads::GameThread);
-
-			while (!LevelUnloaded)
-			{
-				FPlatformProcess::Sleep(0.1f);
-			}
-
-			if (!bResult) {
-				return false;
-			}
-
-			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("---------- End Schema Gen for %s"), *GetPathNameSafe(Level));
 		}
 
-		return true;
+		while (AssetPointers.Num() < Assets.Num())
+		{
+			FPlatformProcess::Sleep(0.1f);
+		}
+
+		bool bPreprocessed = false;
+
+		FFunctionGraphTask::CreateAndDispatchWhenReady([&]() {
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Preprocessing Map"));
+			PreProcessSchemaMap();
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Preprocessing Map: done."));
+			bPreprocessed = true;
+		}, TStatId(), NULL, ENamedThreads::GameThread);
+
+		while (!bPreprocessed)
+		{
+			FPlatformProcess::Sleep(0.1f);
+		}
+
+		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Do Schema Gen"));
+		bool bResult = SpatialGDKGenerateSchema();
+		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Do Schema Gen: done"));
+
+		bool bGarbageCollectionFinished = false;
+		AssetPointers.Empty();
+
+		FFunctionGraphTask::CreateAndDispatchWhenReady([&]() {
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Triggering GC"));
+			CollectGarbage(RF_NoFlags);
+			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Triggering GC: done."));
+			bGarbageCollectionFinished = true;
+		}, TStatId(), NULL, ENamedThreads::GameThread);
+
+		while (!bGarbageCollectionFinished)
+		{
+			FPlatformProcess::Sleep(0.1f);
+		}
+
+		return bResult;
 	},
 		[this, bCachedSpatialNetworking, ErroredBlueprints, SuccessCallback, FailureCallback]()
 	{
@@ -204,6 +236,7 @@ TArray<ULevelStreaming*> FSpatialGDKEditor::LoadAllStreamingLevels(UWorld* World
 
 		for (ULevelStreaming* Tile : StreamingTiles)
 		{
+			UE_LOG(LogSpatialGDKEditor, Display, TEXT("Get Deps for %s"), *GetPathNameSafe(Tile));
 			AssetRegistryModule.Get().GetDependencies(Tile->GetWorldAssetPackageFName(), StreamingDependencies);
 		}
 
@@ -227,10 +260,13 @@ TArray<ULevelStreaming*> FSpatialGDKEditor::LoadAllStreamingLevels(UWorld* World
 				UE_LOG(LogSpatialGDKEditor, Display, TEXT("Loaded Asset %s"), *GetNameSafe(Asset));
 			}
 
-			/*for (TPair<FName, FString> KV : Data.TagsAndValues.GetMap())
+			for (TPair<FName, FString> KV : Data.TagsAndValues.GetMap())
 			{
-				UE_LOG(LogSpatialGDKEditor, Display, TEXT("-  %s = %s"), *KV.Key.ToString(), *KV.Value);
-			}*/
+				if (KV.Key != "FiBData")
+				{
+					UE_LOG(LogSpatialGDKEditor, Display, TEXT("-  %s = %s"), *KV.Key.ToString(), *KV.Value);
+				}
+			}
 		}
 	}
 
