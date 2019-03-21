@@ -321,7 +321,6 @@ void USpatialNetDriver::OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningW
 	{
 		if (GlobalStateManager->HasAuthority())
 		{
-			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Gained authroity over the GSM on %"), *GetWorld()->GetGameInstance()->GetSpatialWorkerType());
 			for (auto Actor : LoadedLevel->Actors)
 			{
 				if (Actor->GetIsReplicated())
