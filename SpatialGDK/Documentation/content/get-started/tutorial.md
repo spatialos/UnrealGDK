@@ -49,7 +49,7 @@ The GDK's [default branch (GitHub documentation)](https://help.github.com/en/art
 > **Note:**  You need to ensure that the root folder of the Unreal GDK repository is called `UnrealGDK` so its path is: `UnrealGDKThirdPersonShooter\Game\Plugins\UnrealGDK\`.
 
 <br/>
-### Build Dependencies 
+### Build dependencies 
 
 In this step, you're going to build the Unreal GDK's dependencies.
 
