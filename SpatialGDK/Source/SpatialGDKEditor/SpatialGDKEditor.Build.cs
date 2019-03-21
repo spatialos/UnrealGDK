@@ -15,7 +15,8 @@ public class SpatialGDKEditor : ModuleRules
 				"CoreUObject",
 				"Engine",
  				"EngineSettings",
-				"SpatialGDK",
+                "Json",
+                "SpatialGDK",
 				"UnrealEd"
 			});
 

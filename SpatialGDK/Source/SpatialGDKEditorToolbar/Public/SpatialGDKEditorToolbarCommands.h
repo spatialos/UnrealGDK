@@ -25,4 +25,5 @@ public:
 	TSharedPtr<FUICommandInfo> StartSpatialOSStackAction;
 	TSharedPtr<FUICommandInfo> StopSpatialOSStackAction;
 	TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
+	TSharedPtr<FUICommandInfo> OpenSimulatedPlayerConfigurationWindowAction;
 };

@@ -16,10 +16,14 @@ public:
 
 	void GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
+	void LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
+	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 
 private:
 	bool bSchemaGeneratorRunning;
 	TFuture<bool> SchemaGeneratorResult;
+	TFuture<bool> LaunchCloudResult;
+	TFuture<bool> StopCloudResult;
 };

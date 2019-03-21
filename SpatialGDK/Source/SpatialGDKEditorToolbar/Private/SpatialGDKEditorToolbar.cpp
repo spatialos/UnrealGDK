@@ -3,7 +3,6 @@
 #include "SpatialGDKEditorToolbar.h"
 #include "Async/Async.h"
 #include "Editor.h"
-#include "EditorStyleSet.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
@@ -20,6 +19,12 @@
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
 #include "Sound/SoundBase.h"
+
+#include "Widgets/DeclarativeSyntaxSupport.h"
+#include "EditorStyleSet.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Widgets/Layout/SBox.h"
+#include "SpatialGDKSimulatedPlayerDeployment.h"
 
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
@@ -155,6 +160,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked),
 		FCanExecuteAction());
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog),
+		FCanExecuteAction());
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -191,6 +201,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
 	}
 	Builder.EndSection();
 }
@@ -203,6 +214,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
 }
 
 void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
@@ -422,6 +434,31 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
 	}
+}
+
+void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
+{
+	// Create and open the cloud configuration dialog
+	SimulatedPlayerDeploymentWindowPtr = SNew(SWindow)
+		.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Simulated Player Deployment Configuration"))
+		.HasCloseButton(true)
+		.SupportsMaximize(false)
+		.SupportsMinimize(false)
+		.SizingRule(ESizingRule::Autosized);
+
+	SimulatedPlayerDeploymentWindowPtr->SetContent(
+		SNew(SBox)
+		.WidthOverride(700.0f)
+		[
+			SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
+			.SpatialGDKEditor(SpatialGDKEditorInstance)
+			.ParentWindow(SimulatedPlayerDeploymentWindowPtr)
+		]
+	);
+
+	TSharedPtr<SWindow> RootWindow = FGlobalTabmanager::Get()->GetRootWindow();
+
+	FSlateApplication::Get().AddModalWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef(), RootWindow);
 }
 
 bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const
