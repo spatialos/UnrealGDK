@@ -43,6 +43,7 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
 }
+<<<<<<< HEAD
 
 FString USpatialGDKEditorSettings::ToString()
 {
@@ -70,3 +71,5 @@ FString USpatialGDKEditorSettings::ToString()
 		, Args);
 }
 
+=======
+>>>>>>> Clean up of the launch config settings

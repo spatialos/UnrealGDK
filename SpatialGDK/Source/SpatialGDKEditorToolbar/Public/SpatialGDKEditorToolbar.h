@@ -66,6 +66,7 @@ private:
 	void ShowFailedNotification(const FString& NotificationText);
 
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
+	bool WriteLegacyFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const;
 	bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType) const;
 	bool WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, int32 Columns, int32 Rows, bool ManualWorkerConnectionOnly) const;
 
