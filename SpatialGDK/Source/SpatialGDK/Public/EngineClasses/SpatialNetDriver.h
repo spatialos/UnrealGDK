@@ -163,7 +163,6 @@ private:
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
 	FString SnapshotToLoad;
-	FString WorkerType;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
