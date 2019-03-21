@@ -48,12 +48,12 @@ There is a basic example in the _Examples_ section below. For more examples of h
 You set up your game to receive component updates through implementing callbacks for specified SpatialOS component IDs and operation types. The GDK detects your callbacks when it’s initialized and uses them for all received data relating to components with IDs in the range 1000 to 2000.
 To create callbacks, you need to create a class derived from the GDK `UOpCallbackTemplate` base class and implement `GetComponentId` and one or more of the callback methods. These callback methods are parameterized by the following network operation types:
 
-* `virtual void OnAddComponent(const Worker_AddComponentOp& op) {}`
-* `virtual void OnRemoveComponent(const Worker_RemoveComponentOp& op) {}`
-* `virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& op) {}`
-* `virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& op) {}`
-* `virtual void OnCommandRequest(const Worker_CommandRequestOp& op) {}`
-* `virtual void OnCommandResponse(const Worker_CommandResponseOp& op) {}`
+* `virtual void OnAddComponent(const Worker_AddComponentOp& Op) {}`
+* `virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) {}`
+* `virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) {}`
+* `virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) {}`
+* `virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) {}`
+* `virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) {}`
 
 
 The `UOpCallbackTemplate` base class contains protected references to the `UWorld` and GDK `StaticComponentView` enabling you to write more meaningful callbacks.
@@ -99,8 +99,8 @@ void SendSomeUpdate(Worker_EntityId TargetEntityId, Worker_ComponentId Component
     Worker_ComponentUpdate Update = {};
     Update.component_id = ComponentId;
     Update.schema_type = Schema_CreateComponentUpdate(ComponentId);
-    Schema_Object* fields_object = Schema_GetComponentUpdateFields(Update.schema_type);
-    Schema_AddInt32(fields_object, 1, ++UnrealCounter);
+    Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update.schema_type);
+    Schema_AddInt32(FieldsObject, 1, ++UnrealCounter);
     Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendComponentUpdate(TargetEntityId, &Update);
 }
 ```
@@ -114,10 +114,10 @@ Worker_RequestId SendSomeCommandRequest(Worker_EntityId TargetEntityId, Worker_C
     Worker_CommandResponse Response = {};
     Response.component_id = ComponentId;
     Response.schema_type = Schema_CreateCommandResponse(ComponentId, CommandId);
-    Schema_Object* response_object = Schema_GetCommandResponseObject(Response.schema_type);
-const char* text = "Hello World.";
-    Schema_AddBytes(response_object, 1, (const uint8_t*)text, sizeof(char) * strlen(text));
-Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendCommandResponse(TargetEntityId, &Response);
+    Schema_Object* ResponseObject = Schema_GetCommandResponseObject(Response.schema_type);
+    const char* Text = "Hello World.";
+    Schema_AddBytes(ResponseObject, 1, (const uint8_t*)Text, sizeof(char) * strlen(Text));
+    Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendCommandResponse(TargetEntityId, &Response);
 }
 ```
 
@@ -141,8 +141,8 @@ public:
         Worker_ComponentUpdate Update = {};
         Update.component_id = 1338;
         Update.schema_type = Schema_CreateComponentUpdate(1338);
-        Schema_Object* fields_object = Schema_GetComponentUpdateFields(Update.schema_type);
-        Schema_AddInt32(fields_object, 1, ++UnrealCounter);
+        Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update.schema_type);
+        Schema_AddInt32(FieldsObject, 1, ++UnrealCounter);
         Cast<USpatialNetDriver>(World->GetNetDriver())->Connection-> SendComponentUpdate(39, &Update);
     }
 
@@ -151,10 +151,10 @@ public:
         Worker_CommandResponse Response = {};
         Response.component_id = 1338;
         Response.schema_type = Schema_CreateCommandResponse(1338, 1);
-        Schema_Object* response_object = Schema_GetCommandResponseObject(Response.schema_type);
+        Schema_Object* ResponseObject = Schema_GetCommandResponseObject(Response.schema_type);
 
-        const char* text = "My Response text."; 
-        Schema_AddBytes(response_object, 1, (const uint8_t*)text, sizeof(char) * strlen(text));
+        const char* Text = "My Response text."; 
+        Schema_AddBytes(ResponseObject, 1, (const uint8_t*)Text, sizeof(char) * strlen(Text));
 
         // Spawn an actor using the World pointer
         // (where CubeClass is a Blueprint Actor UClass pointer)
