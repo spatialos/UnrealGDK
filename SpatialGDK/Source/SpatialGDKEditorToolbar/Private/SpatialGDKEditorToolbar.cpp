@@ -430,6 +430,13 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
+	if (SpatialGDKSettings != nullptr)
+	{
+		return false;
+	}
+
+	const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKSettings->LaunchConfigDesc;
+
 	// Populate json file for launch config
 	Writer->WriteObjectStart(); // Start of json
 		Writer->WriteValue(TEXT("template"), TEXT("small")); // Template section
@@ -464,27 +471,21 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 		Writer->WriteObjectEnd(); // World section end
 		Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
 			Writer->WriteArrayStart("layer_configurations");
-				if (SpatialGDKSettings != nullptr)
+			for (auto& Worker : LaunchConfigDescription.Workers)
+			{
+				if (Worker.WorkerTypeName == TEXT("UnrealClient"))
 				{
-					for (auto& Worker : SpatialGDKSettings->LaunchConfigDesc.Workers)
-					{
-						if (Worker.WorkerTypeName == TEXT("UnrealClient"))
-						{
-							continue;
-						}
-						WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.ManualWorkerConnectionOnly);
-					}
+					continue;
 				}
+				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.ManualWorkerConnectionOnly);
+			}
 			Writer->WriteArrayEnd();
 		Writer->WriteObjectEnd(); // Load balancing section end
 		Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
-			if (SpatialGDKSettings != nullptr)
-			{
-				for(auto& Worker : SpatialGDKSettings->LaunchConfigDesc.Workers)
-				{
-					WriteWorkerSection(Writer, Worker.WorkerTypeName);
-				}
-			}
+		for (auto& Worker : LaunchConfigDescription.Workers)
+		{
+			WriteWorkerSection(Writer, Worker.WorkerTypeName);
+		}
 		Writer->WriteArrayEnd(); // Worker section end
 	Writer->WriteObjectEnd(); // End of json
 
@@ -518,11 +519,11 @@ bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<
 bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, int32 Columns, int32 Rows, bool ManualWorkerConnectionOnly) const
 {
 	Writer->WriteObjectStart();
-		Writer->WriteValue(TEXT("layer"), WorkerType);
-			Writer->WriteObjectStart("rectangle_grid");
-				Writer->WriteValue(TEXT("cols"), Columns);
-				Writer->WriteValue(TEXT("rows"), Rows);
-			Writer->WriteObjectEnd();
+	Writer->WriteValue(TEXT("layer"), WorkerType);
+		Writer->WriteObjectStart("rectangle_grid");
+			Writer->WriteValue(TEXT("cols"), Columns);
+			Writer->WriteValue(TEXT("rows"), Rows);
+		Writer->WriteObjectEnd();
 		Writer->WriteObjectStart(TEXT("options"));
 			Writer->WriteValue(TEXT("manual_worker_connection_only"), ManualWorkerConnectionOnly);
 		Writer->WriteObjectEnd();
