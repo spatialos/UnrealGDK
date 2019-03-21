@@ -148,7 +148,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	WorkerRequirementSet ReadACL;
 	for (auto& Worker : SpatialGDKSettings->LaunchConfigDesc.Workers)
 	{
-		if (Worker.WorkerTypeName == TEXT("UnrealClient"))
+		if (Worker.WorkerTypeName == SpatialConstants::ClientWorkerType)
 		{
 			continue;
 		}
