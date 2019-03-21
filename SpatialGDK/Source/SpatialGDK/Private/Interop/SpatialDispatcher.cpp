@@ -173,6 +173,8 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 		UserCallback->OnCommandResponse(Op->command_response);
 		break;
 	default:
+		// This should only happen if the ComponentId is a valid Id, and 
+		// a new type of Op as been added to the worker SDK.
 		checkNoEntry();
 		return;
 	}
