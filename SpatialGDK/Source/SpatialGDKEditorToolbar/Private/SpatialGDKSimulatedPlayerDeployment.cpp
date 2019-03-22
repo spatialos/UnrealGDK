@@ -468,7 +468,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnRefreshClicked()
 {
-	// TODO: Invoke Platform SDK to refresh the deployment list
+	// TODO: Invoke the Deployment Launcher script to list the deployments
 	return FReply::Handled();
 }
 

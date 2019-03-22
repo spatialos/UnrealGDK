@@ -3,9 +3,9 @@
 #include "SpatialGDKEditor.h"
 
 #include "Async/Async.h"
+#include "SpatialGDKEditorCloudLauncher.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
-#include "SpatialGDKEditorCloudLauncher.h"
 
 #include "Editor.h"
 
