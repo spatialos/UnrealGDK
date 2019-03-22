@@ -396,7 +396,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnSnapshotPathPicked(const FString & 
 	SpatialGDKCloudLauncherSettings->SetSnapshotPath(PickedPath);
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked(const FString& PickedPath)
+void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked(const FString & PickedPath)
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 	SpatialGDKCloudLauncherSettings->SetPrimaryLaunchConfigPath(PickedPath);
