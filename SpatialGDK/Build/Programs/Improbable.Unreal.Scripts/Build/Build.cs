@@ -233,7 +233,7 @@ exit /b !ERRORLEVEL!
                     Console.WriteLine("worker coordinator path did not exist");
                 }
 
-                var archiveFileName = gameName + SimulatedPlayer@Linux.zip";
+                var archiveFileName = gameName + "SimulatedPlayer@Linux.zip";
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
