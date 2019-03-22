@@ -5,10 +5,13 @@
 #include "Async/Async.h"
 #include "Engine/WorldComposition.h"
 #include "UObject/StrongObjectPtr.h"
+#include "Engine/LevelScriptActor.h"
 
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
 #include "SpatialGDKEditorSettings.h"
+
+#include "Engine/ObjectLibrary.h"
 
 #include "Editor.h"
 #include "Engine/AssetManager.h"
@@ -24,6 +27,38 @@ FSpatialGDKEditor::FSpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
 {
 	TryLoadExistingSchemaDatabase();
+}
+
+// This callback is copied from UEditorEngine so that we can turn it off during schema gen in editor.
+void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
+{
+	// do not init worlds when running schema gen.
+	if (bSchemaGeneratorRunning)
+	{
+		UE_LOG(LogTemp, Log, TEXT("OnAssetLoaded %s but schema generating so ignoring."), *GetNameSafe(Asset));
+		return;
+	}
+
+	UWorld* World = Cast<UWorld>(Asset);
+	if (World)
+	{
+		// Init inactive worlds here instead of UWorld::PostLoad because it is illegal to call UpdateWorldComponents while IsRoutingPostLoad
+		check(World);
+		if (!World->bIsWorldInitialized && World->WorldType == EWorldType::Inactive)
+		{
+			// Create the world without a physics scene because creating too many physics scenes causes deadlock issues in PhysX. The scene will be created when it is opened in the level editor.
+			// Also, don't create an FXSystem because it consumes too much video memory. This is also created when the level editor opens this world.
+			World->InitWorld(UWorld::InitializationValues()
+				.ShouldSimulatePhysics(false)
+				.EnableTraceCollision(true)
+				.CreatePhysicsScene(false)
+				.CreateFXSystem(false)
+			);
+
+			// Update components so the scene is populated
+			World->UpdateWorldComponents(true, true);
+		}
+	}
 }
 
 void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
@@ -61,6 +96,20 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	LoadDefaultGameModes();
 
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	UObjectLibrary& Library = *UObjectLibrary::CreateLibrary(UObject::StaticClass(), true, false);
+
+	if (UEditorEngine* EdEngine = Cast<UEditorEngine>(GEngine))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Removing UEditorEngine::OnAssetLoaded."));
+		FCoreUObjectDelegates::OnAssetLoaded.RemoveAll(EdEngine);
+		if (!OnAssetLoadedHandle.IsValid())
+		{
+			UE_LOG(LogTemp, Log, TEXT("Replacing UEditorEngine::OnAssetLoaded with spatial version that won't run during schema gen."));
+			FCoreUObjectDelegates::OnAssetLoaded.AddLambda([this](UObject* Asset) {
+				OnAssetLoaded(Asset);
+			});
+		}
+	}
 
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread,
 		[&, this, LoadedLevels]() {
@@ -72,20 +121,18 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 		FFunctionGraphTask::CreateAndDispatchWhenReady([&]() {
 			UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("Finding Assets To Load"));
-			//FARFilter Filter;
-			////Filter.ClassNames.Add(UWorld::StaticClass()->GetFName());
-			//AssetRegistryModule.Get().GetAssets(Filter, Assets);
-
+			
 			AssetRegistryModule.Get().GetAllAssets(Assets, true);
 
 			for (FAssetData Data : Assets)
 			{
 				FString IsLoaded = Data.IsAssetLoaded() ? TEXT("True") : TEXT("False");
 				FString InGamePackage = Data.PackagePath.ToString().StartsWith("/Game") ? TEXT("True") : TEXT("False");
-				FString HasGeneratedClass = Data.TagsAndValues.Contains("GeneratedClass") ? TEXT("True") : TEXT("False");
+				FString HasGeneratedClass = Data.TagsAndValues.Contains("GeneratedClass") ? Data.TagsAndValues.FindRef("GeneratedClass") : TEXT("False");
+				FString NumReplicatedProperties = Data.TagsAndValues.Contains("NumReplicatedProperties") ? Data.TagsAndValues.FindRef("NumReplicatedProperties") : TEXT("n/a");
 
-				UE_LOG(LogTemp, Log, TEXT("Found %s, Loaded: %s, GeneratedClass: %s, InGamePackage: %s (%s)"),
-					*Data.GetFullName(), *IsLoaded, *HasGeneratedClass, *InGamePackage, *Data.PackagePath.ToString());
+				/*UE_LOG(LogTemp, Log, TEXT("Found %s, Loaded: %s, GeneratedClass: %s, InGamePackage: %s (%s), RepProperties: %s"),
+					*Data.GetFullName(), *IsLoaded, *HasGeneratedClass, *InGamePackage, *Data.PackagePath.ToString(), *NumReplicatedProperties);*/
 			}
 
 			// Filter assets to blueprint classes that are not loaded.
@@ -115,8 +162,15 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 		for (FAssetData Data : Assets)
 		{
 			FFunctionGraphTask::CreateAndDispatchWhenReady([&, Data]() {
-				AssetPointers.Add(TStrongObjectPtr<UObject>(Data.GetAsset()));
-				UE_LOG(LogTemp, Log, TEXT("Loaded %s"), *Data.GetFullName());
+				if (auto GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass"))
+				{
+					UE_LOG(LogTemp, Log, TEXT("Loading %s"), *Data.GetFullName());
+					const FString ClassObjectPath = FPackageName::ExportTextPathToObjectPath(*GeneratedClassPathPtr);
+					const FString ClassName = FPackageName::ObjectPathToObjectName(ClassObjectPath);
+					FSoftClassPath SoftPath = FSoftClassPath(ClassObjectPath);
+					AssetPointers.Add(TStrongObjectPtr<UClass>(SoftPath.TryLoadClass<UClass>()));
+					UE_LOG(LogTemp, Log, TEXT("Loaded %s ClassPath: %s, ClassName: %s"), *Data.GetFullName(), *ClassObjectPath, *ClassName);
+				}
 			}, TStatId(), NULL, ENamedThreads::GameThread);
 		}
 

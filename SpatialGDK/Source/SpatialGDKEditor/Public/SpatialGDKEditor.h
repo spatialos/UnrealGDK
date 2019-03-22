@@ -23,6 +23,10 @@ public:
 	void UnloadLevels(TArray<ULevelStreaming*> LoadedLevels);
 
 private:
+
+	FDelegateHandle OnAssetLoadedHandle;
+	void OnAssetLoaded(UObject* Asset);
+
 	bool bSchemaGeneratorRunning;
 	TFuture<bool> SchemaGeneratorResult;
 };
