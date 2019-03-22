@@ -1,14 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialGDKEditorCloudLauncherSettings.h"
 
-#include "SpatialGDKEditorSettings.h";
-#include "Settings/LevelEditorPlaySettings.h"
-#include "Internationalization/Regex.h"
-#include "Templates/SharedPointer.h"
-#include "Serialization/JsonReader.h"
 #include "Dom/JsonObject.h"
-#include "Serialization/JsonSerializer.h"
+#include "Internationalization/Regex.h"
 #include "Misc/FileHelper.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "Settings/LevelEditorPlaySettings.h"
+#include "SpatialGDKEditorSettings.h";
+#include "Templates/SharedPointer.h"
 
 USpatialGDKEditorCloudLauncherSettings::USpatialGDKEditorCloudLauncherSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
