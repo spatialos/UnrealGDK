@@ -20,11 +20,11 @@
 #include "HAL/FileManager.h"
 #include "Sound/SoundBase.h"
 
-#include "Widgets/DeclarativeSyntaxSupport.h"
 #include "EditorStyleSet.h"
 #include "Framework/Application/SlateApplication.h"
-#include "Widgets/Layout/SBox.h"
 #include "SpatialGDKSimulatedPlayerDeployment.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Widgets/Layout/SBox.h"
 
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
