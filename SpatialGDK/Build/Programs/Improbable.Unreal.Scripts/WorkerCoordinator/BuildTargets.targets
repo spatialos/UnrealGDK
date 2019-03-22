@@ -1,0 +1,35 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DebugWindows|x64'">
+    <OutputPath>bin\x64\DebugWindows\</OutputPath>
+    <PackagePath>package\x64\DebugWindows\</PackagePath>
+    <WorkerPlatform>windows</WorkerPlatform>
+  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DebugMacOS|x64'">
+    <OutputPath>bin\x64\DebugMacOS\</OutputPath>
+    <PackagePath>package\x64\DebugMacOS\</PackagePath>
+    <WorkerPlatform>macos</WorkerPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DebugLinux|x64'">
+    <OutputPath>bin\x64\DebugLinux\</OutputPath>
+    <PackagePath>package\x64\DebugLinux\</PackagePath>
+    <WorkerPlatform>linux</WorkerPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseWindows|x64'">
+    <OutputPath>bin\x64\ReleaseWindows\</OutputPath>
+    <PackagePath>package\x64\ReleaseWindows\</PackagePath>
+    <WorkerPlatform>windows</WorkerPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseMacOS|x64'">
+    <OutputPath>bin\x64\ReleaseMacOS\</OutputPath>
+    <PackagePath>package\x64\ReleaseMacOS\</PackagePath>
+    <WorkerPlatform>macos</WorkerPlatform>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseLinux|x64'">
+    <OutputPath>bin\x64\ReleaseLinux\</OutputPath>
+    <PackagePath>package\x64\ReleaseLinux\</PackagePath>
+    <WorkerPlatform>linux</WorkerPlatform>
+  </PropertyGroup>
+</Project>
