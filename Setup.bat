@@ -68,7 +68,7 @@ call :MarkStartOfBlock "Clean folders"
     rd /s /q "%WORKER_SDK_DIR_OLD%"     2>nul
     rd /s /q "%BINARIES_DIR%"           2>nul
     rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
-    rd /s /q "%IMPROBABLE_WORKER_DIR%" 2>nul
+    rd /s /q "%IMPROBABLE_WORKER_DIR%"  2>nul
 call :MarkEndOfBlock "Clean folders"
 
 call :MarkStartOfBlock "Create folders"

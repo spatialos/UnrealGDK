@@ -76,6 +76,7 @@ markStartOfBlock "Setup variables"
     BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
     SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
     SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
+    IMPROBABLE_WORKER_DIR="$(dirname "$0")/../../../spatial/workers/improbable"
 markEndOfBlock "Setup variables"
 
 markStartOfBlock "Clean folders"
@@ -83,6 +84,7 @@ markStartOfBlock "Clean folders"
     rm -rf $WORKER_SDK_DIR         2>/dev/null
     rm -rf $BINARIES_DIR           2>/dev/null
     rm -rf $SCHEMA_STD_COPY_DIR    2>/dev/null
+    rm -rf $IMPROBABLE_WORKER_DIR  2>/dev/null
 markEndOfBlock "Clean folders"
 
 markStartOfBlock "Create folders"
@@ -92,6 +94,7 @@ markStartOfBlock "Create folders"
     mkdir -p $CORE_SDK_DIR/worker_sdk >/dev/null 2>/dev/null
     mkdir -p $BINARIES_DIR            >/dev/null 2>/dev/null
     mkdir -p $SCHEMA_STD_COPY_DIR     >/dev/null 2>/dev/null
+    mkdir -p $IMPROBABLE_WORKER_DIR   >/dev/null 2>/dev/null
 markEndOfBlock "Create folders"
 
 markStartOfBlock "Retrieve dependencies"
@@ -102,6 +105,8 @@ markStartOfBlock "Retrieve dependencies"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux       $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc_libstdcpp-linux.zip
     spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_libcpp-macos        $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang_libcpp-macos.zip
     spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang_libcpp-ios  $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang_libcpp-ios.zip
+    spatial package retrieve worker_sdk      core-dynamic-x86_64-linux                  $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/core-dynamic-x86_64-linux.zip
+    spatial package retrieve worker_sdk      csharp                                     $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/csharp.zip
 markEndOfBlock "Retrieve dependencies"
 
 markStartOfBlock "Unpack dependencies"
@@ -110,6 +115,8 @@ markStartOfBlock "Unpack dependencies"
     unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc_libstdcpp-linux.zip        -d $BINARIES_DIR/Linux/
     unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang_libcpp-macos.zip         -d $BINARIES_DIR/Mac/
     unzip -oq $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang_libcpp-ios.zip   -d $BINARIES_DIR/IOS/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/core-dynamic-x86_64-linux.zip                   -d $BINARIES_DIR/Programs/worker_sdk/core/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/csharp.zip                                      -d $BINARIES_DIR/Programs/worker_sdk/csharp/
     unzip -oq $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip                     -d $BINARIES_DIR/Programs/
     unzip -oq $CORE_SDK_DIR/schema/standard_library.zip                                -d $BINARIES_DIR/Programs/schema/
 
@@ -132,6 +139,11 @@ markEndOfBlock "Copy GDK schema"
 markStartOfBlock "Build C# utilities"
     msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
 markEndOfBlock "Build C# utilities"
+
+markStartOfBlock "Copy worker coordinator config"
+    echo "Copying worker coordinator config to $IMPROBABLE_WORKER_DIR"
+    cp -R $(dirname %0)/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/spatialos.SimulatedPlayerCoordinator.worker.json $IMPROBABLE_WORKER_DIR
+markEndOfBlock "Copy worker coordinator config"
 
 markEndOfBlock "$0"
 
