@@ -148,10 +148,6 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	WorkerRequirementSet ReadACL;
 	for (auto& Worker : SpatialGDKSettings->LaunchConfigDesc.Workers)
 	{
-		if (Worker.WorkerTypeName == SpatialConstants::ClientWorkerType)
-		{
-			continue;
-		}
 		const WorkerAttributeSet WorkerTypeAttributeSet{ TArray<FString>{Worker.WorkerTypeName} };
 		ReadACL.Add(WorkerTypeAttributeSet);
 	}
