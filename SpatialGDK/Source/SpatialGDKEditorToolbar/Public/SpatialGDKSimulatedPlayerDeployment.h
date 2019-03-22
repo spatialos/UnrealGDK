@@ -1,15 +1,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Layout/Visibility.h"
-#include "Widgets/DeclarativeSyntaxSupport.h"
-#include "Templates/SharedPointer.h"
 #include "Input/Reply.h"
-#include "Widgets/SCompoundWidget.h"
-#include "Widgets/Layout/SBorder.h"
-#include "Widgets/Input/SEditableTextBox.h"
+#include "Layout/Visibility.h"
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorCloudLauncherSettings.h"
+#include "Templates/SharedPointer.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Widgets/Input/SEditableTextBox.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/SCompoundWidget.h"
 
 class SWindow;
 
