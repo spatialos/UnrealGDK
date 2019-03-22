@@ -30,7 +30,7 @@ namespace ENetworkFailure
 			return ENetworkFailure::PendingConnectionFailure;
 
 		default:
-			// Execution of this code path should be considered an error, as all worker status codes map to an ENetworkFailure
+			// Execution of this code path should be considered an error as all worker status codes map to an ENetworkFailure
 			// The only exception to this is WORKER_CONNECTION_STATUS_CODE_SUCCESS which does not indicate an error and will never
 			// be received in a WORKER_OP_TYPE_DISCONNECT
 			checkNoEntry();
