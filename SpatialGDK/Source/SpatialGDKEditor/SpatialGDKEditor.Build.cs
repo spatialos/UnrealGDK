@@ -16,7 +16,7 @@ public class SpatialGDKEditor : ModuleRules
 				"Engine",
  				"EngineSettings",
 				"Json",
-                "SpatialGDK",
+				"SpatialGDK",
 				"UnrealEd"
 			});
 
