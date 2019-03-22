@@ -169,6 +169,10 @@ namespace Improbable.WorkerCoordinator
                 }
             }
 
+            // Prepend the simulated player id as an argument to the start client script.
+            // This argument is consumed by the start client script and will not be passed to the client worker.
+            simulatedPlayerArgs = new string[] { clientName }.Concat(simulatedPlayerArgs).ToArray();
+
             // Start the client
             connection.SendLogMessage(LogLevel.Info, LoggerName, "Starting worker " + clientName + " with args: " + ArgsToString(simulatedPlayerArgs));
             StartClient(string.Join(" ", simulatedPlayerArgs));

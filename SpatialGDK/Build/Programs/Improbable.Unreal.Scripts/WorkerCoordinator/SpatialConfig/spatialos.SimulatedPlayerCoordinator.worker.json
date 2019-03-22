@@ -44,8 +44,6 @@
         "${IMPROBABLE_RECEPTIONIST_PORT}",
         "${IMPROBABLE_WORKER_ID}",
         "coordinator_start_delay_millis=10000",
-			
-        "<IMPROBABLE_SIM_PLAYER_WORKER_ID>",
         
         "+workerType",
         "UnrealClient",
