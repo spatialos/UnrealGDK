@@ -424,6 +424,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 	}
 }
 
+#pragma optimize("", off)
 bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const
 {
 	FString Text;
@@ -431,7 +432,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	if (SpatialGDKSettings != nullptr)
+	if (SpatialGDKSettings == nullptr)
 	{
 		return false;
 	}
@@ -462,10 +463,6 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 			Writer->WriteArrayStart("layer_configurations");
 			for (auto& Worker : LaunchConfigDescription.Workers)
 			{
-				if (Worker.WorkerTypeName == SpatialConstants::ClientWorkerType)
-				{
-					continue;
-				}
 				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.ManualWorkerConnectionOnly);
 			}
 			Writer->WriteArrayEnd();
@@ -475,6 +472,8 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 		{
 			WriteWorkerSection(Writer, Worker.WorkerTypeName);
 		}
+		// Write the client worker section
+		WriteWorkerSection(Writer, SpatialConstants::ClientWorkerType);
 		Writer->WriteArrayEnd(); // Worker section end
 	Writer->WriteObjectEnd(); // End of json
 
@@ -530,6 +529,7 @@ bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJson
 
 	return true;
 }
+#pragma optimize("", on)
 
 #undef LOCTEXT_NAMESPACE
 
