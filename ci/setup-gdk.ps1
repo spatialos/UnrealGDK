@@ -61,6 +61,22 @@ pushd "$($gdk_home)"
         "$($pinned_core_sdk_version)", `
         "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip" `
     )
+	Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
+        "package", `
+        "retrieve", `
+        "worker_sdk", `
+        "core-dynamic-x86_64-linux", `
+        "$($pinned_core_sdk_version)", `
+        "$($core_sdk_dir)\worker_sdk\core-dynamic-x86_64-linux.zip" `
+    )
+	Start-Process -Wait -PassThru -NoNewWindow -FilePath "spatial" -ArgumentList @(`
+        "package", `
+        "retrieve", `
+        "worker_sdk", `
+        "csharp", `
+        "$($pinned_core_sdk_version)", `
+        "$($core_sdk_dir)\worker_sdk\csharp.zip" `
+    )
     Finish-Event "download-spatial-packages" "build-unreal-gdk-:windows:"
 
 
@@ -70,6 +86,8 @@ pushd "$($gdk_home)"
     Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\c-dynamic-x86-msvc_md-win32.zip" -DestinationPath "$($binaries_dir)\Win32\" -Force
     Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip" -DestinationPath "$($binaries_dir)\Win64\" -Force
     Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip" -DestinationPath "$($binaries_dir)\Linux\" -Force
+    Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\core-dynamic-x86_64-linux.zip" -DestinationPath "$($binaries_dir)\Programs\worker_sdk\core\" -Force
+    Expand-Archive -Path "$($core_sdk_dir)\worker_sdk\csharp.zip" -DestinationPath "$($binaries_dir)\Programs\worker_sdk\csharp\" -Force
     Finish-Event "extract-spatial-packages" "build-unreal-gdk-:windows:"
 
 
