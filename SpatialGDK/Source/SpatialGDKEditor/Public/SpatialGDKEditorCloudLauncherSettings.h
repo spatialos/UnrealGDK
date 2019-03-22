@@ -45,9 +45,9 @@ private:
 	UPROPERTY(config)
 	uint32 NumberOfSimulatedPlayers;
 
-	bool PrimaryDeploymentNameIsValid;
-	bool AssemblyNameIsValid;
-	bool ProjectNameIsValid;
+	bool bPrimaryDeploymentNameIsValid;
+	bool bAssemblyNameIsValid;
+	bool bProjectNameIsValid;
 
 	UPROPERTY(config)
 	bool SimulatedPlayersIsEnabled;
@@ -115,17 +115,17 @@ public:
 
 	FORCEINLINE bool IsProjectNameValid() const
 	{
-		return ProjectNameIsValid;
+		return bProjectNameIsValid;
 	}
 
 	FORCEINLINE bool IsPrimaryDeploymentNameValid() const
 	{
-		return PrimaryDeploymentNameIsValid;
+		return bPrimaryDeploymentNameIsValid;
 	}
 
 	FORCEINLINE bool IsAssemblyNameValid() const
 	{
-		return AssemblyNameIsValid;
+		return bAssemblyNameIsValid;
 	}
 
 	bool IsDeploymentConfigurationValidSinceLastCheck() const;

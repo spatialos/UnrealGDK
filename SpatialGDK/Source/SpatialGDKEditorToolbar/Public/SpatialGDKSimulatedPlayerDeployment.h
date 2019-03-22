@@ -82,6 +82,6 @@ private:
 
 	ECheckBoxState IsSimulatedPlayersEnabled() const;
 
-	/** Delegate to determine the 'Launch Simulated Player Deployment' button enabled state */
+	/** Delegate to determine the 'Launch Deployment' button enabled state */
 	bool IsDeploymentConfigurationValid() const;
 };

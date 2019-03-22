@@ -30,9 +30,9 @@ FString USpatialGDKEditorCloudLauncherSettings::ToString()
 	Args.Add(SimulatedPlayerDeploymentName);
 	Args.Add(SimulatedPlayerLaunchConfigPath.FilePath);
 	Args.Add(NumberOfSimulatedPlayers);
-	Args.Add(PrimaryDeploymentNameIsValid);
-	Args.Add(AssemblyNameIsValid);
-	Args.Add(ProjectNameIsValid);
+	Args.Add(bPrimaryDeploymentNameIsValid);
+	Args.Add(bAssemblyNameIsValid);
+	Args.Add(bProjectNameIsValid);
 	Args.Add(SimulatedPlayersIsEnabled);
 
 	return FString::Format(TEXT(
@@ -44,9 +44,9 @@ FString USpatialGDKEditorCloudLauncherSettings::ToString()
 		"SimulatedPlayerDeploymentName={5}, "
 		"SimulatedPlayerLaunchConfigPath={6}, "
 		"NumberOfSimulatedPlayers={7}, "
-		"PrimaryDeploymentNameIsValid={8}, "
-		"AssemblyNameIsValid={9}, "
-		"ProjectNameIsValid={10}, "
+		"bPrimaryDeploymentNameIsValid={8}, "
+		"bAssemblyNameIsValid={9}, "
+		"bProjectNameIsValid={10}, "
 		"SimulatedPlayersIsEnabled={11}")
 		, Args);
 }
@@ -77,7 +77,7 @@ void USpatialGDKEditorCloudLauncherSettings::ValidateAssemblyName()
 	const FRegexPattern AssemblyPattern(TEXT("^[a-zA-Z0-9_.-]{5,64}$"));
 	FRegexMatcher RegMatcher(AssemblyPattern, AssemblyName);
 
-	AssemblyNameIsValid = RegMatcher.FindNext();
+	bAssemblyNameIsValid = RegMatcher.FindNext();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::ValidateProjectName()
@@ -85,7 +85,7 @@ void USpatialGDKEditorCloudLauncherSettings::ValidateProjectName()
 	const FRegexPattern ProjectPattern(TEXT("^[a-z0-9_]{3,32}$"));
 	FRegexMatcher RegMatcher(ProjectPattern, ProjectName);
 
-	ProjectNameIsValid = RegMatcher.FindNext();
+	bProjectNameIsValid = RegMatcher.FindNext();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::ValidateDeploymentName()
@@ -93,7 +93,7 @@ void USpatialGDKEditorCloudLauncherSettings::ValidateDeploymentName()
 	const FRegexPattern DeploymentPattern(TEXT("^[a-z0-9_]{2,32}$"));
 	FRegexMatcher RegMatcher(DeploymentPattern, PrimaryDeploymentName);
 
-	PrimaryDeploymentNameIsValid = RegMatcher.FindNext();
+	bPrimaryDeploymentNameIsValid = RegMatcher.FindNext();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetPrimaryDeploymentName(const FString & Name)
@@ -144,9 +144,9 @@ void USpatialGDKEditorCloudLauncherSettings::SetNumberOfSimulatedPlayers(uint32 
 bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValidSinceLastCheck() const
 {
 	return
-		ProjectNameIsValid &&
-		AssemblyNameIsValid &&
-		PrimaryDeploymentNameIsValid &&
+		bProjectNameIsValid &&
+		bAssemblyNameIsValid &&
+		bPrimaryDeploymentNameIsValid &&
 		!PrimaryLaunchConfigPath.FilePath.IsEmpty() &&
 		!SnapshotPath.FilePath.IsEmpty();
 }
