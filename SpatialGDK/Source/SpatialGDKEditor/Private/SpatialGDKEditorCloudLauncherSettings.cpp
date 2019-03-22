@@ -143,8 +143,7 @@ void USpatialGDKEditorCloudLauncherSettings::SetNumberOfSimulatedPlayers(uint32 
 
 bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValidSinceLastCheck() const
 {
-	return
-		bProjectNameIsValid &&
+	return bProjectNameIsValid &&
 		bAssemblyNameIsValid &&
 		bPrimaryDeploymentNameIsValid &&
 		!PrimaryLaunchConfigPath.FilePath.IsEmpty() &&
