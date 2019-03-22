@@ -169,6 +169,10 @@ namespace Improbable
                     targetDeploymentFlag.Add("name", "simulated_players_target_deployment");
                     targetDeploymentFlag.Add("value", mainDeploymentName);
 
+                    var numSimulatedPlayersFlag = new JObject();
+                    numSimulatedPlayersFlag.Add("name", "target_num_simulated_players");
+                    numSimulatedPlayersFlag.Add("value", $"{simNumPlayers}");
+
                     var simWorkerConfigJson = File.ReadAllText(simDeploymentJson);
                     dynamic simWorkerConfig = JObject.Parse(simWorkerConfigJson);
 
@@ -178,6 +182,7 @@ namespace Improbable
                         {
                             simWorkerConfig.workers[i].flags.Add(devAuthTokenIdFlag);
                             simWorkerConfig.workers[i].flags.Add(targetDeploymentFlag);
+                            simWorkerConfig.workers[i].flags.Add(numSimulatedPlayersFlag);
                         }
                     }
 
