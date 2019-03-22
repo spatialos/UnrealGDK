@@ -91,7 +91,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								[
 									SNew(STextBlock)
 									.Text(FText::FromString(FString(TEXT("Project Name"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the Improbable project."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -114,7 +114,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								[
 									SNew(STextBlock)
 									.Text(FText::FromString(FString(TEXT("Assembly Name"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the assembly file."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the assembly."))))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
@@ -137,14 +137,14 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								[
 									SNew(STextBlock)
 									.Text(FText::FromString(FString(TEXT("Deployment Name"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the deployment."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SEditableTextBox)
 									.Text(FText::FromString(SpatialGDKCloudLauncherSettings->GetPrimaryDeploymentName()))
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the deployment."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the cloud deployment. Must be unique."))))
 									.OnTextCommitted(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited)
 									.OnTextChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited, ETextCommit::Default)
 								]
@@ -199,7 +199,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.BrowseDirectory(SpatialGDKSettings->GetSpatialOSDirectory())
 									.BrowseTitle(FText::FromString(FString(TEXT("File picker..."))))
 									.FilePath_UObject(SpatialGDKCloudLauncherSettings, &USpatialGDKEditorCloudLauncherSettings::GetPrimaryLanchConfigPath)
-									.FileTypeFilter(TEXT("Configuration files (*.json)|*.json"))
+									.FileTypeFilter(TEXT("Launch configuration files (*.json)|*.json"))
 									.OnPathPicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked)
 								]
 							]
@@ -269,13 +269,13 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								[
 									SNew(STextBlock)
 									.Text(FText::FromString(FString(TEXT("Number of Simulated Players"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The number of Simulated Players to be launched and connect to the game."))))
+									.ToolTipText(FText::FromString(FString(TEXT("The number of Simulated Players to be launch and connect to the game."))))
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
 								[
 									SNew(SSpinBox<uint32>)
-									.ToolTipText(FText::FromString(FString(TEXT("The name of the deployment."))))
+									.ToolTipText(FText::FromString(FString(TEXT("Number of Simulated Players."))))
 									.MinValue(1)
 									.MaxValue(8192)
 									.Value(SpatialGDKCloudLauncherSettings->GetNumberOfSimulatedPlayer())
