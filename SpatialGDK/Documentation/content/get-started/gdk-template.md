@@ -1,11 +1,10 @@
-# Next steps: Set up the SpatialOS GDK Starter Template
+<%(TOC)%>
+# Get started: 3 - Set up the SpatialOS GDK Starter Template
 
 Before setting up the SpatialOS GDK Starter Template, you need to have followed:
 
 * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
 * [Getting started: 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/tutorial).
-
-If you haven't already, follow our [Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/dependencies) to try out the SpatialOS for Unreal GDK development experience by adding a new feature to a project and testing it across two server-workers.
 
 If you are ready to start developing your own game with the GDK, follow the steps below. 
 
@@ -58,16 +57,14 @@ To use the Starter Template, you must build the GDK for Unreal module dependenci
 1. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
 1. When Visual Studio has finished building your project, right-click on **`<YourProject>`** and select **Set as StartUp Project**.
 1. Press F5 on your keyboard or select **Local Windows Debugger** in the Visual Studio toolbar to open your project in the Unreal Editor.<br/>
-![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)
+![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
 _Image: The Visual Studio toolbar_
 
 Note: Ensure that your Visual Studio Solution Configuration is set to **Development Editor**.
 
-
-
 ### Deploy your project 
 
-To test your project, you can launch a [local deployment (SpatialOS documentation)](https://docs.improbable.io/reference/13.5/shared/glossary#local-deployment) or a [cloud deployment (SpatialOS documentation)](https://docs.improbable.io/reference/13.5/shared/glossary#cloud-deployment).  
+To test your project, you can launch a [local deployment (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) or a [cloud deployment (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment).  
 
 #### Deploy locally with multiple clients
 
@@ -80,7 +77,7 @@ _Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
 1. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
-![Toolbar]({{assetRoot}}assets/set-up-template/template-start.png)<br/>
+![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 2. Under **Modes**, select **New Editor Window (PIE)**.<br/>
@@ -88,7 +85,7 @@ _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 ![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
 _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
 1. On the Unreal Engine toolbar, select **Play** to run the game.<br/>
-1. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/set-up-template/template-stop.png)<br/>
+1. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 
 If you want to run multiple server-workers in the Editor, see the [Toolbar documentation]({{urlRoot}}/content/toolbars#launching-multiple-pie-server-workers) for details on launching multiple PIE server-workers.
@@ -166,3 +163,7 @@ You've successfully set up and launched the Starter Template and the GDK! You ar
 
 If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk.md) to get it onto the GDK.
 
+<br/>
+<br/>
+-------------
+2019-03-15 Page updated with limited editorial review

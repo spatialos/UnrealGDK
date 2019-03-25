@@ -86,9 +86,6 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 
 		// World Command Responses
-		case WORKER_OP_TYPE_RESERVE_ENTITY_ID_RESPONSE:
-			Receiver->OnReserveEntityIdResponse(Op->reserve_entity_id_response);
-			break;
 		case WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE:
 			Receiver->OnReserveEntityIdsResponse(Op->reserve_entity_ids_response);
 			break;
@@ -145,14 +142,6 @@ bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) const
 
 void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 {
-	auto TryUserCallback = [&](Worker_ComponentId ComponentId, TFunction<void(UOpCallbackTemplate*)>& OpCallback)
-	{
-		if (UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(ComponentId))
-		{
-			UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
-			OpCallback(UserCallback);
-		}
-	};
 	Worker_ComponentId ComponentId = GetComponentId(Op);
 	check(ComponentId != SpatialConstants::INVALID_COMPONENT_ID);
 
@@ -162,7 +151,7 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 		return;
 	}
 	UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
-	
+
 	switch (Op->op_type)
 	{
 	case WORKER_OP_TYPE_ADD_COMPONENT:
@@ -176,6 +165,7 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
 		UserCallback->OnAuthorityChange(Op->authority_change);
+		StaticComponentView->OnAuthorityChange(Op->authority_change);
 		break;
 	case WORKER_OP_TYPE_COMMAND_REQUEST:
 		UserCallback->OnCommandRequest(Op->command_request);
@@ -184,6 +174,8 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 		UserCallback->OnCommandResponse(Op->command_response);
 		break;
 	default:
+		// This should only happen if the ComponentId is a valid Id, and
+		// a new type of Op as been added to the worker SDK.
 		checkNoEntry();
 		return;
 	}

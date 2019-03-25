@@ -46,5 +46,5 @@ private:
 	USpatialStaticComponentView* StaticComponentView;
 
 	UPROPERTY()
-	TMap <uint32, UOpCallbackTemplate*> UserOpCallbacks; // key has to be explicit primitive or UHT complains
+	TMap<uint32, UOpCallbackTemplate*> UserOpCallbacks; // key has to be explicit primitive or UHT complains
 };

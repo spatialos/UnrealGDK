@@ -13,10 +13,16 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
+#include "Utils/EntityPool.h"
 #include "Utils/SchemaOption.h"
 #include "UObject/UObjectGlobals.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
+
+void USpatialPackageMapClient::Init(USpatialNetDriver* InNetDriver)
+{
+	NetDriver = InNetDriver;
+}
 
 void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 {
@@ -48,6 +54,72 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 	{
 		return A.GetName() < B.GetName();
 	});
+}
+
+Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor* Actor)
+{
+	check(Actor);
+	checkf(NetDriver->IsServer(), TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
+
+	Worker_EntityId EntityId = NetDriver->EntityPool->GetNextEntityId();
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
+		return EntityId;
+	}
+
+	// Register Actor with package map since we know what the entity id is.
+	ResolveEntityActor(Actor, EntityId);
+
+	return EntityId;
+}
+
+FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
+{
+	FNetworkGUID NetGUID;
+
+	if (!NetDriver->IsServer())
+	{
+		return NetGUID;
+	}
+
+	if (!Value->IsA<AActor>() && !Value->GetOuter()->IsA<AActor>())
+	{
+		return NetGUID;
+	}
+
+	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Cast<AActor>(Value->GetOuter());
+
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		// Singletons will always go through GlobalStateManager first.
+		return NetGUID;
+	}
+
+	// Resolve as an entity if it is an unregistered actor
+	if (Actor->Role == ROLE_Authority && NetDriver->PackageMap->GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		Worker_EntityId EntityId = AllocateEntityIdAndResolveActor(Actor);
+		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			// Mark this entity ID as pending creation (checked in USpatialActorChannel::SetChannelActor).
+			PendingCreationEntityIds.Add(EntityId);
+		}
+
+		NetGUID = GetNetGUIDFromObject(Value);
+	}
+
+	return NetGUID;
+}
+
+bool USpatialPackageMapClient::IsEntityIdPendingCreation(Worker_EntityId EntityId) const
+{
+	return PendingCreationEntityIds.Contains(EntityId);
+}
+
+void USpatialPackageMapClient::RemovePendingCreationEntityId(Worker_EntityId EntityId)
+{
+	PendingCreationEntityIds.Remove(EntityId);
 }
 
 FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId)

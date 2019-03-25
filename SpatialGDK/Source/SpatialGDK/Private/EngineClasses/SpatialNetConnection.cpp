@@ -12,6 +12,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 
@@ -49,10 +50,17 @@ void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSock
 	}
 }
 
+#if ENGINE_MINOR_VERSION <= 20
 void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
 {
 	//Intentionally does not call Super::
 }
+#else
+void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBits, FOutPacketTraits& Traits)
+{
+	//Intentionally does not call Super::
+}
+#endif
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor) const
 {
@@ -149,7 +157,7 @@ void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 	{
 		// This client timed out. Disconnect it and trigger OnDisconnected logic.
 		CleanUp();
-	}, SpatialConstants::HEARTBEAT_TIMEOUT_SECONDS, false);
+	}, GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds, false);
 }
 
 void USpatialNetConnection::SetHeartbeatEventTimer()
@@ -168,7 +176,7 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 		{
 			Connection->SendComponentUpdate(PlayerControllerEntity, &ComponentUpdate);
 		}
-	}, SpatialConstants::HEARTBEAT_INTERVAL_SECONDS, true, 0.0f);
+	}, GetDefault<USpatialGDKSettings>()->HeartbeatIntervalSeconds, true, 0.0f);
 }
 
 void USpatialNetConnection::DisableHeartbeat()

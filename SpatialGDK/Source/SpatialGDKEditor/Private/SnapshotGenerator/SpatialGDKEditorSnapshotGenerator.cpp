@@ -127,7 +127,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(improbable::Position(improbable::Origin).CreatePositionData());
+	Components.Add(improbable::Position(Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(CreateSingletonManagerData());
@@ -192,7 +192,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 
 // This function is not in use.
 // Set up classes needed for Startup Actor creation
-void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialClassInfoManager*& ClassInfoManager, UEntityRegistry*& EntityRegistry, UWorld* World)
+void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialClassInfoManager*& ClassInfoManager, UWorld* World)
 {
 	NetDriver = NewObject<USpatialNetDriver>();
 	NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
@@ -344,7 +344,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Components.Add(improbable::EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	Components.Add(improbable::UnrealMetadata({}, {}, ActorClass->GetPathName()).CreateUnrealMetadataData());
+	Components.Add(improbable::UnrealMetadata({}, {}, ActorClass->GetPathName(), Actor->bNetLoadOnClient).CreateUnrealMetadataData());
 	Components.Add(improbable::Interest().CreateInterestData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, ClassInfoManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
@@ -393,9 +393,8 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	USpatialNetConnection* NetConnection = nullptr;
 	USpatialPackageMapClient* PackageMap = nullptr;
 	USpatialClassInfoManager* ClassInfoManager = nullptr;
-	UEntityRegistry* EntityRegistry = nullptr;
 
-	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, ClassInfoManager, EntityRegistry, World);
+	SetupStartupActorCreation(NetDriver, NetConnection, PackageMap, ClassInfoManager, World);
 
 	// Create set of world actors (World actor iterator returns same actor multiple times in some circumstances)
 	TSet<AActor*> WorldActors;
@@ -407,7 +406,7 @@ bool CreateStartupActors(Worker_SnapshotOutputStream* OutputStream, UWorld* Worl
 	bool bSuccess = true;
 
 	// Need to add all actors in the world to the package map so they have assigned UnrealObjRefs for the ComponentFactory to use
-	bSuccess &= ProcessSupportedActors(WorldActors, ClassInfoManager, [&PackageMap, &EntityRegistry, &ClassInfoManager](AActor* Actor, Worker_EntityId EntityId)
+	bSuccess &= ProcessSupportedActors(WorldActors, ClassInfoManager, [&PackageMap, &ClassInfoManager](AActor* Actor, Worker_EntityId EntityId)
 	{
 		PackageMap->ResolveEntityActor(Actor, EntityId);
 		return true;
