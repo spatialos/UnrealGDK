@@ -110,9 +110,6 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		return;
 	}
 
-	// Set the timer manager.
-	TimerManager = &GameInstance->GetTimerManager();
-
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
@@ -195,6 +192,7 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
+	TimerManager = MakeUnique<FTimerManager>();
 	Dispatcher = NewObject<USpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
@@ -209,15 +207,15 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	ClassInfoManager->Init(this);
 	Dispatcher->Init(this);
 	Sender->Init(this);
-	Receiver->Init(this, TimerManager);
-	GlobalStateManager->Init(this, TimerManager);
+	Receiver->Init(this, TimerManager.Get());
+	GlobalStateManager->Init(this, TimerManager.Get());
 	SnapshotManager->Init(this);
-	PlayerSpawner->Init(this, TimerManager);
+	PlayerSpawner->Init(this, TimerManager.Get());
 
 	// Entity Pools should never exist on clients
 	if (IsServer())
 	{
-		EntityPool->Init(this, TimerManager);
+		EntityPool->Init(this, TimerManager.Get());
 	}
 }
 
@@ -1175,6 +1173,12 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		}
 		LastUpdateCount = Updated;
 #endif // WITH_SERVER_CODE
+	}
+
+	// Tick the timer manager
+	if (TimerManager.IsValid())
+	{
+		TimerManager->Tick(DeltaTime);
 	}
 
 	Super::TickFlush(DeltaTime);

@@ -47,9 +47,13 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	GENERATED_BODY()
 
 public:
+	// Begin UObject Interface
 	virtual void PostInitProperties() override;
+	// End UObject Interface
 
+	// Begin FExec Interface
 	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar = *GLog) override;
+	// End FExec Interface
 
 	// Begin UNetDriver interface.
 	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
@@ -156,7 +160,7 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 
-	FTimerManager* TimerManager;
+	TUniquePtr<FTimerManager> TimerManager;
 
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
