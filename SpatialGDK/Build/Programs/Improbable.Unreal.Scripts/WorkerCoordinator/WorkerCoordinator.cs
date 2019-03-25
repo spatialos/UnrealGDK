@@ -38,12 +38,12 @@ namespace Improbable.WorkerCoordinator
     /// 
     /// </summary>
     internal static class WorkerCoordinator
-	{
+    {
         // Arguments for the coordinator.
-		private const string START_DELAY_ARG = "coordinator_start_delay_millis";
+        private const string START_DELAY_ARG = "coordinator_start_delay_millis";
 
         // Argument placeholders for simulated players - these will be replaced by the coordinator by their actual values.
-		private const string WORKER_NAME_ARG = "<IMPROBABLE_SIM_PLAYER_WORKER_ID>";
+        private const string WORKER_NAME_ARG = "<IMPROBABLE_SIM_PLAYER_WORKER_ID>";
         private const string LOGIN_TOKEN_ARG = "<LOGIN_TOKEN>";
         private const string PLAYER_IDENTITY_TOKEN_ARG = "<PLAYER_IDENTITY_TOKEN>";
 
@@ -59,7 +59,7 @@ namespace Improbable.WorkerCoordinator
 
         private static Stack<Process> SimulatedPlayerList = new Stack<Process>();
 
-		private static Logger Logger = new Logger("/improbable/logs/WorkerCoordinator.log");
+        private static Logger Logger = new Logger("/improbable/logs/WorkerCoordinator.log");
         private const string LoggerName = "WorkerCoordinator.cs";
         private const int ErrorExitStatus = 1;
 
@@ -194,42 +194,42 @@ namespace Improbable.WorkerCoordinator
         }
 
         private static int GetIntegerArgument(IEnumerable<string> args, string argumentName, int defaultValue)
-		{
-			var argumentsWithName = args.Where(arg => arg.StartsWith(argumentName)).ToArray();
-			if (!argumentsWithName.Any())
-			{
-				return defaultValue;
-			}
+        {
+            var argumentsWithName = args.Where(arg => arg.StartsWith(argumentName)).ToArray();
+            if (!argumentsWithName.Any())
+            {
+                return defaultValue;
+            }
 
-			if (argumentsWithName.Length == 1)
-			{
-				var valueString = argumentsWithName.Single().Split(new[] {'='}, 2, StringSplitOptions.None)[1];
-				int value;
-				if (int.TryParse(valueString, out value))
-				{
-					return value;
-				}
-				throw new ArgumentException($"Cannot parse value,\"{valueString}\", for argument \"{argumentName}\".");
-			}
-			throw new ArgumentException($"Multiple values for argument, \"{argumentName}\".");
-		}
+            if (argumentsWithName.Length == 1)
+            {
+                var valueString = argumentsWithName.Single().Split(new[] {'='}, 2, StringSplitOptions.None)[1];
+                int value;
+                if (int.TryParse(valueString, out value))
+                {
+                    return value;
+                }
+                throw new ArgumentException($"Cannot parse value,\"{valueString}\", for argument \"{argumentName}\".");
+            }
+            throw new ArgumentException($"Multiple values for argument, \"{argumentName}\".");
+        }
 
-		private static void StartClient(string args)
-		{
-			try
-			{
-				SimulatedPlayerList.Push(Process.Start(SimulatedPlayerFilename, args));
-			}
+        private static void StartClient(string args)
+        {
+            try
+            {
+                SimulatedPlayerList.Push(Process.Start(SimulatedPlayerFilename, args));
+            }
             catch (Exception e)
-			{
+            {
                 connection.SendLogMessage(LogLevel.Error, LoggerName, "Exception from starting simulated player: " + e.Message);
-			}
-		}
-		
-		private static string ArgsToString(string[] args)
+            }
+        }
+        
+        private static string ArgsToString(string[] args)
         {
             return string.Join(" ", args);
-		}
+        }
 
         private static Connection ConnectWithReceptionist(string hostname, ushort port,
             string workerId, ConnectionParameters connectionParameters)
