@@ -273,7 +273,7 @@ This is a `spatialos.json` file which lives in your project's spatial directory.
 It lists the SpatialOS [project name](#project-name) assigned to you by Improbable when you sign up as well as the version of [SpatialOS SDK](#spatialos-sdk) your project uses.
 
 >Related
-> 
+>
 >[Project defnition file - `spatialos.json`](https://docs.improbable.io/reference/latest/shared/reference/file-formats/spatialos-json)
 
 ### Queries
@@ -302,7 +302,7 @@ SpatialOS uses the schema to generate code. You can use this generated code in y
 The `spatial` command-line tool (also known as the “CLI”) provides a set of commands that you use to interact with a [SpatialOS project](https://docs.improbable.io/reference/latest/shared/reference/project-structure#structure-of-a-spatialos-project). Among other things, you use it to [deploy](#deployment) your game (using [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch) or [`spatial cloud launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-cloud-launch)). You can run the CLI commands `spatial build` and `spatial local launch` from the [GDK toolbar]({{urlRoot}}/content/toolbars.md#spatialos-gdk-for-unreal-toolbar) in the Unreal Editor.
 
 > Related:
->
+> 
 > * [An introduction to the `spatial` command-line tool](https://docs.improbable.io/reference/latest/shared/spatial-cli-introduction). Note that the GDK does not support any `spatial worker` commands.
 > * [`spatial` reference](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial)
 
@@ -349,7 +349,7 @@ Also sometimes just called “SpatialOS”.
 A SpatialOS Runtime instance manages the [SpatialOS world](#spatialos-world) of each [deployment](#deployment) by storing all [SpatialOS entities](#spatialos-entity) and the current state of their [SpatialOS components](#spatialos-component). [Workers](#workers) interact with the SpatialOS Runtime to read and modify the components of an entity as well as send messages between each other.
 
 ### SpatialOS SDK
-This is a set of low-level tools in several programming languages which you can use to integrate your game project with SpatialOS. It consists of the Worker SDK (or “Worker module”) and Platform SDK (or “Platform module”).
+This is a set of low-level tools in several programming languages which you can use to integrate your game project with SpatialOS. It consists of the Worker SDK (or “Worker module”) and Platform SDK (or “Platform module”). 
 If you are using the GDK for Unreal, you do not need to use the Worker SDK or Platform SDK, however, you can use the Worker SDK to extend or complement the functionality of the GDK for Unreal. 
 
 > Related:
