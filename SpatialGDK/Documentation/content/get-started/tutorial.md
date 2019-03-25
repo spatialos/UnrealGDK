@@ -1,10 +1,13 @@
 <%(TOC)%>
 # Follow the Multiserver Shooter tutorial
 
+<%(Callout type="warn" message="The Multi-server Shooter game is currently in alpha as we improve its stability. Be aware that some elements of the game may behave unexpectedly. If you encounter any problems, please contact us via our [forums](https://forums.improbable.io/), or [Discord](https://discord.gg/vAT7RSU).")%>
+
 **What the tutorial covers**<br/>
 In this tutorial you’ll implement cross-server remote procedure calls (RPCs) in a simple third person shooter. The end result will be a multiplayer, cloud-hosted Unreal game running across multiple [server-workers]({{urlRoot}}/content/glossary#inspector) that players can seamlessly move between and shoot across. It will look something like this:
 
 ![]({{assetRoot}}assets/tutorial/cross-server.gif)
+
 
 The exercise demonstrates that the workflows and iteration speed you’re used to as an Unreal developer are almost entirely unaltered by the GDK: it’s just like regular Unreal!
 <br/>
@@ -332,5 +335,6 @@ We hope you've enjoyed this tutorial. If you want to build a new game using the 
 
 <br/>
 <br/>
+
 -------------
 _2019-03-20 Page updated with limited editorial review_

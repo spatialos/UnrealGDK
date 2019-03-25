@@ -1,6 +1,6 @@
 <%(TOC)%>
 # Welcome to the SpatialOS GDK for Unreal Alpha
-<%(Callout type="warn" message="This is an alpha release of the SpatialOS GDK for Unreal. The API may change as we learn from feedback. Although not fully ready in terms of performance, stability and documentation, this is a great time to get involved and shape it with us. We are committed to improving the GDK rapidly, aiming for a more stable release in Q2 2019: see [Development Roadmap](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap). If you are interested in developing with the GDK before this time, please contact us. For more information please see [Recommended Use]({{urlRoot}}/recommended-use).")%>
+<%(Callout type="warn" message=" The SpatialOS GDK for Unreal is in alpha. Its API may change as we learn from feedback. Although not fully ready in terms of performance, stability and documentation, this is a great time to get involved with the GDK and shape it with us. We are committed to improving the GDK rapidly, aiming for a more stable release in Q2 2019: see [Development roadmap](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap). If you are interested in developing with the GDK before then, please contact us via our [forums](https://forums.improbable.io/), or [Discord](https://discord.gg/vAT7RSU).")%>
 
 <img src="{{assetRoot}}assets/unrealgdk-headline-image.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
 
@@ -31,3 +31,8 @@ The GDK offers:<br/>
 <br/> **Read the [SpatialOS concept docs](https://docs.improbable.io/reference/latest/shared/concepts/spatialos)** on the SpatialOS documentation website (5 minute read).
 <br/>
 <br/>
+
+<br/>
+
+------
+_2019-03-25 Page updated with editorial review_
