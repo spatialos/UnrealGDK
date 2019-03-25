@@ -10,6 +10,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, HeartbeatIntervalSeconds(2.0f)
 	, HeartbeatTimeoutSeconds(10.0f)
 	, ActorReplicationRateLimit(0)
+	, bUsingQBI(false)
 {
 }
 
@@ -22,6 +23,7 @@ FString USpatialGDKSettings::ToString()
 	Args.Add(HeartbeatIntervalSeconds);
 	Args.Add(HeartbeatTimeoutSeconds);
 	Args.Add(ActorReplicationRateLimit);
+	Args.Add(bUsingQBI);
 
 	return FString::Format(TEXT(
 		"EntityPoolInitialReservationCount={0}, "
@@ -29,6 +31,7 @@ FString USpatialGDKSettings::ToString()
 		"EntityPoolRefreshCount={2}, "
 		"HeartbeatIntervalSeconds={3}, "
 		"HeartbeatTimeoutSeconds={4}, "
-		"ActorReplicationRateLimit={5}")
+		"ActorReplicationRateLimit={5}, "
+		"bUsingQBI={6}")
 		, Args);
 }

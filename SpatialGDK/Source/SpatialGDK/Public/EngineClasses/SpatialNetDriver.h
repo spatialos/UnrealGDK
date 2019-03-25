@@ -85,6 +85,9 @@ public:
 
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
+	// Temporary additions for UNR-1180
+	bool IsUsingQBI();
+
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);

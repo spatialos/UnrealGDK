@@ -45,6 +45,9 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Actor Replication Rate Limit"))
 	uint32 ActorReplicationRateLimit;
 
+	UPROPERTY(EditAnywhere, config, Category = "QBI", meta = (ConfigRestartRequired = false, DisplayName = "QBI Enabled"))
+	bool bUsingQBI;
+
 	virtual FString ToString();
 };
 

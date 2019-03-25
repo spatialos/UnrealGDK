@@ -30,6 +30,11 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate()
 
 Interest InterestFactory::CreateInterest()
 {
+	if (!NetDriver->IsUsingQBI())
+	{
+		return Interest();
+	}
+
 	if (Actor->GetNetConnection() != nullptr)
 	{
 		return CreatePlayerOwnedActorInterest();
