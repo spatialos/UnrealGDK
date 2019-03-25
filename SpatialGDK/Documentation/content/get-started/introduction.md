@@ -24,7 +24,7 @@ Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issu
 
 #### Next: [Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)
 
-<%(Callout type="warn" message="This is an [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) version of the SpatialOS GDK for Unreal, pending stability, performance and documentation improvements. The API may change as we learn from feedback.)%>
+<%(Callout type="warn" message="This is an [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) version of the SpatialOS GDK for Unreal, pending stability, performance and documentation improvements. The API may change as we learn from feedback.")%>
 
 <br/>
 
