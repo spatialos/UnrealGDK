@@ -74,12 +74,12 @@ exit /b !ERRORLEVEL!
 
             if (help)
             {
-                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>");
+                Console.WriteLine("Usage: <WorkerName> <Platform> <Configuration> <BuildType> <game.uproject> [-nocompile] <Additional UAT args>");
 
                 Environment.Exit(exitCode);
             }
 
-            var gameName = args[0];
+            var workerName = args[0];
             var platform = args[1];
             var configuration = args[2];
             var projectFile = Path.GetFullPath(args[3]);
@@ -89,7 +89,7 @@ exit /b !ERRORLEVEL!
 
             var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
             var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));
-            var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
+            var gameName = Path.GetFileNameWithoutExtension(projectFile);
 
             if (buildType == "Editor")
             {
@@ -103,7 +103,7 @@ exit /b !ERRORLEVEL!
 
                     Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new[]
                     {
-                        baseGameName + "Editor",
+                        gameName + "Editor",
                         platform,
                         configuration,
                         Quote(projectFile)
@@ -280,14 +280,14 @@ exit /b !ERRORLEVEL!
                 {
                     // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                     // Also ensure script uses Linux line endings
-                    File.WriteAllText(Path.Combine(serverPath, "StartWorker.sh"), string.Format(UnrealWorkerShellScript, baseGameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
+                    File.WriteAllText(Path.Combine(serverPath, "StartWorker.sh"), string.Format(UnrealWorkerShellScript, gameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
                 }
 
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
                     "-add=" + Quote(serverPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, gameName + $"@{assemblyPlatform}.zip"))
+                    "-archive=" + Quote(Path.Combine(outputDir, workerName + $"@{assemblyPlatform}.zip"))
                 });
             }
             else
@@ -296,7 +296,7 @@ exit /b !ERRORLEVEL!
                 Common.WriteHeading($" > Building ${gameName}.");
                 Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new[]
                 {
-                    baseGameName,
+                    gameName,
                     platform,
                     configuration,
                     Quote(projectFile)
