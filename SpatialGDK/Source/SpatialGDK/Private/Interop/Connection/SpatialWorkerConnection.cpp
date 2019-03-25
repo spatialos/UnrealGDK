@@ -465,7 +465,10 @@ void USpatialWorkerConnection::OnConnectionFailure()
 			AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
 			{
 				UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
-				GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::PendingConnectionFailure, *ErrorMessage);
+				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+				{
+					GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::PendingConnectionFailure, *ErrorMessage);
+				}
 			});
 			break;
 		}
