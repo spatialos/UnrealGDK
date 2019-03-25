@@ -214,7 +214,7 @@ In SpatialOS, you can split up [server-worker](#workers) computation into layers
 
 A SpatialOS layer has two elements;
 
-* a group of SpatialOS entity components,
+* a group of SpatialOS [component definitions](#spatialos-component),
 * server-worker instances of a worker type that have write access authority over the group of components.
 
 By default, the GDK for Unreal uses a single Unreal server-worker layer to handle all server-side computation.
