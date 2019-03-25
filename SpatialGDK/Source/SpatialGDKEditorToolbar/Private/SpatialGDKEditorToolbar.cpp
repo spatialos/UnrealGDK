@@ -424,7 +424,6 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 	}
 }
 
-#pragma optimize("", off)
 bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const
 {
 	FString Text;
@@ -529,7 +528,6 @@ bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJson
 
 	return true;
 }
-#pragma optimize("", on)
 
 #undef LOCTEXT_NAMESPACE
 
