@@ -8,6 +8,7 @@ class SPATIALGDK_API USpatialWorkerFlags : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
+public:
 	/** Gets value of a worker flag. Must be connected to SpatialOS to properly work.
 	 * @param Name - Name of worker flag
 	 * @param OutValue - Value of worker flag
