@@ -54,7 +54,7 @@ FString USpatialGDKEditorCloudLauncherSettings::ToString()
 FString USpatialGDKEditorCloudLauncherSettings::GetProjectNameFromSpatial()
 {
 	FString FileContents;
-	FString SpatialOSFile = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory().Append(TEXT("/spatialos.json"));
+	const FString SpatialOSFile = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory().Append(TEXT("/spatialos.json"));
 
 	if (!FFileHelper::LoadFileToString(FileContents, *SpatialOSFile))
 	{
