@@ -13,7 +13,7 @@
 USpatialGDKEditorCloudLauncherSettings::USpatialGDKEditorCloudLauncherSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	const USpatialGDKEditorSettings * SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	SnapshotPath.FilePath = FPaths::Combine(SpatialEditorSettings->GetSpatialOSSnapshotFolderPath(), SpatialEditorSettings->GetSpatialOSSnapshotFile());
 	ProjectName = GetProjectNameFromSpatial();
 }
