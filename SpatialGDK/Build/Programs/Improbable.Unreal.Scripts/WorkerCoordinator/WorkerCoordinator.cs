@@ -71,16 +71,6 @@ namespace Improbable.WorkerCoordinator
 
             // Create connection between worker coordinator and simulated player deployment
             // and keep it alive to prevent the coordinator from being killed.
-            var connectionParameters = new ConnectionParameters
-            {
-                WorkerType = CoordinatorWorkerType,
-                Network =
-                {
-                    ConnectionType = NetworkConnectionType.Tcp
-                }
-            };
-
-            // Connect coordinator to simulated player deployment.
             string receptionistHost = args[1];
             ushort receptionistPort = Convert.ToUInt16(args[2]);
             string workerId = args[3];
@@ -138,18 +128,8 @@ namespace Improbable.WorkerCoordinator
             Connection.SendLogMessage(LogLevel.Info, LoggerName, "Starting worker " + clientName + " with args: " + ArgsToString(simulatedPlayerArgs));
             StartClient(string.Join(" ", simulatedPlayerArgs));
 
-            // Wait for client to have exited
-            while (SimulatedPlayerList.Count > 0)
-            {
-                try
-                {
-                    SimulatedPlayerList.Pop().WaitForExit();
-                }
-                catch (Exception e)
-                {
-                    Logger.WriteError("Error while waiting for simulated player to exit: " + e.Message);
-                }
-            }
+            // Wait for client to exit
+            WaitForClientsToExit();
 
             return 0;
         }
@@ -184,6 +164,21 @@ namespace Improbable.WorkerCoordinator
             catch (Exception e)
             {
                 Connection.SendLogMessage(LogLevel.Error, LoggerName, "Exception from starting simulated player: " + e.Message);
+            }
+        }
+
+        private static void WaitForClientsToExit()
+        {
+            while (SimulatedPlayerList.Count > 0)
+            {
+                try
+                {
+                    SimulatedPlayerList.Pop().WaitForExit();
+                }
+                catch (Exception e)
+                {
+                    Logger.WriteError("Error while waiting for simulated player to exit: " + e.Message);
+                }
             }
         }
         
