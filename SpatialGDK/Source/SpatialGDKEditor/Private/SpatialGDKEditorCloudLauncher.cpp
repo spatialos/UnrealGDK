@@ -52,7 +52,7 @@ bool SpatialGDKCloudStop()
 
 	uint32 DeploymentLauncherProcessID;
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
-		*(CmdExecutable), *LauncherCmdArguments, true, false, false, &DeploymentLauncherProcessID, 0,
+		*CmdExecutable, *LauncherCmdArguments, true, false, false, &DeploymentLauncherProcessID, 0,
 		*ExecuteAbsolutePath, nullptr, nullptr);
 
 	return DeploymentLauncherProcHandle.IsValid();
