@@ -424,7 +424,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 
-	if (!SpatialGDKCloudLauncherSettings->IsDeploymentConfigurationValidWithCheck()) {
+	if (!SpatialGDKCloudLauncherSettings->IsDeploymentConfigurationValid()) {
 		FNotificationInfo Info(FText::FromString(TEXT("Deployment configuration is not valid.")));
 		Info.bUseSuccessFailIcons = true;
 		Info.ExpireDuration = 3.0f;

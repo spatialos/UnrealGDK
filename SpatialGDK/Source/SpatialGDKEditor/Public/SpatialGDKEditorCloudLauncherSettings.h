@@ -18,7 +18,7 @@ public:
 private:
 	/** Path to the directory containing the SpatialOS-related files. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
-		FDirectoryPath SpatialOSDirectory;
+	FDirectoryPath SpatialOSDirectory;
 
 private:
 	UPROPERTY(config)
@@ -45,16 +45,12 @@ private:
 	UPROPERTY(config)
 	uint32 NumberOfSimulatedPlayers;
 
-	bool bPrimaryDeploymentNameIsValid;
-	bool bAssemblyNameIsValid;
-	bool bProjectNameIsValid;
-
 	UPROPERTY(config)
-	bool SimulatedPlayersIsEnabled;
+	bool bSimulatedPlayersIsEnabled;
 
-	void ValidateAssemblyName();
-	void ValidateProjectName();
-	void ValidateDeploymentName();
+	static bool IsAssemblyNameValid(const FString & Name);
+	static bool IsProjectNameValid(const FString & Name);
+	static bool IsDeploymentNameValid(const FString & Name);
 
 public:
 	FString GetProjectNameFromSpatial() const;
@@ -92,7 +88,7 @@ public:
 	void SetSimulatedPlayersEnabledState(bool IsEnabled);
 	FORCEINLINE bool IsSimulatedPlayersEnabled() const
 	{
-		return SimulatedPlayersIsEnabled;
+		return bSimulatedPlayersIsEnabled;
 	}
 
 	void SetSimulatedPlayerDeploymentName(const FString & Name);
@@ -113,24 +109,5 @@ public:
 		return NumberOfSimulatedPlayers;
 	}
 
-	FORCEINLINE bool IsProjectNameValid() const
-	{
-		return bProjectNameIsValid;
-	}
-
-	FORCEINLINE bool IsPrimaryDeploymentNameValid() const
-	{
-		return bPrimaryDeploymentNameIsValid;
-	}
-
-	FORCEINLINE bool IsAssemblyNameValid() const
-	{
-		return bAssemblyNameIsValid;
-	}
-
-	bool IsDeploymentConfigurationValidSinceLastCheck() const;
-
-	bool IsDeploymentConfigurationValidWithCheck();
-
-	virtual FString ToString();
+	bool IsDeploymentConfigurationValid();
 };

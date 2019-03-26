@@ -39,28 +39,28 @@ FString USpatialGDKEditorCloudLauncherSettings::GetProjectNameFromSpatial() cons
 	return TEXT("");
 }
 
-void USpatialGDKEditorCloudLauncherSettings::ValidateAssemblyName()
+bool USpatialGDKEditorCloudLauncherSettings::IsAssemblyNameValid(const FString & Name)
 {
 	const FRegexPattern AssemblyPattern(TEXT("^[a-zA-Z0-9_.-]{5,64}$"));
-	FRegexMatcher RegMatcher(AssemblyPattern, AssemblyName);
+	FRegexMatcher RegMatcher(AssemblyPattern, Name);
 
-	bAssemblyNameIsValid = RegMatcher.FindNext();
+	return RegMatcher.FindNext();
 }
 
-void USpatialGDKEditorCloudLauncherSettings::ValidateProjectName()
+bool USpatialGDKEditorCloudLauncherSettings::IsProjectNameValid(const FString & Name)
 {
 	const FRegexPattern ProjectPattern(TEXT("^[a-z0-9_]{3,32}$"));
-	FRegexMatcher RegMatcher(ProjectPattern, ProjectName);
+	FRegexMatcher RegMatcher(ProjectPattern, Name);
 
-	bProjectNameIsValid = RegMatcher.FindNext();
+	return RegMatcher.FindNext();
 }
 
-void USpatialGDKEditorCloudLauncherSettings::ValidateDeploymentName()
+bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentNameValid(const FString & Name)
 {
 	const FRegexPattern DeploymentPattern(TEXT("^[a-z0-9_]{2,32}$"));
-	FRegexMatcher RegMatcher(DeploymentPattern, PrimaryDeploymentName);
+	FRegexMatcher RegMatcher(DeploymentPattern, Name);
 
-	bPrimaryDeploymentNameIsValid = RegMatcher.FindNext();
+	return RegMatcher.FindNext();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetPrimaryDeploymentName(const FString & Name)
@@ -90,7 +90,7 @@ void USpatialGDKEditorCloudLauncherSettings::SetSnapshotPath(const FString & Pat
 
 void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
-	SimulatedPlayersIsEnabled = IsEnabled;
+	bSimulatedPlayersIsEnabled = IsEnabled;
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerDeploymentName(const FString & Name)
@@ -108,20 +108,11 @@ void USpatialGDKEditorCloudLauncherSettings::SetNumberOfSimulatedPlayers(uint32 
 	NumberOfSimulatedPlayers = Number;
 }
 
-bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValidSinceLastCheck() const
+bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValid()
 {
-	return bProjectNameIsValid &&
-		bAssemblyNameIsValid &&
-		bPrimaryDeploymentNameIsValid &&
-		!PrimaryLaunchConfigPath.FilePath.IsEmpty() &&
-		!SnapshotPath.FilePath.IsEmpty();
-}
-
-bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValidWithCheck()
-{
-	ValidateAssemblyName();
-	ValidateDeploymentName();
-	ValidateProjectName();
-
-	return IsDeploymentConfigurationValidSinceLastCheck();
+	return IsAssemblyNameValid(PrimaryDeploymentName) &&
+		IsDeploymentNameValid(PrimaryDeploymentName) &&
+		IsProjectNameValid(ProjectName) &&
+		!SnapshotPath.FilePath.IsEmpty() &&
+		!PrimaryLaunchConfigPath.FilePath.IsEmpty();
 }
