@@ -12,8 +12,6 @@ bool SpatialGDKCloudLaunch()
 	const FString ExecuteAbsolutePath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir() / TEXT("Plugins/UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher")));
 	const FString CmdExecutable = TEXT("cmd.exe");
 
-	uint32 DeploymentLauncherProcessID;
-
 	FString LauncherCmdArguments = FString::Printf(
 		TEXT("/c cmd.exe /c DeploymentLauncher.exe create %s %s %s %s %s "),
 		*SpatialGDKCloudLauncherSettings->GetProjectName(),
@@ -34,6 +32,7 @@ bool SpatialGDKCloudLaunch()
 		);
 	}
 
+	uint32 DeploymentLauncherProcessID;
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
 		*(CmdExecutable), *LauncherCmdArguments, true, false, false, &DeploymentLauncherProcessID, 0,
 		*ExecuteAbsolutePath, nullptr, nullptr);
@@ -49,10 +48,9 @@ bool SpatialGDKCloudStop()
 	const FString ExecuteAbsolutePath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir() / TEXT("Plugins/UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher")));
 	const FString CmdExecutable = TEXT("cmd.exe");
 
-	uint32 DeploymentLauncherProcessID;
-
 	const FString LauncherCmdArguments = TEXT("/c cmd.exe /c DeploymentLauncher.exe stop");
 
+	uint32 DeploymentLauncherProcessID;
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
 		*(CmdExecutable), *LauncherCmdArguments, true, false, false, &DeploymentLauncherProcessID, 0,
 		*ExecuteAbsolutePath, nullptr, nullptr);
