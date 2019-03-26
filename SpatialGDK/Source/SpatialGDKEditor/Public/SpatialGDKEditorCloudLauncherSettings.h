@@ -57,7 +57,7 @@ private:
 	void ValidateDeploymentName();
 
 public:
-	FString GetProjectNameFromSpatial();
+	FString GetProjectNameFromSpatial() const;
 
 	void SetPrimaryDeploymentName(const FString & Name);
 	FORCEINLINE FString GetPrimaryDeploymentName() const
