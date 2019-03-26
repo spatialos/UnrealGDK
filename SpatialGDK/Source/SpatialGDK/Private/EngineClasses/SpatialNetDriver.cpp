@@ -510,11 +510,6 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 {
-	if (!IsUsingQBI())
-	{
-		return;
-	}
-
 	// If PackageMap doesn't exist, we haven't connected yet, which means
 	// we don't need to update the interest at this point
 	if (PackageMap == nullptr)
@@ -1603,10 +1598,4 @@ void USpatialNetDriver::HandleOnConnectionFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
 	OnConnectionFailed.Broadcast(Reason);
-}
-
-// Temporary additions for UNR-1180
-bool USpatialNetDriver::IsUsingQBI()
-{
-	return GetDefault<USpatialGDKSettings>()->bUsingQBI;
 }
