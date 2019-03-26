@@ -28,7 +28,6 @@ namespace Improbable.WorkerCoordinator
             }
 
             return pitResponse.PlayerIdentityToken;
-
         }
 
         public static List<LoginTokenDetails> GetDevelopmentLoginTokens(string workerType, string pit)

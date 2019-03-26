@@ -29,7 +29,6 @@ namespace Improbable.WorkerCoordinator
     ///     `<LOGIN_TOKEN>`                         will be replaced by the generated development auth login token
     ///     `<PLAYER_IDENTITY_TOKEN>`               will be replaced by the generated development auth player identity token
     ///
-    ///
     /// WORKER FLAGS
     /// Additionally, the following worker flags are required for the coordinator:
     ///     simulated_players_dev_auth_token_id     The development auth token id used to generate login tokens and player identity tokens
@@ -126,7 +125,6 @@ namespace Improbable.WorkerCoordinator
             var startDelayMillis = GetIntegerArgument(args, START_DELAY_ARG, 0) + new Random().Next(maxDelayMillis);
             connection.SendLogMessage(LogLevel.Debug, LoggerName, $"Waiting for {startDelayMillis} millis before starting client.");
             Thread.Sleep(startDelayMillis);
-
 
             string clientName = "SimulatedPlayer" + Guid.NewGuid();
 
