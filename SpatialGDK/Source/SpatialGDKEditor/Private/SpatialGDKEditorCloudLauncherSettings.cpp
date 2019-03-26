@@ -8,7 +8,8 @@
 #include "Serialization/JsonSerializer.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKEditorSettings.h";
-#include "Templates/SharedPointer.h"
+#include "Templates/SharedPointer.h";
+#include "SpatialConstants.h";
 
 USpatialGDKEditorCloudLauncherSettings::USpatialGDKEditorCloudLauncherSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -41,24 +42,24 @@ FString USpatialGDKEditorCloudLauncherSettings::GetProjectNameFromSpatial() cons
 
 bool USpatialGDKEditorCloudLauncherSettings::IsAssemblyNameValid(const FString & Name)
 {
-	const FRegexPattern AssemblyPattern(TEXT("^[a-zA-Z0-9_.-]{5,64}$"));
-	FRegexMatcher RegMatcher(AssemblyPattern, Name);
+	const FRegexPattern AssemblyPatternRegex(SpatialConstants::AssemblyPattern);
+	FRegexMatcher RegMatcher(AssemblyPatternRegex, Name);
 
 	return RegMatcher.FindNext();
 }
 
 bool USpatialGDKEditorCloudLauncherSettings::IsProjectNameValid(const FString & Name)
 {
-	const FRegexPattern ProjectPattern(TEXT("^[a-z0-9_]{3,32}$"));
-	FRegexMatcher RegMatcher(ProjectPattern, Name);
+	const FRegexPattern ProjectPatternRegex(SpatialConstants::ProjectPattern);
+	FRegexMatcher RegMatcher(ProjectPatternRegex, Name);
 
 	return RegMatcher.FindNext();
 }
 
 bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentNameValid(const FString & Name)
 {
-	const FRegexPattern DeploymentPattern(TEXT("^[a-z0-9_]{2,32}$"));
-	FRegexMatcher RegMatcher(DeploymentPattern, Name);
+	const FRegexPattern DeploymentPatternRegex(SpatialConstants::DeploymentPattern);
+	FRegexMatcher RegMatcher(DeploymentPatternRegex, Name);
 
 	return RegMatcher.FindNext();
 }
@@ -108,7 +109,7 @@ void USpatialGDKEditorCloudLauncherSettings::SetNumberOfSimulatedPlayers(uint32 
 	NumberOfSimulatedPlayers = Number;
 }
 
-bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValid()
+bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValid() const
 {
 	return IsAssemblyNameValid(AssemblyName) &&
 		IsDeploymentNameValid(PrimaryDeploymentName) &&

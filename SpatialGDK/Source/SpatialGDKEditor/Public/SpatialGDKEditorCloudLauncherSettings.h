@@ -104,5 +104,5 @@ public:
 		return NumberOfSimulatedPlayers;
 	}
 
-	bool IsDeploymentConfigurationValid();
+	bool IsDeploymentConfigurationValid() const;
 };
