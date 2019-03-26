@@ -18,39 +18,6 @@ USpatialGDKEditorCloudLauncherSettings::USpatialGDKEditorCloudLauncherSettings(c
 	ProjectName = GetProjectNameFromSpatial();
 }
 
-FString USpatialGDKEditorCloudLauncherSettings::ToString()
-{
-	TArray<FStringFormatArg> Args;
-
-	Args.Add(ProjectName);
-	Args.Add(PrimaryDeploymentName);
-	Args.Add(AssemblyName);
-	Args.Add(PrimaryLaunchConfigPath.FilePath);
-	Args.Add(SnapshotPath.FilePath);
-	Args.Add(SimulatedPlayerDeploymentName);
-	Args.Add(SimulatedPlayerLaunchConfigPath.FilePath);
-	Args.Add(NumberOfSimulatedPlayers);
-	Args.Add(bPrimaryDeploymentNameIsValid);
-	Args.Add(bAssemblyNameIsValid);
-	Args.Add(bProjectNameIsValid);
-	Args.Add(SimulatedPlayersIsEnabled);
-
-	return FString::Format(TEXT(
-		"ProjectName={0}, "
-		"PrimaryDeploymentName={1}"
-		"AssemblyName={2}"
-		"PrimaryLaunchConfigPath={3}, "
-		"SnapshotPath={4}, "
-		"SimulatedPlayerDeploymentName={5}, "
-		"SimulatedPlayerLaunchConfigPath={6}, "
-		"NumberOfSimulatedPlayers={7}, "
-		"bPrimaryDeploymentNameIsValid={8}, "
-		"bAssemblyNameIsValid={9}, "
-		"bProjectNameIsValid={10}, "
-		"SimulatedPlayersIsEnabled={11}")
-		, Args);
-}
-
 FString USpatialGDKEditorCloudLauncherSettings::GetProjectNameFromSpatial() const
 {
 	FString FileContents;
