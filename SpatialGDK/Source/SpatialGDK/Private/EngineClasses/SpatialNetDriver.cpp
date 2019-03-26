@@ -192,7 +192,6 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
-	TimerManager = MakeUnique<FTimerManager>();
 	Dispatcher = NewObject<USpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
@@ -207,15 +206,15 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	ClassInfoManager->Init(this);
 	Dispatcher->Init(this);
 	Sender->Init(this);
-	Receiver->Init(this, TimerManager.Get());
-	GlobalStateManager->Init(this, TimerManager.Get());
+	Receiver->Init(this, &TimerManager);
+	GlobalStateManager->Init(this, &TimerManager);
 	SnapshotManager->Init(this);
-	PlayerSpawner->Init(this, TimerManager.Get());
+	PlayerSpawner->Init(this, &TimerManager);
 
 	// Entity Pools should never exist on clients
 	if (IsServer())
 	{
-		EntityPool->Init(this, TimerManager.Get());
+		EntityPool->Init(this, &TimerManager);
 	}
 }
 
@@ -1176,9 +1175,8 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	}
 
 	// Tick the timer manager
-	if (TimerManager.IsValid())
 	{
-		TimerManager->Tick(DeltaTime);
+		TimerManager.Tick(DeltaTime);
 	}
 
 	Super::TickFlush(DeltaTime);
@@ -1579,7 +1577,7 @@ void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType
 void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay)
 {
 	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(RetryTimer, [this, EntityId]()
+	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);

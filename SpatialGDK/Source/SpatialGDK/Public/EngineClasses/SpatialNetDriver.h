@@ -6,6 +6,7 @@
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
 #include "OnlineSubsystemNames.h"
+#include "TimerManager.h"
 #include "UObject/CoreOnline.h"
 
 #include "Interop/Connection/ConnectionConfig.h"
@@ -160,7 +161,7 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 
-	TUniquePtr<FTimerManager> TimerManager;
+	FTimerManager TimerManager;
 
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
