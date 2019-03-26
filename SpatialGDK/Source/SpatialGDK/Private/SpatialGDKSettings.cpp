@@ -35,3 +35,16 @@ FString USpatialGDKSettings::ToString()
 		"bUsingQBI={6}")
 		, Args);
 }
+
+// Add a pop-up to warn users to update their config upon changing the using QBI property.
+void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& e)
+{
+	FName PropertyName = (e.Property != NULL) ? e.Property->GetFName() : NAME_None;
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUsingQBI))
+	{
+		FMessageDialog::Open(EAppMsgType::Ok,
+			FText::FromString(FString::Printf(TEXT("If you are not using auto-generated launch config, you must make sure to set the value of the \"enable_chunk_interest\" field to \"%s\" in your launch configuration for this to work. (You can check what launch configuration you are using in the SpatialOS GDK for Unreal Editor Settings.)"),
+				bUsingQBI ? TEXT("false") : TEXT("true"))));
+	}
+	Super::PostEditChangeProperty(e);
+}

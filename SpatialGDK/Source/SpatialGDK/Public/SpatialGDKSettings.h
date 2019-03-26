@@ -16,6 +16,8 @@ class SPATIALGDK_API USpatialGDKSettings : public UObject
 public:
 	USpatialGDKSettings(const FObjectInitializer& ObjectInitializer);
 
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+
 	/** The number of entity IDs to be reserved when the entity pool is first created */
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (ConfigRestartRequired = false, DisplayName = "Initial Entity ID Reservation Count"))
 	uint32 EntityPoolInitialReservationCount;
@@ -45,6 +47,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Actor Replication Rate Limit"))
 	uint32 ActorReplicationRateLimit;
 
+	/** QBI is required for level streaming to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
 	UPROPERTY(EditAnywhere, config, Category = "QBI", meta = (ConfigRestartRequired = false, DisplayName = "QBI Enabled"))
 	bool bUsingQBI;
 

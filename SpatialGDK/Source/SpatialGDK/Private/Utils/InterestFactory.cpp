@@ -8,6 +8,8 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/PlayerController.h"
 
+#include "SpatialGDKSettings.h"
+
 namespace improbable
 {
 
@@ -30,7 +32,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate()
 
 Interest InterestFactory::CreateInterest()
 {
-	if (!NetDriver->IsUsingQBI())
+	if (!GetDefault<USpatialGDKSettings>()->bUsingQBI)
 	{
 		return Interest();
 	}
