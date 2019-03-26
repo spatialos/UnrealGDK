@@ -128,24 +128,16 @@ namespace Improbable.WorkerCoordinator
             string clientName = "SimulatedPlayer" + Guid.NewGuid();
 
             // Create player identity token and login token
-            var pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthTokenId.Value, clientName);
-            if (pit == null)
+            string pit, loginToken;
+            try
             {
-                connection.SendLogMessage(LogLevel.Error, LoggerName, $"Did not receive player identity token for {clientName}, client will not connect.");
-                return ErrorExitStatus;
+                pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthTokenId.Value, clientName);
+                var loginTokens = Authentication.GetDevelopmentLoginTokens(SimulatedPlayerWorkerType, pit);
+                loginToken = Authentication.SelectLoginToken(loginTokens, targetDeployment.Value);
             }
-
-            var loginTokens = Authentication.GetDevelopmentLoginTokens(SimulatedPlayerWorkerType, pit);
-            if (loginTokens == null)
+            catch (Exception e)
             {
-                connection.SendLogMessage(LogLevel.Error, LoggerName, $"Did not receive login tokens for {clientName}, client will not connect.");
-                return ErrorExitStatus;
-            }
-
-            var loginToken = Authentication.SelectLoginToken(loginTokens, targetDeployment.Value);
-            if (loginToken == null)
-            {
-                connection.SendLogMessage(LogLevel.Error, LoggerName, "Failed to launch simulated player. Login token for target deployment was not found in response. Does that deployment have the `dev_auth` tag?");
+                connection.SendLogMessage(LogLevel.Error, LoggerName, $"Failed to launch simulated player: {e.Message}");
                 return ErrorExitStatus;
             }
 

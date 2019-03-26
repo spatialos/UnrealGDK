@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Improbable.Worker;
@@ -7,8 +8,6 @@ namespace Improbable.WorkerCoordinator
 {
     class Authentication
     {
-        private static Logger Logger = new Logger("/improbable/logs/WorkerCoordinator.log");
-
         public static string GetDevelopmentPlayerIdentityToken(string devAuthTokenId, string clientName)
         {
             var pitResponse = DevelopmentAuthentication.CreateDevelopmentPlayerIdentityTokenAsync("locator.improbable.io", 444,
@@ -21,10 +20,9 @@ namespace Improbable.WorkerCoordinator
 
             if (pitResponse.Status != ConnectionStatusCode.Success)
             {
-                Logger.WriteError($"Failed to retrieve player identity token.\n" +
+                throw new Exception($"Failed to retrieve player identity token.\n" +
                     $"error code: {pitResponse.Status}\n" +
                     $"error message: {pitResponse.Error}");
-                return null;
             }
 
             return pitResponse.PlayerIdentityToken;
@@ -43,10 +41,9 @@ namespace Improbable.WorkerCoordinator
 
             if (loginTokensResponse.Status != ConnectionStatusCode.Success)
             {
-                Logger.WriteError($"Failed to retrieve any login tokens.\n" +
+                throw new Exception($"Failed to retrieve any login tokens.\n" +
                     $"error code: {loginTokensResponse.Status}\n" +
                     $"error message: {loginTokensResponse.Error}");
-                return null;
             }
 
             return loginTokensResponse.LoginTokens;
@@ -58,7 +55,7 @@ namespace Improbable.WorkerCoordinator
 
             if (selectedLoginToken == null)
             {
-                Logger.WriteError("Failed to launch simulated player. Login token for target deployment was not found in response. Does that deployment have the `dev_auth` tag?");
+                throw new Exception("Failed to launch simulated player. Login token for target deployment was not found in response. Does that deployment have the `dev_auth` tag?");
             }
 
             return selectedLoginToken;
