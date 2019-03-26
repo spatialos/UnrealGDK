@@ -61,7 +61,6 @@ namespace Improbable.WorkerCoordinator
         private const string LoggerName = "WorkerCoordinator.cs";
         private const int ErrorExitStatus = 1;
 
-        private const uint GetOpListTimeoutInMilliseconds = 100;
         private static Connection Connection;
 
         private static Random Random = new Random();
@@ -85,8 +84,7 @@ namespace Improbable.WorkerCoordinator
             string receptionistHost = args[1];
             ushort receptionistPort = Convert.ToUInt16(args[2]);
             string workerId = args[3];
-            Connection = ConnectWithReceptionist(receptionistHost, receptionistPort, workerId, connectionParameters);
-            KeepConnectionOpen(Connection);
+            Connection = CoordinatorConnection.ConnectAndKeepAlive(Logger, receptionistHost, receptionistPort, workerId, CoordinatorWorkerType);
 
             // Read worker flags.
             string devAuthTokenId, targetDeployment;
@@ -130,22 +128,7 @@ namespace Improbable.WorkerCoordinator
                 return ErrorExitStatus;
             }
 
-            // Replace client argument placeholders.
-            for (int j = 0; j < simulatedPlayerArgs.Length; j++)
-            {
-                if (simulatedPlayerArgs[j] == WORKER_NAME_ARG)
-                {
-                    simulatedPlayerArgs[j] = clientName;
-                }
-                else if (simulatedPlayerArgs[j] == LOGIN_TOKEN_ARG)
-                {
-                    simulatedPlayerArgs[j] = loginToken;
-                }
-                else if (simulatedPlayerArgs[j] == PLAYER_IDENTITY_TOKEN_ARG)
-                {
-                    simulatedPlayerArgs[j] = pit;
-                }
-            }
+            ReplacePlaceholderArgs(simulatedPlayerArgs, clientName, loginToken, pit);
 
             // Prepend the simulated player id as an argument to the start client script.
             // This argument is consumed by the start client script and will not be passed to the client worker.
@@ -220,66 +203,23 @@ namespace Improbable.WorkerCoordinator
             return flagValue.Value;
         }
 
-        private static Connection ConnectWithReceptionist(string hostname, ushort port,
-            string workerId, ConnectionParameters connectionParameters)
+        private static void ReplacePlaceholderArgs(string[] args, string clientName, string loginToken, string pit)
         {
-            Connection connection;
-
-            connectionParameters.Network.UseExternalIp = false;
-
-            using (var future = Connection.ConnectAsync(hostname, port, workerId, connectionParameters))
+            for (int j = 0; j < args.Length; j++)
             {
-                connection = future.Get();
-            }
-
-            connection.SendLogMessage(LogLevel.Info, LoggerName, "Successfully connected coordinator using the Receptionist");
-
-            return connection;
-        }
-
-        // We do not use the connection to the simulated player deployment,
-        // but we must ensure it is kept open to prevent the coordinator worker
-        // from being killed.
-        // This keeps the connection open in a separate thread by repeatedly calling
-        // GetOpList on the connection.
-        private static void KeepConnectionOpen(Connection connection)
-        {
-            var thread = new Thread(() =>
-            {
-                using (var dispatcher = new Dispatcher())
+                if (args[j] == WORKER_NAME_ARG)
                 {
-                    var isConnected = true;
-
-                    dispatcher.OnDisconnect(op =>
-                    {
-                        Logger.WriteError("[disconnect] " + op.Reason);
-                        isConnected = false;
-                    });
-
-                    dispatcher.OnLogMessage(op =>
-                    {
-                        connection.SendLogMessage(op.Level, LoggerName, op.Message);
-                        if (op.Level == LogLevel.Fatal)
-                        {
-                            Logger.WriteError("Fatal error: " + op.Message);
-                            Environment.Exit(ErrorExitStatus);
-                        }
-                    });
-
-                    while (isConnected)
-                    {
-                        using (var opList = connection.GetOpList(GetOpListTimeoutInMilliseconds))
-                        {
-                            dispatcher.Process(opList);
-                        }
-                    }
+                    args[j] = clientName;
                 }
-            });
-
-            // Don't keep thread / connection alive when main process stops.
-            thread.IsBackground = true;
-
-            thread.Start();
+                else if (args[j] == LOGIN_TOKEN_ARG)
+                {
+                    args[j] = loginToken;
+                }
+                else if (args[j] == PLAYER_IDENTITY_TOKEN_ARG)
+                {
+                    args[j] = pit;
+                }
+            }
         }
     }
 }

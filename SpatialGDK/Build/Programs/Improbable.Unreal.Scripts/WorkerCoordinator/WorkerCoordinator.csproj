@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Authentication.cs" />
+    <Compile Include="CoordinatorConnection.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="WorkerCoordinator.cs" />
   </ItemGroup>
