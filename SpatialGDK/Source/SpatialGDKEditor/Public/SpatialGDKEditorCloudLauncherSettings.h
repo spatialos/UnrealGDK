@@ -16,37 +16,32 @@ public:
 	USpatialGDKEditorCloudLauncherSettings(const FObjectInitializer& ObjectInitializer);
 
 private:
-	/** Path to the directory containing the SpatialOS-related files. */
-	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
-	FDirectoryPath SpatialOSDirectory;
-
-private:
-	UPROPERTY(config)
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS project"))
 	FString ProjectName;
 
-	UPROPERTY(config)
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Deployment name"))
 	FString PrimaryDeploymentName;
 
-	UPROPERTY(config)
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Assembly name"))
 	FString AssemblyName;
 
-	UPROPERTY(config)
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Cloud launch configuration path"))
 	FFilePath PrimaryLaunchConfigPath;
 
-	UPROPERTY(config)
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
 	FFilePath SnapshotPath;
 
-	UPROPERTY(config)
+	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (ConfigRestartRequired = false, DisplayName = "Include simulated players"))
+	bool bSimulatedPlayersIsEnabled;
+
+	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Deployment mame"))
 	FString SimulatedPlayerDeploymentName;
 
-	UPROPERTY(config)
+	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Launch configuration path"))
 	FFilePath SimulatedPlayerLaunchConfigPath;
 
-	UPROPERTY(config)
+	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Number of simulated players"))
 	uint32 NumberOfSimulatedPlayers;
-
-	UPROPERTY(config)
-	bool bSimulatedPlayersIsEnabled;
 
 	static bool IsAssemblyNameValid(const FString & Name);
 	static bool IsProjectNameValid(const FString & Name);

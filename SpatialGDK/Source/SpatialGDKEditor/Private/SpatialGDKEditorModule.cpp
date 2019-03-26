@@ -4,6 +4,7 @@
 
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKEditorCloudLauncherSettings.h"
 
 #include "ISettingsModule.h"
 #include "ISettingsContainer.h"
@@ -52,6 +53,16 @@ void FSpatialGDKEditorModule::RegisterSettings()
 		{
 			RuntimeSettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorModule::HandleRuntimeSettingsSaved);
 		}
+
+		ISettingsSectionPtr CloudLauncherSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Cloud Settings",
+			LOCTEXT("SpatialCloudLauncherGeneralSettingsName", "Cloud Settings"),
+			LOCTEXT("SpatialCloudLauncherGeneralSettingsDescription", "Cloud configuration for the SpatialOS GDK for Unreal"),
+			GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>());
+
+		if (CloudLauncherSettingsSection.IsValid())
+		{
+			CloudLauncherSettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorModule::HandleCloudLauncherSettingsSaved);
+		}
 	}
 }
 
@@ -61,6 +72,7 @@ void FSpatialGDKEditorModule::UnregisterSettings()
 	{
 		SettingsModule->UnregisterSettings("Project", "SpatialGDKEditor", "Editor Settings");
 		SettingsModule->UnregisterSettings("Project", "SpatialGDKEditor", "Runtime Settings");
+		SettingsModule->UnregisterSettings("Project", "SpatialGDKEditor", "Cloud Settings");
 	}
 }
 
@@ -74,6 +86,13 @@ bool FSpatialGDKEditorModule::HandleEditorSettingsSaved()
 bool FSpatialGDKEditorModule::HandleRuntimeSettingsSaved()
 {
 	GetMutableDefault<USpatialGDKSettings>()->SaveConfig();
+
+	return true;
+}
+
+bool FSpatialGDKEditorModule::HandleCloudLauncherSettingsSaved()
+{
+	GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>()->SaveConfig();
 
 	return true;
 }
