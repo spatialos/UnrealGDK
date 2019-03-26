@@ -38,9 +38,6 @@ private:
 	/** Pointer to the SpatialGDK editor */
 	TWeakPtr<FSpatialGDKEditor> SpatialGDKEditorPtr;
 
-	/** Pointer to the Spatial GDK Cloud Settings */
-	TSharedPtr<USpatialGDKEditorCloudLauncherSettings> SpatialGDKCloudSettings;
-
 	/** Delegate to commit assembly name */
 	void OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType);
 
