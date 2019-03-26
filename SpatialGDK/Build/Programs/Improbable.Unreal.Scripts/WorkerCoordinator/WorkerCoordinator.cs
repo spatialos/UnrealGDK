@@ -51,7 +51,6 @@ namespace Improbable.WorkerCoordinator
         private const string TARGET_DEPLOYMENT_FLAG = "simulated_players_target_deployment";
         private const string NUM_SIM_PLAYERS_FLAG = "target_num_simulated_players";
 
-
         private const string CoordinatorWorkerType = "SimulatedPlayerCoordinator";
         private const string SimulatedPlayerWorkerType = "UnrealClient";
         private const string SimulatedPlayerFilename = "StartSimulatedClient.sh";
