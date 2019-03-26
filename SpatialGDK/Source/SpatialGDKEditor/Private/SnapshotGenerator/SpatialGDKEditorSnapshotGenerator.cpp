@@ -17,6 +17,7 @@
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SchemaUtils.h"
+#include "Utils/SnapshotGenerationTemplate.h"
 
 #include "EngineUtils.h"
 #include "HAL/PlatformFile.h"
@@ -30,15 +31,6 @@ using namespace improbable;
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
-const WorkerAttributeSet UnrealServerAttributeSet{ TArray<FString>{SpatialConstants::ServerWorkerType} };
-const WorkerAttributeSet UnrealClientAttributeSet{ TArray<FString>{SpatialConstants::ClientWorkerType} };
-
-const WorkerRequirementSet UnrealServerPermission{ { UnrealServerAttributeSet } };
-const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
-const WorkerRequirementSet AnyWorkerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet } };
-
-const improbable::Coordinates Origin{ 0, 0, 0 };
-
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity SpawnerEntity;
@@ -51,16 +43,16 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	TArray<Worker_ComponentData> Components;
 
 	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(improbable::Position(Origin).CreatePositionData());
+	Components.Add(improbable::Position(improbable::Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
-	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(improbable::EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(PlayerSpawnerData);
 
 	SpawnerEntity.component_count = Components.Num();
@@ -126,14 +118,14 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	TArray<Worker_ComponentData> Components;
 
 	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
 	Components.Add(improbable::Position(Origin).CreatePositionData());
 	Components.Add(improbable::Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
@@ -142,8 +134,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
-
-	Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(improbable::EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();
@@ -172,15 +163,15 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 			TArray<Worker_ComponentData> Components;
 
 			WriteAclMap ComponentWriteAcl;
-			ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
-			ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, UnrealServerPermission);
-			ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, UnrealServerPermission);
-			ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
+			ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+			ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+			ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+			ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
 			Components.Add(improbable::Position(PlaceholderPosition).CreatePositionData());
 			Components.Add(improbable::Metadata(TEXT("Placeholder")).CreateMetadataData());
 			Components.Add(improbable::Persistence().CreatePersistenceData());
-			Components.Add(improbable::EntityAcl(UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
+			Components.Add(improbable::EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 			Placeholder.component_count = Components.Num();
 			Placeholder.components = Components.GetData();
@@ -291,10 +282,10 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 
 	WriteAclMap ComponentWriteAcl;
 
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, UnrealServerPermission);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
@@ -311,7 +302,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 			return;
 		}
 
-		ComponentWriteAcl.Add(ComponentId, UnrealServerPermission);
+		ComponentWriteAcl.Add(ComponentId, SpatialConstants::UnrealServerPermission);
 	});
 
 
@@ -340,7 +331,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 				return;
 			}
 
-			ComponentWriteAcl.Add(ComponentId, UnrealServerPermission);
+			ComponentWriteAcl.Add(ComponentId, SpatialConstants::UnrealServerPermission);
 		});
 	}
 
@@ -350,7 +341,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	TArray<Worker_ComponentData> Components;
 	Components.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	Components.Add(improbable::Metadata(ActorClass->GetName()).CreateMetadataData());
-	Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(improbable::EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(improbable::Persistence().CreatePersistenceData());
 	Components.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
 	Components.Add(improbable::UnrealMetadata({}, {}, ActorClass->GetPathName(), Actor->bNetLoadOnClient).CreateUnrealMetadataData());
@@ -452,6 +443,26 @@ bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 	return true;
 }
 
+
+bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStream)
+{
+	Worker_EntityId NextEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
+	for (TObjectIterator<UClass> SnapshotGenerationClass; SnapshotGenerationClass; ++SnapshotGenerationClass)
+	{
+		if (SnapshotGenerationClass->IsChildOf(USnapshotGenerationTemplate::StaticClass()) && *SnapshotGenerationClass != USnapshotGenerationTemplate::StaticClass())
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Found user snapshot generation class: %s"), *SnapshotGenerationClass->GetName());
+			USnapshotGenerationTemplate *SnapshotGenerationObj = NewObject<USnapshotGenerationTemplate>(GetTransientPackage(), *SnapshotGenerationClass);
+			if (!SnapshotGenerationObj->WriteToSnapshotOutput(OutputStream, NextEntityId))
+			{
+				UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Failure returned in user snapshot generation override method from class: %s"), *SnapshotGenerationClass->GetName());
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 {
 	if (!CreateSpawnerEntity(OutputStream))
@@ -474,6 +485,12 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 			return false;
 		}
+	}
+
+	if (!RunUserSnapshotGenerationOverrides(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		return false;
 	}
 
 	return true;

@@ -6,15 +6,13 @@
 
 #include "Schema/Component.h"
 #include "Schema/UnrealObjectRef.h"
-#include "SpatialConstants.h"
+#include "SpatialCommonTypes.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/Package.h"
 #include "Utils/SchemaUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 
 namespace improbable
 {
@@ -45,6 +43,8 @@ struct Coordinates
 		return Location;
 	}
 };
+
+static const Coordinates Origin{ 0, 0, 0 };
 
 inline void AddCoordinateToSchema(Schema_Object* Object, Schema_FieldId Id, const Coordinates& Coordinate)
 {
