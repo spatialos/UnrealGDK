@@ -62,7 +62,9 @@ namespace Improbable.WorkerCoordinator
         private const int ErrorExitStatus = 1;
 
         private const uint GetOpListTimeoutInMilliseconds = 100;
-        private static Connection connection;
+        private static Connection Connection;
+
+        private static Random Random = new Random();
 
         private static int Main(string[] args)
         {
@@ -83,46 +85,33 @@ namespace Improbable.WorkerCoordinator
             string receptionistHost = args[1];
             ushort receptionistPort = Convert.ToUInt16(args[2]);
             string workerId = args[3];
-            connection = ConnectWithReceptionist(receptionistHost, receptionistPort, workerId, connectionParameters);
-            KeepConnectionOpen(connection);
-
+            Connection = ConnectWithReceptionist(receptionistHost, receptionistPort, workerId, connectionParameters);
+            KeepConnectionOpen(Connection);
 
             // Read worker flags.
-            var devAuthTokenId = connection.GetWorkerFlag(DEV_AUTH_TOKEN_ID_FLAG);
-            if (!devAuthTokenId.HasValue)
+            string devAuthTokenId, targetDeployment;
+            int numSimulatedPlayers;
+            try
             {
-                connection.SendLogMessage(LogLevel.Error, LoggerName, $"Missing worker flag with development authentication token id ({DEV_AUTH_TOKEN_ID_FLAG}). Unable to connect simulated players.");
+                devAuthTokenId = GetRequiredWorkerFlag(DEV_AUTH_TOKEN_ID_FLAG);
+                targetDeployment = GetRequiredWorkerFlag(TARGET_DEPLOYMENT_FLAG);
+                numSimulatedPlayers = Convert.ToInt32(GetRequiredWorkerFlag(NUM_SIM_PLAYERS_FLAG));
+            }
+            catch (Exception e)
+            {
+                Connection.SendLogMessage(LogLevel.Error, LoggerName, $"Failed to start simulated player deployment: {e.Message}");
                 return ErrorExitStatus;
             }
 
-            var targetDeployment = connection.GetWorkerFlag(TARGET_DEPLOYMENT_FLAG);
-            if (!targetDeployment.HasValue)
-            {
-                connection.SendLogMessage(LogLevel.Error, LoggerName, $"Missing worker flag with target deployment ({TARGET_DEPLOYMENT_FLAG}). Unable to connect simulated players.");
-                return ErrorExitStatus;
-            }
-
-            var numSimulatedPlayers = connection.GetWorkerFlag(NUM_SIM_PLAYERS_FLAG);
-            int maxDelayMillis;
-            if (!numSimulatedPlayers.HasValue)
-            {
-                maxDelayMillis = 30_000;
-                connection.SendLogMessage(LogLevel.Warn, LoggerName, $"Missing worker flag with target number of simulated players ({NUM_SIM_PLAYERS_FLAG}). Unable to estimate good delay between connecting simulated clients, too many clients might start connecting at the same time.");
-            }
-            else
-            {
-                // Connect 1 player per 1.5 seconds (on average) across entire simulated player deployment.
-                maxDelayMillis = Convert.ToInt32(numSimulatedPlayers.Value) * 1500;
-            }
-
-       
             // Start the simulated player.
             // First 4 args are for coordinator - all following args are for simulated players.
             var simulatedPlayerArgs = args.Skip(4).ToArray();
 
             // Add a random delay between 0 and maxDelaySec to spread out the connecting of simulated clients (plus a fixed start delay).
-            var startDelayMillis = GetIntegerArgument(args, START_DELAY_ARG, 0) + new Random().Next(maxDelayMillis);
-            connection.SendLogMessage(LogLevel.Debug, LoggerName, $"Waiting for {startDelayMillis} millis before starting client.");
+            // Connect 1 player per 1.5 seconds (on average) across entire simulated player deployment.
+            var maxDelayMillis = numSimulatedPlayers * 1500;
+            var ourRandomDelayMillis = Random.Next(maxDelayMillis);
+            var startDelayMillis = GetIntegerArgument(args, START_DELAY_ARG, 0) + ourRandomDelayMillis;
             Thread.Sleep(startDelayMillis);
 
             string clientName = "SimulatedPlayer" + Guid.NewGuid();
@@ -131,13 +120,13 @@ namespace Improbable.WorkerCoordinator
             string pit, loginToken;
             try
             {
-                pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthTokenId.Value, clientName);
+                pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthTokenId, clientName);
                 var loginTokens = Authentication.GetDevelopmentLoginTokens(SimulatedPlayerWorkerType, pit);
-                loginToken = Authentication.SelectLoginToken(loginTokens, targetDeployment.Value);
+                loginToken = Authentication.SelectLoginToken(loginTokens, targetDeployment);
             }
             catch (Exception e)
             {
-                connection.SendLogMessage(LogLevel.Error, LoggerName, $"Failed to launch simulated player: {e.Message}");
+                Connection.SendLogMessage(LogLevel.Error, LoggerName, $"Failed to launch simulated player: {e.Message}");
                 return ErrorExitStatus;
             }
 
@@ -163,7 +152,7 @@ namespace Improbable.WorkerCoordinator
             simulatedPlayerArgs = new string[] { clientName }.Concat(simulatedPlayerArgs).ToArray();
 
             // Start the client
-            connection.SendLogMessage(LogLevel.Info, LoggerName, "Starting worker " + clientName + " with args: " + ArgsToString(simulatedPlayerArgs));
+            Connection.SendLogMessage(LogLevel.Info, LoggerName, "Starting worker " + clientName + " with args: " + ArgsToString(simulatedPlayerArgs));
             StartClient(string.Join(" ", simulatedPlayerArgs));
 
             // Wait for client to have exited
@@ -211,13 +200,24 @@ namespace Improbable.WorkerCoordinator
             }
             catch (Exception e)
             {
-                connection.SendLogMessage(LogLevel.Error, LoggerName, "Exception from starting simulated player: " + e.Message);
+                Connection.SendLogMessage(LogLevel.Error, LoggerName, "Exception from starting simulated player: " + e.Message);
             }
         }
         
         private static string ArgsToString(string[] args)
         {
             return string.Join(" ", args);
+        }
+
+        private static string GetRequiredWorkerFlag(string flagName)
+        {
+            var flagValue = Connection.GetWorkerFlag(flagName);
+            if (!flagValue.HasValue)
+            {
+                throw new Exception($"Missing worker flag `{flagName}`.");
+            }
+
+            return flagValue.Value;
         }
 
         private static Connection ConnectWithReceptionist(string hostname, ushort port,
