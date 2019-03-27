@@ -139,6 +139,8 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
+	case SpatialConstants::SERVER_PING_COMPONENT_ID:
+	case SpatialConstants::CLIENT_PONG_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -183,27 +185,49 @@ void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 
 void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& Op, APlayerController* PlayerController)
 {
+	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection());
+	bool bIsServer = NetDriver->IsServer();
+
 	// Server initializes heartbeat logic based on its authority over the position component,
 	// client does the same for heartbeat component
-	if ((NetDriver->IsServer() && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID) ||
-		(!NetDriver->IsServer() && Op.component_id == SpatialConstants::HEARTBEAT_COMPONENT_ID))
+	if ((bIsServer && Op.component_id == SpatialConstants::POSITION_COMPONENT_ID) ||
+		(!bIsServer && Op.component_id == SpatialConstants::HEARTBEAT_COMPONENT_ID))
 	{
-		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Connection != nullptr)
 		{
-			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
-			{
-				Connection->InitHeartbeat(TimerManager, Op.entity_id);
-			}
+			Connection->InitHeartbeat(TimerManager, Op.entity_id);
 		}
 		else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 		{
-			if (NetDriver->IsServer())
+			if (bIsServer)
 			{
 				HeartbeatDelegates.Remove(Op.entity_id);
 			}
-			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
+			if (Connection != nullptr)
 			{
 				Connection->DisableHeartbeat();
+			}
+		}
+	}
+
+	// Initialise Ping for server authoritative over the server ping component and
+	// for the client authoritative over the client pong component
+	if ((bIsServer && Op.component_id == SpatialConstants::SERVER_PING_COMPONENT_ID) ||
+		(!bIsServer && Op.component_id == SpatialConstants::CLIENT_PONG_COMPONENT_ID))
+	{
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Connection != nullptr)
+		{
+			Connection->InitPing(TimerManager, Op.entity_id);
+		}
+		else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
+		{
+			if (bIsServer)
+			{
+				ClientPongDelegates.Remove(Op.entity_id);
+			}
+			if (Connection != nullptr)
+			{
+				Connection->DisablePing();
 			}
 		}
 	}
@@ -818,6 +842,18 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			UpdateDelegate->ExecuteIfBound(Op);
 		}
 		return;
+	case SpatialConstants::SERVER_PING_COMPONENT_ID:
+		if (ServerPingDelegate* UpdateDelegate = ServerPingDelegates.Find(Op.entity_id))
+		{
+			UpdateDelegate->ExecuteIfBound(Op);
+		}
+		return;
+	case SpatialConstants::CLIENT_PONG_COMPONENT_ID:
+		if (ClientPongDelegate* UpdateDelegate = ClientPongDelegates.Find(Op.entity_id))
+		{
+			UpdateDelegate->ExecuteIfBound(Op);
+		}
+		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
 		GlobalStateManager->LinkAllExistingSingletonActors();
@@ -1237,6 +1273,16 @@ void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, R
 void USpatialReceiver::AddHeartbeatDelegate(Worker_EntityId EntityId, HeartbeatDelegate Delegate)
 {
 	HeartbeatDelegates.Add(EntityId, Delegate);
+}
+
+void USpatialReceiver::AddServerPingDelegate(Worker_EntityId EntityId, ServerPingDelegate Delegate)
+{
+	ServerPingDelegates.Add(EntityId, Delegate);
+}
+
+void USpatialReceiver::AddClientPongDelegate(Worker_EntityId EntityId, ClientPongDelegate Delegate)
+{
+	ClientPongDelegates.Add(EntityId, Delegate);
 }
 
 TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)

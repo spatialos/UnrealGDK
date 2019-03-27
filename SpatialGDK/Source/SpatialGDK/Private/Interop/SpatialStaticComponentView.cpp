@@ -5,6 +5,7 @@
 #include "Schema/Component.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
+#include "Schema/Ping.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
 
@@ -58,6 +59,12 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		break;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 		Data = MakeUnique<improbable::ComponentStorage<improbable::Heartbeat>>(Op.data);
+		break;
+	case SpatialConstants::SERVER_PING_COMPONENT_ID:
+		Data = MakeUnique<improbable::ComponentStorage<improbable::ServerPing>>(Op.data);
+		break;
+	case SpatialConstants::CLIENT_PONG_COMPONENT_ID:
+		Data = MakeUnique<improbable::ComponentStorage<improbable::ClientPong>>(Op.data);
 		break;
 	default:
 		return;

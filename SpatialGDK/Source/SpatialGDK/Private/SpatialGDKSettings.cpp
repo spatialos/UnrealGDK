@@ -9,6 +9,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityPoolRefreshCount(2000)
 	, HeartbeatIntervalSeconds(2.0f)
 	, HeartbeatTimeoutSeconds(10.0f)
+	, PingIntervalSeconds(0.5f)
+	, PingTimeoutSeconds(1.5f)
 	, ActorReplicationRateLimit(0)
 {
 }
@@ -21,6 +23,8 @@ FString USpatialGDKSettings::ToString()
 	Args.Add(EntityPoolRefreshCount);
 	Args.Add(HeartbeatIntervalSeconds);
 	Args.Add(HeartbeatTimeoutSeconds);
+	Args.Add(PingIntervalSeconds);
+	Args.Add(PingTimeoutSeconds);
 	Args.Add(ActorReplicationRateLimit);
 
 	return FString::Format(TEXT(
@@ -29,6 +33,8 @@ FString USpatialGDKSettings::ToString()
 		"EntityPoolRefreshCount={2}, "
 		"HeartbeatIntervalSeconds={3}, "
 		"HeartbeatTimeoutSeconds={4}, "
-		"ActorReplicationRateLimit={5}")
+		"PingIntervalSeconds={5}, "
+		"PingTimeoutSeconds={6}, "
+		"ActorReplicationRateLimit={7}")
 		, Args);
 }

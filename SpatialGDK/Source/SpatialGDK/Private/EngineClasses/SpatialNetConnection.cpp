@@ -2,12 +2,14 @@
 
 #include "EngineClasses/SpatialNetConnection.h"
 
+#include "Engine/World.h"
 #include "TimerManager.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Gameframework/PlayerController.h"
 #include "Gameframework/Pawn.h"
+#include "Gameframework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
@@ -23,6 +25,7 @@ USpatialNetConnection::USpatialNetConnection(const FObjectInitializer& ObjectIni
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
 {
 	InternalAck = 1;
+	CurrentPingID = 0;
 }
 
 void USpatialNetConnection::BeginDestroy()
@@ -117,9 +120,9 @@ void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
 
 void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
 {
-	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID, TEXT("InitHeartbeat: PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
+	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID || PlayerControllerEntity == InPlayerControllerEntity, TEXT("InitPing: PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
 	PlayerControllerEntity = InPlayerControllerEntity;
-	TimerManager = InTimerManager;
+	TimerManager = TimerManager == nullptr ? InTimerManager : TimerManager;
 
 	if (Driver->IsServer())
 	{
@@ -192,4 +195,115 @@ void USpatialNetConnection::DisableHeartbeat()
 void USpatialNetConnection::OnHeartbeat()
 {
 	SetHeartbeatTimeoutTimer();
+}
+
+void USpatialNetConnection::InitPing(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
+{
+	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID || PlayerControllerEntity == InPlayerControllerEntity, TEXT("InitPing: PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
+	PlayerControllerEntity = InPlayerControllerEntity;
+	TimerManager = TimerManager == nullptr ? InTimerManager : TimerManager;
+
+	TWeakObjectPtr<USpatialNetConnection> ConnectionPtr = this;
+
+	if (Driver->IsServer())
+	{
+		Cast<USpatialNetDriver>(Driver)->Receiver->AddClientPongDelegate(PlayerControllerEntity, ClientPongDelegate::CreateLambda([ConnectionPtr](Worker_ComponentUpdateOp& Op)
+		{
+			if (ConnectionPtr.IsValid())
+			{
+				float fReceivedTimestamp = ConnectionPtr->GetWorld()->GetTimeSeconds();
+
+				Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
+				uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::PING_EVENT_ID);
+
+				if (EventCount > 0 && ConnectionPtr->PlayerController)
+				{
+					if (APlayerState* PlayerState = Cast<APlayerController>(ConnectionPtr->PlayerController)->PlayerState)
+					{
+						uint32 ID = Schema_GetUint32(EventsObject, SpatialConstants::PING_ID_OFFSET_ID);
+						float fTimeSent;
+						if (ConnectionPtr->SentPingTimestamps.RemoveAndCopyValue(ID, fTimeSent))
+						{
+							// Set player state ExactPing in msecs, ExactPing is not replicated
+							PlayerState->ExactPing = (fReceivedTimestamp - fTimeSent) * 1000.0f;
+
+							// In native Unreal, Ping property on player state is replicated
+							// (compressed for replication by dividing ExactPing by 4)
+							PlayerState->Ping = (int32)(PlayerState->ExactPing * 0.25f);
+						}
+					}
+				}
+			}
+		}));
+
+		TimerManager->SetTimer(PingTimer, [this]()
+		{
+			RemoveExpiredPings();
+			SendPingOrPong(CurrentPingID++, SpatialConstants::SERVER_PING_COMPONENT_ID);
+		}, GetDefault<USpatialGDKSettings>()->PingIntervalSeconds, true, 0.0f);
+	}
+	else
+	{
+		Cast<USpatialNetDriver>(Driver)->Receiver->AddServerPingDelegate(PlayerControllerEntity, ServerPingDelegate::CreateLambda([ConnectionPtr](Worker_ComponentUpdateOp& Op)
+		{
+			if (ConnectionPtr.IsValid())
+			{
+				Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
+				uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::PING_EVENT_ID);
+
+				if (EventCount > 0)
+				{
+					uint32 ID = Schema_GetUint32(EventsObject, SpatialConstants::PING_ID_OFFSET_ID);
+					ConnectionPtr->SendPingOrPong(ID, SpatialConstants::CLIENT_PONG_COMPONENT_ID);
+				}
+			}
+		}));
+	}
+}
+
+void USpatialNetConnection::DisablePing()
+{
+	if (TimerManager && PingTimer.IsValid())
+	{
+		TimerManager->ClearTimer(PingTimer);
+	}
+	SentPingTimestamps.Empty();
+
+	PlayerControllerEntity = SpatialConstants::INVALID_ENTITY_ID;
+}
+
+void USpatialNetConnection::SendPingOrPong(uint32 PingId, Worker_ComponentId ComponentId)
+{
+	Worker_ComponentUpdate ComponentUpdate = {};
+
+	ComponentUpdate.component_id = ComponentId;
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
+	Schema_AddObject(EventsObject, SpatialConstants::PING_EVENT_ID);
+	Schema_AddUint32(EventsObject, SpatialConstants::PING_ID_OFFSET_ID, PingId);
+
+	USpatialWorkerConnection* Connection = Cast<USpatialNetDriver>(Driver)->Connection;
+	if (Connection->IsConnected())
+	{
+		Connection->SendComponentUpdate(PlayerControllerEntity, &ComponentUpdate);
+
+		if (Driver->IsServer())
+		{
+			SentPingTimestamps.Add(PingId, GetWorld()->GetTimeSeconds());
+		}
+	}
+}
+
+void USpatialNetConnection::RemoveExpiredPings()
+{
+	float Timeout = GetDefault<USpatialGDKSettings>()->PingTimeoutSeconds;
+	float TimeNow = GetWorld()->GetTimeSeconds();
+
+	for (auto It = SentPingTimestamps.CreateIterator(); It; ++It)
+	{
+		if (TimeNow - It->Value > Timeout)
+		{
+			It.RemoveCurrent();
+		}
+	}
 }

@@ -15,6 +15,7 @@
 #include "Interop/SpatialDispatcher.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
+#include "Schema/Ping.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
@@ -110,6 +111,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
+		ComponentWriteAcl.Add(SpatialConstants::SERVER_PING_COMPONENT_ID, ServersOnly);
+		ComponentWriteAcl.Add(SpatialConstants::CLIENT_PONG_COMPONENT_ID, OwningClientOnly);
 	}
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
@@ -189,6 +192,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentDatas.Add(improbable::Heartbeat().CreateHeartbeatData());
+		ComponentDatas.Add(improbable::ServerPing().CreateServerPingData());
+		ComponentDatas.Add(improbable::ClientPong().CreateClientPongData());
 	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
