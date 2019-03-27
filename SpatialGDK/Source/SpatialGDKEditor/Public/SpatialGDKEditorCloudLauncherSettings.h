@@ -92,7 +92,7 @@ public:
 		return SimulatedPlayerDeploymentName;
 	}
 
-	void SetSimulatedPlayerLaunchConfigPath(const FString & Path);
+	void SetSimulatedPlayerLaunchConfigPath(const FString& Path);
 	FORCEINLINE FString GetSimulatedPlayerLaunchConfigPath() const
 	{
 		return SimulatedPlayerLaunchConfigPath.FilePath;
