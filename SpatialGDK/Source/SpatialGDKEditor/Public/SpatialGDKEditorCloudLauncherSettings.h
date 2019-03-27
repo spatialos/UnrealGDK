@@ -86,7 +86,7 @@ public:
 		return bSimulatedPlayersIsEnabled;
 	}
 
-	void SetSimulatedPlayerDeploymentName(const FString & Name);
+	void SetSimulatedPlayerDeploymentName(const FString& Name);
 	FORCEINLINE FString GetSimulatedPlayerDeploymentName() const
 	{
 		return SimulatedPlayerDeploymentName;
