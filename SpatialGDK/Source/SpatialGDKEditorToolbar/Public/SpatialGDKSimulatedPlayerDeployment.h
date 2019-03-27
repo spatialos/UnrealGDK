@@ -51,7 +51,7 @@ private:
 	void OnSnapshotPathPicked(const FString& PickedPath);
 
 	/** Delegate called when the user has picked a path for the primary launch configuration file */
-	void OnPrimaryLaunchConfigPathPicked(const FString & PickedPath);
+	void OnPrimaryLaunchConfigPathPicked(const FString& PickedPath);
 
 	/** Delegate to commit simulated player deployment name */
 	void OnSimulatedPlayerDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType);
