@@ -66,10 +66,9 @@ You have now built Unreal Engine 4 with cross-compilation for Linux.
 
 > Once you've built Unreal Engine, *don't move it into another directory*. That will break the integration.
 
-#### Next: [Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)  
-
+#### Next: [Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)  
 
 <br/>
 
 ------
-_2019-03-25 Page updated with limited editorial review_
+_2019-03-27 Page updated with limited editorial review_
