@@ -56,7 +56,7 @@ bool USpatialGDKEditorCloudLauncherSettings::IsProjectNameValid(const FString & 
 	return RegMatcher.FindNext();
 }
 
-bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentNameValid(const FString & Name)
+bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentNameValid(const FString& Name)
 {
 	const FRegexPattern DeploymentPatternRegex(SpatialConstants::DeploymentPattern);
 	FRegexMatcher RegMatcher(DeploymentPatternRegex, Name);
