@@ -110,9 +110,6 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		return;
 	}
 
-	// Set the timer manager.
-	TimerManager = &GameInstance->GetTimerManager();
-
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
@@ -209,15 +206,15 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	ClassInfoManager->Init(this);
 	Dispatcher->Init(this);
 	Sender->Init(this);
-	Receiver->Init(this, TimerManager);
-	GlobalStateManager->Init(this, TimerManager);
+	Receiver->Init(this, &TimerManager);
+	GlobalStateManager->Init(this, &TimerManager);
 	SnapshotManager->Init(this);
-	PlayerSpawner->Init(this, TimerManager);
+	PlayerSpawner->Init(this, &TimerManager);
 
 	// Entity Pools should never exist on clients
 	if (IsServer())
 	{
-		EntityPool->Init(this, TimerManager);
+		EntityPool->Init(this, &TimerManager);
 	}
 }
 
@@ -1177,6 +1174,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
+	// Tick the timer manager
+	{
+		TimerManager.Tick(DeltaTime);
+	}
+
 	Super::TickFlush(DeltaTime);
 }
 
@@ -1575,7 +1577,7 @@ void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType
 void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay)
 {
 	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(RetryTimer, [this, EntityId]()
+	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
