@@ -40,7 +40,7 @@ FString USpatialGDKEditorCloudLauncherSettings::GetProjectNameFromSpatial() cons
 	return TEXT("");
 }
 
-bool USpatialGDKEditorCloudLauncherSettings::IsAssemblyNameValid(const FString & Name)
+bool USpatialGDKEditorCloudLauncherSettings::IsAssemblyNameValid(const FString& Name)
 {
 	const FRegexPattern AssemblyPatternRegex(SpatialConstants::AssemblyPattern);
 	FRegexMatcher RegMatcher(AssemblyPatternRegex, Name);
