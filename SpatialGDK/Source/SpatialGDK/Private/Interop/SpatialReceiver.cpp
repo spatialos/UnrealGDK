@@ -84,17 +84,11 @@ void USpatialReceiver::LeaveCriticalSection()
 		HandleActorAuthority(PendingAuthorityChange);
 	}
 
-	for (Worker_EntityId& PendingRemoveEntity : PendingRemoveEntities)
-	{
-		RemoveActor(PendingRemoveEntity);
-	}
-
 	// Mark that we've left the critical section.
 	bInCriticalSection = false;
 	PendingAddEntities.Empty();
 	PendingAddComponents.Empty();
 	PendingAuthorityChanges.Empty();
-	PendingRemoveEntities.Empty();
 
 	ProcessQueuedResolvedObjects();
 }
@@ -947,7 +941,6 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 {
 	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, command: %d)"), Op.entity_id, Op.request.component_id, CommandIndex);
 
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
 	{
@@ -991,6 +984,8 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	UFunction* Function = Info.RPCs[Index];
 
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
+		Op.entity_id, Op.request.component_id, *Function->GetName());
 	ReceiveRPCCommandRequest(Op.request, TargetObject, Function, UTF8_TO_TCHAR(Op.caller_worker_id));
 
 	Sender->SendCommandResponse(Op.request_id, Response);
