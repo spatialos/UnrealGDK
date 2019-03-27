@@ -69,7 +69,7 @@ void USpatialGDKEditorCloudLauncherSettings::SetPrimaryDeploymentName(const FStr
 	PrimaryDeploymentName = Name;
 }
 
-void USpatialGDKEditorCloudLauncherSettings::SetAssemblyName(const FString & Name)
+void USpatialGDKEditorCloudLauncherSettings::SetAssemblyName(const FString& Name)
 {
 	AssemblyName = Name;
 }
