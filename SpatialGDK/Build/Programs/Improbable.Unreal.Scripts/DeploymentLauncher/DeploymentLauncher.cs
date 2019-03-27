@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
+using Google.LongRunning;
 using Google.Protobuf.WellKnownTypes;
 using Improbable.SpatialOS.Deployment.V1Alpha1;
 using Improbable.SpatialOS.PlayerAuth.V2Alpha1;
@@ -82,8 +83,8 @@ namespace Improbable
             var projectName = args[1];
             var assemblyName = args[2];
             var mainDeploymentName = args[3];
-            var mainDeploymentJson = args[4];
-            var mainDeploymentSnapshotFilePath = args[5];
+            var mainDeploymentJsonPath = args[4];
+            var mainDeploymentSnapshotPath = args[5];
 
             var simDeploymentName = string.Empty;
             var simDeploymentJson = string.Empty;
@@ -101,136 +102,47 @@ namespace Improbable
                 }
             }
 
-            // Create service clients.
-            var playerAuthServiceClient = PlayerAuthServiceClient.Create();
-            var snapshotServiceClient = SnapshotServiceClient.Create();
-            var deploymentServiceClient = DeploymentServiceClient.Create();
-
             try
             {
-                // Upload snapshots.
-                var mainSnapshotId = UploadSnapshot(snapshotServiceClient, mainDeploymentSnapshotFilePath, projectName,
-                    mainDeploymentName);
+                var deploymentServiceClient = DeploymentServiceClient.Create();
 
-                if (mainSnapshotId.Length == 0)
+                var createMainDeploymentOp = CreateMainDeploymentAsync(deploymentServiceClient, launchSimPlayerDeployment, projectName, assemblyName, mainDeploymentName, mainDeploymentJsonPath, mainDeploymentSnapshotPath);
+
+                if (!launchSimPlayerDeployment)
                 {
+                    // Don't launch a simulated player deployment. Wait for main deployment to be created and then return.
+                    Console.WriteLine("Waiting for deployment to be ready...");
+                    createMainDeploymentOp.PollUntilCompleted();
+                    Console.WriteLine("Successfully created the main deployment");
+                    return 0;
+                }
+
+                var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, mainDeploymentName, simDeploymentName, simDeploymentJson, simNumPlayers);
+
+                // Wait for both deployments to be created.
+                Console.WriteLine("Waiting for deployments to be ready...");
+                createMainDeploymentOp.PollUntilCompleted();
+                Console.WriteLine("Successfully created the main deployment");
+
+                var simPlayerDeployment = createSimDeploymentOp.PollUntilCompleted().GetResultOrNull();
+                if (simPlayerDeployment == null)
+                {
+                    Console.WriteLine("Failed to launch the simulated player deployment");
                     return 1;
                 }
 
-                // Create main deployment.
-                var mainDeploymentConfig = new Deployment
+                Console.WriteLine("Successfully created the simulated player deployment");
+
+                // Update coordinator worker flag for simulated player deployment to notify target deployment is ready.
+                simPlayerDeployment.WorkerFlags.Add(new WorkerFlag
                 {
-                    AssemblyId = assemblyName,
-                    LaunchConfig = new LaunchConfig
-                    {
-                        ConfigJson = File.ReadAllText(mainDeploymentJson)
-                    },
-                    Name = mainDeploymentName,
-                    ProjectName = projectName,
-                    StartingSnapshotId = mainSnapshotId
-                };
+                    Key = "target_deployment_ready",
+                    Value = "true",
+                    WorkerType = CoordinatorWorkerName
+                });
+                deploymentServiceClient.UpdateDeployment(new UpdateDeploymentRequest { Deployment = simPlayerDeployment });
 
-                mainDeploymentConfig.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
-
-                if (launchSimPlayerDeployment)
-                {
-                    // This tag needs to be added to allow simulated players to connect using login
-                    // tokens generated with anonymous auth.
-                    mainDeploymentConfig.Tag.Add("dev_login");
-                }
-
-                Console.WriteLine(
-                    $"Creating the main deployment {mainDeploymentName} in project {projectName} with snapshot ID {mainSnapshotId}. Link: https://console.improbable.io/projects/{projectName}/deployments/{mainDeploymentName}/overview");
-
-                var mainDeploymentCreateOp = deploymentServiceClient.CreateDeployment(new CreateDeploymentRequest
-                {
-                    Deployment = mainDeploymentConfig
-                }).PollUntilCompleted();
-
-                Console.WriteLine("Successfully created the main deployment.");
-
-                if (launchSimPlayerDeployment)
-                {
-                    // Create development authentication token used by the simulated players.
-                    var dat = playerAuthServiceClient.CreateDevelopmentAuthenticationToken(
-                        new CreateDevelopmentAuthenticationTokenRequest
-                        {
-                            Description = "DAT for sim worker deployment.",
-                            Lifetime = Duration.FromTimeSpan(new TimeSpan(7, 0, 0, 0)),
-                            ProjectName = projectName
-                        });
-
-                    // Add worker flags to sim deployment JSON.
-                    var devAuthTokenIdFlag = new JObject();
-                    devAuthTokenIdFlag.Add("name", "simulated_players_dev_auth_token_id");
-                    devAuthTokenIdFlag.Add("value", dat.DevelopmentAuthenticationToken.Id);
-
-                    var targetDeploymentFlag = new JObject();
-                    targetDeploymentFlag.Add("name", "simulated_players_target_deployment");
-                    targetDeploymentFlag.Add("value", mainDeploymentName);
-
-                    var numSimulatedPlayersFlag = new JObject();
-                    numSimulatedPlayersFlag.Add("name", "target_num_simulated_players");
-                    numSimulatedPlayersFlag.Add("value", $"{simNumPlayers}");
-
-                    var simWorkerConfigJson = File.ReadAllText(simDeploymentJson);
-                    dynamic simWorkerConfig = JObject.Parse(simWorkerConfigJson);
-
-                    for (var i = 0; i < simWorkerConfig.workers.Count; ++i)
-                    {
-                        if (simWorkerConfig.workers[i].worker_type == CoordinatorWorkerName)
-                        {
-                            simWorkerConfig.workers[i].flags.Add(devAuthTokenIdFlag);
-                            simWorkerConfig.workers[i].flags.Add(targetDeploymentFlag);
-                            simWorkerConfig.workers[i].flags.Add(numSimulatedPlayersFlag);
-                        }
-                    }
-
-                    // Specify the number of managed coordinator workers to start by editing
-                    // the load balancing options in the launch config. It creates a rectangular
-                    // launch config of N cols X 1 row, N being the number of coordinators
-                    // to create.
-                    // This assumes the launch config contains a rectangular load balancing
-                    // layer configuration already for the coordinator worker.
-                    var lbLayerConfigurations = simWorkerConfig.load_balancing.layer_configurations;
-                    for (var i = 0; i < lbLayerConfigurations.Count; ++i)
-                    {
-                        if (lbLayerConfigurations[i].layer == CoordinatorWorkerName)
-                        {
-                            var rectangleGrid = lbLayerConfigurations[i].rectangle_grid;
-                            rectangleGrid.cols = simNumPlayers;
-                            rectangleGrid.rows = 1;
-                        }
-                    }
-
-                    simWorkerConfigJson = simWorkerConfig.ToString();
-
-                    // Create simulated player deployment.
-                    var simDeploymentConfig = new Deployment
-                    {
-                        AssemblyId = assemblyName,
-                        LaunchConfig = new LaunchConfig
-                        {
-                            ConfigJson = simWorkerConfigJson
-                        },
-                        Name = simDeploymentName,
-                        ProjectName = projectName
-                        // No snapshot included for the simulated player deployment
-                    };
-
-                    simDeploymentConfig.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
-                    simDeploymentConfig.Tag.Add(SIM_PLAYER_DEPLOYMENT_TAG);
-
-                    Console.WriteLine(
-                        $"Creating the simulated player deployment {simDeploymentName} in project {projectName} with {simNumPlayers} simulated players. Link: https://console.improbable.io/projects/{projectName}/deployments/{simDeploymentName}/overview");
-
-                    var simDeploymentCreateOp = deploymentServiceClient.CreateDeployment(new CreateDeploymentRequest
-                    {
-                        Deployment = simDeploymentConfig
-                    }).PollUntilCompleted();
-
-                    Console.WriteLine("Successfully created the simulated player deployment.");
-                }
+                Console.WriteLine("Done! Simulated players will start to connect to your deployment");
             }
             catch (Grpc.Core.RpcException e)
             {
@@ -247,6 +159,140 @@ namespace Improbable
 
             return 0;
         }
+
+        private static Operation<Deployment, CreateDeploymentMetadata> CreateMainDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
+            bool launchSimPlayerDeployment, string projectName, string assemblyName, string mainDeploymentName, string mainDeploymentJsonPath, string mainDeploymentSnapshotPath)
+        {
+            var snapshotServiceClient = SnapshotServiceClient.Create();
+
+            // Upload snapshots.
+            var mainSnapshotId = UploadSnapshot(snapshotServiceClient, mainDeploymentSnapshotPath, projectName,
+                mainDeploymentName);
+
+            if (mainSnapshotId.Length == 0)
+            {
+                throw new Exception("Error while uploading snapshot.");
+            }
+
+            // Create main deployment.
+            var mainDeploymentConfig = new Deployment
+            {
+                AssemblyId = assemblyName,
+                LaunchConfig = new LaunchConfig
+                {
+                    ConfigJson = File.ReadAllText(mainDeploymentJsonPath)
+                },
+                Name = mainDeploymentName,
+                ProjectName = projectName,
+                StartingSnapshotId = mainSnapshotId
+            };
+
+            mainDeploymentConfig.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
+
+            if (launchSimPlayerDeployment)
+            {
+                // This tag needs to be added to allow simulated players to connect using login
+                // tokens generated with anonymous auth.
+                mainDeploymentConfig.Tag.Add("dev_login");
+            }
+
+            Console.WriteLine(
+                $"Creating the main deployment {mainDeploymentName} in project {projectName} with snapshot ID {mainSnapshotId}. Link: https://console.improbable.io/projects/{projectName}/deployments/{mainDeploymentName}/overview");
+
+            var mainDeploymentCreateOp = deploymentServiceClient.CreateDeployment(new CreateDeploymentRequest
+            {
+                Deployment = mainDeploymentConfig
+            });
+
+            return mainDeploymentCreateOp;
+        }
+
+        private static Operation<Deployment, CreateDeploymentMetadata> CreateSimPlayerDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
+            string projectName, string assemblyName, string mainDeploymentName, string simDeploymentName, string simDeploymentJsonPath, int simNumPlayers)
+        {
+            var playerAuthServiceClient = PlayerAuthServiceClient.Create();
+
+            // Create development authentication token used by the simulated players.
+            var dat = playerAuthServiceClient.CreateDevelopmentAuthenticationToken(
+                new CreateDevelopmentAuthenticationTokenRequest
+                {
+                    Description = "DAT for simulated player deployment.",
+                    Lifetime = Duration.FromTimeSpan(new TimeSpan(7, 0, 0, 0)),
+                    ProjectName = projectName
+                });
+
+            // Add worker flags to sim deployment JSON.
+            var devAuthTokenIdFlag = new JObject();
+            devAuthTokenIdFlag.Add("name", "simulated_players_dev_auth_token_id");
+            devAuthTokenIdFlag.Add("value", dat.DevelopmentAuthenticationToken.Id);
+
+            var targetDeploymentFlag = new JObject();
+            targetDeploymentFlag.Add("name", "simulated_players_target_deployment");
+            targetDeploymentFlag.Add("value", mainDeploymentName);
+
+            var numSimulatedPlayersFlag = new JObject();
+            numSimulatedPlayersFlag.Add("name", "target_num_simulated_players");
+            numSimulatedPlayersFlag.Add("value", $"{simNumPlayers}");
+
+            var simWorkerConfigJson = File.ReadAllText(simDeploymentJsonPath);
+            dynamic simWorkerConfig = JObject.Parse(simWorkerConfigJson);
+
+            for (var i = 0; i < simWorkerConfig.workers.Count; ++i)
+            {
+                if (simWorkerConfig.workers[i].worker_type == CoordinatorWorkerName)
+                {
+                    simWorkerConfig.workers[i].flags.Add(devAuthTokenIdFlag);
+                    simWorkerConfig.workers[i].flags.Add(targetDeploymentFlag);
+                    simWorkerConfig.workers[i].flags.Add(numSimulatedPlayersFlag);
+                }
+            }
+
+            // Specify the number of managed coordinator workers to start by editing
+            // the load balancing options in the launch config. It creates a rectangular
+            // launch config of N cols X 1 row, N being the number of coordinators
+            // to create.
+            // This assumes the launch config contains a rectangular load balancing
+            // layer configuration already for the coordinator worker.
+            var lbLayerConfigurations = simWorkerConfig.load_balancing.layer_configurations;
+            for (var i = 0; i < lbLayerConfigurations.Count; ++i)
+            {
+                if (lbLayerConfigurations[i].layer == CoordinatorWorkerName)
+                {
+                    var rectangleGrid = lbLayerConfigurations[i].rectangle_grid;
+                    rectangleGrid.cols = simNumPlayers;
+                    rectangleGrid.rows = 1;
+                }
+            }
+
+            simWorkerConfigJson = simWorkerConfig.ToString();
+
+            // Create simulated player deployment.
+            var simDeploymentConfig = new Deployment
+            {
+                AssemblyId = assemblyName,
+                LaunchConfig = new LaunchConfig
+                {
+                    ConfigJson = simWorkerConfigJson
+                },
+                Name = simDeploymentName,
+                ProjectName = projectName
+                // No snapshot included for the simulated player deployment
+            };
+
+            simDeploymentConfig.Tag.Add(DEPLOYMENT_LAUNCHED_BY_LAUNCHER_TAG);
+            simDeploymentConfig.Tag.Add(SIM_PLAYER_DEPLOYMENT_TAG);
+
+            Console.WriteLine(
+                $"Creating the simulated player deployment {simDeploymentName} in project {projectName} with {simNumPlayers} simulated players. Link: https://console.improbable.io/projects/{projectName}/deployments/{simDeploymentName}/overview");
+
+            var simDeploymentCreateOp = deploymentServiceClient.CreateDeployment(new CreateDeploymentRequest
+            {
+                Deployment = simDeploymentConfig
+            });
+
+            return simDeploymentCreateOp;
+        }
+
 
         private static int StopDeployments(string[] args)
         {

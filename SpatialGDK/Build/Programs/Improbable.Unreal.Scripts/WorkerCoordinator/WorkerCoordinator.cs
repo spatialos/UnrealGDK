@@ -50,6 +50,7 @@ namespace Improbable.WorkerCoordinator
         private const string DEV_AUTH_TOKEN_ID_FLAG = "simulated_players_dev_auth_token_id";
         private const string TARGET_DEPLOYMENT_FLAG = "simulated_players_target_deployment";
         private const string NUM_SIM_PLAYERS_FLAG = "target_num_simulated_players";
+        private const string TARGET_DEPLOYMENT_READY_FLAG = "target_deployment_ready";
 
         private const string CoordinatorWorkerType = "SimulatedPlayerCoordinator";
         private const string SimulatedPlayerWorkerType = "UnrealClient";
@@ -63,7 +64,7 @@ namespace Improbable.WorkerCoordinator
 
         private static Connection Connection;
 
-        private static Random Random = new Random();
+        private static Random Random;
 
         private static int Main(string[] args)
         {
@@ -75,6 +76,8 @@ namespace Improbable.WorkerCoordinator
             ushort receptionistPort = Convert.ToUInt16(args[2]);
             string workerId = args[3];
             Connection = CoordinatorConnection.ConnectAndKeepAlive(Logger, receptionistHost, receptionistPort, workerId, CoordinatorWorkerType);
+
+            Random = new Random(Guid.NewGuid().GetHashCode());
 
             // Read worker flags.
             string devAuthTokenId, targetDeployment;
@@ -91,13 +94,16 @@ namespace Improbable.WorkerCoordinator
                 return ErrorExitStatus;
             }
 
+            // Wait for target deployment to be ready
+            WaitForTargetDeploymentReady();
+
             // Start the simulated player.
             // First 4 args are for coordinator - all following args are for simulated players.
             var simulatedPlayerArgs = args.Skip(4).ToArray();
 
             // Add a random delay between 0 and maxDelaySec to spread out the connecting of simulated clients (plus a fixed start delay).
-            // Connect 1 player per 1.5 seconds (on average) across entire simulated player deployment.
-            var maxDelayMillis = numSimulatedPlayers * 1500;
+            // Connect 1 player per second (on average) across entire simulated player deployment.
+            var maxDelayMillis = numSimulatedPlayers * 1000;
             var ourRandomDelayMillis = Random.Next(maxDelayMillis);
             var startDelayMillis = GetIntegerArgument(args, START_DELAY_ARG, 0) + ourRandomDelayMillis;
             Thread.Sleep(startDelayMillis);
@@ -153,6 +159,24 @@ namespace Improbable.WorkerCoordinator
                 throw new ArgumentException($"Cannot parse value,\"{valueString}\", for argument \"{argumentName}\".");
             }
             throw new ArgumentException($"Multiple values for argument, \"{argumentName}\".");
+        }
+
+        private static void WaitForTargetDeploymentReady()
+        {
+            Connection.SendLogMessage(LogLevel.Info, LoggerName, "Waiting for target deployment to become ready");
+            while (true)
+            {
+                var readyFlagOpt = Connection.GetWorkerFlag(TARGET_DEPLOYMENT_READY_FLAG);
+                if (readyFlagOpt == "true")
+                {
+                    // Ready.
+                    Connection.SendLogMessage(LogLevel.Info, LoggerName, "Target deployment is ready");
+                    break;
+                }
+
+                // Poll every 5 seconds.
+                Thread.Sleep(5_000);
+            }
         }
 
         private static void StartClient(string args)
