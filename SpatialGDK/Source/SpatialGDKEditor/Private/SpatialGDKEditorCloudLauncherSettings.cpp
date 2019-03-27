@@ -94,7 +94,7 @@ void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayersEnabledState(boo
 	bSimulatedPlayersIsEnabled = IsEnabled;
 }
 
-void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerDeploymentName(const FString & Name)
+void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerDeploymentName(const FString& Name)
 {
 	SimulatedPlayerDeploymentName = Name;
 }
