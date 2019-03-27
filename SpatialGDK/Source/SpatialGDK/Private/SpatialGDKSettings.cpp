@@ -19,7 +19,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 // Add a pop-up to warn users to update their config upon changing the using QBI property.
 void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& e)
 {
-	if (e.Property != nullptr)
+	if (e.Property == nullptr)
 	{
 		return;
 	}
