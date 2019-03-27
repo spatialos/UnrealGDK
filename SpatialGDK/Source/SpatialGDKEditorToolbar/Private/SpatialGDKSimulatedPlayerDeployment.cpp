@@ -469,7 +469,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnRefreshClicked()
 {
-	// TODO: Invoke the Deployment Launcher script to list the deployments
+	// TODO (UNR-1193): Invoke the Deployment Launcher script to list the deployments
 	return FReply::Handled();
 }
 

@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "SpatialGDKEditorSettings.h";
 
 #include "SpatialGDKEditorCloudLauncherSettings.generated.h"
 
@@ -77,7 +78,10 @@ public:
 	void SetSnapshotPath(const FString& Path);
 	FORCEINLINE FString GetSnapshotPath() const
 	{
-		return SnapshotPath.FilePath;
+		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+		return SnapshotPath.FilePath.IsEmpty()
+			? FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSSnapshotFolderPath(), GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSSnapshotFile())
+			: SnapshotPath.FilePath;
 	}
 
 	void SetSimulatedPlayersEnabledState(bool IsEnabled);
