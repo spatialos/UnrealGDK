@@ -79,7 +79,7 @@ void USpatialGDKEditorCloudLauncherSettings::SetProjectName(const FString& Name)
 	ProjectName = Name;
 }
 
-void USpatialGDKEditorCloudLauncherSettings::SetPrimaryLaunchConfigPath(const FString & Path)
+void USpatialGDKEditorCloudLauncherSettings::SetPrimaryLaunchConfigPath(const FString& Path)
 {
 	PrimaryLaunchConfigPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
 }
