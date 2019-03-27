@@ -64,7 +64,7 @@ bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentNameValid(const FString
 	return RegMatcher.FindNext();
 }
 
-void USpatialGDKEditorCloudLauncherSettings::SetPrimaryDeploymentName(const FString & Name)
+void USpatialGDKEditorCloudLauncherSettings::SetPrimaryDeploymentName(const FString& Name)
 {
 	PrimaryDeploymentName = Name;
 }
