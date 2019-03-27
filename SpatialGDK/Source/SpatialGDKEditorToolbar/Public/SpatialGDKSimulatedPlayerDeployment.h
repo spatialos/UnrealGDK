@@ -48,7 +48,7 @@ private:
 	void OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType);
 
 	/** Delegate called when the user has picked a path for the snapshot file */
-	void OnSnapshotPathPicked(const FString & PickedPath);
+	void OnSnapshotPathPicked(const FString& PickedPath);
 
 	/** Delegate called when the user has picked a path for the primary launch configuration file */
 	void OnPrimaryLaunchConfigPathPicked(const FString & PickedPath);
