@@ -67,46 +67,55 @@ bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentNameValid(const FString
 void USpatialGDKEditorCloudLauncherSettings::SetPrimaryDeploymentName(const FString& Name)
 {
 	PrimaryDeploymentName = Name;
+	SaveConfig();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetAssemblyName(const FString& Name)
 {
 	AssemblyName = Name;
+	SaveConfig();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetProjectName(const FString& Name)
 {
 	ProjectName = Name;
+	SaveConfig();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetPrimaryLaunchConfigPath(const FString& Path)
 {
 	PrimaryLaunchConfigPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
+	SaveConfig();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetSnapshotPath(const FString& Path)
 {
 	SnapshotPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
+	SaveConfig();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
 	bSimulatedPlayersIsEnabled = IsEnabled;
+	SaveConfig();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerDeploymentName(const FString& Name)
 {
 	SimulatedPlayerDeploymentName = Name;
+	SaveConfig();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerLaunchConfigPath(const FString& Path)
 {
 	SimulatedPlayerLaunchConfigPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
+	SaveConfig();
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 {
 	NumberOfSimulatedPlayers = Number;
+	SaveConfig();
 }
 
 bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValid() const

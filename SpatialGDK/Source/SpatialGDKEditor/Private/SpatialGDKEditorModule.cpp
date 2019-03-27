@@ -55,7 +55,7 @@ void FSpatialGDKEditorModule::RegisterSettings()
 		}
 
 		ISettingsSectionPtr CloudLauncherSettingsSection = SettingsModule->RegisterSettings("Project", "SpatialGDKEditor", "Cloud Settings",
-			LOCTEXT("SpatialCloudLauncherGeneralSettingsName", "Cloud Settings"),
+			LOCTEXT("SpatialCloudLauncherGeneralSettingsName", "Cloud Deployment Settings"),
 			LOCTEXT("SpatialCloudLauncherGeneralSettingsDescription", "Cloud configuration for the SpatialOS GDK for Unreal"),
 			GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>());
 

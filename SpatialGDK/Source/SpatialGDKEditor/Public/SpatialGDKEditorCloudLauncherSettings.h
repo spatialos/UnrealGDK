@@ -19,11 +19,11 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS project"))
 	FString ProjectName;
 
-	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Deployment name"))
-	FString PrimaryDeploymentName;
-
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Assembly name"))
 	FString AssemblyName;
+
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Deployment name"))
+	FString PrimaryDeploymentName;
 
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Cloud launch configuration path"))
 	FFilePath PrimaryLaunchConfigPath;
