@@ -84,7 +84,7 @@ void USpatialGDKEditorCloudLauncherSettings::SetPrimaryLaunchConfigPath(const FS
 	PrimaryLaunchConfigPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
 }
 
-void USpatialGDKEditorCloudLauncherSettings::SetSnapshotPath(const FString & Path)
+void USpatialGDKEditorCloudLauncherSettings::SetSnapshotPath(const FString& Path)
 {
 	SnapshotPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
 }
