@@ -49,10 +49,8 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Actor Replication Rate Limit"))
 	uint32 ActorReplicationRateLimit;
 
-	/** QBI is required for level streaming to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
-	UPROPERTY(EditAnywhere, config, Category = "QBI", meta = (ConfigRestartRequired = false, DisplayName = "QBI Enabled"))
+	/** Query Based Interest is required for level streaming and the bAlwaysRelevant flag to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
+	UPROPERTY(EditAnywhere, config, Category = "Query Based Interest", meta = (ConfigRestartRequired = false, DisplayName = "Query Based Interest Enabled"))
 	bool bUsingQBI;
-
-	virtual FString ToString();
 };
 

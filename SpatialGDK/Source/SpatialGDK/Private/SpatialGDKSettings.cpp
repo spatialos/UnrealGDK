@@ -15,33 +15,16 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 {
 }
 
-FString USpatialGDKSettings::ToString()
-{
-	TArray<FStringFormatArg> Args;
-	Args.Add(EntityPoolInitialReservationCount);
-	Args.Add(EntityPoolRefreshThreshold);
-	Args.Add(EntityPoolRefreshCount);
-	Args.Add(HeartbeatIntervalSeconds);
-	Args.Add(HeartbeatTimeoutSeconds);
-	Args.Add(ActorReplicationRateLimit);
-	Args.Add(bUsingQBI);
-
-	return FString::Format(TEXT(
-		"EntityPoolInitialReservationCount={0}, "
-		"EntityPoolRefreshThreshold={1}, "
-		"EntityPoolRefreshCount={2}, "
-		"HeartbeatIntervalSeconds={3}, "
-		"HeartbeatTimeoutSeconds={4}, "
-		"ActorReplicationRateLimit={5}, "
-		"bUsingQBI={6}")
-		, Args);
-}
-
 #if WITH_EDITOR
 // Add a pop-up to warn users to update their config upon changing the using QBI property.
 void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& e)
 {
-	FName PropertyName = (e.Property != NULL) ? e.Property->GetFName() : NAME_None;
+	if (e.Property != nullptr)
+	{
+		return;
+	}
+	const FName PropertyName = e.Property->GetFName();
+
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUsingQBI))
 	{
 		FMessageDialog::Open(EAppMsgType::Ok,
