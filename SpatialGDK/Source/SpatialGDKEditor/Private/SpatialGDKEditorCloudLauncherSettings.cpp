@@ -74,7 +74,7 @@ void USpatialGDKEditorCloudLauncherSettings::SetAssemblyName(const FString& Name
 	AssemblyName = Name;
 }
 
-void USpatialGDKEditorCloudLauncherSettings::SetProjectName(const FString & Name)
+void USpatialGDKEditorCloudLauncherSettings::SetProjectName(const FString& Name)
 {
 	ProjectName = Name;
 }
