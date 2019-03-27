@@ -43,38 +43,38 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Number of simulated players"))
 	uint32 NumberOfSimulatedPlayers;
 
-	static bool IsAssemblyNameValid(const FString & Name);
-	static bool IsProjectNameValid(const FString & Name);
-	static bool IsDeploymentNameValid(const FString & Name);
+	static bool IsAssemblyNameValid(const FString& Name);
+	static bool IsProjectNameValid(const FString& Name);
+	static bool IsDeploymentNameValid(const FString& Name);
 
 public:
 	FString GetProjectNameFromSpatial() const;
 
-	void SetPrimaryDeploymentName(const FString & Name);
+	void SetPrimaryDeploymentName(const FString& Name);
 	FORCEINLINE FString GetPrimaryDeploymentName() const
 	{
 		return PrimaryDeploymentName;
 	}
 
-	void SetAssemblyName(const FString & Name);
+	void SetAssemblyName(const FString& Name);
 	FORCEINLINE FString GetAssemblyName() const
 	{
 		return AssemblyName;
 	}
 
-	void SetProjectName(const FString & Name);
+	void SetProjectName(const FString& Name);
 	FORCEINLINE FString GetProjectName() const
 	{
 		return ProjectName;
 	}
 
-	void SetPrimaryLaunchConfigPath(const FString & Path);
+	void SetPrimaryLaunchConfigPath(const FString& Path);
 	FORCEINLINE FString GetPrimaryLanchConfigPath() const
 	{
 		return PrimaryLaunchConfigPath.FilePath;
 	}
 
-	void SetSnapshotPath(const FString & Path);
+	void SetSnapshotPath(const FString& Path);
 	FORCEINLINE FString GetSnapshotPath() const
 	{
 		return SnapshotPath.FilePath;

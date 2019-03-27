@@ -99,7 +99,7 @@ void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerDeploymentName(co
 	SimulatedPlayerDeploymentName = Name;
 }
 
-void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerLaunchConfigPath(const FString & Path)
+void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerLaunchConfigPath(const FString& Path)
 {
 	SimulatedPlayerLaunchConfigPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
 }
