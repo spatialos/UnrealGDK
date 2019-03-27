@@ -90,5 +90,5 @@ private:
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
 	TSharedPtr<SWindow> SimulatedPlayerDeploymentWindowPtr;
-	TSharedPtr<class SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
+	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
 };

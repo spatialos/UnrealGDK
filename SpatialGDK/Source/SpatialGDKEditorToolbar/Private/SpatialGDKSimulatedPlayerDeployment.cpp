@@ -372,37 +372,37 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 		];
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited(const FText & InText, ETextCommit::Type InCommitType)
+void SSpatialGDKSimulatedPlayerDeployment::OnDeploymentAssemblyCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 	SpatialGDKCloudLauncherSettings->SetAssemblyName(InText.ToString());
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited(const FText & InText, ETextCommit::Type InCommitType)
+void SSpatialGDKSimulatedPlayerDeployment::OnProjectNameCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 	SpatialGDKCloudLauncherSettings->SetProjectName(InText.ToString());
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const FText & InText, ETextCommit::Type InCommitType)
+void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 	SpatialGDKCloudLauncherSettings->SetPrimaryDeploymentName(InText.ToString());
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnSnapshotPathPicked(const FString & PickedPath)
+void SSpatialGDKSimulatedPlayerDeployment::OnSnapshotPathPicked(const FString& PickedPath)
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 	SpatialGDKCloudLauncherSettings->SetSnapshotPath(PickedPath);
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked(const FString & PickedPath)
+void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked(const FString& PickedPath)
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 	SpatialGDKCloudLauncherSettings->SetPrimaryLaunchConfigPath(PickedPath);
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerDeploymentNameCommited(const FText & InText, ETextCommit::Type InCommitType)
+void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType)
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 	SpatialGDKCloudLauncherSettings->SetSimulatedPlayerDeploymentName(InText.ToString());
@@ -414,7 +414,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited(ui
 	SpatialGDKCloudLauncherSettings->SetNumberOfSimulatedPlayers(NewValue);
 }
 
-void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerLaunchConfigPathPicked(const FString & PickedPath)
+void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerLaunchConfigPathPicked(const FString& PickedPath)
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 	SpatialGDKCloudLauncherSettings->SetSimulatedPlayerLaunchConfigPath(PickedPath);
@@ -422,7 +422,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerLaunchConfigPathPick
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 {
-	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
+	const USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetDefault<USpatialGDKEditorCloudLauncherSettings>();
 
 	if (!SpatialGDKCloudLauncherSettings->IsDeploymentConfigurationValid()) {
 		FNotificationInfo Info(FText::FromString(TEXT("Deployment configuration is not valid.")));
@@ -521,7 +521,7 @@ void SSpatialGDKSimulatedPlayerDeployment::OnCheckedSimulatedPlayers(ECheckBoxSt
 
 ECheckBoxState SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled() const
 {
-	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
+	const USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetDefault<USpatialGDKEditorCloudLauncherSettings>();
 	return SpatialGDKCloudLauncherSettings->IsSimulatedPlayersEnabled() ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
 }
 
