@@ -2,6 +2,7 @@
 
 #include "SpatialGDKSettings.h"
 #include "Misc/MessageDialog.h"
+#include "Misc/CommandLine.h"
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
