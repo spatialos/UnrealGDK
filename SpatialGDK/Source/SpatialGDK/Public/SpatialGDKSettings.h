@@ -16,6 +16,10 @@ class SPATIALGDK_API USpatialGDKSettings : public UObject
 public:
 	USpatialGDKSettings(const FObjectInitializer& ObjectInitializer);
 
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
 	/** The number of entity IDs to be reserved when the entity pool is first created */
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (ConfigRestartRequired = false, DisplayName = "Initial Entity ID Reservation Count"))
 	uint32 EntityPoolInitialReservationCount;
@@ -45,6 +49,8 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Actor Replication Rate Limit"))
 	uint32 ActorReplicationRateLimit;
 
-	virtual FString ToString();
+	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
+	UPROPERTY(EditAnywhere, config, Category = "Query Based Interest", meta = (ConfigRestartRequired = false, DisplayName = "Query Based Interest Enabled"))
+	bool bUsingQBI;
 };
 
