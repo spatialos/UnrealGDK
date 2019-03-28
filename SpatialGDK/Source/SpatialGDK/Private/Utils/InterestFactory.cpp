@@ -34,7 +34,7 @@ Interest InterestFactory::CreateInterest()
 {
 	if (!GetDefault<USpatialGDKSettings>()->bUsingQBI)
 	{
-		return {};
+		return Interest{};
 	}
 
 	if (Actor->GetNetConnection() != nullptr)
