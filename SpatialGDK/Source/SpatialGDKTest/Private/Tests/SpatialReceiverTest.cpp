@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "Misc/AutomationTest.h"
 #include "Interop/SpatialReceiver.h"
 
