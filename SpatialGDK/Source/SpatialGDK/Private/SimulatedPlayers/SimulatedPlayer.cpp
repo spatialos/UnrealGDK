@@ -2,32 +2,35 @@
 
 #include "SimulatedPlayer.h"
 
+#include "Engine.h"
 #include "Misc/Parse.h"
 #include "Misc/CommandLine.h"
 #include "SpatialConstants.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogSimulatedPlayer, Log, All);
 
-bool USimulatedPlayer::IsSimulatedPlayer()
+bool USimulatedPlayer::IsSimulatedPlayer(UObject* WorldContextObject)
 {
-#if WITH_EDITOR
-	// Check game instance instead of command line arguments for PIE simulated players.
-	UWorld* world = GWorld;
+	UEngine* engine = GEngine;
+	if (engine == nullptr)
+	{
+		UE_LOG(LogSimulatedPlayer, Error, TEXT("Cannot check if player is simulated: GEngine is null. Defaulting to false."));
+		return false;
+	}
+
+	UWorld* world = engine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::ReturnNull);
 	if (world == nullptr)
 	{
-		UE_LOG(LogSimulatedPlayer, Warning, TEXT("Cannot check if player is simulated: GWorld is null. Defaulting to false."));
+		UE_LOG(LogSimulatedPlayer, Error, TEXT("Cannot check if player is simulated: world returned by WorldContextObject is null. Defaulting to false."));
 		return false;
 	}
 
 	UGameInstance* gameInstance = world->GetGameInstance();
 	if (gameInstance == nullptr)
 	{
-		UE_LOG(LogSimulatedPlayer, Warning, TEXT("Cannot check if player is simulated: game instance is null. Defaulting to false."));
+		UE_LOG(LogSimulatedPlayer, Error, TEXT("Cannot check if player is simulated: game instance is null. Defaulting to false."));
 		return false;
 	}
 
 	return gameInstance->IsSimulatedPlayer();
-#endif // WITH_EDITOR
-
-	return FParse::Param(FCommandLine::Get(), *SpatialConstants::SimulatedPlayerArg);
 }
