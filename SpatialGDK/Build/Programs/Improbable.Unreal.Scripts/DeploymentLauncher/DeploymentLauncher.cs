@@ -112,7 +112,13 @@ namespace Improbable
                 {
                     // Don't launch a simulated player deployment. Wait for main deployment to be created and then return.
                     Console.WriteLine("Waiting for deployment to be ready...");
-                    createMainDeploymentOp.PollUntilCompleted();
+                    var result = createMainDeploymentOp.PollUntilCompleted().GetResultOrNull();
+                    if (result == null)
+                    {
+                        Console.WriteLine("Failed to create the main deployment");
+                        return 1;
+                    }
+
                     Console.WriteLine("Successfully created the main deployment");
                     return 0;
                 }
@@ -121,13 +127,18 @@ namespace Improbable
 
                 // Wait for both deployments to be created.
                 Console.WriteLine("Waiting for deployments to be ready...");
-                createMainDeploymentOp.PollUntilCompleted();
-                Console.WriteLine("Successfully created the main deployment");
+                var mainDeploymentResult = createMainDeploymentOp.PollUntilCompleted().GetResultOrNull();
+                if (mainDeploymentResult == null)
+                {
+                    Console.WriteLine("Failed to create the main deployment");
+                    return 1;
+                }
 
+                Console.WriteLine("Successfully created the main deployment");
                 var simPlayerDeployment = createSimDeploymentOp.PollUntilCompleted().GetResultOrNull();
                 if (simPlayerDeployment == null)
                 {
-                    Console.WriteLine("Failed to launch the simulated player deployment");
+                    Console.WriteLine("Failed to create the simulated player deployment");
                     return 1;
                 }
 
