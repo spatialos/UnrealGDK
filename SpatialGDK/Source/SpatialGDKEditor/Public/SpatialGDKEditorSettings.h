@@ -7,6 +7,93 @@
 
 #include "SpatialGDKEditorSettings.generated.h"
 
+USTRUCT()
+struct FWorldLaunchSection
+{
+	GENERATED_BODY()
+
+	FWorldLaunchSection()
+		: Dimensions(2000, 2000)
+		, ChunkEdgeLenghtMeters(50)
+		, StreamingQueryInterval(4)
+		, SnapshotWritePeriodSeconds(0)
+	{
+		LegacyFlags.Add(TEXT("bridge_qos_max_timeout"), TEXT("0"));
+		LegacyFlags.Add(TEXT("bridge_soft_handover_enabled"), TEXT("false"));
+		LegacyFlags.Add(TEXT("enable_chunk_interest"), TEXT("false"));
+	}
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Dimensions"))
+	FIntPoint Dimensions;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Chunk edge length in meters"))
+	int32 ChunkEdgeLenghtMeters;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Streaming query interval"))
+	int32 StreamingQueryInterval;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Snapshot write period in seconds"))
+	int32 SnapshotWritePeriodSeconds;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Legacy flags"))
+	TMap<FString, FString> LegacyFlags;
+};
+
+USTRUCT()
+struct FWorkerTypeLaunchSection
+{
+	GENERATED_BODY()
+
+	FWorkerTypeLaunchSection()
+		: WorkerTypeName()
+		, Columns(1)
+		, Rows(1)
+		, ManualWorkerConnectionOnly(true)
+	{
+
+	}
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker type name"))
+	FString WorkerTypeName;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid column count", ClampMin = "1", UIMin = "1"))
+	int32 Columns;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
+	int32 Rows;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Manual Worker Connection Only"))
+	bool ManualWorkerConnectionOnly;
+};
+
+USTRUCT()
+struct FSpatialLaunchConfigDescription
+{
+	GENERATED_BODY()
+
+	FSpatialLaunchConfigDescription()
+		: Template(TEXT("small"))
+		, World()
+	{
+		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
+		UnrealWorkerDefaultSetting.WorkerTypeName = TEXT("UnrealWorker");
+		UnrealWorkerDefaultSetting.Rows = 1;
+		UnrealWorkerDefaultSetting.Columns = 1;
+		UnrealWorkerDefaultSetting.ManualWorkerConnectionOnly = true;
+
+		Workers.Add(UnrealWorkerDefaultSetting);
+	}
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Template"))
+	FString Template;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "World"))
+	FWorldLaunchSection World;
+
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Workers"))
+	TArray<FWorkerTypeLaunchSection> Workers;
+};
+
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
 class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 {
@@ -38,6 +125,10 @@ private:
 	FFilePath SpatialOSLaunchConfig;
 
 public:
+	/** Launch configuration description. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration description"))
+	FSpatialLaunchConfigDescription LaunchConfigDesc;
+
 	/** Stop `spatial local launch` when shutting down editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Stop on exit"))
 	bool bStopSpatialOnExit;
@@ -95,6 +186,4 @@ public:
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
 			: GeneratedSchemaOutputFolder.Path;
 	}
-	
-	virtual FString ToString();
 };
