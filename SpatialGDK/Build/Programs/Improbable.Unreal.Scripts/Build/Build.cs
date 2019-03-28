@@ -74,7 +74,7 @@ exit /b !ERRORLEVEL!
 
             if (help)
             {
-                Console.WriteLine("Usage: <WorkerName> <Platform> <Configuration> <BuildType> <game.uproject> [-nocompile] <Additional UAT args>");
+                Console.WriteLine("Usage: <WorkerName> <Platform> <Configuration> <game.uproject> <BuildType> [-nocompile] <Additional UAT args>");
 
                 Environment.Exit(exitCode);
             }
