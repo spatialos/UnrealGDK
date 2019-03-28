@@ -440,7 +440,7 @@ void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
 {
 	// Create and open the cloud configuration dialog
 	SimulatedPlayerDeploymentWindowPtr = SNew(SWindow)
-		.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Simulated Player Deployment Configuration"))
+		.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Cloud Deployment"))
 		.HasCloseButton(true)
 		.SupportsMaximize(false)
 		.SupportsMinimize(false)
