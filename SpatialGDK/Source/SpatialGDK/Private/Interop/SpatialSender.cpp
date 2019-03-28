@@ -461,10 +461,16 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Send command request (entity: %lld, component: %d, command: %d)"), EntityId, CommandRequest.component_id, Schema_GetCommandRequestCommandIndex(CommandRequest.schema_type));
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: %s)"),
+					EntityId, CommandRequest.component_id, *Params->Function->GetName(), Params->Attempts+1);
 				// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 				Params->Attempts++;
 				Receiver->AddPendingReliableRPC(RequestId, Params);
+			}
+			else
+			{
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
+					EntityId, CommandRequest.component_id, *Params->Function->GetName());
 			}
 		}
 		break;

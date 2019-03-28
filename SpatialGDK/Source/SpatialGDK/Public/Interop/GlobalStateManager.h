@@ -74,6 +74,9 @@ public:
 #if WITH_EDITOR
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
+
+	void OnShutdownComponentUpdate(Worker_ComponentUpdate& Update);
+	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
@@ -85,6 +88,7 @@ private:
 
 #if WITH_EDITOR
 	void SendShutdownMultiProcessRequest();
+	void SendShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
 
 private:

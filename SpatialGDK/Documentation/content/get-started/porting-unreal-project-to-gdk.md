@@ -1,9 +1,10 @@
 <%(TOC)%>
 # Get started: Port your own Unreal project to the GDK
 
+<%(Callout type="warn" message="The GDK's porting guide is currently in alpha as we improve its stability. We do not recommend attempting to port your Unreal game now. If you need to port your game, please contact us via our [forums](https://forums.improbable.io/), or [Discord](https://discord.gg/vAT7RSU) so we can best support you.")%>
+
 This guide shows you how to port your own Unreal project to SpatialOS using the GDK for Unreal. By the end of this guide, your game will run on a single server-worker and you will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
 
-<%(Callout type="alert" message="The GDK's porting workflow is currently in pre-alpha as we improve its stability. We do not recommend attempting to port your Unreal game now. If you need to port your game, please get in touch on our [forums](https://forums.improbable.io/), or on [Discord](https://discord.gg/vAT7RSU) so we can best support you.")%>
 
 ## Before you start
 
@@ -12,7 +13,7 @@ Before porting your project:
 * If you haven't done this already, follow our Get Started guide before porting your game:
     * [Get started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     * [Get started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-    * [Get Started: 3 - Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
+    * [Get started: 3 - Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
 
 * Open a terminal window and run the command `spatial update` to ensure your [spatial CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) installation is up to date. 
 
@@ -208,3 +209,9 @@ You can change:
 
 If you haven't already, check out the tutorial on how to implement [cross-server shooting]({{urlRoot}}/content/get-started/tutorial).  
 Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
+
+
+<br/>
+
+------
+_2019-03-25 Page updated with limited editorial review_

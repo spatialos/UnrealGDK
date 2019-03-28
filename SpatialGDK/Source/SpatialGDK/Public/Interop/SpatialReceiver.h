@@ -211,7 +211,6 @@ private:
 	TArray<Worker_EntityId> PendingAddEntities;
 	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
-	TArray<Worker_EntityId> PendingRemoveEntities;
 
 	TMap<Worker_RequestId, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;
