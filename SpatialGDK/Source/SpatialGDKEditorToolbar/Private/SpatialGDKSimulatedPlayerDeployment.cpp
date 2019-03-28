@@ -312,32 +312,10 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.IsEnabled_UObject(SpatialGDKCloudLauncherSettings, &USpatialGDKEditorCloudLauncherSettings::IsSimulatedPlayersEnabled)
 								]
 							]
-							// Expandeable Logs
-							+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(0.0f, 6.0f, 0.0f, 0.0f)
-							[
-								SNew(SExpandableArea)
-								.AreaTitleFont(FEditorStyle::GetFontStyle(TEXT("SourceControl.LoginWindow.Font")))
-								.AreaTitle(FText::FromString(FString(TEXT("Simulated Player Logs"))))
-								.BorderImage(FEditorStyle::GetBrush("NoBorder"))
-								.IsEnabled(true)
-								.InitiallyCollapsed(false)
-								.BodyContent()
-								[
-									SNew(SBox)
-									.HeightOverride(250)
-									.WidthOverride(400)
-									[
-										SNew(STextBlock)
-										.Text(FText::FromString(FString(TEXT("Loading..."))))
-									]
-								]
-							]
 							// Buttons
 							+ SVerticalBox::Slot()
 							.AutoHeight()
-							.VAlign(VAlign_Center)
+							.Padding(2.0f)
 							[
 								SNew(SHorizontalBox)
 								+ SHorizontalBox::Slot()
@@ -354,14 +332,6 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 										.Text(FText::FromString(FString(TEXT("Launch Deployment"))))
 										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked)
 										.IsEnabled(this, &SSpatialGDKSimulatedPlayerDeployment::IsDeploymentConfigurationValid)
-									]
-									// Stop Cloud Deployment Button
-									+ SUniformGridPanel::Slot(1, 0)
-									[
-										SNew(SButton)
-										.HAlign(HAlign_Center)
-										.Text(FText::FromString(FString(TEXT("Stop Deployments"))))
-										.OnClicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnStopClicked)
 									]
 								]
 							]
