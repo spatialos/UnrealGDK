@@ -9,6 +9,7 @@
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "Serialization/JsonWriter.h"
 
 class FToolBarBuilder;
 class FMenuBuilder;
@@ -75,6 +76,9 @@ private:
 
 	bool ValidateGeneratedLaunchConfig() const;
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
+	bool WriteLegacyFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const;
+	bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType) const;
+	bool WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, int32 Columns, int32 Rows, bool ManualWorkerConnectionOnly) const;
 
 	bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const;
 	bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLaunchSection& FWorkerTypeLaunchSection) const;

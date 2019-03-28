@@ -61,7 +61,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
 
             var exitCode = 0;
-            if (args.Length < 4 && !help)
+            if (args.Length < 5 && !help)
             {
                 help = true;
                 exitCode = 1;
@@ -70,21 +70,22 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
 
             if (help)
             {
-                Console.WriteLine("Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>");
+                Console.WriteLine("Usage: <WorkerName> <Platform> <Configuration> <BuildType> <game.uproject> [-nocompile] <Additional UAT args>");
 
                 Environment.Exit(exitCode);
             }
 
-            var gameName = args[0];
+            var workerName = args[0];
             var platform = args[1];
             var configuration = args[2];
             var projectFile = Path.GetFullPath(args[3]);
+            var buildType = args[4];
             var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
-            var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => arg.ToLowerInvariant() != "-nocompile"));
+            var additionalUATArgs = string.Join(" ", args.Skip(5).Where(arg => arg.ToLowerInvariant() != "-nocompile"));
 
-            var stagingDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "unreal"));
-            var outputDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "assembly", "worker"));
-            var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
+            var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
+            var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));
+            var gameName = Path.GetFileNameWithoutExtension(projectFile);
 
             // Locate the Unreal Engine.
             Console.WriteLine("Finding Unreal Engine build.");
@@ -125,8 +126,8 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
 
             string runUATBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\RunUAT.bat");
             string buildBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\Build.bat");
-
-            if (gameName == baseGameName + "Editor")
+            
+            if (buildType == "Editor")
             {
                 if (noCompile)
                 {
@@ -138,7 +139,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                     
                     Common.RunRedirected(buildBat, new[]
                     {
-                        gameName,
+                        gameName + "Editor",
                         platform,
                         configuration,
                         Quote(projectFile)
@@ -168,7 +169,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                     "-archive=" + Quote(Path.Combine(outputDir, "UnrealEditor@Windows.zip")),
                 });
             }
-            else if (gameName == baseGameName)
+            else if (buildType == "Client")
             {
                 Common.WriteHeading(" > Building client.");
                 Common.RunRedirected(runUATBat, new[]
@@ -224,11 +225,11 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                     "-archive=" + Quote(Path.Combine(outputDir, "UnrealClient@Windows.zip")),
                 });
             }
-            else if (gameName == baseGameName + "FakeClient")
+            else if (buildType == "FakeClient")
             {
                 Common.WriteWarning("'FakeClient' has been renamed to 'SimulatedPlayer', please use this instead. It will create the same assembly under a different name: UnrealSimulatedPlayer@Linux.zip.");
             }
-            else if (gameName == baseGameName + "SimulatedPlayer") // This is for internal use only. We do not support Linux clients.
+            else if (buildType == "SimulatedPlayer") // This is for internal use only. We do not support Linux clients.
             {
                 Common.WriteHeading(" > Building simulated player.");
                 Common.RunRedirected(runUATBat, new[]
@@ -285,7 +286,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                     "-archive=" + Quote(Path.Combine(outputDir, archiveFileName)),
                 });
             }
-            else if (gameName == baseGameName + "Server")
+            else if (buildType == "Server")
             {
                 Common.WriteHeading(" > Building worker.");
                 Common.RunRedirected(runUATBat, new[]
@@ -324,14 +325,14 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 {
                     // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                     // Also ensure script uses Linux line endings
-                    File.WriteAllText(Path.Combine(serverPath, "StartWorker.sh"), string.Format(UnrealWorkerShellScript, baseGameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
+                    File.WriteAllText(Path.Combine(serverPath, "StartWorker.sh"), string.Format(UnrealWorkerShellScript, gameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
                 }
 
                 Common.RunRedirected(runUATBat, new[]
                 {
                     "ZipUtils",
                     "-add=" + Quote(serverPath),
-                    "-archive=" + Quote(Path.Combine(outputDir, $"UnrealWorker@{assemblyPlatform}.zip"))
+                    "-archive=" + Quote(Path.Combine(outputDir, workerName + $"@{assemblyPlatform}.zip"))
                 });
             }
             else

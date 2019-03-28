@@ -86,20 +86,22 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
+	WorkerAttributeSet AIWorkerAttribute = { FString(TEXT("AIWorker")) };
 	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
 	WorkerAttributeSet OwningClientAttribute = { ClientWorkerAttribute };
 
 	WorkerRequirementSet ServersOnly = { ServerAttribute };
+	WorkerRequirementSet AllServerTypes = { ServerAttribute, AIWorkerAttribute };
 	WorkerRequirementSet ClientsOnly = { ClientAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	WorkerRequirementSet AnyUnrealServerOrClient = { ServerAttribute, ClientAttribute };
-	WorkerRequirementSet AnyUnrealServerOrOwningClient = { ServerAttribute, OwningClientAttribute };
+	WorkerRequirementSet AnyUnrealServerOrClient = { ServerAttribute, AIWorkerAttribute, ClientAttribute };
+	WorkerRequirementSet AnyUnrealServerOrOwningClient = { ServerAttribute, AIWorkerAttribute, OwningClientAttribute };
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
-		ReadAcl = ServersOnly;
+		ReadAcl = AllServerTypes;
 	}
 	else if (Actor->IsA<APlayerController>())
 	{
@@ -112,15 +114,23 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
+	WorkerRequirementSet AuthoritativeWorkerType = ServersOnly;
+	if (!Class->WorkerAssociation.IsEmpty())
+	{
+		const WorkerAttributeSet WorkerAttribute{ Class->WorkerAssociation };
+		AuthoritativeWorkerType = { WorkerAttribute };
+	}
+
 	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, AuthoritativeWorkerType);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
+
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
@@ -134,7 +144,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			return;
 		}
 
-		ComponentWriteAcl.Add(ComponentId, ServersOnly);
+		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerType);
 	});
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
@@ -156,7 +166,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 				return;
 			}
 
-			ComponentWriteAcl.Add(ComponentId, ServersOnly);
+			ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerType);
 		});
 	}
 
