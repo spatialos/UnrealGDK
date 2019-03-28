@@ -18,9 +18,9 @@ struct FWorldLaunchSection
 		, StreamingQueryInterval(4)
 		, SnapshotWritePeriodSeconds(0)
 	{
-		LegacyFlags.Add(TEXT("streaming_query_diff"), TEXT("true"));
 		LegacyFlags.Add(TEXT("bridge_qos_max_timeout"), TEXT("0"));
 		LegacyFlags.Add(TEXT("bridge_soft_handover_enabled"), TEXT("false"));
+		LegacyFlags.Add(TEXT("enable_chunk_interest"), TEXT("false"));
 	}
 
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Dimensions"))
@@ -65,9 +65,14 @@ struct FSpatialLaunchConfigDescription
 	FSpatialLaunchConfigDescription()
 		: Template(TEXT("small"))
 		, World()
-		, Workers()
 	{
+		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
+		UnrealWorkerDefaultSetting.WorkerTypeName = TEXT("UnrealWorker");
+		UnrealWorkerDefaultSetting.Rows = 1;
+		UnrealWorkerDefaultSetting.Columns = 1;
+		UnrealWorkerDefaultSetting.ManualWorkerConnectionOnly = true;
 
+		Workers.Add(UnrealWorkerDefaultSetting);
 	}
 
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Template"))
