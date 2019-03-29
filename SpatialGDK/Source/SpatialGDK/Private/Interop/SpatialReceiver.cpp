@@ -1200,7 +1200,7 @@ void USpatialReceiver::OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op)
 		UE_LOG(LogSpatialReceiver, Error, TEXT("EntityQuery failed: request id: %d, message: %s"), Op.request_id, UTF8_TO_TCHAR(Op.message));
 	}
 
-	auto RequestDelegate = EntityQueryDelegates.Find(Op.request_id);
+	EntityQueryDelegate* RequestDelegate = EntityQueryDelegates.Find(Op.request_id);
 	if (RequestDelegate)
 	{
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Executing EntityQueryResponse with delegate, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
