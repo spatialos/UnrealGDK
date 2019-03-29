@@ -13,4 +13,6 @@ if not exist %DEPLOYMENT_LAUNCHER_EXE_PATH% (
 
 popd
 
+pause
+
 exit /b %ERRORLEVEL%

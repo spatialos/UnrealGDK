@@ -455,23 +455,11 @@ namespace Improbable
             {
                 if (e.Status.StatusCode == Grpc.Core.StatusCode.Unauthenticated)
                 {
-                    Console.WriteLine("<error:unauthenticated>");
+                    Console.WriteLine("Error: unauthenticated. Please run `spatial auth login`");
                 }
                 else
                 {
                     Console.Error.WriteLine($"Encountered an unknown gRPC error. Exception = {e.ToString()}");
-                }
-            }
-            catch (ArgumentNullException e)
-            {
-                // This is here to work around WF-464, present as of Platform SDK version 13.5.0.
-                if (e.ParamName == "path")
-                {
-                    Console.WriteLine("<error:authentication>");
-                }
-                else
-                {
-                    throw;
                 }
             }
 
