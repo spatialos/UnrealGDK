@@ -429,7 +429,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 {
 	FString Text;
 	TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
-	bool bUsingQBI = GetDefault<USpatialGDKSettings>()->bUsingQBI;
+	bool bUsingQBI = GetDefault<USpatialGDKSettings>()->IsUsingQBI();
 
 	// Populate json file for launch config
 	Writer->WriteObjectStart(); // Start of json

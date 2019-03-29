@@ -32,7 +32,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate()
 
 Interest InterestFactory::CreateInterest()
 {
-	if (!GetDefault<USpatialGDKSettings>()->bUsingQBI)
+	if (!GetDefault<USpatialGDKSettings>()->IsUsingQBI())
 	{
 		return Interest{};
 	}

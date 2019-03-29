@@ -16,7 +16,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 {
 	// Check any command line overrides for using QBI:
 	const TCHAR* CommandLine = FCommandLine::Get();
-	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
+	bUseQBIOverride = FParse::Bool(CommandLine, TEXT("useQBI"), bQBIOverrideValue);
 }
 
 #if WITH_EDITOR
