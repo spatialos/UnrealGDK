@@ -38,8 +38,7 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Deployment mame"))
 	FString SimulatedPlayerDeploymentName;
 
-	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Launch configuration path"))
-	FFilePath SimulatedPlayerLaunchConfigPath;
+	const FString SimulatedPlayerLaunchConfigPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir() / TEXT("Plugins/UnrealGDK/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json")));
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Number of simulated players"))
 	uint32 NumberOfSimulatedPlayers;
@@ -96,10 +95,9 @@ public:
 		return SimulatedPlayerDeploymentName;
 	}
 
-	void SetSimulatedPlayerLaunchConfigPath(const FString& Path);
 	FORCEINLINE FString GetSimulatedPlayerLaunchConfigPath() const
 	{
-		return SimulatedPlayerLaunchConfigPath.FilePath;
+		return SimulatedPlayerLaunchConfigPath;
 	}
 
 	void SetNumberOfSimulatedPlayers(uint32 Number);

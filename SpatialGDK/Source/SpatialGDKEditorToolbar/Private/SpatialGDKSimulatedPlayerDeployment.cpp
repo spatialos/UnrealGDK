@@ -284,37 +284,9 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.IsEnabled_UObject(SpatialGDKCloudLauncherSettings, &USpatialGDKEditorCloudLauncherSettings::IsSimulatedPlayersEnabled)
 								]
 							]
-							// Simulated Player Launch Config + File Picker
-							+ SVerticalBox::Slot()
-							.AutoHeight()
-							.Padding(2.0f)
-							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Simulated Player Launch Config File"))))
-									.ToolTipText(FText::FromString(FString(TEXT("The relative path to the simulated player launch configuration file."))))
-								]
-								+ SHorizontalBox::Slot()
-								.FillWidth(1.0f)
-								[
-									SNew(SFilePathPicker)
-									.BrowseButtonImage(FEditorStyle::GetBrush("PropertyWindow.Button_Ellipsis"))
-									.BrowseButtonStyle(FEditorStyle::Get(), "HoverHintOnly")
-									.BrowseButtonToolTip(FText::FromString(FString(TEXT("Path to the simulated player launch configuration."))))
-									.BrowseDirectory(SpatialGDKSettings->GetSpatialOSDirectory())
-									.BrowseTitle(FText::FromString(FString(TEXT("File picker..."))))
-									.FilePath_UObject(SpatialGDKCloudLauncherSettings, &USpatialGDKEditorCloudLauncherSettings::GetSimulatedPlayerLaunchConfigPath)
-									.FileTypeFilter(TEXT("Configuration files (*.json)|*.json"))
-									.OnPathPicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerLaunchConfigPathPicked)
-									.IsEnabled_UObject(SpatialGDKCloudLauncherSettings, &USpatialGDKEditorCloudLauncherSettings::IsSimulatedPlayersEnabled)
-								]
-							]
 							// Buttons
 							+ SVerticalBox::Slot()
-							.AutoHeight()
+							.FillHeight(1.0f)
 							.Padding(2.0f)
 							[
 								SNew(SHorizontalBox)
@@ -324,7 +296,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								[
 									// Launch Simulated Players Deployment Button
 									SNew(SUniformGridPanel)
-									.SlotPadding(FMargin(2.0f, 0.0f, 0.0f, 0.0f))
+									.SlotPadding(FMargin(2.0f, 20.0f, 0.0f, 0.0f))
 									+ SUniformGridPanel::Slot(0, 0)
 									[
 										SNew(SButton)
@@ -382,12 +354,6 @@ void SSpatialGDKSimulatedPlayerDeployment::OnNumberOfSimulatedPlayersCommited(ui
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 	SpatialGDKCloudLauncherSettings->SetNumberOfSimulatedPlayers(NewValue);
-}
-
-void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerLaunchConfigPathPicked(const FString& PickedPath)
-{
-	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
-	SpatialGDKCloudLauncherSettings->SetSimulatedPlayerLaunchConfigPath(PickedPath);
 }
 
 FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()

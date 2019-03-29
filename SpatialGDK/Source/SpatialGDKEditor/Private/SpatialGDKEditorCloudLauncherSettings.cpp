@@ -104,12 +104,6 @@ void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerDeploymentName(co
 	SaveConfig();
 }
 
-void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerLaunchConfigPath(const FString& Path)
-{
-	SimulatedPlayerLaunchConfigPath.FilePath = FPaths::ConvertRelativePathToFull(Path);
-	SaveConfig();
-}
-
 void USpatialGDKEditorCloudLauncherSettings::SetNumberOfSimulatedPlayers(uint32 Number)
 {
 	NumberOfSimulatedPlayers = Number;

@@ -59,9 +59,6 @@ private:
 	/** Delegate to commit the number of Simulated Players */
 	void OnNumberOfSimulatedPlayersCommited(uint32 NewValue);
 
-	/** Delegate called when the user has picked a path for the simulated player launch configuration file */
-	void OnSimulatedPlayerLaunchConfigPathPicked(const FString& PickedPath);
-
 	/** Delegate called when the user clicks the 'Launch Simulated Player Deployment' button */
 	FReply OnLaunchClicked();
 
