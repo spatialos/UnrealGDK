@@ -156,6 +156,12 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
+	// This index is incremented and returned everytime the AddOpCallback function is called.
+	using CallbackId = uint32_t;
+	using UserOpCallback = const TFunction<void(Worker_ComponentId, const Worker_Op*)>;
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserOpCallback& Callback);
+	CallbackId RemoveOpCallback(CallbackId Id);
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -199,9 +205,24 @@ private:
 #endif
 
 	friend class USpatialNetConnection;
+	friend class USpatialDispatcher;
 
 	// This index is incremented and assigned to every new RPC in ProcessRemoteFunction.
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs
 	// in the correct order, if needed.
 	int NextRPCIndex;
+
+	// This index is incremented and returned everytime the AddOpCallback function is called.
+	// These indexes enable you to deregister callbacks using the RemoveOpCallback function. 
+	// RunUserCallbacks is called by the SpatialDispatcher and executes all user registered 
+	// callbacks for the matching component ID and network operation type.
+	CallbackId NextCallbackId;
+	void RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
+	TMap<Worker_ComponentId, TSet<CallbackId>> ComponentToCallbackIdMap;
+	TMap<CallbackId, UserCallbackData> CallbackIdToDataMap;
+
+	struct UserCallbackData {
+		Worker_ComponentId ComponentId;
+		UserOpCallback& Callback;
+	}
 };

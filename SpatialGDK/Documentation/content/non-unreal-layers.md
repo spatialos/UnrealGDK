@@ -47,20 +47,17 @@ There is a basic example in the _Examples_ section below. For more examples of h
 
 >**Note:** Your external SpatialOS components must have an ID between 1000 and 2000 to be registered by the pipeline.
 
-You set up your game to receive component updates through implementing callbacks for specified SpatialOS component IDs and operation types. The GDK detects your callbacks when it’s initialized and uses them for all received data relating to components with IDs in the range 1000 to 2000.
-To create callbacks, you need to create a class derived from the GDK `UOpCallbackTemplate` base class and implement `GetComponentId` and one or more of the callback methods. These callback methods are parameterized by the following network operation types:
+You set up your game to receive network operations using the `SpatialNetDriver::AddOpCallback` function. This function is paramaterised with a SpatialOS component ID and a callback function reference with the following type:
 
-* `virtual void OnAddComponent(const Worker_AddComponentOp& Op) {}`
-* `virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) {}`
-* `virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) {}`
-* `virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) {}`
-* `virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) {}`
-* `virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) {}`
+`const TFunction<void(Worker_ComponentId, const Worker_Op*)>`
 
+where `Worker_ComponentId` and `Worker_Op` are types defined in the [Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/reference). You
 
-The `UOpCallbackTemplate` base class contains protected references to the `UWorld` and GDK `StaticComponentView` enabling you to write more meaningful callbacks.
+You'll need to register your callbacks before the Unreal worker connects to the SpatialOS runtime to avoid missing any operations.
 
-There is a basic example in the _Examples_ section below. For more examples of how to deserialize see the SpatialOS documentation on  [serialization in the Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/serialization).
+You can deregister your callbacks at runtime using the `SpatialNetDriver::RemoveOpCallback` function and passing the `CallbackId` parameter returned by the corresponding call to `SpatialNetDriver::AddOpCallback`.
+
+There is a basic example in the _Examples_ section below. For more examples of how to deserialize the `Worker_Op` type see the SpatialOS documentation on [serialization in the Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/serialization).
 
 #### Add to the snapshot
 You can customize snapshot generation by creating a class derived from the GDK `USnapshotGenerationTemplate` base class, and implementing the method below. You have the responsibility of incrementing the `NextEntityId` reference. If you don’t, snapshot generation will fail by attempting to add multiple entities to the snapshot with the same ID.
@@ -129,48 +126,21 @@ Worker_RequestId SendSomeCommandRequest(Worker_EntityId TargetEntityId, Worker_C
 #### Receive data
 You could receive and deserialize a component update and command request in your Unreal project code in the following way:
 ```
-UCLASS()
-class SPATIALGDK_API SessionComponentCallbacks : UOpCallbackTemplate
+void OnAddComponent(Worker_ComponentId ComponentId, const Worker_Op* Op)
 {
-    GENERATED_BODY()
+    Worker_ComponentUpdate Update = Op->component_update;
+    
+    // example deserialization logic
+}
 
-public:
-    Worker_ComponentId GetComponentId()
-    {
-        return 1337;
-    }
+void OnCommandRequest(const Worker_CommandRequestOp& Op) override
+{
+    Worker_CommandRequest Request = Op->command_request;
 
-    void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override
-    {
-        Worker_ComponentUpdate Update = {};
-        Update.component_id = 1338;
-        Update.schema_type = Schema_CreateComponentUpdate(1338);
-        Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update.schema_type);
-        Schema_AddInt32(FieldsObject, 1, ++UnrealCounter);
-        Cast<USpatialNetDriver>(World->GetNetDriver())->Connection-> SendComponentUpdate(39, &Update);
-    }
+    // example deserialization logic
 
-    void OnCommandRequest(const Worker_CommandRequestOp& Op) override
-    {
-        Worker_CommandResponse Response = {};
-        Response.component_id = 1338;
-        Response.schema_type = Schema_CreateCommandResponse(1338, 1);
-        Schema_Object* ResponseObject = Schema_GetCommandResponseObject(Response.schema_type);
-
-        const char* Text = "My Response text.";
-        Schema_AddBytes(ResponseObject, 1, (const uint8_t*)Text, sizeof(char) * strlen(Text));
-
-        // Spawn an actor using the World pointer
-        // (where CubeClass is a Blueprint Actor UClass pointer)
-        if (StaticComponentView->HasAuthority(Op.entity_id, GetComponentId()))
-        {
-            const FVector Location(0.0f, 0.0f, 0.0f);
-            const FRotator Rotation = FRotator::ZeroRotator;
-            World->SpawnActor(CubeClass, &Location, &Rotation);
-        }
-
-        Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);
-    }
+    Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);
+}
 }
 ```
 

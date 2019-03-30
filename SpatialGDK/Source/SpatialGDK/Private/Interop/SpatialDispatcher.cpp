@@ -154,24 +154,14 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 
 	switch (Op->op_type)
 	{
-	case WORKER_OP_TYPE_ADD_COMPONENT:
-		UserCallback->OnAddComponent(Op->add_component);
-		break;
-	case WORKER_OP_TYPE_REMOVE_COMPONENT:
-		UserCallback->OnRemoveComponent(Op->remove_component);
-		break;
-	case WORKER_OP_TYPE_COMPONENT_UPDATE:
-		UserCallback->OnComponentUpdate(Op->component_update);
-		break;
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		UserCallback->OnAuthorityChange(Op->authority_change);
 		StaticComponentView->OnAuthorityChange(Op->authority_change);
-		break;
+	case WORKER_OP_TYPE_ADD_COMPONENT:
+	case WORKER_OP_TYPE_REMOVE_COMPONENT:
+	case WORKER_OP_TYPE_COMPONENT_UPDATE:
 	case WORKER_OP_TYPE_COMMAND_REQUEST:
-		UserCallback->OnCommandRequest(Op->command_request);
-		break;
 	case WORKER_OP_TYPE_COMMAND_RESPONSE:
-		UserCallback->OnCommandResponse(Op->command_response);
+		NetDriver->RunUserCallbacks(ComponentId, Op->op_type, Op);
 		break;
 	default:
 		// This should only happen if the ComponentId is a valid Id, and
