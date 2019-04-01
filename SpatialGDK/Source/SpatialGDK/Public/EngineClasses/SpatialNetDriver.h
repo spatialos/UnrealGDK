@@ -87,6 +87,7 @@ public:
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId);
+	TMap<Worker_EntityId, USpatialActorChannel*>& GetEntityToActorChannelMap();
 
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
