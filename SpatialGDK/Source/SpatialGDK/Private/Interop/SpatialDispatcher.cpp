@@ -187,7 +187,7 @@ void USpatialDispatcher::RemoveOpCallback(uint32 CallbackId)
 	// Find callback ID in map and assert it does not exist
 	UserOpCallbackData CallbackDataToRemove = CallbackIdToDataMap.FindAndRemoveChecked(CallbackId);
 
-	TArray<uint32_t>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(CallbackDataToRemove.ComponentId);
+	TArray<uint32>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(CallbackDataToRemove.ComponentId);
 	check(ComponentCallbackIds);
 
 	if (ComponentCallbackIds->Num() == 1)
