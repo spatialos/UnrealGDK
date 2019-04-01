@@ -16,18 +16,6 @@ void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 	NetDriver = InNetDriver;
 	Receiver = InNetDriver->Receiver;
 	StaticComponentView = InNetDriver->StaticComponentView;
-
-	// Collect all OpCallbackTemplate subclasses to register user callbacks in pipeline.
-	for (TObjectIterator<UClass> OpCallbackClass; OpCallbackClass; ++OpCallbackClass)
-	{
-		if (OpCallbackClass->IsChildOf(UOpCallbackTemplate::StaticClass()) && *OpCallbackClass != UOpCallbackTemplate::StaticClass())
-		{
-			UOpCallbackTemplate* CallbackObject = NewObject<UOpCallbackTemplate>(this, *OpCallbackClass);
-			CallbackObject->InternalInit(NetDriver->GetWorld(), StaticComponentView);
-			UE_LOG(LogSpatialView, Log, TEXT("Registered dispatcher callback class %s to handle component ID %d."), *OpCallbackClass->GetName(), CallbackObject->GetComponentId());
-			UserOpCallbacks.Add(CallbackObject->GetComponentId(), CallbackObject);
-		}
-	}
 }
 
 void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
@@ -145,13 +133,6 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 	Worker_ComponentId ComponentId = GetComponentId(Op);
 	check(ComponentId != SpatialConstants::INVALID_COMPONENT_ID);
 
-	UOpCallbackTemplate** UserCallbackWrapper = UserOpCallbacks.Find(ComponentId);
-	if (UserCallbackWrapper == nullptr)
-	{
-		return;
-	}
-	UOpCallbackTemplate* UserCallback = *UserCallbackWrapper;
-
 	switch (Op->op_type)
 	{
 	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
@@ -161,11 +142,11 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
 	case WORKER_OP_TYPE_COMMAND_REQUEST:
 	case WORKER_OP_TYPE_COMMAND_RESPONSE:
-		NetDriver->RunUserCallbacks(ComponentId, Op);
+		RunUserCallbacks(ComponentId, Op);
 		break;
 	default:
-		// This should only happen if the ComponentId is a valid Id, and
-		// a new type of Op as been added to the worker SDK.
+		// This never happen providing the GetComponentId has the same
+		// explicit cases as the switch in this method
 		checkNoEntry();
 		return;
 	}
@@ -189,5 +170,45 @@ Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op) const
 		return Op->command_response.response.component_id;
 	default:
 		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+}
+
+uint32_t USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserOpCallback& Callback)
+{
+	SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID;
+	uint32_t NewCallbackId = NextCallbackId++;
+	ComponentToCallbackIdMap.FindOrAdd(ComponentId).Add(NewCallbackId);
+	CallbackIdToDataMap.Add(NewCallbackId, UserOpCallbackData{ ComponentId, Callback });
+	return NewCallbackId;
+}
+
+void USpatialDispatcher::RemoveOpCallback(uint32_t CallbackId)
+{
+	// Find callback ID in map and assert it does not exist
+	UserOpCallbackData CallbackDataToRemove = CallbackIdToDataMap.FindAndRemoveChecked(CallbackId);
+
+	TSet<uint32_t>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(CallbackDataToRemove.ComponentId);
+	if (ComponentCallbackIds == nullptr)
+	{
+		UE_LOG(LogSpatialView, Warning, TEXT("Tried to remove callback ID: %d but found no callbacks for corresponding component ID: %d"), CallbackId, CallbackDataToRemove.ComponentId);
+	}
+
+	ComponentCallbackIds->Remove(CallbackId);
+}
+
+void USpatialDispatcher::RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op)
+{
+	if (TSet<uint32_t>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(ComponentId))
+	{
+		for (auto& CallbackId : *ComponentCallbackIds)
+		{
+			UserOpCallbackData* CallbackData = CallbackIdToDataMap.Find(CallbackId);
+			if (CallbackData == nullptr)
+			{
+				UE_LOG(LogSpatialView, Warning, TEXT("Tried to run callback ID: %d but found no callback data"), CallbackId);
+				continue;
+			}
+			CallbackData->Callback(ComponentId, Op);
+		}
 	}
 }
