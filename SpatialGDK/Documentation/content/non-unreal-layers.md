@@ -51,7 +51,7 @@ You set up your game to receive network operations using the `SpatialNetDriver::
 
 `const TFunction<void(Worker_ComponentId, const Worker_Op*)>`
 
-where `Worker_ComponentId` and `Worker_Op` are types defined in the [Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/reference). You
+where `Worker_ComponentId` and `Worker_Op` are types defined in the [Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/reference).
 
 You'll need to register your callbacks before the Unreal worker connects to the SpatialOS runtime to avoid missing any operations.
 
