@@ -202,7 +202,7 @@ void USpatialDispatcher::RemoveOpCallback(uint32 CallbackId)
 
 void USpatialDispatcher::RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op)
 {
-	TArray<uint32_t>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(ComponentId);
+	TArray<uint32>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(ComponentId);
 	if (ComponentCallbackIds == nullptr)
 	{
 		return;
