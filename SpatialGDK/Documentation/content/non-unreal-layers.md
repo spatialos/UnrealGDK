@@ -47,7 +47,7 @@ There is a basic example in the _Examples_ section below. For more examples of h
 
 >**Note:** Your external SpatialOS components must have an ID between 1000 and 2000 to be registered by the pipeline.
 
-You set up your game to receive network operations using the `SpatialNetDriver::AddOpCallback` function. This function is paramaterised with a SpatialOS component ID and a callback function reference with the following type:
+You set up your game to receive network operations using the `USpatialDispatcher::AddOpCallback` function. This function is paramaterised with a SpatialOS component ID and a callback function reference with the following type:
 
 `const TFunction<void(Worker_ComponentId, const Worker_Op*)>`
 
