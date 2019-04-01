@@ -12,21 +12,23 @@ bool SpatialGDKCloudLaunch()
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	FString LauncherCmdArguments = FString::Printf(
-		TEXT("/c DeploymentLauncher.exe create %s %s %s %s %s "),
+		TEXT("/c DeploymentLauncher.exe create %s %s %s %s %s %s"),
 		*SpatialGDKCloudLauncherSettings->GetProjectName(),
 		*SpatialGDKCloudLauncherSettings->GetAssemblyName(),
 		*SpatialGDKCloudLauncherSettings->GetPrimaryDeploymentName(),
 		*SpatialGDKCloudLauncherSettings->GetPrimaryLanchConfigPath(),
-		*SpatialGDKCloudLauncherSettings->GetSnapshotPath()
+		*SpatialGDKCloudLauncherSettings->GetSnapshotPath(),
+		*SpatialGDKCloudLauncherSettings->GetPrimaryRegionCode().ToString()
 	);
 
 	if (SpatialGDKCloudLauncherSettings->IsSimulatedPlayersEnabled())
 	{
 		LauncherCmdArguments = FString::Printf(
-			TEXT("%s %s %s %s"),
+			TEXT("%s %s %s %s %s"),
 			*LauncherCmdArguments,
 			*SpatialGDKCloudLauncherSettings->GetSimulatedPlayerDeploymentName(),
 			*SpatialGDKCloudLauncherSettings->GetSimulatedPlayerLaunchConfigPath(),
+			*SpatialGDKCloudLauncherSettings->GetSimulatedPlayerRegionCode().ToString(),
 			*FString::FromInt(SpatialGDKCloudLauncherSettings->GetNumberOfSimulatedPlayer())
 		);
 	}

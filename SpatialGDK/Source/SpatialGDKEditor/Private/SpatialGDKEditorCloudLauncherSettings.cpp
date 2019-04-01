@@ -65,6 +65,13 @@ bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentNameValid(const FString
 	return RegMatcher.FindNext();
 }
 
+bool USpatialGDKEditorCloudLauncherSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode)
+{
+	UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
+
+	return pEnum && pEnum->IsValidEnumValue(RegionCode);
+}
+
 void USpatialGDKEditorCloudLauncherSettings::SetPrimaryDeploymentName(const FString& Name)
 {
 	PrimaryDeploymentName = Name;
@@ -95,6 +102,16 @@ void USpatialGDKEditorCloudLauncherSettings::SetSnapshotPath(const FString& Path
 	SaveConfig();
 }
 
+void USpatialGDKEditorCloudLauncherSettings::SetPrimaryRegionCode(const ERegionCode::Type RegionCode)
+{
+	PrimaryDeploymentRegionCode = RegionCode;
+}
+
+void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode)
+{
+	SimulatedPlayerDeploymentRegionCode = RegionCode;
+}
+
 void USpatialGDKEditorCloudLauncherSettings::SetSimulatedPlayersEnabledState(bool IsEnabled)
 {
 	bSimulatedPlayersIsEnabled = IsEnabled;
@@ -115,9 +132,20 @@ void USpatialGDKEditorCloudLauncherSettings::SetNumberOfSimulatedPlayers(uint32 
 
 bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentConfigurationValid() const
 {
-	return IsAssemblyNameValid(AssemblyName) &&
+	bool result = IsAssemblyNameValid(AssemblyName) &&
 		IsDeploymentNameValid(PrimaryDeploymentName) &&
 		IsProjectNameValid(ProjectName) &&
 		!SnapshotPath.FilePath.IsEmpty() &&
-		!PrimaryLaunchConfigPath.FilePath.IsEmpty();
+		!PrimaryLaunchConfigPath.FilePath.IsEmpty() &&
+		IsRegionCodeValid(PrimaryDeploymentRegionCode);
+
+	if (IsSimulatedPlayersEnabled())
+	{
+		result = result &&
+			IsDeploymentNameValid(SimulatedPlayerDeploymentName) &&
+			!SimulatedPlayerLaunchConfigPath.IsEmpty() &&
+			IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode);
+	}
+
+	return result;
 }
