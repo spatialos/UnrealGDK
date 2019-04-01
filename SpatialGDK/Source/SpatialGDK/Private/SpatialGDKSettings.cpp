@@ -14,9 +14,15 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ActorReplicationRateLimit(0)
 	, bUsingQBI(false)
 {
-	// Check any command line overrides for using QBI:
+}
+
+void USpatialGDKSettings::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	// Check any command line overrides for using QBI (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
-	bUseQBIOverride = FParse::Bool(CommandLine, TEXT("useQBI"), bQBIOverrideValue);
+	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
 }
 
 #if WITH_EDITOR

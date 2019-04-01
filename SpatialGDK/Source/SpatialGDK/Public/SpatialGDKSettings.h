@@ -13,9 +13,6 @@ class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
 	GENERATED_BODY()
 
-private:
-	bool bUseQBIOverride, bQBIOverrideValue;
-
 public:
 	USpatialGDKSettings(const FObjectInitializer& ObjectInitializer);
 
@@ -23,7 +20,7 @@ public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
-	bool IsUsingQBI() const { return bUseQBIOverride ? bQBIOverrideValue : bUsingQBI; }
+	void PostInitProperties() override;
 
 	/** The number of entity IDs to be reserved when the entity pool is first created */
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (ConfigRestartRequired = false, DisplayName = "Initial Entity ID Reservation Count"))
