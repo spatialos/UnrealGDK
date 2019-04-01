@@ -32,10 +32,11 @@ public:
 	void ProcessOps(Worker_OpList* OpList);
 
 	// AddOpCallback returns a callback ID which is incremented on each callback that is registered.
+	// ComponentId must be in the range 1000 - 2000.
 	// Callbacks can be deregistered through passing the corresponding callback ID to the RemoveOpCallback function.
 	using UserOpCallback = const TFunction<void(Worker_ComponentId, const Worker_Op*)>;
-	uint32_t AddOpCallback(Worker_ComponentId ComponentId, const UserOpCallback& Callback);
-	void RemoveOpCallback(uint32_t Id);
+	uint32 AddOpCallback(Worker_ComponentId ComponentId, const UserOpCallback& Callback);
+	void RemoveOpCallback(uint32 Id);
 
 private:
 	bool IsExternalSchemaOp(Worker_Op* Op) const;
@@ -60,8 +61,8 @@ private:
 	// These indexes enable you to deregister callbacks using the RemoveOpCallback function. 
 	// RunUserCallbacks is called by the SpatialDispatcher and executes all user registered 
 	// callbacks for the matching component ID and network operation type.
-	uint32_t NextCallbackId;
+	uint32 NextCallbackId;
 	void RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
-	TMap<Worker_ComponentId, TSet<uint32_t>> ComponentToCallbackIdMap;
-	TMap<uint32_t, UserOpCallbackData> CallbackIdToDataMap;
+	TMap<Worker_ComponentId, TArray<uint32>> ComponentToCallbackIdMap;
+	TMap<uint32, UserOpCallbackData> CallbackIdToDataMap;
 };

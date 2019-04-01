@@ -173,42 +173,45 @@ Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op) const
 	}
 }
 
-uint32_t USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserOpCallback& Callback)
+uint32 USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserOpCallback& Callback)
 {
-	SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID;
-	uint32_t NewCallbackId = NextCallbackId++;
+	check(SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID);
+	uint32 NewCallbackId = NextCallbackId++;
 	ComponentToCallbackIdMap.FindOrAdd(ComponentId).Add(NewCallbackId);
 	CallbackIdToDataMap.Add(NewCallbackId, UserOpCallbackData{ ComponentId, Callback });
 	return NewCallbackId;
 }
 
-void USpatialDispatcher::RemoveOpCallback(uint32_t CallbackId)
+void USpatialDispatcher::RemoveOpCallback(uint32 CallbackId)
 {
 	// Find callback ID in map and assert it does not exist
 	UserOpCallbackData CallbackDataToRemove = CallbackIdToDataMap.FindAndRemoveChecked(CallbackId);
 
-	TSet<uint32_t>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(CallbackDataToRemove.ComponentId);
-	if (ComponentCallbackIds == nullptr)
-	{
-		UE_LOG(LogSpatialView, Warning, TEXT("Tried to remove callback ID: %d but found no callbacks for corresponding component ID: %d"), CallbackId, CallbackDataToRemove.ComponentId);
-	}
+	TArray<uint32_t>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(CallbackDataToRemove.ComponentId);
+	check(ComponentCallbackIds);
 
-	ComponentCallbackIds->Remove(CallbackId);
+	if (ComponentCallbackIds->Num() == 1)
+	{
+		ComponentToCallbackIdMap.Remove(CallbackDataToRemove.ComponentId);
+	}
+	else
+	{
+		ComponentCallbackIds->Remove(CallbackId);
+	}
 }
 
 void USpatialDispatcher::RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op)
 {
-	if (TSet<uint32_t>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(ComponentId))
+	TArray<uint32_t>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(ComponentId);
+	if (ComponentCallbackIds == nullptr)
 	{
-		for (auto& CallbackId : *ComponentCallbackIds)
-		{
-			UserOpCallbackData* CallbackData = CallbackIdToDataMap.Find(CallbackId);
-			if (CallbackData == nullptr)
-			{
-				UE_LOG(LogSpatialView, Warning, TEXT("Tried to run callback ID: %d but found no callback data"), CallbackId);
-				continue;
-			}
-			CallbackData->Callback(ComponentId, Op);
-		}
+		return;
+	}
+
+	for (auto& CallbackId : *ComponentCallbackIds)
+	{
+		UserOpCallbackData* CallbackData = CallbackIdToDataMap.Find(CallbackId);
+		check(CallbackData);
+		CallbackData->Callback(ComponentId, Op);
 	}
 }
