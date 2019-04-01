@@ -41,7 +41,7 @@
     },
     {
       "Name": "SpatialGDKTest",
-      "Type": "Editor",
+      "Type": "Developer",
       "LoadingPhase": "Default",
       "WhitelistPlatforms": [ "Win64" ]
     }
