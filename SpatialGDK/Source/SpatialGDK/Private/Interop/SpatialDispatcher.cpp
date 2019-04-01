@@ -208,7 +208,7 @@ void USpatialDispatcher::RunUserCallbacks(Worker_ComponentId ComponentId, const 
 		return;
 	}
 
-	for (auto& CallbackId : *ComponentCallbackIds)
+	for (uint32& CallbackId : *ComponentCallbackIds)
 	{
 		UserOpCallbackData* CallbackData = CallbackIdToDataMap.Find(CallbackId);
 		check(CallbackData);
