@@ -65,7 +65,7 @@ bool USpatialGDKEditorCloudLauncherSettings::IsDeploymentNameValid(const FString
 	return RegMatcher.FindNext();
 }
 
-bool USpatialGDKEditorCloudLauncherSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode) const
+bool USpatialGDKEditorCloudLauncherSettings::IsRegionCodeValid(const ERegionCode::Type RegionCode)
 {
 	UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 

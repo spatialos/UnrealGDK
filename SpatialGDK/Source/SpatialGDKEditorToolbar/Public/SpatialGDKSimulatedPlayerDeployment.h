@@ -53,10 +53,10 @@ private:
 	/** Delegate called when the user has picked a path for the primary launch configuration file */
 	void OnPrimaryLaunchConfigPathPicked(const FString& PickedPath);
 
-	/** Delegate called to populate the primary deployment region code dropdown */
+	/** Delegate called to populate the region codes for the primary deployment */
 	TSharedRef<SWidget> OnGetPrimaryDeploymentRegionCode();
 
-	/** Delegate called to populate the simulated deployment region code dropdown */
+	/** Delegate called to populate the region codes for the simulated player deployment */
 	TSharedRef<SWidget> OnGetSimulatedPlayerDeploymentRegionCode();
 
 	/** Delegate called when the user selects a region code from the dropdown for the primary deployment */

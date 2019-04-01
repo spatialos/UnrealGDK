@@ -5,7 +5,6 @@
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
 #include "SpatialGDKEditorSettings.h"
-#include "UObject/Class.h"
 #include "UObject/Package.h"
 
 #include "SpatialGDKEditorCloudLauncherSettings.generated.h"
