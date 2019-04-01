@@ -1,18 +1,20 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "CoreMinimal.h"
 #include "Misc/AutomationTest.h"
 #include "Interop/SpatialReceiver.h"
 
-namespace SpatialReceiverTestUtils {
-	bool SpatialReceiverOnEntityQueryResponseTest(Worker_EntityQueryResponseOp& TestOp)
+namespace SpatialReceiverTestUtils
+{
+	bool SpatialReceiverOnEntityQueryResponseTest(const Worker_EntityQueryResponseOp& TestOp)
 	{
 		USpatialReceiver* Receiver = NewObject<USpatialReceiver>();
-		Worker_RequestId RequestId = 0;
+		const Worker_RequestId RequestId = 0;
 		EntityQueryDelegate TestQueryDelegate;
 
 		bool IsDelegateCalled = false;
 
-		TestQueryDelegate.BindLambda([&IsDelegateCalled](Worker_EntityQueryResponseOp& _)
+		TestQueryDelegate.BindLambda([&IsDelegateCalled](const Worker_EntityQueryResponseOp& _)
 		{
 			IsDelegateCalled = true;
 		});
