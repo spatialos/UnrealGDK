@@ -55,7 +55,7 @@ where `Worker_ComponentId` and `Worker_Op` are types defined in the [Worker SDK 
 
 You'll need to register your callbacks before the Unreal worker connects to the SpatialOS runtime to avoid missing any operations.
 
-You can deregister your callbacks at runtime using the `SpatialNetDriver::RemoveOpCallback` function and passing the `CallbackId` parameter returned by the corresponding call to `SpatialNetDriver::AddOpCallback`.
+You can deregister your callbacks at runtime using the `USpatialDispatcher::RemoveOpCallback` function and passing the `CallbackId` parameter returned by the corresponding call to `USpatialDispatcher::AddOpCallback`.
 
 There is a basic example in the _Examples_ section below. For more examples of how to deserialize the `Worker_Op` type see the SpatialOS documentation on [serialization in the Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/serialization).
 
@@ -126,21 +126,19 @@ Worker_RequestId SendSomeCommandRequest(Worker_EntityId TargetEntityId, Worker_C
 #### Receive data
 You could receive and deserialize a component update and command request in your Unreal project code in the following way:
 ```
-void OnAddComponent(Worker_ComponentId ComponentId, const Worker_Op* Op)
+void ATPSGameMode::BeginPlay()
 {
-    Worker_ComponentUpdate Update = Op->component_update;
-    
-    // example deserialization logic
-}
+    USpatialDispatcher* Dispatcher = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Dispatcher;
 
-void OnCommandRequest(const Worker_CommandRequestOp& Op) override
-{
-    Worker_CommandRequest Request = Op->command_request;
+    Dispatcher->AddOpCallback(1337, [&](Worker_ComponentId ComponentId, const Worker_Op* Callback) {
+        // deserialize Callback
+        UE_LOG(LogTPS, Error, TEXT("received component update"));
+    });
 
-    // example deserialization logic
-
-    Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);
-}
+    Dispatcher->AddOpCallback(1337, [&](Worker_ComponentId ComponentId, const Worker_Op* Callback) {
+        // deserialize Callback
+        UE_LOG(LogTPS, Error, TEXT("received component update"));
+    });
 }
 ```
 
