@@ -1602,38 +1602,39 @@ void USpatialNetDriver::HandleOnConnectionFailed(const FString& Reason)
 	OnConnectionFailed.Broadcast(Reason);
 }
 
-CallbackId USpatialNetDriver::AddOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op&)>& Callback)
+uint32_t USpatialNetDriver::AddOpCallback(Worker_ComponentId ComponentId, const UserOpCallback& Callback)
 {
 	SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID;
-	CallbackId NewCallbackId = NextCallbackId++;
+	uint32_t NewCallbackId = NextCallbackId++;
 	ComponentToCallbackIdMap.FindOrAdd(ComponentId).Add(NewCallbackId);
-	CallbackIdToDataMap.Add(NewCallbackId, UserCallbackData{ComponentId, Callback});
+	CallbackIdToDataMap.Add(NewCallbackId, UserOpCallbackData{ComponentId, Callback});
+	return NewCallbackId;
 }
 
-CallbackId USpatialNetDriver::RemoveOpCallback(CallbackId Id) 
+void USpatialNetDriver::RemoveOpCallback(uint32_t CallbackId)
 {
 	// Find callback ID in map and assert it does not exist
-	UserCallbackData CallbackDataToRemove = CallbackIdToDataMap.FindAndRemoveChecked(Id);
+	UserOpCallbackData CallbackDataToRemove = CallbackIdToDataMap.FindAndRemoveChecked(CallbackId);
 
-	TSet<CallbackId>* ComponentCallbacks = ComponentOpTypeToCallbackIdMap.Find(CallbackDataToRemove.ComponentId);
-	if (ComponentCallbacks == nullptr)
+	TSet<uint32_t>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(CallbackDataToRemove.ComponentId);
+	if (ComponentCallbackIds == nullptr)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Tried to remove callback ID: %d but found no callbacks for corresponding component ID: %d"), Id, DataToRemove->ComponentId);
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Tried to remove callback ID: %d but found no callbacks for corresponding component ID: %d"), CallbackId, CallbackDataToRemove.ComponentId);
 	}
 
-	OpTypeComponentCallbacksCallbacks.Remove(Id);
+	ComponentCallbackIds->Remove(CallbackId);
 }
 
-void RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op) 
+void USpatialNetDriver::RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op)
 {
-	if (TSet<CallbackId>* ComponentCallbacks = ComponentOpTypeToCallbackIdMap.Find(ComponentId))
+	if (TSet<uint32_t>* ComponentCallbackIds = ComponentToCallbackIdMap.Find(ComponentId))
 	{
-		for (auto& CallbackId : *ComponentCallbacks)
+		for (auto& CallbackId : *ComponentCallbackIds)
 		{
-			UserCallbackData* CallbackData = CallbackIdToDataMap.Find(CallbackId);
+			UserOpCallbackData* CallbackData = CallbackIdToDataMap.Find(CallbackId);
 			if (CallbackData == nullptr)
 			{
-				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Tried to run callback ID: %d but found no callback data"), Id);
+				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Tried to run callback ID: %d but found no callback data"), CallbackId);
 				continue;
 			}
 			CallbackData->Callback(ComponentId, Op);

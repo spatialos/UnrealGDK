@@ -161,7 +161,7 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 	case WORKER_OP_TYPE_COMPONENT_UPDATE:
 	case WORKER_OP_TYPE_COMMAND_REQUEST:
 	case WORKER_OP_TYPE_COMMAND_RESPONSE:
-		NetDriver->RunUserCallbacks(ComponentId, Op->op_type, Op);
+		NetDriver->RunUserCallbacks(ComponentId, Op);
 		break;
 	default:
 		// This should only happen if the ComponentId is a valid Id, and
