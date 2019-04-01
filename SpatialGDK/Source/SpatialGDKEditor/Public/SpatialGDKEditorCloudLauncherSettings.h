@@ -120,7 +120,7 @@ public:
 			return FText::FromString(TEXT("Invalid"));
 		}
 
-		return pEnum->GetEnumTextByValue((int64) PrimaryDeploymentRegionCode.GetValue());
+		return pEnum->GetEnumTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
 	}
 
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);
