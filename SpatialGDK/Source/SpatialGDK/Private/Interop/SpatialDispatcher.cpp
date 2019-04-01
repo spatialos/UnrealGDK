@@ -176,7 +176,7 @@ Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op) const
 uint32 USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserOpCallback& Callback)
 {
 	check(SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID);
-	uint32 NewCallbackId = NextCallbackId++;
+	const uint32 NewCallbackId = NextCallbackId++;
 	ComponentToCallbackIdMap.FindOrAdd(ComponentId).Add(NewCallbackId);
 	CallbackIdToDataMap.Add(NewCallbackId, UserOpCallbackData{ ComponentId, Callback });
 	return NewCallbackId;
