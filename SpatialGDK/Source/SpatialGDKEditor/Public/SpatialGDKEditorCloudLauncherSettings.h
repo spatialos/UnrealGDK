@@ -34,7 +34,6 @@ public:
 	USpatialGDKEditorCloudLauncherSettings(const FObjectInitializer& ObjectInitializer);
 
 private:
-
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS project"))
 	FString ProjectName;
 
