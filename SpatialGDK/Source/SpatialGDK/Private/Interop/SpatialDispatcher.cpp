@@ -124,13 +124,9 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	Receiver->FlushRetryRPCs();
 
 	// Check every channel for net ownership changes (determines ACL and component interest)
-	const FActorChannelMap& ChannelMap = NetDriver->GetSpatialOSNetConnection()->ActorChannelMap();
-	for (auto& Pair : ChannelMap)
+	for (auto& EntityChannelPair : NetDriver->GetEntityToActorChannelMap())
 	{
-		if (USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Pair.Value))
-		{
-			Channel->SpatialViewTick();
-		}
+		EntityChannelPair.Value->SpatialViewTick();
 	}
 }
 

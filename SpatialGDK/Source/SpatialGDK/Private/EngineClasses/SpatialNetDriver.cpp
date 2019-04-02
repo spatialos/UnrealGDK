@@ -1454,6 +1454,11 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId)
 	EntityToActorChannel.FindAndRemoveChecked(EntityId);
 }
 
+TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityToActorChannelMap()
+{
+	return EntityToActorChannel;
+}
+
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
