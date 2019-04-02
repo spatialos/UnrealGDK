@@ -16,12 +16,6 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
 
-FSpatialGDKEditor::FSpatialGDKEditor()
-	: bSchemaGeneratorRunning(false)
-{
-	TryLoadExistingSchemaDatabase();
-}
-
 bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 {
 	if (bSchemaGeneratorRunning)
