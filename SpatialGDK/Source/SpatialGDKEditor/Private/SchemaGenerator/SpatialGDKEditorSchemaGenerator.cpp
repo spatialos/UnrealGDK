@@ -444,6 +444,15 @@ void DeleteGeneratedSchemaFiles()
 	PlatformFile.CreateDirectory(*SchemaOutputPath);
 }
 
+void ClearGeneratedSchema()
+{
+	ClassPathToSchema.Empty();
+	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
+
+	// As a safety precaution, if the SchemaDatabase.uasset doesn't exist then make sure the schema generated folder is cleared as well.
+	DeleteGeneratedSchemaFiles();
+}
+
 void TryLoadExistingSchemaDatabase()
 {
 	TSoftObjectPtr<USchemaDatabase> SchemaDatabasePtr(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")));
@@ -466,12 +475,7 @@ void TryLoadExistingSchemaDatabase()
 	else
 	{
 		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("SchemaDatabase not found on Engine startup so the generated schema directory will be cleared out if it exists."));
-
-		ClassPathToSchema.Empty();
-		NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
-
-		// As a safety precaution, if the SchemaDatabase.uasset doesn't exist then make sure the schema generated folder is cleared as well. 
-		DeleteGeneratedSchemaFiles();
+		ClearGeneratedSchema();
 	}
 }
 

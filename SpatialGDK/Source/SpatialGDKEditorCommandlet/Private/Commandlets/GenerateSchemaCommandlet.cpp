@@ -24,7 +24,7 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 
 	//Generate Schema!
 	FSpatialGDKEditor SpatialGDKEditor;
-	if (SpatialGDKEditor.GenerateSchema())
+	if (SpatialGDKEditor.GenerateSchema(true))
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!"));
 	}

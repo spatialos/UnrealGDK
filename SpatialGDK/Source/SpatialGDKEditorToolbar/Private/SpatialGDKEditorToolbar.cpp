@@ -223,7 +223,7 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 {
 	ShowTaskStartNotification("Generating Schema");
 
-	if (SpatialGDKEditorInstance->GenerateSchema())
+	if (SpatialGDKEditorInstance->GenerateSchema(true))
 	{
 		ShowSuccessNotification("Schema Generation Completed!");
 	}

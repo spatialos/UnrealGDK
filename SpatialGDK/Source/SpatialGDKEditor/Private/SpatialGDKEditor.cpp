@@ -22,7 +22,7 @@ FSpatialGDKEditor::FSpatialGDKEditor()
 	TryLoadExistingSchemaDatabase();
 }
 
-bool FSpatialGDKEditor::GenerateSchema()
+bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 {
 	if (bSchemaGeneratorRunning)
 	{
@@ -40,7 +40,14 @@ bool FSpatialGDKEditor::GenerateSchema()
 	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
 	GeneralProjectSettings->bSpatialNetworking = true;
 
-	TryLoadExistingSchemaDatabase();
+	if (bFullRebuild)
+	{
+		ClearGeneratedSchema();
+	}
+	else
+	{
+		TryLoadExistingSchemaDatabase();
+	}
 	Progress.EnterProgressFrame(1.f);
 
 	PreProcessSchemaMap();

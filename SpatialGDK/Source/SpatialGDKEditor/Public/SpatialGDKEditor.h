@@ -14,7 +14,7 @@ class SPATIALGDKEDITOR_API FSpatialGDKEditor
 public:
 	FSpatialGDKEditor();
 
-	bool GenerateSchema();
+	bool GenerateSchema(bool bFullRebuild);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
