@@ -9,7 +9,6 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialCommonTypes.h"
 #include "SpatialConstants.h"
-#include "Utils/OpCallbackTemplate.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -34,9 +33,16 @@ public:
 	// AddOpCallback returns a callback ID which is incremented on each callback that is registered.
 	// ComponentId must be in the range 1000 - 2000.
 	// Callbacks can be deregistered through passing the corresponding callback ID to the RemoveOpCallback function.
-	using UserOpCallback = const TFunction<void(Worker_ComponentId, const Worker_Op*)>;
-	uint32 AddOpCallback(Worker_ComponentId ComponentId, const UserOpCallback& Callback);
-	void RemoveOpCallback(uint32 Id);
+	template<typename T>
+	using UserCallback = const TFunction<void(T)>;
+	using CallbackId = uint32;
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_AddComponentOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_RemoveComponentOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_AuthorityChangeOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_ComponentUpdateOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_CommandRequestOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_CommandResponseOp>& Callback);
+	void RemoveOpCallback(CallbackId Id);
 
 private:
 	bool IsExternalSchemaOp(Worker_Op* Op) const;
@@ -52,17 +58,20 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
-	struct UserOpCallbackData {
+	struct UserOpCallbackData
+	{
 		Worker_ComponentId ComponentId;
-		UserOpCallback& Callback;
+		Worker_OpType OpType;
+		UserCallback<const Worker_Op*> Callback;
 	};
 
 	// This index is incremented and returned every time the AddOpCallback function is called.
 	// These indexes enable you to deregister callbacks using the RemoveOpCallback function. 
 	// RunUserCallbacks is called by the SpatialDispatcher and executes all user registered 
 	// callbacks for the matching component ID and network operation type.
-	uint32 NextCallbackId;
+	CallbackId NextCallbackId;
+	CallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, UserCallback<const Worker_Op*> Callback);
 	void RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
-	TMap<Worker_ComponentId, TArray<uint32>> ComponentToCallbackIdMap;
-	TMap<uint32, UserOpCallbackData> CallbackIdToDataMap;
+	TMap<Worker_ComponentId, TMap<Worker_OpType, TArray<CallbackId>>> ComponentOpTypeToCallbackIdMap;
+	TMap<CallbackId, UserOpCallbackData> CallbackIdToDataMap;
 };
