@@ -4,10 +4,8 @@
 
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
-#include "SocketSubsystem.h"
 #include "TimerManager.h"
 
-#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
@@ -44,13 +42,20 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 	// Accept new player.
 	URLString.Append(TEXT("?workerAttribute=")).Append(UTF8_TO_TCHAR(CallerAttribute));
 
-	NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
+	// Accept the player if we have not already accepted a player from this worker.
+	bool bAlreadyHasPlayer;
+	WorkersWithPlayersSpawned.Emplace(FString{ CallerAttribute }, &bAlreadyHasPlayer);
 
+	if (!bAlreadyHasPlayer)
+	{
+		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
+	}
+
+	// Send a successful response if the player has been accepted, either from this request or one in the past.
 	Worker_CommandResponse CommandResponse = {};
 	CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
 	Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
-	Schema_AddBool(ResponseObject, 1, true);
 
 	NetDriver->Connection->SendCommandResponse(RequestId, &CommandResponse);
 }
@@ -112,7 +117,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	++NumberOfAttempts;
 }
 
-void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op)
+void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(const Worker_CommandResponseOp& Op)
 {
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{
