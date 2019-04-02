@@ -47,7 +47,7 @@ void USnapshotManager::WorldWipe(const USpatialNetDriver::PostWorldWipeDelegate&
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&WorldQuery);
 
 	EntityQueryDelegate WorldQueryDelegate;
-	WorldQueryDelegate.BindLambda([this, PostWorldWipeDelegate](Worker_EntityQueryResponseOp& Op)
+	WorldQueryDelegate.BindLambda([this, PostWorldWipeDelegate](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
