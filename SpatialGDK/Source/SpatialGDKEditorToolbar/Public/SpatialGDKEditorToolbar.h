@@ -4,6 +4,8 @@
 #include "Async/Future.h"
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
+#include "Serialization/JsonWriter.h"
+#include "SpatialGDKEditorSettings.h"
 #include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
@@ -68,6 +70,10 @@ private:
 	void ShowFailedNotification(const FString& NotificationText);
 
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
+
+	bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const;
+	bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLaunchSection& FWorkerTypeLaunchSection) const;
+	bool WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, int32 Columns, int32 Rows, bool ManualWorkerConnectionOnly) const;
 
 	static void ShowCompileLog();
 
