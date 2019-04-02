@@ -375,7 +375,12 @@ Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId En
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
 {
-	return Worker_Connection_SendCommandResponse(WorkerConnection, RequestId, Response);
+	Worker_Connection_SendCommandResponse(WorkerConnection, RequestId, Response);
+}
+
+void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const char* Message)
+{
+	Worker_Connection_SendCommandFailure(WorkerConnection, RequestId, Message);
 }
 
 void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message)
