@@ -10,8 +10,11 @@
 
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
+#include "Misc/ScopedSlowTask.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
+
+#define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
 
 FSpatialGDKEditor::FSpatialGDKEditor()
 	: bSchemaGeneratorRunning(false)
@@ -19,15 +22,18 @@ FSpatialGDKEditor::FSpatialGDKEditor()
 	TryLoadExistingSchemaDatabase();
 }
 
-void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
+bool FSpatialGDKEditor::GenerateSchema()
 {
 	if (bSchemaGeneratorRunning)
 	{
 		UE_LOG(LogSpatialGDKEditor, Warning, TEXT("Schema generation is already running"));
-		return;
+		return false;
 	}
 
 	bSchemaGeneratorRunning = true;
+
+	FScopedSlowTask Progress(5.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
+	Progress.MakeDialog();
 
 	// Force spatial networking so schema layouts are correct
 	UGeneralProjectSettings* GeneralProjectSettings = GetMutableDefault<UGeneralProjectSettings>();
@@ -35,40 +41,37 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 	GeneralProjectSettings->bSpatialNetworking = true;
 
 	TryLoadExistingSchemaDatabase();
+	Progress.EnterProgressFrame(1.f);
 
 	PreProcessSchemaMap();
+	Progress.EnterProgressFrame(1.f);
 
 	// Compile all dirty blueprints
 	TArray<UBlueprint*> ErroredBlueprints;
 	bool bPromptForCompilation = false;
 	UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
+	Progress.EnterProgressFrame(1.f);
 
 	LoadDefaultGameModes();
+	Progress.EnterProgressFrame(1.f);
 
-	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
-		[this, bCachedSpatialNetworking, ErroredBlueprints, SuccessCallback, FailureCallback]()
+	bool bResult = SpatialGDKGenerateSchema();
+	Progress.EnterProgressFrame(1.f);
+
+	// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
+	if (ErroredBlueprints.Num() > 0)
 	{
-		// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
-		if (ErroredBlueprints.Num() > 0)
+		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Errors compiling blueprints during schema generation! The following blueprints did not have schema generated for them:"));
+		for (const auto& Blueprint : ErroredBlueprints)
 		{
-			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Errors compiling blueprints during schema generation! The following blueprints did not have schema generated for them:"));
-			for (const auto& Blueprint : ErroredBlueprints)
-			{
-				UE_LOG(LogSpatialGDKEditor, Error, TEXT("%s"), *GetPathNameSafe(Blueprint));
-			}
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("%s"), *GetPathNameSafe(Blueprint));
 		}
+	}
 
-		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
-		{
-			FailureCallback.ExecuteIfBound();
-		}
-		else
-		{
-			SuccessCallback.ExecuteIfBound();
-		}
-		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
-		bSchemaGeneratorRunning = false;
-	});
+	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
+	bSchemaGeneratorRunning = false;
+
+	return bResult;
 }
 
 void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback)
@@ -84,3 +87,5 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 		FailureCallback.ExecuteIfBound();
 	}
 }
+
+#undef LOCTEXT_NAMESPACE

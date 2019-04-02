@@ -275,12 +275,19 @@ FLevelData GenerateSchemaForSublevel(UWorld* World)
 
 void GenerateSchemaForSublevels(const FString& SchemaPath)
 {
-	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
+	if (GWorld == nullptr)
+	{
+		UE_LOG(LogTemp, Log, TEXT("No world found, skipping schema for sublevels."));
+		return;
+	}
 
-	FLevelData LevelData = GenerateSchemaForSublevel(EditorWorld);
+	/*UWorld* EditorWorld =
+		GEditor->GetEditorWorldContext().World();*/
+
+	FLevelData LevelData = GenerateSchemaForSublevel(GWorld);
 	if (LevelData.SublevelNameToComponentId.Num() > 0)
 	{
-		LevelPathToLevelData.Add(EditorWorld->GetMapName(), LevelData);
+		LevelPathToLevelData.Add(GWorld->GetMapName(), LevelData);
 	}
 
 	if (LevelPathToLevelData.Num() == 0)
@@ -333,36 +340,34 @@ FString GenerateIntermediateDirectory()
 
 void SaveSchemaDatabase()
 {
-	AsyncTask(ENamedThreads::GameThread, []{
-		FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
-		UPackage *Package = CreatePackage(nullptr, *PackagePath);
+	FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+	UPackage *Package = CreatePackage(nullptr, *PackagePath);
 
-		USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
-		SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
-		SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
-		SchemaDatabase->LevelPathToLevelData = LevelPathToLevelData;
-		SchemaDatabase->FirstSublevelComponentId = FirstSublevelComponentId;
-		SchemaDatabase->LastSublevelComponentId = LastSublevelComponentId;
+	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
+	SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
+	SchemaDatabase->LevelPathToLevelData = LevelPathToLevelData;
+	SchemaDatabase->FirstSublevelComponentId = FirstSublevelComponentId;
+	SchemaDatabase->LastSublevelComponentId = LastSublevelComponentId;
 
-		FAssetRegistryModule::AssetCreated(SchemaDatabase);
-		SchemaDatabase->MarkPackageDirty();
+	FAssetRegistryModule::AssetCreated(SchemaDatabase);
+	SchemaDatabase->MarkPackageDirty();
 
-		// NOTE: UPackage::GetMetaData() has some code where it will auto-create the metadata if it's missing
-		// UPackage::SavePackage() calls UPackage::GetMetaData() at some point, and will cause an exception to get thrown
-		// if the metadata auto-creation branch needs to be taken. This is the case when generating the schema from the
-		// command line, so we just pre-empt it here.
-		Package->GetMetaData();
+	// NOTE: UPackage::GetMetaData() has some code where it will auto-create the metadata if it's missing
+	// UPackage::SavePackage() calls UPackage::GetMetaData() at some point, and will cause an exception to get thrown
+	// if the metadata auto-creation branch needs to be taken. This is the case when generating the schema from the
+	// command line, so we just pre-empt it here.
+	Package->GetMetaData();
 
-		FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
-		bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
+	FString FilePath = FString::Printf(TEXT("%s%s"), *PackagePath, *FPackageName::GetAssetPackageExtension());
+	bool bSuccess = UPackage::SavePackage(Package, SchemaDatabase, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension()));
 
-		if (!bSuccess)
-		{
-			FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
-			FPaths::MakePlatformFilename(FullPath);
-			FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to '%s'! Please make sure the file is writeable."), *FullPath)));
-		}
-	});
+	if (!bSuccess)
+	{
+		FString FullPath = FPaths::ConvertRelativePathToFull(FilePath);
+		FPaths::MakePlatformFilename(FullPath);
+		FMessageDialog::Debugf(FText::FromString(FString::Printf(TEXT("Unable to save Schema Database to '%s'! Please make sure the file is writeable."), *FullPath)));
+	}
 }
 
 TArray<UClass*> GetAllSupportedClasses()

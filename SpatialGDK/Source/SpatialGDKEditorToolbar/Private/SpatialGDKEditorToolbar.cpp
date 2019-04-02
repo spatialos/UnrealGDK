@@ -222,10 +222,15 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 {
 	ShowTaskStartNotification("Generating Schema");
-	SpatialGDKEditorInstance->GenerateSchema(
-		FSimpleDelegate::CreateLambda([this]() { ShowSuccessNotification("Schema Generation Completed!"); }),
-		FSimpleDelegate::CreateLambda([this]() { ShowFailedNotification("Schema Generation Failed"); }),
-		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
+
+	if (SpatialGDKEditorInstance->GenerateSchema())
+	{
+		ShowSuccessNotification("Schema Generation Completed!");
+	}
+	else
+	{
+		ShowFailedNotification("Schema Generation Failed");
+	}
 }
 		
 
