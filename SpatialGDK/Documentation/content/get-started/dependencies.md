@@ -21,7 +21,7 @@ Refer to the <a href="https://docs.unrealengine.com/en-US/GettingStarted/Recomme
 
 ### Step 2: Network settings
 
-To configure your network to work with SpatialOS, refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/get-started/requirements#network-settings). 
+To configure your network to work with SpatialOS, refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/setup/requirements#network-settings). 
 
 ### Step 3: Software
 
