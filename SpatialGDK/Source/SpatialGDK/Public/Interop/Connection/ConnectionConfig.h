@@ -16,6 +16,7 @@ struct FConnectionConfig
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
 		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_TCP)
+		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
@@ -56,6 +57,7 @@ struct FConnectionConfig
 	FString ProtocolLoggingPrefix;
 	Worker_NetworkConnectionType LinkProtocol;
 	Worker_ConnectionParameters ConnectionParams;
+	uint8 TcpMultiplexLevel;
 };
 
 struct FReceptionistConfig : public FConnectionConfig
