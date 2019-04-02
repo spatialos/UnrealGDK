@@ -4,6 +4,7 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
+#include "UObject/StrongObjectPtr.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
 
@@ -20,4 +21,10 @@ public:
 private:
 	bool bSchemaGeneratorRunning;
 	TFuture<bool> SchemaGeneratorResult;
+
+	bool LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets);
+
+	FDelegateHandle OnAssetLoadedHandle;
+	void OnAssetLoaded(UObject* Asset);
+	void RemoveEditorAssetLoadedCallback();
 };
