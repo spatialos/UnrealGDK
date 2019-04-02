@@ -92,12 +92,12 @@ struct FPendingIncomingRPC
 
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
-DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
+DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
 DECLARE_DELEGATE_OneParam(HeartbeatDelegate, Worker_ComponentUpdateOp&);
 
 UCLASS()
-class USpatialReceiver : public UObject
+class SPATIALGDK_API USpatialReceiver : public UObject
 {
 	GENERATED_BODY()
 
@@ -127,7 +127,7 @@ public:
 
 	void AddHeartbeatDelegate(Worker_EntityId EntityId, HeartbeatDelegate Delegate);
 
-	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
+	void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
