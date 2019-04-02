@@ -111,7 +111,7 @@ An assembly is what’s created when you run `BuildWorker.bat`. Assemblies are `
 **Note:** In the following commands, you must replace **`YourProject`** with the name of your project.
  
 1. In a terminal window, navigate to your `<ProjectRoot>` directory.
-1. Build a server-worker assembly by running the following command: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Linux Development YourProject.uproject`
+1. Build a server-worker assembly by running the following command: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProjectServer Linux Development YourProject.uproject`
 1. Build a client-worker assembly by running the following command: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Win64 Development YourProject.uproject`
 
 ### Upload your game
@@ -166,4 +166,4 @@ If you have an existing Unreal multiplayer project, follow our detailed [porting
 <br/>
 <br/>
 -------------
-2019-03-15 Page updated with limited editorial review
+2019-04-02 Page updated with limited editorial review
