@@ -29,25 +29,26 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* 
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId )
 {
-	// Extract spawn parameters.
-	FString URLString = GetStringFromSchema(Payload, 1);
+	FString Attributes = FString{ UTF8_TO_TCHAR(CallerAttribute) };
 
-	FUniqueNetIdRepl UniqueId;
-	TArray<uint8> UniqueIdBytes = GetBytesFromSchema(Payload, 2);
-	FNetBitReader UniqueIdReader(nullptr, UniqueIdBytes.GetData(), UniqueIdBytes.Num() * 8);
-	UniqueIdReader << UniqueId;
-
-	FName OnlinePlatformName = FName(*GetStringFromSchema(Payload, 3));
-
-	// Accept new player.
-	URLString.Append(TEXT("?workerAttribute=")).Append(UTF8_TO_TCHAR(CallerAttribute));
+	bool bAlreadyHasPlayer;
+	WorkersWithPlayersSpawned.Emplace(Attributes, &bAlreadyHasPlayer);
 
 	// Accept the player if we have not already accepted a player from this worker.
-	bool bAlreadyHasPlayer;
-	WorkersWithPlayersSpawned.Emplace(UTF8_TO_TCHAR(CallerAttribute), &bAlreadyHasPlayer);
-
 	if (!bAlreadyHasPlayer)
 	{
+		// Extract spawn parameters.
+		FString URLString = GetStringFromSchema(Payload, 1);
+
+		FUniqueNetIdRepl UniqueId;
+		TArray<uint8> UniqueIdBytes = GetBytesFromSchema(Payload, 2);
+		FNetBitReader UniqueIdReader(nullptr, UniqueIdBytes.GetData(), UniqueIdBytes.Num() * 8);
+		UniqueIdReader << UniqueId;
+
+		FName OnlinePlatformName = FName(*GetStringFromSchema(Payload, 3));
+
+		URLString.Append(TEXT("?workerAttribute=")).Append(Attributes);
+
 		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
 	}
 
