@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Utils/ErrorCodeRemapping.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/World.h"
@@ -438,8 +439,6 @@ USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 	return SpatialNetDriver;
 }
 
-
-// TODO: UNR-962 - move connection events in to native connection handling codepath (eg, UEngine::HandleNetworkFailure)
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
@@ -456,21 +455,12 @@ void USpatialWorkerConnection::OnConnectionFailure()
 {
 	bIsConnected = false;
 
-	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
-	for (size_t i = 0; i < OpList->op_count; i++)
+	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
+	if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 	{
-		if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
-		{
-			const FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
-			AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
-			{
-				UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
-				if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
-				{
-					GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::PendingConnectionFailure, *ErrorMessage);
-				}
-			});
-			break;
-		}
+		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
+		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
+
+		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
 	}
 }
