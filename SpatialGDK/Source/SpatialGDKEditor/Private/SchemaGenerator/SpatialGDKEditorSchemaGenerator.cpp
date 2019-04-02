@@ -521,46 +521,6 @@ void LoadDefaultGameModes()
 	}
 }
 
-void PreProcessSchemaMap()
-{
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-
-	TArray<FString> EntriesToRemove;
-	for (const auto& EntryIn : ClassPathToSchema)
-	{
-		const FString ClassPath = EntryIn.Key;
-
-		FString ObjectPath = EntryIn.Key;
-		int32 Index = 0;
-		ObjectPath.FindLastChar('_', Index); // Blueprints will always be suffixed by "_C"
-		if (Index != -1)
-		{
-			ObjectPath = ObjectPath.Mid(0, Index);
-			FAssetData AssetData = AssetRegistryModule.Get().GetAssetByObjectPath(FName(*ObjectPath));
-
-			// Skip over level blueprints since we can't load them.
-			if (AssetData.AssetClass.IsEqual(FName(TEXT("World"))))
-			{
-				continue;
-			}
-		}
-
-		bool ClassExists = TryLoadClassForSchemaGeneration(ClassPath);
-
-		// If the class isn't loaded then mark the entry for removal from the map.
-		if(!ClassExists)
-		{
-			EntriesToRemove.Add(ClassPath);
-		}
-	}
-
-	// This will prevent any garbage/unused classes from sticking around in the SchemaDatabase as clutter.
-	for (const auto& EntryIn : EntriesToRemove)
-	{
-		ClassPathToSchema.Remove(EntryIn);
-	}
-}
-
 bool SpatialGDKGenerateSchema()
 {
 	ClassToSchemaName.Empty();

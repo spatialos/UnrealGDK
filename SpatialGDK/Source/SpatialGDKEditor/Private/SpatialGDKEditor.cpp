@@ -44,7 +44,6 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 	}
 	Progress.EnterProgressFrame(1.f);
 
-	PreProcessSchemaMap();
 	Progress.EnterProgressFrame(1.f);
 
 	// Compile all dirty blueprints

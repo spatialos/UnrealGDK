@@ -12,6 +12,4 @@ SPATIALGDKEDITOR_API void ClearGeneratedSchema();
 
 SPATIALGDKEDITOR_API void TryLoadExistingSchemaDatabase();
 
-SPATIALGDKEDITOR_API void PreProcessSchemaMap();
-
 SPATIALGDKEDITOR_API void LoadDefaultGameModes();
