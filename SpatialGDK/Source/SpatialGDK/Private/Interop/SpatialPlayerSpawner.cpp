@@ -44,7 +44,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 
 	// Accept the player if we have not already accepted a player from this worker.
 	bool bAlreadyHasPlayer;
-	WorkersWithPlayersSpawned.Emplace(FString{ CallerAttribute }, &bAlreadyHasPlayer);
+	WorkersWithPlayersSpawned.Emplace(UTF8_TO_TCHAR(CallerAttribute), &bAlreadyHasPlayer);
 
 	if (!bAlreadyHasPlayer)
 	{
