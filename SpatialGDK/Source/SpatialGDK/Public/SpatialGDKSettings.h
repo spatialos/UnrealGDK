@@ -20,6 +20,8 @@ public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 
+	virtual void PostInitProperties() override;
+
 	/** The number of entity IDs to be reserved when the entity pool is first created */
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (ConfigRestartRequired = false, DisplayName = "Initial Entity ID Reservation Count"))
 	uint32 EntityPoolInitialReservationCount;
