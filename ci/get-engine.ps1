@@ -18,7 +18,7 @@ pushd "$($gdk_home)"
     ## Create an UnrealEngine directory if it doesn't already exist
     New-Item -Name "UnrealEngine" -ItemType Directory -Force
 
-    Start-Event "download-unreal-engine" "build-unreal-gdk-:windows:"
+    Start-Event "download-unreal-engine" "build-unreal-gdk-:linux:"
     pushd "UnrealEngine"
         $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
         Write-Log "Downloading Unreal Engine artifacts from $($engine_gcs_path)"
@@ -43,7 +43,7 @@ pushd "$($gdk_home)"
             Throw "Failed to unzip Unreal Engine."  
         }
     popd
-    Finish-Event "download-unreal-engine" "build-unreal-gdk-:windows:"
+    Finish-Event "download-unreal-engine" "build-unreal-gdk-:linux:"
 
     $unreal_path = "$($gdk_home)\UnrealEngine"
     Write-Log "Setting UNREAL_HOME environment variable to $($unreal_path)"
@@ -53,11 +53,11 @@ pushd "$($gdk_home)"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
     [Environment]::SetEnvironmentVariable("LINUX_MULTIARCH_ROOT", "$($clang_path)", "Machine")
 
-    Start-Event "installing-unreal-engine-prerequisites" "build-unreal-gdk-:windows:"
+    Start-Event "installing-unreal-engine-prerequisites" "build-unreal-gdk-:linux:"
         # This runs an opaque exe downloaded in the previous step that does *some stuff* that UE needs to occur.
         # Trapping error codes on this is tricky, because it doesn't always return 0 on success, and frankly, we just don't know what it _will_ return.
         Start-Process -Wait -PassThru -NoNewWindow -FilePath "$($unreal_path)/Engine/Extras/Redist/en-us/UE4PrereqSetup_x64.exe" -ArgumentList @(`
             "/quiet" `
         )
-    Finish-Event "installing-unreal-engine-prerequisites" "build-unreal-gdk-:windows:"
+    Finish-Event "installing-unreal-engine-prerequisites" "build-unreal-gdk-:linux:"
 popd
