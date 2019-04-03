@@ -34,14 +34,14 @@ public:
 	// ComponentId must be in the range 1000 - 2000.
 	// Callbacks can be deregistered through passing the corresponding callback ID to the RemoveOpCallback function.
 	template<typename T>
-	using UserCallback = const TFunction<void(T)>;
+	using UserCallback = TFunction<void(T)>;
 	using CallbackId = uint32;
-	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_AddComponentOp>& Callback);
-	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_RemoveComponentOp>& Callback);
-	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_AuthorityChangeOp>& Callback);
-	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_ComponentUpdateOp>& Callback);
-	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_CommandRequestOp>& Callback);
-	CallbackId AddOpCallback(Worker_ComponentId ComponentId, UserCallback<Worker_CommandResponseOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_AddComponentOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_RemoveComponentOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_AuthorityChangeOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_ComponentUpdateOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_CommandRequestOp>& Callback);
+	CallbackId AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_CommandResponseOp>& Callback);
 	void RemoveOpCallback(CallbackId Id);
 
 private:

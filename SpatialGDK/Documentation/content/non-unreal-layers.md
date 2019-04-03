@@ -82,7 +82,9 @@ package improbable.session;
 type MyRequest {
   string player_name = 1;
 }
-type MyResponse {}
+type MyResponse {
+  string response_string = 1;
+}
 
 component Session {
     id = 1337;
@@ -111,7 +113,7 @@ You could serialize and send a command response in your Unreal project code in t
 
 
 ```
-Worker_RequestId SendSomeCommandRequest(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandId) {
+Worker_RequestId SendSomeCommandResponse(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandId) {
     Worker_CommandResponse Response = {};
     Response.component_id = ComponentId;
     Response.schema_type = Schema_CreateCommandResponse(ComponentId, CommandId);
@@ -130,14 +132,26 @@ void ATPSGameMode::BeginPlay()
 {
     USpatialDispatcher* Dispatcher = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Dispatcher;
 
-    Dispatcher->AddOpCallback(1337, [&](Worker_ComponentId ComponentId, const Worker_Op* Callback) {
-        // deserialize Callback
-        UE_LOG(LogTPS, Error, TEXT("received component update"));
+    Dispatcher->AddOpCallback(1337, [&](Worker_ComponentUpdateOp Op) {
+        UWorld* World = GetWorld();
+
+        uint32 PlayerCount = Schema_GetUint32(Schema_GetComponentUpdateFields(Op.update.schema_type), 1);
+        UE_LOG(LogTPS, Verbose, TEXT("Received update, new player count: %d"), PlayerCount);
+        const FVector Location(0.0f, 0.0f, 0.0f);
+        const FRotator Rotation = FRotator::ZeroRotator;
+        World->SpawnActor(CubeClass, &Location, &Rotation);
     });
 
-    Dispatcher->AddOpCallback(1337, [&](Worker_ComponentId ComponentId, const Worker_Op* Callback) {
-        // deserialize Callback
-        UE_LOG(LogTPS, Error, TEXT("received component update"));
+    Dispatcher->AddOpCallback(1338, [&](Worker_CommandRequestOp Op) {
+        Worker_CommandResponse Response = {};
+        Response.component_id = 1338;
+        Response.schema_type = Schema_CreateCommandResponse(1338, 1);
+        Schema_Object* response_object = Schema_GetCommandResponseObject(Response.schema_type);
+
+        const char* text = "Here's my response.";
+        Schema_AddBytes(response_object, 1, (const uint8_t*)text, sizeof(char) * strlen(text));
+
+        NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
     });
 }
 ```

@@ -173,51 +173,51 @@ Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op) const
 	}
 }
 
-uint32 USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_AddComponentOp>& Callback)
+USpatialDispatcher::CallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_AddComponentOp>& Callback)
 {
-	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_ADD_COMPONENT, [&](const Worker_Op* Op) {
+	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_ADD_COMPONENT, [Callback](const Worker_Op* Op) {
 		Callback(Op->add_component);
 	});
 }
 
-uint32 USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_RemoveComponentOp>& Callback)
+USpatialDispatcher::CallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_RemoveComponentOp>& Callback)
 {
-	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_REMOVE_COMPONENT, [&](const Worker_Op* Op) {
+	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_REMOVE_COMPONENT, [Callback](const Worker_Op* Op) {
 		Callback(Op->remove_component);
 	});
 }
 
-uint32 USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_AuthorityChangeOp>& Callback)
+USpatialDispatcher::CallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_AuthorityChangeOp>& Callback)
 {
-	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_AUTHORITY_CHANGE, [&](const Worker_Op* Op) {
+	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_AUTHORITY_CHANGE, [Callback](const Worker_Op* Op) {
 		Callback(Op->authority_change);
 	});
 }
-uint32 USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_ComponentUpdateOp>& Callback)
+USpatialDispatcher::CallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_ComponentUpdateOp>& Callback)
 {
-	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMPONENT_UPDATE, [&](const Worker_Op* Op) {
+	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMPONENT_UPDATE, [Callback](const Worker_Op* Op) {
 		Callback(Op->component_update);
 	});
 }
 
-uint32 USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_CommandRequestOp>& Callback)
+USpatialDispatcher::CallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_CommandRequestOp>& Callback)
 {
-	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMMAND_REQUEST, [&](const Worker_Op* Op) {
+	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMMAND_REQUEST, [Callback](const Worker_Op* Op) {
 		Callback(Op->command_request);
 	});
 }
 
-uint32 USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_CommandResponseOp>& Callback)
+USpatialDispatcher::CallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const UserCallback<Worker_CommandResponseOp>& Callback)
 {
-	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMMAND_RESPONSE, [&](const Worker_Op* Op) {
+	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMMAND_RESPONSE, [Callback](const Worker_Op* Op) {
 		Callback(Op->command_response);
 	});
 }
 
 
-uint32 USpatialDispatcher::AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, TFunction<void(const Worker_Op*)> Callback) {
+USpatialDispatcher::CallbackId USpatialDispatcher::AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, UserCallback<const Worker_Op*> Callback) {
 	check(SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID);
-	const uint32 NewCallbackId = NextCallbackId++;
+	const CallbackId NewCallbackId = NextCallbackId++;
 	ComponentOpTypeToCallbackIdMap.FindOrAdd(ComponentId).FindOrAdd(OpType).Add(NewCallbackId);
 	CallbackIdToDataMap.Add(NewCallbackId, UserOpCallbackData{ ComponentId, OpType, Callback });
 	return NewCallbackId;
@@ -251,19 +251,19 @@ void USpatialDispatcher::RemoveOpCallback(CallbackId CallbackId)
 
 void USpatialDispatcher::RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op)
 {
-	TMap<Worker_OpType, TArray<uint32>>* OpTypeCallbacks = ComponentOpTypeToCallbackIdMap.Find(ComponentId);
+	TMap<Worker_OpType, TArray<CallbackId>>* OpTypeCallbacks = ComponentOpTypeToCallbackIdMap.Find(ComponentId);
 	if (OpTypeCallbacks == nullptr)
 	{
 		return;
 	}
 
-	TArray<uint32>* ComponentCallbackIds = OpTypeCallbacks->Find(static_cast<Worker_OpType>(Op->op_type));
+	TArray<CallbackId>* ComponentCallbackIds = OpTypeCallbacks->Find(static_cast<Worker_OpType>(Op->op_type));
 	if (ComponentCallbackIds == nullptr)
 	{
 		return;
 	}
 
-	for (uint32& CallbackId : *ComponentCallbackIds)
+	for (CallbackId& CallbackId : *ComponentCallbackIds)
 	{
 		UserOpCallbackData* CallbackData = CallbackIdToDataMap.Find(CallbackId);
 		check(CallbackData);
