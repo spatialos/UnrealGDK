@@ -52,6 +52,7 @@ private:
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
+	void SchemaGenerateFullButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
 private:
@@ -59,6 +60,8 @@ private:
 	bool CanExecuteSnapshotGenerator() const;
 	void StopRunningStack();
 	void CheckForRunningStack();
+
+	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 
 	void ShowTaskStartNotification(const FString& NotificationText);
 	void ShowSuccessNotification(const FString& NotificationText);
