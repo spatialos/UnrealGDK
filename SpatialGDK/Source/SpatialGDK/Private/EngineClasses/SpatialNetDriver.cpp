@@ -191,7 +191,19 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 
 void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
-	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
+	int PIEIndex = -1; // -1 is Unreal's default index when not using PIE
+#if WITH_EDITOR
+	if (IsServer())
+	{
+		PIEIndex = GEngine->GetWorldContextFromWorldChecked(GetWorld()).PIEInstance;
+	}
+	else
+	{
+		PIEIndex = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this).PIEInstance;
+	}
+#endif //WITH_EDITOR
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"), PIEIndex);
+
 	Dispatcher = NewObject<USpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
