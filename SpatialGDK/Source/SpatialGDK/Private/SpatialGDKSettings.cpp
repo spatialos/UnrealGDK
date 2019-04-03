@@ -4,6 +4,11 @@
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
 
+#if WITH_EDITOR
+#include "ModuleManager.h"
+#include "ISettingsModule.h"
+#endif
+
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, EntityPoolInitialReservationCount(3000)
@@ -47,7 +52,7 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 
 		if (Result == EAppReturnType::Yes)
 		{
-
+			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
 		}
 	}
 	Super::PostEditChangeProperty(PropertyChangedEvent);
