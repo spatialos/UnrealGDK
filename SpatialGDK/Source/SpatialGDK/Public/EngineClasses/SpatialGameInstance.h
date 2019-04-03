@@ -21,7 +21,6 @@ public:
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
 	virtual void StartGameInstance() override;
-	virtual void Shutdown() override;
 
 	// bResponsibleForSnapshotLoading exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
 	bool bResponsibleForSnapshotLoading = false;
