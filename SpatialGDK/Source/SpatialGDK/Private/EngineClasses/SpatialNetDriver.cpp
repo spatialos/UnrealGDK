@@ -1607,12 +1607,6 @@ void USpatialNetDriver::HandleOnConnected()
 	OnConnected.Broadcast();
 }
 
-void USpatialNetDriver::HandleOnDisconnected(const FString& Reason)
-{
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
-	OnDisconnected.Broadcast(Reason);
-}
-
 void USpatialNetDriver::HandleOnConnectionFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
