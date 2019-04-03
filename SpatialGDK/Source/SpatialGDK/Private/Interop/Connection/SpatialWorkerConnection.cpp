@@ -111,6 +111,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
+	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
@@ -200,6 +201,7 @@ void USpatialWorkerConnection::ConnectToLegacyLocator()
 
 		ConnectionParams.network.connection_type = SpatialConnection->LegacyLocatorConfig.LinkProtocol;
 		ConnectionParams.network.use_external_ip = SpatialConnection->LegacyLocatorConfig.UseExternalIp;
+		ConnectionParams.network.tcp.multiplex_level = SpatialConnection->LegacyLocatorConfig.TcpMultiplexLevel;
 		// end TODO
 
 		int DeploymentIndex = 0;
@@ -288,6 +290,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 	ConnectionParams.network.connection_type = LocatorConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
+	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
 
 	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
 	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
