@@ -405,11 +405,14 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetPrimaryDeployment
 	FMenuBuilder MenuBuilder(true, NULL);
 	UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
-	for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+	if (pEnum != nullptr)
 	{
-		int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
-		FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentRegionCodePicked, CurrentEnumValue));
-		MenuBuilder.AddMenuEntry(pEnum->GetEnumTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+		for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+		{
+			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
+			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentRegionCodePicked, CurrentEnumValue));
+			MenuBuilder.AddMenuEntry(pEnum->GetEnumTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+		}
 	}
 
 	return MenuBuilder.MakeWidget();
@@ -420,13 +423,16 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDe
 	FMenuBuilder MenuBuilder(true, NULL);
 	UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
-	for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+	if (pEnum != nullptr)
 	{
-		int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
-		FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerDeploymentRegionCodePicked, CurrentEnumValue));
-		MenuBuilder.AddMenuEntry(pEnum->GetEnumTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+		for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+		{
+			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
+			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerDeploymentRegionCodePicked, CurrentEnumValue));
+			MenuBuilder.AddMenuEntry(pEnum->GetEnumTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+		}
 	}
-
+	
 	return MenuBuilder.MakeWidget();
 }
 
