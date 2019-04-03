@@ -69,7 +69,7 @@ bool USpatialGDKEditorCloudLauncherSettings::IsRegionCodeValid(const ERegionCode
 {
 	UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
-	return pEnum && pEnum->IsValidEnumValue(RegionCode);
+	return pEnum != nullptr && pEnum->IsValidEnumValue(RegionCode);
 }
 
 void USpatialGDKEditorCloudLauncherSettings::SetPrimaryDeploymentName(const FString& Name)
