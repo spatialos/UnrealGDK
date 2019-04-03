@@ -191,7 +191,7 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 
 void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
-	int PIEIndex = -1; // -1 is Unreal's default index when not using PIE
+	int32 PIEIndex = -1; // -1 is Unreal's default index when not using PIE
 #if WITH_EDITOR
 	if (IsServer())
 	{

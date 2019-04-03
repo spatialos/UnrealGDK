@@ -4,7 +4,7 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
-FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FString LoggerName, int InPIEIndex)
+FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FString LoggerName, int32 InPIEIndex)
 	: FilterLevel(ELogVerbosity::Warning)
 	, Connection(InConnection)
 	, Name(LoggerName)
