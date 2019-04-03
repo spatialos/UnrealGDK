@@ -114,7 +114,7 @@ public:
 	{
 		UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
 
-		if (!pEnum || !IsRegionCodeValid(PrimaryDeploymentRegionCode))
+		if (pEnum == nullptr || !IsRegionCodeValid(PrimaryDeploymentRegionCode))
 		{
 			return FText::FromString(TEXT("Invalid"));
 		}
