@@ -554,7 +554,9 @@ bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<
 		Writer->WriteArrayEnd();
 		if (Worker.MaxConnectionCapacityLimit > 0)
 		{
-			Writer->WriteValue(TEXT("max_capacity"), Worker.MaxConnectionCapacityLimit);
+			Writer->WriteObjectStart(TEXT("connection_capacity_limit"));
+				Writer->WriteValue(TEXT("max_capacity"), Worker.MaxConnectionCapacityLimit);
+			Writer->WriteObjectEnd();
 		}
 		if (Worker.bLoginRateLimitEnabled)
 		{

@@ -41,9 +41,14 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUsingQBI))
 	{
-		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::FromString(FString::Printf(TEXT("If you are not using auto-generated launch config, you must make sure to set the value of the \"enable_chunk_interest\" field to \"%s\" in your launch configuration for this to work. (You can check what launch configuration you are using in the SpatialOS GDK for Unreal Editor Settings.)"),
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo,
+			FText::FromString(FString::Printf(TEXT("If you are not using auto-generated launch config, you must make sure to set the value of the \"enable_chunk_interest\" field to \"%s\" in your launch configuration for this to work. Do you want to configure your launch config settings now?"),
 				bUsingQBI ? TEXT("false") : TEXT("true"))));
+
+		if (Result == EAppReturnType::Yes)
+		{
+
+		}
 	}
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
