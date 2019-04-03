@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
-#include "SpatialGDKEditorSettings.h";
+#include "SpatialGDKEditorSettings.h"
 
 #include "SpatialGDKEditorCloudLauncherSettings.generated.h"
 
@@ -71,7 +71,10 @@ public:
 	void SetPrimaryLaunchConfigPath(const FString& Path);
 	FORCEINLINE FString GetPrimaryLanchConfigPath() const
 	{
-		return PrimaryLaunchConfigPath.FilePath;
+		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
+		return PrimaryLaunchConfigPath.FilePath.IsEmpty() 
+			? SpatialEditorSettings->GetSpatialOSLaunchConfig()
+			: PrimaryLaunchConfigPath.FilePath;
 	}
 
 	void SetSnapshotPath(const FString& Path);
@@ -79,7 +82,7 @@ public:
 	{
 		const USpatialGDKEditorSettings* SpatialEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 		return SnapshotPath.FilePath.IsEmpty()
-			? FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSSnapshotFolderPath(), GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSSnapshotFile())
+			? FPaths::Combine(SpatialEditorSettings->GetSpatialOSSnapshotFolderPath(), SpatialEditorSettings->GetSpatialOSSnapshotFile())
 			: SnapshotPath.FilePath;
 	}
 

@@ -7,14 +7,15 @@
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
 #include "Settings/LevelEditorPlaySettings.h"
-#include "Templates/SharedPointer.h";
-#include "SpatialConstants.h";
+#include "Templates/SharedPointer.h"
+#include "SpatialConstants.h"
 
 USpatialGDKEditorCloudLauncherSettings::USpatialGDKEditorCloudLauncherSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-	SnapshotPath.FilePath = GetSnapshotPath();
 	ProjectName = GetProjectNameFromSpatial();
+	SnapshotPath.FilePath = GetSnapshotPath();
+	PrimaryLaunchConfigPath.FilePath = GetPrimaryLanchConfigPath();
 }
 
 FString USpatialGDKEditorCloudLauncherSettings::GetProjectNameFromSpatial() const
