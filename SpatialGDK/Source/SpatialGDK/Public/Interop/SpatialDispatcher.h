@@ -45,9 +45,23 @@ public:
 	void RemoveOpCallback(CallbackId Id);
 
 private:
+	struct UserOpCallbackData
+	{
+		CallbackId Id;
+		UserCallback<const Worker_Op*> Callback;
+	};
+
+	struct CallbackIdData
+	{
+		Worker_ComponentId ComponentId;
+		Worker_OpType OpType;
+	};
+
 	bool IsExternalSchemaOp(Worker_Op* Op) const;
 	void ProcessExternalSchemaOp(Worker_Op* Op);
 	Worker_ComponentId GetComponentId(Worker_Op* Op) const;
+	CallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const UserCallback<const Worker_Op*>& Callback);
+	void RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -58,20 +72,11 @@ private:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 
-	struct UserOpCallbackData
-	{
-		Worker_ComponentId ComponentId;
-		Worker_OpType OpType;
-		UserCallback<const Worker_Op*> Callback;
-	};
-
-	// This index is incremented and returned every time the AddOpCallback function is called.
-	// These indexes enable you to deregister callbacks using the RemoveOpCallback function. 
+	// This index is incremented and returned every time an AddOpCallback function is called.
+	// CallbackIds enable you to deregister callbacks using the RemoveOpCallback function. 
 	// RunUserCallbacks is called by the SpatialDispatcher and executes all user registered 
 	// callbacks for the matching component ID and network operation type.
 	CallbackId NextCallbackId;
-	CallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, UserCallback<const Worker_Op*> Callback);
-	void RunUserCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
-	TMap<Worker_ComponentId, TMap<Worker_OpType, TArray<CallbackId>>> ComponentOpTypeToCallbackIdMap;
-	TMap<CallbackId, UserOpCallbackData> CallbackIdToDataMap;
+	TMap<Worker_ComponentId, TMap<Worker_OpType, TArray<UserOpCallbackData>>> ComponentOpTypeToCallbackIdMap;
+	TMap<CallbackId, CallbackIdData> CallbackIdToDataMap;
 };
