@@ -208,6 +208,22 @@ The Launcher downloads the client executable from the [SpatialOS assembly](#asse
 >
 > [The Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher)
 
+### Layers
+
+In SpatialOS, you can split up [server-worker](#workers) computation into layers, with each layer of server-worker instances handling a specific and unique aspect of your game.
+
+A SpatialOS layer has two elements;
+
+* a group of SpatialOS [component definitions](#spatialos-component),
+* server-worker instances of a worker type that have write access authority over the group of components.
+
+By default, the GDK for Unreal uses a single Unreal server-worker layer to handle all server-side computation.
+However, you can set up additional non-Unreal layers, made up of server-worker instances that do not use Unreal or the GDK.
+
+For more information:
+* See documentation on [non-Unreal layers]({{urlRoot}}/content/non-unreal-layers.md)
+* See SpatialOS documentation for [layers](https://docs.improbable.io/reference/latest/shared/worker-configuration/layers).
+
 ### Load balancing
 One of the features of SpatialOS is load balancing: dynamically adjusting how many [components](#spatialos-component) on [entities](#spatialos-entity) in the [world](#spatialos-world) each [worker](#workers) has [write access](#authority) to, so that workers don’t get overloaded.
 
@@ -220,11 +236,23 @@ This means that an [entity](#spatialos-entity) won’t necessarily stay on the s
 >
 > [Configuring load balancing](https://docs.improbable.io/reference/latest/shared/worker-configuration/loadbalancer-config)
 
+### Network operations
+
+Also known as "ops".
+
+Network operations are network messages sent between a worker instance and the SpatialOS Runtime. They carry information about updates to worker instances, entities, entity components, commands, and more.
+
+For more information, see the SpatialOS documentation on [operations](https://docs.improbable.io/reference/latest/shared/design/operations).
+
 ### Node
 
 >Not to be confused with [worker](#workers).
 
 A node refers to a single machine used by a [cloud deployment](#deployment). Its name indicates the role it plays in your deployment. You can see these on the advanced tab of your deployment details in the [Console](#console).
+
+### Ops
+
+See [Network operations](#network-operations).
 
 ### Persistence
 Most [entities](#spatialos-entity) in your [game world](#game-world) need to keep existing if you stop a game [deployment](#deployment) and start a new one. However,  some entities don’t need to keep existing from one deployment to another; you may want per-deployment player abilities and a per-deployment score, for example.
@@ -315,7 +343,6 @@ SpatialOS entities are made up of [SpatialOS components](#spatialos-component), 
 ### SpatialOS Runtime
 
 >Not to be confused with the [SpatialOS world](#spatialos-world).
-
 
 Also sometimes just called “SpatialOS”. 
 
@@ -428,3 +455,10 @@ Within these broad types, you can define your own worker sub-types to create mor
 
 ### Write access
 See [authority](#authority).
+
+<br/>
+------------
+2019-03-15 Page updated with full editorial review
+<br/>
+<br/>
+2019-03-15 Added layers, non-Unreal layers, network operations (ops)

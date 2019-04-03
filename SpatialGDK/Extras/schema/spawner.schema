@@ -7,11 +7,7 @@ type SpawnPlayerRequest {
     string online_platform_name = 3;
 }
 
-type SpawnPlayerResponse {
-    bool success = 1;
-    string error_message = 2;
-    EntityId created_entity_id = 3;
-}
+type SpawnPlayerResponse { }
 
 component PlayerSpawner {
     id = 9998;

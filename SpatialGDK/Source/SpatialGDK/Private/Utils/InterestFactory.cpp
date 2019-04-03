@@ -8,6 +8,8 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "GameFramework/PlayerController.h"
 
+#include "SpatialGDKSettings.h"
+
 namespace improbable
 {
 
@@ -30,6 +32,11 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate()
 
 Interest InterestFactory::CreateInterest()
 {
+	if (!GetDefault<USpatialGDKSettings>()->bUsingQBI)
+	{
+		return Interest{};
+	}
+
 	if (Actor->GetNetConnection() != nullptr)
 	{
 		return CreatePlayerOwnedActorInterest();

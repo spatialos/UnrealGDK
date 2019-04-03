@@ -185,6 +185,9 @@ inline TArray<UFunction*> GetClassRPCFunctions(const UClass* Class)
 		}
 	}
 
+	// When using multiple EventGraphs in blueprints, the functions could be iterated in different order, so just sort them alphabetically.
+	RelevantClassFunctions.Sort([](const UFunction& A, const UFunction& B) { return A.GetFName() < B.GetFName(); });
+
 	return RelevantClassFunctions;
 }
 

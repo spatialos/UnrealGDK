@@ -130,8 +130,6 @@ void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 
 void UGlobalStateManager::SendShutdownMultiProcessRequest()
 {
-	// TODO:UNR-964. An event will need to be sent from the server to notify all the non-authoritative servers to shutdown.
-
 	/** When running with Use Single Process unticked, send a shutdown command to the servers to allow SpatialOS to shutdown.
 	  * Standard UnrealEngine behavior is to call TerminateProc on external processes and there is no method to send any messaging
 	  * to those external process.
@@ -140,9 +138,9 @@ void UGlobalStateManager::SendShutdownMultiProcessRequest()
 	  */
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
-	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, 1);
+	CommandRequest.schema_type = Schema_CreateCommandRequest(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID);
 
-	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest, 1);
+	NetDriver->Connection->SendCommandRequest(GlobalStateManagerEntityId, &CommandRequest, SpatialConstants::SHUTDOWN_MULTI_PROCESS_REQUEST_ID);
 }
 
 void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
@@ -154,9 +152,49 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
 		SetAcceptingPlayers(false);
 
-		// Allow each worker to begin shutting down.
+		// If we have multiple servers, they need to be informed of PIE session ending.
+		SendShutdownAdditionalServersEvent();
+
+		// Allow this worker to begin shutting down.
 		FGenericPlatformMisc::RequestExit(false);
 	}
+}
+
+void UGlobalStateManager::OnShutdownComponentUpdate(Worker_ComponentUpdate& Update)
+{
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update.schema_type);
+	if (Schema_GetObjectCount(EventsObject, SpatialConstants::SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID) > 0)
+	{
+		ReceiveShutdownAdditionalServersEvent();
+	}
+}
+
+void UGlobalStateManager::ReceiveShutdownAdditionalServersEvent()
+{
+	if (NetDriver && NetDriver->GetNetMode() == NM_DedicatedServer)
+	{
+		UE_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown additional servers event."));
+
+		FGenericPlatformMisc::RequestExit(false);
+	}
+}
+
+void UGlobalStateManager::SendShutdownAdditionalServersEvent()
+{
+	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID))
+	{
+		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to send shutdown_additional_servers event on the GSM but this worker does not have authority."));
+		return;
+	}
+
+	Worker_ComponentUpdate ComponentUpdate = {};
+
+	ComponentUpdate.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
+	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID);
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
+	Schema_AddObject(EventsObject, SpatialConstants::SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID);
+
+	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &ComponentUpdate);
 }
 #endif // WITH_EDITOR
 
@@ -479,17 +517,8 @@ void UGlobalStateManager::TriggerBeginPlay()
 		return;
 	}
 
-	// Copied from UWorld::BeginPlay
-	UWorld* World = NetDriver->World;
-	AGameModeBase* const GameMode = World->GetAuthGameMode();
-	if (GameMode)
-	{
-		GameMode->StartPlay();
-		if (World->GetAISystem())
-		{
-			World->GetAISystem()->StartPlay();
-		}
-	}
+	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
+	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
 
 	bTriggeredBeginPlay = true;
 }
