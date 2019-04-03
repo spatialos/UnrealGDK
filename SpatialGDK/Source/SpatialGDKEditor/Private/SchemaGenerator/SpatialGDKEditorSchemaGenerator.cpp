@@ -30,8 +30,10 @@
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
 #include "Engine/WorldComposition.h"
+#include "Misc/ScopedSlowTask.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
+#define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
 
 TArray<UClass*> SchemaGeneratedClasses;
 TArray<UClass*> AdditionalSchemaGeneratedClasses; // Used to keep UClasses in memory whilst generating schema for them.
@@ -241,8 +243,10 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
 {
 	// Generate the actual schema.
+	FScopedSlowTask Progress((float)TypeInfos.Num(), LOCTEXT("GenerateSchemaFromClasses", "Generating Schema..."));
 	for (const auto& TypeInfo : TypeInfos)
 	{
+		Progress.EnterProgressFrame(1.f);
 		NextAvailableComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, NextAvailableComponentId, TypeInfo);
 	}
 }
@@ -576,3 +580,5 @@ bool SpatialGDKGenerateSchema()
 
 	return true;
 }
+
+#undef LOCTEXT_NAMESPACE
