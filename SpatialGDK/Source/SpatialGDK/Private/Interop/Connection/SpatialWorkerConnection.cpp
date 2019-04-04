@@ -472,3 +472,72 @@ void USpatialWorkerConnection::OnConnectionFailure()
 		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
 	}
 }
+
+bool USpatialWorkerConnection::Init()
+{
+
+}
+
+uint32 USpatialWorkerConnection::Run()
+{
+	FPlatformProcess::Sleep(0.0f);
+
+	QueueLatestOpList();
+
+	ProcessOutgoingMessages();
+}
+
+void USpatialWorkerConnection::Stop()
+{
+
+}
+
+void USpatialWorkerConnection::Exit()
+{
+
+}
+
+void USpatialWorkerConnection::QueueLatestOpList()
+{
+	Worker_OpList* OpList = Worker_Connection_GetOpList(connection);
+	OpListQueue.Enqueue(OpList);
+}
+
+void USpatialWorkerConnection::ProcessOutgoingMessages()
+{
+	while (!OutgoingMessagesQueue.IsEmpty())
+	{
+		FVariant OutgoingMessage;
+		OutgoingMessagesQueue.Dequeue(OutgoingMessage);
+
+		switch (OutgoingMessage.GetType())
+		{
+		case ESpatialVariantTypes::ReserveEntityIdsRequest:
+		{
+			FReserveEntityIdsRequest ReserveEntityIdsRequestStruct = OutgoingMessage.GetValue<FReserveEntityIdsRequest>();
+			Worker_Connection_SendReserveEntityIdsRequest(connection, ReserveEntityIdsRequestStruct.NumOfEntities)
+			break;
+		}
+		case ESpatialVariantTypes::CreateEntityRequest:
+			break;
+		case ESpatialVariantTypes::DeleteEntityRequest:
+			break;
+		case ESpatialVariantTypes::ComponentUpdate:
+			break;
+		case ESpatialVariantTypes::CommandRequest:
+			break;
+		case ESpatialVariantTypes::CommandResponse:
+			break;
+		case ESpatialVariantTypes::CommandFailure:
+			break;
+		case ESpatialVariantTypes::LogMessage:
+			break;
+		case ESpatialVariantTypes::ComponentInterest:
+			break;
+		case ESpatialVariantTypes::EntityQueryRequest:
+			break;
+		case ESpatialVariantTypes::Metrics:
+			break;
+		}
+	}
+}
