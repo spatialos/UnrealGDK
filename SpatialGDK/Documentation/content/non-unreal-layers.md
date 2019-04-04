@@ -55,7 +55,7 @@ where `Worker_ComponentId` and `Worker_Op` are types defined in the [Worker SDK 
 
 You'll need to register your callbacks before the Unreal worker connects to the SpatialOS runtime to avoid missing any operations.
 
-You can deregister your callbacks at runtime using the `USpatialDispatcher::RemoveOpCallback` function and passing the `CallbackId` parameter returned by the corresponding call to `USpatialDispatcher::AddOpCallback`.
+You can deregister your callbacks using the `USpatialDispatcher::RemoveOpCallback` function and passing the `CallbackId` parameter returned by the corresponding call to `USpatialDispatcher::AddOpCallback`.
 
 There is a basic example in the _Examples_ section below. For more examples of how to deserialize the `Worker_Op` type see the SpatialOS documentation on [serialization in the Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/serialization).
 
@@ -130,28 +130,28 @@ You could receive and deserialize a component update and command request in your
 ```
 void ATPSGameMode::BeginPlay()
 {
-    USpatialDispatcher* Dispatcher = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Dispatcher;
+    UWorld* World = GetWorld();
+    USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+    USpatialDispatcher* Dispatcher = NetDriver->Dispatcher;
 
-    Dispatcher->AddOpCallback(1337, [&](Worker_ComponentUpdateOp Op) {
-        UWorld* World = GetWorld();
-
+    Dispatcher->AddOpCallback(1337, [&](const Worker_ComponentUpdateOp& Op) {
         uint32 PlayerCount = Schema_GetUint32(Schema_GetComponentUpdateFields(Op.update.schema_type), 1);
         UE_LOG(LogTPS, Verbose, TEXT("Received update, new player count: %d"), PlayerCount);
-        const FVector Location(0.0f, 0.0f, 0.0f);
+        const FVector = FVector::ZeroVector;
         const FRotator Rotation = FRotator::ZeroRotator;
-        World->SpawnActor(CubeClass, &Location, &Rotation);
+        GetWorld()->SpawnActor(CubeClass, &Location, &Rotation);
     });
 
-    Dispatcher->AddOpCallback(1338, [&](Worker_CommandRequestOp Op) {
+    Dispatcher->AddOpCallback(1338, [&](const Worker_CommandRequestOp& Op) {
         Worker_CommandResponse Response = {};
         Response.component_id = 1338;
         Response.schema_type = Schema_CreateCommandResponse(1338, 1);
         Schema_Object* response_object = Schema_GetCommandResponseObject(Response.schema_type);
 
-        const char* text = "Here's my response.";
-        Schema_AddBytes(response_object, 1, (const uint8_t*)text, sizeof(char) * strlen(text));
+        FString text = "Here's my response.";
+        Schema_AddBytes(response_object, 1, (const uint8_t*) TCHAR_TO_ANSI(*text), sizeof(char) * strlen(TCHAR_TO_ANSI(*text)));
 
-        NetDriver->Connection->SendCommandResponse(Op.request_id, &Response);
+        Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);
     });
 }
 ```
