@@ -5,11 +5,16 @@
 #include "AssetRegistryModule.h"
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
+#include "Engine/Engine.h"
 #include "Engine/SCS_Node.h"
 #include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
+#if WITH_EDITOR
+#include "Runtime/Engine/Classes/Engine/World.h"
+#include "Kismet/KismetSystemLibrary.h"
+#endif
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -40,46 +45,80 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 	return Class;
 }
 
+ESchemaComponentType GetRPCType(UFunction* RemoteFunction)
+{
+	if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetMulticast))
+	{
+		return SCHEMA_NetMulticastRPC;
+	}
+	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetCrossServer))
+	{
+		return SCHEMA_CrossServerRPC;
+	}
+	else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetReliable))
+	{
+		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
+		{
+			return SCHEMA_ClientReliableRPC;
+		}
+		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
+		{
+			return SCHEMA_ServerReliableRPC;
+		}
+	}
+	else
+	{
+		if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetClient))
+		{
+			return SCHEMA_ClientUnreliableRPC;
+		}
+		else if (RemoteFunction->HasAnyFunctionFlags(FUNC_NetServer))
+		{
+			return SCHEMA_ServerUnreliableRPC;
+		}
+	}
+
+	return SCHEMA_Invalid;
+}
+
 void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 {
-	checkf(IsSupportedClass(Class), TEXT("Could not find class in schema database: %s"), *Class->GetPathName());
+	// Remove PIE prefix on class if it exists to properly look up the class.
+	FString ClassPath = Class->GetPathName();
+	GEngine->NetworkRemapPath(NetDriver, ClassPath, false);
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
+  
+	// Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
+	if (!IsSupportedClass(ClassPath))
+	{
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is explicitly referenced from the starting scene and schema has been generated."), *ClassPath);
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *ClassPath);
+#if WITH_EDITOR
+		// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
+		// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
+		UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit);
+#else
+		FGenericPlatformMisc::RequestExit(false);
+#endif
+		return;
+	}
 
 	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
 
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
-		ESchemaComponentType RPCType = SCHEMA_Invalid;
-		if (RemoteFunction->FunctionFlags & FUNC_NetClient)
-		{
-			RPCType = SCHEMA_ClientRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetServer)
-		{
-			RPCType = SCHEMA_ServerRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetCrossServer)
-		{
-			RPCType = SCHEMA_CrossServerRPC;
-		}
-		else if (RemoteFunction->FunctionFlags & FUNC_NetMulticast)
-		{
-			RPCType = SCHEMA_NetMulticastRPC;
-		}
-		else
-		{
-			checkNoEntry();
-		}
-
-		TArray<UFunction*>& RPCArray = Info->RPCs.FindOrAdd(RPCType);
-
+		ESchemaComponentType RPCType = GetRPCType(RemoteFunction);
+		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
+		
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
-		RPCInfo.Index = RPCArray.Num();
 
-		RPCArray.Add(RemoteFunction);
+		// Index is guaranteed to be the same on Clients & Servers since we process remote functions in the same order.
+		RPCInfo.Index = Info->RPCs.Num();
+
+		Info->RPCs.Add(RemoteFunction);
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
@@ -116,7 +155,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SchemaComponents[Type];
+		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[ClassPath].SchemaComponents[Type];
 		if (ComponentId != 0)
 		{
 			Info->SchemaComponents[Type] = ComponentId;
@@ -126,7 +165,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	});
 
-	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[Class->GetPathName()].SubobjectData)
+	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[ClassPath].SubobjectData)
 	{
 		int32 Offset = SubobjectClassDataPair.Key;
 		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
@@ -155,9 +194,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	}
 }
 
-bool USpatialClassInfoManager::IsSupportedClass(UClass* Class) const
+bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const
 {
-	return SchemaDatabase->ClassPathToSchema.Contains(Class->GetPathName());
+	return SchemaDatabase->ClassPathToSchema.Contains(PathName);
 }
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* Class)
@@ -246,4 +285,10 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 	}
 
 	return ESchemaComponentType::SCHEMA_Invalid;
+}
+
+bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
+{
+	return SchemaDatabase->FirstSublevelComponentId <= ComponentId &&
+		SchemaDatabase->LastSublevelComponentId >= ComponentId;
 }

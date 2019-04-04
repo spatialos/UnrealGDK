@@ -1,5 +1,6 @@
+<%(TOC)%>
 # Dynamic Typebindings
-To allow Unreal to replicate through the SpatialOS network stack and combine multiple dedicated server instances across one seamless game world, the GDK has to adapt Unreal networking functionality to work with the [SpatialOS Worker API (SpatialOS documentation)](https://docs.improbable.io/reference/latest/capi/introduction). It does  this seamlessly using `Dynamic Typebindings`. 
+To allow Unreal to replicate through the SpatialOS network stack and combine multiple dedicated server instances across one seamless game world, the GDK has to adapt Unreal networking functionality to work with the [SpatialOS Worker API](https://docs.improbable.io/reference/latest/capi/introduction). It does  this seamlessly using `Dynamic Typebindings`. 
 
 `Dynamic Typebindings` operate at [runtime]({{urlRoot}}/content/glossary#spatialos-runtime) so that your development iteration speed is not affected, despite your network code running on a completely different representation than Unreal’s.
 
@@ -17,7 +18,7 @@ For Unreal Actors and sub-objects:
 In addition, Unreal Actors also generate (where relevant):
 
 * Client/Server/CrossServer RPC schema components (for example, `_MyActorClientRPCS_`)- Each RPC category has its own SpatialOS component containing all the Actor’s RPCs for that category converted into SpatialOS commands.
-* NetMulticast RPC schema component (for example, `_MyActorNetMulticastRPCS_`)- Contains all the multicast RPCs callable on this Actor, converted into SpatialOS [events (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#event).
+* NetMulticast RPC schema component (for example, `_MyActorNetMulticastRPCS_`)- Contains all the multicast RPCs callable on this Actor, converted into SpatialOS [events](https://docs.improbable.io/reference/latest/shared/glossary#event).
 * Static sub-object schema components - For each static sub-object present on this Actor, additional schema components are generated which wrap the replicated and handover properties defined in the components above.
 
 > Note: The GDK doesn't currently support dynamic components.

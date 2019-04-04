@@ -13,10 +13,16 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityRegistry.h"
+#include "Utils/EntityPool.h"
 #include "Utils/SchemaOption.h"
+#include "UObject/UObjectGlobals.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialPackageMap);
+
+void USpatialPackageMapClient::Init(USpatialNetDriver* InNetDriver)
+{
+	NetDriver = InNetDriver;
+}
 
 void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 {
@@ -50,6 +56,72 @@ void GetSubobjects(UObject* Object, TArray<UObject*>& InSubobjects)
 	});
 }
 
+Worker_EntityId USpatialPackageMapClient::AllocateEntityIdAndResolveActor(AActor* Actor)
+{
+	check(Actor);
+	checkf(NetDriver->IsServer(), TEXT("Tried to allocate an Entity ID on the client, this shouldn't happen."));
+
+	Worker_EntityId EntityId = NetDriver->EntityPool->GetNextEntityId();
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Unable to retrieve an Entity ID for Actor: %s"), *Actor->GetName());
+		return EntityId;
+	}
+
+	// Register Actor with package map since we know what the entity id is.
+	ResolveEntityActor(Actor, EntityId);
+
+	return EntityId;
+}
+
+FNetworkGUID USpatialPackageMapClient::TryResolveObjectAsEntity(UObject* Value)
+{
+	FNetworkGUID NetGUID;
+
+	if (!NetDriver->IsServer())
+	{
+		return NetGUID;
+	}
+
+	if (!Value->IsA<AActor>() && !Value->GetOuter()->IsA<AActor>())
+	{
+		return NetGUID;
+	}
+
+	AActor* Actor = Value->IsA<AActor>() ? Cast<AActor>(Value) : Cast<AActor>(Value->GetOuter());
+
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		// Singletons will always go through GlobalStateManager first.
+		return NetGUID;
+	}
+
+	// Resolve as an entity if it is an unregistered actor
+	if (Actor->Role == ROLE_Authority && NetDriver->PackageMap->GetEntityIdFromObject(Actor) == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		Worker_EntityId EntityId = AllocateEntityIdAndResolveActor(Actor);
+		if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			// Mark this entity ID as pending creation (checked in USpatialActorChannel::SetChannelActor).
+			PendingCreationEntityIds.Add(EntityId);
+		}
+
+		NetGUID = GetNetGUIDFromObject(Value);
+	}
+
+	return NetGUID;
+}
+
+bool USpatialPackageMapClient::IsEntityIdPendingCreation(Worker_EntityId EntityId) const
+{
+	return PendingCreationEntityIds.Contains(EntityId);
+}
+
+void USpatialPackageMapClient::RemovePendingCreationEntityId(Worker_EntityId EntityId)
+{
+	PendingCreationEntityIds.Remove(EntityId);
+}
+
 FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
@@ -58,7 +130,7 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_
 	// check we haven't already assigned a NetGUID to this object
 	if (!NetGUID.IsValid())
 	{
-		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor);
+		NetGUID = SpatialGuidCache->AssignNewEntityActorNetGUID(Actor, EntityId);
 	}
 	return NetGUID;
 }
@@ -71,6 +143,12 @@ void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 	{
 		SpatialGuidCache->RemoveEntityNetGUID(EntityId);
 	}
+}
+
+void USpatialPackageMapClient::UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef)
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	SpatialGuidCache->UnregisterActorObjectRefOnly(ObjectRef);
 }
 
 FNetworkGUID USpatialPackageMapClient::ResolveStablyNamedObject(UObject* Object)
@@ -109,6 +187,11 @@ TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromUnrealObjectRef(c
 	return nullptr;
 }
 
+TWeakObjectPtr<UObject> USpatialPackageMapClient::GetObjectFromEntityId(const Worker_EntityId& EntityId)
+{
+	return GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, 0));
+}
+
 FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject* Object)
 {
 	if (Object == nullptr)
@@ -119,6 +202,23 @@ FUnrealObjectRef USpatialPackageMapClient::GetUnrealObjectRefFromObject(UObject*
 	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
 
 	return GetUnrealObjectRefFromNetGUID(NetGUID);
+}
+
+Worker_EntityId USpatialPackageMapClient::GetEntityIdFromObject(const UObject* Object)
+{
+	if (Object == nullptr)
+	{
+		return SpatialConstants::INVALID_ENTITY_ID;
+	}
+
+	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
+	return GetUnrealObjectRefFromNetGUID(NetGUID).Entity;
+}
+
+bool USpatialPackageMapClient::CanClientLoadObject(UObject* Object)
+{
+	FNetworkGUID NetGUID = GetNetGUIDFromObject(Object);
+	return GuidCache->CanClientLoadObject(Object, NetGUID);
 }
 
 bool USpatialPackageMapClient::SerializeObject(FArchive& Ar, UClass* InClass, UObject*& Obj, FNetworkGUID *OutNetGUID)
@@ -134,13 +234,11 @@ FSpatialNetGUIDCache::FSpatialNetGUIDCache(USpatialNetDriver* InDriver)
 {
 }
 
-FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor)
+FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId)
 {
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
-
-	Worker_EntityId EntityId = SpatialNetDriver->GetEntityRegistry()->GetEntityIdFromActor(Actor);
 	check(EntityId > 0);
 
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 	USpatialReceiver* Receiver = SpatialNetDriver->Receiver;
 
 	FNetworkGUID NetGUID;
@@ -252,7 +350,15 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewStablyNamedObjectNetGUID(UObject* Ob
 		UE_LOG(LogSpatialPackageMap, Fatal, TEXT("Found object called PersistentLevel which isn't a Level! This is not allowed when using the GDK"));
 	}
 
-	FUnrealObjectRef StablyNamedObjRef(0, 0, Object->GetFName().ToString(), (OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef());
+	bool bNoLoadOnClient = false;
+	if (IsNetGUIDAuthority())
+	{
+		// If the server is replicating references to things inside levels, it needs to indicate
+		// that the client should not load these. Once the level is streamed in, the client will
+		// resolve the references.
+		bNoLoadOnClient = !CanClientLoadObject(Object, NetGUID);
+	}
+	FUnrealObjectRef StablyNamedObjRef(0, 0, Object->GetFName().ToString(), (OuterGUID.IsValid() && !OuterGUID.IsDefault()) ? GetUnrealObjectRefFromNetGUID(OuterGUID) : FUnrealObjectRef(), bNoLoadOnClient);
 	RegisterObjectRef(NetGUID, StablyNamedObjRef);
 
 	return NetGUID;
@@ -263,23 +369,17 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
-	AActor* Actor = SpatialNetDriver->EntityRegistry->GetActorFromEntityId(EntityId);
-	if (Actor == nullptr)
-	{
-		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Trying to clean up Actor for EntityId %lld but Actor does not exist! Will not cleanup subobjects for this Entity"), EntityId);
-		return;
-	}
-
-	UClass* Class = Actor->GetClass();
-	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Class);
-
 	improbable::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
 
-	// There are times when the Editor is quitting out of PIE that this is nullptr.
-	if (UnrealMetadata == nullptr)
+	// There are times when the Editor is quitting out of PIE that UnrealMetadata is nullptr.
+	// Due to GetNativeEntityClass using LoadObject, if we are shutting down and garbage collecting, this will crash the editor.
+	// In this case, just return since everything will be cleaned up anyways.
+	if (UnrealMetadata == nullptr || (IsInGameThread() && IsGarbageCollecting()))
 	{
 		return;
 	}
+
+	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
 
 	improbable::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
 
@@ -328,7 +428,7 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const F
 		{
 			OuterGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef.Outer.GetValue());
 		}
-		NetGUID = RegisterNetGUIDFromPathForStaticObject(ObjectRef.Path.GetValue(), OuterGUID);
+		NetGUID = RegisterNetGUIDFromPathForStaticObject(ObjectRef.Path.GetValue(), OuterGUID, ObjectRef.bNoLoadOnClient);
 		RegisterObjectRef(NetGUID, ObjectRef);
 	}
 	return NetGUID;
@@ -359,6 +459,14 @@ void FSpatialNetGUIDCache::NetworkRemapObjectRefPaths(FUnrealObjectRef& ObjectRe
 	}
 }
 
+void FSpatialNetGUIDCache::UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef)
+{
+	FNetworkGUID& NetGUID = UnrealObjectRefToNetGUID.FindChecked(ObjectRef);
+	// Remove ObjectRef first so the reference above isn't destroyed
+	NetGUIDToUnrealObjectRef.Remove(NetGUID);
+	UnrealObjectRefToNetGUID.Remove(ObjectRef);
+}
+
 FUnrealObjectRef FSpatialNetGUIDCache::GetUnrealObjectRefFromNetGUID(const FNetworkGUID& NetGUID) const
 {
 	const FUnrealObjectRef* ObjRef = NetGUIDToUnrealObjectRef.Find(NetGUID);
@@ -369,10 +477,10 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromEntityId(Worker_EntityId Entity
 {
 	FUnrealObjectRef ObjRef(EntityId, 0);
 	const FNetworkGUID* NetGUID = UnrealObjectRefToNetGUID.Find(ObjRef);
-	return (NetGUID == nullptr ? FNetworkGUID(0) : *NetGUID);
+	return (NetGUID == nullptr) ? FNetworkGUID(0) : *NetGUID;
 }
 
-FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const FString& PathName, const FNetworkGUID& OuterGUID)
+FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const FString& PathName, const FNetworkGUID& OuterGUID, bool bNoLoadOnClient)
 {
 	// Put the PIE prefix back (if applicable) so that the correct object can be found.
 	FString TempPath = PathName;
@@ -382,8 +490,8 @@ FNetworkGUID FSpatialNetGUIDCache::RegisterNetGUIDFromPathForStaticObject(const 
 	FNetGuidCacheObject CacheObject;
 	CacheObject.PathName = FName(*TempPath);
 	CacheObject.OuterGUID = OuterGUID;
-	CacheObject.bNoLoad = false;				// allow worker to attempt to load object
-	CacheObject.bIgnoreWhenMissing = true;		// ensure we give workers time to load non-loaded assets
+	CacheObject.bNoLoad = bNoLoadOnClient;		// server decides whether the client should load objects (e.g. don't load levels)
+	CacheObject.bIgnoreWhenMissing = bNoLoadOnClient;
 	FNetworkGUID NetGUID = GenerateNewNetGUID(0);
 	RegisterNetGUID_Internal(NetGUID, CacheObject);
 	return NetGUID;

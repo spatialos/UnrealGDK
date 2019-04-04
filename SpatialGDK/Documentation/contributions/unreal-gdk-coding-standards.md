@@ -1,4 +1,5 @@
 
+<%(TOC)%>
 # GDK for Unreal C++ coding standards
 
 > In general, we follow the [Coding Standard](https://docs.unrealengine.com/en-us/Programming/Development/CodingStandard) (Unreal documentation) set out by Epic. This page highlights some additions to Epic's guidelines.

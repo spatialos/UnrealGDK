@@ -6,12 +6,10 @@
 #include "Serialization/BitWriter.h"
 
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-using WorkerAttributeSet = TArray<FString>;
-using WorkerRequirementSet = TArray<WorkerAttributeSet>;
 
 using StringToEntityMap = TMap<FString, Worker_EntityId>;
 
@@ -112,10 +110,11 @@ inline void AddObjectRefToSchema(Schema_Object* Object, Schema_FieldId Id, const
 	if (ObjectRef.Path)
 	{
 		AddStringToSchema(ObjectRefObject, 3, *ObjectRef.Path);
+		Schema_AddBool(ObjectRefObject, 4, ObjectRef.bNoLoadOnClient);
 	}
 	if (ObjectRef.Outer)
 	{
-		AddObjectRefToSchema(ObjectRefObject, 4, *ObjectRef.Outer);
+		AddObjectRefToSchema(ObjectRefObject, 5, *ObjectRef.Outer);
 	}
 }
 
@@ -129,13 +128,17 @@ inline FUnrealObjectRef IndexObjectRefFromSchema(Schema_Object* Object, Schema_F
 
 	ObjectRef.Entity = Schema_GetEntityId(ObjectRefObject, 1);
 	ObjectRef.Offset = Schema_GetUint32(ObjectRefObject, 2);
-	if (Schema_GetBytesCount(ObjectRefObject, 3) > 0)
+	if (Schema_GetObjectCount(ObjectRefObject, 3) > 0)
 	{
 		ObjectRef.Path = GetStringFromSchema(ObjectRefObject, 3);
 	}
-	if (Schema_GetObjectCount(ObjectRefObject, 4) > 0)
+	if (Schema_GetBoolCount(ObjectRefObject, 4) > 0)
 	{
-		ObjectRef.Outer = FUnrealObjectRef(GetObjectRefFromSchema(ObjectRefObject, 4));
+		ObjectRef.bNoLoadOnClient = GetBoolFromSchema(ObjectRefObject, 4);
+	}
+	if (Schema_GetObjectCount(ObjectRefObject, 5) > 0)
+	{
+		ObjectRef.Outer = GetObjectRefFromSchema(ObjectRefObject, 5);
 	}
 
 	return ObjectRef;

@@ -21,7 +21,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
-#include "Utils/EntityRegistry.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
@@ -68,12 +67,13 @@ void UpdateChangelistHistory(TSharedPtr<FRepState>& RepState)
 
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
-	, EntityId(0)
+	, bCreatedEntity(false)
+	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bFirstTick(true)
+	, bInterestDirty(false)
 	, NetDriver(nullptr)
 	, LastSpatialPosition(FVector::ZeroVector)
 	, bCreatingNewEntity(false)
-	, bCreatedEntity(false)
 {
 }
 
@@ -123,17 +123,19 @@ bool USpatialActorChannel::IsSingletonEntity()
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 {
 #if WITH_EDITOR
-	if (NetDriver != nullptr && NetDriver->GetWorld() != nullptr)
+	if (NetDriver != nullptr)
 	{
 		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
+		UWorld* World = NetDriver->GetWorld();
+		const bool bPIEShutdown = World != nullptr && World->WorldType == EWorldType::PIE && World->bIsTearingDown;
+
 		if (bDeleteDynamicEntities &&
 			NetDriver->IsServer() &&
-			NetDriver->GetWorld()->WorldType == EWorldType::PIE &&
-			NetDriver->GetWorld()->bIsTearingDown &&
-			NetDriver->GetEntityRegistry()->GetActorFromEntityId(EntityId))
+			(bPIEShutdown || GIsRequestingExit) &&
+			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
 		{
-			// If we're running in PIE, as a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
+			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
 			DeleteEntityIfAuthoritative();
 		}
 	}
@@ -360,6 +362,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Actor) };
 			Sender->SendComponentUpdates(Actor, Info, this, &RepChangeState, &HandoverChangeState);
+			bInterestDirty = false;
 		}
 
 		bWroteSomethingImportant = true;
@@ -381,18 +384,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		FOutBunch DummyOutBunch;
 
-		for (UActorComponent* ActorComponent : Actor->GetReplicatedComponents())
-		{
-			const FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(ActorComponent);
-
-			if (ObjectRef.IsValid())
-			{
-				FClassInfo& SubobjectInfo = Info.SubobjectInfo[ObjectRef.Offset].Get();
-
-				bWroteSomethingImportant |= ReplicateSubobject(ActorComponent, SubobjectInfo, RepFlags);
-				bWroteSomethingImportant |= ActorComponent->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
-			}
-		}
+		// Actor::ReplicateSubobjects is overridable and enables the Actor to replicate any subobjects directly, via a
+		// call back into SpatialActorChannel::ReplicateSubobject, as well as issues a call to UActorComponent::ReplicateSubobjects
+		// on any of its replicating actor components. This allows the component to replicate any of its subobjects directly via
+		// the same SpatialActorChannel::ReplicateSubobject.
+		bWroteSomethingImportant |= Actor->ReplicateSubobjects(this, &DummyOutBunch, &RepFlags);
 
 		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 		{
@@ -581,22 +577,25 @@ FHandoverChangeState USpatialActorChannel::GetHandoverChangeList(TArray<uint8>& 
 void USpatialActorChannel::SetChannelActor(AActor* InActor)
 {
 	Super::SetChannelActor(InActor);
-
-	// Get the entity ID from the entity registry (or return 0 if it doesn't exist).
-	check(NetDriver->GetEntityRegistry());
-	EntityId = NetDriver->GetEntityRegistry()->GetEntityIdFromActor(InActor);
+	
+	USpatialPackageMapClient* PackageMap = NetDriver->PackageMap;
+	EntityId = PackageMap->GetEntityIdFromObject(InActor);
 
 	// If the entity registry has no entry for this actor, this means we need to create it.
-	if (EntityId == 0)
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
 		bCreatingNewEntity = true;
-		Sender->SendReserveEntityIdRequest(this);
+		TryResolveActor();
 	}
 	else
 	{
 		UE_LOG(LogSpatialActorChannel, Log, TEXT("Opened channel for actor %s with existing entity ID %lld."), *InActor->GetName(), EntityId);
 
-		// Inform USpatialNetDriver of this new actor channel/entity pairing
+		if (PackageMap->IsEntityIdPendingCreation(EntityId))
+		{
+			bCreatingNewEntity = true;
+			PackageMap->RemovePendingCreationEntityId(EntityId);
+		}
 		NetDriver->AddActorChannel(EntityId, this);
 	}
 
@@ -618,6 +617,27 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		check(!HandoverShadowDataMap.Contains(Subobject));
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
+}
+
+bool USpatialActorChannel::TryResolveActor()
+{
+	EntityId = NetDriver->PackageMap->AllocateEntityIdAndResolveActor(Actor);
+
+	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
+	{
+		return false;
+	}
+	
+	// If a Singleton was created, update the GSM with the proper Id.
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), EntityId);
+	}
+
+	// Inform USpatialNetDriver of this new actor channel/entity pairing
+	NetDriver->AddActorChannel(EntityId, this);
+
+	return true;
 }
 
 FObjectReplicator& USpatialActorChannel::PreReceiveSpatialUpdate(UObject* TargetObject)
@@ -646,56 +666,6 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 	{
 		TargetObject->PostRepNotifies();
 	}
-}
-
-void USpatialActorChannel::RegisterEntityId(const Worker_EntityId& ActorEntityId)
-{
-	NetDriver->GetEntityRegistry()->AddToRegistry(ActorEntityId, GetActor());
-
-	// Inform USpatialNetDriver of this new actor channel/entity pairing
-	NetDriver->AddActorChannel(ActorEntityId, this);
-
-	// If a Singleton was created, update the GSM with the proper Id.
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		NetDriver->GlobalStateManager->UpdateSingletonEntityId(Actor->GetClass()->GetPathName(), ActorEntityId);
-	}
-}
-
-void USpatialActorChannel::OnReserveEntityIdResponse(const Worker_ReserveEntityIdResponseOp& Op)
-{
-	if (Actor == nullptr || Actor->IsPendingKill())
-	{
-		UE_LOG(LogSpatialActorChannel, Warning, TEXT("Actor is invalid after trying to reserve entity id"));
-		return;
-	}
-
-	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
-	{
-		// UNR-630 - Temporary hack to avoid failure to reserve entities due to timeout on large maps
-		if (Op.status_code == WORKER_STATUS_CODE_TIMEOUT)
-		{
-			UE_LOG(LogSpatialActorChannel, Warning, TEXT("Failed to reserve entity for Actor %s Reason: %s. Retrying..."), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
-			Sender->SendReserveEntityIdRequest(this);
-		}
-		else
-		{
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("Failed to reserve entity id for Actor %s: Reason: %s"), *Actor->GetName(), UTF8_TO_TCHAR(Op.message));
-		}
-
-		return;
-	}
-
-	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Reserved entity id (%lld) for: %s."), Op.entity_id, *Actor->GetName());
-
-	EntityId = Op.entity_id;
-	RegisterEntityId(EntityId);
-
-	// Register Actor with package map since we know what the entity id is.
-	NetDriver->PackageMap->ResolveEntityActor(Actor, EntityId);
-
-	// Force an Update so that the entity will be created in the next batch of processed actors
-	NetDriver->ForceNetUpdate(Actor);
 }
 
 void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)

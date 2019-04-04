@@ -38,24 +38,33 @@ void FSpatialGDKEditor::GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleD
 
 	PreProcessSchemaMap();
 
+	// Compile all dirty blueprints
+	TArray<UBlueprint*> ErroredBlueprints;
+	bool bPromptForCompilation = false;
+	UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
+
 	LoadDefaultGameModes();
 
 	SchemaGeneratorResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKGenerateSchema,
-		[this, bCachedSpatialNetworking, SuccessCallback, FailureCallback]()
+		[this, bCachedSpatialNetworking, ErroredBlueprints, SuccessCallback, FailureCallback]()
 	{
+		// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
+		if (ErroredBlueprints.Num() > 0)
+		{
+			UE_LOG(LogSpatialGDKEditor, Error, TEXT("Errors compiling blueprints during schema generation! The following blueprints did not have schema generated for them:"));
+			for (const auto& Blueprint : ErroredBlueprints)
+			{
+				UE_LOG(LogSpatialGDKEditor, Error, TEXT("%s"), *GetPathNameSafe(Blueprint));
+			}
+		}
+
 		if (!SchemaGeneratorResult.IsReady() || SchemaGeneratorResult.Get() != true)
 		{
-			if (FailureCallback.IsBound())
-			{
-				FailureCallback.Execute();
-			}
+			FailureCallback.ExecuteIfBound();
 		}
 		else
 		{
-			if (SuccessCallback.IsBound())
-			{
-				SuccessCallback.Execute();
-			}
+			SuccessCallback.ExecuteIfBound();
 		}
 		GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
 		bSchemaGeneratorRunning = false;
@@ -68,16 +77,10 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 
 	if (bSuccess)
 	{
-		if (SuccessCallback.IsBound())
-		{
-			SuccessCallback.Execute();
-		}
+		SuccessCallback.ExecuteIfBound();
 	}
 	else
 	{
-		if (FailureCallback.IsBound())
-		{
-			FailureCallback.Execute();
-		}
+		FailureCallback.ExecuteIfBound();
 	}
 }

@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Get started: 1 - Get the dependencies
 
 To start using the GDK for Unreal, you need to ensure you have the correct software installed and that your machine is capable of running Unreal Engine. 
@@ -20,7 +21,7 @@ Refer to the <a href="https://docs.unrealengine.com/en-US/GettingStarted/Recomme
 
 ### Step 2: Network settings
 
-To configure your network to work with SpatialOS, refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/get-started/requirements#network-settings). 
+To configure your network to work with SpatialOS, refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/setup/requirements#network-settings). 
 
 ### Step 3: Software
 
@@ -47,3 +48,8 @@ To build the GDK for Unreal you need the following software installed on your ma
     - Game development with C++
 
 #### Next: [Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork.md)
+
+<br/>
+
+------	
+_2019-04-02 Page updated with limited editorial review_

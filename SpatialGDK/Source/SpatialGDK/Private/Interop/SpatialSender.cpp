@@ -7,7 +7,6 @@
 
 #include "Engine/Engine.h"
 #include "EngineClasses/SpatialActorChannel.h"
-#include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -22,7 +21,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentFactory.h"
-#include "Utils/EntityRegistry.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
@@ -105,6 +104,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
@@ -118,8 +120,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			return;
 		}
 
-		WorkerRequirementSet& RequirementSet = Type == SCHEMA_ClientRPC ? OwningClientOnly : ServersOnly;
-		ComponentWriteAcl.Add(ComponentId, RequirementSet);
+		ComponentWriteAcl.Add(ComponentId, ServersOnly);
 	});
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
@@ -141,26 +142,32 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 				return;
 			}
 
-			WorkerRequirementSet& RequirementSet = Type == SCHEMA_ClientRPC ? OwningClientOnly : ServersOnly;
-			ComponentWriteAcl.Add(ComponentId, RequirementSet);
+			ComponentWriteAcl.Add(ComponentId, ServersOnly);
 		});
 	}
 
-	// Only want to have a stably object ref if this Actor is stably named.
-	// We use this to indicate if a new Actor should be created or to link a pre-existing Actor
-	// when receiving an AddEntityOp.
+	// We want to have a stably named ref if this is a loaded Actor.
+	// We use this to indicate if a new Actor should be created or to link a pre-existing Actor when receiving an AddEntityOp.
+	// Previously, IsFullNameStableForNetworking was used but this was only true if bNetLoadOnClient was true.
 	TSchemaOption<FUnrealObjectRef> StablyNamedObjectRef;
-	if (Actor->IsFullNameStableForNetworking())
+	TSchemaOption<bool> bNetStartup;
+	if (Actor->HasAnyFlags(RF_WasLoaded) || Actor->bNetStartup)
 	{
 		// Since we've already received the EntityId for this Actor. It is guaranteed to be resolved
 		// with the package map by this point
 		FUnrealObjectRef OuterObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor->GetOuter());
+		if (OuterObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+		{
+			FNetworkGUID NetGUID = PackageMap->ResolveStablyNamedObject(Actor->GetOuter());
+			OuterObjectRef = PackageMap->GetUnrealObjectRefFromNetGUID(NetGUID);
+		}
 
 		// No path in SpatialOS should contain a PIE prefix.
 		FString TempPath = Actor->GetFName().ToString();
 		GEngine->NetworkRemapPath(NetDriver, TempPath, false /*bIsReading*/);
 
-		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef);
+		StablyNamedObjectRef = FUnrealObjectRef(0, 0, TempPath, OuterObjectRef, true);
+		bNetStartup = Actor->bNetStartup;
 	}
 
 	TArray<Worker_ComponentData> ComponentDatas;
@@ -169,21 +176,24 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName()).CreateUnrealMetadataData());
-	ComponentDatas.Add(improbable::Interest().CreateInterestData());
-	if (Actor->IsA<APlayerController>())
-	{
-		ComponentDatas.Add(improbable::Heartbeat().CreateHeartbeatData());
-	}
+	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
 	}
 
+	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
+	ComponentDatas.Add(CreateLevelComponentData(Actor));
+
+	if (Actor->IsA<APlayerController>())
+	{
+		ComponentDatas.Add(improbable::Heartbeat().CreateHeartbeatData());
+	}
+
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
-	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
+	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, false, NetDriver);
 
 	FRepChangeState InitialRepChanges = Channel->CreateInitialRepChangeState(Actor);
 	FHandoverChangeState InitialHandoverChanges = Channel->CreateInitialHandoverChangeState(Info);
@@ -201,13 +211,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		QueueOutgoingUpdate(Channel, Actor, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 	}
 
-	for (int32 RPCType = SCHEMA_FirstRPC; RPCType <= SCHEMA_LastRPC; RPCType++)
-	{
-		if (Info.SchemaComponents[RPCType] != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(Info.SchemaComponents[RPCType]));
-		}
-	}
+	InterestFactory InterestDataFactory(Actor, Info, NetDriver);
+	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
+
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
@@ -239,14 +248,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		{
 			QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 		}
-
-		for (int32 RPCType = SCHEMA_ClientRPC; RPCType < SCHEMA_Count; RPCType++)
-		{
-			if (SubobjectInfo.SchemaComponents[RPCType] != SpatialConstants::INVALID_COMPONENT_ID)
-			{
-				ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SubobjectInfo.SchemaComponents[RPCType]));
-			}
-		}
 	}
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
@@ -254,6 +255,19 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	PendingActorRequests.Add(CreateEntityRequestId, Channel);
 
 	return CreateEntityRequestId;
+}
+
+Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
+{
+	if (FLevelData* LevelData = ClassInfoManager->SchemaDatabase->LevelPathToLevelData.Find(NetDriver->World->GetName()))
+	{
+		if (uint32* ComponentId = LevelData->SublevelNameToComponentId.Find(Actor->GetTypedOuter<UWorld>()->GetName()))
+		{
+			return ComponentFactory::CreateEmptyComponentData(*ComponentId);
+		}
+	}
+
+	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
@@ -265,7 +279,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
-	ComponentFactory UpdateFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, NetDriver);
+	ComponentFactory UpdateFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, Channel->GetInterestDirty(), NetDriver);
 
 	TArray<Worker_ComponentUpdate> ComponentUpdates = UpdateFactory.CreateComponentUpdates(Object, Info, EntityId, RepChanges, HandoverChanges);
 
@@ -357,6 +371,9 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
 	}
 
+	ComponentInterest.Add({ SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, bIsNetOwned });
+	ComponentInterest.Add({ SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, bIsNetOwned });
+
 	return ComponentInterest;
 }
 
@@ -424,8 +441,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 	switch (RPCInfo->Type)
 	{
-	case SCHEMA_ClientRPC:
-	case SCHEMA_ServerRPC:
+	case SCHEMA_ClientReliableRPC:
+	case SCHEMA_ServerReliableRPC:
 	case SCHEMA_CrossServerRPC:
 	{
 		int ReliableRPCIndex = 0;
@@ -433,7 +450,9 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		ReliableRPCIndex = Params->ReliableRPCIndex;
 #endif // !UE_BUILD_SHIPPING
 
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), Info.SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject, ReliableRPCIndex);
+		Worker_ComponentId ComponentId = RPCInfo->Type == SCHEMA_ClientReliableRPC ? SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, ReliableRPCIndex);
 
 		if (!UnresolvedObject)
 		{
@@ -442,17 +461,39 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Send command request (entity: %lld, component: %d, command: %d)"), EntityId, CommandRequest.component_id, Schema_GetCommandRequestCommandIndex(CommandRequest.schema_type));
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: %s)"),
+					EntityId, CommandRequest.component_id, *Params->Function->GetName(), Params->Attempts+1);
 				// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 				Params->Attempts++;
 				Receiver->AddPendingReliableRPC(RequestId, Params);
+			}
+			else
+			{
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
+					EntityId, CommandRequest.component_id, *Params->Function->GetName());
 			}
 		}
 		break;
 	}
 	case SCHEMA_NetMulticastRPC:
+	case SCHEMA_ClientUnreliableRPC:
+	case SCHEMA_ServerUnreliableRPC:
 	{
-		Worker_ComponentUpdate ComponentUpdate = CreateMulticastUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), Info.SchemaComponents[RPCInfo->Type], RPCInfo->Index + 1, EntityId, UnresolvedObject);
+		Worker_ComponentId ComponentId;
+		if (RPCInfo->Type == SCHEMA_ClientUnreliableRPC)
+		{
+			ComponentId = SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+		}
+		else if (RPCInfo->Type == SCHEMA_ServerUnreliableRPC)
+		{
+			ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+		}
+		else
+		{
+			ComponentId = SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
+		}
+
+		Worker_ComponentUpdate ComponentUpdate = CreateUnreliableRPCUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
@@ -493,13 +534,6 @@ void USpatialSender::FlushRetryRPCs()
 		SendRPC(RetryRPC);
 	}
 	RetryRPCs.Empty();
-}
-
-void USpatialSender::SendReserveEntityIdRequest(USpatialActorChannel* Channel)
-{
-	UE_LOG(LogSpatialSender, Log, TEXT("Sending reserve entity Id request for %s"), *Channel->Actor->GetName());
-	Worker_RequestId RequestId = Connection->SendReserveEntityIdRequest();
-	Receiver->AddPendingActorRequest(RequestId, Channel);
 }
 
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
@@ -624,7 +658,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 {
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = ComponentId;
-	CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, CommandIndex);
+	CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
@@ -661,19 +695,18 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		}
 	}
 
-	AddBytesToSchema(RequestObject, 1, PayloadWriter);
-
+	WriteRpcPayload(RequestObject, TargetObjectRef.Offset, CommandIndex, PayloadWriter);
 	return CommandRequest;
 }
 
-Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject)
+Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
 	ComponentUpdate.component_id = ComponentId;
 	ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
-	Schema_Object* EventData = Schema_AddObject(EventsObject, EventIndex);
+	Schema_Object* EventData = Schema_AddObject(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID);
 
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
@@ -702,9 +735,16 @@ Worker_ComponentUpdate USpatialSender::CreateMulticastUpdate(UObject* TargetObje
 		}
 	}
 
-	AddBytesToSchema(EventData, 1, PayloadWriter);
+	WriteRpcPayload(EventData, TargetObjectRef.Offset, EventIndex, PayloadWriter);
 
 	return ComponentUpdate;
+}
+
+void USpatialSender::WriteRpcPayload(Schema_Object* Object, uint32 Offset, Schema_FieldId Index, FSpatialNetBitWriter& PayloadWriter)
+{
+	Schema_AddUint32(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
+	Schema_AddUint32(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
+	AddBytesToSchema(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadWriter);
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)
@@ -843,26 +883,22 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 		return false;
 	}
 
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
 	FString OwnerWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
-	EntityACL->ComponentWriteAcl.Add(Info.SchemaComponents[SCHEMA_ClientRPC], OwningClientOnly);
-
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
-
-		if (SubobjectInfo.SchemaComponents[SCHEMA_ClientRPC] != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			EntityACL->ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_ClientRPC], OwningClientOnly);
-		}
-	}
-
+	EntityACL->ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
 	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
 
 	Connection->SendComponentUpdate(EntityId, &Update);
 	return true;
+}
+
+void USpatialSender::UpdateInterestComponent(AActor* Actor)
+{
+	improbable::InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver);
+	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
+
+	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
+	Connection->SendComponentUpdate(EntityId, &Update);
 }

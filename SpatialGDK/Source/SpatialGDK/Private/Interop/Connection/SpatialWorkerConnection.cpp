@@ -48,6 +48,8 @@ void USpatialWorkerConnection::DestroyConnection()
 
 		WorkerLocator = nullptr;
 	}
+
+	bIsConnected = false;
 }
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
@@ -77,6 +79,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
 		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::ClientWorkerType : SpatialConstants::ServerWorkerType;
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
 	}
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
@@ -108,6 +111,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
+	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
@@ -144,6 +148,7 @@ void USpatialWorkerConnection::ConnectToLegacyLocator()
 	if (LegacyLocatorConfig.WorkerType.IsEmpty())
 	{
 		LegacyLocatorConfig.WorkerType = SpatialConstants::ClientWorkerType;
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LegacyLocatorConfig.WorkerType);
 	}
 
 	if (LegacyLocatorConfig.WorkerId.IsEmpty())
@@ -196,6 +201,7 @@ void USpatialWorkerConnection::ConnectToLegacyLocator()
 
 		ConnectionParams.network.connection_type = SpatialConnection->LegacyLocatorConfig.LinkProtocol;
 		ConnectionParams.network.use_external_ip = SpatialConnection->LegacyLocatorConfig.UseExternalIp;
+		ConnectionParams.network.tcp.multiplex_level = SpatialConnection->LegacyLocatorConfig.TcpMultiplexLevel;
 		// end TODO
 
 		int DeploymentIndex = 0;
@@ -254,6 +260,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	if (LocatorConfig.WorkerType.IsEmpty())
 	{
 		LocatorConfig.WorkerType = SpatialConstants::ClientWorkerType;
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LocatorConfig.WorkerType);
 	}
 
 	if (LocatorConfig.WorkerId.IsEmpty())
@@ -283,6 +290,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 	ConnectionParams.network.connection_type = LocatorConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
+	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
 
 	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
 	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
@@ -337,11 +345,6 @@ Worker_OpList* USpatialWorkerConnection::GetOpList()
 	return Worker_Connection_GetOpList(WorkerConnection, 0);
 }
 
-Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdRequest()
-{
-	return Worker_Connection_SendReserveEntityIdRequest(WorkerConnection, nullptr);
-}
-
 Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
 	return Worker_Connection_SendReserveEntityIdsRequest(WorkerConnection, NumOfEntities, nullptr);
@@ -372,7 +375,12 @@ Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId En
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
 {
-	return Worker_Connection_SendCommandResponse(WorkerConnection, RequestId, Response);
+	Worker_Connection_SendCommandResponse(WorkerConnection, RequestId, Response);
+}
+
+void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const char* Message)
+{
+	Worker_Connection_SendCommandFailure(WorkerConnection, RequestId, Message);
 }
 
 void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message)
@@ -423,10 +431,19 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
-	check(GEngine);
-	USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GEngine->GetWorldFromContextObjectChecked(this)->GetNetDriver());
-	checkf(NetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
-	return NetDriver;
+	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
+	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
+
+	// On the client, the world might not be completely set up.
+	// in this case we can use the PendingNetGame to get the NetDriver
+	if (NetDriver == nullptr)
+	{
+		NetDriver = GameInstance->GetWorldContext()->PendingNetGame->GetNetDriver();
+	}
+
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(NetDriver);
+	checkf(SpatialNetDriver, TEXT("SpatialNetDriver was invalid while accessing SpatialNetDriver!"));
+	return SpatialNetDriver;
 }
 
 

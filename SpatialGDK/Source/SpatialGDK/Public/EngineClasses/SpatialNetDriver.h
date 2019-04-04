@@ -6,6 +6,7 @@
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
 #include "OnlineSubsystemNames.h"
+#include "TimerManager.h"
 #include "UObject/CoreOnline.h"
 
 #include "Interop/Connection/ConnectionConfig.h"
@@ -30,7 +31,7 @@ class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
 class USnapshotManager;
 
-class UEntityRegistry;
+class UEntityPool;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
@@ -47,9 +48,13 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	GENERATED_BODY()
 
 public:
+	// Begin UObject Interface
 	virtual void PostInitProperties() override;
+	// End UObject Interface
 
+	// Begin FExec Interface
 	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar = *GLog) override;
+	// End FExec Interface
 
 	// Begin UNetDriver interface.
 	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
@@ -60,6 +65,8 @@ public:
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
 	// End UNetDriver interface.
+
+	virtual void OnOwnerUpdated(AActor* Actor);
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
@@ -72,8 +79,6 @@ public:
 	// You can check if we connected by calling GetSpatialOS()->IsConnected()
 	USpatialNetConnection* GetSpatialOSNetConnection() const;
 
-	UEntityRegistry* GetEntityRegistry() { return EntityRegistry; }
-
 	// When the AcceptingPlayers state on the GSM has changed this method will be called.
 	void OnAcceptingPlayersChanged(bool bAcceptingPlayers);
 
@@ -82,6 +87,7 @@ public:
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId);
+	TMap<Worker_EntityId_Key, USpatialActorChannel*>& GetEntityToActorChannelMap();
 
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
@@ -119,16 +125,9 @@ public:
 	UPROPERTY()
 	USpatialStaticComponentView* StaticComponentView;
 	UPROPERTY()
-	UEntityRegistry* EntityRegistry;
-	UPROPERTY()
 	USnapshotManager* SnapshotManager;
-
-	// Limit the number of actors which are replicated per tick to the number specified.
-	// This acts as a hard limit to the number of actors per frame but nothing else. It's recommended to set this value to around 100~ (experimentation recommended).
-	// If not set SpatialOS will replicate every actor per frame (unbounded) and so large worlds will experience slowdown server-side and client-side.
-	// Use `stat SpatialNet` in editor builds to find the number of calls to 'ReplicateActor' and use this to inform the rate limit setting.
-	UPROPERTY(Config)
-	int32 ActorReplicationRateLimit;
+	UPROPERTY()
+	UEntityPool* EntityPool;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
@@ -163,7 +162,7 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 
-	FTimerManager* TimerManager;
+	FTimerManager TimerManager;
 
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
@@ -171,16 +170,24 @@ private:
 	bool bWaitingForAcceptingPlayersToSpawn;
 	FString SnapshotToLoad;
 
+	void InitiateConnectionToSpatialOS(const FURL& URL);
+
+	UFUNCTION()
+	void OnConnectedToSpatialOS();
+
+	void CreateAndInitializeCoreClasses();
+
+	void CreateServerSpatialOSNetConnection();
+
+	void QueryGSMToLoadMap();
+
+	void HandleOngoingServerTravel();
+
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
 
 	UFUNCTION()
 	void OnLevelAddedToWorld(ULevel* LoadedLevel, UWorld* OwningWorld);
-
-	void Connect();
-
-	UFUNCTION()
-	void OnMapLoadedAndConnected();
 
 	static void SpatialProcessServerTravel(const FString& URL, bool bAbsolute, AGameModeBase* GameMode);
 

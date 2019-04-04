@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -91,6 +91,13 @@ namespace Improbable
         public static void WriteHeading(string format, params object[] args)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine(format, args);
+            Console.ForegroundColor = ConsoleColor.Gray;
+        }
+
+        public static void WriteWarning(string format, params object[] args)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(format, args);
             Console.ForegroundColor = ConsoleColor.Gray;
         }

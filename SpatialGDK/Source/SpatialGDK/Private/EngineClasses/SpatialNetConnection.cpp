@@ -6,8 +6,13 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Gameframework/PlayerController.h"
+#include "Gameframework/Pawn.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 
@@ -45,10 +50,17 @@ void USpatialNetConnection::InitBase(UNetDriver* InDriver, class FSocket* InSock
 	}
 }
 
+#if ENGINE_MINOR_VERSION <= 20
 void USpatialNetConnection::LowLevelSend(void * Data, int32 CountBytes, int32 CountBits)
 {
 	//Intentionally does not call Super::
 }
+#else
+void USpatialNetConnection::LowLevelSend(void* Data, int32 CountBits, FOutPacketTraits& Traits)
+{
+	//Intentionally does not call Super::
+}
+#endif
 
 bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor) const
 {
@@ -75,6 +87,32 @@ int32 USpatialNetConnection::IsNetReady(bool Saturate)
 	// TODO: UNR-664 - Currently we do not report the number of bits sent when replicating, this means channel saturation cannot be checked properly.
 	// This will always return true until we solve this.
 	return true;
+}
+
+void USpatialNetConnection::UpdateLevelVisibility(const FName& PackageName, bool bIsVisible)
+{
+	UNetConnection::UpdateLevelVisibility(PackageName, bIsVisible);
+
+	// We want to update our interest as fast as possible
+	// So we send an Interest update immediately.
+	UpdateActorInterest(Cast<AActor>(PlayerController));
+	UpdateActorInterest(Cast<AActor>(PlayerController->GetPawn()));
+}
+
+void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
+{
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	USpatialSender* Sender = Cast<USpatialNetDriver>(Driver)->Sender;
+
+	Sender->UpdateInterestComponent(Actor);
+	for (const auto& Child : Actor->Children)
+	{
+		UpdateActorInterest(Child);
+	}
 }
 
 void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
@@ -119,7 +157,7 @@ void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 	{
 		// This client timed out. Disconnect it and trigger OnDisconnected logic.
 		CleanUp();
-	}, SpatialConstants::HEARTBEAT_TIMEOUT_SECONDS, false);
+	}, GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds, false);
 }
 
 void USpatialNetConnection::SetHeartbeatEventTimer()
@@ -133,8 +171,12 @@ void USpatialNetConnection::SetHeartbeatEventTimer()
 		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 		Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
 
-		Cast<USpatialNetDriver>(Driver)->Connection->SendComponentUpdate(PlayerControllerEntity, &ComponentUpdate);
-	}, SpatialConstants::HEARTBEAT_INTERVAL_SECONDS, true, 0.0f);
+		USpatialWorkerConnection* Connection = Cast<USpatialNetDriver>(Driver)->Connection;
+		if (Connection->IsConnected())
+		{
+			Connection->SendComponentUpdate(PlayerControllerEntity, &ComponentUpdate);
+		}
+	}, GetDefault<USpatialGDKSettings>()->HeartbeatIntervalSeconds, true, 0.0f);
 }
 
 void USpatialNetConnection::DisableHeartbeat()
