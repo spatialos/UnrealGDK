@@ -70,9 +70,6 @@ When you launch a deployment, SpatialOS  sets up the world based on a [snapshot]
 
 You'll find out more about snapshots and workers later on in this tutorial. 
 
-To test your project, you can launch a  or a 
-
-
 #### Deploy locally with multiple clients
 
 To launch a local deployment: 
@@ -80,6 +77,8 @@ To launch a local deployment:
 1. In the Unreal Editor, on the GDK toolbar, select [**Schema**](https://docs.improbable.io/reference/latest/shared/glossary) to generate schema.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
+<br/>
+
 1. Select [**Snapshot**]({{urlRoot}}/content/generating-a-snapshot) to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>

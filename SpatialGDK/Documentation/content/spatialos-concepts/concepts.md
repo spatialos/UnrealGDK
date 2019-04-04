@@ -50,9 +50,9 @@ SpatialOS uses the schema to generate code. You can use this generated code in y
 
 ## Snapshots
 
-A snapshot is a representation of the state of a SpatialOS world at a given point in time. It stores each persistent SpatialOS entity and the values of their [components](#components)' properties.
+A snapshot is a representation of a SpatialOS world at a given point in time. A snapshot stores each entity's component data. You start each deployment with a snapshot; if it's a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it 
 
-You use a snapshot as the starting point (using an an “initial snapshot”) for your SpatialOS world when you deploy your game.
+To learn more about how to use snapshots in the GDK for Unreal, <GO HERE>
 
 ## Load balancing
 
