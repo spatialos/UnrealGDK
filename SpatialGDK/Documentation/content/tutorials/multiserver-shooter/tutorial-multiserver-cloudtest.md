@@ -1,4 +1,8 @@
-<br/>
+<%(TOC)%>
+# Multiserver Shooter Tutorial
+
+## Step 4: Test your changes in the cloud
+
 ### Build your assemblies
 
 An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip files that contains all the files that your game uses when running in the cloud.
@@ -12,7 +16,7 @@ An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip f
 
 1. In File Explorer, navigate to `UnrealGDKThirdPersonShooter\spatial` and open `spatialos.json` in a text editor.
 2. Change the `name` field to the name of your project. You can find this in the [Console](https://console.improbable.io). It’ll be something like `beta_someword_anotherword_000`.
-  ![]({{assetRoot}}assets/tutorial/project-name.png)
+    ![]({{assetRoot}}assets/tutorial/project-name.png)
 3. In a terminal window, change directory to `UnrealGDKThirdPersonShooter\spatial\` and run `spatial cloud upload <assembly_name>`, where `<assembly_name>` is a name of your choice (for example `myassembly`). A valid upload command looks like this:
 
 ```
@@ -33,7 +37,7 @@ When launching a cloud deployment you must provide three parameters:
 * **a name for your deployment**, which is used to label the deployment in the [Console](https://console.improbable.io).
 
 1. In a  terminal window, in the same directory you used to upload your game, run: `spatial cloud launch --snapshot=snapshots/default.snapshot <assembly_name> two_worker_test.json <deployment_name>` 
-  <br/>where `assembly_name` is the name you gave the assembly in the previous step and `deployment_name` is a name of your choice. A valid launch command would look like this:
+    <br/>where `assembly_name` is the name you gave the assembly in the previous step and `deployment_name` is a name of your choice. A valid launch command would look like this:
 
 ```
 spatial cloud launch --snapshot=snapshots/default.snapshot myassembly two_worker_test.json mydeployment
@@ -49,7 +53,7 @@ spatial cloud launch --snapshot=snapshots/default.snapshot myassembly two_worker
 When your deployment has launched, SpatialOS automatically opens the [Console](https://console.improbable.io) in your browser.
 
 1. In the Console, Select the **Launch** button on the left of the page, and then click the **Launch** button that appears in the centre of the page. The SpatialOS Launcher, which was installed along with SpatialOS, downloads the game client for this deployment and runs it on your local machine.
-  ![]({{assetRoot}}assets/tutorial/launch.png)
+    ![]({{assetRoot}}assets/tutorial/launch.png)
 2. Once the client has launched, enter the game and fire a few celebratory shots - you are now playing in your first SpatialOS cloud deployment!
 
 <br/>

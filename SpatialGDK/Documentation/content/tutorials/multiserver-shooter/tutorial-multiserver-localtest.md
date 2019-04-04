@@ -1,5 +1,7 @@
-<br/>
-### Deploy the project locally (again)
+<%(TOC)%>
+# Multiserver Shooter Tutorial
+
+## Step 3: Test your changes locally
 
 1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
 2. From the Unreal Editor toolbar, click **Play** to run the game.
@@ -18,7 +20,7 @@ _Image: A local Inspector showing two server-worker instances (two Unreal server
 1. Access the Inspector at [http://localhost:21000/inspector](http://localhost:21000/inspector).
 2. In the **View** tab, check the boxes next to both of the **UnrealWorkers**.
 3. In the **Show me** option, select **Authority / interest**.<br>
-  This causes the Inspector to display the areas that each server-worker instance has authority over as two colored zones.
+    This causes the Inspector to display the areas that each server-worker instance has authority over as two colored zones.
 4. Back in your two Unreal game clients, run around and shoot.
 5. Using the Inspector to track the location of your two players, notice that if you position them in the same area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
 
@@ -106,3 +108,5 @@ Now let’s test our new cross-server functionality in another local deployment.
 Now that you're free of the single-server paradigm, have a think about the huge, seamless multiplayer worlds you can build and host using the Unreal GDK.
 
 Speaking of hosting, let’s upload your game.
+
+[Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)

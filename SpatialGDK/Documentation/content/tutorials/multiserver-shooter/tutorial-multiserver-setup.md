@@ -9,7 +9,7 @@
 Before following the Multiserver Shooter tutorial, you need to have followed:
 
 * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
-* [Getting started: 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/tutorial).
+* [Getting started: 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork).
 
 Once you have done this, you are ready to get going with the Multiserver Shooter tutorial by following the steps below.
 <br/>
@@ -85,9 +85,6 @@ _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** 
 <br/>The two server-worker instances are acting as two Unreal servers and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
 <br/>(You can find out about workers in the [glossary](https://docs.improbable.io/unreal/alpha/content/glossary#workers).)
 
-Notice that when players shoot each other, their health does not go down. It's not much fun with no skin in the game is it? Let’s fix the health system.
+Notice that when players shoot each other, their health does not go down. Lets fix the health system.
 
-[Step 2: Replicate health changes](LINK)
-
-<br/>
-
+[Step 2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)

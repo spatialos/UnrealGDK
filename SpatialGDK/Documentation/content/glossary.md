@@ -221,7 +221,7 @@ By default, the GDK for Unreal uses a single Unreal server-worker layer to handl
 However, you can set up additional non-Unreal layers, made up of server-worker instances that do not use Unreal or the GDK.
 
 For more information:
-* See documentation on [non-Unreal layers]({{urlRoot}}/content/non-unreal-layers.md)
+* See documentation on [non-Unreal layers]({{urlRoot}}/content/spatialos-concepts/non-unreal-layers.md)
 * See SpatialOS documentation for [layers](https://docs.improbable.io/reference/latest/shared/worker-configuration/layers).
 
 ### Load balancing
@@ -294,7 +294,7 @@ SpatialOS uses the schema to generate code. You can use this generated code in y
 
 > Related:
 >
-> * [Schema (Unreal GDK documentation)]({{urlRoot}}/content/schema)
+> * [Schema (Unreal GDK documentation)]({{urlRoot}}/content/spatialos-concepts/concepts#schema)
 > * [Introduction to schema](https://docs.improbable.io/reference/latest/shared/schema/introduction)
 > * [Schema reference](https://docs.improbable.io/reference/latest/shared/schema/reference)
 
@@ -377,7 +377,7 @@ You use a snapshot as the starting point (using an an “initial snapshot”) fo
 
 > Related:
 > 
-> * [How to generate a snapshot]({{urlRoot}}/content/generating-a-snapshot)
+> * [How to generate a snapshot]({{urlRoot}}/content/spatialos-concepts/concepts#snapshots)
 > * [Snapshots](https://docs.improbable.io/reference/latest/shared/operate/snapshots)
 
 ### Streaming queries

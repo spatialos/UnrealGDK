@@ -4,7 +4,7 @@
 Before setting up the SpatialOS GDK Starter Template, you need to have followed:
 
 * [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
-* [Getting started: 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/tutorial).
+* [Getting started: 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork).
 
 If you are ready to start developing your own game with the GDK, follow the steps below. 
 
@@ -109,7 +109,7 @@ The name should look something like `beta_randomword_anotherword_randomnumber`. 
 An assembly is what’s created when you run `BuildWorker.bat`. Assemblies are `.zip` files that contain all the files that your game uses when running in the cloud.
 
 **Note:** In the following commands, you must replace **`YourProject`** with the name of your project.
- 
+
 1. In a terminal window, navigate to your `<ProjectRoot>` directory.
 1. Build a server-worker assembly by running the following command: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Linux Development YourProject.uproject`
 1. Build a client-worker assembly by running the following command: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Win64 Development YourProject.uproject`

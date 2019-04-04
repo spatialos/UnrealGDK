@@ -9,7 +9,7 @@ This guide shows you how to port your own Unreal project to SpatialOS using the 
 ## Before you start
 
 Before porting your project: 
- 
+
 * If you haven't done this already, follow our Get Started guide before porting your game:
     * [Get started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     * [Get started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
@@ -61,14 +61,14 @@ Before porting your project:
 1. You need to configure the GDK helper scripts to work with your project. 
 
 Follow this step to set up your project paths: 
-   
+
    * Open **`\<ProjectRoot>\ProjectPaths.bat`** in a text editor.  
 
-    * In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.  
-    * In `set GAME_NAME= TP_SpatialGDK `, replace `TP_SpatialGDK ` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
+        * In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.  
+        * In `set GAME_NAME= TP_SpatialGDK `, replace `TP_SpatialGDK ` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
 
     **Note**: The helper scripts `LaunchClient.bat` and `LaunchServer.bat` will not work if you do not follow this step correctly. 
-    
+
 ### 2. Clone the GDK
 
 Now you need to clone the SpatialOS GDK for Unreal into your project. To do this: 
@@ -78,17 +78,18 @@ Now you need to clone the SpatialOS GDK for Unreal into your project. To do this
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`<br/><br/>
 **Note:** You need to ensure that the root directory of the GDK for Unreal repository is called `UnrealGDK` so the file path is: `<GameRoot>\Plugins\UnrealGDK\...`<br/>
-1. Run `Setup.bat` which is in the root directory of the GDK repository (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
+3. Run `Setup.bat` which is in the root directory of the GDK repository (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
     - In a terminal window, navigate to the root directory of the GDK and run: `Setup.bat` or
     - In your file manager, double-click the `Setup.bat` file.
-  
+      
+
     **Note**:`Setup.bat` will automatically open the SpatialOS authorization page in your default browser. You may be prompted to sign into your SpatialOS account if you have not already. 
 
 ### 3. Add the SpatialGDK module to your project
 
 1. In **File Explorer**, navigate to `\<ProjectRoot>\<GameRoot>\Source\<YourProject>\`.
 2. Open the `<YourProject>.build.cs` file in a code editor and add add `"SpatialGDK"` to `PublicDependencyModuleNames`.
-    
+   
     For example:  
 
     ``` csharp
@@ -156,7 +157,7 @@ You must modify your `GameInstance` class to work properly with the GDK.
     ![spatial game instance reparent]({{assetRoot}}assets/screen-grabs/spatial-game-instance-reparent.png)<br/>_Image: The Blueprint class settings screen_<br/>
 
 ### 6. Generate schema and a snapshot
-You need to generate [schema]({{urlRoot}}/content/schema) and generate a [snapshot]({{urlRoot}}/content/generating-a-snapshot) before you start your deployment. To do this:
+You need to generate [schema]({{urlRoot}}/content/spatialos-concepts/concepts#schema) and generate a [snapshot]({{urlRoot}}/content/spatialos-concepts/concepts#snapshots) before you start your deployment. To do this:
 
 1. In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars), select **Schema** to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
 1. On the same toolbar, select **Snapshot**, which will generate a snapshot for the map currently open in the editor.
@@ -207,7 +208,7 @@ You can change:
 
 ## Next steps
 
-If you haven't already, check out the tutorial on how to implement [cross-server shooting]({{urlRoot}}/content/get-started/tutorial).  
+If you haven't already, check out the Multiserver shooter tutorial tutorial to learn how to implement [cross-server interactions]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro).  
 Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 

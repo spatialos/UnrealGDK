@@ -6,20 +6,25 @@
         - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
         - [3: Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
     - Tutorials
+        - Placeholder name for Example Project tutorial
+            - Introduction
+            - Step 1: 
+            - Step 2: 
+            - Step 3:  
         - Multiserver Shooter tutorial
             - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
             - [Step 1: Set up]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
-            - [Step 2: Replicating health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
+            - [Step 2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
             - [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
         - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
     - [Feature list]({{urlRoot}}/features)
     - [What's new in alpha]({{urlRoot}}/content/whatsnew)
 - <h3>Concepts and terminology</h3>
-    - [SpatialOS concepts]({{urlRoot}}/content/concepts)
-        - [Schema]({{urlRoot}}/content/schema)
-        - [Snapshots]({{urlRoot}}/content/generating-a-snapshot) 
-        - [Non-Unreal layers]({{urlRoot}}/content/non-unreal-layers)
+    - [SpatialOS concepts]({{urlRoot}}/content/spatialos-concepts/concepts)
+        - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
+        - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
+        - [Non-Unreal layers]({{urlRoot}}/content/spatialos-concepts/non-unreal-layers)
     - [Glossary]({{urlRoot}}/content/glossary)
     - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
@@ -33,7 +38,7 @@
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
-    
+
 - <h3>Troubleshooting</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Known issues]({{urlRoot}}/known-issues)
