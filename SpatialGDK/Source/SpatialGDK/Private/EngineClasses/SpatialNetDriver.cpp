@@ -189,7 +189,7 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	}
 }
 
-void USpatialNetDriver::CreateAndInitializeCoreClasses()
+void USpatialNetDriver::InitializeSpatialOutputDevice()
 {
 	int32 PIEIndex = -1; // -1 is Unreal's default index when not using PIE
 #if WITH_EDITOR
@@ -203,6 +203,11 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 #endif //WITH_EDITOR
 	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"), PIEIndex);
+}
+
+void USpatialNetDriver::CreateAndInitializeCoreClasses()
+{
+	InitializeSpatialOutputDevice();
 
 	Dispatcher = NewObject<USpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
