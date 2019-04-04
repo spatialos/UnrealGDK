@@ -64,7 +64,14 @@ Note: Ensure that your Visual Studio Solution Configuration is set to **Developm
 
 ### Deploy your project 
 
-To test your project, you can launch a [local deployment (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) or a [cloud deployment (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment).  
+To test your game, you need to launch a [deployment](spatialos-concepts/concepts#ldeployment). This means launching your game with its own instance of the SpatialOS runtime, either locally using a [local deployment]({{urlRoot}}/content/spatialos-concepts/concepts#local-deployment),  or in the cloud using a [cloud deployment]({{urlRoot}}/content/spatialos-concepts/concepts#cloud-deployment).. 
+
+When you launch a deployment, SpatialOS  sets up the world based on a [snapshot], then starts up the [worker] instances needed to run the game world.
+
+You'll find out more about snapshots and workers later on in this tutorial. 
+
+To test your project, you can launch a  or a 
+
 
 #### Deploy locally with multiple clients
 

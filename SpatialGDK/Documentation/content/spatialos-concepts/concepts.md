@@ -1,4 +1,5 @@
 <%(TOC)%>
+
 # SpatialOS concepts
 
 Copy about what SpatialOS is any why you want to know about these concepts
@@ -61,3 +62,8 @@ In SpatialOS, you can split up [server-worker](#workers) computation into layers
 
 You can use non-Unreal layers to modularize your game’s functionality so you can re-use the functionality across different games. For example, you could use a non-Unreal layer written in Python that interact with a database or other 3rd party service, such as [Firebase](https://firebase.google.com/) or [PlayFab](https://playfab.com/).
 
+## Deployments
+
+## Local deployment
+
+## Cloud deployment
