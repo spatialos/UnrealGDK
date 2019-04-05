@@ -99,7 +99,18 @@ FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const F
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
-		UObject* Subobject = Actor->GetDefaultSubobjectByName(SubobjectInfoPair.Value->SubobjectName);
+		UObject* Subobject = nullptr;
+
+		// Override the GetDefaultSubobjectByName method from Obj.cpp, to not care whether the object is the default subobject, if it is safe to do so (not garbage collecting).
+		if (!GIsSavingPackage && !IsGarbageCollecting())
+		{
+			Subobject = StaticFindObjectFast(UObject::StaticClass(), Actor, SubobjectInfoPair.Value->SubobjectName);
+		}
+		else
+		{
+			Subobject = Actor->GetDefaultSubobjectByName(SubobjectInfoPair.Value->SubobjectName);
+		}
+
 		uint32 Offset = SubobjectInfoPair.Key;
 
 		if (Subobject != nullptr && Subobject->IsPendingKill() == false && Subobject->IsSupportedForNetworking())
