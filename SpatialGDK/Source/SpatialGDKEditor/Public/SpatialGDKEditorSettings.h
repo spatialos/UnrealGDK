@@ -23,11 +23,11 @@ struct FWorldLaunchSection
 		LegacyFlags.Add(TEXT("enable_chunk_interest"), TEXT("false"));
 	}
 
-	/** The size of the grid squares that the world is divided into, in “world units” (an arbitrary unit that workers can interpret as they choose. */
+	/** The size of the simulation in meters for the auto generated launch config.*/
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Dimensions"))
 	FIntPoint Dimensions;
 
-	/** The frequency in seconds to write snapshots of the simulated world. */
+	/** The size of the grid squares that the world is divided into, in “world units” (an arbitrary unit that workers can interpret as they choose. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Chunk edge length in meters"))
 	int32 ChunkEdgeLengthMeters;
 
