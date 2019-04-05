@@ -434,27 +434,22 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 
 bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const
 {
-	FString Text;
-	TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
-
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
-	if (SpatialGDKSettings == nullptr)
+	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
-		return false;
-	}
+		FString Text;
+		TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
 
-	const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKSettings->LaunchConfigDesc;
+		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKSettings->LaunchConfigDesc;
 
-	// Populate json file for launch config
-	Writer->WriteObjectStart(); // Start of json
-		Writer->WriteValue(TEXT("template"), LaunchConfigDescription.Template); // Template section
-		Writer->WriteObjectStart(TEXT("world")); // World section begin
-			Writer->WriteObjectStart(TEXT("dimensions"));
-				Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);
-				Writer->WriteValue(TEXT("z_meters"), LaunchConfigDescription.World.Dimensions.Y);
-			Writer->WriteObjectEnd();
-			Writer->WriteValue(TEXT("chunk_edge_length_meters"), LaunchConfigDescription.World.ChunkEdgeLenghtMeters);
+		// Populate json file for launch config
+		Writer->WriteObjectStart(); // Start of json
+			Writer->WriteValue(TEXT("template"), LaunchConfigDescription.Template); // Template section
+			Writer->WriteObjectStart(TEXT("world")); // World section begin
+				Writer->WriteObjectStart(TEXT("dimensions"));
+					Writer->WriteValue(TEXT("x_meters"), LaunchConfigDescription.World.Dimensions.X);
+					Writer->WriteValue(TEXT("z_meters"), LaunchConfigDescription.World.Dimensions.Y);
+				Writer->WriteObjectEnd();
+			Writer->WriteValue(TEXT("chunk_edge_length_meters"), LaunchConfigDescription.World.ChunkEdgeLengthMeters);
 			Writer->WriteValue(TEXT("streaming_query_interval"), LaunchConfigDescription.World.StreamingQueryInterval);
 			Writer->WriteArrayStart(TEXT("legacy_flags"));
 			for (auto& Flag : LaunchConfigDescription.World.LegacyFlags)
@@ -476,33 +471,36 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 			Writer->WriteArrayStart("layer_configurations");
 			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.Workers)
 			{
-				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.ManualWorkerConnectionOnly);
+				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.bManualWorkerConnectionOnly);
 			}
 			Writer->WriteArrayEnd();
-		Writer->WriteObjectEnd(); // Load balancing section end
-		Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
-		for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.Workers)
+			Writer->WriteObjectEnd(); // Load balancing section end
+			Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
+			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.Workers)
+			{
+				WriteWorkerSection(Writer, Worker);
+			}
+			// Write the client worker section
+			FWorkerTypeLaunchSection ClientWorker;
+			ClientWorker.WorkerTypeName = SpatialConstants::ClientWorkerType;
+			ClientWorker.WorkerPermissions.bAllPermissions = true;
+			ClientWorker.bLoginRateLimitEnabled = false;
+			WriteWorkerSection(Writer, ClientWorker);
+			Writer->WriteArrayEnd(); // Worker section end
+		Writer->WriteObjectEnd(); // End of json
+
+		Writer->Close();
+
+		if (!FFileHelper::SaveStringToFile(Text, *LaunchConfigPath))
 		{
-			WriteWorkerSection(Writer, Worker);
+			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '%s'. Perhaps the file is Read-Only?"), *LaunchConfigPath);
+			return false;
 		}
-		// Write the client worker section
-		FWorkerTypeLaunchSection ClientWorker;
-		ClientWorker.WorkerTypeName = SpatialConstants::ClientWorkerType;
-		ClientWorker.WorkerPermissions.bAllPermissions = true;
-		ClientWorker.bLoginRateLimitEnabled = false;
-		WriteWorkerSection(Writer, ClientWorker);
-		Writer->WriteArrayEnd(); // Worker section end
-	Writer->WriteObjectEnd(); // End of json
 
-	Writer->Close();
-
-	if (!FFileHelper::SaveStringToFile(Text, *LaunchConfigPath))
-	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '%s'. Perhaps the file is Read-Only?"), *LaunchConfigPath);
-		return false;
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 bool FSpatialGDKEditorToolbarModule::WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const
@@ -570,7 +568,7 @@ bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<
 	return true;
 }
 
-bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, int32 Columns, int32 Rows, bool ManualWorkerConnectionOnly) const
+bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly) const
 {
 	Writer->WriteObjectStart();
 	Writer->WriteValue(TEXT("layer"), WorkerType);
