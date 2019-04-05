@@ -2,8 +2,6 @@ param(
   [string] $target_platform = "Win64"
 )
 
-. "$PSScriptRoot\common.ps1"
-
 pushd "$($gdk_home)"
 
     Start-Event "build-unreal-gdk-$($target_platform)" "build-gdk"

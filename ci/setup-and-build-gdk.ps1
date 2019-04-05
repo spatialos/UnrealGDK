@@ -5,6 +5,8 @@ param(
   [string] $target_platform = "Win64"
 )
 
+. "$PSScriptRoot\common.ps1"
+
 # Download Unreal Engine
 Start-Event "get-unreal-engine" "command"
 &$PSScriptRoot"\get-engine.ps1"

@@ -1,5 +1,3 @@
-. "$PSScriptRoot\common.ps1"
-
 pushd "$($gdk_home)"
 
     # Fetch the version of Unreal Engine we need
