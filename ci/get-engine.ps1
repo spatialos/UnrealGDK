@@ -17,10 +17,11 @@ pushd "$($gdk_home)"
     New-Item -Name "UnrealEngine" -ItemType Directory -Force
 
     pushd "UnrealEngine"
+        Start-Event "download-unreal-engine" "get-unreal-engine"
+
         $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
         Write-Log "Downloading Unreal Engine artifacts from $($engine_gcs_path)"
 
-        Start-Event "download-unreal-engine" "get-unreal-engine"
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
             "cp", `
             "$($engine_gcs_path)", `
@@ -32,8 +33,8 @@ pushd "$($gdk_home)"
             Throw "Failed to download Engine artifacts"
         }
 
-        Write-Log "Unzipping Unreal Engine"
         Start-Event "unzip-unreal-engine" "get-unreal-engine"
+        Write-Log "Unzipping Unreal Engine"
         $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
         "x", `
         "$($unreal_version).zip" `
