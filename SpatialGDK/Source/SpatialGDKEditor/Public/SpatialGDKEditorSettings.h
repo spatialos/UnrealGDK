@@ -23,7 +23,7 @@ struct FWorldLaunchSection
 		LegacyFlags.Add(TEXT("enable_chunk_interest"), TEXT("false"));
 	}
 
-	/** The size of the simulation in meters for the auto generated launch config.*/
+	/** The size of the simulation in meters for the auto generated launch config. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Dimensions"))
 	FIntPoint Dimensions;
 
@@ -71,7 +71,7 @@ struct FWorkerPermissionsSection
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity creation"))
 	bool bAllowEntityCreation;
 
-	/** Enables a worker to delete new entities */
+	/** Enables a worker to delete entities */
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity deletion"))
 	bool bAllowEntityDeletion;
 
@@ -96,7 +96,7 @@ struct FLoginRateLimitSection
 
 	}
 
-	/** The duration for which worker connections requests will be limited. */
+	/** The duration for which worker connection requests will be limited. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Duration"))
 	FString Duration;
 
@@ -127,7 +127,7 @@ struct FWorkerTypeLaunchSection
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker type name"))
 	FString WorkerTypeName;
 
-	/** Defines the permissions of the worke */
+	/** Defines the permissions of the worker. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker permissions"))
 	FWorkerPermissionsSection WorkerPermissions;
 

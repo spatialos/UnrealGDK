@@ -5,7 +5,7 @@
 #include "Misc/CommandLine.h"
 
 #if WITH_EDITOR
-#include "ModuleManager.h"
+#include "Modules/ModuleManager.h"
 #include "ISettingsModule.h"
 #endif
 
