@@ -31,11 +31,11 @@ struct FWorldLaunchSection
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Chunk edge length in meters"))
 	int32 ChunkEdgeLengthMeters;
 
-	/** The frequency in seconds to write snapshots of the simulated world. */
+	/** The time between streaming query updates (in seconds). */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Streaming query interval"))
 	int32 StreamingQueryInterval;
 
-	/** Legacy non-worker flag configurations. */
+	/** The frequency in seconds to write snapshots of the simulated world. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Snapshot write period in seconds"))
 	int32 SnapshotWritePeriodSeconds;
 
