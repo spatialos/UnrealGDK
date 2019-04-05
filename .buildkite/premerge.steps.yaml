@@ -4,7 +4,7 @@ agent_transients: &agent_transients
   # connection. Agent exits with -1 in this case.
   exit_status: -1
   limit: 3
-  
+
 common: &common
   agents:
     - "capable_of_building=gdk-for-unreal"
@@ -22,7 +22,13 @@ common: &common
 
 steps:
   - label: "build-GDK-:windows:"
-    command: "powershell ./ci/setup-and-build-gdk.ps1"
-    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede. 
+    command: "powershell ./ci/setup-and-build-gdk.ps1 -target-platform Win64"
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
+    artifact_paths:
+      - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+
+  - label: "build-GDK-:linux:"
+    command: "powershell ./ci/setup-and-build-gdk.ps1 -target-platform Linux"
+    <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
