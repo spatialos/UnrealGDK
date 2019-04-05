@@ -23,21 +23,27 @@ struct FWorldLaunchSection
 		LegacyFlags.Add(TEXT("enable_chunk_interest"), TEXT("false"));
 	}
 
+	/** The size of the grid squares that the world is divided into, in “world units” (an arbitrary unit that workers can interpret as they choose. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Dimensions"))
 	FIntPoint Dimensions;
 
+	/** The frequency in seconds to write snapshots of the simulated world. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Chunk edge length in meters"))
 	int32 ChunkEdgeLengthMeters;
 
+	/** The frequency in seconds to write snapshots of the simulated world. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Streaming query interval"))
 	int32 StreamingQueryInterval;
 
+	/** Legacy non-worker flag configurations. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Snapshot write period in seconds"))
 	int32 SnapshotWritePeriodSeconds;
 
+	/** Legacy non-worker flag configurations. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Legacy flags"))
 	TMap<FString, FString> LegacyFlags;
 
+	/** Legacy JVM configurations. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Legacy java parameters"))
 	TMap<FString, FString> LegacyJavaParams;
 };
@@ -57,18 +63,23 @@ struct FWorkerPermissionsSection
 
 	}
 
+	/** Gives all permissions to a worker. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "All"))
 	bool bAllPermissions;
 
+	/** Enables a worker to create new entities */
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity creation"))
 	bool bAllowEntityCreation;
 
+	/** Enables a worker to delete new entities */
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity deletion"))
 	bool bAllowEntityDeletion;
 
+	/** Controls what components can be returned from entity queries performed by the worker. If an entity query specifies other components to be returned then the query will fail. */
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity query"))
 	bool bAllowEntityQuery;
 
+	/** Specifies which components can be returned in the query result. */
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Component queries"))
 	TArray<FString> Components;
 };
@@ -85,9 +96,11 @@ struct FLoginRateLimitSection
 
 	}
 
+	/** The duration for which worker connections requests will be limited. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Duration"))
 	FString Duration;
 
+	/** The connection request limit for the duration. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Requests per duration", ClampMin = "1", UIMin = "1"))
 	int32 RequestsPerDuration;
 };
@@ -110,30 +123,39 @@ struct FWorkerTypeLaunchSection
 
 	}
 
+	/** Worker type name, defined in the filename of the worker’s spatialos.<worker_type>.worker.json file. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker type name"))
 	FString WorkerTypeName;
 
+	/** Defines the permissions of the worke */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker permissions"))
 	FWorkerPermissionsSection WorkerPermissions;
 
+	/** Defines the maximum number of workers that can connect.  */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Max connection capacity limit (0 = Unlimited capacity)", ClampMin = "0", UIMin = "0"))
 	int32 MaxConnectionCapacityLimit;
 
+	/** Enable connection rate limiting. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Login rate limit enabled"))
 	bool bLoginRateLimitEnabled;
 
+	/** Login rate limiting configuration. */
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "bLoginRateLimitEnabled", ConfigRestartRequired = false, DisplayName = "Login rate limit"))
 	FLoginRateLimitSection LoginRateLimit;
 
+	/** Number of columns in the rectangle grid load balancing config in the auto generated launch config. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid column count", ClampMin = "1", UIMin = "1"))
 	int32 Columns;
 
+	/** Number of rows in the rectangle grid load balancing config in the auto generated launch config. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
 	int32 Rows;
 
+	/** Flags defined for a worker in the auto generated launch config. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Flags"))
 	TMap<FString, FString> Flags;
 
+	/** Determines if the worker will be launched manually or by spatial. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Manual Worker Connection Only"))
 	bool bManualWorkerConnectionOnly;
 };
@@ -156,12 +178,15 @@ struct FSpatialLaunchConfigDescription
 		Workers.Add(UnrealWorkerDefaultSetting);
 	}
 
+	/** Deployment template that the auto generated launch configuration is based on. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Template"))
 	FString Template;
 
+	/** Configuration for the simulated world in the auto generated launch configuration. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "World"))
 	FWorldLaunchSection World;
 
+	/** Worker-specific configuration parameters in the auto generated launch configuration. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Workers"))
 	TArray<FWorkerTypeLaunchSection> Workers;
 };
