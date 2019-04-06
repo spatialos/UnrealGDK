@@ -22,13 +22,13 @@ common: &common
 
 steps:
   - label: "build-GDK-:windows:"
-    command: "powershell ./ci/setup-and-build-gdk.ps1 -target-platform Win64"
+    command: "powershell ./ci/setup-and-build-gdk.ps1 -target_platform Win64"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
 
   - label: "build-GDK-:linux:"
-    command: "powershell ./ci/setup-and-build-gdk.ps1 -target-platform Linux"
+    command: "powershell ./ci/setup-and-build-gdk.ps1 -target_platform Linux"
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
