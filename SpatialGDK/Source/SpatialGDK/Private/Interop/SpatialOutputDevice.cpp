@@ -4,12 +4,12 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
-FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FString LoggerName)
+FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FString LoggerName, int32 InPIEIndex)
+	: FilterLevel(ELogVerbosity::Warning)
+	, Connection(InConnection)
+	, Name(LoggerName)
+	, PIEIndex(InPIEIndex)
 {
-	Connection = InConnection;
-	Name = LoggerName;
-	FilterLevel = ELogVerbosity::Warning;
-
 	const TCHAR* CommandLine = FCommandLine::Get();
 	bLogToSpatial = !FParse::Param(CommandLine, TEXT("NoLogToSpatial"));
 
@@ -30,6 +30,12 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 
 	if (bLogToSpatial && Connection->IsConnected())
 	{
+#if WITH_EDITOR
+		if (GPlayInEditorID != PIEIndex)
+		{
+			return;
+		}
+#endif //WITH_EDITOR
 		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), *Name, InData);
 	}
 }

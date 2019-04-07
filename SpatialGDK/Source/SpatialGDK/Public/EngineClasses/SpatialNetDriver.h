@@ -172,6 +172,7 @@ private:
 	UFUNCTION()
 	void OnConnectedToSpatialOS();
 
+	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
 
 	void CreateServerSpatialOSNetConnection();
