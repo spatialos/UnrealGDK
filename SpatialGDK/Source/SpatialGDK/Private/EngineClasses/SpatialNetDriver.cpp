@@ -1050,11 +1050,14 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 
 	if (Connection != nullptr && Connection->IsConnected())
 	{
-		Worker_OpList* OpList = Connection->GetOpList();
+		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
 
-		Dispatcher->ProcessOps(OpList);
+		for (Worker_OpList* OpList : OpLists)
+		{
+			Dispatcher->ProcessOps(OpList);
 
-		Worker_OpList_Destroy(OpList);
+			Worker_OpList_Destroy(OpList);
+		}
 	}
 }
 

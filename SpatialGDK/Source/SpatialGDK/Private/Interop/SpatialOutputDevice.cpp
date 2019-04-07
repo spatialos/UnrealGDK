@@ -30,7 +30,7 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 
 	if (bLogToSpatial && Connection->IsConnected())
 	{
-		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), TCHAR_TO_UTF8(*Name), TCHAR_TO_UTF8(InData));
+		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), *Name, InData);
 	}
 }
 

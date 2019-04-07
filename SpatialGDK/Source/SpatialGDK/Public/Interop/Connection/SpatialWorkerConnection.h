@@ -2,8 +2,8 @@
 #pragma once
 
 #include "Interop/Connection/ConnectionConfig.h"
+#include "Interop/Connection/OutgoingMessages.h"
 #include "HAL/Runnable.h"
-#include "Misc/Variant.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -21,140 +21,6 @@ enum class SpatialConnectionType
 	Locator
 };
 
-enum class ESpatialVariantTypes : int32
-{
-	ReserveEntityIdsRequest = EVariantTypes::Custom,
-	CreateEntityRequest,
-	DeleteEntityRequest,
-	ComponentUpdate,
-	CommandRequest,
-	CommandResponse,
-	CommandFailure,
-	LogMessage,
-	ComponentInterest,
-	EntityQueryRequest,
-	Metrics
-};
-
-struct FReserveEntityIdsRequest
-{
-	const uint32_t NumOfEntities;
-};
-
-struct FCreateEntityRequest
-{
-	const TArray<Worker_ComponentData> Components;
-	const TOptional<Worker_EntityId> EntityId;
-};
-
-struct FDeleteEntityRequest
-{
-	const Worker_EntityId EntityId;
-};
-
-struct FComponentUpdate
-{
-	const Worker_EntityId EntityId;
-	const Worker_ComponentUpdate ComponentUpdate;
-};
-
-struct FCommandRequest
-{
-	const Worker_EntityId EntityId;
-	const Worker_CommandRequest Request;
-	const uint32_t CommandId;
-};
-
-struct FCommandResponse
-{
-	const Worker_RequestId RequestId;
-	const Worker_CommandResponse Response;
-};
-
-struct FCommandFailure
-{
-	const Worker_RequestId RequestId;
-	const FString Message;
-};
-
-struct FLogMessage
-{
-	const uint8_t Level;
-	const FString LoggerName;
-	const FString Message;
-};
-
-struct FComponentInterest
-{
-	const Worker_EntityId EntityId;
-	const TArray<Worker_InterestOverride> ComponentInterest;
-};
-
-struct FEntityQueryRequest
-{
-	const Worker_EntityQuery EntityQuery;
-};
-
-struct FMetrics
-{
-	const Worker_Metrics Metrics;
-};
-
-template<> struct TVariantTraits<FReserveEntityIdsRequest>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::ReserveEntityIdsRequest; }
-};
-
-template<> struct TVariantTraits<FCreateEntityRequest>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::CreateEntityRequest; }
-};
-
-template<> struct TVariantTraits<FDeleteEntityRequest>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::DeleteEntityRequest; }
-};
-
-template<> struct TVariantTraits<FComponentUpdate>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::ComponentUpdate; }
-};
-
-template<> struct TVariantTraits<FCommandRequest>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::CommandRequest; }
-};
-
-template<> struct TVariantTraits<FCommandResponse>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::CommandResponse; }
-};
-
-template<> struct TVariantTraits<FCommandFailure>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::CommandFailure; }
-};
-
-template<> struct TVariantTraits<FLogMessage>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::LogMessage; }
-};
-
-template<> struct TVariantTraits<FComponentInterest>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::ComponentInterest; }
-};
-
-template<> struct TVariantTraits<FEntityQueryRequest>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::EntityQueryRequest; }
-};
-
-template<> struct TVariantTraits<FMetrics>
-{
-	static CONSTEXPR EVariantTypes GetType() { return ESpatialVariantTypes::Metrics; }
-};
-
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 {
@@ -170,16 +36,16 @@ public:
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
 	// Worker Connection Interface
-	Worker_OpList* GetOpList();
+	TArray<Worker_OpList*> GetOpList();
 	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
-	Worker_RequestId SendCreateEntityRequest(uint32_t ComponentCount, const Worker_ComponentData* Components, const Worker_EntityId* EntityId);
+	Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId);
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
 	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate);
 	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
-	void SendCommandFailure(Worker_RequestId RequestId, const char* Message = "");
-	void SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message);
-	void SendComponentInterest(Worker_EntityId EntityId, const TArray<Worker_InterestOverride>& ComponentInterest);
+	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
+	void SendLogMessage(const uint8_t Level, const TCHAR* LoggerName, const TCHAR* Message);
+	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
 	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
 	void SendMetrics(const Worker_Metrics* Metrics);
 
@@ -217,12 +83,21 @@ private:
 	// Begin FRunnable Interface
 	virtual bool Init();
 	virtual uint32 Run();
-	virtual void Exit();
 	virtual void Stop();
 	// End FRunnable Interface
 
-	FRunnableThread* WorkerThread;
+	void InitializeWorkerThread();
+	FRunnableThread* Thread;
+	FThreadSafeBool KeepRunning = true;
+
+	void QueueLatestOpList();
+	void ProcessOutgoingMessages();
+
+	template <typename T>
+	void QueueOutgoingMessage(const T& Message);
 
 	TQueue<Worker_OpList*> OpListQueue;
-	TQueue<FVariant> OutgoingMessagesQueue;
+	TQueue<FOutgoingMessageWrapper> OutgoingMessagesQueue;
+
+	Worker_RequestId NextRequestId = 0;
 };
