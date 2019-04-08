@@ -72,7 +72,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bFirstTick(true)
 	, bInterestDirty(false)
 	, NetDriver(nullptr)
-	, LastSpatialPosition(FVector::ZeroVector)
+	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, bCreatingNewEntity(false)
 {
 }
@@ -305,7 +305,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	// Update SpatialOS position.
-	if (!bCreatingNewEntity && !PlayerController && !Cast<APlayerState>(Actor))
+	if (!bCreatingNewEntity)
 	{
 		UpdateSpatialPosition();
 	}
@@ -706,40 +706,51 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
 	// of the PlayerController and PlayerState at the same time as the pawn.
 
-	// Check that it has moved sufficiently far to be updated
-	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
-	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
-	if (FVector::DistSquared(ActorSpatialPosition, LastSpatialPosition) < SpatialPositionThreshold)
+	// If we have an Owner or a NetConnection but are NOT a PlayerController, don't try updating.
+	if ((Actor->GetOwner() != nullptr || Actor->GetNetConnection()) && !Actor->IsA<APlayerController>())
 	{
 		return;
 	}
 
-	LastSpatialPosition = ActorSpatialPosition;
-	Sender->SendPositionUpdate(EntityId, LastSpatialPosition);
-
-	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
-	if (APawn* Pawn = Cast<APawn>(Actor))
+	if ((NetDriver->Time - TimeSinceLastPositionUpdate) < 1.0f)
 	{
-		if (AController* Controller = Pawn->GetController())
-		{
-			if (USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller)))
-			{
-				bool bHasControllerAuthority = NetDriver->StaticComponentView->HasAuthority(ControllerActorChannel->GetEntityId(), SpatialConstants::POSITION_COMPONENT_ID);
-				if (bHasControllerAuthority)
-				{
-					Sender->SendPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
-				}
-			}
+		return;
+	}
 
-			if (USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller->PlayerState)))
-			{
-				bool bHasPlayerStateAuthority = NetDriver->StaticComponentView->HasAuthority(PlayerStateActorChannel->GetEntityId(), SpatialConstants::POSITION_COMPONENT_ID);
-				if (bHasPlayerStateAuthority)
-				{
-					Sender->SendPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
-				}
-			}
+	// Check that it has moved sufficiently far to be updated
+	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
+	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
+	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) < SpatialPositionThreshold)
+	{
+		return;
+	}
+
+	LastPositionSinceUpdate = ActorSpatialPosition;
+	TimeSinceLastPositionUpdate = NetDriver->Time;
+
+	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+	{
+		if (APawn* Pawn = PlayerController->GetPawn())
+		{
+			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), LastPositionSinceUpdate);
 		}
+	}
+}
+
+void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId EntityId, const FVector& NewPosition)
+{
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		Sender->SendPositionUpdate(EntityId, NewPosition);
+	}
+
+	for (const auto& Child : InActor->Children)
+	{
+		// EntityId of child could be 0 which is fine. We still want to update the child 
+		// since it potentially might have children that have entity ids.
+		SendPositionUpdate(Child, NetDriver->PackageMap->GetEntityIdFromObject(Child), NewPosition);
 	}
 }
 
