@@ -68,6 +68,10 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 		return;
 	}
 
+	// Create InternalWorkerConnection
+
+	// Connect using InternalWorkerConnection
+
 	switch (GetConnectionType())
 	{
 	case SpatialConnectionType::Receptionist:
@@ -512,6 +516,7 @@ void USpatialWorkerConnection::Stop()
 
 void USpatialWorkerConnection::InitializeWorkerThread()
 {
+	// TODO: Assert main thread
 	Thread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0, TPri_AboveNormal);
 	check(Thread);
 }
