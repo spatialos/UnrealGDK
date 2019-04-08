@@ -1,5 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#pragma once
+
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SpatialWorkerFlags.generated.h"
 
