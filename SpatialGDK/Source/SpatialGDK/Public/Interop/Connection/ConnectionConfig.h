@@ -15,7 +15,7 @@ struct FConnectionConfig
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_TCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
@@ -30,7 +30,6 @@ struct FConnectionConfig
 		WorkerType = SpatialConstants::ClientWorkerType;
 		UseExternalIp = true;
 #endif
-
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
@@ -41,13 +40,6 @@ struct FConnectionConfig
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
 		}
-#if !(PLATFORM_PS4 || PLATFORM_XBOXONE)
-		// RakNet is not compiled for console platforms.
-		else if (LinkProtocolString == TEXT("RakNet"))
-		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
-		}
-#endif // !(PLATFORM_PS4 || PLATFORM_XBOXONE)
 	}
 
 	FString WorkerId;
