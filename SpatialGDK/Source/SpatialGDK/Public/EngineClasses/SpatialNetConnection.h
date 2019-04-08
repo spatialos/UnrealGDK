@@ -63,14 +63,8 @@ public:
 	Worker_EntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
 
+	class ULatencyManager* LatencyManager;
 
-
-	void InitPing(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
-	void DisablePing();
-	void SendPingOrPong(uint32 PingId, Worker_ComponentId ComponentId);
-	void RemoveExpiredPings();
-
-	uint32 CurrentPingID;
-	FTimerHandle PingTimer;
-	TMap<uint32, float> SentPingTimestamps;
+	void SetupLatencyManager(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
+	void DisableLatencyManager();
 };

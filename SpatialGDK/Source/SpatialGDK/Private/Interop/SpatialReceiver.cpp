@@ -20,6 +20,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
+#include "Utils/LatencyManager.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/ErrorCodeRemapping.h"
 
@@ -213,7 +214,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 	{
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Connection != nullptr)
 		{
-			Connection->InitPing(TimerManager, Op.entity_id);
+			Connection->SetupLatencyManager(TimerManager, Op.entity_id);
 		}
 		else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 		{
@@ -223,7 +224,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 			}
 			if (Connection != nullptr)
 			{
-				Connection->DisablePing();
+				Connection->DisableLatencyManager();
 			}
 		}
 	}
