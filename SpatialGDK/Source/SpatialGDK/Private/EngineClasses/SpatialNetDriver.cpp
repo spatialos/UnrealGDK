@@ -110,9 +110,6 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		return;
 	}
 
-	// Set the timer manager.
-	TimerManager = &GameInstance->GetTimerManager();
-
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
@@ -192,9 +189,26 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	}
 }
 
+void USpatialNetDriver::InitializeSpatialOutputDevice()
+{
+	int32 PIEIndex = -1; // -1 is Unreal's default index when not using PIE
+#if WITH_EDITOR
+	if (IsServer())
+	{
+		PIEIndex = GEngine->GetWorldContextFromWorldChecked(GetWorld()).PIEInstance;
+	}
+	else
+	{
+		PIEIndex = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this).PIEInstance;
+	}
+#endif //WITH_EDITOR
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"), PIEIndex);
+}
+
 void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
-	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
+	InitializeSpatialOutputDevice();
+
 	Dispatcher = NewObject<USpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
@@ -209,15 +223,15 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	ClassInfoManager->Init(this);
 	Dispatcher->Init(this);
 	Sender->Init(this);
-	Receiver->Init(this, TimerManager);
-	GlobalStateManager->Init(this, TimerManager);
+	Receiver->Init(this, &TimerManager);
+	GlobalStateManager->Init(this, &TimerManager);
 	SnapshotManager->Init(this);
-	PlayerSpawner->Init(this, TimerManager);
+	PlayerSpawner->Init(this, &TimerManager);
 
 	// Entity Pools should never exist on clients
 	if (IsServer())
 	{
-		EntityPool->Init(this, TimerManager);
+		EntityPool->Init(this, &TimerManager);
 	}
 }
 
@@ -1177,6 +1191,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
+	// Tick the timer manager
+	{
+		TimerManager.Tick(DeltaTime);
+	}
+
 	Super::TickFlush(DeltaTime);
 }
 
@@ -1452,6 +1471,11 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId)
 	EntityToActorChannel.FindAndRemoveChecked(EntityId);
 }
 
+TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityToActorChannelMap()
+{
+	return EntityToActorChannel;
+}
+
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
@@ -1575,7 +1599,7 @@ void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType
 void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay)
 {
 	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(RetryTimer, [this, EntityId]()
+	TimerManager.SetTimer(RetryTimer, [this, EntityId]()
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
@@ -1586,12 +1610,6 @@ void USpatialNetDriver::HandleOnConnected()
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Succesfully connected to SpatialOS"));
 	OnConnectedToSpatialOS();
 	OnConnected.Broadcast();
-}
-
-void USpatialNetDriver::HandleOnDisconnected(const FString& Reason)
-{
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
-	OnDisconnected.Broadcast(Reason);
 }
 
 void USpatialNetDriver::HandleOnConnectionFailed(const FString& Reason)

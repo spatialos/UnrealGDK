@@ -6,12 +6,10 @@
 #include "Serialization/BitWriter.h"
 
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialConstants.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-using WorkerAttributeSet = TArray<FString>;
-using WorkerRequirementSet = TArray<WorkerAttributeSet>;
 
 using StringToEntityMap = TMap<FString, Worker_EntityId>;
 
@@ -20,17 +18,19 @@ namespace improbable
 
 inline void AddStringToSchema(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
 {
-	FTCHARToUTF8 CStrConvertion(*Value);
-	uint32 StringLength = CStrConvertion.Length();
+	FTCHARToUTF8 CStrConversion(*Value);
+	uint32 StringLength = CStrConversion.Length();
 	uint8* StringBuffer = Schema_AllocateBuffer(Object, sizeof(char) * StringLength);
-	FMemory::Memcpy(StringBuffer, CStrConvertion.Get(), sizeof(char) * StringLength);
+	FMemory::Memcpy(StringBuffer, CStrConversion.Get(), sizeof(char) * StringLength);
 	Schema_AddBytes(Object, Id, StringBuffer, sizeof(char) * StringLength);
 }
 
 inline FString IndexStringFromSchema(const Schema_Object* Object, Schema_FieldId Id, uint32 Index)
 {
 	int32 StringLength = (int32)Schema_IndexBytesLength(Object, Id, Index);
-	return FString(StringLength, UTF8_TO_TCHAR(Schema_IndexBytes(Object, Id, Index)));
+	const uint8_t* Bytes = Schema_IndexBytes(Object, Id, Index);
+	FUTF8ToTCHAR FStringConversion(reinterpret_cast<const ANSICHAR*>(Bytes), StringLength);
+	return FString(FStringConversion.Length(), FStringConversion.Get());
 }
 
 inline FString GetStringFromSchema(const Schema_Object* Object, Schema_FieldId Id)

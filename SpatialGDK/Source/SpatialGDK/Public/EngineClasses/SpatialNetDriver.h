@@ -6,6 +6,7 @@
 #include "GameFramework/OnlineReplStructs.h"
 #include "IpNetDriver.h"
 #include "OnlineSubsystemNames.h"
+#include "TimerManager.h"
 #include "UObject/CoreOnline.h"
 
 #include "Interop/Connection/ConnectionConfig.h"
@@ -47,9 +48,13 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	GENERATED_BODY()
 
 public:
+	// Begin UObject Interface
 	virtual void PostInitProperties() override;
+	// End UObject Interface
 
+	// Begin FExec Interface
 	virtual bool Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar = *GLog) override;
+	// End FExec Interface
 
 	// Begin UNetDriver interface.
 	virtual bool InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error) override;
@@ -82,6 +87,7 @@ public:
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId);
+	TMap<Worker_EntityId_Key, USpatialActorChannel*>& GetEntityToActorChannelMap();
 
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
@@ -90,13 +96,10 @@ public:
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	void HandleOnConnected();
-	void HandleOnDisconnected(const FString& Reason);
 	void HandleOnConnectionFailed(const FString& Reason);
 
 	// Invoked when this worker has successfully connected to SpatialOS
 	FOnConnectedEvent OnConnected;
-	// Invoked when this worker has disconnected from SpatialOS, both when initiated by this worker and when disconnected by the runtime
-	FOnDisconnectedEvent OnDisconnected;
 	// Invoked when this worker fails to initiate a connection to SpatialOS
 	FOnConnectionFailedEvent OnConnectionFailed;
 
@@ -156,7 +159,7 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 
-	FTimerManager* TimerManager;
+	FTimerManager TimerManager;
 
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
@@ -169,6 +172,7 @@ private:
 	UFUNCTION()
 	void OnConnectedToSpatialOS();
 
+	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
 
 	void CreateServerSpatialOSNetConnection();

@@ -16,6 +16,7 @@
 
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -428,6 +429,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 {
 	FString Text;
 	TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
+	bool bUsingQBI = GetDefault<USpatialGDKSettings>()->bUsingQBI;
 
 	// Populate json file for launch config
 	Writer->WriteObjectStart(); // Start of json
@@ -454,7 +456,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 				Writer->WriteObjectEnd();
 				Writer->WriteObjectStart();
 					Writer->WriteValue(TEXT("name"), TEXT("enable_chunk_interest"));
-					Writer->WriteValue(TEXT("value"), TEXT("false"));
+					Writer->WriteValue(TEXT("value"), bUsingQBI ? TEXT("false") : TEXT("true"));
 				Writer->WriteObjectEnd();
 			Writer->WriteArrayEnd();
 			Writer->WriteObjectStart(TEXT("snapshots"));

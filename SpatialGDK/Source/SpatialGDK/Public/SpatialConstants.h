@@ -5,14 +5,10 @@
 #include "UObject/Script.h"
 
 #include "Schema/UnrealObjectRef.h"
+#include "SpatialCommonTypes.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
-
-// IMPORTANT: This is required for Linux builds to succeed - don't remove!
-// Worker_EntityId from the Worker SDK resolves to a long on Linux.
-// These are not a type of key supported by TMap.
-using Worker_EntityId_Key = int64;
 
 enum ESchemaComponentType : int32
 {
@@ -150,8 +146,15 @@ namespace SpatialConstants
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
-	static const FString ClientWorkerType = TEXT("UnrealClient");
 	static const FString ServerWorkerType = TEXT("UnrealWorker");
+	static const FString ClientWorkerType = TEXT("UnrealClient");
+
+	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ServerWorkerType};
+	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ClientWorkerType};
+
+	const WorkerRequirementSet UnrealServerPermission{ {UnrealServerAttributeSet} };
+	const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
+	const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
 	static const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 	static const FString SnapshotURLOption = TEXT("snapshot=");
@@ -167,4 +170,7 @@ namespace SpatialConstants
 	const uint16 DEFAULT_PORT = 7777;
 
 	const float ENTITY_QUERY_RETRY_WAIT_SECONDS = 3.0f;
+
+	const Worker_ComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
+	const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
 }
