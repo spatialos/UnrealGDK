@@ -100,7 +100,6 @@ FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const F
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
 		UObject* Subobject = StaticFindObjectFast(UObject::StaticClass(), Actor, SubobjectInfoPair.Value->SubobjectName);
-
 		uint32 Offset = SubobjectInfoPair.Key;
 
 		if (Subobject != nullptr && Subobject->IsPendingKill() == false && Subobject->IsSupportedForNetworking())
