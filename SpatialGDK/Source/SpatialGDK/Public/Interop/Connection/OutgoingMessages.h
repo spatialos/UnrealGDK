@@ -40,7 +40,7 @@ struct FCreateEntityRequest : FOutgoingMessage
 {
 	FCreateEntityRequest(TArray<Worker_ComponentData>&& InComponents, const Worker_EntityId* InEntityId)
 		: FOutgoingMessage(EOutgoingMessageType::CreateEntityRequest)
-		, Components(InComponents)
+		, Components(MoveTemp(InComponents))
 		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
 	{}
 
@@ -127,7 +127,7 @@ struct FComponentInterest : FOutgoingMessage
 	FComponentInterest(const Worker_EntityId& InEntityId, TArray<Worker_InterestOverride>&& InInterests)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentInterest)
 		, EntityId(InEntityId)
-		, Interests(InInterests)
+		, Interests(MoveTemp(InInterests))
 	{}
 
 	const Worker_EntityId EntityId;

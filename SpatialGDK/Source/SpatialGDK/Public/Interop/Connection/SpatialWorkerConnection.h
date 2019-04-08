@@ -65,7 +65,6 @@ private:
 	void OnPreConnectionFailure(const FString& Reason);
 	void OnConnectionFailure();
 
-	Worker_ConnectionParameters CreateConnectionParameters(FConnectionConfig& Config);
 	SpatialConnectionType GetConnectionType() const;
 
 	void CacheWorkerAttributes();
