@@ -16,7 +16,7 @@ If you are ready to start developing your own game with the GDK, follow the step
 
 ### Create a new project using the Starter Template
 
-After [building the Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork), in **File Explorer**, navigate to `UnrealEngine\Engine\Binaries\Win64`and double-click UE4Editor.exe to open the Unreal Editor. 
+After [building the Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork), in **File Explorer**, navigate to `UnrealEngine\Engine\Binaries\Win64`and double-click `UE4Editor.exe` to open the Unreal Editor.
 
 1. In the [Project Browser](https://docs.unrealengine.com/en-us/Engine/Basics/Projects/Browser) window, select the **New Project** tab and then the **C++ tab**. 
 2. In this tab, select **SpatialOS GDK Starter**. 
