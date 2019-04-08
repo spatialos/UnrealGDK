@@ -11,7 +11,6 @@
 
 namespace improbable
 {
-
 	struct ServerPing : Component
 	{
 		static const Worker_ComponentId ComponentId = SpatialConstants::SERVER_PING_COMPONENT_ID;
@@ -49,4 +48,4 @@ namespace improbable
 			return Data;
 		}
 	};
-}
+} // ::improbable

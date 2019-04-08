@@ -179,7 +179,7 @@ void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 	HandleActorAuthority(Op);
 }
 
-void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& Op, APlayerController* PlayerController)
+void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, const APlayerController* PlayerController)
 {
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection());
 	bool bIsServer = NetDriver->IsServer();
