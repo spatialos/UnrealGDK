@@ -40,6 +40,10 @@ struct FConnectionConfig
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
 		}
+		else if (!LinkProtocolString.IsEmpty())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
+		}
 	}
 
 	FString WorkerId;
