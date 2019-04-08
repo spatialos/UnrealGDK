@@ -42,7 +42,7 @@ To build the GDK for Unreal you need the following software installed on your ma
 
   - The Windows SDK 8.1 provides libraries, headers, metadata and tools required for building Windows 10 applications.
 
-- The [**DirectX End-User Runtime**](https://www.microsoft.com/en-gb/download/details.aspx?id=35)
+- The [**DirectX End-User Runtimes (June 2010)**](https://www.microsoft.com/en-us/download/details.aspx?id=8109)
 
   - The DirectX End-User Runtime is used to run built out Unreal Engine 4 clients on Windows.
 
