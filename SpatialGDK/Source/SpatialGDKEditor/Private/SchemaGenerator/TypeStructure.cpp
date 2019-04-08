@@ -277,8 +277,10 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				continue;
 			}
 
-			// Check whether the owner of this value is the CDO itself.
-			if (Value->GetOuter() == ContainerCDO)
+			// Check whether the owner is the CDO itself or the parent of the CDO.
+			// (it also covers cases when the CDO is a Blueprint derived from the owner class)
+			if(Value->GetOuter()->HasAnyFlags(RF_ClassDefaultObject) &&
+				ContainerCDO->GetClass()->IsChildOf(Value->GetOuter()->GetClass()))
 			{
 				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
