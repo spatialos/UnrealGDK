@@ -4,11 +4,14 @@
 #include "EditorDirectories.h"
 #include "EditorStyleSet.h"
 #include "Framework/Application/SlateApplication.h"
+#include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "SharedPointer.h"
 #include "SpatialGDKEditorCloudLauncherSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "Textures/SlateIcon.h"
 #include "Widgets/Input/SButton.h"
+#include "Widgets/Input/SComboButton.h"
 #include "Widgets/Input/SFilePathPicker.h"
 #include "Widgets/Input/SHyperlink.h"
 #include "Widgets/Input/SSpinBox.h"
@@ -204,6 +207,32 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.OnPathPicked(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked)
 								]
 							]
+							// Primary Deployment Region Picker
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Region"))))
+									.ToolTipText(FText::FromString(FString(TEXT("The region in which the deployment will be deployed."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SComboButton)
+									.OnGetMenuContent(this, &SSpatialGDKSimulatedPlayerDeployment::OnGetPrimaryDeploymentRegionCode)
+									.ContentPadding(FMargin(2.0f, 2.0f))
+									.ButtonContent()
+									[
+										SNew(STextBlock)
+										.Text_UObject(SpatialGDKCloudLauncherSettings, &USpatialGDKEditorCloudLauncherSettings::GetPrimaryRegionCode)
+									]
+								]
+							]
 							// Separator
 							+ SVerticalBox::Slot()
 							.AutoHeight()
@@ -284,6 +313,33 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 									.IsEnabled_UObject(SpatialGDKCloudLauncherSettings, &USpatialGDKEditorCloudLauncherSettings::IsSimulatedPlayersEnabled)
 								]
 							]
+							// Simulated Players Deployment Region Picker
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							[
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Region"))))
+									.ToolTipText(FText::FromString(FString(TEXT("The region in which the simulated player deployment will be deployed."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(SComboButton)
+									.OnGetMenuContent(this, &SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDeploymentRegionCode)
+									.ContentPadding(FMargin(2.0f, 2.0f))
+									.IsEnabled_UObject(SpatialGDKCloudLauncherSettings, &USpatialGDKEditorCloudLauncherSettings::IsSimulatedPlayersEnabled)
+									.ButtonContent()
+									[
+										SNew(STextBlock)
+										.Text_UObject(SpatialGDKCloudLauncherSettings, &USpatialGDKEditorCloudLauncherSettings::GetSimulatedPlayerRegionCode)
+									]
+								]
+							]
 							// Buttons
 							+ SVerticalBox::Slot()
 							.FillHeight(1.0f)
@@ -342,6 +398,55 @@ void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryLaunchConfigPathPicked(const
 {
 	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
 	SpatialGDKCloudLauncherSettings->SetPrimaryLaunchConfigPath(PickedPath);
+}
+
+TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetPrimaryDeploymentRegionCode()
+{
+	FMenuBuilder MenuBuilder(true, NULL);
+	UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
+
+	if (pEnum != nullptr)
+	{
+		for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+		{
+			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
+			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentRegionCodePicked, CurrentEnumValue));
+			MenuBuilder.AddMenuEntry(pEnum->GetEnumTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+		}
+	}
+
+	return MenuBuilder.MakeWidget();
+}
+
+TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDeploymentRegionCode()
+{
+	FMenuBuilder MenuBuilder(true, NULL);
+	UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
+
+	if (pEnum != nullptr)
+	{
+		for (int32 i = 0; i < pEnum->NumEnums() - 1; i++)
+		{
+			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
+			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerDeploymentRegionCodePicked, CurrentEnumValue));
+			MenuBuilder.AddMenuEntry(pEnum->GetEnumTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+		}
+	}
+	
+	return MenuBuilder.MakeWidget();
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentRegionCodePicked(const int64 RegionCodeEnumValue)
+{
+	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
+	SpatialGDKCloudLauncherSettings->SetPrimaryRegionCode((ERegionCode::Type) RegionCodeEnumValue);
+
+}
+
+void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerDeploymentRegionCodePicked(const int64 RegionCodeEnumValue)
+{
+	USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetMutableDefault<USpatialGDKEditorCloudLauncherSettings>();
+	SpatialGDKCloudLauncherSettings->SetSimulatedPlayerRegionCode((ERegionCode::Type) RegionCodeEnumValue);
 }
 
 void SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerDeploymentNameCommited(const FText& InText, ETextCommit::Type InCommitType)

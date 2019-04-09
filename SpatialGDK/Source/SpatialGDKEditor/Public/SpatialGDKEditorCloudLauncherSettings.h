@@ -5,8 +5,24 @@
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
 #include "SpatialGDKEditorSettings.h"
+#include "UObject/Package.h"
 
 #include "SpatialGDKEditorCloudLauncherSettings.generated.h"
+
+
+/**
+* Enumerates available Region Codes
+*/
+UENUM()
+namespace ERegionCode
+{
+	enum Type
+	{
+		US = 1,
+		EU,
+		AP,
+	};
+}
 
 UCLASS(config = SpatialGDKEditorCloudLauncherSettings, defaultconfig)
 class SPATIALGDKEDITOR_API USpatialGDKEditorCloudLauncherSettings : public UObject
@@ -32,6 +48,9 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
 	FFilePath SnapshotPath;
 
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Region"))
+	TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
+
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (ConfigRestartRequired = false, DisplayName = "Include simulated players"))
 	bool bSimulatedPlayersIsEnabled;
 
@@ -43,9 +62,13 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Number of simulated players"))
 	uint32 NumberOfSimulatedPlayers;
 
+	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Region"))
+	TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
+
 	static bool IsAssemblyNameValid(const FString& Name);
 	static bool IsProjectNameValid(const FString& Name);
 	static bool IsDeploymentNameValid(const FString& Name);
+	static bool IsRegionCodeValid(const ERegionCode::Type RegionCode);
 
 public:
 	FString GetProjectNameFromSpatial() const;
@@ -84,6 +107,32 @@ public:
 		return SnapshotPath.FilePath.IsEmpty()
 			? FPaths::Combine(SpatialEditorSettings->GetSpatialOSSnapshotFolderPath(), SpatialEditorSettings->GetSpatialOSSnapshotFile())
 			: SnapshotPath.FilePath;
+	}
+
+	void SetPrimaryRegionCode(const ERegionCode::Type RegionCode);
+	FORCEINLINE FText GetPrimaryRegionCode() const
+	{
+		UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
+
+		if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
+		{
+			return FText::FromString(TEXT("Invalid"));
+		}
+
+		return pEnum->GetEnumTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
+	}
+
+	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);
+	FORCEINLINE FText GetSimulatedPlayerRegionCode() const
+	{
+		UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
+
+		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
+		{
+			return FText::FromString(TEXT("Invalid"));
+		}
+
+		return pEnum->GetEnumTextByValue(static_cast<int64>(SimulatedPlayerDeploymentRegionCode.GetValue()));
 	}
 
 	void SetSimulatedPlayersEnabledState(bool IsEnabled);
