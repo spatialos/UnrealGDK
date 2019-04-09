@@ -55,6 +55,10 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Schema", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
 	FDirectoryPath GeneratedSchemaOutputFolder;
 
+	/** Command line flags passed in to `spatial local launch`.*/
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Command line flags for local launch"))
+	TArray<FString> SpatialOSCommandLineLaunchFlags;
+
 public:
 
 	/** If checked, placeholder entities will be added to the snapshot on generation */
@@ -95,6 +99,19 @@ public:
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
 			: GeneratedSchemaOutputFolder.Path;
 	}
-	
+
+	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
+	{
+		FString CommandLineLaunchFlags = TEXT("");
+
+		for (FString Flag : SpatialOSCommandLineLaunchFlags)
+		{
+			Flag = Flag.StartsWith(TEXT("--")) ? Flag : TEXT("--") + Flag;
+			CommandLineLaunchFlags += Flag + TEXT(" ");
+		}
+
+		return CommandLineLaunchFlags;
+	}
+
 	virtual FString ToString();
 };

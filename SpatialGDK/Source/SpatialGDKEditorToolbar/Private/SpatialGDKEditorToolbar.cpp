@@ -309,7 +309,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s ^& pause"), *LaunchConfig);
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
@@ -442,10 +442,6 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 			Writer->WriteValue(TEXT("chunk_edge_length_meters"), 50);
 			Writer->WriteValue(TEXT("streaming_query_interval"), 4);
 			Writer->WriteArrayStart(TEXT("legacy_flags"));
-				Writer->WriteObjectStart();
-					Writer->WriteValue(TEXT("name"), TEXT("streaming_query_diff"));
-					Writer->WriteValue(TEXT("value"), TEXT("true"));
-				Writer->WriteObjectEnd();
 				Writer->WriteObjectStart();
 					Writer->WriteValue(TEXT("name"), TEXT("bridge_qos_max_timeout"));
 					Writer->WriteValue(TEXT("value"), TEXT("0"));
