@@ -60,7 +60,7 @@ public:
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
-	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId);
+	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
@@ -73,7 +73,7 @@ public:
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
 	void ResolveOutgoingRPCs(UObject* Object);
 
-	bool UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId);
+	bool UpdateEntityACLs(Worker_EntityId EntityId, FString OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
@@ -93,7 +93,6 @@ private:
 	void WriteRpcPayload(Schema_Object* Object, uint32 Offset, Schema_FieldId Index, FSpatialNetBitWriter& PayloadWriter);
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
-	FString GetOwnerWorkerAttribute(AActor* Actor);
 
 private:
 	UPROPERTY()

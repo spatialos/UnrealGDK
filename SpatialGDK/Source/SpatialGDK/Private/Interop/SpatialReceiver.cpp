@@ -109,13 +109,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
 
-	if (!bInCriticalSection)
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received a dynamically added component, these are currently unsupported - component ID: %u entity ID: %lld"),
-			Op.data.component_id, Op.entity_id);
-		return;
-	}
-
 	TSharedPtr<improbable::Component> Data;
 
 	switch (Op.data.component_id)
@@ -148,6 +141,12 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
  		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
 		return;
 	default:
+		if (!bInCriticalSection)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("Received a dynamically added component, these are currently unsupported - component ID: %u entity ID: %lld"),
+				Op.data.component_id, Op.entity_id);
+			return;
+		}
 		Data = MakeShared<improbable::DynamicComponent>(Op.data);
 		break;
 	}
@@ -299,6 +298,8 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
 			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+
+			UE_LOG(LogTemp, Warning, TEXT("Hey! AuthorityOp: Set %s's role to %s"), *Actor->GetName(), Actor->Role == ROLE_SimulatedProxy ? TEXT("sim proxy") : TEXT("auto proxy"));
 		}
 	}
 
@@ -433,7 +434,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		if (!NetDriver->IsServer())
 		{
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-			Sender->SendComponentInterest(EntityActor, EntityId);
+			Sender->SendComponentInterest(EntityActor, EntityId, Channel->IsOwnedByWorker());
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.
@@ -1057,12 +1058,17 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 	ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
+
+	ENetRole Role = TargetObject->IsA<APawn>() ? Cast<APawn>(TargetObject)->Role : ROLE_None;
+
 	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel, bIsHandover);
 
 	// This is a temporary workaround, see UNR-841:
 	// If the update includes tearoff, close the channel and clean up the entity.
 	if (TargetObject->IsA<AActor>() && ClassInfoManager->GetCategoryByComponentId(ComponentUpdate.component_id) == SCHEMA_Data)
 	{
+		if (TargetObject->IsA<APawn>() && Role != Cast<APawn>(TargetObject)->Role) UE_LOG(LogTemp, Warning, TEXT("Hey! ComponentUpdate: Set %s's role to %s"), *TargetObject->GetName(), Cast<APawn>(TargetObject)->Role == ROLE_SimulatedProxy ? TEXT("sim proxy") : TEXT("auto proxy"));
+
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		// Check if bTearOff has been set to true

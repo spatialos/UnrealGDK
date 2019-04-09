@@ -22,6 +22,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
@@ -71,6 +72,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bFirstTick(true)
 	, bInterestDirty(false)
+	, bNetOwned(false)
 	, NetDriver(nullptr)
 	, LastSpatialPosition(FVector::ZeroVector)
 	, bCreatingNewEntity(false)
@@ -796,39 +798,58 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 	});
 }
 
+void USpatialActorChannel::ServerViewTick()
+{
+	if (!IsAuthoritativeServer())
+	{
+		return;
+	}
+
+	UObject* ControllerCDO = AController::StaticClass()->GetDefaultObject();
+	UObject* PlayerControllerCDO = APlayerController::StaticClass()->GetDefaultObject();
+
+	FString OldOwnerWorkerAttribute = NetOwnerWorkerAttribute;
+	NetOwnerWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
+
+	if (bFirstTick || OldOwnerWorkerAttribute != NetOwnerWorkerAttribute)
+	{
+		bool bSuccess = Sender->UpdateEntityACLs(GetEntityId(), NetOwnerWorkerAttribute);
+
+		if (bSuccess)
+		{
+			bFirstTick = false;
+		}
+		else
+		{
+			// Reset stored worker attribute so we retry setting ACLs next tick.
+			NetOwnerWorkerAttribute = OldOwnerWorkerAttribute;
+		}
+	}
+}
+
+void USpatialActorChannel::ClientViewTick()
+{
+	bool bOldNetOwned = bNetOwned;
+	bNetOwned = IsOwnedByWorker();
+
+	if (bFirstTick || bOldNetOwned != bNetOwned)
+	{
+		Sender->SendComponentInterest(Actor, GetEntityId(), bNetOwned);
+		bFirstTick = false;
+	}
+}
+
 void USpatialActorChannel::SpatialViewTick()
 {
-	if (Actor != nullptr && !Actor->IsPendingKill() && IsReadyForReplication())
+	if (Actor != nullptr && !Actor->IsPendingKill())
 	{
-		bool bOldNetOwned = bNetOwned;
-
-		// Use Actor's connection to determine if client owned
-		bNetOwned = false;
-		if (UNetConnection* NetConnection = Actor->GetNetConnection())
+		if (NetDriver->IsServer())
 		{
-			if (APlayerController* PlayerController = NetConnection->PlayerController)
-			{
-				bNetOwned = PlayerController->PlayerState != nullptr;
-			}
+			ServerViewTick();
 		}
-
-		if (bFirstTick || bOldNetOwned != bNetOwned)
+		else
 		{
-			if (IsAuthoritativeServer())
-			{
-				bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
-
-				if (bFirstTick && bSuccess)
-				{
-					bFirstTick = false;
-				}
-			}
-			else if (!NetDriver->IsServer())
-			{
-				Sender->SendComponentInterest(Actor, GetEntityId());
-
-				bFirstTick = false;
-			}
+			ClientViewTick();
 		}
 	}
 }

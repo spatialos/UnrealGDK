@@ -23,6 +23,7 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
 
@@ -70,7 +71,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
 
-	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
+	FString ClientWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
 
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
 	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
@@ -377,13 +378,11 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 	return ComponentInterest;
 }
 
-void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId EntityId)
+void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId EntityId, bool bNetOwned)
 {
 	check(!NetDriver->IsServer());
 
-	const USpatialActorChannel* const ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
-	const bool bIsNetOwned = ActorChannel && ActorChannel->IsOwnedByWorker();
-	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor, bIsNetOwned));
+	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor, bNetOwned));
 }
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
@@ -847,28 +846,9 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 	}
 }
 
-FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
-{
-	// This should only be executed on the server.
-	check(NetDriver->IsServer());
-
-	// If we don't have an owning connection, there is no assoicated client
-	if (Actor->GetNetConnection() == nullptr)
-	{
-		return FString();
-	}
-
-	if (USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
-	{
-		return SpatialConnection->WorkerAttribute;
-	}
-
-	return FString();
-}
-
 // Authority over the ClientRPC Schema component is dictated by the owning connection of a client.
 // This function updates the authority of that component as the owning connection can change.
-bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
+bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, FString OwnerWorkerAttribute)
 {
 	improbable::EntityAcl* EntityACL = StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId);
 
@@ -883,7 +863,6 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 		return false;
 	}
 
-	FString OwnerWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 

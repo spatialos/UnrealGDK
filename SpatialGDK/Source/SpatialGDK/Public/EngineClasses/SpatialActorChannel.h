@@ -66,6 +66,7 @@ public:
 		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID);
 	}
 
+	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
 	FORCEINLINE bool IsOwnedByWorker() const
 	{
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
@@ -145,6 +146,9 @@ protected:
 	virtual bool CleanUp(const bool bForDestroy) override;
 
 private:
+	void ServerViewTick();
+	void ClientViewTick();
+
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
 
@@ -157,7 +161,11 @@ private:
 	Worker_EntityId EntityId;
 	bool bFirstTick;
 	bool bInterestDirty;
+
+	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;
+	// Used on the server to track when the owner changes.
+	FString NetOwnerWorkerAttribute;
 
 	UPROPERTY(transient)
 	USpatialNetDriver* NetDriver;
