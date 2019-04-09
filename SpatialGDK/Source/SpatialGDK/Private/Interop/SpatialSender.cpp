@@ -317,7 +317,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	{
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
 		{
-			UE_LOG(LogSpatialSender, Log, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
+			UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
 
 			// This is a temporary fix. A task to improve this has been created: UNR-955
 			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the update, to send upon receiving authority.
@@ -390,7 +390,7 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 #if !UE_BUILD_SHIPPING
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
+		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 		return;
 	}
 #endif
@@ -839,7 +839,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 
 			// We can guarantee that SendRPC won't populate OutgoingRPCs[Object] whilst we're iterating through it,
 			// because Object has been resolved when we call ResolveOutgoingRPCs.
-			UE_LOG(LogSpatialSender, Log, TEXT("Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams->TargetObject->GetName(), *RPCParams->Function->GetName());
+			UE_LOG(LogSpatialSender, Verbose, TEXT("Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams->TargetObject->GetName(), *RPCParams->Function->GetName());
 			SendRPC(RPCParams);
 		}
 		OutgoingRPCs.Remove(Object);

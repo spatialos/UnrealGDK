@@ -153,6 +153,7 @@ private:
 	bool IsSingletonEntity();
 
 	void UpdateSpatialPosition();
+	void SendPositionUpdate(AActor* InActor, Worker_EntityId EntityId, const FVector& NewPosition);
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
@@ -176,7 +177,8 @@ private:
 	UPROPERTY(transient)
 	class USpatialReceiver* Receiver;
 
-	FVector LastSpatialPosition;
+	FVector LastPositionSinceUpdate;
+	float TimeWhenPositionLastUpdated;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains
