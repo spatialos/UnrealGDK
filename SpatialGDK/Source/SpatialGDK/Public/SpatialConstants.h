@@ -154,6 +154,10 @@ namespace SpatialConstants
 	static const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 	static const FString SnapshotURLOption = TEXT("snapshot=");
 
+	static const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+	static const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
+	static const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
+
 	inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	{
 		// Double the time to wait on each failure.

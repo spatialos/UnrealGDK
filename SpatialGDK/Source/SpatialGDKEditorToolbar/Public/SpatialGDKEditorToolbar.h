@@ -13,7 +13,9 @@ class FToolBarBuilder;
 class FMenuBuilder;
 class FUICommandList;
 class USoundBase;
+class SSpatialGDKSimulatedPlayerDeployment;
 class FSpatialGDKEditor;
+class SWindow;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
 
@@ -54,6 +56,8 @@ private:
 	void SchemaGenerateButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
+	void ShowSimulatedPlayerDeploymentDialog();
+
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
@@ -84,4 +88,7 @@ private:
 
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
+
+	TSharedPtr<SWindow> SimulatedPlayerDeploymentWindowPtr;
+	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
 };
