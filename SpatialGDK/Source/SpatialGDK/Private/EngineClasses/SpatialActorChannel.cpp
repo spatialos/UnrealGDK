@@ -74,7 +74,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bInterestDirty(false)
 	, NetDriver(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
-	, TimeSinceLastPositionUpdate(0)
+	, TimeWhenPositionLastUpdated(0)
 	, bCreatingNewEntity(false)
 {
 }
@@ -714,7 +714,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 
 	// Check that there has been a sufficient amount of time since the last update.
-	if ((NetDriver->Time - TimeSinceLastPositionUpdate) < (1.0 / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+	if ((NetDriver->Time - TimeWhenPositionLastUpdated) < (1.0 / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
 	{
 		return;
 	}
@@ -728,7 +728,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 
 	LastPositionSinceUpdate = ActorSpatialPosition;
-	TimeSinceLastPositionUpdate = NetDriver->Time;
+	TimeWhenPositionLastUpdated = NetDriver->Time;
 
 	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
 

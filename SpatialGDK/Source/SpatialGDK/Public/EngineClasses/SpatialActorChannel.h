@@ -170,7 +170,7 @@ private:
 	class USpatialReceiver* Receiver;
 
 	FVector LastPositionSinceUpdate;
-	float TimeSinceLastPositionUpdate;
+	float TimeWhenPositionLastUpdated;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains
