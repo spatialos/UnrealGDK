@@ -63,6 +63,7 @@ public:
 	Worker_EntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
 
+	UPROPERTY(transient)
 	class ULatencyManager* LatencyManager;
 
 	void SetupLatencyManager(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);

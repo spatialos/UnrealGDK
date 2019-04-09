@@ -223,6 +223,7 @@ private:
 	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 
 	TMap<Worker_EntityId_Key, HeartbeatDelegate> HeartbeatDelegates;
+//	TFunction<void(Worker_EntityId)> 
 	TMap<Worker_EntityId_Key, ServerPingDelegate> ServerPingDelegates;
 	TMap<Worker_EntityId_Key, ClientPongDelegate> ClientPongDelegates;
 };

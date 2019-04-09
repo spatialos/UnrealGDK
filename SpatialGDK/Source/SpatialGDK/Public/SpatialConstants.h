@@ -128,8 +128,7 @@ namespace SpatialConstants
 	const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID					= 1;
 	const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
 
-	const Schema_FieldId PING_EVENT_ID										= 1;
-	const Schema_FieldId PING_ID_OFFSET_ID									= 1;
+	const Schema_FieldId PING_PONG_EVENT_ID									= 1;
 
 	// UnrealRPCPayload Field IDs
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID = 1;

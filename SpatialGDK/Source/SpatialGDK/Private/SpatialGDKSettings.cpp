@@ -11,8 +11,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityPoolRefreshCount(2000)
 	, HeartbeatIntervalSeconds(2.0f)
 	, HeartbeatTimeoutSeconds(10.0f)
-	, PingIntervalSeconds(0.5f)
-	, PingTimeoutSeconds(1.5f)
 	, ActorReplicationRateLimit(0)
 	, bUsingQBI(false)
 {

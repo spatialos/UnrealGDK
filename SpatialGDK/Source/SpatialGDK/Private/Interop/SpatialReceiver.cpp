@@ -207,9 +207,9 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 		}
 	}
 
-	// Initialise Ping for server authoritative over the server ping component and
+	// Initialise Latency Manager for server authoritative over the server ping component and
 	// for the client authoritative over the client pong component
-	if ((bIsServer && Op.component_id == SpatialConstants::SERVER_PING_COMPONENT_ID) ||
+	else if ((bIsServer && Op.component_id == SpatialConstants::SERVER_PING_COMPONENT_ID) ||
 		(!bIsServer && Op.component_id == SpatialConstants::CLIENT_PONG_COMPONENT_ID))
 	{
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Connection != nullptr)

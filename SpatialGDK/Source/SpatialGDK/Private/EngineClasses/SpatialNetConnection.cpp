@@ -201,10 +201,9 @@ void USpatialNetConnection::SetupLatencyManager(FTimerManager* InTimerManager, W
 	if (LatencyManager == nullptr)
 	{
 		LatencyManager = NewObject<ULatencyManager>(this);
-		LatencyManager->Init(Cast<USpatialNetDriver>(Driver), this);
 	}
 
-	LatencyManager->Enable(InTimerManager, InPlayerControllerEntity);
+	LatencyManager->Enable(InPlayerControllerEntity);
 }
 
 void USpatialNetConnection::DisableLatencyManager()

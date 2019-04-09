@@ -42,14 +42,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Heartbeat", meta = (ConfigRestartRequired = false, DisplayName = "Heartbeat Timeout (seconds)"))
 	float HeartbeatTimeoutSeconds;
 
-	/** Time between ping events sent from the authoritative server to clients to measure latency. */
-	UPROPERTY(EditAnywhere, config, Category = "Ping", meta = (ConfigRestartRequired = false, DisplayName = "Ping Interval (seconds)"))
-	float PingIntervalSeconds;
-
-	/** Time that a server should wait after sending a ping event for a corresponding response from the client before the initial ping is disregarded. */
-	UPROPERTY(EditAnywhere, config, Category = "Ping", meta = (ConfigRestartRequired = false, DisplayName = "Ping Timeout (seconds)"))
-	float PingTimeoutSeconds;
-
 	/**
 	 * Limit the number of actors which are replicated per tick to the number specified.
 	 * This acts as a hard limit to the number of actors per frame but nothing else. It's recommended to set this value to around 100~ (experimentation recommended).
