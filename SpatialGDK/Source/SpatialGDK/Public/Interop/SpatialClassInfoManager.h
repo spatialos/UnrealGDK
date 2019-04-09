@@ -56,7 +56,7 @@ struct FClassInfo
 
 	TWeakObjectPtr<UClass> Class;
 
-	TMap<ESchemaComponentType, TArray<UFunction*>> RPCs;
+	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
 
 	TArray<FHandoverPropertyInfo> HandoverProperties;
@@ -82,7 +82,8 @@ public:
 	void Init(USpatialNetDriver* NetDriver);
 
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
-	bool IsSupportedClass(UClass* Class) const;
+	// In PIE, PathName must be NetworkRemapped (bReading = false)
+	bool IsSupportedClass(const FString& PathName) const;
 
 	const FClassInfo& GetOrCreateClassInfoByClass(UClass* Class);
 	const FClassInfo& GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset);
@@ -93,6 +94,11 @@ public:
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 
+	bool IsSublevelComponent(Worker_ComponentId ComponentId);
+
+	UPROPERTY()
+	USchemaDatabase* SchemaDatabase;
+
 private:
 	void CreateClassInfoForClass(UClass* Class);
 
@@ -100,11 +106,7 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
-	UPROPERTY()
-	USchemaDatabase* SchemaDatabase;
-
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
-
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;

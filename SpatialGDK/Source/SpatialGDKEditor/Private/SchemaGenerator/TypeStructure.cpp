@@ -277,8 +277,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				continue;
 			}
 
-			// Check whether the owner of this value is the CDO itself.
-			if (Value->GetOuter() == ContainerCDO)
+			// Check whether the outer is the CDO of the class we're generating for
+			// or the CDO of any of its parent classes.
+			// (this also covers generating schema for a Blueprint derived from the outer's class)
+			UObject* Outer = Value->GetOuter();
+			if ((Outer != nullptr) &&
+				Outer->HasAnyFlags(RF_ClassDefaultObject) &&
+				ContainerCDO->IsA(Outer->GetClass()))
 			{
 				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
@@ -505,10 +510,19 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 
 	// Find the handover properties.
 	uint16 HandoverDataHandle = 1;
-	VisitAllProperties(TypeNode, [&HandoverDataHandle](TSharedPtr<FUnrealProperty> PropertyInfo)
+	VisitAllProperties(TypeNode, [&HandoverDataHandle, &Class](TSharedPtr<FUnrealProperty> PropertyInfo)
 	{
 		if (PropertyInfo->Property->PropertyFlags & CPF_Handover)
 		{
+			if (UStructProperty* StructProp = Cast<UStructProperty>(PropertyInfo->Property))
+			{
+				if (StructProp->Struct->StructFlags & STRUCT_NetDeltaSerializeNative)
+				{
+					// Warn about delta serialization
+					UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("%s in %s uses delta serialization. " \
+						"This is not supported and standard serialization will be used instead."), *PropertyInfo->Property->GetName(), *Class->GetName());
+				}
+			}
 			PropertyInfo->HandoverData = MakeShared<FUnrealHandoverData>();
 			PropertyInfo->HandoverData->Handle = HandoverDataHandle++;
 		}

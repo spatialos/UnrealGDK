@@ -60,7 +60,8 @@ FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
 			if (Value == nullptr)
 			{
 				// At this point, we're unable to resolve a stably-named actor by path. This likely means either the actor doesn't exist, or
-				// it's part of a streaming level that hasn't been streamed in. In either case, there's nothing we can do.
+				// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
+				// So we do the same.
 				FString FullPath;
 				improbable::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
 				UE_LOG(LogSpatialNetBitReader, Verbose, TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: %s %s"),

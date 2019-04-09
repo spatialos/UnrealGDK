@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Troubleshooting
 
 #### Q:
@@ -48,7 +49,7 @@ You're building against an unsupported version of Unreal Engine. Make sure you'r
 My game uses reliable multicast RPCs - why does the SpatialOS GDK for Unreal not support these?
 
 #### A: 
-The underlying implementation of multicast RPCs uses SpatialOS [events](https://docs.improbable.io/reference/latest/shared/glossary#event) (SpatialOS documentation). SpatialOS events can only be sent unreliably. Additionally, the cost of a multicast RPC scales with the number of client-workers present in a deployment, which means they can get very expensive. A better approach would be to send RPCs to only the workers that are close to the broadcasting worker.
+The underlying implementation of multicast RPCs uses SpatialOS [events](https://docs.improbable.io/reference/latest/shared/glossary#event). SpatialOS events can only be sent unreliably. Additionally, the cost of a multicast RPC scales with the number of client-workers present in a deployment, which means they can get very expensive. A better approach would be to send RPCs to only the workers that are close to the broadcasting worker.
 <br/>
 -----
 
@@ -64,7 +65,7 @@ When I build my project, I get the following error: `Unknown class specifier 'Sp
 When I launch my SpatialOS deployment, I receive error messages similar to: `uses component ID 100005 which conflicts with components defined elsewhere.`
 
 #### A:  
-This means you were using the GDK since pre-alpha. To fix the issue, delete the contents of your `spatial/schema` folder, run `Setup.bat` again in the GDK folder, and generate the schemas again. You may also need to update your streaming queries in `spatialos.json`. Refer to our [StarterProject repo](https://github.com/spatialos/UnrealGDKStarterProject) to see an example.
+This means you were using the GDK since pre-alpha. To fix the issue, delete the contents of your `spatial/schema` folder, run `Setup.bat` again in the GDK folder, and generate the schemas again. You may also need to update your streaming queries in `spatialos.json`. Refer to our [Starter Template]({{urlRoot}}/content/get-started/gdk-template) to see an example.
 <br/>
 -----
 

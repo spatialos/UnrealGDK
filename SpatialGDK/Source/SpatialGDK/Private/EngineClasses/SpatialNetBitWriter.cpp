@@ -4,9 +4,11 @@
 
 #include "UObject/WeakObjectPtr.h"
 
+#include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
+#include "Utils/EntityPool.h"
 
 FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects)
 	: FNetBitWriter(InPackageMap, 0)
@@ -46,6 +48,10 @@ FArchive& FSpatialNetBitWriter::operator<<(UObject*& Value)
 			if (Value->IsFullNameStableForNetworking())
 			{
 				NetGUID = PackageMapClient->ResolveStablyNamedObject(Value);
+			}
+			else
+			{
+				NetGUID = PackageMapClient->TryResolveObjectAsEntity(Value);
 			}
 		}
 		ObjectRef = FUnrealObjectRef(PackageMapClient->GetUnrealObjectRefFromNetGUID(NetGUID));

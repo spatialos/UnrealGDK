@@ -4,10 +4,8 @@
 
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
-#include "SocketSubsystem.h"
 #include "TimerManager.h"
 
-#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
@@ -31,26 +29,34 @@ void USpatialPlayerSpawner::Init(USpatialNetDriver* InNetDriver, FTimerManager* 
 
 void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, const char* CallerAttribute, Worker_RequestId RequestId )
 {
-	// Extract spawn parameters.
-	FString URLString = GetStringFromSchema(Payload, 1);
+	FString Attributes = FString{ UTF8_TO_TCHAR(CallerAttribute) };
 
-	FUniqueNetIdRepl UniqueId;
-	TArray<uint8> UniqueIdBytes = GetBytesFromSchema(Payload, 2);
-	FNetBitReader UniqueIdReader(nullptr, UniqueIdBytes.GetData(), UniqueIdBytes.Num() * 8);
-	UniqueIdReader << UniqueId;
+	bool bAlreadyHasPlayer;
+	WorkersWithPlayersSpawned.Emplace(Attributes, &bAlreadyHasPlayer);
 
-	FName OnlinePlatformName = FName(*GetStringFromSchema(Payload, 3));
+	// Accept the player if we have not already accepted a player from this worker.
+	if (!bAlreadyHasPlayer)
+	{
+		// Extract spawn parameters.
+		FString URLString = GetStringFromSchema(Payload, 1);
 
-	// Accept new player.
-	URLString.Append(TEXT("?workerAttribute=")).Append(UTF8_TO_TCHAR(CallerAttribute));
+		FUniqueNetIdRepl UniqueId;
+		TArray<uint8> UniqueIdBytes = GetBytesFromSchema(Payload, 2);
+		FNetBitReader UniqueIdReader(nullptr, UniqueIdBytes.GetData(), UniqueIdBytes.Num() * 8);
+		UniqueIdReader << UniqueId;
 
-	NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
+		FName OnlinePlatformName = FName(*GetStringFromSchema(Payload, 3));
 
+		URLString.Append(TEXT("?workerAttribute=")).Append(Attributes);
+
+		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
+	}
+
+	// Send a successful response if the player has been accepted, either from this request or one in the past.
 	Worker_CommandResponse CommandResponse = {};
 	CommandResponse.component_id = SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID;
 	CommandResponse.schema_type = Schema_CreateCommandResponse(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, 1);
 	Schema_Object* ResponseObject = Schema_GetCommandResponseObject(CommandResponse.schema_type);
-	Schema_AddBool(ResponseObject, 1, true);
 
 	NetDriver->Connection->SendCommandResponse(RequestId, &CommandResponse);
 }
@@ -112,7 +118,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	++NumberOfAttempts;
 }
 
-void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op)
+void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(const Worker_CommandResponseOp& Op)
 {
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{

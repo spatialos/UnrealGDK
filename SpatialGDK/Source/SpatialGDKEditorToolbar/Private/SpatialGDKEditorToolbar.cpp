@@ -16,6 +16,7 @@
 
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -140,12 +141,16 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute));
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute),
+		FIsActionChecked(),
+		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSButtonClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute));
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute),
+		FIsActionChecked(),
+		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction,
@@ -424,6 +429,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 {
 	FString Text;
 	TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
+	bool bUsingQBI = GetDefault<USpatialGDKSettings>()->bUsingQBI;
 
 	// Populate json file for launch config
 	Writer->WriteObjectStart(); // Start of json
@@ -437,16 +443,16 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 			Writer->WriteValue(TEXT("streaming_query_interval"), 4);
 			Writer->WriteArrayStart(TEXT("legacy_flags"));
 				Writer->WriteObjectStart();
-					Writer->WriteValue(TEXT("name"), TEXT("streaming_query_diff"));
-					Writer->WriteValue(TEXT("value"), TEXT("true"));
-				Writer->WriteObjectEnd();
-				Writer->WriteObjectStart();
 					Writer->WriteValue(TEXT("name"), TEXT("bridge_qos_max_timeout"));
 					Writer->WriteValue(TEXT("value"), TEXT("0"));
 				Writer->WriteObjectEnd();
 				Writer->WriteObjectStart();
 					Writer->WriteValue(TEXT("name"), TEXT("bridge_soft_handover_enabled"));
 					Writer->WriteValue(TEXT("value"), TEXT("false"));
+				Writer->WriteObjectEnd();
+				Writer->WriteObjectStart();
+					Writer->WriteValue(TEXT("name"), TEXT("enable_chunk_interest"));
+					Writer->WriteValue(TEXT("value"), bUsingQBI ? TEXT("false") : TEXT("true"));
 				Writer->WriteObjectEnd();
 			Writer->WriteArrayEnd();
 			Writer->WriteObjectStart(TEXT("snapshots"));
@@ -475,7 +481,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 							else
 							{
 								// Find greatest divisor.
-								for (int Divisor = FMath::Sqrt(NumServers); Divisor >= 2; Divisor--)
+								for (int Divisor = FMath::Sqrt(NumServers); Divisor >= 1; Divisor--)
 								{
 									if (NumServers % Divisor == 0)
 									{

@@ -60,8 +60,8 @@ FString USpatialGDKEditorSettings::ToString()
 
 	return FString::Format(TEXT(
 		"ProjectRootFolder={0}, "
-		"bDeleteDynamicEntities={1}"
-		"bGenerateDefaultLaunchConfig={2}"
+		"bDeleteDynamicEntities={1}, "
+		"bGenerateDefaultLaunchConfig={2}, "
 		"SpatialOSLaunchArgument={3}, "
 		"bStopSpatialOnExit={4}, "
 		"SpatialOSSnapshotPath={5}, "
