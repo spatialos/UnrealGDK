@@ -74,8 +74,8 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bInterestDirty(false)
 	, NetDriver(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
-	, bCreatingNewEntity(false)
 	, TimeSinceLastPositionUpdate(0)
+	, bCreatingNewEntity(false)
 {
 }
 
@@ -743,7 +743,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 
 void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId EntityId, const FVector& NewPosition)
 {
-	if (EntityId != SpatialConstants::INVALID_ENTITY_ID)
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
 		Sender->SendPositionUpdate(EntityId, NewPosition);
 	}
