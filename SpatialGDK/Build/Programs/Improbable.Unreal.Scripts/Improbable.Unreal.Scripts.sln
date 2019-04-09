@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Linter", "Linter\Linter.csproj", "{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeploymentLauncher", "DeploymentLauncher\DeploymentLauncher.csproj", "{B879D33B-AA4B-4A13-BCD4-957178C060E7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,8 +29,15 @@ Global
 		{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B879D33B-AA4B-4A13-BCD4-957178C060E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B879D33B-AA4B-4A13-BCD4-957178C060E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B879D33B-AA4B-4A13-BCD4-957178C060E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B879D33B-AA4B-4A13-BCD4-957178C060E7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DE79C414-1A1D-4BC6-B720-9BD77526CFB7}
 	EndGlobalSection
 EndGlobal
