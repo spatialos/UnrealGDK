@@ -18,11 +18,11 @@ namespace Improbable.WorkerCoordinator
                         DisplayName = "SimulatedPlayer"
                     }).Get();
 
-            if (pitResponse.Status != ConnectionStatusCode.Success)
+            if (pitResponse.Status.Code != ConnectionStatusCode.Success)
             {
                 throw new Exception($"Failed to retrieve player identity token.\n" +
-                    $"error code: {pitResponse.Status}\n" +
-                    $"error message: {pitResponse.Error}");
+                    $"error code: {pitResponse.Status.Code}\n" +
+                    $"error message: {pitResponse.Status.Detail}");
             }
 
             return pitResponse.PlayerIdentityToken;
@@ -39,11 +39,11 @@ namespace Improbable.WorkerCoordinator
                     DurationSeconds = 300
                 }).Get();
 
-            if (loginTokensResponse.Status != ConnectionStatusCode.Success)
+            if (loginTokensResponse.Status.Code != ConnectionStatusCode.Success)
             {
                 throw new Exception($"Failed to retrieve any login tokens.\n" +
-                    $"error code: {loginTokensResponse.Status}\n" +
-                    $"error message: {loginTokensResponse.Error}");
+                    $"error code: {loginTokensResponse.Status.Code}\n" +
+                    $"error message: {loginTokensResponse.Status.Detail}");
             }
 
             return loginTokensResponse.LoginTokens;
