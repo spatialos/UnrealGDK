@@ -56,11 +56,11 @@ public:
 	bool bUsingQBI;
 
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
-	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false, DisplayName = "Position Update Frequency"))
+	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false))
 	float PositionUpdateFrequency;
 
 	/** Threshold an Actor needs to move before its SpatialOS Position is updated.*/
-	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false, DisplayName = "Position Distance Threshold"))
+	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false))
 	float PositionDistanceThreshold;
 };
 
