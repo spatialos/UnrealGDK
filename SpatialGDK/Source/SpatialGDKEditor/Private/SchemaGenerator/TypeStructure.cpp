@@ -283,7 +283,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 			UObject* Outer = Value->GetOuter();
 			if ((Outer != nullptr) &&
 				Outer->HasAnyFlags(RF_ClassDefaultObject) &&
-				ContainerCDO->IsA(Outer->GetClass())
+				ContainerCDO->IsA(Outer->GetClass()))
 			{
 				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
