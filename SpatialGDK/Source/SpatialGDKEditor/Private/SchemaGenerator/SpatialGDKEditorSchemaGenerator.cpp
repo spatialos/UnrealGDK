@@ -2,6 +2,7 @@
 
 #include "SpatialGDKEditorSchemaGenerator.h"
 
+#include "Abilities/GameplayAbility.h"
 #include "AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "Components/SceneComponent.h"
@@ -390,6 +391,18 @@ TArray<UClass*> GetAllSupportedClasses()
 			if (FunctionIt->HasAnyFunctionFlags(FUNC_NetFuncFlags))
 			{
 				SupportedClass = *ClassIt;
+			}
+		}
+
+		// Check for replicated GameplayAbilities and print a warning if we find one. The UnrealGDK does not currently support this.
+		if (ClassIt->IsChildOf(UGameplayAbility::StaticClass()))
+		{
+			UClass* AbilityClass = *ClassIt;
+			UGameplayAbility* GameplayAbility = Cast<UGameplayAbility>(AbilityClass->GetDefaultObject());
+
+			if (GameplayAbility->GetReplicationPolicy() == EGameplayAbilityReplicationPolicy::ReplicateYes)
+			{
+				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated GameplayAbility found when generating schema. This is not currently supported and will cause undefined behaviour. Please set the 'ReplicationPolicy' to 'NotReplicated'. Ability: %s"), *GameplayAbility->GetName());
 			}
 		}
 

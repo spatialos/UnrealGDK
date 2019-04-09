@@ -277,8 +277,13 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 				continue;
 			}
 
-			// Check whether the owner of this value is the CDO itself.
-			if (Value->GetOuter() == ContainerCDO)
+			// Check whether the outer is the CDO of the class we're generating for
+			// or the CDO of any of its parent classes.
+			// (this also covers generating schema for a Blueprint derived from the outer's class)
+			UObject* Outer = Value->GetOuter();
+			if ((Outer != nullptr) &&
+				Outer->HasAnyFlags(RF_ClassDefaultObject) &&
+				ContainerCDO->IsA(Outer->GetClass()))
 			{
 				UE_LOG(LogSpatialGDKSchemaGenerator, Verbose, TEXT("Property Class: %s Instance Class: %s"), *ObjectProperty->PropertyClass->GetName(), *Value->GetClass()->GetName());
 
