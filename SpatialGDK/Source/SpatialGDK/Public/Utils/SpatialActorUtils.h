@@ -10,7 +10,7 @@
 namespace improbable
 {
 
-FORCEINLINE FString GetOwnerWorkerAttribute(AActor* Actor)
+inline FString GetOwnerWorkerAttribute(AActor* Actor)
 {
 	FString NetOwnerAttribute;
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
