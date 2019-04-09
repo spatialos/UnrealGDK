@@ -27,20 +27,6 @@ DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
 using namespace improbable;
 
-template <typename T>
-T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
-{
-	for (PendingAddComponentWrapper& PendingAddComponent : Receiver.PendingAddComponents)
-	{
-		if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.ComponentId == T::ComponentId)
-		{
-			return static_cast<T*>(PendingAddComponent.Data.Get());
-		}
-	}
-
-	return nullptr;
-}
-
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
@@ -109,8 +95,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
 
-	TSharedPtr<improbable::Component> Data;
-
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
@@ -135,23 +119,25 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
- 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
+		GlobalStateManager->ApplyDeploymentMapData(Op.data);
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
- 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
+		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
 		return;
-	default:
-		if (!bInCriticalSection)
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Received a dynamically added component, these are currently unsupported - component ID: %u entity ID: %lld"),
-				Op.data.component_id, Op.entity_id);
-			return;
-		}
-		Data = MakeShared<improbable::DynamicComponent>(Op.data);
-		break;
 	}
 
-	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, Data);
+	if (ClassInfoManager->IsSublevelComponent(Op.data.component_id))
+	{
+		return;
+	}
+
+	if (!bInCriticalSection)
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received a dynamically added component, these are currently unsupported - component ID: %u entity ID: %lld"),
+			Op.data.component_id, Op.entity_id);
+		return;
+	}
+	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<improbable::DynamicComponent>(Op.data));
 }
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
@@ -346,7 +332,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			continue;
 		}
 
-		Worker_ComponentData* ComponentData = static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data;
+		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData;
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
 		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
@@ -423,9 +409,9 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				continue;
 			}
 
-			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic)
+			if (PendingAddComponent.EntityId == EntityId)
 			{
-				ApplyComponentData(EntityId, *static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data, Channel);
+				ApplyComponentData(EntityId, *PendingAddComponent.Data->ComponentData, Channel);
 			}
 		}
 
