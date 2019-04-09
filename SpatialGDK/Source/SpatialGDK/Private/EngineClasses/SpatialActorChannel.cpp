@@ -805,9 +805,6 @@ void USpatialActorChannel::ServerViewTick()
 		return;
 	}
 
-	UObject* ControllerCDO = AController::StaticClass()->GetDefaultObject();
-	UObject* PlayerControllerCDO = APlayerController::StaticClass()->GetDefaultObject();
-
 	FString OldOwnerWorkerAttribute = NetOwnerWorkerAttribute;
 	NetOwnerWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
 
