@@ -298,8 +298,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
 			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
-
-			UE_LOG(LogTemp, Warning, TEXT("Hey! AuthorityOp: Set %s's role to %s"), *Actor->GetName(), Actor->Role == ROLE_SimulatedProxy ? TEXT("sim proxy") : TEXT("auto proxy"));
 		}
 	}
 
@@ -1058,17 +1056,12 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	FObjectReferencesMap& ObjectReferencesMap = UnresolvedRefsMap.FindOrAdd(ChannelObjectPair);
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 	ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
-
-	ENetRole Role = TargetObject->IsA<APawn>() ? Cast<APawn>(TargetObject)->Role : ROLE_None;
-
 	Reader.ApplyComponentUpdate(ComponentUpdate, TargetObject, Channel, bIsHandover);
 
 	// This is a temporary workaround, see UNR-841:
 	// If the update includes tearoff, close the channel and clean up the entity.
 	if (TargetObject->IsA<AActor>() && ClassInfoManager->GetCategoryByComponentId(ComponentUpdate.component_id) == SCHEMA_Data)
 	{
-		if (TargetObject->IsA<APawn>() && Role != Cast<APawn>(TargetObject)->Role) UE_LOG(LogTemp, Warning, TEXT("Hey! ComponentUpdate: Set %s's role to %s"), *TargetObject->GetName(), Cast<APawn>(TargetObject)->Role == ROLE_SimulatedProxy ? TEXT("sim proxy") : TEXT("auto proxy"));
-
 		Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(ComponentUpdate.schema_type);
 
 		// Check if bTearOff has been set to true
