@@ -703,18 +703,22 @@ void USpatialActorChannel::UpdateSpatialPosition()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
 
-	// If we have an Owner or a NetConnection but are NOT a PlayerController, don't try updating.
+	// When we update an Actor's position, we want to update the position of all the children of this Actor.
+	// If this Actor is a PlayerController, we want to update all of its children and its possessed Pawn.
+	// That means if this Actor has an Owner or has a NetConnection and is NOT a PlayerController
+	// we want to defer updating position until we reach the highest parent.
 	if ((Actor->GetOwner() != nullptr || Actor->GetNetConnection()) && !Actor->IsA<APlayerController>())
 	{
 		return;
 	}
 
+	// Check that there has been a sufficient amount of time since the last update.
 	if ((NetDriver->Time - TimeSinceLastPositionUpdate) < (1.0 / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
 	{
 		return;
 	}
 
-	// Check that it has moved sufficiently far to be updated
+	// Check that the Actor has moved sufficiently far to be updated
 	const float SpatialPositionThresholdSquared = FMath::Square(GetDefault<USpatialGDKSettings>()->PositionDistanceThreshold);
 	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
 	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) < SpatialPositionThresholdSquared)
@@ -745,8 +749,6 @@ void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId E
 
 	for (const auto& Child : InActor->Children)
 	{
-		// EntityId of child could be 0 which is fine. We still want to update the child 
-		// since it potentially might have children that have entity ids.
 		SendPositionUpdate(Child, NetDriver->PackageMap->GetEntityIdFromObject(Child), NewPosition);
 	}
 }
