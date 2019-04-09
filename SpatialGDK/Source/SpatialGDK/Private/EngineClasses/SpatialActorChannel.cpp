@@ -21,6 +21,7 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
@@ -702,25 +703,21 @@ void USpatialActorChannel::UpdateSpatialPosition()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
 
-	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
-	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
-	// of the PlayerController and PlayerState at the same time as the pawn.
-
 	// If we have an Owner or a NetConnection but are NOT a PlayerController, don't try updating.
 	if ((Actor->GetOwner() != nullptr || Actor->GetNetConnection()) && !Actor->IsA<APlayerController>())
 	{
 		return;
 	}
 
-	if ((NetDriver->Time - TimeSinceLastPositionUpdate) < 1.0f)
+	if ((NetDriver->Time - TimeSinceLastPositionUpdate) < (1.0 / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
 	{
 		return;
 	}
 
 	// Check that it has moved sufficiently far to be updated
-	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
+	const float SpatialPositionThresholdSquared = FMath::Square(GetDefault<USpatialGDKSettings>()->PositionDistanceThreshold);
 	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
-	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) < SpatialPositionThreshold)
+	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) < SpatialPositionThresholdSquared)
 	{
 		return;
 	}
