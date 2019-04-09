@@ -805,21 +805,16 @@ void USpatialActorChannel::ServerCheckIfOwnershipChanged()
 		return;
 	}
 
-	FString OldOwnerWorkerAttribute = NetOwnerWorkerAttribute;
-	NetOwnerWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
+	FString NewOwnerWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
 
-	if (bFirstTick || OldOwnerWorkerAttribute != NetOwnerWorkerAttribute)
+	if (bFirstTick || SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{
-		bool bSuccess = Sender->UpdateEntityACLs(GetEntityId(), NetOwnerWorkerAttribute);
+		bool bSuccess = Sender->UpdateEntityACLs(GetEntityId(), NewOwnerWorkerAttribute);
 
 		if (bSuccess)
 		{
 			bFirstTick = false;
-		}
-		else
-		{
-			// Reset stored worker attribute so we retry setting ACLs next tick.
-			NetOwnerWorkerAttribute = OldOwnerWorkerAttribute;
+			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		}
 	}
 }

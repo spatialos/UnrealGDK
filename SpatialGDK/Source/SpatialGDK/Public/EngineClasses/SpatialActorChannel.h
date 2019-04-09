@@ -165,7 +165,7 @@ private:
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;
 	// Used on the server to track when the owner changes.
-	FString NetOwnerWorkerAttribute;
+	FString SavedOwnerWorkerAttribute;
 
 	UPROPERTY(transient)
 	USpatialNetDriver* NetDriver;
