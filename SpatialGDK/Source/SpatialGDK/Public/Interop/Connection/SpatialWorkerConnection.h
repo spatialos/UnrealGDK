@@ -56,6 +56,9 @@ public:
 	FLegacyLocatorConfig LegacyLocatorConfig;
 	FLocatorConfig LocatorConfig;
 
+	bool bConnectAsClient;
+	int32 PlayInEditorID;
+
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);
 	void ConnectToLegacyLocator();
@@ -69,6 +72,7 @@ private:
 	SpatialConnectionType GetConnectionType() const;
 
 	void CacheWorkerAttributes();
+	void ReplaceWorker();
 
 	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
