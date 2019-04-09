@@ -40,10 +40,9 @@ TArray<UClass*> SchemaGeneratedClasses;
 TMap<FString, FSchemaData> ClassPathToSchema;
 uint32 NextAvailableComponentId;
 
-// Sublevels
-TMap<FString, FLevelData> LevelPathToLevelData;
-uint32 FirstSublevelComponentId;
-uint32 LastSublevelComponentId;
+// LevelStreaming
+TMap<FString, uint32> LevelPathToComponentId;
+uint32 FirstlevelComponentId;
 
 // Prevent name collisions.
 TMap<UClass*, FString> ClassToSchemaName;
@@ -251,32 +250,6 @@ void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos,
 	}
 }
 
-FLevelData GenerateSchemaForSublevel(UWorld* World)
-{
-	FLevelData LevelData;
-
-	if (UWorldComposition* WorldComposition = World->WorldComposition)
-	{
-		for (const auto& Tile : WorldComposition->GetTilesList())
-		{
-			FString TilePath = Tile.PackageName.ToString();
-			int32 Index = 0;
-			TilePath.FindLastChar('/', Index);
-			TilePath = TilePath.Mid(Index + 1);
-			LevelData.SublevelNameToComponentId.Add(TilePath, SpatialConstants::INVALID_COMPONENT_ID);
-		}
-	}
-	else
-	{
-		for (const auto& LevelStreamingObject : World->GetStreamingLevels())
-		{
-			LevelData.SublevelNameToComponentId.Add(LevelStreamingObject->GetLoadedLevel()->GetOuter()->GetName(), SpatialConstants::INVALID_COMPONENT_ID);
-		}
-	}
-
-	return LevelData;
-}
-
 void GenerateSchemaForSublevels(const FString& SchemaPath)
 {
 	if (GWorld == nullptr)
@@ -285,49 +258,51 @@ void GenerateSchemaForSublevels(const FString& SchemaPath)
 		return;
 	}
 
-	FLevelData LevelData = GenerateSchemaForSublevel(GWorld);
-	if (LevelData.SublevelNameToComponentId.Num() > 0)
-	{
-		LevelPathToLevelData.Add(GWorld->GetMapName(), LevelData);
-	}
+	// TODO: Generate new schema.
 
-	if (LevelPathToLevelData.Num() == 0)
-	{
-		FirstSublevelComponentId = SpatialConstants::INVALID_COMPONENT_ID;
-		LastSublevelComponentId = SpatialConstants::INVALID_COMPONENT_ID;
-		return;
-	}
+	//FLevelData LevelData = GenerateSchemaForSublevel(GWorld);
+	//if (LevelData.SublevelNameToComponentId.Num() > 0)
+	//{
+	//	LevelPathToLevelData.Add(GWorld->GetMapName(), LevelData);
+	//}
 
-	FComponentIdGenerator IdGenerator(NextAvailableComponentId);
+	//if (LevelPathToLevelData.Num() == 0)
+	//{
+	//	FirstSublevelComponentId = SpatialConstants::INVALID_COMPONENT_ID;
+	//	LastSublevelComponentId = SpatialConstants::INVALID_COMPONENT_ID;
+	//	return;
+	//}
 
-	FirstSublevelComponentId = IdGenerator.GetCurrentId();
+	//FComponentIdGenerator IdGenerator(NextAvailableComponentId);
 
-	for (auto& LevelPathToLevelDataPair : LevelPathToLevelData)
-	{
-		FCodeWriter Writer;
+	//FirstSublevelComponentId = IdGenerator.GetCurrentId();
 
-		Writer.Printf(R"""(
-			// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-			// Note that this file has been generated automatically
-			package unreal.sublevels.{0};)""",
-			*UnrealNameToSchemaComponentName(LevelPathToLevelDataPair.Key).ToLower());
+	//for (auto& LevelPathToLevelDataPair : LevelPathToLevelData)
+	//{
+	//	FCodeWriter Writer;
 
-		for (auto& SublevelToComponentIdPair : LevelPathToLevelDataPair.Value.SublevelNameToComponentId)
-		{
-			SublevelToComponentIdPair.Value = IdGenerator.GetNextAvailableId();
+	//	Writer.Printf(R"""(
+	//		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+	//		// Note that this file has been generated automatically
+	//		package unreal.sublevels.{0};)""",
+	//		*UnrealNameToSchemaComponentName(LevelPathToLevelDataPair.Key).ToLower());
 
-			Writer.PrintNewLine();
-			Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(SublevelToComponentIdPair.Key));
-			Writer.Indent();
-			Writer.Printf("id = {0};", SublevelToComponentIdPair.Value);
-			Writer.Outdent().Print("}");
-		}
+	//	for (auto& SublevelToComponentIdPair : LevelPathToLevelDataPair.Value.SublevelNameToComponentId)
+	//	{
+	//		SublevelToComponentIdPair.Value = IdGenerator.GetNextAvailableId();
 
-		Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *(SchemaPath + TEXT("Sublevels/")), *LevelPathToLevelDataPair.Key));
-	}
+	//		Writer.PrintNewLine();
+	//		Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(SublevelToComponentIdPair.Key));
+	//		Writer.Indent();
+	//		Writer.Printf("id = {0};", SublevelToComponentIdPair.Value);
+	//		Writer.Outdent().Print("}");
+	//	}
 
-	LastSublevelComponentId = IdGenerator.GetCurrentId();
-	NextAvailableComponentId = IdGenerator.GetNextAvailableId();
+	//	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *(SchemaPath + TEXT("Sublevels/")), *LevelPathToLevelDataPair.Key));
+	//}
+
+	//LastSublevelComponentId = IdGenerator.GetCurrentId();
+	//NextAvailableComponentId = IdGenerator.GetNextAvailableId();
 }
 
 FString GenerateIntermediateDirectory()
@@ -347,9 +322,8 @@ void SaveSchemaDatabase()
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
 	SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
-	SchemaDatabase->LevelPathToLevelData = LevelPathToLevelData;
-	SchemaDatabase->FirstSublevelComponentId = FirstSublevelComponentId;
-	SchemaDatabase->LastSublevelComponentId = LastSublevelComponentId;
+	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
+	SchemaDatabase->FirstLevelComponentId = FirstlevelComponentId;
 
 	FAssetRegistryModule::AssetCreated(SchemaDatabase);
 	SchemaDatabase->MarkPackageDirty();

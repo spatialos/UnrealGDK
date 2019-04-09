@@ -240,22 +240,18 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 
 	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
 
-	FLevelData* LevelData = NetDriver->ClassInfoManager->SchemaDatabase->LevelPathToLevelData.Find(NetDriver->World->GetName());
-	if (LevelData == nullptr)
-	{
-		return LevelConstraint;
-	}
-
 	// Create component constraints for every loaded sublevel
 	for (const auto& LevelPath : LoadedLevels)
 	{
-		UPackage* TempPkg = FindPackage(nullptr, *LevelPath.ToString());
-		UWorld* LevelWorld = (UWorld*)FindObjectWithOuter(TempPkg, UWorld::StaticClass());
-		uint32 ComponentId = LevelData->SublevelNameToComponentId[LevelWorld->GetName()];
+		FString CleanPackagePath = UWorld::RemovePIEPrefix(LevelPath.ToString());
+		uint32 ComponentId = NetDriver->ClassInfoManager->SchemaDatabase->LevelPathToComponentId.FindRef(CleanPackagePath);
 
-		QueryConstraint SpecificLevelConstraint;
-		SpecificLevelConstraint.ComponentConstraint = ComponentId;
-		LevelConstraint.OrConstraint.Add(SpecificLevelConstraint);
+		if (ComponentId > 0)
+		{
+			QueryConstraint SpecificLevelConstraint;
+			SpecificLevelConstraint.ComponentConstraint = ComponentId;
+			LevelConstraint.OrConstraint.Add(SpecificLevelConstraint);
+		}
 	}
 
 	return LevelConstraint;
