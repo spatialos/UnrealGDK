@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Upgraded to use SpatialOS 13.6.2.
+- Added this Changelog
 - Added an error when unsupported replicated gameplay abilities are found in schema generation.
 - Demoted various logs to Verbose in SpatialSender and SpatialReceiver
 
