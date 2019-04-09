@@ -75,6 +75,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, NetDriver(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, bCreatingNewEntity(false)
+	, TimeSinceLastPositionUpdate(0)
 {
 }
 
