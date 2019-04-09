@@ -708,7 +708,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	// If this Actor is a PlayerController, we want to update all of its children and its possessed Pawn.
 	// That means if this Actor has an Owner or has a NetConnection and is NOT a PlayerController
 	// we want to defer updating position until we reach the highest parent.
-	if ((Actor->GetOwner() != nullptr || Actor->GetNetConnection()) && !Actor->IsA<APlayerController>())
+	if ((Actor->GetOwner() != nullptr || Actor->GetNetConnection() != nullptr) && !Actor->IsA<APlayerController>())
 	{
 		return;
 	}
