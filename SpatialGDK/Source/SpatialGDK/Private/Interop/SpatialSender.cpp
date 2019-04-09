@@ -848,7 +848,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 
 // Authority over the ClientRPC Schema component is dictated by the owning connection of a client.
 // This function updates the authority of that component as the owning connection can change.
-bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, FString OwnerWorkerAttribute)
+bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
 {
 	improbable::EntityAcl* EntityACL = StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId);
 

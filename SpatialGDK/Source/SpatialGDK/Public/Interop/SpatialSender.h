@@ -73,7 +73,7 @@ public:
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
 	void ResolveOutgoingRPCs(UObject* Object);
 
-	bool UpdateEntityACLs(Worker_EntityId EntityId, FString OwnerWorkerAttribute);
+	bool UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
