@@ -21,4 +21,4 @@ FORCEINLINE FString GetOwnerWorkerAttribute(AActor* Actor)
 	return NetOwnerAttribute;
 }
 
-}
+} // namespace improbable
