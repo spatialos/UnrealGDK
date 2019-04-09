@@ -126,7 +126,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	// Check every channel for net ownership changes (determines ACL and component interest)
 	for (auto& EntityChannelPair : NetDriver->GetEntityToActorChannelMap())
 	{
-		EntityChannelPair.Value->SpatialViewTick();
+		EntityChannelPair.Value->CheckIfOwnershipChanged();
 	}
 }
 

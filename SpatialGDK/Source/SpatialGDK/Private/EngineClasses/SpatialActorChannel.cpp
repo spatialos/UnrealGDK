@@ -798,7 +798,7 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 	});
 }
 
-void USpatialActorChannel::ServerViewTick()
+void USpatialActorChannel::ServerCheckIfOwnershipChanged()
 {
 	if (!IsAuthoritativeServer())
 	{
@@ -824,7 +824,7 @@ void USpatialActorChannel::ServerViewTick()
 	}
 }
 
-void USpatialActorChannel::ClientViewTick()
+void USpatialActorChannel::ClientCheckIfOwnershipChanged()
 {
 	bool bOldNetOwned = bNetOwned;
 	bNetOwned = IsOwnedByWorker();
@@ -836,17 +836,17 @@ void USpatialActorChannel::ClientViewTick()
 	}
 }
 
-void USpatialActorChannel::SpatialViewTick()
+void USpatialActorChannel::CheckIfOwnershipChanged()
 {
 	if (Actor != nullptr && !Actor->IsPendingKill())
 	{
 		if (NetDriver->IsServer())
 		{
-			ServerViewTick();
+			ServerCheckIfOwnershipChanged();
 		}
 		else
 		{
-			ClientViewTick();
+			ClientCheckIfOwnershipChanged();
 		}
 	}
 }
