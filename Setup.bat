@@ -59,6 +59,7 @@ call :MarkStartOfBlock "Setup variables"
     set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
+    set IMPROBABLE_WORKER_DIR=%~dp0..\..\..\spatial\workers\improbable
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
@@ -67,6 +68,7 @@ call :MarkStartOfBlock "Clean folders"
     rd /s /q "%WORKER_SDK_DIR_OLD%"     2>nul
     rd /s /q "%BINARIES_DIR%"           2>nul
     rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
+    rd /s /q "%IMPROBABLE_WORKER_DIR%"  2>nul
 call :MarkEndOfBlock "Clean folders"
 
 call :MarkStartOfBlock "Create folders"
@@ -76,6 +78,7 @@ call :MarkStartOfBlock "Create folders"
     md "%CORE_SDK_DIR%\worker_sdk"   >nul 2>nul
     md "%BINARIES_DIR%"              >nul 2>nul
     md "%SCHEMA_STD_COPY_DIR%"       >nul 2>nul
+    md "%IMPROBABLE_WORKER_DIR%"     >nul 2>nul
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
@@ -84,12 +87,16 @@ call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve worker_sdk      c-dynamic-x86-msvc_md-win32            %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32         %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux   %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"
+    spatial package retrieve worker_sdk      core-dynamic-x86_64-linux              %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip"
+    spatial package retrieve worker_sdk      csharp                                 %PINNED_CORE_SDK_VERSION%       "%CORE_SDK_DIR%\worker_sdk\csharp.zip"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 call :MarkStartOfBlock "Unpack dependencies"
     powershell -Command "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86-msvc_md-win32.zip\"             -DestinationPath \"%BINARIES_DIR%\Win32\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip\"          -DestinationPath \"%BINARIES_DIR%\Win64\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip\"    -DestinationPath \"%BINARIES_DIR%\Linux\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\core-dynamic-x86_64-linux.zip\"               -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\core\" -Force; "^
+                        "Expand-Archive -Path \"%CORE_SDK_DIR%\worker_sdk\csharp.zip\"                                  -DestinationPath \"%BINARIES_DIR%\Programs\worker_sdk\csharp\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\tools\schema_compiler-x86_64-win32.zip\"                 -DestinationPath \"%BINARIES_DIR%\Programs\" -Force; "^
                         "Expand-Archive -Path \"%CORE_SDK_DIR%\schema\standard_library.zip\"                            -DestinationPath \"%BINARIES_DIR%\Programs\schema\" -Force;"
 
@@ -112,6 +119,11 @@ call :MarkEndOfBlock "Copy GDK schema"
 call :MarkStartOfBlock "Build C# utilities"
     %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
 call :MarkEndOfBlock "Build C# utilities"
+
+call :MarkStartOfBlock "Copy worker coordinator config"
+    echo Copying worker coordinator config to "%IMPROBABLE_WORKER_DIR%"
+    xcopy /s /i /q ".\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\WorkerCoordinator\SpatialConfig\spatialos.SimulatedPlayerCoordinator.worker.json" "%IMPROBABLE_WORKER_DIR%"
+call :MarkEndOfBlock "Copy worker coordinator config"
 
 call :MarkEndOfBlock "%~0"
 

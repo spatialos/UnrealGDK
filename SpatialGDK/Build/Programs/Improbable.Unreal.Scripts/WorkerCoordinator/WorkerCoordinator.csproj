@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B879D33B-AA4B-4A13-BCD4-957178C060E7}</ProjectGuid>
+    <ProjectGuid>{C41625B0-CDB7-4480-B2E4-AEB27AF3B198}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DeploymentLauncher</RootNamespace>
-    <AssemblyName>DeploymentLauncher</AssemblyName>
+    <RootNamespace>WorkerCoordinator</RootNamespace>
+    <AssemblyName>WorkerCoordinator</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -33,6 +33,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Improbable.WorkerCoordinator.WorkerCoordinator</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -42,30 +45,24 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <PackageReference Include="Improbable.SpatialOS.Platform">
-      <Version>13.6.2</Version>
-    </PackageReference>
-    <PackageReference Include="Newtonsoft.Json">
-      <Version>12.0.1</Version>
-    </PackageReference>
+    <Reference Include="Improbable.WorkerSdkCsharp.dll">
+      <HintPath>..\..\..\..\Binaries\ThirdParty\Improbable\Programs\worker_sdk\csharp\Improbable.WorkerSdkCsharp.dll</HintPath>
+    </Reference>
+    <Content Include="..\..\..\..\Binaries\ThirdParty\Improbable\Programs\worker_sdk\core\libCoreSdkDll.so">
+      <Link>libCoreSdkDll.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DeploymentLauncher.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Common\Common.csproj">
-      <Project>{d2cc2525-ec22-4a24-bde8-d9a6bff55bad}</Project>
-      <Name>Common</Name>
-      <Private>False</Private>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
+    <Compile Include="Authentication.cs" />
+    <Compile Include="CoordinatorConnection.cs" />
+    <Compile Include="Logger.cs" />
+    <Compile Include="WorkerCoordinator.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>mkdir "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\DeploymentLauncher\"
-xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir)." "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\DeploymentLauncher\" /q /y</PostBuildEvent>
+    <PostBuildEvent>mkdir "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\WorkerCoordinator\"
+xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir)." "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\WorkerCoordinator\" /q /y</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
