@@ -95,11 +95,16 @@ To launch a local deployment:
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
-2. Under **Modes**, select **New Editor Window (PIE)**.<br/>
+1. Under **Modes**, select **New Editor Window (PIE)**.<br/>
 1. Under **Multiplayer Options**, set the number of players to **2** and ensure that the check box next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)<br/>
 ![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
 _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
-1. On the Unreal Engine toolbar, select **Play** to run the game.<br/>
+1. On the Unreal Engine toolbar, select **Play** to run the game, and you should see two clients start.<br/><br/>
+![]({{assetRoot}}assets/set-up-template/template-two-clients.png)<br/>
+_Image: Two clients running in editor, with player actors replicated by SpatialOS and the GDK_<br/>
+1. Opening the Inspector, you can see that a local SpatialOS deployment is running with one server worker and two client workers connected. You can also find and follow around the two player entities.<br/><br/>
+![]({{assetRoot}}assets/set-up-template/template-two-client-inspector.png)<br/>
+_Image: The inspector showing the state of your local deployment_<br/>
 1. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 
