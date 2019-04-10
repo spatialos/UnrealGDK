@@ -48,6 +48,7 @@ There is a basic example in the _Examples_ section below. For more examples of h
 >**Note:** Your external SpatialOS components must have an ID between 1000 and 2000 to be registered by the pipeline.
 
 You set up your game to receive network operations using the `USpatialDispatcher::AddOpCallback` functions. These overloaded functions are paramaterized with a `Worker_ComponentId` and a callback function reference that takes one of the following network operation types as an argument:
+
 * `Worker_AddComponentOp`
 * `Worker_RemoveComponentOp`
 * `Worker_AuthorityChangeOp`
@@ -59,7 +60,7 @@ You set up your game to receive network operations using the `USpatialDispatcher
 
 You must register the callbacks inside your game instance's `::Init()` function to ensure your callbacks will be triggered for initial network operations received by the SpatialOS worker connection.
 
-Each `USpatialDispatcher::AddOpCallback` function returns a `CallbackId`. You can deregister your callbacks using the `USpatialDispatcher::RemoveOpCallback` function and passing the `CallbackId` parameter returned by the corresponding call to `USpatialDispatcher::AddOpCallback`.
+Each `USpatialDispatcher::AddOpCallback` function returns a `CallbackId`. You can deregister your callbacks using the `USpatialDispatcher::RemoveOpCallback` function and passing the `CallbackId` parameter that was returned by the corresponding call to `USpatialDispatcher::AddOpCallback`.
 
 There is a basic example in the _Examples_ section below. For more examples of how to deserialize the `Worker_Op` type see the SpatialOS documentation on [serialization in the Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/serialization).
 
@@ -81,19 +82,24 @@ There is a basic example in the _Examples_ section below. For more examples of h
 Below is a simple example schema file which a non-Unreal layer could use to track player statistics:
 
 ```
-package improbable.session;
+package improbable.testing;
 
-type MyRequest {
-  string player_name = 1;
+type UnrealRequest {
+    string some_request_string = 1;
 }
-type MyResponse {
-  string response_string = 1;
+type UnrealResponse {
+    string some_response_string = 1;
 }
 
-component Session {
+component NonUnrealAuthoritative {
     id = 1337;
-    uint32 player_count = 1;
-    command MyResponse some_command(My_Request);
+    uint32 counter = 1;
+}
+
+component UnrealAuthoritative {
+    id = 1338;
+    uint32 other_counter = 1;
+    command UnrealResponse test_command(UnrealRequest);
 }
 ```
 
@@ -163,7 +169,7 @@ void UTPSGameInstance::Init()
 
         });
 
-        Dispatcher->AddOpCallback(1338 /* where Unreal worker has authority */, [this](const Worker_CommandRequestOp& Op) {
+        Dispatcher->AddOpCallback(1338, [this](const Worker_CommandRequestOp& Op) {
             // Example serializing and sending command response
             Worker_CommandResponse Response = {};
             Response.component_id = 1338;
@@ -182,51 +188,61 @@ You could add a new entity with the given component in your Unreal project code 
 
 ```
 UCLASS()
-class SPATIALGDK_API USessionEntitySnapshotGeneration : USnapshotGenerationTemplate
+class UTestEntitySnapshotGeneration : public USnapshotGenerationTemplate
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    bool WriteToSnapshotOutput(Worker_SnapshotOutputStream* OutputStream, Worker_Entity& NextEntityId) override
-    {
-        Worker_Entity SomeEntity;
-        SomeEntity.entity_id = NextEntityId;
-        TArray<Worker_ComponentData> Components;
-        const WorkerAttributeSet ExternalWorkerAttributeSet{ TArray<FString>{TEXT("some_external_worker_type")} };
-        const WorkerRequirementSet ExternalWorkerPermission{ ExternalWorkerAttributeSet};
-        const WorkerRequirementSet AnyWorkerPermission{ {SpatialConstants::UnrealClientAttributeSet, SpatialConstants::UnrealServerAttributeSet, ExternalWorkerAttributeSet} };
-        WriteAclMap ComponentWriteAcl;
-        ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-        ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-        ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-        ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-        ComponentWriteAcl.Add(1337, ExternalWorkerPermission);
+	bool WriteToSnapshotOutput(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextEntityId) override {
+		Worker_Entity TestEntity;
+		TestEntity.entity_id = NextEntityId;
 
-        // Serialize SomeComponent data
-        Worker_ComponentData SomeComponentComponentData{};
-        FromUnrealComponentData.component_id = 1337;
-        FromUnrealComponentData.schema_type = Schema_CreateComponentData(1337);
-        Schema_Object* FromUnrealComponentDataObject = Schema_GetComponentDataFields(FromUnrealComponentData.schema_type);
-        Schema_AddInt32(FromUnrealComponentDataObject, 1, 1); // set some_counter to 1 initially
+		TArray<Worker_ComponentData> Components;
 
-        Components.Add(improbable::Position(improbable::Origin).CreatePositionData());
-        Components.Add(improbable::Metadata(TEXT("SessionManager")).CreateMetadataData());
-        Components.Add(improbable::Persistence().CreatePersistenceData());
-        Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
-        Components.Add(SessionComponentData);
-        Components.Add(FromUnrealComponentData);
+		const WorkerAttributeSet TestWorkerAttributeSet{ TArray<FString>{TEXT("test_attribute")} };
+		const WorkerRequirementSet TestWorkerPermission{ TestWorkerAttributeSet };
+		const WorkerRequirementSet AnyWorkerPermission{ {SpatialConstants::UnrealClientAttributeSet, SpatialConstants::UnrealServerAttributeSet, TestWorkerAttributeSet } };
 
-        SomeEntity.component_count = Components.Num();
-        SomeEntity.components = Components.GetData();
+		WriteAclMap ComponentWriteAcl;
+		ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+		ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+		ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+		ComponentWriteAcl.Add(1337, TestWorkerPermission);
+		ComponentWriteAcl.Add(1338, SpatialConstants::UnrealServerPermission);
 
-        bool bSuccess = Worker_SnapshotOutputStream_WriteEntity(OutputStream, &SomeEntity) != 0;
-        if (bSuccess)
-        {
-            NextEntityId++;
-        }
-        return bSuccess;
-    }
-}
+		// Serialize NonUnrealAuthoritative component data
+		Worker_ComponentData NonUnrealAuthoritativeComponentData{};
+		NonUnrealAuthoritativeComponentData.component_id = 1337;
+		NonUnrealAuthoritativeComponentData.schema_type = Schema_CreateComponentData(1337);
+		Schema_Object* NonUnrealAuthoritativeComponentDataObject = Schema_GetComponentDataFields(NonUnrealAuthoritativeComponentData.schema_type);
+		Schema_AddInt32(NonUnrealAuthoritativeComponentDataObject, 1, 1); // set counter field to 1 initially
+
+		// Serialize FromUnreal component data
+		Worker_ComponentData UnrealAuthoritativeComponentData{};
+		UnrealAuthoritativeComponentData.component_id = 1338;
+		UnrealAuthoritativeComponentData.schema_type = Schema_CreateComponentData(1338);
+		Schema_Object* UnrealAuthoritativeComponentDataObject = Schema_GetComponentDataFields(UnrealAuthoritativeComponentData.schema_type);
+		Schema_AddInt32(UnrealAuthoritativeComponentDataObject, 1, 1); // set other_counter field to 1 initially
+
+		Components.Add(improbable::Position(improbable::Origin).CreatePositionData());
+		Components.Add(improbable::Metadata(TEXT("TestEntity")).CreateMetadataData());
+		Components.Add(improbable::Persistence().CreatePersistenceData());
+		Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+		Components.Add(NonUnrealAuthoritativeComponentData);
+		Components.Add(UnrealAuthoritativeComponentData);
+
+		TestEntity.component_count = Components.Num();
+		TestEntity.components = Components.GetData();
+
+		bool bSuccess = Worker_SnapshotOutputStream_WriteEntity(OutputStream, &TestEntity) != 0;
+		if (bSuccess) {
+			NextEntityId++;
+		}
+
+		return bSuccess;
+	}
+};
 ```
 
 <br/>

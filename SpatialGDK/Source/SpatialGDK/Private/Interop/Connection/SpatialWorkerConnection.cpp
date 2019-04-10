@@ -429,7 +429,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
-	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
 	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
 
 	// On the client, the world might not be completely set up.
@@ -448,7 +447,6 @@ USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
-	GetSpatialNetDriverChecked()->OnConnectedToSpatialOS();
 	GameInstance->HandleOnConnected();
 }
 
