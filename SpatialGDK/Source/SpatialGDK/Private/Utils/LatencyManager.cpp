@@ -25,17 +25,18 @@ void ULatencyManager::Enable(Worker_EntityId InPlayerControllerEntity)
 
 	NetConnection = Cast<USpatialNetConnection>(GetOuter());
 	NetDriver = Cast<USpatialNetDriver>(NetConnection->GetDriver());
+	LastPingSent = GetWorld()->RealTimeSeconds;
 
 	TWeakObjectPtr<USpatialNetConnection> ConnectionPtr = NetConnection;
 
 	auto Delegate = TBaseDelegate<void, Worker_ComponentUpdateOp &>::CreateLambda([ConnectionPtr, this](const Worker_ComponentUpdateOp& Op)
 	{
+		float ReceivedTimestamp = GetWorld()->RealTimeSeconds;
+
 		if (!ConnectionPtr.IsValid())
 		{
 			return;
 		}
-
-		float ReceivedTimestamp = ConnectionPtr->GetWorld()->GetTimeSeconds();
 
 		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 		uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::PING_PONG_EVENT_ID);
@@ -77,6 +78,6 @@ void ULatencyManager::SendPingOrPong(Worker_ComponentId ComponentId)
 	if (WorkerConnection->IsConnected())
 	{
 		WorkerConnection->SendComponentUpdate(PlayerControllerEntity, &ComponentUpdate);
-		LastPingSent = GetWorld()->GetTimeSeconds();
+		LastPingSent = GetWorld()->RealTimeSeconds;
 	}
 }

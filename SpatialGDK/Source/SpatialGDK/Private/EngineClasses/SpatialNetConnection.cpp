@@ -196,7 +196,7 @@ void USpatialNetConnection::OnHeartbeat()
 	SetHeartbeatTimeoutTimer();
 }
 
-void USpatialNetConnection::SetupLatencyManager(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity)
+void USpatialNetConnection::SetupLatencyManager(Worker_EntityId InPlayerControllerEntity)
 {
 	if (LatencyManager == nullptr)
 	{

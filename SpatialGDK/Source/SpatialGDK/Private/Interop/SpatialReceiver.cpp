@@ -214,7 +214,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 	{
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Connection != nullptr)
 		{
-			Connection->SetupLatencyManager(TimerManager, Op.entity_id);
+			Connection->SetupLatencyManager(Op.entity_id);
 		}
 		else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 		{

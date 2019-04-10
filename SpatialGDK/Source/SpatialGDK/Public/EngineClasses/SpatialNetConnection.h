@@ -66,6 +66,6 @@ public:
 	UPROPERTY(transient)
 	class ULatencyManager* LatencyManager;
 
-	void SetupLatencyManager(FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
+	void SetupLatencyManager(Worker_EntityId InPlayerControllerEntity);
 	void DisableLatencyManager();
 };
