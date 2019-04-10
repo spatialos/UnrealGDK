@@ -424,10 +424,14 @@ FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRefInternal(const F
 	if (!NetGUID.IsValid() && ObjectRef.Path.IsSet())
 	{
 		FNetworkGUID OuterGUID;
+
+		// Recursively resolve the outers for this object in order to ensure that the package can be loaded
 		if (ObjectRef.Outer.IsSet())
 		{
 			OuterGUID = GetNetGUIDFromUnrealObjectRef(ObjectRef.Outer.GetValue());
 		}
+
+		// Once all outer packages have been resolved, assign a new NetGUID for this object
 		NetGUID = RegisterNetGUIDFromPathForStaticObject(ObjectRef.Path.GetValue(), OuterGUID, ObjectRef.bNoLoadOnClient);
 		RegisterObjectRef(NetGUID, ObjectRef);
 	}
