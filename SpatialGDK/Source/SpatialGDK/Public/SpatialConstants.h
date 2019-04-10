@@ -151,6 +151,8 @@ namespace SpatialConstants
 	const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
 	const WorkerRequirementSet ClientOrServerPermission{ {UnrealClientAttributeSet, UnrealServerAttributeSet} };
 
+	static const FString SimulatedPlayerArg = TEXT("simulatedplayer");
+
 	static const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 	static const FString SnapshotURLOption = TEXT("snapshot=");
 
