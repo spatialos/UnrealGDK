@@ -17,7 +17,7 @@ inline FString GetOwnerWorkerAttribute(AActor* Actor)
 		return NetConnection->WorkerAttribute;
 	}
 
-	return FString{};
+	return FString();
 }
 
 } // namespace improbable
