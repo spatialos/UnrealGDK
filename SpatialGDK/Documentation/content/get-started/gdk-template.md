@@ -77,7 +77,7 @@ Before you launch a deployment (local or cloud) you must generate schema and a s
 1. In the Unreal Editor, on the GDK toolbar, select [**Schema**]({{urlRoot}}/content/schema) to generate schema.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
-1. Select [**Snapshot**]({{urlRoot}}/content/generating-a-snapshot) to generate a snapshot.<br/>
+1. Select [**Snapshot**]({{urlRoot}}/content/spatialos-concepts/concepts#snapshots) to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
 
@@ -85,6 +85,8 @@ _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
 <%(/Expandable)%>
 
 <%(#Expandable title="What is a snapshot?")%>A snapshot is a representation of the state of a SpatialOS world at a given point in time. It stores each persistent SpatialOS entity and the values of their SpatialOS components’ properties.
+
+You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot)
 <%(/Expandable)%>
 
 To launch a local deployment: 
