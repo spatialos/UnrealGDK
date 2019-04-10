@@ -738,9 +738,12 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	int32 ActorUpdatesThisConnectionSent = 0;
 
 	// SpatialGDK - Actor replication rate limiting based on config value.
-	uint32 ActorReplicationRateLimit = GetDefault<USpatialGDKSettings>()->ActorReplicationRateLimit;
-	int32 RateLimit = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
+	int32 NumActorsToReplicate = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
 	int32 FinalReplicatedCount = 0;
+
+	// SpatialGDK - Entity creation rate limiting based on config value.
+	int32 NumEntitiesToCreate = (EntityCreationRateLimit > 0) ? EntityCreationRateLimit : INT32_MAX;
+	int32 FinalCreationCount = 0;
 
 	for (int32 j = 0; j < FinalSortedCount; j++)
 	{
@@ -794,11 +797,19 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 				}
 			}
 
+			// SpatialGDK - Creation of new entities should always be handled and therefore is checked prior to actor throttling.
+			// There is a EntityCreationRateLimit to prevent overloading spatial with creation requests if the developer desires.
+			// Creation of a new entity occurs when the channel is currently nullptr or if the channel does not have bCreatedEntity set to true.
+			if (FinalCreationCount < NumEntitiesToCreate && (Channel == nullptr || (Channel != nullptr && !Channel->bCreatedEntity)))
+			{
+				bIsRelevant = true;
+				FinalCreationCount++;
+			}
 			// SpatialGDK - We will only replicate the highest priority actors up the the rate limit and the final tick of TearOff actors.
 			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
 			// TearOff actors would normally replicate their final tick due to RecentlyRelevant, after which the channel is closed.
 			// With throttling we no longer always replicate when RecentlyRelevant is true, thus we ensure to always replicate a TearOff actor while it still has a channel.
-			if ((FinalReplicatedCount < RateLimit && !Actor->GetTearOff()) || (Actor->GetTearOff() && Channel))
+			else if ((FinalReplicatedCount < NumActorsToReplicate && !Actor->GetTearOff()) || (Actor->GetTearOff() && Channel))
 			{
 				bIsRelevant = true;
 				FinalReplicatedCount++;
@@ -891,7 +902,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 					if (!InConnection->IsNetReady(0))
 					{
 						// We can bail out now since this connection is saturated, we'll return how far we got though
-						return FinalReplicatedCount;
+						return FinalReplicatedCount + FinalCreationCount;
 					}
 				}
 			}
@@ -912,7 +923,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		}
 	}
 
-	return FinalReplicatedCount;
+	return FinalReplicatedCount + FinalCreationCount;
 }
 #endif
 
