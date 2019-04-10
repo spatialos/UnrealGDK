@@ -53,13 +53,12 @@ public:
 	const TArray<FString>& GetWorkerAttributes() const;
 
 	FReceptionistConfig ReceptionistConfig;
-	FLegacyLocatorConfig LegacyLocatorConfig;
 	FLocatorConfig LocatorConfig;
 
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);
-	void ConnectToLegacyLocator();
 	void ConnectToLocator();
+	void FinishConnecting(Worker_ConnectionFuture* ConnectionFuture);
 
 	void OnConnectionSuccess();
 	void OnPreConnectionFailure(const FString& Reason);

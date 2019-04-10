@@ -121,15 +121,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
 
-	if (URL.HasOption(TEXT("legacylocator")))
-	{
-		Connection->LegacyLocatorConfig.ProjectName = URL.GetOption(TEXT("project="), TEXT(""));
-		Connection->LegacyLocatorConfig.DeploymentName = URL.GetOption(TEXT("deployment="), TEXT(""));
-		Connection->LegacyLocatorConfig.LoginToken = URL.GetOption(TEXT("token="), TEXT(""));
-		Connection->LegacyLocatorConfig.UseExternalIp = true;
-		Connection->LegacyLocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType();
-	}
-	else if (URL.HasOption(TEXT("locator")))
+	if (URL.HasOption(TEXT("locator")))
 	{
 		// Obtain PIT and LT.
 		Connection->LocatorConfig.PlayerIdentityToken = URL.GetOption(TEXT("playeridentity="), TEXT(""));

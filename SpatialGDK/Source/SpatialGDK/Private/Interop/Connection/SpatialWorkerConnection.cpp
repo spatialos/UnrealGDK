@@ -68,17 +68,10 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 		return;
 	}
 
-	// Create InternalWorkerConnection
-
-	// Connect using InternalWorkerConnection
-
 	switch (GetConnectionType())
 	{
 	case SpatialConnectionType::Receptionist:
 		ConnectToReceptionist(bInitAsClient);
-		break;
-	case SpatialConnectionType::LegacyLocator:
-		ConnectToLegacyLocator();
 		break;
 	case SpatialConnectionType::Locator:
 		ConnectToLocator();
@@ -130,141 +123,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,
 		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
 
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, this]
-	{
-		WorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-
-		Worker_ConnectionFuture_Destroy(ConnectionFuture);
-		if (Worker_Connection_IsConnected(WorkerConnection))
-		{
-			CacheWorkerAttributes();
-
-			AsyncTask(ENamedThreads::GameThread, [this]
-			{
-				this->OnConnectionSuccess();
-			});
-		}
-		else
-		{
-			// TODO: Try to reconnect - UNR-576
-			AsyncTask(ENamedThreads::GameThread, [this]
-			{
-				this->OnConnectionFailure();
-			});
-		}
-	});
-}
-
-void USpatialWorkerConnection::ConnectToLegacyLocator()
-{
-	if (LegacyLocatorConfig.WorkerType.IsEmpty())
-	{
-		LegacyLocatorConfig.WorkerType = SpatialConstants::ClientWorkerType;
-		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LegacyLocatorConfig.WorkerType);
-	}
-
-	if (LegacyLocatorConfig.WorkerId.IsEmpty())
-	{
-		LegacyLocatorConfig.WorkerId = LegacyLocatorConfig.WorkerType + FGuid::NewGuid().ToString();
-	}
-
-	FTCHARToUTF8 ProjectNameCStr(*LegacyLocatorConfig.ProjectName);
-	FTCHARToUTF8 LoginTokenCStr(*LegacyLocatorConfig.LoginToken);
-
-	Worker_LoginTokenCredentials Credentials;
-	Credentials.token = LoginTokenCStr.Get();
-
-	Worker_LocatorParameters LocatorParams = {};
-	LocatorParams.credentials_type = WORKER_LOCATOR_LOGIN_TOKEN_CREDENTIALS;
-	LocatorParams.project_name = ProjectNameCStr.Get();
-	LocatorParams.login_token = Credentials;
-
-	WorkerLegacyLocator = Worker_Locator_Create(TCHAR_TO_UTF8(*LegacyLocatorConfig.LocatorHost), &LocatorParams);
-
-	Worker_DeploymentListFuture* DeploymentListFuture = Worker_Locator_GetDeploymentListAsync(WorkerLegacyLocator);
-	Worker_DeploymentListFuture_Get(DeploymentListFuture, nullptr, this,
-		[](void* UserData, const Worker_DeploymentList* DeploymentList)
-	{
-		USpatialWorkerConnection* SpatialConnection = static_cast<USpatialWorkerConnection*>(UserData);
-
-		if (DeploymentList->error != nullptr)
-		{
-			const FString ErrorMessage = FString::Printf(TEXT("Error fetching deployment list: %s"), UTF8_TO_TCHAR(DeploymentList->error));
-			SpatialConnection->OnPreConnectionFailure(ErrorMessage);
-			return;
-		}
-
-		if (DeploymentList->deployment_count == 0)
-		{
-			const FString ErrorMessage = FString::Printf(TEXT("Received empty list of deployments."));
-			SpatialConnection->OnPreConnectionFailure(ErrorMessage);
-			return;
-		}
-
-		// TODO: Move creation of connection parameters into a function somehow
-		Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
-		FTCHARToUTF8 WorkerTypeCStr(*SpatialConnection->LegacyLocatorConfig.WorkerType);
-		ConnectionParams.worker_type = WorkerTypeCStr.Get();
-		ConnectionParams.enable_protocol_logging_at_startup = SpatialConnection->LegacyLocatorConfig.EnableProtocolLoggingAtStartup;
-
-		Worker_ComponentVtable DefaultVtable = {};
-		ConnectionParams.component_vtable_count = 0;
-		ConnectionParams.default_component_vtable = &DefaultVtable;
-
-		ConnectionParams.network.connection_type = SpatialConnection->LegacyLocatorConfig.LinkProtocol;
-		ConnectionParams.network.use_external_ip = SpatialConnection->LegacyLocatorConfig.UseExternalIp;
-		ConnectionParams.network.tcp.multiplex_level = SpatialConnection->LegacyLocatorConfig.TcpMultiplexLevel;
-		// end TODO
-
-		int DeploymentIndex = 0;
-		if (!SpatialConnection->LegacyLocatorConfig.DeploymentName.IsEmpty())
-		{
-			bool bFoundRequestedDeployment = false;
-			for (uint32_t i = 0; i < DeploymentList->deployment_count; ++i)
-			{
-				if (SpatialConnection->LegacyLocatorConfig.DeploymentName.Equals(UTF8_TO_TCHAR(DeploymentList->deployments[i].deployment_name)))
-				{
-					DeploymentIndex = i;
-					bFoundRequestedDeployment = true;
-					break;
-				}
-			}
-
-			if (!bFoundRequestedDeployment)
-			{
-				const FString ErrorMessage = FString::Printf(TEXT("Requested deployment name was not present in the deployment list: %s"),
-					*SpatialConnection->LegacyLocatorConfig.DeploymentName);
-				SpatialConnection->OnPreConnectionFailure(ErrorMessage);
-				return;
-			}
-		}
-
-		Worker_ConnectionFuture* ConnectionFuture = Worker_Locator_ConnectAsync(SpatialConnection->WorkerLegacyLocator, DeploymentList->deployments[DeploymentIndex].deployment_name,
-			&ConnectionParams, nullptr, nullptr);
-
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, SpatialConnection]
-		{
-			SpatialConnection->WorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-
-			Worker_ConnectionFuture_Destroy(ConnectionFuture);
-			if (Worker_Connection_IsConnected(SpatialConnection->WorkerConnection))
-			{
-				SpatialConnection->CacheWorkerAttributes();
-
-				AsyncTask(ENamedThreads::GameThread, [SpatialConnection]
-				{
-					SpatialConnection->OnConnectionSuccess();
-				});
-			}
-			else
-			{
-				AsyncTask(ENamedThreads::GameThread, [SpatialConnection]
-				{
-					SpatialConnection->OnConnectionFailure();
-				});
-			}
-		});
-	});
+	FinishConnecting(ConnectionFuture);
 }
 
 void USpatialWorkerConnection::ConnectToLocator()
@@ -310,41 +169,42 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Alpha_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);
 
+	FinishConnecting(ConnectionFuture);
+}
+
+void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture)
+{
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, this]
 	{
-		WorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
-
+		Worker_Connection* NewWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
-		if (Worker_Connection_IsConnected(WorkerConnection))
+
+		AsyncTask(ENamedThreads::GameThread, [this, NewWorkerConnection]
 		{
+			WorkerConnection = NewWorkerConnection;
+
 			CacheWorkerAttributes();
-			AsyncTask(ENamedThreads::GameThread, [this]
+
+			if (Worker_Connection_IsConnected(NewWorkerConnection))
 			{
 				this->OnConnectionSuccess();
-			});
-		}
-		else
-		{
-			// TODO: Try to reconnect - UNR-576
-			AsyncTask(ENamedThreads::GameThread, [this]
+			}
+			else
 			{
+				// TODO: Try to reconnect - UNR-576
 				this->OnConnectionFailure();
-			});
-		}
+			}
+		});
+
+		FGenericPlatformMisc::MemoryBarrier();
 	});
 }
 
 SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 {
-	// The legacy locator path did not specify PlayerIdentityToken, so if we have one
-	// we can use the new locator workflow.
 	if (!LocatorConfig.PlayerIdentityToken.IsEmpty())
 	{
 		return SpatialConnectionType::Locator;
-	}
-	else if (!LegacyLocatorConfig.LoginToken.IsEmpty())
-	{
-		return SpatialConnectionType::LegacyLocator;
 	}
 	else
 	{
@@ -665,5 +525,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 template <typename T>
 void USpatialWorkerConnection::QueueOutgoingMessage(const T& Message)
 {
+	// As later optimization, we can change the queue to hold a union
+	// of all outgoing message types, rather than having a pointer.
 	OutgoingMessagesQueue.Enqueue(MakeUnique<T>(Message));
 }
