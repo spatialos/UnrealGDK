@@ -190,9 +190,26 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	}
 }
 
+void USpatialNetDriver::InitializeSpatialOutputDevice()
+{
+	int32 PIEIndex = -1; // -1 is Unreal's default index when not using PIE
+#if WITH_EDITOR
+	if (IsServer())
+	{
+		PIEIndex = GEngine->GetWorldContextFromWorldChecked(GetWorld()).PIEInstance;
+	}
+	else
+	{
+		PIEIndex = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this).PIEInstance;
+	}
+#endif //WITH_EDITOR
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"), PIEIndex);
+}
+
 void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
-	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
+	InitializeSpatialOutputDevice();
+
 	Dispatcher = NewObject<USpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
@@ -1455,6 +1472,11 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId)
 	EntityToActorChannel.FindAndRemoveChecked(EntityId);
 }
 
+TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityToActorChannelMap()
+{
+	return EntityToActorChannel;
+}
+
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
@@ -1583,4 +1605,3 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
 }
-

@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "GameFramework/OnlineReplStructs.h"
 #include "UObject/NoExportTypes.h"
 
@@ -30,7 +29,7 @@ public:
 
 	// Client
 	void SendPlayerSpawnRequest();
-	void ReceivePlayerSpawnResponse(Worker_CommandResponseOp& Op);
+	void ReceivePlayerSpawnResponse(const Worker_CommandResponseOp& Op);
 
 private:
 	void ObtainPlayerParams(struct FURL& LoginURL, FUniqueNetIdRepl& OutUniqueId, FName& OutOnlinePlatformName);
@@ -40,4 +39,6 @@ private:
 
 	FTimerManager* TimerManager;
 	int NumberOfAttempts;
+
+	TSet<FString> WorkersWithPlayersSpawned;
 };

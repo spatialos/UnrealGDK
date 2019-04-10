@@ -12,7 +12,6 @@ class USpatialWorkerConnection;
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
 DECLARE_EVENT(USpatialWorkerConnection, FOnConnectedEvent);
-DECLARE_EVENT_OneParam(USpatialWorkerConnection, FOnDisconnectedEvent, const FString&);
 DECLARE_EVENT_OneParam(USpatialWorkerConnection, FOnConnectionFailedEvent, const FString&);
 
 UCLASS(config = Engine)
@@ -25,7 +24,6 @@ public:
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
 	virtual void StartGameInstance() override;
-	virtual void Shutdown() override;
 
 	// bResponsibleForSnapshotLoading exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
 	bool bResponsibleForSnapshotLoading = false;
@@ -36,13 +34,10 @@ public:
 	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
 
 	void HandleOnConnected();
-	void HandleOnDisconnected(const FString& Reason);
 	void HandleOnConnectionFailed(const FString& Reason);
 
 	// Invoked when this worker has successfully connected to SpatialOS
 	FOnConnectedEvent OnConnected;
-	// Invoked when this worker has disconnected from SpatialOS, both when initiated by this worker and when disconnected by the runtime
-	FOnDisconnectedEvent OnDisconnected;
 	// Invoked when this worker fails to initiate a connection to SpatialOS
 	FOnConnectionFailedEvent OnConnectionFailed;
 

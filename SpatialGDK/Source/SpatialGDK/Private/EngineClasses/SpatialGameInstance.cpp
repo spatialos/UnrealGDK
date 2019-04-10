@@ -114,30 +114,10 @@ void USpatialGameInstance::StartGameInstance()
 	Super::StartGameInstance();
 }
 
-void USpatialGameInstance::Shutdown()
-{
-	UWorld* World = GetWorld();
-	if (World != nullptr && SpatialConnection != nullptr && SpatialConnection->IsConnected())
-	{
-		if (World->GetNetDriver() != nullptr)
-		{
-			HandleOnDisconnected(TEXT("Client shutdown"));
-		}
-	}
-
-	Super::Shutdown();
-}
-
 void USpatialGameInstance::HandleOnConnected()
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Succesfully connected to SpatialOS"));
 	OnConnected.Broadcast();
-}
-
-void USpatialGameInstance::HandleOnDisconnected(const FString& Reason)
-{
-	UE_LOG(LogSpatialGameInstance, Log, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
-	OnDisconnected.Broadcast(Reason);
 }
 
 void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)

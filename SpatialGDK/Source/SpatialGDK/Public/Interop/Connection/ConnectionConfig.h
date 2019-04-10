@@ -15,7 +15,8 @@ struct FConnectionConfig
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_RAKNET)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
+		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
 
@@ -29,7 +30,6 @@ struct FConnectionConfig
 		WorkerType = SpatialConstants::ClientWorkerType;
 		UseExternalIp = true;
 #endif
-
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
@@ -40,13 +40,10 @@ struct FConnectionConfig
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
 		}
-#if !(PLATFORM_PS4 || PLATFORM_XBOXONE)
-		// RakNet is not compiled for console platforms.
-		else if (LinkProtocolString == TEXT("RakNet"))
+		else if (!LinkProtocolString.IsEmpty())
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
+			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
 		}
-#endif // !(PLATFORM_PS4 || PLATFORM_XBOXONE)
 	}
 
 	FString WorkerId;
@@ -56,6 +53,7 @@ struct FConnectionConfig
 	FString ProtocolLoggingPrefix;
 	Worker_NetworkConnectionType LinkProtocol;
 	Worker_ConnectionParameters ConnectionParams;
+	uint8 TcpMultiplexLevel;
 };
 
 struct FReceptionistConfig : public FConnectionConfig
