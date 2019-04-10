@@ -168,9 +168,6 @@ private:
 	bool bWaitingForAcceptingPlayersToSpawn;
 	FString SnapshotToLoad;
 
-	uint32 ActorReplicationRateLimit = GetDefault<USpatialGDKSettings>()->ActorReplicationRateLimit;
-	uint32 EntityCreationRateLimit = GetDefault<USpatialGDKSettings>()->EntityCreationRateLimit;
-
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
 	UFUNCTION()

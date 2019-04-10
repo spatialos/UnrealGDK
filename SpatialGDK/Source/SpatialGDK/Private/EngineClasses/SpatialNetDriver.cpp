@@ -738,10 +738,12 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 	int32 ActorUpdatesThisConnectionSent = 0;
 
 	// SpatialGDK - Actor replication rate limiting based on config value.
+	uint32 ActorReplicationRateLimit = GetDefault<USpatialGDKSettings>()->ActorReplicationRateLimit;
 	int32 NumActorsToReplicate = (ActorReplicationRateLimit > 0) ? ActorReplicationRateLimit : INT32_MAX;
 	int32 FinalReplicatedCount = 0;
 
 	// SpatialGDK - Entity creation rate limiting based on config value.
+	uint32 EntityCreationRateLimit = GetDefault<USpatialGDKSettings>()->EntityCreationRateLimit;
 	int32 NumEntitiesToCreate = (EntityCreationRateLimit > 0) ? EntityCreationRateLimit : INT32_MAX;
 	int32 FinalCreationCount = 0;
 
@@ -898,12 +900,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 						OutUpdated++;
 					}
 
-					// Second check for channel saturation.
-					if (!InConnection->IsNetReady(0))
-					{
-						// We can bail out now since this connection is saturated, we'll return how far we got though
-						return FinalReplicatedCount + FinalCreationCount;
-					}
+					// SpatialGDK: Here Unreal would do a second check for channel saturation and early out if needed. Removed such checks.
 				}
 			}
 
