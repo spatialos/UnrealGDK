@@ -33,22 +33,20 @@ public:
 	// AddOpCallback returns a callback ID which is incremented on each callback that is registered.
 	// ComponentId must be in the range 1000 - 2000.
 	// Callbacks can be deregistered through passing the corresponding callback ID to the RemoveOpCallback function.
-	template<typename T>
-	using TCallback = TFunction<void(T)>;
 	using FCallbackId = uint32;
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TCallback<const Worker_AddComponentOp&>& Callback);
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TCallback<const Worker_RemoveComponentOp&>& Callback);
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TCallback<const Worker_AuthorityChangeOp&>& Callback);
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TCallback<const Worker_ComponentUpdateOp&>& Callback);
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TCallback<const Worker_CommandRequestOp&>& Callback);
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TCallback<const Worker_CommandResponseOp&>& Callback);
+	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback);
+	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback);
+	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback);
+	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback);
+	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback);
+	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback);
 	void RemoveOpCallback(FCallbackId Id);
 
 private:
 	struct UserOpCallbackData
 	{
 		FCallbackId Id;
-		TCallback<const Worker_Op*> Callback;
+		TFunction<void(const Worker_Op*)> Callback;
 	};
 
 	struct CallbackIdData
@@ -60,7 +58,7 @@ private:
 	bool IsExternalSchemaOp(Worker_Op* Op) const;
 	void ProcessExternalSchemaOp(Worker_Op* Op);
 	Worker_ComponentId GetComponentId(Worker_Op* Op) const;
-	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TCallback<const Worker_Op*>& Callback);
+	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
 	UPROPERTY()

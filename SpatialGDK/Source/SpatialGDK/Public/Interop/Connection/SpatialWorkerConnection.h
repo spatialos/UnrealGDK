@@ -10,6 +10,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+class USpatialGameInstance;
 class UWorld;
 
 enum class SpatialConnectionType
@@ -26,6 +27,8 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject
 	GENERATED_BODY()
 
 public:
+	void Init(USpatialGameInstance* InGameInstance);
+
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
@@ -71,6 +74,8 @@ private:
 	Worker_Connection* WorkerConnection;
 	Worker_Locator* WorkerLegacyLocator;
 	Worker_Alpha_Locator* WorkerLocator;
+
+	USpatialGameInstance* GameInstance;
 
 	bool bIsConnected;
 

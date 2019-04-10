@@ -2,6 +2,7 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/World.h"
 #include "UnrealEngine.h"
@@ -9,6 +10,11 @@
 #include "Misc/Paths.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
+
+void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
+{
+	GameInstance = InGameInstance;
+}
 
 void USpatialWorkerConnection::FinishDestroy()
 {
@@ -438,18 +444,18 @@ USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 	return SpatialNetDriver;
 }
 
-
 // TODO: UNR-962 - move connection events in to native connection handling codepath (eg, UEngine::HandleNetworkFailure)
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
-	GetSpatialNetDriverChecked()->HandleOnConnected();
+	GetSpatialNetDriverChecked()->OnConnectedToSpatialOS();
+	GameInstance->HandleOnConnected();
 }
 
 void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
 {
 	bIsConnected = false;
-	GetSpatialNetDriverChecked()->HandleOnConnectionFailed(Reason);
+	GameInstance->HandleOnConnectionFailed(Reason);
 }
 
 void USpatialWorkerConnection::OnConnectionFailure()
@@ -464,7 +470,7 @@ void USpatialWorkerConnection::OnConnectionFailure()
 			const FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
 			AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
 			{
-				GetSpatialNetDriverChecked()->HandleOnConnectionFailed(ErrorMessage);
+				GameInstance->HandleOnConnectionFailed(ErrorMessage);
 			});
 			break;
 		}

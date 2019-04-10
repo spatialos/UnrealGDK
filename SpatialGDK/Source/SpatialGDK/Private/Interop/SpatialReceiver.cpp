@@ -8,6 +8,7 @@
 
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
@@ -1269,7 +1270,7 @@ void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealOb
 
 void USpatialReceiver::OnDisconnect(Worker_DisconnectOp& Op)
 {
-	NetDriver->HandleOnDisconnected(UTF8_TO_TCHAR(Op.reason));
+	Cast<USpatialGameInstance>(GetWorld()->GetGameInstance())->HandleOnDisconnected(UTF8_TO_TCHAR(Op.reason));
 }
 
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)

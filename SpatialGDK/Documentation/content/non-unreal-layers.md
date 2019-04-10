@@ -47,15 +47,19 @@ There is a basic example in the _Examples_ section below. For more examples of h
 
 >**Note:** Your external SpatialOS components must have an ID between 1000 and 2000 to be registered by the pipeline.
 
-You set up your game to receive network operations using the `USpatialDispatcher::AddOpCallback` function. This function is paramaterised with a SpatialOS component ID and a callback function reference with the following type:
+You set up your game to receive network operations using the `USpatialDispatcher::AddOpCallback` functions. These overloaded functions are paramaterized with a `Worker_ComponentId` and a callback function reference that takes one of the following network operation types as an argument:
+* `Worker_AddComponentOp`
+* `Worker_RemoveComponentOp`
+* `Worker_AuthorityChangeOp`
+* `Worker_ComponentUpdateOp`
+* `Worker_CommandRequestOp`
+* `Worker_CommandResponseOp`
 
-`const TFunction<void(Worker_ComponentId, const Worker_Op*)>`
+`Worker_ComponentId` and each network operation type are defined in the [Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/reference).
 
-where `Worker_ComponentId` and `Worker_Op` are types defined in the [Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/reference).
+You must register the callbacks inside your game instance's `::Init()` function to ensure your callbacks will be triggered for initial network operations received by the SpatialOS worker connection.
 
-You'll need to register your callbacks before the Unreal worker connects to the SpatialOS runtime to avoid missing any operations.
-
-You can deregister your callbacks using the `USpatialDispatcher::RemoveOpCallback` function and passing the `CallbackId` parameter returned by the corresponding call to `USpatialDispatcher::AddOpCallback`.
+Each `USpatialDispatcher::AddOpCallback` function returns a `CallbackId`. You can deregister your callbacks using the `USpatialDispatcher::RemoveOpCallback` function and passing the `CallbackId` parameter returned by the corresponding call to `USpatialDispatcher::AddOpCallback`.
 
 There is a basic example in the _Examples_ section below. For more examples of how to deserialize the `Worker_Op` type see the SpatialOS documentation on [serialization in the Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/serialization).
 
@@ -95,7 +99,7 @@ component Session {
 
 #### Send data
 You could serialize and send a component update in your Unreal project code in the following way:
- 
+
 ```
 void SendSomeUpdate(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId)
 {
@@ -128,30 +132,47 @@ Worker_RequestId SendSomeCommandResponse(Worker_EntityId TargetEntityId, Worker_
 #### Receive data
 You could receive and deserialize a component update and command request in your Unreal project code in the following way:
 ```
-void ATPSGameMode::BeginPlay()
+void UTPSGameInstance::Init()
 {
-    UWorld* World = GetWorld();
-    USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-    USpatialDispatcher* Dispatcher = NetDriver->Dispatcher;
+    // OnConnected is an event declared in USpatialGameInstance
+    OnConnected.AddLambda([this]() {
+        // On the client the world may not be completely set up, if s we can use the PendingNetGame
+        USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
+        if (NetDriver == nullptr)
+        {
+            NetDriver = Cast<USpatialNetDriver>(GetWorldContext()->PendingNetGame->GetNetDriver());
+        }
+        USpatialDispatcher* Dispatcher = NetDriver->Dispatcher;
 
-    Dispatcher->AddOpCallback(1337, [&](const Worker_ComponentUpdateOp& Op) {
-        uint32 PlayerCount = Schema_GetUint32(Schema_GetComponentUpdateFields(Op.update.schema_type), 1);
-        UE_LOG(LogTPS, Verbose, TEXT("Received update, new player count: %d"), PlayerCount);
-        const FVector = FVector::ZeroVector;
-        const FRotator Rotation = FRotator::ZeroRotator;
-        GetWorld()->SpawnActor(CubeClass, &Location, &Rotation);
-    });
+        Dispatcher->AddOpCallback(1337, [this](const Worker_ComponentUpdateOp& Op) {
+            // Example deserializing network operation
+            uint32 PlayerCount = Schema_GetUint32(Schema_GetComponentUpdateFields(Op.update.schema_type), 1);
 
-    Dispatcher->AddOpCallback(1338, [&](const Worker_CommandRequestOp& Op) {
-        Worker_CommandResponse Response = {};
-        Response.component_id = 1338;
-        Response.schema_type = Schema_CreateCommandResponse(1338, 1);
-        Schema_Object* response_object = Schema_GetCommandResponseObject(Response.schema_type);
+            // Example actor spawning
+            const FVector Location = FVector::ZeroVector;
+            const FRotator Rotation = FRotator::ZeroRotator;
+            GetWorld()->SpawnActor(CubeClass, &Location, &Rotation);
 
-        FString text = "Here's my response.";
-        Schema_AddBytes(response_object, 1, (const uint8_t*) TCHAR_TO_ANSI(*text), sizeof(char) * strlen(TCHAR_TO_ANSI(*text)));
+            // Example serializing and sending another network operation
+            Worker_ComponentUpdate Update = {};
+            Update.component_id = 1338;
+            Update.schema_type = Schema_CreateComponentUpdate(1338);
+            Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update.schema_type);
+            Schema_AddInt32(FieldsObject, 1, PlayerCount);
+            Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->SendComponentUpdate(Op.entity_id, &Update);
 
-        Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);
+        });
+
+        Dispatcher->AddOpCallback(1338 /* where Unreal worker has authority */, [this](const Worker_CommandRequestOp& Op) {
+            // Example serializing and sending command response
+            Worker_CommandResponse Response = {};
+            Response.component_id = 1338;
+            Response.schema_type = Schema_CreateCommandResponse(1338, 1);
+            Schema_Object* response_object = Schema_GetCommandResponseObject(Response.schema_type);
+            FString text = "Here's my response.";
+            Schema_AddBytes(response_object, 1, (const uint8_t*)TCHAR_TO_ANSI(*text), sizeof(char) * strlen(TCHAR_TO_ANSI(*text)));
+            Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);
+        });
     });
 }
 ```
@@ -210,4 +231,4 @@ public:
 
 <br/>
 ------------
-2019-03-15 Page added with full editorial review
+2019-04-04 Page updated with full editorial review: updated methods for receiving network operations
