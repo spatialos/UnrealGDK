@@ -128,11 +128,11 @@ Workers are the programs that connect to a SpatialOS world. In general, you use 
 **Note:** In the following commands, you must replace **`YourProject`** with the name of your project.
 
 1. In a terminal window, navigate to your `<ProjectRoot>` directory.
-1. Build a server-worker assembly by running the following command: 
+2. Build a server-worker assembly by running the following command: 
 ```
 Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Linux Development YourProject.uproject
 ```
-2. Build a client-worker assembly by running the following command: 
+3. Build a client-worker assembly by running the following command: 
 ```
 Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Win64 Development YourProject.uproject
 ```
