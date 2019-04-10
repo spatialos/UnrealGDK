@@ -450,7 +450,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 					Writer->WriteValue(TEXT("z_meters"), LaunchConfigDescription.World.Dimensions.Y);
 				Writer->WriteObjectEnd();
 			Writer->WriteValue(TEXT("chunk_edge_length_meters"), LaunchConfigDescription.World.ChunkEdgeLengthMeters);
-			Writer->WriteValue(TEXT("streaming_query_interval"), LaunchConfigDescription.World.StreamingQueryInterval);
+			Writer->WriteValue(TEXT("streaming_query_interval"), LaunchConfigDescription.World.StreamingQueryIntervalSeconds);
 			Writer->WriteArrayStart(TEXT("legacy_flags"));
 			for (auto& Flag : LaunchConfigDescription.World.LegacyFlags)
 			{

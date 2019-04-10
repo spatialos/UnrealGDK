@@ -31,32 +31,11 @@ You can switch back by unchecking the boxes.
 
 > **Warning:** As the GDK is in alpha, switching back to Unreal default networking mode can be a useful way to debug and so speed up your development iteration. However, you lose access to the multiserver features of the GDK in Unreal default networking mode which may lead to erratic behavior.
 
-### Launching multiple PIE server-workers
-
-> **Warning:** This option is still experimental and is currently unstable.
+### Auto-generated launch config for PIE server-workers
 
 You can launch multiple servers at the same time from within the Unreal Editor in [PIE (Unreal documentation)](https://docs.unrealengine.com/en-us/Engine/UI/LevelEditor/InEditorTesting#playineditor) configuration. To configure the number of servers launched, open the **Play** drop-down menu and use the slider `Number of Servers` within the `Multiplayer Options` section.
 
-To connect multiple servers-workers to SpatialOS, you need to tell SpatialOS how many server-workers you will be connecting. In `<ProjectPath>\spatial\default_launch.json` there is a load balancing section which dictates how many workers will be connected to SpatialOS. 
-
-If you haven't modified your load balancing previously, your load balancing strategy should look like:
-
-```
-"load_balancing": {
-  "layer_configurations": [
-      {
-          "layer": "UnrealWorker",
-          "rectangle_grid": {
-              "cols": 1,
-              "rows": 1
-          },
-          "options": {
-            "manual_worker_connection_only": true
-        }
-      }
-  ]
-}
-```
+To connect multiple servers-workers to SpatialOS, you need to tell SpatialOS how many server-workers you will be connecting. In `<ProjectPath>\spatial\default_launch.json` there is a load balancing section which dictates how many workers will be connected to SpatialOS. By default, When launching SpatialOS through the editor, a launch configuration is auto-generated for you based on the settings specified on the [SpatialOS editor settings]().
 
 This uses the [`rectangle_grid`](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#rectangular-grid-rectangle-grid) strategy with 1 column and 1 row. To connect 2 servers, change this to 1 column and 2 rows (or vice-versa). Read more about the different kinds of load balancing strategies [here](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#load-balancing-with-the-new-runtime).
 

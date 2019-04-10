@@ -15,7 +15,7 @@ struct FWorldLaunchSection
 	FWorldLaunchSection()
 		: Dimensions(2000, 2000)
 		, ChunkEdgeLengthMeters(50)
-		, StreamingQueryInterval(4)
+		, StreamingQueryIntervalSeconds(4)
 		, SnapshotWritePeriodSeconds(0)
 	{
 		LegacyFlags.Add(TEXT("bridge_qos_max_timeout"), TEXT("0"));
