@@ -27,8 +27,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 
 	bSchemaGeneratorRunning = true;
 
-	// 80/20 load assets to gen schema.
-	float ProgressLeft = 100.0f;
+	// 80/10/10 load assets / gen schema / garbage collection.
 	FScopedSlowTask Progress(100.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
 	Progress.MakeDialog(true);
 
@@ -51,8 +50,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
 	if (bFullRebuild)
 	{
-		ProgressLeft -= 90.0f;
-		Progress.EnterProgressFrame(90.f);
+		Progress.EnterProgressFrame(80.f);
 		if (!LoadPotentialAssets(LoadedAssets))
 		{
 			bSchemaGeneratorRunning = false;
@@ -65,8 +63,15 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 	bool bPromptForCompilation = false;
 	UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
 
-	Progress.EnterProgressFrame(ProgressLeft);
+	Progress.EnterProgressFrame(bFullRebuild ? 10.f : 100.f);
 	bool bResult = SpatialGDKGenerateSchema();
+
+	if (bFullRebuild)
+	{
+		Progress.EnterProgressFrame(10.f);
+		LoadedAssets.Empty();
+		GEngine->ForceGarbageCollection(true);
+	}
 	
 	// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
 	if (ErroredBlueprints.Num() > 0)

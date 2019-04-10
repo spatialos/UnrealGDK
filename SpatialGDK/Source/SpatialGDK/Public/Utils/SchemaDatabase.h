@@ -49,7 +49,7 @@ public:
 	TMap<FString, uint32> LevelPathToComponentId;
 
 	UPROPERTY(VisibleAnywhere)
-	uint32 FirstLevelComponentId;
+	TSet<uint32> LevelComponentIds;
 
 	UPROPERTY(VisibleAnywhere)
 	uint32 NextAvailableComponentId;

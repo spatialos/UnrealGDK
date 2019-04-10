@@ -288,6 +288,5 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 
 bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
-	return ComponentId >= SchemaDatabase->FirstLevelComponentId &&
-		ComponentId <= SchemaDatabase->FirstLevelComponentId + SchemaDatabase->LevelPathToComponentId.Num();
+	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
 }

@@ -244,13 +244,18 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 	for (const auto& LevelPath : LoadedLevels)
 	{
 		FString CleanPackagePath = UWorld::RemovePIEPrefix(LevelPath.ToString());
-		uint32 ComponentId = NetDriver->ClassInfoManager->SchemaDatabase->LevelPathToComponentId.FindRef(CleanPackagePath);
-
-		if (ComponentId > 0)
+		
+		uint32* ComponentId = NetDriver->ClassInfoManager->SchemaDatabase->LevelPathToComponentId.Find(CleanPackagePath);
+		if (ComponentId != nullptr)
 		{
+			//UE_LOG(LogTemp, Log, TEXT("[SG] Found Component [%d] for Path [%s]"), *ComponentId, *CleanPackagePath);
 			QueryConstraint SpecificLevelConstraint;
-			SpecificLevelConstraint.ComponentConstraint = ComponentId;
+			SpecificLevelConstraint.ComponentConstraint = *ComponentId;
 			LevelConstraint.OrConstraint.Add(SpecificLevelConstraint);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("[SG] Didn't find Component for LevelPath [%s]"), *CleanPackagePath);
 		}
 	}
 

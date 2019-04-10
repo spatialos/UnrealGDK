@@ -42,7 +42,7 @@ uint32 NextAvailableComponentId;
 
 // LevelStreaming
 TMap<FString, uint32> LevelPathToComponentId;
-uint32 FirstlevelComponentId;
+TSet<uint32> LevelComponentIds;
 
 // Prevent name collisions.
 TMap<UClass*, FString> ClassToSchemaName;
@@ -56,22 +56,19 @@ void OnStatusOutput(FString Message)
 	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("%s"), *Message);
 }
 
-int GenerateCompleteSchemaFromClass(FString SchemaPath, int ComponentId, TSharedPtr<FUnrealType> TypeInfo)
+void GenerateCompleteSchemaFromClass(FString SchemaPath, FComponentIdGenerator& IdGenerator, TSharedPtr<FUnrealType> TypeInfo)
 {
 	UClass* Class = Cast<UClass>(TypeInfo->Type);
 	FString SchemaFilename = UnrealNameToSchemaName(Class->GetName());
 
-	int NumComponents = 0;
 	if (Class->IsChildOf<AActor>())
 	{
-		NumComponents = GenerateActorSchema(ComponentId, Class, TypeInfo, SchemaPath);
+		GenerateActorSchema(IdGenerator, Class, TypeInfo, SchemaPath);
 	}
 	else
 	{
 		GenerateSubobjectSchema(Class, TypeInfo, SchemaPath + TEXT("Subobjects/"));
 	}
-
-	return NumComponents;
 }
 
 bool CheckSchemaNameValidity(FString Name, FString Identifier, FString Category)
@@ -239,70 +236,106 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 }// ::
 
 
-void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath)
+void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath, FComponentIdGenerator& IdGenerator)
 {
 	// Generate the actual schema.
 	FScopedSlowTask Progress((float)TypeInfos.Num(), LOCTEXT("GenerateSchemaFromClasses", "Generating Schema..."));
 	for (const auto& TypeInfo : TypeInfos)
 	{
 		Progress.EnterProgressFrame(1.f);
-		NextAvailableComponentId += GenerateCompleteSchemaFromClass(CombinedSchemaPath, NextAvailableComponentId, TypeInfo);
+		GenerateCompleteSchemaFromClass(CombinedSchemaPath, IdGenerator, TypeInfo);
 	}
 }
 
-void GenerateSchemaForSublevels(const FString& SchemaPath)
+void WriteLevelComponent(FCodeWriter& Writer, FString LevelName, uint32 ComponentId)
 {
-	if (GWorld == nullptr)
+	Writer.PrintNewLine();
+	Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(LevelName));
+	Writer.Indent();
+	Writer.Printf("id = {0};", ComponentId);
+	Writer.Outdent().Print("}");
+}
+
+void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator& IdGenerator)
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+
+	TArray<FAssetData> WorldAssets;
+	AssetRegistryModule.Get().GetAllAssets(WorldAssets, true);
+
+	// Filter assets to game maps.
+	WorldAssets = WorldAssets.FilterByPredicate([](FAssetData Data) {
+		return (Data.AssetClass == UWorld::StaticClass()->GetFName() && Data.PackagePath.ToString().StartsWith("/Game"));
+	});
+
+	TMultiMap<FName, FName> LevelNamesToPaths;
+
+	for (FAssetData World : WorldAssets)
 	{
-		UE_LOG(LogTemp, Log, TEXT("No world found, skipping schema for sublevels."));
-		return;
+		UE_LOG(LogTemp, Log, TEXT("Found World Name: [%s]. Path: [%s]. Object: [%s]"),
+			*World.AssetName.ToString(),
+			*World.PackagePath.ToString(),
+			*World.PackageName.ToString());
+		LevelNamesToPaths.Add(World.AssetName, World.PackageName);
 	}
 
-	// TODO: Generate new schema.
+	FCodeWriter Writer;
+	Writer.Printf(R"""(
+		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+		// Note that this file has been generated automatically
+		package unreal.sublevels;)""");
 
-	//FLevelData LevelData = GenerateSchemaForSublevel(GWorld);
-	//if (LevelData.SublevelNameToComponentId.Num() > 0)
-	//{
-	//	LevelPathToLevelData.Add(GWorld->GetMapName(), LevelData);
-	//}
+	TArray<FName> Keys;
+	LevelNamesToPaths.GetKeys(Keys);
 
-	//if (LevelPathToLevelData.Num() == 0)
-	//{
-	//	FirstSublevelComponentId = SpatialConstants::INVALID_COMPONENT_ID;
-	//	LastSublevelComponentId = SpatialConstants::INVALID_COMPONENT_ID;
-	//	return;
-	//}
+	for (FName LevelName : Keys)
+	{
+		if (LevelNamesToPaths.Num(LevelName) > 1)
+		{
+			// Write multiple numbered components.
+			TArray<FName> LevelPaths;
+			LevelNamesToPaths.MultiFind(LevelName, LevelPaths);
+			FString LevelNameString = LevelName.ToString();
 
-	//FComponentIdGenerator IdGenerator(NextAvailableComponentId);
+			for (int i = 0; i < LevelPaths.Num(); i++)
+			{
+				uint32 ComponentId = LevelPathToComponentId.FindRef(LevelPaths[i].ToString());
+				if (ComponentId == 0)
+				{
+					ComponentId = IdGenerator.Next();
+					LevelPathToComponentId.Add(LevelPaths[i].ToString(), ComponentId);
+					LevelComponentIds.Add(ComponentId);
+					UE_LOG(LogTemp, Log, TEXT("[SchemaGen] Generated ComponentId %d for Level [%s]"), ComponentId, *LevelPaths[i].ToString())
+				}
+				else
+				{
+					UE_LOG(LogTemp, Log, TEXT("[SchemaGen] Found ComponentId %d for Level [%s]"), ComponentId, *LevelPaths[i].ToString())
+				}
+				WriteLevelComponent(Writer, FString::Printf(TEXT("%s%d"), *LevelNameString, i), ComponentId);
+				
+			}
+		}
+		else
+		{
+			// Write a single component.
+			FString LevelPath = LevelNamesToPaths.FindRef(LevelName).ToString();
+			uint32 ComponentId = LevelPathToComponentId.FindRef(LevelPath);
+			if (ComponentId == 0)
+			{
+				ComponentId = IdGenerator.Next();
+				LevelPathToComponentId.Add(LevelPath, ComponentId);
+				LevelComponentIds.Add(ComponentId);
+				UE_LOG(LogTemp, Log, TEXT("[SchemaGen] Generated ComponentId %d for Level [%s]"), ComponentId, *LevelPath)
+			}
+			else
+			{
+				UE_LOG(LogTemp, Log, TEXT("[SchemaGen] Found ComponentId %d for Level [%s]"), ComponentId, *LevelPath)
+			}
+			WriteLevelComponent(Writer, LevelName.ToString(), ComponentId);
+		}
+	}
 
-	//FirstSublevelComponentId = IdGenerator.GetCurrentId();
-
-	//for (auto& LevelPathToLevelDataPair : LevelPathToLevelData)
-	//{
-	//	FCodeWriter Writer;
-
-	//	Writer.Printf(R"""(
-	//		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-	//		// Note that this file has been generated automatically
-	//		package unreal.sublevels.{0};)""",
-	//		*UnrealNameToSchemaComponentName(LevelPathToLevelDataPair.Key).ToLower());
-
-	//	for (auto& SublevelToComponentIdPair : LevelPathToLevelDataPair.Value.SublevelNameToComponentId)
-	//	{
-	//		SublevelToComponentIdPair.Value = IdGenerator.GetNextAvailableId();
-
-	//		Writer.PrintNewLine();
-	//		Writer.Printf("component {0} {", *UnrealNameToSchemaComponentName(SublevelToComponentIdPair.Key));
-	//		Writer.Indent();
-	//		Writer.Printf("id = {0};", SublevelToComponentIdPair.Value);
-	//		Writer.Outdent().Print("}");
-	//	}
-
-	//	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *(SchemaPath + TEXT("Sublevels/")), *LevelPathToLevelDataPair.Key));
-	//}
-
-	//LastSublevelComponentId = IdGenerator.GetCurrentId();
-	//NextAvailableComponentId = IdGenerator.GetNextAvailableId();
+	Writer.WriteToFile(FString::Printf(TEXT("%slevel_streaming.schema"), *SchemaPath));
 }
 
 FString GenerateIntermediateDirectory()
@@ -323,7 +356,7 @@ void SaveSchemaDatabase()
 	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
 	SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
-	SchemaDatabase->FirstLevelComponentId = FirstlevelComponentId;
+	SchemaDatabase->LevelComponentIds = LevelComponentIds;
 
 	FAssetRegistryModule::AssetCreated(SchemaDatabase);
 	SchemaDatabase->MarkPackageDirty();
@@ -422,6 +455,8 @@ void DeleteGeneratedSchemaFiles()
 void ClearGeneratedSchema()
 {
 	ClassPathToSchema.Empty();
+	LevelComponentIds.Empty();
+	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
 
 	// As a safety precaution, if the SchemaDatabase.uasset doesn't exist then make sure the schema generated folder is cleared as well.
@@ -430,13 +465,13 @@ void ClearGeneratedSchema()
 
 void TryLoadExistingSchemaDatabase()
 {
-	TSoftObjectPtr<USchemaDatabase> SchemaDatabasePtr(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")));
-	SchemaDatabasePtr.LoadSynchronous();
-	const USchemaDatabase* const SchemaDatabase = SchemaDatabasePtr.Get();
+	const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")).TryLoad());
 
 	if (SchemaDatabase != nullptr)
 	{
 		ClassPathToSchema = SchemaDatabase->ClassPathToSchema;
+		LevelComponentIds = SchemaDatabase->LevelComponentIds;
+		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
@@ -490,9 +525,19 @@ bool SpatialGDKGenerateSchema()
 
 	check(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking);
 
-	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath);
+	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
-	GenerateSchemaForSublevels(SchemaOutputPath);
+	UE_LOG(LogTemp, Log, TEXT("[SchemaGen] NextIdStart: %d"), IdGenerator.Peek());
+
+	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath, IdGenerator);
+
+	UE_LOG(LogTemp, Log, TEXT("[SchemaGen] After Class Gen: %d"), IdGenerator.Peek());
+
+	GenerateSchemaForSublevels(SchemaOutputPath, IdGenerator);
+
+	UE_LOG(LogTemp, Log, TEXT("[SchemaGen] After Level Gen: %d"), IdGenerator.Peek());
+
+	NextAvailableComponentId = IdGenerator.Peek();
 
 	SaveSchemaDatabase();
 

@@ -264,10 +264,15 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	if (ActorWorld != NetDriver->World)
 	{
 		FString CleanedLevelPath = UWorld::RemovePIEPrefix(ActorWorld->GetOuter()->GetPathName());
-		uint32 ComponentId = ClassInfoManager->SchemaDatabase->LevelPathToComponentId.FindRef(CleanedLevelPath);
-		if (ComponentId > 0)
+		uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelPathToComponentId.Find(CleanedLevelPath);
+		if (ComponentId != nullptr)
 		{
-			return ComponentFactory::CreateEmptyComponentData(ComponentId);
+			//UE_LOG(LogTemp, Log, TEXT("[SG] Sender Found Component [%d] for LevelPath [%s]"), *ComponentId, *CleanedLevelPath);
+			return ComponentFactory::CreateEmptyComponentData(*ComponentId);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Log, TEXT("[SG] Sender Failed to find Component for LevelPath [%s]"), *CleanedLevelPath);
 		}
 	}
 
