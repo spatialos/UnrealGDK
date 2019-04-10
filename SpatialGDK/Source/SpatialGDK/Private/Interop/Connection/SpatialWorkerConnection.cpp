@@ -13,6 +13,7 @@
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 //TArray<FString> USpatialWorkerConnection::WorkerIds;
+static TArray<FString> WorkerIds;
 
 void USpatialWorkerConnection::FinishDestroy()
 {
@@ -86,13 +87,35 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bInConnectAsClient)
 		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
 	}
 
+	bConnectAsClient = bInConnectAsClient;
+	PlayInEditorID = GPlayInEditorID;
+
 	if (ReceptionistConfig.WorkerId.IsEmpty())
 	{
 		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
+
+// 		if (bConnectAsClient)
+// 		{
+// 			ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
+// 		}
+// 		else
+// 		{
+// 			if (PlayInEditorID <= WorkerIds.Num())
+// 			{
+// 				ReceptionistConfig.WorkerId = WorkerIds[PlayInEditorID - 1];
+// 			}
+// 			else
+// 			{
+// 				ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
+// 				WorkerIds.AddDefaulted();
+// 				WorkerIds[PlayInEditorID - 1] = ReceptionistConfig.WorkerId;
+// 			}
+// 		}
 	}
 
-	bConnectAsClient = bInConnectAsClient;
-	PlayInEditorID = GPlayInEditorID;
+	int LaunchTime = FDateTime::Now().GetSecond();
+	ReplaceWorker();
+	//FPlatformProcess::Sleep(1.0f);
 
 	// TODO: Move creation of connection parameters into a function somehow - UNR:579
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
@@ -132,7 +155,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bInConnectAsClient)
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 		if (Worker_Connection_IsConnected(WorkerConnection))
 		{
-			ReplaceWorker();
+			//ReplaceWorker();
 			CacheWorkerAttributes();
 
 			AsyncTask(ENamedThreads::GameThread, [this]
@@ -431,6 +454,52 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 	return CachedWorkerAttributes;
 }
 
+void USpatialWorkerConnection::PrepareNextWorker()
+{
+	//if (!bConnectAsClient)
+	{
+		FString NextWorkerId;
+		PlayInEditorID = 1;
+
+		//if (PlayInEditorID <= WorkerIds.Num())
+		{
+			//NextWorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
+			NextWorkerId = TEXT("UnrealWorker") + FGuid::NewGuid().ToString();
+			//OldWorkerId = WorkerIds[PlayInEditorID - 1];
+			//OldWorkerId = FString::Printf(TEXT("%s:%d"), *ReceptionistConfig.WorkerType, PlayInEditorID - 1);
+
+			const FString ExecuteAbsolutePath(TEXT("C:/dev/UnrealGDKTestSuite/spatial/"));
+			const FString CmdExecutable = TEXT("cmd.exe");
+
+			const FString SpatialCmdArgument = FString::Printf(
+				TEXT("/c cmd.exe /c spatial.exe local worker replace "
+					"--existing_worker_id %s "
+					"--local_service_grpc_port 22000 "
+					"--replacing_worker_id %s "
+					"--log_level=debug ^& pause"), *NextWorkerId, *WorkerIds[PlayInEditorID - 1]);
+					//"--log_level=debug ^& pause"), *NextWorkerId, *ReceptionistConfig.WorkerId);
+			//"--log_level=debug ^& pause"), *ReceptionistConfig.WorkerId, *OldWorkerId);
+			uint32 SpatialOSStackProcessID = 0;
+			FProcHandle SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
+				*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
+				*ExecuteAbsolutePath, nullptr, nullptr);
+
+			if (PlayInEditorID > WorkerIds.Num())
+			{
+				WorkerIds.AddDefaulted();
+			}
+
+			WorkerIds[PlayInEditorID - 1] = NextWorkerId;
+		}
+		//else
+		//{
+			//ReceptionistConfig.WorkerId = FString::Printf(TEXT("%s:%d"), *ReceptionistConfig.WorkerType, PlayInEditorID - 1);
+		//	WorkerIds.AddDefaulted();
+		//	WorkerIds[PlayInEditorID - 1] = ReceptionistConfig.WorkerId;
+		//}
+	}
+}
+
 void USpatialWorkerConnection::CacheWorkerAttributes()
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
@@ -444,7 +513,7 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 void USpatialWorkerConnection::ReplaceWorker()
 {
-	static TArray<FString> WorkerIds;
+	//static TArray<FString> WorkerIds;
 
 	if (!bConnectAsClient)
 	{
@@ -455,32 +524,23 @@ void USpatialWorkerConnection::ReplaceWorker()
 			OldWorkerId = WorkerIds[PlayInEditorID - 1];
 			//OldWorkerId = FString::Printf(TEXT("%s:%d"), *ReceptionistConfig.WorkerType, PlayInEditorID - 1);
 
-			//const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
-			//const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 			const FString ExecuteAbsolutePath(TEXT("C:/dev/UnrealGDKTestSuite/spatial/"));
 			const FString CmdExecutable = TEXT("cmd.exe");
 
 			const FString SpatialCmdArgument = FString::Printf(
-				//TEXT("/c spatial.exe local worker replace "
-				TEXT("/c cmd.exe /c spatial.exe local worker replace "
+				//TEXT("/c cmd.exe /c spatial.exe local worker replace "
+				TEXT("/c spatial.exe local worker replace "
 					"--existing_worker_id %s "
 					"--local_service_grpc_port 22000 "
 					"--replacing_worker_id %s "
-					"--log_level=debug ^& pause"), *ReceptionistConfig.WorkerId, *OldWorkerId);
-
-			//UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
-			// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
-			// execute it. We currently can't use pipes to capture output as it doesn't work properly with current
-			// spatial.exe.
+					"--log_level=debug ^& pause"), *OldWorkerId, *ReceptionistConfig.WorkerId);
+					//"--log_level=debug ^& pause"), *ReceptionistConfig.WorkerId, *OldWorkerId);
 			uint32 SpatialOSStackProcessID = 0;
 			FProcHandle SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
 				*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
 				*ExecuteAbsolutePath, nullptr, nullptr);
-			//  
-			//  			FNotificationInfo Info(SpatialOSStackProcHandle.IsValid() == true
-			//  				? FText::FromString(TEXT("SpatialOS Starting..."))
-			//  				: FText::FromString(TEXT("Failed to start SpatialOS")));
+
+			WorkerIds[PlayInEditorID - 1] = ReceptionistConfig.WorkerId;
 		}
 		else
 		{

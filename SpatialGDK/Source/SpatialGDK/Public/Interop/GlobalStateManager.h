@@ -73,6 +73,7 @@ public:
 
 #if WITH_EDITOR
 	void OnPrePIEEnded(bool bValue);
+	void OnPrePIEEndedSingleProcess(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
 
 	void OnShutdownComponentUpdate(Worker_ComponentUpdate& Update);

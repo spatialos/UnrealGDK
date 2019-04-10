@@ -58,6 +58,7 @@ public:
 
 	bool bConnectAsClient;
 	int32 PlayInEditorID;
+	void PrepareNextWorker();
 
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);
