@@ -12,13 +12,12 @@ namespace improbable
 
 inline FString GetOwnerWorkerAttribute(AActor* Actor)
 {
-	FString NetOwnerAttribute;
 	if (const USpatialNetConnection* NetConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
 	{
-		NetOwnerAttribute = NetConnection->WorkerAttribute;
+		return NetConnection->WorkerAttribute;
 	}
 
-	return NetOwnerAttribute;
+	return FString();
 }
 
 } // namespace improbable
