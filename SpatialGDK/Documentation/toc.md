@@ -1,24 +1,19 @@
 - <h3>SpatialOS GDK for Unreal</h3>
     - [Welcome]({{urlRoot}}/index)
+    - [Feature list]({{urlRoot}}/features)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
         - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
         - [3: Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
     - Tutorials
-        - Placeholder name for Example Project tutorial
-            - Introduction
-            - Step 1: 
-            - Step 2: 
-            - Step 3:  
         - Multiserver Shooter tutorial
             - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
             - [Step 1: Set up]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
             - [Step 2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
             - [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
-        - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
-    - [Feature list]({{urlRoot}}/features)
+        - [Port your own project to the GDK]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
     - [What's new in alpha]({{urlRoot}}/content/whatsnew)
 - <h3>Concepts and terminology</h3>
     - [SpatialOS concepts]({{urlRoot}}/content/spatialos-concepts/concepts)

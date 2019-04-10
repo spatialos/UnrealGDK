@@ -64,24 +64,31 @@ Note: Ensure that your Visual Studio Solution Configuration is set to **Developm
 
 ### Deploy your project 
 
-To test your game, you need to launch a [deployment](spatialos-concepts/concepts#ldeployment). This means launching your game with its own instance of the SpatialOS runtime, either locally using a [local deployment]({{urlRoot}}/content/spatialos-concepts/concepts#local-deployment),  or in the cloud using a [cloud deployment]({{urlRoot}}/content/spatialos-concepts/concepts#cloud-deployment).. 
+To test your game, you need to launch a [deployment]({{urlRoot}}/content/spatialos-concepts/concepts#deployments). This means launching your game with its own instance of the SpatialOS runtime, either locally using a [local deployment]({{urlRoot}}/content/spatialos-concepts/concepts#local-deployment),  or in the cloud using a [cloud deployment]({{urlRoot}}/content/spatialos-concepts/concepts#cloud-deployment).. 
 
-When you launch a deployment, SpatialOS  sets up the world based on a [snapshot], then starts up the [worker] instances needed to run the game world.
+When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/concepts#snapshots), then starts up the [worker]({{urlRoot}}/content/spatialos-concepts/concepts#workers) instances needed to run the game world.
 
-You'll find out more about snapshots and workers later on in this tutorial. 
+You'll find out more about schema, snapshots and workers later on in this tutorial. 
 
 #### Deploy locally with multiple clients
 
-To launch a local deployment: 
+Before you launch a deployment (local or cloud) you must generate schema and a snapshot. 
 
-1. In the Unreal Editor, on the GDK toolbar, select [**Schema**](https://docs.improbable.io/reference/latest/shared/glossary) to generate schema.<br/>
+1. In the Unreal Editor, on the GDK toolbar, select [**Schema**]({{urlRoot}}/content/schema) to generate schema.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
-<br/>
-
 1. Select [**Snapshot**]({{urlRoot}}/content/generating-a-snapshot) to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
+
+<%(#Expandable title="What is schema?")%>In SpatialOS, your game world is defined and controlled centrally. Many different types of [server-workers]({{urlRoot}}/content/spatialos-concepts/concepts-workers#server-worker) may need to access and make changes to the game world, so they need a common language with which to do this. That language is schema. 
+<%(/Expandable)%>
+
+<%(#Expandable title="What is a snapshot?")%>A snapshot is a representation of the state of a SpatialOS world at a given point in time. It stores each persistent SpatialOS entity and the values of their SpatialOS components’ properties.
+<%(/Expandable)%>
+
+To launch a local deployment: 
+
 1. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
@@ -112,13 +119,17 @@ The name should look something like `beta_randomword_anotherword_randomnumber`. 
 
 ##### Step 2: Build your worker assemblies
 
-An assembly is what’s created when you run `BuildWorker.bat`. Assemblies are `.zip` files that contain all the files that your game uses when running in the cloud.
+Workers are the programs that connect to a SpatialOS world. In general, you use [server-worker]({{urlRoot}}/content/spatialos-concepts/concepts-workers#server-worker) instances simulate the world, and players use client-worker instances to connect to your game. Worker assemblies are `.zip` files that contain all the files that your game uses when running in the cloud.
+
+<!--<%(#Expandable title="More information about worker assemblies")%>More info<%(/Expandable)%>-->
 
 **Note:** In the following commands, you must replace **`YourProject`** with the name of your project.
 
 1. In a terminal window, navigate to your `<ProjectRoot>` directory.
 1. Build a server-worker assembly by running the following command: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Linux Development YourProject.uproject`
 1. Build a client-worker assembly by running the following command: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Win64 Development YourProject.uproject`
+
+Alternatively you can use the `BuildProject.bat` script found in the `<ProjectRoot>` directory to run both of these commands automatically. 
 
 ### Upload your game
 
@@ -167,7 +178,7 @@ _Image: The SpatialOS console launch window_
 
 You've successfully set up and launched the Starter Template and the GDK! You are now ready to start developing a game with SpatialOS.
 
-If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk.md) to get it onto the GDK.
+If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
 
 <br/>
 <br/>
