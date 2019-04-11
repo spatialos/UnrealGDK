@@ -52,10 +52,6 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 		{
 			FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEnded);
 		}
-		else
-		{
-			FEditorDelegates::PrePIEEnded.AddUObject(this, &UGlobalStateManager::OnPrePIEEndedSingleProcess);
-		}
 	}
 #endif // WITH_EDITOR
   
@@ -132,18 +128,6 @@ void UGlobalStateManager::ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpda
 void UGlobalStateManager::OnPrePIEEnded(bool bValue)
 {
 	SendShutdownMultiProcessRequest();
-}
-
-void UGlobalStateManager::OnPrePIEEndedSingleProcess(bool bValue)
-{
-	return;
-
-	if (NetDriver && NetDriver->GetWorld()->GetGameInstance())
-	{
-		USpatialGameInstance* GameInstance = Cast<USpatialGameInstance>(NetDriver->GetWorld()->GetGameInstance());
-		USpatialWorkerConnection* WorkerConnection = GameInstance->GetSpatialWorkerConnection();
-		WorkerConnection->PrepareNextWorker();
-	}
 }
 
 void UGlobalStateManager::SendShutdownMultiProcessRequest()

@@ -11,13 +11,83 @@
 #include "SNotificationList.h"
 
 #if WITH_EDITOR
-#include "Editor/EditorEngine.h"
+#include "Editor.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
-static TArray<FString> WorkerIds;
+#if WITH_EDITOR
+struct EditorWorkerController
+{
+	void OnPrePIEEnded(bool bValue)
+	{
+		LastPIEEndTime = FDateTime::Now().ToUnixTimestamp();
+		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
+	}
+
+	void InitWorkers(const FString& WorkerType)
+	{
+		ReplaceProcesses.Empty();
+		int64 SecondsSinceLastSession = FDateTime::Now().ToUnixTimestamp() - LastPIEEndTime;
+		UE_LOG(LogTemp, Warning, TEXT("Seconds since last session: %d"), SecondsSinceLastSession);
+
+		PIEEndHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &EditorWorkerController::OnPrePIEEnded);
+
+		int32 PlayNumberOfServers;
+		GetDefault<ULevelEditorPlaySettings>()->GetPlayNumberOfServers(PlayNumberOfServers);
+
+		WorkerIds.SetNum(PlayNumberOfServers);
+		for (int i = 0; i < PlayNumberOfServers; ++i)
+		{
+			FString NewWorkerId = WorkerType + FGuid::NewGuid().ToString();
+
+			if (!WorkerIds[i].IsEmpty() && SecondsSinceLastSession < 8)
+			{
+				ReplaceProcesses.Add(ReplaceWorker(WorkerIds[i], NewWorkerId));
+			}
+
+			WorkerIds[i] = NewWorkerId;
+		}
+
+	}
+
+	FProcHandle ReplaceWorker(const FString& OldWorker, const FString& NewWorker)
+	{
+		const FString CmdExecutable = TEXT("spatial.exe");
+
+		const FString CmdArgs = FString::Printf(
+			TEXT(" local worker replace "
+				"--existing_worker_id %s "
+				"--local_service_grpc_port 22000 "
+				"--replacing_worker_id %s"), *OldWorker, *NewWorker);
+		uint32 ProcessID = 0;
+		FProcHandle ProcHandle = FPlatformProcess::CreateProc(
+			*(CmdExecutable), *CmdArgs, false, true, true, &ProcessID, 2,
+			nullptr, nullptr, nullptr);
+
+		return ProcHandle;
+	}
+
+	void BlockUntilWorkerReady(int32 WorkerIdx)
+	{
+		if (WorkerIdx < ReplaceProcesses.Num())
+		{
+			while (FPlatformProcess::IsProcRunning(ReplaceProcesses[WorkerIdx]))
+			{
+				FPlatformProcess::Sleep(0.1f);
+			}
+		}
+	}
+
+	TArray<FString> WorkerIds;
+	TArray<FProcHandle> ReplaceProcesses;
+	int64 LastPIEEndTime = -1;
+	FDelegateHandle PIEEndHandle;
+};
+
+static EditorWorkerController WorkerController;
+#endif
 
 void USpatialWorkerConnection::FinishDestroy()
 {
@@ -85,72 +155,28 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 
 void USpatialWorkerConnection::ConnectToReceptionist(bool bInConnectAsClient)
 {
-	TArray<FProcHandle> ReplaceProcesses;
-	if (GPlayInEditorID == 1 && !bInConnectAsClient)
-	{
-#if WITH_EDITOR
-		ULevelEditorPlaySettings* PlayInSettings = GetDefault<ULevelEditorPlaySettings>();
-		bool PlayNetDedicated;
-		PlayInSettings->GetPlayNetDedicated(PlayNetDedicated);
-		int32 PlayNumberOfServers;
-		PlayInSettings->GetPlayNumberOfServers(PlayNumberOfServers);
-
-		WorkerIds.SetNum(PlayNumberOfServers);
-		for (int i = 0; i < PlayNumberOfServers; ++i)
-		{
-			FString NewWorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
-
-			if (!WorkerIds[i].IsEmpty())
-			{
-				ReplaceProcesses.Add(ReplaceWorker(WorkerIds[i], NewWorkerId));
-			}
-
-			WorkerIds[i] = NewWorkerId;
-		}
-#endif
-	}
-
-
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
 		ReceptionistConfig.WorkerType = bInConnectAsClient ? SpatialConstants::ClientWorkerType : SpatialConstants::ServerWorkerType;
 		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
 	}
 
-	bConnectAsClient = bInConnectAsClient;
-	PlayInEditorID = GPlayInEditorID;
+#if WITH_EDITOR
+	if (!bInConnectAsClient)
+	{
+		if (GPlayInEditorID == 1)
+		{
+			WorkerController.InitWorkers(ReceptionistConfig.WorkerType);
+		}
+
+		ReceptionistConfig.WorkerId = WorkerController.WorkerIds[GPlayInEditorID - 1];
+	}
+#endif
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
 	{
 		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
-
-		if (!bConnectAsClient)
-		{
-			ReceptionistConfig.WorkerId = WorkerIds[PlayInEditorID - 1];
-		}
-
-// 		if (bConnectAsClient)
-// 		{
-// 			ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
-// 		}
-// 		else
-// 		{
-// 			if (PlayInEditorID <= WorkerIds.Num())
-// 			{
-// 				ReceptionistConfig.WorkerId = WorkerIds[PlayInEditorID - 1];
-// 			}
-// 			else
-// 			{
-// 				ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
-// 				WorkerIds.AddDefaulted();
-// 				WorkerIds[PlayInEditorID - 1] = ReceptionistConfig.WorkerId;
-// 			}
-// 		}
 	}
-
-	//int LaunchTime = FDateTime::Now().GetSecond();
-	//ReplaceWorker();
-	//FPlatformProcess::Sleep(1.0f);
 
 	// TODO: Move creation of connection parameters into a function somehow - UNR:579
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
@@ -179,24 +205,12 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bInConnectAsClient)
 	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
 	// end TODO
 
-	bool ProcRunning = ReplaceProcesses.Num() > 0;
-	while (ProcRunning)
+#if WITH_EDITOR
+	if (!bInConnectAsClient)
 	{
-		ProcRunning = false;
-		for (int i = 0; i < ReplaceProcesses.Num(); ++i)
-		{
-			if (FPlatformProcess::IsProcRunning(ReplaceProcesses[i]))
-			{
-				ProcRunning = true;
-			}
-		}
-
-		if (ProcRunning)
-		{
-			FPlatformProcess::Sleep(0.1f);
-		}
+		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);
 	}
-	ReplaceProcesses.Empty();
+#endif
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
 		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,
@@ -209,7 +223,6 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bInConnectAsClient)
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 		if (Worker_Connection_IsConnected(WorkerConnection))
 		{
-			//ReplaceWorker();
 			CacheWorkerAttributes();
 
 			AsyncTask(ENamedThreads::GameThread, [this]
@@ -508,52 +521,6 @@ const TArray<FString>& USpatialWorkerConnection::GetWorkerAttributes() const
 	return CachedWorkerAttributes;
 }
 
-void USpatialWorkerConnection::PrepareNextWorker()
-{
-	//if (!bConnectAsClient)
-	{
-		FString NextWorkerId;
-		PlayInEditorID = 1;
-
-		//if (PlayInEditorID <= WorkerIds.Num())
-		{
-			//NextWorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
-			NextWorkerId = TEXT("UnrealWorker") + FGuid::NewGuid().ToString();
-			//OldWorkerId = WorkerIds[PlayInEditorID - 1];
-			//OldWorkerId = FString::Printf(TEXT("%s:%d"), *ReceptionistConfig.WorkerType, PlayInEditorID - 1);
-
-			const FString ExecuteAbsolutePath(TEXT("C:/dev/UnrealGDKTestSuite/spatial/"));
-			const FString CmdExecutable = TEXT("cmd.exe");
-
-			const FString SpatialCmdArgument = FString::Printf(
-				TEXT("/c cmd.exe /c spatial.exe local worker replace "
-					"--existing_worker_id %s "
-					"--local_service_grpc_port 22000 "
-					"--replacing_worker_id %s "
-					"--log_level=debug ^& pause"), *NextWorkerId, *WorkerIds[PlayInEditorID - 1]);
-					//"--log_level=debug ^& pause"), *NextWorkerId, *ReceptionistConfig.WorkerId);
-			//"--log_level=debug ^& pause"), *ReceptionistConfig.WorkerId, *OldWorkerId);
-			uint32 SpatialOSStackProcessID = 0;
-			FProcHandle SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
-				*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
-				*ExecuteAbsolutePath, nullptr, nullptr);
-
-			if (PlayInEditorID > WorkerIds.Num())
-			{
-				WorkerIds.AddDefaulted();
-			}
-
-			WorkerIds[PlayInEditorID - 1] = NextWorkerId;
-		}
-		//else
-		//{
-			//ReceptionistConfig.WorkerId = FString::Printf(TEXT("%s:%d"), *ReceptionistConfig.WorkerType, PlayInEditorID - 1);
-		//	WorkerIds.AddDefaulted();
-		//	WorkerIds[PlayInEditorID - 1] = ReceptionistConfig.WorkerId;
-		//}
-	}
-}
-
 void USpatialWorkerConnection::CacheWorkerAttributes()
 {
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
@@ -563,67 +530,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	{
 		CachedWorkerAttributes.Add(UTF8_TO_TCHAR(Attributes->attributes[Index]));
 	}
-}
-
-void USpatialWorkerConnection::ReplaceWorker()
-{
-	//static TArray<FString> WorkerIds;
-
-	if (!bConnectAsClient)
-	{
-		FString OldWorkerId;
-
-		if (PlayInEditorID <= WorkerIds.Num())
-		{
-			OldWorkerId = WorkerIds[PlayInEditorID - 1];
-
-			const FString CmdExecutable = TEXT("spatial.exe");
-
-			const FString CmdArgs = FString::Printf(
-				TEXT(" local worker replace "
-					"--existing_worker_id %s "
-					"--local_service_grpc_port 22000 "
-					"--replacing_worker_id %s"), *OldWorkerId, *ReceptionistConfig.WorkerId);
-			uint32 ProcessID = 0;
-			FProcHandle ProcHandle = FPlatformProcess::CreateProc(
-				*(CmdExecutable), *CmdArgs, false, true, true, &ProcessID, 2,
-				nullptr, nullptr, nullptr);
-
-			while (FPlatformProcess::IsProcRunning(ProcHandle))
-			{
-				FPlatformProcess::Sleep(0.1f);
-			}
-
-			WorkerIds[PlayInEditorID - 1] = ReceptionistConfig.WorkerId;
-		}
-		else
-		{
-			//ReceptionistConfig.WorkerId = FString::Printf(TEXT("%s:%d"), *ReceptionistConfig.WorkerType, PlayInEditorID - 1);
-			WorkerIds.AddDefaulted();
-			WorkerIds[PlayInEditorID - 1] = ReceptionistConfig.WorkerId;
-		}
-	}
-}
-
-FProcHandle USpatialWorkerConnection::ReplaceWorker(const FString& OldWorker, const FString& NewWorker)
-{
-	const FString CmdExecutable = TEXT("spatial.exe");
-
-	const FString CmdArgs = FString::Printf(
-		TEXT(" local worker replace "
-			"--existing_worker_id %s "
-			"--local_service_grpc_port 22000 "
-			"--replacing_worker_id %s"), *OldWorker, *NewWorker);
-	uint32 ProcessID = 0;
-	FProcHandle ProcHandle = FPlatformProcess::CreateProc(
-		*(CmdExecutable), *CmdArgs, false, true, true, &ProcessID, 2,
-		nullptr, nullptr, nullptr);
-
-	return ProcHandle;
-	//while (FPlatformProcess::IsProcRunning(ProcHandle))
-	//{
-	//	FPlatformProcess::Sleep(0.1f);
-	//}
 }
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const

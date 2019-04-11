@@ -56,10 +56,6 @@ public:
 	FLegacyLocatorConfig LegacyLocatorConfig;
 	FLocatorConfig LocatorConfig;
 
-	bool bConnectAsClient;
-	int32 PlayInEditorID;
-	void PrepareNextWorker();
-
 private:
 	void ConnectToReceptionist(bool bConnectAsClient);
 	void ConnectToLegacyLocator();
@@ -73,8 +69,6 @@ private:
 	SpatialConnectionType GetConnectionType() const;
 
 	void CacheWorkerAttributes();
-	void ReplaceWorker();
-	FProcHandle ReplaceWorker(const FString& OldWorker, const FString& NewWorker);
 
 	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
