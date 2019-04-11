@@ -16,9 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added this Changelog
 - Added an error when unsupported replicated gameplay abilities are found in schema generation.
 - Demoted various logs to Verbose in SpatialSender and SpatialReceiver
+- You can now use the Project Settings window to pass [command line flags](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) to local deployments launched from the GDK toolbar.
+- You can now adjust the SpatialOS update frequency and the distance an action must move before we update its SpatialOS position.
 
 ### Bug fixes:
-- Worker disconnection flow is now handled by `UEngine::OnNetworkFailure` rather than the existing `OnDisconnection` callback, which has been removed.
+- The worker disconnection flow is now handled by `UEngine::OnNetworkFailure` rather than the existing `OnDisconnection` callback, which has been removed.
 - Fix duplicated log messages in `spatial CLI` output when running in PIE.
 - Fixed deserialization of strings from schema.
 - Ensure that components added in blueprints are replicated.
