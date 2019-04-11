@@ -36,15 +36,6 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 	bool bCachedSpatialNetworking = GeneralProjectSettings->bSpatialNetworking;
 	GeneralProjectSettings->bSpatialNetworking = true;
 
-	if (bFullRebuild)
-	{
-		ClearGeneratedSchema();
-	}
-	else
-	{
-		TryLoadExistingSchemaDatabase();
-	}
-
 	RemoveEditorAssetLoadedCallback();
 
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
@@ -54,6 +45,8 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 		if (!LoadPotentialAssets(LoadedAssets))
 		{
 			bSchemaGeneratorRunning = false;
+			LoadedAssets.Empty();
+			GEngine->ForceGarbageCollection(true);
 			return false;
 		}
 	}
@@ -62,6 +55,8 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 	TArray<UBlueprint*> ErroredBlueprints;
 	bool bPromptForCompilation = false;
 	UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
+
+	TryLoadExistingSchemaDatabase();
 
 	Progress.EnterProgressFrame(bFullRebuild ? 10.f : 100.f);
 	bool bResult = SpatialGDKGenerateSchema();
