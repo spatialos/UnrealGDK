@@ -217,7 +217,6 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_Compone
 	});
 }
 
-
 USpatialDispatcher::FCallbackId USpatialDispatcher::AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback)
 {
 	check(SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID);
@@ -254,10 +253,14 @@ void USpatialDispatcher::RemoveOpCallback(FCallbackId CallbackId)
 		return;
 	}
 
-	ComponentCallbackIds->RemoveAll([CallbackId](const UserOpCallbackData& Data)
-	{
-		return Data.Id == CallbackId;
-	});
+	for (int i = 0; i < ComponentCallbackIds->Num(); i++) {
+		if ((*ComponentCallbackIds)[i].Id == CallbackId)
+		{
+			ComponentCallbackIds->RemoveAt(i);
+			return;
+		}
+	}
+
 }
 
 void USpatialDispatcher::RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op)
