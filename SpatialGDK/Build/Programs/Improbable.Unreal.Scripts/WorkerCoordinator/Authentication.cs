@@ -8,6 +8,9 @@ namespace Improbable.WorkerCoordinator
 {
     class Authentication
     {
+        private const string LOCATOR_HOST_NAME = "locator.improbable.io";
+        private const int LOCATOR_PORT = 444;
+
         public static string GetDevelopmentPlayerIdentityToken(string devAuthTokenId, string clientName)
         {
             var pitResponse = DevelopmentAuthentication.CreateDevelopmentPlayerIdentityTokenAsync("locator.improbable.io", 444,
@@ -15,7 +18,7 @@ namespace Improbable.WorkerCoordinator
                     {
                         DevelopmentAuthenticationTokenId = devAuthTokenId,
                         PlayerId = clientName,
-                        DisplayName = "SimulatedPlayer"
+                        DisplayName = clientName
                     }).Get();
 
             if (pitResponse.Status.Code != ConnectionStatusCode.Success)
@@ -30,7 +33,7 @@ namespace Improbable.WorkerCoordinator
 
         public static List<LoginTokenDetails> GetDevelopmentLoginTokens(string workerType, string pit)
         {
-            var loginTokensResponse = DevelopmentAuthentication.CreateDevelopmentLoginTokensAsync("locator.improbable.io", 444,
+            var loginTokensResponse = DevelopmentAuthentication.CreateDevelopmentLoginTokensAsync(LOCATOR_HOST_NAME, LOCATOR_PORT,
                 new LoginTokensRequest
                 {
                     PlayerIdentityToken = pit,

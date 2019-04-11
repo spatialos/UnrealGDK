@@ -21,7 +21,7 @@ namespace Improbable.WorkerCoordinator
     ///     {hostname}                              Receptionist hostname
     ///     {port}                                  Receptionist port
     ///     {worker_id}                             Worker id of the coordinator
-    ///     coordinator_start_delay_millis={value}  Minimum delay before the coordinator starts a simulated client
+    ///     coordinator_start_delay_millis={value}  Minimum delay before the coordinator starts a simulated client, to prevent clients from connecting too soon to the target deployment
     ///
     /// All following arguments will be passed to the simulated player instance.
     /// These arguments can contain the following placeholders, which will be replaced by the coordinator:
@@ -66,6 +66,9 @@ namespace Improbable.WorkerCoordinator
 
         private static Random Random;
 
+        // Average amount of delay between connecting each client to the target deployment.
+        private const int AVG_MS_BETWEEN_CLIENTS_CONNECTING = 1500;
+
         private static int Main(string[] args)
         {
             Logger.WriteLog("Starting coordinator with args: " + ArgsToString(args));
@@ -102,10 +105,10 @@ namespace Improbable.WorkerCoordinator
             var simulatedPlayerArgs = args.Skip(4).ToArray();
 
             // Add a random delay between 0 and maxDelaySec to spread out the connecting of simulated clients (plus a fixed start delay).
-            // Connect 1 player per second (on average) across entire simulated player deployment.
-            var maxDelayMillis = numSimulatedPlayers * 1000;
+            var maxDelayMillis = numSimulatedPlayers * AVG_MS_BETWEEN_CLIENTS_CONNECTING;
             var ourRandomDelayMillis = Random.Next(maxDelayMillis);
-            var startDelayMillis = GetIntegerArgument(args, START_DELAY_ARG, 0) + ourRandomDelayMillis;
+            var fixedStartDelayMillis = GetIntegerArgument(args, START_DELAY_ARG, 0);
+            var startDelayMillis = fixedStartDelayMillis + ourRandomDelayMillis;
             Thread.Sleep(startDelayMillis);
 
             string clientName = "SimulatedPlayer" + Guid.NewGuid();
