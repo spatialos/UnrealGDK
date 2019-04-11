@@ -21,7 +21,7 @@ namespace Improbable.WorkerCoordinator
     ///     {hostname}                              Receptionist hostname
     ///     {port}                                  Receptionist port
     ///     {worker_id}                             Worker id of the coordinator
-    ///     coordinator_start_delay_millis={value}  Minimum delay before the coordinator starts a simulated client
+    ///     coordinator_start_delay_millis={value}  Minimum delay before the coordinator starts a simulated client, to prevent clients from connecting too soon to the target deployment
     ///
     /// All following arguments will be passed to the simulated player instance.
     /// These arguments can contain the following placeholders, which will be replaced by the coordinator:
