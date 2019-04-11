@@ -15,7 +15,7 @@ namespace Improbable.WorkerCoordinator
                     {
                         DevelopmentAuthenticationTokenId = devAuthTokenId,
                         PlayerId = clientName,
-                        DisplayName = "SimulatedPlayer"
+                        DisplayName = clientName
                     }).Get();
 
             if (pitResponse.Status != ConnectionStatusCode.Success)
