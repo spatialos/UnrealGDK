@@ -11,7 +11,7 @@
 class USpatialNetConnection;
 class USpatialNetDriver;
 
-UCLASS(transient)
+UCLASS()
 class SPATIALGDK_API ULatencyManager : public UObject
 {
 	GENERATED_BODY()
@@ -27,6 +27,6 @@ private:
 	Worker_EntityId PlayerControllerEntity;
 	float LastPingSent;
 
-	USpatialNetConnection* NetConnection;
-	USpatialNetDriver* NetDriver;
+	TWeakObjectPtr<USpatialNetConnection> NetConnection;
+	TWeakObjectPtr<USpatialNetDriver> NetDriver;
 };

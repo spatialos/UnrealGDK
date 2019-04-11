@@ -20,20 +20,18 @@ ULatencyManager::ULatencyManager(const FObjectInitializer& ObjectInitializer)
 
 void ULatencyManager::Enable(Worker_EntityId InPlayerControllerEntity)
 {
-	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID, TEXT("InitPing: PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
+	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID, TEXT("LatencyManager::Enable : PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
 	PlayerControllerEntity = InPlayerControllerEntity;
 
 	NetConnection = Cast<USpatialNetConnection>(GetOuter());
 	NetDriver = Cast<USpatialNetDriver>(NetConnection->GetDriver());
 	LastPingSent = GetWorld()->RealTimeSeconds;
 
-	TWeakObjectPtr<USpatialNetConnection> ConnectionPtr = NetConnection;
-
-	auto Delegate = TBaseDelegate<void, Worker_ComponentUpdateOp &>::CreateLambda([ConnectionPtr, this](const Worker_ComponentUpdateOp& Op)
+	auto Delegate = TBaseDelegate<void, Worker_ComponentUpdateOp &>::CreateLambda([this](const Worker_ComponentUpdateOp& Op)
 	{
 		float ReceivedTimestamp = GetWorld()->RealTimeSeconds;
 
-		if (!ConnectionPtr.IsValid())
+		if (!NetConnection.IsValid())
 		{
 			return;
 		}
@@ -43,7 +41,7 @@ void ULatencyManager::Enable(Worker_EntityId InPlayerControllerEntity)
 
 		if (EventCount > 0)
 		{
-			ConnectionPtr->PlayerController->PlayerState->UpdatePing(ReceivedTimestamp - LastPingSent);
+			NetConnection->PlayerController->PlayerState->UpdatePing(ReceivedTimestamp - LastPingSent);
 			SendPingOrPong(NetDriver->IsServer() ? SpatialConstants::SERVER_PING_COMPONENT_ID : SpatialConstants::CLIENT_PONG_COMPONENT_ID);
 		}
 	});
