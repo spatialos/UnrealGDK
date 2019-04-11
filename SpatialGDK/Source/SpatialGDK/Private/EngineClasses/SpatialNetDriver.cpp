@@ -1056,7 +1056,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 {
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
-	// TODO: Remove IsConnected Check
+
+	// TODO UNR-1271: Remove IsConnected Check
 	if (Connection != nullptr && Connection->IsConnected())
 	{
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
@@ -1161,7 +1162,8 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #if USE_SERVER_PERF_COUNTERS
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
-	// TODO: Remove IsConnected check
+
+	// TODO UNR-1271: Remove IsConnected check
 	if (IsServer() && ClientConnections.Num() > 0 && Connection->IsConnected() && EntityPool->IsReady())
 	{
 		// Update all clients.
