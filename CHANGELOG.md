@@ -6,13 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2019-xx-xx
 
-### Breaking Changes:
-- The GDK now uses SpatialOS 13.6.2. You **must** change the version specified in your projects `spatialos.json` file.
-
 ### New Known Issues:
 
 ### Features:
-- Upgraded to use SpatialOS 13.6.2.
+- The GDK now uses SpatialOS `13.6.2`.
 - Added this Changelog
 - Added an error when unsupported replicated gameplay abilities are found in schema generation.
 - Demoted various logs to Verbose in SpatialSender and SpatialReceiver
