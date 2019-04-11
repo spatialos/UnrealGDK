@@ -256,9 +256,9 @@ bool USpatialDispatcher::RemoveOpCallback(FCallbackId CallbackId)
 	}
 
 	// If removing the only callback for a component ID / op type, delete map entries as applicable
-	if (OpTypesToCallbacks->Num() == 1)
+	if (ComponentCallbacks->Num() == 1)
 	{
-		if (ComponentOpTypeToCallbackMap.Num() == 1)
+		if (OpTypesToCallbacks->Num() == 1)
 		{
 			ComponentOpTypeToCallbackMap.Remove(CallbackData->ComponentId);
 			return true;
