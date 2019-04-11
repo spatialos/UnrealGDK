@@ -32,7 +32,7 @@ public:
 	void Init(USpatialNetDriver* NetDriver);
 	void ProcessOps(Worker_OpList* OpList);
 
-	// AddOpCallback returns a callback ID which is incremented on each callback that is registered.
+	// Each callback method returns a callback ID which is incremented for each registration.
 	// ComponentId must be in the range 1000 - 2000.
 	// Callbacks can be deregistered through passing the corresponding callback ID to the RemoveOpCallback function.
 	FCallbackId OnAddComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback);
