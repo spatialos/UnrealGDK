@@ -138,7 +138,7 @@ For current known issues, please visit [this](https://docs.improbable.io/unreal/
 ### External contributors:
 @DW-Sebastien
 
-## [`0.2.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.1.0) - 2019-02-08
+## [`0.1.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.1.0) - 2019-02-08
 
 ## Release Notes 0.1.0
 
