@@ -28,8 +28,10 @@ struct EditorWorkerController
 	void InitWorkers(const FString& WorkerType)
 	{
 		ReplaceProcesses.Empty();
+
+		const int64 WorkerReplaceThreshold = 8;	// Issue replace worker request if restarting deployment within this timeframe
 		int64 SecondsSinceLastSession = FDateTime::Now().ToUnixTimestamp() - LastPIEEndTime;
-		UE_LOG(LogTemp, Warning, TEXT("Seconds since last session: %d"), SecondsSinceLastSession);
+		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Seconds since last session - %d"), SecondsSinceLastSession);
 
 		PIEEndHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &EditorWorkerController::OnPrePIEEnded);
 
@@ -41,7 +43,7 @@ struct EditorWorkerController
 		{
 			FString NewWorkerId = WorkerType + FGuid::NewGuid().ToString();
 
-			if (!WorkerIds[i].IsEmpty() && SecondsSinceLastSession < 8)
+			if (!WorkerIds[i].IsEmpty() && SecondsSinceLastSession < WorkerReplaceThreshold)
 			{
 				ReplaceProcesses.Add(ReplaceWorker(WorkerIds[i], NewWorkerId));
 			}
