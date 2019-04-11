@@ -208,22 +208,6 @@ The Launcher downloads the client executable from the [SpatialOS assembly](#asse
 >
 > [The Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher)
 
-### Layers
-
-In SpatialOS, you can split up [server-worker](#workers) computation into layers, with each layer of server-worker instances handling a specific and unique aspect of your game.
-
-A SpatialOS layer has two elements;
-
-* a group of SpatialOS [component definitions](#spatialos-component),
-* server-worker instances of a worker type that have write access authority over the group of components.
-
-By default, the GDK for Unreal uses a single Unreal server-worker layer to handle all server-side computation.
-However, you can set up additional non-Unreal layers, made up of server-worker instances that do not use Unreal or the GDK.
-
-For more information:
-* See documentation on [non-Unreal layers]({{urlRoot}}/content/non-unreal-layers.md)
-* See SpatialOS documentation for [layers](https://docs.improbable.io/reference/latest/shared/worker-configuration/layers).
-
 ### Load balancing
 One of the features of SpatialOS is load balancing: dynamically adjusting how many [components](#spatialos-component) on [entities](#spatialos-entity) in the [world](#spatialos-world) each [worker](#workers) has [write access](#authority) to, so that workers don’t get overloaded.
 
