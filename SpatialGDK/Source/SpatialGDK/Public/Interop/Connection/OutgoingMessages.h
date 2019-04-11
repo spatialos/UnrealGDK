@@ -5,7 +5,6 @@
 
 enum class EOutgoingMessageType : int32
 {
-	Invalid,
 	ReserveEntityIdsRequest,
 	CreateEntityRequest,
 	DeleteEntityRequest,
@@ -23,7 +22,7 @@ struct FOutgoingMessage
 {
 	FOutgoingMessage(const EOutgoingMessageType& InType) : Type(InType) {}
 
-	const EOutgoingMessageType Type;
+	EOutgoingMessageType Type;
 };
 
 struct FReserveEntityIdsRequest : FOutgoingMessage
@@ -33,7 +32,7 @@ struct FReserveEntityIdsRequest : FOutgoingMessage
 		, NumOfEntities(InNumOfEntities)
 	{}
 
-	const uint32_t NumOfEntities;
+	uint32_t NumOfEntities;
 };
 
 struct FCreateEntityRequest : FOutgoingMessage
@@ -44,8 +43,8 @@ struct FCreateEntityRequest : FOutgoingMessage
 		, EntityId(InEntityId != nullptr ? *InEntityId : TOptional<Worker_EntityId>())
 	{}
 
-	const TArray<Worker_ComponentData> Components;
-	const TOptional<Worker_EntityId> EntityId;
+	TArray<Worker_ComponentData> Components;
+	TOptional<Worker_EntityId> EntityId;
 };
 
 struct FDeleteEntityRequest : FOutgoingMessage
@@ -55,7 +54,7 @@ struct FDeleteEntityRequest : FOutgoingMessage
 		, EntityId(InEntityId)
 	{}
 
-	const Worker_EntityId EntityId;
+	Worker_EntityId EntityId;
 };
 
 struct FComponentUpdate : FOutgoingMessage
@@ -66,8 +65,8 @@ struct FComponentUpdate : FOutgoingMessage
 		, Update(InComponentUpdate)
 	{}
 
-	const Worker_EntityId EntityId;
-	const Worker_ComponentUpdate Update;
+	Worker_EntityId EntityId;
+	Worker_ComponentUpdate Update;
 };
 
 struct FCommandRequest : FOutgoingMessage
@@ -79,9 +78,9 @@ struct FCommandRequest : FOutgoingMessage
 		, CommandId(InCommandId)
 	{}
 	
-	const Worker_EntityId EntityId;
-	const Worker_CommandRequest Request;
-	const uint32_t CommandId;
+	Worker_EntityId EntityId;
+	Worker_CommandRequest Request;
+	uint32_t CommandId;
 };
 
 struct FCommandResponse : FOutgoingMessage
@@ -92,8 +91,8 @@ struct FCommandResponse : FOutgoingMessage
 		, Response(InResponse)
 	{}
 
-	const Worker_RequestId RequestId;
-	const Worker_CommandResponse Response;
+	Worker_RequestId RequestId;
+	Worker_CommandResponse Response;
 };
 
 struct FCommandFailure : FOutgoingMessage
@@ -104,8 +103,8 @@ struct FCommandFailure : FOutgoingMessage
 		, Message(InMessage)
 	{}
 	
-	const Worker_RequestId RequestId;
-	const FString Message;
+	Worker_RequestId RequestId;
+	FString Message;
 };
 
 struct FLogMessage : FOutgoingMessage
@@ -117,21 +116,21 @@ struct FLogMessage : FOutgoingMessage
 		, Message(InMessage)
 	{}
 
-	const uint8_t Level;
-	const FString LoggerName;
-	const FString Message;
+	uint8_t Level;
+	FString LoggerName;
+	FString Message;
 };
 
 struct FComponentInterest : FOutgoingMessage
 {
-	FComponentInterest(const Worker_EntityId& InEntityId, TArray<Worker_InterestOverride>&& InInterests)
+	FComponentInterest(const Worker_EntityId& InEntityId, TArray<Worker_InterestOverride> InInterests)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentInterest)
 		, EntityId(InEntityId)
-		, Interests(MoveTemp(InInterests))
+		, Interests(InInterests)
 	{}
 
-	const Worker_EntityId EntityId;
-	const TArray<Worker_InterestOverride> Interests;
+	Worker_EntityId EntityId;
+	TArray<Worker_InterestOverride> Interests;
 };
 
 struct FEntityQueryRequest : FOutgoingMessage
@@ -141,7 +140,7 @@ struct FEntityQueryRequest : FOutgoingMessage
 		, EntityQuery(InEntityQuery)
 	{}
 
-	const Worker_EntityQuery EntityQuery;
+	Worker_EntityQuery EntityQuery;
 };
 
 struct FMetrics : FOutgoingMessage
@@ -151,7 +150,7 @@ struct FMetrics : FOutgoingMessage
 		, Metrics(InMetrics)
 	{}
 
-	const Worker_Metrics Metrics;
+	Worker_Metrics Metrics;
 };
 
 using FOutgoingMessageWrapper = TUniquePtr<FOutgoingMessage>;

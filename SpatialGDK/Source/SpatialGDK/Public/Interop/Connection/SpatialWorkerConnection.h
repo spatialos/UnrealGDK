@@ -86,8 +86,8 @@ private:
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
 
-	template <typename T>
-	void QueueOutgoingMessage(const T& Message);
+	template <typename T, typename... ArgsType>
+	void QueueOutgoingMessage(ArgsType&&... Args);
 
 	FRunnableThread* Thread;
 	FThreadSafeBool KeepRunning = true;

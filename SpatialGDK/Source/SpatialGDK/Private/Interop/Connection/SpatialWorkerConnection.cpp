@@ -22,6 +22,10 @@ void USpatialWorkerConnection::FinishDestroy()
 void USpatialWorkerConnection::DestroyConnection()
 {
 	Stop(); // Stop worker thread
+	if (Thread != nullptr)
+	{
+		Thread->WaitForCompletion();
+	}
 
 	if (WorkerConnection)
 	{
@@ -44,11 +48,6 @@ void USpatialWorkerConnection::DestroyConnection()
 	}
 
 	bIsConnected = false;
-
-	if (Thread != nullptr)
-	{
-		Thread->WaitForCompletion();
-	}
 }
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
@@ -216,62 +215,62 @@ TArray<Worker_OpList*> USpatialWorkerConnection::GetOpList()
 
 Worker_RequestId USpatialWorkerConnection::SendReserveEntityIdsRequest(uint32_t NumOfEntities)
 {
-	QueueOutgoingMessage(FReserveEntityIdsRequest{ NumOfEntities });
+	QueueOutgoingMessage<FReserveEntityIdsRequest>(NumOfEntities);
 	return NextRequestId++;
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId)
 {
-	QueueOutgoingMessage(FCreateEntityRequest{ MoveTemp(Components), EntityId });
+	QueueOutgoingMessage<FCreateEntityRequest>(MoveTemp(Components), EntityId);
 	return NextRequestId++;
 }
 
 Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_EntityId EntityId)
 {
-	QueueOutgoingMessage(FDeleteEntityRequest{ EntityId });
+	QueueOutgoingMessage<FDeleteEntityRequest>(EntityId);
 	return NextRequestId++;
 }
 
 void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
 {
-	QueueOutgoingMessage(FComponentUpdate{ EntityId, *ComponentUpdate });
+	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
 }
 
 Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId)
 {
-	QueueOutgoingMessage(FCommandRequest{ EntityId, *Request, CommandId });
+	QueueOutgoingMessage<FCommandRequest>(EntityId, *Request, CommandId);
 	return NextRequestId++;
 }
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
 {
-	QueueOutgoingMessage(FCommandResponse{ RequestId, *Response });
+	QueueOutgoingMessage<FCommandResponse>(RequestId, *Response);
 }
 
 void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const FString& Message)
 {
-	QueueOutgoingMessage(FCommandFailure{ RequestId, Message });
+	QueueOutgoingMessage<FCommandFailure>(RequestId, Message);
 }
 
 void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const TCHAR* LoggerName, const TCHAR* Message)
 {
-	QueueOutgoingMessage(FLogMessage{ Level, LoggerName, Message });
+	QueueOutgoingMessage<FLogMessage>(Level, LoggerName, Message);
 }
 
 void USpatialWorkerConnection::SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest)
 {
-	QueueOutgoingMessage(FComponentInterest{ EntityId, MoveTemp(ComponentInterest) });
+	QueueOutgoingMessage<FComponentInterest>(EntityId, MoveTemp(ComponentInterest));
 }
 
 Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery)
 {
-	QueueOutgoingMessage(FEntityQueryRequest{ *EntityQuery });
+	QueueOutgoingMessage<FEntityQueryRequest>(*EntityQuery);
 	return NextRequestId++;
 }
 
 void USpatialWorkerConnection::SendMetrics(const Worker_Metrics* Metrics)
 {
-	QueueOutgoingMessage(FMetrics{ *Metrics });
+	QueueOutgoingMessage<FMetrics>(*Metrics);
 }
 
 FString USpatialWorkerConnection::GetWorkerId() const
@@ -375,21 +374,11 @@ void USpatialWorkerConnection::InitializeWorkerThread()
 
 void USpatialWorkerConnection::QueueLatestOpList()
 {
-	if (WorkerConnection == nullptr)
-	{
-		return;
-	}
-
 	OpListQueue.Enqueue(Worker_Connection_GetOpList(WorkerConnection, 0));
 }
 
 void USpatialWorkerConnection::ProcessOutgoingMessages()
 {
-	if (WorkerConnection == nullptr)
-	{
-		return;
-	}
-
 	while (!OutgoingMessagesQueue.IsEmpty())
 	{
 		FOutgoingMessageWrapper OutgoingMessage;
@@ -514,10 +503,10 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 	}
 }
 
-template <typename T>
-void USpatialWorkerConnection::QueueOutgoingMessage(const T& Message)
+template <typename T, typename... ArgsType>
+void USpatialWorkerConnection::QueueOutgoingMessage(ArgsType&&... Args)
 {
 	// TODO UNR-1271: As later optimization, we can change the queue to hold a union
 	// of all outgoing message types, rather than having a pointer.
-	OutgoingMessagesQueue.Enqueue(MakeUnique<T>(Message));
+	OutgoingMessagesQueue.Enqueue(MakeUnique<T>(Forward<ArgsType>(Args)...));
 }
