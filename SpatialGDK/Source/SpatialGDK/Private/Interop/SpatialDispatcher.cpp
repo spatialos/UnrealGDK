@@ -142,8 +142,8 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 		RunCallbacks(ComponentId, Op);
 		break;
 	default:
-		// This never happen providing the GetComponentId has the same
-		// explicit cases as the switch in this method
+		// This should never happen providing the GetComponentId function has
+		// the same explicit cases as the switch in this method
 		checkNoEntry();
 		return;
 	}
@@ -229,15 +229,15 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::AddGenericOpCallback(Worker_
 bool USpatialDispatcher::RemoveOpCallback(FCallbackId CallbackId)
 {
 	// Find callback ID in map and assert if it does not exist
-	CallbackIdData CallbackDataToRemove = CallbackIdToDataMap.FindAndRemoveChecked(CallbackId);
+	CallbackIdData CallbackData = CallbackIdToDataMap.FindAndRemoveChecked(CallbackId);
 
-	TMap<Worker_OpType, TArray<UserOpCallbackData>>* OpTypesToCallbacks = ComponentOpTypeToCallbackMap.Find(CallbackDataToRemove.ComponentId);
+	TMap<Worker_OpType, TArray<UserOpCallbackData>>* OpTypesToCallbacks = ComponentOpTypeToCallbackMap.Find(CallbackData.ComponentId);
 	if (OpTypesToCallbacks == nullptr)
 	{
 		return false;
 	}
 
-	TArray<UserOpCallbackData>* ComponentCallbacks = OpTypesToCallbacks->Find(CallbackDataToRemove.OpType);
+	TArray<UserOpCallbackData>* ComponentCallbacks = OpTypesToCallbacks->Find(CallbackData.OpType);
 	if (ComponentCallbacks == nullptr)
 	{
 		return false;
@@ -257,10 +257,10 @@ bool USpatialDispatcher::RemoveOpCallback(FCallbackId CallbackId)
 	{
 		if (ComponentOpTypeToCallbackMap.Num() == 1)
 		{
-			ComponentOpTypeToCallbackMap.Remove(CallbackDataToRemove.ComponentId);
+			ComponentOpTypeToCallbackMap.Remove(CallbackData.ComponentId);
 			return true;
 		}
-		OpTypesToCallbacks->Remove(CallbackDataToRemove.OpType);
+		OpTypesToCallbacks->Remove(CallbackData.OpType);
 		return true;
 	}
 

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Interop/Connection/ConnectionConfig.h"
+#include "UObject/WeakObjectPtr.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -76,7 +77,7 @@ private:
 	Worker_Locator* WorkerLegacyLocator;
 	Worker_Alpha_Locator* WorkerLocator;
 
-	USpatialGameInstance* GameInstance;
+	TWeakObjectPtr<USpatialGameInstance> GameInstance;
 
 	bool bIsConnected;
 
