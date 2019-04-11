@@ -802,7 +802,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			// SpatialGDK - Creation of new entities should always be handled and therefore is checked prior to actor throttling.
 			// There is a EntityCreationRateLimit to prevent overloading spatial with creation requests if the developer desires.
 			// Creation of a new entity occurs when the channel is currently nullptr or if the channel does not have bCreatedEntity set to true.
-			if (FinalCreationCount < NumEntitiesToCreate && (Channel == nullptr || (Channel != nullptr && !Channel->bCreatedEntity)))
+			if (FinalCreationCount < NumEntitiesToCreate && !Actor->GetTearOff() && (Channel == nullptr || (Channel != nullptr && !Channel->bCreatedEntity)))
 			{
 				bIsRelevant = true;
 				FinalCreationCount++;
