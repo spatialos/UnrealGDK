@@ -1,13 +1,14 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Utils/ErrorCodeRemapping.h"
 
-#include "EngineClasses/SpatialNetDriver.h"
-#include "Engine/World.h"
-#include "UnrealEngine.h"
 #include "Async/Async.h"
+#include "Engine/World.h"
+#include "EngineClasses/SpatialNetDriver.h"
 #include "Misc/Paths.h"
+#include "SpatialGDKSettings.h"
+#include "UnrealEngine.h"
+#include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
@@ -30,16 +31,6 @@ void USpatialWorkerConnection::DestroyConnection()
 		});
 
 		WorkerConnection = nullptr;
-	}
-
-	if (WorkerLegacyLocator)
-	{
-		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [WorkerLegacyLocator = WorkerLegacyLocator]
-		{
-			Worker_Locator_Destroy(WorkerLegacyLocator);
-		});
-
-		WorkerLegacyLocator = nullptr;
 	}
 
 	if (WorkerLocator)
@@ -92,7 +83,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 		ReceptionistConfig.WorkerId = ReceptionistConfig.WorkerType + FGuid::NewGuid().ToString();
 	}
 
-	// TODO: Move creation of connection parameters into a function somehow - UNR:579
+	// TODO UNR-1271: Move creation of connection parameters into a function somehow
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
 	FTCHARToUTF8 WorkerTypeCStr(*ReceptionistConfig.WorkerType);
 	ConnectionParams.worker_type = WorkerTypeCStr.Get();
@@ -149,7 +140,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 	// Connect to the locator on the default port(0 will choose the default)
 	WorkerLocator = Worker_Alpha_Locator_Create(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), 0, &LocatorParams);
 
-	// TODO: Move creation of connection parameters into a function somehow
+	// TODO UNR-1271: Move creation of connection parameters into a function somehow
 	Worker_ConnectionParameters ConnectionParams = Worker_DefaultConnectionParameters();
 	FTCHARToUTF8 WorkerTypeCStr(*LocatorConfig.WorkerType);
 	ConnectionParams.worker_type = WorkerTypeCStr.Get();
@@ -181,7 +172,7 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 
 		AsyncTask(ENamedThreads::GameThread, [this, NewWorkerConnection]
 		{
-			WorkerConnection = NewWorkerConnection;
+			this->WorkerConnection = NewWorkerConnection;
 
 			CacheWorkerAttributes();
 
@@ -195,8 +186,6 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 				this->OnConnectionFailure();
 			}
 		});
-
-		FGenericPlatformMisc::MemoryBarrier();
 	});
 }
 
@@ -352,6 +341,8 @@ void USpatialWorkerConnection::OnConnectionFailure()
 
 bool USpatialWorkerConnection::Init()
 {
+	OpsUpdateInterval = 1.0f / GetDefault<USpatialGDKSettings>()->OpsUpdateRate;
+
 	return true;
 }
 
@@ -359,7 +350,7 @@ uint32 USpatialWorkerConnection::Run()
 {
 	while (KeepRunning)
 	{
-		FPlatformProcess::Sleep(0.015f);
+		FPlatformProcess::Sleep(OpsUpdateInterval);
 
 		QueueLatestOpList();
 
@@ -376,8 +367,9 @@ void USpatialWorkerConnection::Stop()
 
 void USpatialWorkerConnection::InitializeWorkerThread()
 {
-	// TODO: Assert main thread
-	Thread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0, TPri_AboveNormal);
+	check(IsInGameThread());
+
+	Thread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
 	check(Thread);
 }
 
@@ -525,7 +517,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 template <typename T>
 void USpatialWorkerConnection::QueueOutgoingMessage(const T& Message)
 {
-	// As later optimization, we can change the queue to hold a union
+	// TODO UNR-1271: As later optimization, we can change the queue to hold a union
 	// of all outgoing message types, rather than having a pointer.
 	OutgoingMessagesQueue.Enqueue(MakeUnique<T>(Message));
 }

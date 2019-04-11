@@ -1078,7 +1078,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
-	// TODO: Remove IsConnected check
 	if (Connection == nullptr || !Connection->IsConnected())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));

@@ -24,7 +24,6 @@ enum class SpatialConnectionType
 UCLASS()
 class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 {
-
 	GENERATED_BODY()
 
 public:
@@ -71,7 +70,6 @@ private:
 	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
 	Worker_Connection* WorkerConnection;
-	Worker_Locator* WorkerLegacyLocator;
 	Worker_Alpha_Locator* WorkerLocator;
 
 	bool bIsConnected;
@@ -85,17 +83,19 @@ private:
 	// End FRunnable Interface
 
 	void InitializeWorkerThread();
-	FRunnableThread* Thread;
-	FThreadSafeBool KeepRunning = true;
-
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
 
 	template <typename T>
 	void QueueOutgoingMessage(const T& Message);
 
+	FRunnableThread* Thread;
+	FThreadSafeBool KeepRunning = true;
+	float OpsUpdateInterval;
+
 	TQueue<Worker_OpList*> OpListQueue;
 	TQueue<FOutgoingMessageWrapper> OutgoingMessagesQueue;
 
+	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
 };
