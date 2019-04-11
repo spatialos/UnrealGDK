@@ -46,7 +46,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 		{
 			bSchemaGeneratorRunning = false;
 			LoadedAssets.Empty();
-			GEngine->ForceGarbageCollection(true);
+			CollectGarbage(RF_NoFlags, true);
 			return false;
 		}
 	}
@@ -65,7 +65,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 	{
 		Progress.EnterProgressFrame(10.f);
 		LoadedAssets.Empty();
-		GEngine->ForceGarbageCollection(true);
+		CollectGarbage(RF_NoFlags, true);
 	}
 	
 	// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
