@@ -256,7 +256,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 		}
 		else
 		{
-			UE_LOG(LogInterestFactory, Warning, TEXT("Could not find Streaming Level Component for Level %s. Have you generated schema?"), *CleanedLevelPath);
+			UE_LOG(LogInterestFactory, Warning, TEXT("Could not find Streaming Level Component for Level %s. Have you generated schema?"), *CleanLevelPath);
 		}
 	}
 

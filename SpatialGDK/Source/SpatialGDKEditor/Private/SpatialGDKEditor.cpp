@@ -17,7 +17,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
 
-bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
+bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 {
 	if (bSchemaGeneratorRunning)
 	{
@@ -39,7 +39,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 	RemoveEditorAssetLoadedCallback();
 
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
-	if (bFullRebuild)
+	if (bFullScan)
 	{
 		Progress.EnterProgressFrame(80.f);
 		if (!LoadPotentialAssets(LoadedAssets))
@@ -58,10 +58,10 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullRebuild)
 
 	TryLoadExistingSchemaDatabase();
 
-	Progress.EnterProgressFrame(bFullRebuild ? 10.f : 100.f);
+	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
 	bool bResult = SpatialGDKGenerateSchema();
 
-	if (bFullRebuild)
+	if (bFullScan)
 	{
 		Progress.EnterProgressFrame(10.f);
 		LoadedAssets.Empty();

@@ -13,7 +13,7 @@ DECLARE_DELEGATE_OneParam(FSpatialGDKEditorErrorHandler, FString);
 class SPATIALGDKEDITOR_API FSpatialGDKEditor
 {
 public:
-	bool GenerateSchema(bool bFullRebuild);
+	bool GenerateSchema(bool bFullScan);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }

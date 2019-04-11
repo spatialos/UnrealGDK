@@ -11,6 +11,8 @@
 class USpatialNetDriver;
 class USpatialPackageMapClient;
 
+DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
+
 namespace improbable
 {
 
