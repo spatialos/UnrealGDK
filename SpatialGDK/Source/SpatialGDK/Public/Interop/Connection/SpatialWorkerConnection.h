@@ -74,6 +74,7 @@ private:
 
 	void CacheWorkerAttributes();
 	void ReplaceWorker();
+	FProcHandle ReplaceWorker(const FString& OldWorker, const FString& NewWorker);
 
 	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
