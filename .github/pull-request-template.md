@@ -6,8 +6,7 @@
 Describe your changes here.
 
 #### Release note
-REQUIRED: Enter a simple message for this commit which will go in the release notes. Prefix with "Bugfix:" or "Feature:".
-(Documentation changes are exempt)
+REQUIRED: Add a release note to the `##Unreleased` section of CHANGELOG.md. You can find guidance for writing useful release notes [here](../SpatialGDK/Extras/internal-documentation/how-to-write-good-release-notes.md). Documentation changes are exempt from this requirement.
 
 #### Tests
 How did you test these changes prior to submitting this pull request?
