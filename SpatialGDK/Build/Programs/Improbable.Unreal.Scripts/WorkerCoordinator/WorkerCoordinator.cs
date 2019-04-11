@@ -65,6 +65,9 @@ namespace Improbable.WorkerCoordinator
 
         private static Random Random = new Random();
 
+        // Average amount of delay between connecting each client to the target deployment.
+        private const int AVG_MS_BETWEEN_CLIENTS_CONNECTING = 1500;
+
         private static int Main(string[] args)
         {
             Logger.WriteLog("Starting coordinator with args: " + ArgsToString(args));
@@ -97,9 +100,10 @@ namespace Improbable.WorkerCoordinator
 
             // Add a random delay between 0 and maxDelaySec to spread out the connecting of simulated clients (plus a fixed start delay).
             // Connect 1 player per 1.5 seconds (on average) across entire simulated player deployment.
-            var maxDelayMillis = numSimulatedPlayers * 1500;
+            var maxDelayMillis = numSimulatedPlayers * AVG_MS_BETWEEN_CLIENTS_CONNECTING;
             var ourRandomDelayMillis = Random.Next(maxDelayMillis);
-            var startDelayMillis = GetIntegerArgument(args, START_DELAY_ARG, 0) + ourRandomDelayMillis;
+            var fixedStartDelayMillis = GetIntegerArgument(args, START_DELAY_ARG, 0);
+            var startDelayMillis = fixedStartDelayMillis + ourRandomDelayMillis;
             Thread.Sleep(startDelayMillis);
 
             string clientName = "SimulatedPlayer" + Guid.NewGuid();
