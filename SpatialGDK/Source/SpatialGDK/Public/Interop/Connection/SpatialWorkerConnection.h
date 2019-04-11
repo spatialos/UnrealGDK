@@ -33,9 +33,6 @@ public:
 
 	FORCEINLINE bool IsConnected() { return bIsConnected; }
 
-	static void ClearWorkerIds();
-	//static TArray<FString> WorkerIds;
-
 	// Worker Connection Interface
 	Worker_OpList* GetOpList();
 	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);

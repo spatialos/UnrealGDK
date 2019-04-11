@@ -8,7 +8,6 @@
 #include "UnrealEngine.h"
 #include "Async/Async.h"
 #include "Misc/Paths.h"
-#include "SNotificationList.h"
 
 #if WITH_EDITOR
 #include "Editor.h"
@@ -153,16 +152,16 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	}
 }
 
-void USpatialWorkerConnection::ConnectToReceptionist(bool bInConnectAsClient)
+void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 {
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
-		ReceptionistConfig.WorkerType = bInConnectAsClient ? SpatialConstants::ClientWorkerType : SpatialConstants::ServerWorkerType;
+		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::ClientWorkerType : SpatialConstants::ServerWorkerType;
 		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
 	}
 
 #if WITH_EDITOR
-	if (!bInConnectAsClient)
+	if (!bConnectAsClient)
 	{
 		if (GPlayInEditorID == 1)
 		{
@@ -206,7 +205,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bInConnectAsClient)
 	// end TODO
 
 #if WITH_EDITOR
-	if (!bInConnectAsClient)
+	if (!bConnectAsClient)
 	{
 		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);
 	}
@@ -436,11 +435,6 @@ SpatialConnectionType USpatialWorkerConnection::GetConnectionType() const
 	{
 		return SpatialConnectionType::Receptionist;
 	}
-}
-
-void USpatialWorkerConnection::ClearWorkerIds()
-{
-	//WorkerIds.Empty();
 }
 
 Worker_OpList* USpatialWorkerConnection::GetOpList()
