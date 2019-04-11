@@ -272,10 +272,6 @@ void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator
 
 	for (FAssetData World : WorldAssets)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Found World Name: [%s]. Path: [%s]. Object: [%s]"),
-			*World.AssetName.ToString(),
-			*World.PackagePath.ToString(),
-			*World.PackageName.ToString());
 		LevelNamesToPaths.Add(World.AssetName, World.PackageName);
 	}
 
@@ -305,11 +301,6 @@ void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator
 					ComponentId = IdGenerator.Next();
 					LevelPathToComponentId.Add(LevelPaths[i].ToString(), ComponentId);
 					LevelComponentIds.Add(ComponentId);
-					UE_LOG(LogTemp, Log, TEXT("[SchemaGen] Generated ComponentId %d for Level [%s]"), ComponentId, *LevelPaths[i].ToString())
-				}
-				else
-				{
-					UE_LOG(LogTemp, Log, TEXT("[SchemaGen] Found ComponentId %d for Level [%s]"), ComponentId, *LevelPaths[i].ToString())
 				}
 				WriteLevelComponent(Writer, FString::Printf(TEXT("%s%d"), *LevelNameString, i), ComponentId);
 				
@@ -325,11 +316,6 @@ void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator
 				ComponentId = IdGenerator.Next();
 				LevelPathToComponentId.Add(LevelPath, ComponentId);
 				LevelComponentIds.Add(ComponentId);
-				UE_LOG(LogTemp, Log, TEXT("[SchemaGen] Generated ComponentId %d for Level [%s]"), ComponentId, *LevelPath)
-			}
-			else
-			{
-				UE_LOG(LogTemp, Log, TEXT("[SchemaGen] Found ComponentId %d for Level [%s]"), ComponentId, *LevelPath)
 			}
 			WriteLevelComponent(Writer, LevelName.ToString(), ComponentId);
 		}
@@ -527,18 +513,9 @@ bool SpatialGDKGenerateSchema()
 
 	FComponentIdGenerator IdGenerator = FComponentIdGenerator(NextAvailableComponentId);
 
-	UE_LOG(LogTemp, Log, TEXT("[SchemaGen] NextIdStart: %d"), IdGenerator.Peek());
-
 	GenerateSchemaFromClasses(TypeInfos, SchemaOutputPath, IdGenerator);
-
-	UE_LOG(LogTemp, Log, TEXT("[SchemaGen] After Class Gen: %d"), IdGenerator.Peek());
-
 	GenerateSchemaForSublevels(SchemaOutputPath, IdGenerator);
-
-	UE_LOG(LogTemp, Log, TEXT("[SchemaGen] After Level Gen: %d"), IdGenerator.Peek());
-
 	NextAvailableComponentId = IdGenerator.Peek();
-
 	SaveSchemaDatabase();
 
 	return true;

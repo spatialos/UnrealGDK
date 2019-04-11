@@ -267,12 +267,11 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 		uint32* ComponentId = ClassInfoManager->SchemaDatabase->LevelPathToComponentId.Find(CleanedLevelPath);
 		if (ComponentId != nullptr)
 		{
-			//UE_LOG(LogTemp, Log, TEXT("[SG] Sender Found Component [%d] for LevelPath [%s]"), *ComponentId, *CleanedLevelPath);
 			return ComponentFactory::CreateEmptyComponentData(*ComponentId);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Log, TEXT("[SG] Sender Failed to find Component for LevelPath [%s]"), *CleanedLevelPath);
+			UE_LOG(LogSpatialSender, Warning, TEXT("Could not find Streaming Level Component for Level %s. Have you generated schema?"), *CleanedLevelPath);
 		}
 	}
 

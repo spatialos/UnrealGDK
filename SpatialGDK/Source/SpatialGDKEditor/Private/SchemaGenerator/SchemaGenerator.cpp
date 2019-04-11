@@ -360,7 +360,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 	if (HandoverData.Num() > 0)
 	{
 		const Worker_ComponentId ComponentId = SchemaData ? SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : IdGenerator.Next();
-				
+
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
