@@ -27,20 +27,21 @@ class SPATIALGDK_API USpatialDispatcher : public UObject
 	GENERATED_BODY()
 
 public:
+	using FCallbackId = uint32;
+
 	void Init(USpatialNetDriver* NetDriver);
 	void ProcessOps(Worker_OpList* OpList);
 
 	// AddOpCallback returns a callback ID which is incremented on each callback that is registered.
 	// ComponentId must be in the range 1000 - 2000.
 	// Callbacks can be deregistered through passing the corresponding callback ID to the RemoveOpCallback function.
-	using FCallbackId = uint32;
 	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback);
 	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback);
 	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback);
 	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback);
 	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback);
 	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback);
-	void RemoveOpCallback(FCallbackId Id);
+	bool RemoveOpCallback(FCallbackId Id);
 
 private:
 	struct UserOpCallbackData
@@ -75,6 +76,6 @@ private:
 	// RunCallbacks is called by the SpatialDispatcher and executes all user registered 
 	// callbacks for the matching component ID and network operation type.
 	FCallbackId NextCallbackId;
-	TMap<Worker_ComponentId, TMap<Worker_OpType, TArray<UserOpCallbackData>>> ComponentOpTypeToCallbackIdMap;
+	TMap<Worker_ComponentId, TMap<Worker_OpType, TArray<UserOpCallbackData>>> ComponentOpTypeToCallbackMap;
 	TMap<FCallbackId, CallbackIdData> CallbackIdToDataMap;
 };

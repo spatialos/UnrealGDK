@@ -185,8 +185,8 @@ private:
 	int32 ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
 #endif
 
-	friend class USpatialNetConnection;
-	friend class USpatialWorkerConnection;
+	friend USpatialNetConnection;
+	friend USpatialWorkerConnection;
 
 	// This index is incremented and assigned to every new RPC in ProcessRemoteFunction.
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs
