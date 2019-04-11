@@ -170,7 +170,7 @@ Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op) const
 	}
 }
 
-USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnAddComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_ADD_COMPONENT, [Callback](const Worker_Op* Op)
 	{
@@ -178,7 +178,7 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_Compone
 	});
 }
 
-USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnRemoveComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_REMOVE_COMPONENT, [Callback](const Worker_Op* Op)
 	{
@@ -186,14 +186,14 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_Compone
 	});
 }
 
-USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnAuthorityChange(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_AUTHORITY_CHANGE, [Callback](const Worker_Op* Op)
 	{
 		Callback(Op->authority_change);
 	});
 }
-USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnComponentUpdate(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMPONENT_UPDATE, [Callback](const Worker_Op* Op)
 	{
@@ -201,7 +201,7 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_Compone
 	});
 }
 
-USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnCommandRequest(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMMAND_REQUEST, [Callback](const Worker_Op* Op)
 	{
@@ -209,7 +209,7 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_Compone
 	});
 }
 
-USpatialDispatcher::FCallbackId USpatialDispatcher::AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback)
+USpatialDispatcher::FCallbackId USpatialDispatcher::OnCommandResponse(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback)
 {
 	return AddGenericOpCallback(ComponentId, WORKER_OP_TYPE_COMMAND_RESPONSE, [Callback](const Worker_Op* Op)
 	{
@@ -228,16 +228,19 @@ USpatialDispatcher::FCallbackId USpatialDispatcher::AddGenericOpCallback(Worker_
 
 bool USpatialDispatcher::RemoveOpCallback(FCallbackId CallbackId)
 {
-	// Find callback ID in map and assert if it does not exist
-	CallbackIdData CallbackData = CallbackIdToDataMap.FindAndRemoveChecked(CallbackId);
+	CallbackIdData* CallbackData = CallbackIdToDataMap.Find(CallbackId);
+	if (CallbackData == nullptr)
+	{
+		return false;
+	}
 
-	TMap<Worker_OpType, TArray<UserOpCallbackData>>* OpTypesToCallbacks = ComponentOpTypeToCallbackMap.Find(CallbackData.ComponentId);
+	TMap<Worker_OpType, TArray<UserOpCallbackData>>* OpTypesToCallbacks = ComponentOpTypeToCallbackMap.Find(CallbackData->ComponentId);
 	if (OpTypesToCallbacks == nullptr)
 	{
 		return false;
 	}
 
-	TArray<UserOpCallbackData>* ComponentCallbacks = OpTypesToCallbacks->Find(CallbackData.OpType);
+	TArray<UserOpCallbackData>* ComponentCallbacks = OpTypesToCallbacks->Find(CallbackData->OpType);
 	if (ComponentCallbacks == nullptr)
 	{
 		return false;
@@ -257,10 +260,10 @@ bool USpatialDispatcher::RemoveOpCallback(FCallbackId CallbackId)
 	{
 		if (ComponentOpTypeToCallbackMap.Num() == 1)
 		{
-			ComponentOpTypeToCallbackMap.Remove(CallbackData.ComponentId);
+			ComponentOpTypeToCallbackMap.Remove(CallbackData->ComponentId);
 			return true;
 		}
-		OpTypesToCallbacks->Remove(CallbackData.OpType);
+		OpTypesToCallbacks->Remove(CallbackData->OpType);
 		return true;
 	}
 

@@ -35,12 +35,12 @@ public:
 	// AddOpCallback returns a callback ID which is incremented on each callback that is registered.
 	// ComponentId must be in the range 1000 - 2000.
 	// Callbacks can be deregistered through passing the corresponding callback ID to the RemoveOpCallback function.
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback);
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback);
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback);
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback);
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback);
-	FCallbackId AddOpCallback(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback);
+	FCallbackId OnAddComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AddComponentOp&)>& Callback);
+	FCallbackId OnRemoveComponent(Worker_ComponentId ComponentId, const TFunction<void(const Worker_RemoveComponentOp&)>& Callback);
+	FCallbackId OnAuthorityChange(Worker_ComponentId ComponentId, const TFunction<void(const Worker_AuthorityChangeOp&)>& Callback);
+	FCallbackId OnComponentUpdate(Worker_ComponentId ComponentId, const TFunction<void(const Worker_ComponentUpdateOp&)>& Callback);
+	FCallbackId OnCommandRequest(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandRequestOp&)>& Callback);
+	FCallbackId OnCommandResponse(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback);
 	bool RemoveOpCallback(FCallbackId Id);
 
 private:
