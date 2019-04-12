@@ -123,7 +123,7 @@ public:
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
-	void CheckIfOwnershipChanged();
+	void ProcessOwnershipChange();
 	FObjectReplicator& PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
 
@@ -146,8 +146,8 @@ protected:
 	virtual bool CleanUp(const bool bForDestroy) override;
 
 private:
-	void ServerCheckIfOwnershipChanged();
-	void ClientCheckIfOwnershipChanged();
+	void ServerProcessOwnershipChange();
+	void ClientProcessOwnershipChange();
 
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
