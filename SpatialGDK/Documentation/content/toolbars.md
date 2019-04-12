@@ -96,7 +96,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 | Launch configuration | The [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file) to use when running `spatial local launch` using the **Start** button. |
 | Stop on exit |  If enabled, shuts down running deployments when you close the Unreal Editor. |
 | Generate default launch config | If checked, the GDK creates a [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file) by default when you launch a local deployment through the toolbar. |
-| Launch configuration description | Auto generated launch configuration description. The settings expose the configurations in [launch config documentation](https://docs.improbable.io/reference/13.6/shared/project-layout/launch-config). |
+| Launch configuration description | Auto-generated launch configuration description. The settings expose the configurations in the [launch config documentation](https://docs.improbable.io/reference/latest/shared/project-layout/launch-config). |
 
 ##### Snapshots
 
