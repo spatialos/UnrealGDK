@@ -17,6 +17,7 @@ Alongside the standard functionality, we’ve added some extra capabilities to t
 
 1. The Unreal<->SpatialOS networking switch
 1. The “Number of Servers” multiplayer option
+1. The "SpatialOS Settings" menu item which opens the [SpatialOS settings](#settings)
 
 ### Switching between native Unreal networking and SpatialOS networking
 
@@ -35,7 +36,7 @@ You can switch back by unchecking the boxes.
 
 You can launch multiple servers at the same time from within the Unreal Editor in [PIE (Unreal documentation)](https://docs.unrealengine.com/en-us/Engine/UI/LevelEditor/InEditorTesting#playineditor) configuration. To configure the number of servers launched, open the **Play** drop-down menu and use the slider `Number of Servers` within the `Multiplayer Options` section.
 
-To connect multiple servers-workers to SpatialOS, you need to tell SpatialOS how many server-workers you will be connecting. In `<ProjectPath>\spatial\default_launch.json` there is a load balancing section which dictates how many workers will be connected to SpatialOS. By default, When launching SpatialOS through the editor, a launch configuration is auto-generated for you based on the settings specified on the [SpatialOS editor settings]().
+To connect multiple servers-workers to SpatialOS, you need to tell SpatialOS how many server-workers you will be connecting. In `<ProjectPath>\spatial\default_launch.json` there is a load balancing section which dictates how many workers will be connected to SpatialOS. By default, When launching SpatialOS through the editor, a launch configuration is auto-generated for you based on the settings specified on the [SpatialOS editor settings](#settings).
 
 This uses the [`rectangle_grid`](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#rectangular-grid-rectangle-grid) strategy with 1 column and 1 row. To connect 2 servers, change this to 1 column and 2 rows (or vice-versa). Read more about the different kinds of load balancing strategies [here](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#load-balancing-with-the-new-runtime).
 
@@ -91,9 +92,11 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 
 | Setting | Description |
 | --- | --- |
-| Generate default launch config | If checked, the GDK creates a [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file) by default when you launch a local deployment through the toolbar. |
+| Command line flags for local launch | Command line flags passed in to `spatial local launch`. |
 | Launch configuration | The [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file) to use when running `spatial local launch` using the **Start** button. |
 | Stop on exit |  If enabled, shuts down running deployments when you close the Unreal Editor. |
+| Generate default launch config | If checked, the GDK creates a [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file) by default when you launch a local deployment through the toolbar. |
+| Launch configuration description | Auto generated launch configuration description. The settings expose the configurations in [launch config documentation](https://docs.improbable.io/reference/13.6/shared/project-layout/launch-config). |
 
 ##### Snapshots
 
