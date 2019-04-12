@@ -21,11 +21,11 @@ void USpatialWorkerConnection::FinishDestroy()
 
 void USpatialWorkerConnection::DestroyConnection()
 {
-	Stop(); // Stop worker thread
-	if (Thread != nullptr)
+	Stop(); // Stop OpsProcessingThread
+	if (OpsProcessingThread != nullptr)
 	{
-		Thread->WaitForCompletion();
-		Thread = nullptr;
+		OpsProcessingThread->WaitForCompletion();
+		OpsProcessingThread = nullptr;
 	}
 
 	if (WorkerConnection)
@@ -317,7 +317,12 @@ USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
-	InitializeWorkerThread();
+
+	if (OpsProcessingThread == nullptr)
+	{
+		InitializeOpsProcessingThread();
+	}
+
 	GetSpatialNetDriverChecked()->HandleOnConnected();
 }
 
@@ -367,12 +372,12 @@ void USpatialWorkerConnection::Stop()
 	KeepRunning.AtomicSet(false);
 }
 
-void USpatialWorkerConnection::InitializeWorkerThread()
+void USpatialWorkerConnection::InitializeOpsProcessingThread()
 {
 	check(IsInGameThread());
 
-	Thread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
-	check(Thread);
+	OpsProcessingThread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
+	check(OpsProcessingThread);
 }
 
 void USpatialWorkerConnection::QueueLatestOpList()

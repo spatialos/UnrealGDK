@@ -77,7 +77,7 @@ private:
 	virtual void Stop();
 	// End FRunnable Interface
 
-	void InitializeWorkerThread();
+	void InitializeOpsProcessingThread();
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
 
