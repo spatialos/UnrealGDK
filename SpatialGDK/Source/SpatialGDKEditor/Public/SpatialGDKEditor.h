@@ -13,6 +13,10 @@ DECLARE_DELEGATE_OneParam(FSpatialGDKEditorErrorHandler, FString);
 class SPATIALGDKEDITOR_API FSpatialGDKEditor
 {
 public:
+	FSpatialGDKEditor() : bSchemaGeneratorRunning(false)
+	{
+	}
+
 	bool GenerateSchema(bool bFullScan);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 
