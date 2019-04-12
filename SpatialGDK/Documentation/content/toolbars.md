@@ -38,7 +38,7 @@ You can launch multiple servers at the same time from within the Unreal Editor i
 
 If you want to connect multiple servers-workers to SpatialOS, you need to tell SpatialOS how many server-workers to connect. You do this in the load balancing section of the launch configuration file (<ProjectPath>\spatial\default_launch.json`). However, by default, when you launch SpatialOS through the editor, this launch configuration file is auto-generated for you based on the settings specified in the [SpatialOS editor settings](#settings).
 
-This uses the [`rectangle_grid`](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#rectangular-grid-rectangle-grid) strategy with 1 column and 1 row. To connect 2 servers, change this to 1 column and 2 rows (or vice-versa). Read more about the different kinds of load balancing strategies [here](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#load-balancing-with-the-new-runtime).
+ This uses the [`rectangle_grid`](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#rectangular-grid-rectangle-grid) strategy with 1 column and 1 row. To connect 2 servers, change this to 1 column and 2 rows (or vice-versa). Read more about the different kinds of load balancing strategies [here](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancing).
 
 ## SpatialOS GDK for Unreal toolbar
 
