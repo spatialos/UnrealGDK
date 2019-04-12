@@ -47,7 +47,7 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUsingQBI))
 	{
 		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo,
-			FText::FromString(FString::Printf(TEXT("You must make sure to set the value of the \"enable_chunk_interest\" Legacy flag to \"%s\" in your launch configuration for this to work.\n\nIf you are using auto-generated launch config, this can be changed from the SpatialOS GDK for Unreal - Editor Settings\n\nDo you want to configure your launch config settings now?"),
+			FText::FromString(FString::Printf(TEXT("You must set the value of the \"enable_chunk_interest\" Legacy flag to \"%s\" in your launch configuration file for this to work.\n\nIf you are using an auto-generated launch config, you can set this value from within Unreal Editor by going to Edit > Project Settings > SpatialOS GDK for Unreal > Settings.\n\nDo you want to configure your launch config settings now?"),
 				bUsingQBI ? TEXT("false") : TEXT("true"))));
 
 		if (Result == EAppReturnType::Yes)
