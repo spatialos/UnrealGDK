@@ -50,7 +50,7 @@ You set up your game to receive network operations using the `USpatialDispatcher
 
 `Worker_ComponentId` and each network operation type are defined in the [Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/api-reference).
 
-You must register the callbacks inside your game instance's `::Init()` function to ensure your callbacks will be triggered for initial network operations received by the SpatialOS worker connection.
+To ensure your callbacks will be triggered for initial network operations received by the SpatialOS worker connection, you will need to register the callbacks inside your game instance's `::Init()` function.
 
 Each `USpatialDispatcher::AddOpCallback` function returns a `CallbackId`. You can deregister your callbacks using the `USpatialDispatcher::RemoveOpCallback` function and passing the `CallbackId` parameter that was returned by the corresponding call to `USpatialDispatcher::AddOpCallback`.
 
@@ -228,7 +228,8 @@ public:
 		TestEntity.components = Components.GetData();
 
 		bool bSuccess = Worker_SnapshotOutputStream_WriteEntity(OutputStream, &TestEntity) != 0;
-		if (bSuccess) {
+		if (bSuccess)
+		{
 			NextEntityId++;
 		}
 

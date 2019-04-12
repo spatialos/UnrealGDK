@@ -56,6 +56,8 @@ private:
 		Worker_OpType OpType;
 	};
 
+	using OpTypeToCallbacksMap = TMap<Worker_OpType, TArray<UserOpCallbackData>>;
+
 	bool IsExternalSchemaOp(Worker_Op* Op) const;
 	void ProcessExternalSchemaOp(Worker_Op* Op);
 	Worker_ComponentId GetComponentId(Worker_Op* Op) const;
@@ -76,6 +78,6 @@ private:
 	// RunCallbacks is called by the SpatialDispatcher and executes all user registered 
 	// callbacks for the matching component ID and network operation type.
 	FCallbackId NextCallbackId;
-	TMap<Worker_ComponentId, TMap<Worker_OpType, TArray<UserOpCallbackData>>> ComponentOpTypeToCallbackMap;
+	TMap<Worker_ComponentId, OpTypeToCallbacksMap> ComponentOpTypeToCallbacksMap;
 	TMap<FCallbackId, CallbackIdData> CallbackIdToDataMap;
 };
