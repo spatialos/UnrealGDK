@@ -52,7 +52,7 @@ public:
 	uint32 ActorReplicationRateLimit;
 
 	/** Rate at which updates are sent to SpatialOS and processed from SpatialOS.*/
-	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS Update Rate"))
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS Network Update Rate"))
 	float OpsUpdateRate;
 
 	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/

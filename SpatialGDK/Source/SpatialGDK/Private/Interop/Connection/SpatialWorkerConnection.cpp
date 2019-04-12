@@ -25,6 +25,7 @@ void USpatialWorkerConnection::DestroyConnection()
 	if (Thread != nullptr)
 	{
 		Thread->WaitForCompletion();
+		Thread = nullptr;
 	}
 
 	if (WorkerConnection)
@@ -48,6 +49,8 @@ void USpatialWorkerConnection::DestroyConnection()
 	}
 
 	bIsConnected = false;
+	NextRequestId = 0;
+	KeepRunning.AtomicSet(true);
 }
 
 void USpatialWorkerConnection::Connect(bool bInitAsClient)
@@ -252,7 +255,7 @@ void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, co
 	QueueOutgoingMessage<FCommandFailure>(RequestId, Message);
 }
 
-void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const TCHAR* LoggerName, const TCHAR* Message)
+void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const FString& LoggerName, const TCHAR* Message)
 {
 	QueueOutgoingMessage<FLogMessage>(Level, LoggerName, Message);
 }
@@ -381,7 +384,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 {
 	while (!OutgoingMessagesQueue.IsEmpty())
 	{
-		FOutgoingMessageWrapper OutgoingMessage;
+		TUniquePtr<FOutgoingMessage> OutgoingMessage;
 		OutgoingMessagesQueue.Dequeue(OutgoingMessage);
 
 		switch (OutgoingMessage->Type)

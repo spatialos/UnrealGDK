@@ -152,5 +152,3 @@ struct FMetrics : FOutgoingMessage
 
 	Worker_Metrics Metrics;
 };
-
-using FOutgoingMessageWrapper = TUniquePtr<FOutgoingMessage>;

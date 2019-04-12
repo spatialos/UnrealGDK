@@ -45,7 +45,7 @@ public:
 	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
-	void SendLogMessage(const uint8_t Level, const TCHAR* LoggerName, const TCHAR* Message);
+	void SendLogMessage(const uint8_t Level, const FString& LoggerName, const TCHAR* Message);
 	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
 	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
 	void SendMetrics(const Worker_Metrics* Metrics);
@@ -71,13 +71,6 @@ private:
 
 	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
-	Worker_Connection* WorkerConnection;
-	Worker_Alpha_Locator* WorkerLocator;
-
-	bool bIsConnected;
-
-	TArray<FString> CachedWorkerAttributes;
-
 	// Begin FRunnable Interface
 	virtual bool Init();
 	virtual uint32 Run();
@@ -91,12 +84,20 @@ private:
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);
 
+private:
+	Worker_Connection* WorkerConnection;
+	Worker_Alpha_Locator* WorkerLocator;
+
+	bool bIsConnected;
+
+	TArray<FString> CachedWorkerAttributes;
+
 	FRunnableThread* Thread;
 	FThreadSafeBool KeepRunning = true;
 	float OpsUpdateInterval;
 
 	TQueue<Worker_OpList*> OpListQueue;
-	TQueue<FOutgoingMessageWrapper> OutgoingMessagesQueue;
+	TQueue<TUniquePtr<FOutgoingMessage>> OutgoingMessagesQueue;
 
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;
