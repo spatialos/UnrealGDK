@@ -162,8 +162,6 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("MCS: %s %d"), bConnectAsClient ? TEXT("Client") : TEXT("Server"), GPlayInEditorID);
-
 #if WITH_EDITOR
 	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID != -1);
 	if (bSingleThreadedServer)
