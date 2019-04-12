@@ -102,9 +102,10 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 	FScopedSlowTask Progress((float)FoundAssets.Num(), FText::FromString(FString::Printf(TEXT("Loading %d Assets before generating schema"), FoundAssets.Num())));
 
 
-	for (FAssetData Data : FoundAssets)
+	for (const FAssetData& Data : FoundAssets)
 	{
-		if (Progress.ShouldCancel()) {
+		if (Progress.ShouldCancel())
+		{
 			return false;
 		}
 		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Loading %s"), *Data.AssetName.ToString())));
@@ -153,7 +154,7 @@ void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()
 
 }
 
-// This callback is copied from UEditorEngine so that we can turn it off during schema gen in editor.
+// This callback is copied from UEditorEngine::OnAssetLoaded so that we can turn it off during schema gen in editor.
 void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 {
 	// do not init worlds when running schema gen.
@@ -166,7 +167,6 @@ void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 	if (World)
 	{
 		// Init inactive worlds here instead of UWorld::PostLoad because it is illegal to call UpdateWorldComponents while IsRoutingPostLoad
-		check(World);
 		if (!World->bIsWorldInitialized && World->WorldType == EWorldType::Inactive)
 		{
 			// Create the world without a physics scene because creating too many physics scenes causes deadlock issues in PhysX. The scene will be created when it is opened in the level editor.

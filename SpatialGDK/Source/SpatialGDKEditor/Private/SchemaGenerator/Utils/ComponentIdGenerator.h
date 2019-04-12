@@ -30,7 +30,7 @@ struct FComponentIdGenerator
 		return Result;
 	}
 
-	uint32 Peek()
+	uint32 Peek() const
 	{
 		return NextId;
 	}

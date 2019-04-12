@@ -271,7 +271,8 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 		}
 		else
 		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("Could not find Streaming Level Component for Level %s. Have you generated schema?"), *CleanLevelPath);
+			UE_LOG(LogSpatialSender, Error, TEXT("Could not find Streaming Level Component for Level %s Processing Actor %s. Have you generated schema?"),
+				*CleanLevelPath, *Actor->GetPathName());
 		}
 	}
 
