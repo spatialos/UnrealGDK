@@ -10,84 +10,13 @@
 #include "Misc/Paths.h"
 
 #if WITH_EDITOR
-#include "Editor.h"
-#include "Settings/LevelEditorPlaySettings.h"
+#include "EditorWorkerController.h"
 #endif
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 #if WITH_EDITOR
-struct EditorWorkerController
-{
-	void OnPrePIEEnded(bool bValue)
-	{
-		LastPIEEndTime = FDateTime::Now().ToUnixTimestamp();
-		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
-	}
-
-	void InitWorkers(const FString& WorkerType)
-	{
-		ReplaceProcesses.Empty();
-
-		const int64 WorkerReplaceThreshold = 8;	// Issue replace worker request if restarting deployment within this timeframe
-		int64 SecondsSinceLastSession = FDateTime::Now().ToUnixTimestamp() - LastPIEEndTime;
-		UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Seconds since last session - %d"), SecondsSinceLastSession);
-
-		PIEEndHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &EditorWorkerController::OnPrePIEEnded);
-
-		int32 PlayNumberOfServers;
-		GetDefault<ULevelEditorPlaySettings>()->GetPlayNumberOfServers(PlayNumberOfServers);
-
-		WorkerIds.SetNum(PlayNumberOfServers);
-		for (int i = 0; i < PlayNumberOfServers; ++i)
-		{
-			FString NewWorkerId = WorkerType + FGuid::NewGuid().ToString();
-
-			if (!WorkerIds[i].IsEmpty() && SecondsSinceLastSession < WorkerReplaceThreshold)
-			{
-				ReplaceProcesses.Add(ReplaceWorker(WorkerIds[i], NewWorkerId));
-			}
-
-			WorkerIds[i] = NewWorkerId;
-		}
-
-	}
-
-	FProcHandle ReplaceWorker(const FString& OldWorker, const FString& NewWorker)
-	{
-		const FString CmdExecutable = TEXT("spatial.exe");
-
-		const FString CmdArgs = FString::Printf(
-			TEXT(" local worker replace "
-				"--existing_worker_id %s "
-				"--local_service_grpc_port 22000 "
-				"--replacing_worker_id %s"), *OldWorker, *NewWorker);
-		uint32 ProcessID = 0;
-		FProcHandle ProcHandle = FPlatformProcess::CreateProc(
-			*(CmdExecutable), *CmdArgs, false, true, true, &ProcessID, 2,
-			nullptr, nullptr, nullptr);
-
-		return ProcHandle;
-	}
-
-	void BlockUntilWorkerReady(int32 WorkerIdx)
-	{
-		if (WorkerIdx < ReplaceProcesses.Num())
-		{
-			while (FPlatformProcess::IsProcRunning(ReplaceProcesses[WorkerIdx]))
-			{
-				FPlatformProcess::Sleep(0.1f);
-			}
-		}
-	}
-
-	TArray<FString> WorkerIds;
-	TArray<FProcHandle> ReplaceProcesses;
-	int64 LastPIEEndTime = -1;
-	FDelegateHandle PIEEndHandle;
-};
-
-static EditorWorkerController WorkerController;
+static improbable::EditorWorkerController WorkerController;
 #endif
 
 void USpatialWorkerConnection::FinishDestroy()
@@ -164,9 +93,10 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 #if WITH_EDITOR
 	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID != -1);
+	const int32 FirstServerEditorID = 1;
 	if (bSingleThreadedServer)
 	{
-		if (GPlayInEditorID == 1)
+		if (GPlayInEditorID == FirstServerEditorID)
 		{
 			WorkerController.InitWorkers(ReceptionistConfig.WorkerType);
 		}
