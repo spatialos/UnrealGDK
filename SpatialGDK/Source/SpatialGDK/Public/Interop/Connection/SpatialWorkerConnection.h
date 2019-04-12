@@ -92,7 +92,7 @@ private:
 
 	TArray<FString> CachedWorkerAttributes;
 
-	FRunnableThread* Thread;
+	FRunnableThread* OpsProcessingThread;
 	FThreadSafeBool KeepRunning = true;
 	float OpsUpdateInterval;
 
