@@ -88,6 +88,9 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 
+	// Search project for all assets. This is required as the Commandlet will not have any paths cached.
+	AssetRegistryModule.Get().SearchAllAssets(true);
+
 	TArray<FAssetData> FoundAssets;
 	AssetRegistryModule.Get().GetAllAssets(FoundAssets, true);
 
