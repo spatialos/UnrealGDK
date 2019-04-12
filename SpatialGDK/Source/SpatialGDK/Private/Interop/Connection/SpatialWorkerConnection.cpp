@@ -372,7 +372,7 @@ void USpatialWorkerConnection::InitializeWorkerThread()
 	check(IsInGameThread());
 
 	Thread = FRunnableThread::Create(this, TEXT("SpatialWorkerConnectionWorker"), 0);
-	check(Thread);
+	check(Thread != nullptr);
 }
 
 void USpatialWorkerConnection::QueueLatestOpList()
