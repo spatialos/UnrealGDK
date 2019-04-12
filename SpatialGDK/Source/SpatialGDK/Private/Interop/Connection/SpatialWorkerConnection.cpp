@@ -185,7 +185,7 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 			else
 			{
 				// TODO: Try to reconnect - UNR-576
-				this->OnConnectionFailure();
+				OnConnectionFailure();
 			}
 		});
 	});
