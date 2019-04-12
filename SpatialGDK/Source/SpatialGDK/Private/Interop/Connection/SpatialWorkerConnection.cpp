@@ -180,12 +180,12 @@ void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* Connect
 
 			if (Worker_Connection_IsConnected(NewWorkerConnection))
 			{
-				this->OnConnectionSuccess();
+				OnConnectionSuccess();
 			}
 			else
 			{
 				// TODO: Try to reconnect - UNR-576
-				this->OnConnectionFailure();
+				OnConnectionFailure();
 			}
 		});
 	});
