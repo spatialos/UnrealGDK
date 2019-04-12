@@ -7,7 +7,7 @@
 FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FString LoggerName, int32 InPIEIndex)
 	: FilterLevel(ELogVerbosity::Warning)
 	, Connection(InConnection)
-	, Name(LoggerName)
+	, WorkerName(*LoggerName)
 	, PIEIndex(InPIEIndex)
 {
 	const TCHAR* CommandLine = FCommandLine::Get();
@@ -36,7 +36,7 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 			return;
 		}
 #endif //WITH_EDITOR
-		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), Name, InData);
+		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), WorkerName, InData);
 	}
 }
 

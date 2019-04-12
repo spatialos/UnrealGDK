@@ -1057,8 +1057,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
-	// TODO UNR-1271: Remove IsConnected Check
-	if (Connection != nullptr && Connection->IsConnected())
+	if (Connection != nullptr)
 	{
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
 
@@ -1079,7 +1078,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
-	if (Connection == nullptr || !Connection->IsConnected())
+	if (Connection == nullptr)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));
 		return;
@@ -1163,8 +1162,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
-	// TODO UNR-1271: Remove IsConnected check
-	if (IsServer() && ClientConnections.Num() > 0 && Connection->IsConnected() && EntityPool->IsReady())
+	if (IsServer() && ClientConnections.Num() > 0 && EntityPool->IsReady())
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE

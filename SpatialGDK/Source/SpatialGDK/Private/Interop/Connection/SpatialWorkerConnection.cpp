@@ -255,7 +255,7 @@ void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, co
 	QueueOutgoingMessage<FCommandFailure>(RequestId, Message);
 }
 
-void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const FString& LoggerName, const TCHAR* Message)
+void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const FName& LoggerName, const TCHAR* Message)
 {
 	QueueOutgoingMessage<FLogMessage>(Level, LoggerName, Message);
 }
@@ -466,7 +466,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 
 			Worker_LogMessage LogMessage{};
 			LogMessage.level = Message->Level;
-			LogMessage.logger_name = TCHAR_TO_UTF8(*Message->LoggerName);
+			LogMessage.logger_name = TCHAR_TO_UTF8(*Message->LoggerName.ToString());
 			LogMessage.message = TCHAR_TO_UTF8(*Message->Message);
 			Worker_Connection_SendLogMessage(WorkerConnection, &LogMessage);
 			break;

@@ -45,7 +45,7 @@ public:
 	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
 	void SendCommandFailure(Worker_RequestId RequestId, const FString& Message);
-	void SendLogMessage(const uint8_t Level, const FString& LoggerName, const TCHAR* Message);
+	void SendLogMessage(const uint8_t Level, const FName& LoggerName, const TCHAR* Message);
 	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
 	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
 	void SendMetrics(const Worker_Metrics* Metrics);

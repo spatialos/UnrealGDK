@@ -26,7 +26,7 @@ protected:
 	ELogVerbosity::Type FilterLevel;
 	TSet<FName> CategoriesToRedirect;
 	USpatialWorkerConnection* Connection;
-	FString Name;
+	FName WorkerName;
 
 	int32 PIEIndex;
 	bool bLogToSpatial;
