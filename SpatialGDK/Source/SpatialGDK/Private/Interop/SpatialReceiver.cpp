@@ -134,15 +134,18 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	// If a client gains ownership over something it had already checked out, it will
 	// add component interest on the owner only data components, which will trigger an
 	// AddComponentOp, but it is not guaranteed to be inside a critical section.
-	if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+	if (!NetDriver->IsServer())
 	{
-		if (ClassInfoManager->GetCategoryByComponentId(Op.data.component_id) == SCHEMA_OwnerOnly)
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
 		{
-			// We received owner only data, and we have the entity checked out already,
-			// so this happened as a result of adding component interest. Apply the data
-			// immediately instead of queuing it up (since there will be no AddEntityOp).
-			ApplyComponentData(Op.entity_id, Op.data, Channel);
-			return;
+			if (ClassInfoManager->GetCategoryByComponentId(Op.data.component_id) == SCHEMA_OwnerOnly)
+			{
+				// We received owner only data, and we have the entity checked out already,
+				// so this happened as a result of adding component interest. Apply the data
+				// immediately instead of queuing it up (since there will be no AddEntityOp).
+				ApplyComponentData(Op.entity_id, Op.data, Channel);
+				return;
+			}
 		}
 	}
 
