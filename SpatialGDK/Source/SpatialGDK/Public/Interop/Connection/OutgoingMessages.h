@@ -71,7 +71,7 @@ struct FComponentUpdate : FOutgoingMessage
 
 struct FCommandRequest : FOutgoingMessage
 {
-	FCommandRequest(const Worker_EntityId& InEntityId, const Worker_CommandRequest& InRequest, const uint32_t& InCommandId)
+	FCommandRequest(Worker_EntityId InEntityId, const Worker_CommandRequest& InRequest, uint32_t InCommandId)
 		: FOutgoingMessage(EOutgoingMessageType::CommandRequest)
 		, EntityId(InEntityId)
 		, Request(InRequest)
