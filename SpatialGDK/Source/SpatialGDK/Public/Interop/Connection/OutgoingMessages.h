@@ -123,7 +123,7 @@ struct FLogMessage : FOutgoingMessage
 
 struct FComponentInterest : FOutgoingMessage
 {
-	FComponentInterest(const Worker_EntityId& InEntityId, TArray<Worker_InterestOverride> InInterests)
+	FComponentInterest(Worker_EntityId InEntityId, TArray<Worker_InterestOverride>&& InInterests)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentInterest)
 		, EntityId(InEntityId)
 		, Interests(InInterests)
