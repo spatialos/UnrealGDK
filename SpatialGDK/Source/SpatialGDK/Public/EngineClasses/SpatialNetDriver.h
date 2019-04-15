@@ -87,7 +87,7 @@ public:
 
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId);
-	TMap<Worker_EntityId, USpatialActorChannel*>& GetEntityToActorChannelMap();
+	TMap<Worker_EntityId_Key, USpatialActorChannel*>& GetEntityToActorChannelMap();
 
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 
@@ -96,13 +96,10 @@ public:
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
 
 	void HandleOnConnected();
-	void HandleOnDisconnected(const FString& Reason);
 	void HandleOnConnectionFailed(const FString& Reason);
 
 	// Invoked when this worker has successfully connected to SpatialOS
 	FOnConnectedEvent OnConnected;
-	// Invoked when this worker has disconnected from SpatialOS, both when initiated by this worker and when disconnected by the runtime
-	FOnDisconnectedEvent OnDisconnected;
 	// Invoked when this worker fails to initiate a connection to SpatialOS
 	FOnConnectionFailedEvent OnConnectionFailed;
 
@@ -175,6 +172,7 @@ private:
 	UFUNCTION()
 	void OnConnectedToSpatialOS();
 
+	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
 
 	void CreateServerSpatialOSNetConnection();

@@ -25,10 +25,9 @@ DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
-	
-	TSoftObjectPtr<USchemaDatabase> SchemaDatabasePtr(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")));
-	SchemaDatabasePtr.LoadSynchronous();
-	SchemaDatabase = SchemaDatabasePtr.Get();
+
+	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase"));
+	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 
 	if (SchemaDatabase == nullptr)
 	{

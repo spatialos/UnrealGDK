@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Utils/ErrorCodeRemapping.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Engine/World.h"
@@ -111,6 +112,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
+	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
@@ -200,6 +202,7 @@ void USpatialWorkerConnection::ConnectToLegacyLocator()
 
 		ConnectionParams.network.connection_type = SpatialConnection->LegacyLocatorConfig.LinkProtocol;
 		ConnectionParams.network.use_external_ip = SpatialConnection->LegacyLocatorConfig.UseExternalIp;
+		ConnectionParams.network.tcp.multiplex_level = SpatialConnection->LegacyLocatorConfig.TcpMultiplexLevel;
 		// end TODO
 
 		int DeploymentIndex = 0;
@@ -288,6 +291,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 	ConnectionParams.network.connection_type = LocatorConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = LocatorConfig.UseExternalIp;
+	ConnectionParams.network.tcp.multiplex_level = LocatorConfig.TcpMultiplexLevel;
 
 	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
 	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
@@ -372,7 +376,12 @@ Worker_RequestId USpatialWorkerConnection::SendCommandRequest(Worker_EntityId En
 
 void USpatialWorkerConnection::SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response)
 {
-	return Worker_Connection_SendCommandResponse(WorkerConnection, RequestId, Response);
+	Worker_Connection_SendCommandResponse(WorkerConnection, RequestId, Response);
+}
+
+void USpatialWorkerConnection::SendCommandFailure(Worker_RequestId RequestId, const char* Message)
+{
+	Worker_Connection_SendCommandFailure(WorkerConnection, RequestId, Message);
 }
 
 void USpatialWorkerConnection::SendLogMessage(const uint8_t Level, const char* LoggerName, const char* Message)
@@ -438,8 +447,6 @@ USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 	return SpatialNetDriver;
 }
 
-
-// TODO: UNR-962 - move connection events in to native connection handling codepath (eg, UEngine::HandleNetworkFailure)
 void USpatialWorkerConnection::OnConnectionSuccess()
 {
 	bIsConnected = true;
@@ -456,17 +463,12 @@ void USpatialWorkerConnection::OnConnectionFailure()
 {
 	bIsConnected = false;
 
-	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
-	for (size_t i = 0; i < OpList->op_count; i++)
+	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
+	if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 	{
-		if (OpList->ops[i].op_type == WORKER_OP_TYPE_DISCONNECT)
-		{
-			const FString ErrorMessage(UTF8_TO_TCHAR(OpList->ops[i].disconnect.reason));
-			AsyncTask(ENamedThreads::GameThread, [this, ErrorMessage]
-			{
-				GetSpatialNetDriverChecked()->HandleOnConnectionFailed(ErrorMessage);
-			});
-			break;
-		}
+		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
+		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
+
+		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
 	}
 }

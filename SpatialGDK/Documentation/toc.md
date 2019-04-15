@@ -19,7 +19,7 @@
     - [SpatialOS concepts]({{urlRoot}}/content/spatialos-concepts/concepts)
         - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
         - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
-        - [Non-Unreal layers]({{urlRoot}}/content/spatialos-concepts/non-unreal-layers)
+        - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
     - [Glossary]({{urlRoot}}/content/glossary)
     - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
@@ -33,7 +33,6 @@
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
-
 - <h3>Troubleshooting</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Known issues]({{urlRoot}}/known-issues)

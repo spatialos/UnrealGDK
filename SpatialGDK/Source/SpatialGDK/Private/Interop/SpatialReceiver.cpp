@@ -2,6 +2,7 @@
 
 #include "Interop/SpatialReceiver.h"
 
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
@@ -20,6 +21,7 @@
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
@@ -1269,7 +1271,10 @@ void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealOb
 
 void USpatialReceiver::OnDisconnect(Worker_DisconnectOp& Op)
 {
-	NetDriver->HandleOnDisconnected(UTF8_TO_TCHAR(Op.reason));
+	if (GEngine != nullptr)
+	{
+		GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver, ENetworkFailure::FromDisconnectOpStatusCode(Op.connection_status_code), UTF8_TO_TCHAR(Op.reason));
+	}
 }
 
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)
@@ -1302,7 +1307,7 @@ void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& Unresolved
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)
 {
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
@@ -1322,7 +1327,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		return;
 	}
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
 
 	for (FChannelObjectPair& ChannelObjectPair : *TargetObjectSet)
 	{
@@ -1375,7 +1380,7 @@ void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const FUnrealObjectR
 		return;
 	}
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Resolving incoming RPCs depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving incoming RPCs depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
 
 	for (const TSharedPtr<FPendingIncomingRPC>& IncomingRPC : *IncomingRPCArray)
 	{

@@ -189,9 +189,26 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	}
 }
 
+void USpatialNetDriver::InitializeSpatialOutputDevice()
+{
+	int32 PIEIndex = -1; // -1 is Unreal's default index when not using PIE
+#if WITH_EDITOR
+	if (IsServer())
+	{
+		PIEIndex = GEngine->GetWorldContextFromWorldChecked(GetWorld()).PIEInstance;
+	}
+	else
+	{
+		PIEIndex = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this).PIEInstance;
+	}
+#endif //WITH_EDITOR
+	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"), PIEIndex);
+}
+
 void USpatialNetDriver::CreateAndInitializeCoreClasses()
 {
-	SpatialOutputDevice = MakeUnique<FSpatialOutputDevice>(Connection, TEXT("Unreal"));
+	InitializeSpatialOutputDevice();
+
 	Dispatcher = NewObject<USpatialDispatcher>();
 	Sender = NewObject<USpatialSender>();
 	Receiver = NewObject<USpatialReceiver>();
@@ -1454,7 +1471,7 @@ void USpatialNetDriver::RemoveActorChannel(Worker_EntityId EntityId)
 	EntityToActorChannel.FindAndRemoveChecked(EntityId);
 }
 
-TMap<Worker_EntityId, USpatialActorChannel*>& USpatialNetDriver::GetEntityToActorChannelMap()
+TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityToActorChannelMap()
 {
 	return EntityToActorChannel;
 }
@@ -1593,12 +1610,6 @@ void USpatialNetDriver::HandleOnConnected()
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Succesfully connected to SpatialOS"));
 	OnConnectedToSpatialOS();
 	OnConnected.Broadcast();
-}
-
-void USpatialNetDriver::HandleOnDisconnected(const FString& Reason)
-{
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Disconnected from SpatialOS. Reason: %s"), *Reason);
-	OnDisconnected.Broadcast(Reason);
 }
 
 void USpatialNetDriver::HandleOnConnectionFailed(const FString& Reason)

@@ -13,8 +13,16 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, HeartbeatTimeoutSeconds(10.0f)
 	, ActorReplicationRateLimit(0)
 	, bUsingQBI(false)
+	, PositionUpdateFrequency(1.0f)
+	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 {
-	// Check any command line overrides for using QBI:
+}
+
+void USpatialGDKSettings::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	// Check any command line overrides for using QBI (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
 	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
 }
