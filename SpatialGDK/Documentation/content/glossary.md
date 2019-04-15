@@ -15,7 +15,7 @@ Note that this SpatialOS documentation assumes you are developing a SpatialOS ga
 ## GDK for Unreal documentation terms
 * `<GameRoot>` - The folder containing your project's `.uproject` and source folder.
 * `<ProjectRoot>` - The folder containing your `<GameRoot>`.
-* `<YourProject>` - Name of your project's `.uproject` (for example, `\<GameRoot>\StarterProject.uproject`).
+* `<YourProject>` - Name of your project's `.uproject` (for example, `\<GameRoot>\TP_SpatialGDK.uproject`).
 
 ## GDK for Unreal terms
 
@@ -220,11 +220,23 @@ This means that an [entity](#spatialos-entity) won’t necessarily stay on the s
 >
 > [Configuring load balancing](https://docs.improbable.io/reference/latest/shared/worker-configuration/loadbalancer-config)
 
+### Network operations
+
+Also known as "ops".
+
+Network operations are network messages sent between a worker instance and the SpatialOS Runtime. They carry information about updates to worker instances, entities, entity components, commands, and more.
+
+For more information, see the SpatialOS documentation on [operations](https://docs.improbable.io/reference/latest/shared/design/operations).
+
 ### Node
 
 >Not to be confused with [worker](#workers).
 
 A node refers to a single machine used by a [cloud deployment](#deployment). Its name indicates the role it plays in your deployment. You can see these on the advanced tab of your deployment details in the [Console](#console).
+
+### Ops
+
+See [Network operations](#network-operations).
 
 ### Persistence
 Most [entities](#spatialos-entity) in your [game world](#game-world) need to keep existing if you stop a game [deployment](#deployment) and start a new one. However,  some entities don’t need to keep existing from one deployment to another; you may want per-deployment player abilities and a per-deployment score, for example.
@@ -315,7 +327,6 @@ SpatialOS entities are made up of [SpatialOS components](#spatialos-component), 
 ### SpatialOS Runtime
 
 >Not to be confused with the [SpatialOS world](#spatialos-world).
-
 
 Also sometimes just called “SpatialOS”. 
 
@@ -428,3 +439,10 @@ Within these broad types, you can define your own worker sub-types to create mor
 
 ### Write access
 See [authority](#authority).
+
+<br/>
+------------
+2019-03-15 Page updated with full editorial review
+<br/>
+<br/>
+2019-03-15 Added layers, non-Unreal layers, network operations (ops)

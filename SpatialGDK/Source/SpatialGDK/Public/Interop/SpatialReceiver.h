@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Schema/DynamicComponent.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
@@ -26,12 +27,12 @@ class UGlobalStateManager;
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
-	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const TSharedPtr<improbable::Component>& InData)
-		: EntityId(InEntityId), ComponentId(InComponentId), Data(InData) {}
+	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, TUniquePtr<improbable::DynamicComponent>&& InData)
+		: EntityId(InEntityId), ComponentId(InComponentId), Data(MoveTemp(InData)) {}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
-	TSharedPtr<improbable::Component> Data;
+	TUniquePtr<improbable::DynamicComponent> Data;
 };
 
 struct FObjectReferences
@@ -115,7 +116,6 @@ public:
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
-	void OnReserveEntityIdResponse(Worker_ReserveEntityIdResponseOp& Op);
 	void OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op);
 	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
 
@@ -144,8 +144,8 @@ private:
 	void RemoveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 
-	AActor* GetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, UClass* ActorClass, improbable::SpawnData* SpawnData);
-	AActor* CreateActor(improbable::SpawnData* SpawnData, UClass* ActorClass);
+	AActor* TryGetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData);
+	AActor* CreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
@@ -212,7 +212,6 @@ private:
 	TArray<Worker_EntityId> PendingAddEntities;
 	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
-	TArray<Worker_EntityId> PendingRemoveEntities;
 
 	TMap<Worker_RequestId, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;

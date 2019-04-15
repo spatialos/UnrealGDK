@@ -1,9 +1,12 @@
 <%(TOC)%>
 # Get started: Introduction
 
-Get started with the SpatialOS GDK for Unreal by building the SpatialOS Unreal Engine Fork and following the Multiserver Shooter Tutorial. The tutorial shows you how to deploy a project to the cloud and lets you experience a simple shooter game running across two servers. 
+Get started with the SpatialOS GDK for Unreal by building the SpatialOS Unreal Engine Fork and setting up the GDK Starter Template which you can use as a base for your own project running on SpatialOS.
 
-Once you have completed the tutorial, you are then ready to set up and deploy the Starter Project which you can use as a base for your own Unreal project running on SpatialOS or, if you have an existing Unreal multiplayer project, you can follow our detailed porting guide to get it onto the GDK and running on SpatialOS.
+After this you can either:
+
+* Follow the Multiserver Shooter Tutorial, which shows you how to deploy a project to the cloud and demonstrates a simple shooter game running across two servers.
+* Or, if you have an existing Unreal multiplayer project, you can follow the porting guide to get your game running on  the SpatialOS GDK.
 
 ## Your feedback and ideas
 
@@ -21,4 +24,9 @@ Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issu
 
 #### Next: [Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)
 
-<%(Callout type="warn" message="This is an [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal, pending stability, performance and documentation improvements. The API may change as we learn from feedback  - see the guidance on [Recommended use]({{urlRoot}}/recommended-use).")%>
+<%(Callout type="warn" message="This is an [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) version of the SpatialOS GDK for Unreal, pending stability, performance and documentation improvements. The API may change as we learn from feedback.")%>
+
+<br/>
+
+------
+_2019-03-25 Page updated with editorial review_

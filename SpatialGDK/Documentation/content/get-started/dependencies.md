@@ -21,7 +21,7 @@ Refer to the <a href="https://docs.unrealengine.com/en-US/GettingStarted/Recomme
 
 ### Step 2: Network settings
 
-To configure your network to work with SpatialOS, refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/get-started/requirements#network-settings). 
+To configure your network to work with SpatialOS, refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/setup/requirements#network-settings). 
 
 ### Step 3: Software
 
@@ -35,16 +35,26 @@ To build the GDK for Unreal you need the following software installed on your ma
 
   - You need to download and install Git for windows to clone the GDK and Unreal Engine GitHub repositories. 
 
-- <a href="https://console.improbable.io/installer/download/stable/latest/win" data-track-link="Clicked Download SpatialOS|product=Docs|platform=Win|label=Win" target="_blank">**SpatialOS version 13.2**</a>
+- <a href="https://console.improbable.io/installer/download/stable/latest/win" data-track-link="Clicked Download SpatialOS|product=Docs|platform=Win|label=Win" target="_blank">**SpatialOS**</a>
     - This installs the [SpatialOS CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli), the [SpatialOS Launcher]({{urlRoot}}/content/glossary#launcher), and 32-bit and 64-bit Visual C++ Redistributables.
 
 - The <a href="https://developer.microsoft.com/en-us/windows/downloads/sdk-archive" data-track-link="Clicked Windows SDK 8.1|product=Docs|platform=Win|label=Win" target="_blank">**Windows SDK 8.1**</a>
 
-  - The Windows SDK 8.1 provides libraries, headers, metadata and tools required for building Windows 10 applications. 
+  - The Windows SDK 8.1 provides libraries, headers, metadata and tools required for building Windows 10 applications.
 
-- **Visual Studio** <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2015|product=Docs|platform=Win|label=Win" target="_blank">2015</a> or <a href="https://visualstudio.microsoft.com/downloads/2017" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win">2017</a> (we recommend 2017). During the installation, select the following items in the Workloads tab:
+- The [**DirectX End-User Runtimes (June 2010)**](https://www.microsoft.com/en-us/download/details.aspx?id=8109)
+
+  - The DirectX End-User Runtime is used to run built out Unreal Engine 4 clients on Windows.
+
+- **Visual Studio** <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2015|product=Docs|platform=Win|label=Win" target="_blank">2015</a> or <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win">2017</a> (we recommend 2017). During the installation, select the following items in the Workloads tab:
     - Universal Windows Platform development<br>
+    - .NET desktop development<br>
     - Desktop development with C++<br>
     - Game development with C++
 
 #### Next: [Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork.md)
+
+<br/>
+
+------	
+_2019-04-02 Page updated with limited editorial review_

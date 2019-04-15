@@ -56,17 +56,19 @@ FString USpatialGDKEditorSettings::ToString()
 	Args.Add(SpatialOSSnapshotFile);
 	Args.Add(GeneratedSchemaOutputFolder.Path);
 	Args.Add(bGeneratePlaceholderEntitiesInSnapshot);
+	Args.Add(GetSpatialOSCommandLineLaunchFlags());
 
 	return FString::Format(TEXT(
 		"ProjectRootFolder={0}, "
-		"bDeleteDynamicEntities={1}"
-		"bGenerateDefaultLaunchConfig={2}"
+		"bDeleteDynamicEntities={1}, "
+		"bGenerateDefaultLaunchConfig={2}, "
 		"SpatialOSLaunchArgument={3}, "
 		"bStopSpatialOnExit={4}, "
 		"SpatialOSSnapshotPath={5}, "
 		"SpatialOSSnapshotFile={6}, "
-		"GeneratedSchemaOutputFolder={7}"
-		"bGeneratePlaceholderEntitiesInSnapshot={8}")
+		"GeneratedSchemaOutputFolder={7}, "
+		"bGeneratePlaceholderEntitiesInSnapshot={8}, "
+		"SpatialOSCommandLineLaunchFlags={9}")
 		, Args);
 }
 
