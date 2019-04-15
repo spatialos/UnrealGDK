@@ -167,25 +167,33 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 void USpatialWorkerConnection::FinishConnecting(Worker_ConnectionFuture* ConnectionFuture)
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, this]
+	TWeakObjectPtr<USpatialWorkerConnection> WeakSpatialWorkerConnection(this);
+
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [ConnectionFuture, WeakSpatialWorkerConnection]
 	{
-		Worker_Connection* NewWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
+		Worker_Connection* NewCAPIWorkerConnection = Worker_ConnectionFuture_Get(ConnectionFuture, nullptr);
 		Worker_ConnectionFuture_Destroy(ConnectionFuture);
 
-		AsyncTask(ENamedThreads::GameThread, [this, NewWorkerConnection]
+		AsyncTask(ENamedThreads::GameThread, [WeakSpatialWorkerConnection, NewCAPIWorkerConnection]
 		{
-			this->WorkerConnection = NewWorkerConnection;
+			USpatialWorkerConnection* SpatialWorkerConnection = WeakSpatialWorkerConnection.Get();
 
-			CacheWorkerAttributes();
-
-			if (Worker_Connection_IsConnected(NewWorkerConnection))
+			if (SpatialWorkerConnection == nullptr)
 			{
-				OnConnectionSuccess();
+				return;
+			}
+
+			SpatialWorkerConnection->WorkerConnection = NewCAPIWorkerConnection;
+
+			if (Worker_Connection_IsConnected(NewCAPIWorkerConnection))
+			{
+				SpatialWorkerConnection->CacheWorkerAttributes();
+				SpatialWorkerConnection->OnConnectionSuccess();
 			}
 			else
 			{
 				// TODO: Try to reconnect - UNR-576
-				OnConnectionFailure();
+				SpatialWorkerConnection->OnConnectionFailure();
 			}
 		});
 	});
@@ -291,6 +299,12 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 	const Worker_WorkerAttributes* Attributes = Worker_Connection_GetWorkerAttributes(WorkerConnection);
 
 	CachedWorkerAttributes.Empty();
+
+	if (Attributes->attributes == nullptr)
+	{
+		return;
+	}
+
 	for (uint32 Index = 0; Index < Attributes->attribute_count; ++Index)
 	{
 		CachedWorkerAttributes.Add(UTF8_TO_TCHAR(Attributes->attributes[Index]));
@@ -334,6 +348,11 @@ void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
 
 void USpatialWorkerConnection::OnConnectionFailure()
 {
+	if (!IsValid(this))
+	{
+		return;
+	}
+
 	bIsConnected = false;
 
 	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
