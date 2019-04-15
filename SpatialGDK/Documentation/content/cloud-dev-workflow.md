@@ -1,4 +1,4 @@
-# Cloud Development Workflow
+# Cloud development workflow
 
 <!-- This is a live embed of a google drawing -->
 
