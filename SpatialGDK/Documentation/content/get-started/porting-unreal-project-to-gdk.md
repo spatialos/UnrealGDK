@@ -21,13 +21,15 @@ Before porting your project:
 * `<ProjectRoot>` - The directory containing your `<GameRoot>`.  
 * `<YourProject>` - The name of your project's `.uproject` file (for example, `\<GameRoot>\TP_SpatialGDK.uproject`).
 
-<%(Callout type="tip" message="
-**ShooterGame Reference Project:** 
+<!-- <%(Callout type="tip" message=" -->
+<!-- ")%> -->
 
-As you port your own project, you may find it helpful to use our ported [Unreal ShooterGame](https://docs.unrealengine.com/en-us/Resources/SampleGames/ShooterGame) running on the GDK as a reference.
+> **TIP: Reference project** 
+<br /><br />
+> As you port your own Unreal project to SpatialOS, you could use our pre-ported [Unreal Shooter Game](https://docs.unrealengine.com/en-us/Resources/SampleGames/ShooterGame) as a reference. You should already have this project as it is included in the `Samples` directory of [the SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine) which you downloaded as part of the _Get Started_ steps. 
+<br /><br />
+> (If you want to see the game running, there's a [video on youtube](https://www.youtube.com/watch?v=xojgH7hJgQs&feature=youtu.be) to check out.) 
 
-You should already have this project set up as it is included in the `Samples` directory of [the GDK's Unreal Engine fork](https://github.com/improbableio/UnrealEngine). [Here](https://www.youtube.com/watch?v=xojgH7hJgQs&feature=youtu.be) is a video showing what you can expect to see when running it. 
-")%>
 
 ## Port your game to the GDK
 
@@ -221,4 +223,4 @@ Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cros
 <br/>
 
 ------
-_2019-04-11 Added ShooterGame as a reference project_
+_2019-04-11 Added ShooterGame as a reference project with partial editorial review._
