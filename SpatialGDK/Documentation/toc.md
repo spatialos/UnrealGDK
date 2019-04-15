@@ -8,7 +8,7 @@
         - Next steps - either:
             - [Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
             - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
-    - [Unreal features support]({{urlRoot}}/unreal-features-support)
+    - [Unreal features support matrix]({{urlRoot}}/unreal-features-support-matrix)
     - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
     - [SpatialOS concepts]({{urlRoot}}/content/concepts)
@@ -43,4 +43,4 @@
         - [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368)
         - [Forums](https://forums.improbable.io/)
         - [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
-        - [Development roadmap](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap)
+    - [Development roadmap](https://github.com/spatialos/UnrealGDK/projects/1)
