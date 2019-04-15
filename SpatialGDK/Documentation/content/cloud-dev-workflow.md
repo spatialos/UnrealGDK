@@ -4,7 +4,7 @@
 
 <img src="https://docs.google.com/drawings/d/e/2PACX-1vQRmK7TxLji8pT7erPl54hqMMMDsdosZY1OZ2wuPYLQ23dWIrx86qCHggEeq-XasTCsqRe40fCKQvKN/pub?w=758&amp;h=1162">
 
-You may find the below snippets useful as reference:
+You may find the following snippets useful as reference:
 
 ### Build server-worker assembly
 
