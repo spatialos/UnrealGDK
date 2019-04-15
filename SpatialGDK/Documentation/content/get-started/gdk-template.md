@@ -64,9 +64,17 @@ Note: Ensure that your Visual Studio Solution Configuration is set to **Developm
 
 ### Deploy your project 
 
-To test your game, you need to launch a [deployment]({{urlRoot}}/content/spatialos-concepts/concepts#deployments). This means launching your game with its own instance of the SpatialOS runtime, either locally using a [local deployment]({{urlRoot}}/content/spatialos-concepts/concepts#local-deployment),  or in the cloud using a [cloud deployment]({{urlRoot}}/content/spatialos-concepts/concepts#cloud-deployment).. 
+To test your game, you need to launch a deployment. This means launching your game with its own instance of the SpatialOS runtime, either locally using a local deployment, or in the cloud using a cloud deployment.
 
-When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/concepts#snapshots), then starts up the [worker]({{urlRoot}}/content/spatialos-concepts/concepts#workers) instances needed to run the game world.
+<!---
+TODO: add links from deployments to concepts
+-->
+
+When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot), then starts up the worker instances needed to run the game world.
+
+<!---
+TODO: add links from workers to concepts
+-->
 
 You'll find out more about schema, snapshots and workers later on in this tutorial. 
 
@@ -81,12 +89,18 @@ _Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
 
-<%(#Expandable title="What is schema?")%>In SpatialOS, your game world is defined and controlled centrally. Many different types of [server-workers]({{urlRoot}}/content/spatialos-concepts/concepts-workers#server-worker) may need to access and make changes to the game world, so they need a common language with which to do this. That language is schema. 
+<%(#Expandable title="What is schema?")%>In SpatialOS, your game world is defined and controlled centrally. Many different types of server-workers may need to access and make changes to the game world, so they need a common language with which to do this. That language is schema.
+
+You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/spatialos-concepts/schema).
 <%(/Expandable)%>
+
+<!---
+TODO: add link from server-workers to concepts
+-->
 
 <%(#Expandable title="What is a snapshot?")%>A snapshot is a representation of the state of a SpatialOS world at a given point in time. It stores each persistent SpatialOS entity and the values of their SpatialOS components’ properties.
 
-You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot)
+You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot).
 <%(/Expandable)%>
 
 To launch a local deployment: 
@@ -126,7 +140,11 @@ The name should look something like `beta_randomword_anotherword_randomnumber`. 
 
 ##### Step 2: Build your worker assemblies
 
-Workers are the programs that connect to a SpatialOS world. In general, you use [server-worker]({{urlRoot}}/content/spatialos-concepts/concepts-workers#server-worker) instances simulate the world, and players use client-worker instances to connect to your game. Worker assemblies are `.zip` files that contain all the files that your game uses when running in the cloud.
+Workers are the programs that connect to a SpatialOS world. In general, you use server-worker instances simulate the world, and players use client-worker instances to connect to your game. Worker assemblies are `.zip` files that contain all the files that your game uses when running in the cloud.
+
+<!---
+TODO: add link from server-workers to concepts
+-->
 
 <!--<%(#Expandable title="More information about worker assemblies")%>More info<%(/Expandable)%>-->
 

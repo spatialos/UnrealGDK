@@ -278,7 +278,7 @@ SpatialOS uses the schema to generate code. You can use this generated code in y
 
 > Related:
 >
-> * [Schema (Unreal GDK documentation)]({{urlRoot}}/content/spatialos-concepts/concepts#schema)
+> * [Schema (GDK for Unreal documentation)]({{urlRoot}}/content/spatialos-concepts/schema)
 > * [Introduction to schema](https://docs.improbable.io/reference/latest/shared/schema/introduction)
 > * [Schema reference](https://docs.improbable.io/reference/latest/shared/schema/reference)
 
@@ -361,7 +361,7 @@ You use a snapshot as the starting point (using an an “initial snapshot”) fo
 
 > Related:
 > 
-> * [How to generate a snapshot]({{urlRoot}}/content/spatialos-concepts/concepts#snapshots)
+> * [How to generate a snapshot (GDK for Unreal documentation)]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot)
 > * [Snapshots](https://docs.improbable.io/reference/latest/shared/operate/snapshots)
 
 ### Streaming queries
