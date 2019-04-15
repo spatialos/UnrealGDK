@@ -47,7 +47,6 @@ struct EditorWorkerController
 
 			WorkerIds[i] = NewWorkerId;
 		}
-
 	}
 
 	FProcHandle ReplaceWorker(const FString& OldWorker, const FString& NewWorker)
@@ -55,7 +54,7 @@ struct EditorWorkerController
 		const FString CmdExecutable = TEXT("spatial.exe");
 
 		const FString CmdArgs = FString::Printf(
-			TEXT(" local worker replace "
+			TEXT("local worker replace "
 				"--existing_worker_id %s "
 				"--replacing_worker_id %s"), *OldWorker, *NewWorker);
 		uint32 ProcessID = 0;
