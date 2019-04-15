@@ -30,6 +30,7 @@ class UGlobalStateManager;
 class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
 class USnapshotManager;
+class USpatialMetrics;
 
 class UEntityPool;
 
@@ -125,6 +126,8 @@ public:
 	USnapshotManager* SnapshotManager;
 	UPROPERTY()
 	UEntityPool* EntityPool;
+	UPROPERTY()
+	USpatialMetrics* SpatialMetrics;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
@@ -153,6 +156,9 @@ public:
 #endif // !UE_BUILD_SHIPPING
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
+
+	void StartPerformanceCapture(FString PrefixName);
+	void StopPerformanceCapture();
 
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
