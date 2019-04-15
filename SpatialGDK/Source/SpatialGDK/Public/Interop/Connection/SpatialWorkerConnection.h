@@ -74,7 +74,7 @@ private:
 	// Begin FRunnable Interface
 	virtual bool Init() override;
 	virtual uint32 Run() override;
-	virtual void Stop();
+	virtual void Stop() override;
 	// End FRunnable Interface
 
 	void InitializeOpsProcessingThread();
