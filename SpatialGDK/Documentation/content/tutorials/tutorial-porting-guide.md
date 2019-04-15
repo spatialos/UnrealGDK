@@ -195,7 +195,7 @@ You can find Spatial log files for your local deployments in `<ProjectRoot>\spat
 * `spatial_<datetime>.log` contains all of the logs printed to your terminal during the local deployment.  
 * There are also timestamped folders here which contain additional logs:
   1. `<ProjectRoot>\spatial\logs\workers\` contain managed worker logs which are the workers started by SpatialOS, specified in your [launch configuration]({{urlRoot}}/content/glossary#launch-configuration).
-  1. `<ProjectRoot>\spatial\logs\runtime.log` contains the logs printed by the SpatialOS runtime. These are the services required for SpatialOS to run a local deployment.  
+  1. `<ProjectRoot>\spatial\logs\runtime.log` contains the logs printed by the SpatialOS Runtime. These are the services required for SpatialOS to run a local deployment.  
 
 If you require additional debugging logs you can run `spatial local launch` with the flag `--log_level=debug`.
 

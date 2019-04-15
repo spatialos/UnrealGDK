@@ -2,12 +2,12 @@
 The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine 4 (UE4) [plugin (Unreal documentation)](https://docs.unrealengine.com/en-us/Programming/Plugins) which allows you to host your game and combine multiple dedicated server instances across one seamless game world, whilst using the Unreal Engine networking API.
 
 The GDK offers:
-* **Multiserver support**: leveraging our cloud platform [SpatialOS (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/concepts/spatialos), the GDK allows you to run multiple game servers in a single game instance so your Unreal-developed games can have more players, more Actors, and better gameplay systems than previously possible.
+* **Multiserver support**: leveraging our cloud platform [SpatialOS](https://docs.improbable.io/reference/latest/shared/concepts/spatialos), the GDK allows you to run multiple game servers in a single game instance so your Unreal-developed games can have more players, more Actors, and better gameplay systems than previously possible.
 
 * **An Unreal-native experience:** keeping traditional workflows and networking APIs that Unreal Engine developers are familiar with, the GDK introduces new native-feeling concepts that turn a single-server engine into a distributed one. This enables the GDK to retain the functionality of the networking features which Unreal offers out of the box, including transform synchronization, character movement, and map travel.
 * **An easy onboarding experience**: we have made sure it’s easy to get started with the GDK by including a Starter Template which you can use as a tour of SpatialOS and a base for your own game, as well as a guide to porting your current multiplayer Unreal game to run on SpatialOS.
 
->This is an [alpha (SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal, pending stability and performance improvements. The API may change as we learn from feedback  - see the guidance on [Recommended use](#recommended-use), below.
+>This is an [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) release of the SpatialOS GDK for Unreal, pending stability and performance improvements. The API may change as we learn from feedback  - see the guidance on [Recommended use](#recommended-use), below.
 
 ----
 * [Get started](https://docs.improbable.io/unreal/latest/content/get-started/introduction) (on the SpatialOS documentation website)

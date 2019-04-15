@@ -5,7 +5,7 @@ A snapshot is a representation of the state of a [SpatialOS world]({{urlRoot}}/c
 
 You can find out more about snapshots in the [SpatialOS snapshot documentation](https://docs.improbable.io/reference/latest/shared/operate/snapshot) but note that this documentation concentrates on working with snapshots using the [SpatialOS SDK]({{urlRoot}}/content/glossary#spatialos-sdk).
 
-## When to generate a snapshot
+## Generating a snapshot
 
 You must generate a snapshot as the starting point for your [SpatialOS world]({{urlRoot}}/content/glossary#spatialos-world) when you create a new Unreal GDK project.
 

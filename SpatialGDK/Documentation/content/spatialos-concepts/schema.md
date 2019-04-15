@@ -13,7 +13,7 @@ _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_
 
 As the GDK automatically generates all the schema you need, you do not have to write or edit schema manually when using the GDK.
 
-### When to generate schema
+### Generating schema
 
 You must generate schema when you add or change any [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) that you want to deploy to SpatialOS.
 

@@ -64,7 +64,7 @@ Note: Ensure that your Visual Studio Solution Configuration is set to **Developm
 
 ### Deploy your project 
 
-To test your game, you need to launch a deployment. This means launching your game with its own instance of the SpatialOS runtime, either locally using a local deployment, or in the cloud using a cloud deployment.
+To test your game, you need to launch a deployment. This means launching your game with its own instance of the SpatialOS Runtime, either locally using a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment), or in the cloud using a [cloud deployment](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment).
 
 <!---
 TODO: add links from deployments to concepts
@@ -80,16 +80,16 @@ You'll find out more about schema, snapshots and workers later on in this tutori
 
 #### Deploy locally with multiple clients
 
-Before you launch a deployment (local or cloud) you must generate schema and a snapshot. 
+Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema) and a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot). 
 
-1. In the Unreal Editor, on the GDK toolbar, select [**Schema**]({{urlRoot}}/content/schema) to generate schema.<br/>
+1. In the Unreal Editor, on the GDK toolbar, select **Schema** to generate schema.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
-1. Select [**Snapshot**]({{urlRoot}}/content/spatialos-concepts/concepts#snapshots) to generate a snapshot.<br/>
+1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
 
-<%(#Expandable title="What is schema?")%>In SpatialOS, your game world is defined and controlled centrally. Many different types of server-workers may need to access and make changes to the game world, so they need a common language with which to do this. That language is schema.
+<%(#Expandable title="What is schema?")%>Schema is where you define all the components in your world. Schema is defined in .schema files, written in schemalang, which is a wrapper around Google’s protobuf.
 
 You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/spatialos-concepts/schema).
 <%(/Expandable)%>
@@ -98,7 +98,7 @@ You can find out more about schema in the [GDK schema documentation]({{urlRoot}}
 TODO: add link from server-workers to concepts
 -->
 
-<%(#Expandable title="What is a snapshot?")%>A snapshot is a representation of the state of a SpatialOS world at a given point in time. It stores each persistent SpatialOS entity and the values of their SpatialOS components’ properties.
+<%(#Expandable title="What is a snapshot?")%>A snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores each entity's component data. You start each deployment with a snapshot; if it's a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.
 
 You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot).
 <%(/Expandable)%>
@@ -133,7 +133,7 @@ To launch a cloud deployment, you need to prepare your server-worker and client-
 ##### Step 1: Set up your SpatialOS project name. 
 When you signed up for SpatialOS, your account was automatically associated with an organisation and a project, both of which have the same generated name.
 
-1. Find this name by going to the [Console (SpatialOS Documentation)](https://console.improbable.io). 
+1. Find this name by going to the [Console](https://console.improbable.io). 
 The name should look something like `beta_randomword_anotherword_randomnumber`. In the example below, it’s `beta_yankee_hawaii_621`. <br/>![Toolbar]({{assetRoot}}assets/set-up-template/template-project-page.png)<br/>_Image: The SpatialOS Console with a project name highlighted._
 2. In File Explorer, navigate to the `<YourProject>/spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 3. Replace the `name` field with the project name shown in the Console. This tells SpatialOS which SpatialOS project you intend to upload to.

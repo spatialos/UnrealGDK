@@ -116,7 +116,7 @@ The configuration files contain information on how elements of your project must
 * The [launch configuration file - `*.json`](#launch-configuration-file) contains the information that the “launch a deployment” commands use to use to  run a [deployment](#deployment).
 * The [worker configuration file - `*.worker.json`](#worker-configuration-file) tells SpatialOS how to build, launch, and interact with [workers](#workers).
 * The [project definition file - `spatialos.json`](#project-definition-file) 
-* The [worker packages file - `spatialos_worker_packages.json`(SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/reference/file-formats/spatial-worker-packages)
+* The [worker packages file - `spatialos_worker_packages.json`](https://docs.improbable.io/reference/latest/shared/reference/file-formats/spatial-worker-packages)
 
 ### Console
 
@@ -198,7 +198,7 @@ The [launch configuration file](#launch-configuration-file) is a `.json` file co
 
 >Related:
 >
->[Launch configuration file (SpatialOS documenation)](https://docs.improbable.io/reference/latest/shared/reference/file-formats/launch-config)
+>[Launch configuration file](https://docs.improbable.io/reference/latest/shared/reference/file-formats/launch-config)
 
 ### Launcher
 The Launcher is a tool that can download and start clients that connect to [cloud deployments](#deployment). It's available as an application for Windows and macOS. From the [Console](#console), you can use the Launcher to connect a game client to your own cloud deployment or generate a share link so anyone with the link can download a game client and join your game.
@@ -245,7 +245,7 @@ To facilitate this continuity in an entity's state between deployments, there is
 
 >Related:
 >
->[The persistence component in the standard schema library (SpatialOS documentation](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library#persistence-optional)
+>[The persistence component in the standard schema library](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library#persistence-optional)
 
 ### Project name
 Your project name is a unique identifier for your game project as a deployment. It’s generated for you when you sign up for SpatialOS. It’s usually something like `beta_someword_anotherword_000`.
@@ -424,7 +424,7 @@ Once you’ve chosen a label for the worker type (for example, myWorkerType), yo
 
 > Related:
 >
->[Worker configuration file `worker.json` (SpatialOS documenation)](https://docs.improbable.io/reference/latest/shared/worker-configuration/worker-configuration)
+>[Worker configuration file `worker.json`](https://docs.improbable.io/reference/latest/shared/worker-configuration/worker-configuration)
 
 ### Worker types
 
