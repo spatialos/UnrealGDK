@@ -26,7 +26,7 @@ Before porting your project:
 
 As you port your own project, you may find it helpful to use our ported [Unreal ShooterGame](https://docs.unrealengine.com/en-us/Resources/SampleGames/ShooterGame) running on the GDK as a reference.
 
-You should already have this project set up as it is included in the  `Samples` directory of [the GDK's Unreal Engine fork](https://github.com/improbableio/UnrealEngine). [Here](https://www.youtube.com/watch?v=xojgH7hJgQs&feature=youtu.be) is a video showing what you can expect to see when running it. 
+You should already have this project set up as it is included in the `Samples` directory of [the GDK's Unreal Engine fork](https://github.com/improbableio/UnrealEngine). [Here](https://www.youtube.com/watch?v=xojgH7hJgQs&feature=youtu.be) is a video showing what you can expect to see when running it. 
 ")%>
 
 ## Port your game to the GDK
