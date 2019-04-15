@@ -22,7 +22,7 @@ Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Wi
 
 Replacing **`<YourProject>`** with the name of your Unreal project.
 
-### Upload Assembly
+### Upload assembly
 
 ```
 spatial cloud upload myassembly
