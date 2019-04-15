@@ -85,7 +85,7 @@ struct FCommandRequest : FOutgoingMessage
 
 struct FCommandResponse : FOutgoingMessage
 {
-	FCommandResponse(const Worker_RequestId& InRequestId, const Worker_CommandResponse& InResponse)
+	FCommandResponse(Worker_RequestId InRequestId, const Worker_CommandResponse& InResponse)
 		: FOutgoingMessage(EOutgoingMessageType::CommandResponse)
 		, RequestId(InRequestId)
 		, Response(InResponse)
