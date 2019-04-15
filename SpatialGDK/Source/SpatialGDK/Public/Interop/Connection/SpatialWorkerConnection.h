@@ -72,7 +72,7 @@ private:
 	class USpatialNetDriver* GetSpatialNetDriverChecked() const;
 
 	// Begin FRunnable Interface
-	virtual bool Init();
+	virtual bool Init() override;
 	virtual uint32 Run();
 	virtual void Stop();
 	// End FRunnable Interface
