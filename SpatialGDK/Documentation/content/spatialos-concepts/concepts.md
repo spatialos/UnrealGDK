@@ -30,15 +30,31 @@ The SpatialOS Runtime  manages the SpatialOS world: it keeps track of all the Sp
 
 Workers are programs that connect to a SpatialOS world. They perform the computation associated with a world: they can read what’s happening, watch for changes, and make changes of their own.
 
-There are two types of workers; server-workers and client-workers. 
+There are two kinds of workers: server-workers and client-workers. 
 
 ## Authority and interest
 
 ### Authority
-Authoirty is write acces
+With SpatialOS, you can have multiple worker instances simulating your game world. But you don’t want more than one at a time to be able to write to a particular component. So SpatialOS uses the concept of write access authority: for any component on any entity, there is never more than one worker instance which has write access authority over it (that is, is able to write to it).
+
+Write access authority is a responsibility: the responsibility to carry out the computation required for a component. This is the case for both client-worker and server-worker instances. If you're using zoning, you'll have multiple server-worker instances simulating the game world between them. When an entity moves from one server-worker instance’s area of authority to another, write access authority over the entity’s components is handed over.
+
+You define areas of authority when you decide on the load balancing strategy for the server-worker type which has write access permission to a component type. The “load” in load balancing is the computation associated with the components which instances of the server-worker type have write access permission to.
+
+There is a similar concept in both peer-to-peer games, which migrate "authority" from host to host, and in the client-server game model, where the server has authority for the whole world.
 
 ### Interest
-Interest is read access
+When we talk about interest in SpatialOS, we mean a worker instance wants to receive updates about components from the SpatialOS entity database. Whether a worker instance does receive updates depends on certain criteria, but when it does, we can think of the worker instance as having read access to the component. We call this active read access.
+
+#### Chunk-based interest
+This is the older way to define interest; it gives you imprecise, simple control.
+
+A worker instance has default areas of interest based on the components it has write access authority over. You can extend these areas of interest by defining a radius distance around the components it has write access authority over.
+
+#### Query-based interest (QBI)
+This is the newer way to define interest, which gives you precise, granular control.
+
+Using QBI, in each [entity template](link) you set up, you add a [component](link) called `improbable.interest`. Here you list the types of component that you want a particular worker type to have interest in. The list is based on conditions and constraints to make queries. The combination of these queries from different entities forms a query map which defines a worker instance’s interest.
 
 ## Schema
 
@@ -55,12 +71,6 @@ A snapshot is a representation of a SpatialOS world at a given point in time. A 
 To learn more about how to use snapshots in the GDK for Unreal, <GO HERE>
 
 ## Load balancing
-
-## Layers
-
-In SpatialOS, you can split up [server-worker](#workers) computation into layers, with each layer of server-worker instances handling a specific and unique aspect of your game. By default, the GDK for Unreal uses a single Unreal server-worker layer to handle all server-side computation. However, you can set up additional non-Unreal layers, made up of server-worker instances that do not use Unreal or the GDK.
-
-You can use non-Unreal layers to modularize your game’s functionality so you can re-use the functionality across different games. For example, you could use a non-Unreal layer written in Python that interact with a database or other 3rd party service, such as [Firebase](https://firebase.google.com/) or [PlayFab](https://playfab.com/).
 
 ## Deployments
 
