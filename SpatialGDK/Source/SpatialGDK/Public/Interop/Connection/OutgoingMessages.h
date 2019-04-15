@@ -109,7 +109,7 @@ struct FCommandFailure : FOutgoingMessage
 
 struct FLogMessage : FOutgoingMessage
 {
-	FLogMessage(const uint8_t& InLevel, const FName& InLoggerName, const FString& InMessage)
+	FLogMessage(uint8_t InLevel, const FName& InLoggerName, const FString& InMessage)
 		: FOutgoingMessage(EOutgoingMessageType::LogMessage)
 		, Level(InLevel)
 		, LoggerName(InLoggerName)
