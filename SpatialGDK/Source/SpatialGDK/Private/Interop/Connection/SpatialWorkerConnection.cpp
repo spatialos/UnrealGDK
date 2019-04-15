@@ -346,20 +346,17 @@ void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
 
 void USpatialWorkerConnection::OnConnectionFailure()
 {
-	if (!IsValid(this))
-	{
-		return;
-	}
-
 	bIsConnected = false;
 
-	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
-	if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+	if (UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter()))
 	{
-		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
-		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
+		if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
+		{
+			uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
+			const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
 
-		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+			GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
+		}
 	}
 }
 

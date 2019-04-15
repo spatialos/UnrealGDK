@@ -1,6 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma once
 
+#include "Containers/Array.h"
+#include "HAL/Platform.h"
+#include "Misc/Optional.h"
+#include "Templates/UnrealTemplate.h"
+#include "Templates/UniquePtr.h"
+
 #include <WorkerSDK/improbable/c_worker.h>
 
 namespace improbable
