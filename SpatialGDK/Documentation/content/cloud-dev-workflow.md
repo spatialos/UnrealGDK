@@ -16,7 +16,7 @@ You may find the following command-line snippets useful as reference:
 Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Server Linux Development <YourProject>.uproject
 ```
 
-Replacing **`<YourProject>`** with the name of your Unreal project.
+Replacing `<YourProject>` with the name of your Unreal project.
 
 ### Build client-worker assembly
 
@@ -29,22 +29,22 @@ Replacing `<YourProject>` with the name of your Unreal project.
 ### Upload assembly
 
 ```
-spatial cloud upload myassembly
+spatial cloud upload <myassembly>
 ```
 
-Replacing `myassembly` with the name you choose to give your assembly.
+Replacing `<myassembly>` with the name you choose to give your assembly.
 
-### Launch Cloud Deployment
+### Launch cloud deployment
 
 ```
-spatial cloud launch --snapshot=snapshots/default.snapshot <assembly_name> launch_config.json <deployment_name>
+spatial cloud launch --snapshot=snapshots/default.snapshot <myassembly> <launch_config>.json <deployment_name>
 ```
 
-Providing:
+Replacing:
 
-* `<assembly_name>`, which identifies the worker assemblies to use (as chosen in the `spatial cloud upload` command).
-* `launch_config.json`, which declares the world and load balancing configuration.
-* `<deployment name>`, labels the deployment for SpatialOS to reference in the [Console]({{urlroot}}/content/glossary#console).
+* `<myassembly>` - identifies the worker assemblies to use (as chosen in the `spatial cloud upload` command).
+* `<launch_config>.json` - declares the world and load balancing configuration.
+* `<deployment_name>` - labels the deployment for SpatialOS to reference in the [Console]({{urlroot}}/content/glossary#console).
 
 ----
 
