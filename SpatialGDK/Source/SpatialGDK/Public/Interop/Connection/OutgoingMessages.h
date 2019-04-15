@@ -2,10 +2,12 @@
 #pragma once
 
 #include "Containers/Array.h"
+#include "Containers/UnrealString.h"
 #include "HAL/Platform.h"
 #include "Misc/Optional.h"
 #include "Templates/UnrealTemplate.h"
 #include "Templates/UniquePtr.h"
+#include "UObject/NameTypes.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
