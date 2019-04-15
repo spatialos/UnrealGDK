@@ -27,7 +27,7 @@ struct FOutgoingMessage
 
 struct FReserveEntityIdsRequest : FOutgoingMessage
 {
-	FReserveEntityIdsRequest(const uint32_t& InNumOfEntities)
+	FReserveEntityIdsRequest(uint32_t InNumOfEntities)
 		: FOutgoingMessage(EOutgoingMessageType::ReserveEntityIdsRequest)
 		, NumOfEntities(InNumOfEntities)
 	{}
