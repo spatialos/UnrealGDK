@@ -56,6 +56,7 @@ FString USpatialGDKEditorSettings::ToString()
 	Args.Add(SpatialOSSnapshotFile);
 	Args.Add(GeneratedSchemaOutputFolder.Path);
 	Args.Add(bGeneratePlaceholderEntitiesInSnapshot);
+	Args.Add(GetSpatialOSCommandLineLaunchFlags());
 
 	return FString::Format(TEXT(
 		"ProjectRootFolder={0}, "
@@ -66,7 +67,8 @@ FString USpatialGDKEditorSettings::ToString()
 		"SpatialOSSnapshotPath={5}, "
 		"SpatialOSSnapshotFile={6}, "
 		"GeneratedSchemaOutputFolder={7}, "
-		"bGeneratePlaceholderEntitiesInSnapshot={8}")
+		"bGeneratePlaceholderEntitiesInSnapshot={8}, "
+		"SpatialOSCommandLineLaunchFlags={9}")
 		, Args);
 }
 

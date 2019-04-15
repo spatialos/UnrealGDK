@@ -21,7 +21,9 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
@@ -71,8 +73,10 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bFirstTick(true)
 	, bInterestDirty(false)
+	, bNetOwned(false)
 	, NetDriver(nullptr)
-	, LastSpatialPosition(FVector::ZeroVector)
+	, LastPositionSinceUpdate(FVector::ZeroVector)
+	, TimeWhenPositionLastUpdated(0.0f)
 	, bCreatingNewEntity(false)
 {
 }
@@ -305,7 +309,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	}
 
 	// Update SpatialOS position.
-	if (!bCreatingNewEntity && !PlayerController && !Cast<APlayerState>(Actor))
+	if (!bCreatingNewEntity)
 	{
 		UpdateSpatialPosition();
 	}
@@ -702,44 +706,53 @@ void USpatialActorChannel::UpdateSpatialPosition()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
 
-	// PlayerController's and PlayerState's are a special case here. To ensure that they and their associated pawn are 
-	// handed between workers at the same time (which is not guaranteed), we ensure that we update the position component 
-	// of the PlayerController and PlayerState at the same time as the pawn.
-
-	// Check that it has moved sufficiently far to be updated
-	const float SpatialPositionThreshold = 100.0f * 100.0f; // 1m (100cm)
-	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
-	if (FVector::DistSquared(ActorSpatialPosition, LastSpatialPosition) < SpatialPositionThreshold)
+	// When we update an Actor's position, we want to update the position of all the children of this Actor.
+	// If this Actor is a PlayerController, we want to update all of its children and its possessed Pawn.
+	// That means if this Actor has an Owner or has a NetConnection and is NOT a PlayerController
+	// we want to defer updating position until we reach the highest parent.
+	if ((Actor->GetOwner() != nullptr || Actor->GetNetConnection() != nullptr) && !Actor->IsA<APlayerController>())
 	{
 		return;
 	}
 
-	LastSpatialPosition = ActorSpatialPosition;
-	Sender->SendPositionUpdate(EntityId, LastSpatialPosition);
-
-	// If we're a pawn and are controlled by a player controller, update the player controller and the player state positions too.
-	if (APawn* Pawn = Cast<APawn>(Actor))
+	// Check that there has been a sufficient amount of time since the last update.
+	if ((NetDriver->Time - TimeWhenPositionLastUpdated) < (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
 	{
-		if (AController* Controller = Pawn->GetController())
-		{
-			if (USpatialActorChannel* ControllerActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller)))
-			{
-				bool bHasControllerAuthority = NetDriver->StaticComponentView->HasAuthority(ControllerActorChannel->GetEntityId(), SpatialConstants::POSITION_COMPONENT_ID);
-				if (bHasControllerAuthority)
-				{
-					Sender->SendPositionUpdate(ControllerActorChannel->GetEntityId(), LastSpatialPosition);
-				}
-			}
+		return;
+	}
 
-			if (USpatialActorChannel* PlayerStateActorChannel = Cast<USpatialActorChannel>(Connection->ActorChannelMap().FindRef(Controller->PlayerState)))
-			{
-				bool bHasPlayerStateAuthority = NetDriver->StaticComponentView->HasAuthority(PlayerStateActorChannel->GetEntityId(), SpatialConstants::POSITION_COMPONENT_ID);
-				if (bHasPlayerStateAuthority)
-				{
-					Sender->SendPositionUpdate(PlayerStateActorChannel->GetEntityId(), LastSpatialPosition);
-				}
-			}
+	// Check that the Actor has moved sufficiently far to be updated
+	const float SpatialPositionThresholdSquared = FMath::Square(GetDefault<USpatialGDKSettings>()->PositionDistanceThreshold);
+	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
+	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) < SpatialPositionThresholdSquared)
+	{
+		return;
+	}
+
+	LastPositionSinceUpdate = ActorSpatialPosition;
+	TimeWhenPositionLastUpdated = NetDriver->Time;
+
+	SendPositionUpdate(Actor, EntityId, LastPositionSinceUpdate);
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
+	{
+		if (APawn* Pawn = PlayerController->GetPawn())
+		{
+			SendPositionUpdate(Pawn, NetDriver->PackageMap->GetEntityIdFromObject(Pawn), LastPositionSinceUpdate);
 		}
+	}
+}
+
+void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId EntityId, const FVector& NewPosition)
+{
+	if (EntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+	{
+		Sender->SendPositionUpdate(EntityId, NewPosition);
+	}
+
+	for (const auto& Child : InActor->Children)
+	{
+		SendPositionUpdate(Child, NetDriver->PackageMap->GetEntityIdFromObject(Child), NewPosition);
 	}
 }
 
@@ -796,39 +809,50 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 	});
 }
 
-void USpatialActorChannel::SpatialViewTick()
+void USpatialActorChannel::ServerProcessOwnershipChange()
 {
-	if (Actor != nullptr && !Actor->IsPendingKill() && IsReadyForReplication())
+	if (!IsAuthoritativeServer())
 	{
-		bool bOldNetOwned = bNetOwned;
+		return;
+	}
 
-		// Use Actor's connection to determine if client owned
-		bNetOwned = false;
-		if (UNetConnection* NetConnection = Actor->GetNetConnection())
+	FString NewOwnerWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
+
+	if (bFirstTick || SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
+	{
+		bool bSuccess = Sender->UpdateEntityACLs(GetEntityId(), NewOwnerWorkerAttribute);
+
+		if (bSuccess)
 		{
-			if (APlayerController* PlayerController = NetConnection->PlayerController)
-			{
-				bNetOwned = PlayerController->PlayerState != nullptr;
-			}
+			bFirstTick = false;
+			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		}
+	}
+}
 
-		if (bFirstTick || bOldNetOwned != bNetOwned)
+void USpatialActorChannel::ClientProcessOwnershipChange()
+{
+	bool bOldNetOwned = bNetOwned;
+	bNetOwned = IsOwnedByWorker();
+
+	if (bFirstTick || bOldNetOwned != bNetOwned)
+	{
+		Sender->SendComponentInterest(Actor, GetEntityId(), bNetOwned);
+		bFirstTick = false;
+	}
+}
+
+void USpatialActorChannel::ProcessOwnershipChange()
+{
+	if (Actor != nullptr && !Actor->IsPendingKill())
+	{
+		if (NetDriver->IsServer())
 		{
-			if (IsAuthoritativeServer())
-			{
-				bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
-
-				if (bFirstTick && bSuccess)
-				{
-					bFirstTick = false;
-				}
-			}
-			else if (!NetDriver->IsServer())
-			{
-				Sender->SendComponentInterest(Actor, GetEntityId());
-
-				bFirstTick = false;
-			}
+			ServerProcessOwnershipChange();
+		}
+		else
+		{
+			ClientProcessOwnershipChange();
 		}
 	}
 }

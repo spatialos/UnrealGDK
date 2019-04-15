@@ -23,6 +23,7 @@
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
 
@@ -70,7 +71,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
 
-	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
+	FString ClientWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
 
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
 	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
@@ -316,7 +317,7 @@ void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Inf
 	{
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, Update.component_id))
 		{
-			UE_LOG(LogSpatialSender, Log, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
+			UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send component update but don't have authority! Update will be queued and sent when authority gained. Component Id: %d, entity: %lld"), Update.component_id, EntityId);
 
 			// This is a temporary fix. A task to improve this has been created: UNR-955
 			// It may be the case that upon resolving a component, we do not have authority to send the update. In this case, we queue the update, to send upon receiving authority.
@@ -377,13 +378,11 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 	return ComponentInterest;
 }
 
-void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId EntityId)
+void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId EntityId, bool bNetOwned)
 {
 	check(!NetDriver->IsServer());
 
-	const USpatialActorChannel* const ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId);
-	const bool bIsNetOwned = ActorChannel && ActorChannel->IsOwnedByWorker();
-	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor, bIsNetOwned));
+	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor, bNetOwned));
 }
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
@@ -391,7 +390,7 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 #if !UE_BUILD_SHIPPING
 	if (!NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
+		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send Position component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 		return;
 	}
 #endif
@@ -461,7 +460,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: %s)"),
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: %d)"),
 					EntityId, CommandRequest.component_id, *Params->Function->GetName(), Params->Attempts+1);
 				// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 				Params->Attempts++;
@@ -840,35 +839,16 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 
 			// We can guarantee that SendRPC won't populate OutgoingRPCs[Object] whilst we're iterating through it,
 			// because Object has been resolved when we call ResolveOutgoingRPCs.
-			UE_LOG(LogSpatialSender, Log, TEXT("Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams->TargetObject->GetName(), *RPCParams->Function->GetName());
+			UE_LOG(LogSpatialSender, Verbose, TEXT("Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams->TargetObject->GetName(), *RPCParams->Function->GetName());
 			SendRPC(RPCParams);
 		}
 		OutgoingRPCs.Remove(Object);
 	}
 }
 
-FString USpatialSender::GetOwnerWorkerAttribute(AActor* Actor)
-{
-	// This should only be executed on the server.
-	check(NetDriver->IsServer());
-
-	// If we don't have an owning connection, there is no assoicated client
-	if (Actor->GetNetConnection() == nullptr)
-	{
-		return FString();
-	}
-
-	if (USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(Actor->GetNetConnection()))
-	{
-		return SpatialConnection->WorkerAttribute;
-	}
-
-	return FString();
-}
-
 // Authority over the ClientRPC Schema component is dictated by the owning connection of a client.
 // This function updates the authority of that component as the owning connection can change.
-bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
+bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
 {
 	improbable::EntityAcl* EntityACL = StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId);
 
@@ -883,7 +863,6 @@ bool USpatialSender::UpdateEntityACLs(AActor* Actor, Worker_EntityId EntityId)
 		return false;
 	}
 
-	FString OwnerWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 	WorkerAttributeSet OwningClientAttribute = { OwnerWorkerAttribute };
 	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
 
