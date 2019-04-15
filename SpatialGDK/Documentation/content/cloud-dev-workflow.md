@@ -20,7 +20,7 @@ Replacing **`<YourProject>`** with the name of your Unreal project.
 Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
 ```
 
-Replacing **`<YourProject>`** with the name of your Unreal project.
+Replacing `<YourProject>` with the name of your Unreal project.
 
 ### Upload assembly
 
