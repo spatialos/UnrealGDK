@@ -13,6 +13,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
+using namespace improbable;
+
 void USpatialWorkerConnection::FinishDestroy()
 {
 	DestroyConnection();
@@ -280,11 +282,6 @@ Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_E
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendMetrics(const Worker_Metrics* Metrics)
-{
-	QueueOutgoingMessage<FMetrics>(*Metrics);
-}
-
 FString USpatialWorkerConnection::GetWorkerId() const
 {
 	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
@@ -489,10 +486,13 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FLogMessage* Message = static_cast<FLogMessage*>(OutgoingMessage.Get());
 
+			FTCHARToUTF8 LoggerName(*Message->LoggerName.ToString());
+			FTCHARToUTF8 LogString(*Message->Message);
+
 			Worker_LogMessage LogMessage{};
 			LogMessage.level = Message->Level;
-			LogMessage.logger_name = TCHAR_TO_UTF8(*Message->LoggerName.ToString());
-			LogMessage.message = TCHAR_TO_UTF8(*Message->Message);
+			LogMessage.logger_name = LoggerName.Get();
+			LogMessage.message = LogString.Get();
 			Worker_Connection_SendLogMessage(WorkerConnection, &LogMessage);
 			break;
 		}
@@ -513,13 +513,6 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			Worker_Connection_SendEntityQueryRequest(WorkerConnection,
 				&Message->EntityQuery,
 				nullptr);
-			break;
-		}
-		case EOutgoingMessageType::Metrics:
-		{
-			FMetrics* Message = static_cast<FMetrics*>(OutgoingMessage.Get());
-
-			Worker_Connection_SendMetrics(WorkerConnection, &Message->Metrics);
 			break;
 		}
 		default:

@@ -49,7 +49,6 @@ public:
 	void SendLogMessage(uint8_t Level, const FName& LoggerName, const TCHAR* Message);
 	void SendComponentInterest(Worker_EntityId EntityId, TArray<Worker_InterestOverride>&& ComponentInterest);
 	Worker_RequestId SendEntityQueryRequest(const Worker_EntityQuery* EntityQuery);
-	void SendMetrics(const Worker_Metrics* Metrics);
 
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
@@ -98,7 +97,7 @@ private:
 	float OpsUpdateInterval;
 
 	TQueue<Worker_OpList*> OpListQueue;
-	TQueue<TUniquePtr<FOutgoingMessage>> OutgoingMessagesQueue;
+	TQueue<TUniquePtr<improbable::FOutgoingMessage>> OutgoingMessagesQueue;
 
 	// RequestIds per worker connection start at 0 and incrementally go up each command sent.
 	Worker_RequestId NextRequestId = 0;

@@ -4,10 +4,10 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
-FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FString LoggerName, int32 InPIEIndex)
+FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FName LoggerName, int32 InPIEIndex)
 	: FilterLevel(ELogVerbosity::Warning)
 	, Connection(InConnection)
-	, WorkerName(*LoggerName)
+	, WorkerName(LoggerName)
 	, PIEIndex(InPIEIndex)
 {
 	const TCHAR* CommandLine = FCommandLine::Get();

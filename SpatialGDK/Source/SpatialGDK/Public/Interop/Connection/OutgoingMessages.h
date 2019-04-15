@@ -3,6 +3,9 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
+namespace improbable
+{
+
 enum class EOutgoingMessageType : int32
 {
 	ReserveEntityIdsRequest,
@@ -15,7 +18,6 @@ enum class EOutgoingMessageType : int32
 	LogMessage,
 	ComponentInterest,
 	EntityQueryRequest,
-	Metrics
 };
 
 struct FOutgoingMessage
@@ -77,7 +79,7 @@ struct FCommandRequest : FOutgoingMessage
 		, Request(InRequest)
 		, CommandId(InCommandId)
 	{}
-	
+
 	Worker_EntityId EntityId;
 	Worker_CommandRequest Request;
 	uint32_t CommandId;
@@ -102,7 +104,7 @@ struct FCommandFailure : FOutgoingMessage
 		, RequestId(InRequestId)
 		, Message(InMessage)
 	{}
-	
+
 	Worker_RequestId RequestId;
 	FString Message;
 };
@@ -138,17 +140,21 @@ struct FEntityQueryRequest : FOutgoingMessage
 	FEntityQueryRequest(const Worker_EntityQuery& InEntityQuery)
 		: FOutgoingMessage(EOutgoingMessageType::EntityQueryRequest)
 		, EntityQuery(InEntityQuery)
-	{}
+	{
+		if (EntityQuery.snapshot_result_type_component_ids != nullptr)
+		{
+			ComponentIdStorage.SetNum(EntityQuery.snapshot_result_type_component_id_count);
+			FMemory::Memcpy(static_cast<void*>(ComponentIdStorage.GetData()), static_cast<const void*>(EntityQuery.snapshot_result_type_component_ids), ComponentIdStorage.Num());
+		}
+
+		TraverseConstraint(&EntityQuery.constraint);
+	}
+
+	void TraverseConstraint(Worker_Constraint* Constraint);
 
 	Worker_EntityQuery EntityQuery;
+	TArray<TUniquePtr<Worker_Constraint[]>> ConstraintStorage;
+	TArray<Worker_ComponentId> ComponentIdStorage;
 };
 
-struct FMetrics : FOutgoingMessage
-{
-	FMetrics(const Worker_Metrics& InMetrics)
-		: FOutgoingMessage(EOutgoingMessageType::Metrics)
-		, Metrics(InMetrics)
-	{}
-
-	Worker_Metrics Metrics;
-};
+}
