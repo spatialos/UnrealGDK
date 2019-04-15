@@ -4,6 +4,7 @@
 #include "Containers/Queue.h"
 #include "HAL/Runnable.h"
 #include "HAL/ThreadSafeBool.h"
+
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/Connection/OutgoingMessages.h"
 

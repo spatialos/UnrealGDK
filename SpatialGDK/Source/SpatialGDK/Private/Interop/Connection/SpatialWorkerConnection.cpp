@@ -4,10 +4,11 @@
 
 #include "Async/Async.h"
 #include "Engine/World.h"
-#include "EngineClasses/SpatialNetDriver.h"
 #include "Misc/Paths.h"
-#include "SpatialGDKSettings.h"
 #include "UnrealEngine.h"
+
+#include "EngineClasses/SpatialNetDriver.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
