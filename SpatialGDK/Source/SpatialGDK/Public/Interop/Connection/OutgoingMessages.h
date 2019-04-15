@@ -126,7 +126,7 @@ struct FComponentInterest : FOutgoingMessage
 	FComponentInterest(Worker_EntityId InEntityId, TArray<Worker_InterestOverride>&& InInterests)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentInterest)
 		, EntityId(InEntityId)
-		, Interests(InInterests)
+		, Interests(MoveTemp(InInterests))
 	{}
 
 	Worker_EntityId EntityId;
