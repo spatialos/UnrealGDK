@@ -49,7 +49,7 @@ struct FCreateEntityRequest : FOutgoingMessage
 
 struct FDeleteEntityRequest : FOutgoingMessage
 {
-	FDeleteEntityRequest(const Worker_EntityId& InEntityId)
+	FDeleteEntityRequest(Worker_EntityId InEntityId)
 		: FOutgoingMessage(EOutgoingMessageType::DeleteEntityRequest)
 		, EntityId(InEntityId)
 	{}
