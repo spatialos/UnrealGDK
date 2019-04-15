@@ -73,7 +73,7 @@ private:
 
 	// Begin FRunnable Interface
 	virtual bool Init() override;
-	virtual uint32 Run();
+	virtual uint32 Run() override;
 	virtual void Stop();
 	// End FRunnable Interface
 
