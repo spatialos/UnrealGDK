@@ -31,6 +31,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/EntityPool.h"
+#include "Utils/EngineVersionCheck.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
