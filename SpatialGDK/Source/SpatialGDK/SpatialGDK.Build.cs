@@ -30,10 +30,8 @@ public class SpatialGDK : ModuleRules
                 "Sockets",
             });
 
-		// Check if we're building in the editor.
 		if (Target.bBuildEditor)
 		{
-			// Required by USpatialGameInstance::StartPlayInEditorGameInstance.
 			PublicDependencyModuleNames.Add("UnrealEd");
 		}
 
