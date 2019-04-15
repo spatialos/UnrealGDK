@@ -28,25 +28,31 @@ int32 UGenerateSnapshotCommandlet::Main(const FString& Args)
 	// TMap<FString, FString> Params;
 	// ParseCommandLine(*Args, Tokens, Switches, Params);
 
-	GenerateSnapshots();
+	bool bSnapshotGenSuccess = GenerateSnapshots();
 
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Snapshot Generation Commandlet Complete"));
 
-	return 0;
+	return bSnapshotGenSuccess ? 0 : 1;
 }
 
-void UGenerateSnapshotCommandlet::GenerateSnapshots()
+bool UGenerateSnapshotCommandlet::GenerateSnapshots()
 {
 	FString MapDir = TEXT("/Game");
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Searching %s for maps"), *MapDir);
 	TArray<FString> MapFilePaths = GetAllMapPaths(MapDir);
+	bool bAllSnapshotGenSucces = true;
 	for (FString MapFilePath : MapFilePaths)
 	{
-		GenerateSnapshotForMap(MapFilePath);
+		if (!GenerateSnapshotForMap(MapFilePath))
+		{
+			bAllSnapshotGenSucces = false;
+			break;
+		}
 	}
+	return bAllSnapshotGenSucces;
 }
 
-void UGenerateSnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
+bool UGenerateSnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
 {
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Generating Snapshot for %s"), *MapPath);
 
@@ -57,12 +63,18 @@ void UGenerateSnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
 	}
 
 	// Generate the Snapshot!
+	bool bSnapshotGenSuccess = false;
 	FSpatialGDKEditor SpatialGDKEditor;
 	SpatialGDKEditor.GenerateSnapshot(
 		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(MapPath), TEXT(".snapshot")),
-		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Success!")); }),
+		FSimpleDelegate::CreateLambda([&bSnapshotGenSuccess]()
+		{
+			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Success!"));
+			bSnapshotGenSuccess = true;
+		}),
 		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed")); }),
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s"), *ErrorText); }));
+	return bSnapshotGenSuccess;
 }
 
 TArray<FString> UGenerateSnapshotCommandlet::GetAllMapPaths(FString InMapsPath)
