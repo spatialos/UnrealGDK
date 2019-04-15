@@ -153,7 +153,7 @@ private:
 	bool IsSingletonEntity();
 
 	void UpdateSpatialPosition();
-	void SendPositionUpdate(AActor* InActor, Worker_EntityId EntityId, const FVector& NewPosition);
+	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
