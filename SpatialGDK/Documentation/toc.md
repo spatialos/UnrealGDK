@@ -29,7 +29,7 @@
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
 - <h3>Workflow</h3>
-    - [Local Development Workflow]({{urlRoot}}/content/local-dev-workflow)
+    - [Local deployment workflow]({{urlRoot}}/content/local-dev-workflow)
     - [Cloud Development Workflow]({{urlRoot}}/content/cloud-dev-workflow)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Known issues]({{urlRoot}}/known-issues)
