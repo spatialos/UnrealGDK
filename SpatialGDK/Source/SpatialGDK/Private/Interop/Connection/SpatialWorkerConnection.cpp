@@ -92,7 +92,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	}
 
 #if WITH_EDITOR
-	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID != -1);
+	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
 	const int32 FirstServerEditorID = 1;
 	if (bSingleThreadedServer)
 	{
