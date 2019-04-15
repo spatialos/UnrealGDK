@@ -97,7 +97,7 @@ struct FCommandResponse : FOutgoingMessage
 
 struct FCommandFailure : FOutgoingMessage
 {
-	FCommandFailure(const Worker_RequestId& InRequestId, const FString& InMessage)
+	FCommandFailure(Worker_RequestId InRequestId, const FString& InMessage)
 		: FOutgoingMessage(EOutgoingMessageType::CommandFailure)
 		, RequestId(InRequestId)
 		, Message(InMessage)
