@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialClassInfoManager.h"
+#include "Schema/DynamicComponent.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
@@ -26,12 +27,12 @@ class UGlobalStateManager;
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
-	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, const TSharedPtr<improbable::Component>& InData)
-		: EntityId(InEntityId), ComponentId(InComponentId), Data(InData) {}
+	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, TUniquePtr<improbable::DynamicComponent>&& InData)
+		: EntityId(InEntityId), ComponentId(InComponentId), Data(MoveTemp(InData)) {}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
-	TSharedPtr<improbable::Component> Data;
+	TUniquePtr<improbable::DynamicComponent> Data;
 };
 
 struct FObjectReferences
