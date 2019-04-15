@@ -8,8 +8,8 @@
         - Next steps - either:
             - [Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
             - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
-    - [Feature list]({{urlRoot}}/features)
-    - [What's new in alpha]({{urlRoot}}/content/whatsnew)
+    - [Unreal features support matrix]({{urlRoot}}/unreal-features-support-matrix)
+    - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
     - [SpatialOS concepts]({{urlRoot}}/content/concepts)
     - [Glossary]({{urlRoot}}/content/glossary)
@@ -30,7 +30,6 @@
     - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
 - <h3>Troubleshooting</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
-    - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Get involved</h3>
     - Contributing to the GDK
         - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)
