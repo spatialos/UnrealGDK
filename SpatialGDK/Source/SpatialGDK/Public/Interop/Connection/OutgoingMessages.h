@@ -59,7 +59,7 @@ struct FDeleteEntityRequest : FOutgoingMessage
 
 struct FComponentUpdate : FOutgoingMessage
 {
-	FComponentUpdate(const Worker_EntityId& InEntityId, const Worker_ComponentUpdate& InComponentUpdate)
+	FComponentUpdate(Worker_EntityId InEntityId, const Worker_ComponentUpdate& InComponentUpdate)
 		: FOutgoingMessage(EOutgoingMessageType::ComponentUpdate)
 		, EntityId(InEntityId)
 		, Update(InComponentUpdate)
