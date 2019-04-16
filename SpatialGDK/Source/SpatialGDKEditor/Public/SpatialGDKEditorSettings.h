@@ -148,7 +148,7 @@ struct FWorkerTypeLaunchSection
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
 	int32 Rows;
 
-	/** Flags defined for a worker. */
+	/** Flags defined for a worker instance. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Flags"))
 	TMap<FString, FString> Flags;
 
