@@ -124,7 +124,7 @@ struct FWorkerTypeLaunchSection
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker type name"))
 	FString WorkerTypeName;
 
-	/** Defines the permissions of the worker. */
+	/** Defines the worker instance's permissions. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker permissions"))
 	FWorkerPermissionsSection WorkerPermissions;
 
