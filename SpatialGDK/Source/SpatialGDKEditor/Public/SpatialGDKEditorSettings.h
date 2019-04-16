@@ -66,7 +66,7 @@ struct FWorkerPermissionsSection
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "All"))
 	bool bAllPermissions;
 
-	/** Enables a worker to create new entities */
+	/** Enables a worker instance to create new entities. */
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity creation"))
 	bool bAllowEntityCreation;
 
