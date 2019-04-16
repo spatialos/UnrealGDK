@@ -207,16 +207,15 @@ namespace metrics
 	};
 }
 
+
 struct FMetrics : FOutgoingMessage
 {
 	FMetrics(const metrics::Metrics& InMetrics)
 		: FOutgoingMessage(EOutgoingMessageType::Metrics)
 		, Metrics(InMetrics)
-	{
-	}
+	{}
 
 	metrics::Metrics Metrics;
-	TArray<> KeyStorage;
 };
 
 }

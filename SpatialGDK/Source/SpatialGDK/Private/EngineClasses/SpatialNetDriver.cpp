@@ -1071,8 +1071,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			Worker_OpList_Destroy(OpList);
 		}
 
-		// Every tick we should attempt to report metrics.
-		SpatialMetrics->TickMetrics();
+		if (SpatialMetrics != nullptr)
+		{
+			// Every tick we should attempt to report metrics.
+			SpatialMetrics->TickMetrics();
+		}
 	}
 }
 

@@ -20,8 +20,6 @@ void USpatialMetrics::TickMetrics()
 {
 	FramesSinceLastReport++;
 
-	// Future Josh: Change this to an improbable::metrics::Metrics.
-
 	// Should we report metrics?
 	// Check that there has been a sufficient amount of time since the last report.
 	if ((NetDriver->Time - TimeSinceLastReport) < TimeBetweenMetricsReports)
@@ -32,20 +30,18 @@ void USpatialMetrics::TickMetrics()
 	AverageFPS = FramesSinceLastReport / (NetDriver->Time - TimeSinceLastReport);
 	WorkerLoad = CalculateLoad(NetDriver->NetServerMaxTickRate, AverageFPS);
 
-	Worker_GaugeMetric DynamicFPSGauge{};
-	FTCHARToUTF8 DynamicFPSKeyCStr(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
-	DynamicFPSGauge.key = DynamicFPSKeyCStr.Get();
-	DynamicFPSGauge.value = AverageFPS;
+	improbable::metrics::GaugeMetric DynamicFPSGauge;
+	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
+	DynamicFPSGauge.Value = AverageFPS;
 
-	Worker_Metrics DynamicFPSMetric{};
-	DynamicFPSMetric.gauge_metric_count = 1;
-	DynamicFPSMetric.gauge_metrics = &DynamicFPSGauge;
-	DynamicFPSMetric.load = &WorkerLoad;
+	improbable::metrics::Metrics DynamicFPSMetrics;
+	DynamicFPSMetrics.GaugeMetrics.Add(DynamicFPSGauge);
+	DynamicFPSMetrics.Load = WorkerLoad;
 
 	TimeSinceLastReport = NetDriver->Time;
 	FramesSinceLastReport = 0;
 
-	NetDriver->Connection->SendMetrics(&DynamicFPSMetric);
+	NetDriver->Connection->SendMetrics(DynamicFPSMetrics);
 }
 
 // Load defined as performance relative to target FPS.
