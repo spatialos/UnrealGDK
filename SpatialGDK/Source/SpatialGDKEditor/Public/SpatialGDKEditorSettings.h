@@ -44,7 +44,7 @@ struct FWorldLaunchSection
 	TMap<FString, FString> LegacyFlags;
 
 	/** Legacy JVM configurations. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Legacy java parameters"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Legacy Java parameters"))
 	TMap<FString, FString> LegacyJavaParams;
 };
 
