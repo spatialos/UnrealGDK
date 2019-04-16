@@ -5,7 +5,6 @@
 
 This guide shows you how to port your own Unreal project to SpatialOS using the GDK for Unreal. By the end of this guide, your game will run on a single server-worker and you will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
 
-
 ## Before you start
 
 Before porting your project: 
@@ -18,9 +17,19 @@ Before porting your project:
 * Open a terminal window and run the command `spatial update` to ensure your [spatial CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) installation is up to date. 
 
 ### Terms used in this guide
-`<GameRoot>` - The directory containing your project's `.uproject` file and `Source` directory.  
-`<ProjectRoot>` - The directory containing your `<GameRoot>`.  
-`<YourProject>` - The name of your project's `.uproject` file (for example, `\<GameRoot>\TP_SpatialGDK.uproject`).
+* `<GameRoot>` - The directory containing your project's `.uproject` file and `Source` directory.  
+* `<ProjectRoot>` - The directory containing your `<GameRoot>`.  
+* `<YourProject>` - The name of your project's `.uproject` file (for example, `\<GameRoot>\TP_SpatialGDK.uproject`).
+
+<!-- <%(Callout type="tip" message=" -->
+<!-- ")%> -->
+
+> **TIP: Reference project** 
+<br /><br />
+> As you port your own Unreal project to SpatialOS, you could use our pre-ported [Unreal Shooter Game](https://docs.unrealengine.com/en-us/Resources/SampleGames/ShooterGame) as a reference. You should already have this project as it is included in the `Samples` directory of [the SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine) which you downloaded as part of the _Get Started_ steps. 
+<br /><br />
+> (If you want to see the game running, there's a [video on youtube](https://www.youtube.com/watch?v=xojgH7hJgQs&feature=youtu.be) to check out.) 
+
 
 ## Port your game to the GDK
 
@@ -34,7 +43,7 @@ Before porting your project:
     For example:
     `\MyProject\Game\TP_SpatialGDK.uproject`
     
-1. Your project needs some extra files and folders to run with the GDK. Copy these files from the template project that you set up earlier in the [Before you start](#before-you-start) section.
+2. Your project needs some extra files and folders to run with the GDK. Copy these files from the template project that you set up earlier in the [Before you start](#before-you-start) section.
 
     To do this: either in a terminal window or your file manager, navigate to the root of the `StarterTemplate` repository and copy all of the files and directories below to your `<ProjectRoot>`:  
 
@@ -214,4 +223,4 @@ Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cros
 <br/>
 
 ------
-_2019-03-25 Page updated with limited editorial review_
+_2019-04-11 Added ShooterGame as a reference project with partial editorial review._

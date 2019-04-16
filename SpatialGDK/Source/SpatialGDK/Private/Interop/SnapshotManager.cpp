@@ -172,7 +172,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 		for (uint32_t i = 0; i < Op.number_of_entity_ids; i++)
 		{
 			// Get an entity to spawn and a reserved EntityID
-			auto& EntityToSpawn = EntitiesToSpawn[i];
+			TArray<Worker_ComponentData> EntityToSpawn = EntitiesToSpawn[i];
 			Worker_EntityId ReservedEntityID = Op.first_entity_id + i;
 
 			// Check if this is the GSM
@@ -186,7 +186,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 			}
 
 			UE_LOG(LogSnapshotManager, Log, TEXT("Sending entity create request for: %i"), ReservedEntityID);
-			NetDriver->Connection->SendCreateEntityRequest(EntityToSpawn.Num(), EntityToSpawn.GetData(), &ReservedEntityID);
+			NetDriver->Connection->SendCreateEntityRequest(MoveTemp(EntityToSpawn), &ReservedEntityID);
 		}
 
 		GlobalStateManager->SetAcceptingPlayers(true);
