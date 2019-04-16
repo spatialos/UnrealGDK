@@ -157,9 +157,6 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
-	void StartPerformanceCapture(FString PrefixName);
-	void StopPerformanceCapture();
-
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 

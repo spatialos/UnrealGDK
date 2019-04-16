@@ -25,7 +25,6 @@ public:
 	double CalculateLoad(double TargetFPS, double CalculatedFPS);
 
 private:
-
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
@@ -36,6 +35,5 @@ private:
 
 	double AverageFPS;
 	double WorkerLoad;
-
 };
 

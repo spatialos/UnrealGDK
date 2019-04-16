@@ -35,7 +35,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
-DECLARE_CYCLE_STAT(TEXT("SpatialNetDriver - ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
+DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
 DEFINE_STAT(STAT_SpatialConsiderList);
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
@@ -298,8 +298,6 @@ void USpatialNetDriver::OnMapLoaded(UWorld* LoadedWorld)
 		// make sure that the net driver of this world is in fact us.
 		return;
 	}
-
-	//StartPerformanceCapture(this->GetName());
 
 	// If we're the client, we can now ask the server to spawn our controller.
 	if (!IsServer())
@@ -1621,25 +1619,4 @@ void USpatialNetDriver::HandleOnConnectionFailed(const FString& Reason)
 {
 	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
 	OnConnectionFailed.Broadcast(Reason);
-}
-
-void USpatialNetDriver::StartPerformanceCapture(FString PrefixName)
-{
-	if (UWorld* World = GetWorld())
-	{
-		FString Cmd = FString::Printf(TEXT("Stat SpatialNet"));
-		GEngine->Exec(World, *Cmd);
-
-		FString MapName = World->GetMapName();
-		Cmd = FString::Printf(TEXT("Stat Startfile %s-%s-%s.ue4stats"), *PrefixName, *MapName, *FDateTime::Now().ToString());
-		GEngine->Exec(World, *Cmd);
-	}
-}
-
-void USpatialNetDriver::StopPerformanceCapture()
-{
-	if (UWorld* World = GetWorld())
-	{
-		GEngine->Exec(World, TEXT("Stat StopFile"));
-	}
 }
