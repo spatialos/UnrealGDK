@@ -153,7 +153,7 @@ struct FWorkerTypeLaunchSection
 	TMap<FString, FString> Flags;
 
 	/** Determines if the worker instance is launched manually or by SpatialOS. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Manual Worker Connection Only"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Manual worker connection only"))
 	bool bManualWorkerConnectionOnly;
 };
 
