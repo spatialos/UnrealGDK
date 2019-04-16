@@ -27,7 +27,7 @@ struct FWorldLaunchSection
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Simulation dimensions in meters"))
 	FIntPoint Dimensions;
 
-	/** The size of the grid squares that the world is divided into, in “world units” (an arbitrary unit that workers can interpret as they choose. */
+	/** The size of the grid squares that the world is divided into, in “world units” (an arbitrary unit that worker instances can interpret as they choose). */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Chunk edge length in meters"))
 	int32 ChunkEdgeLengthMeters;
 
