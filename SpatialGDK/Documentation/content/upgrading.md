@@ -17,7 +17,7 @@ If you followed our [Get started]({{urlRoot}}/content/get-started/introduction) 
 * Your `UnrealEngine` repository should have the branch ending with `-SpatialOSUnrealGDK-release`checked out.<br>
 * Your `UnrealGDK` repository should have the `release` branch checked out.<br>
 
-You can determine which branch is checked out by following the instructions below:<br>
+You can find out which branch you have checked out by following the instructions below:<br>
 
 1. In a terminal of your choice, change directory to the root of the repository.<br>
 1. Run `git status`.
