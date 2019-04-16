@@ -74,7 +74,7 @@ struct FWorkerPermissionsSection
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity deletion"))
 	bool bAllowEntityDeletion;
 
-	/** Controls what components can be returned from entity queries performed by the worker. If an entity query specifies other components to be returned then the query will fail. */
+	/** Controls which components can be returned from entity queries that the worker instance performs. If an entity query specifies other components to be returned, the query will fail. */
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity query"))
 	bool bAllowEntityQuery;
 
