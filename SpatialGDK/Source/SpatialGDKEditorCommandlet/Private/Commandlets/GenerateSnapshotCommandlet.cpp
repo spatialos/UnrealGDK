@@ -40,16 +40,16 @@ bool UGenerateSnapshotCommandlet::GenerateSnapshots()
 	FString MapDir = TEXT("/Game");
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Searching %s for maps"), *MapDir);
 	TArray<FString> MapFilePaths = GetAllMapPaths(MapDir);
-	bool bAllSnapshotGenSucces = true;
+	bool bAllSnapshotGenSuccess = true;
 	for (FString MapFilePath : MapFilePaths)
 	{
 		if (!GenerateSnapshotForMap(MapFilePath))
 		{
-			bAllSnapshotGenSucces = false;
+			bAllSnapshotGenSuccess = false;
 			break;
 		}
 	}
-	return bAllSnapshotGenSucces;
+	return bAllSnapshotGenSuccess;
 }
 
 bool UGenerateSnapshotCommandlet::GenerateSnapshotForMap(FString MapPath)
