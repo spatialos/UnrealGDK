@@ -242,7 +242,7 @@ private:
 
 public:
 	/** Auto-generated launch configuration file description. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration description"))
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration file description"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
 	/** If checked, placeholder entities will be added to the snapshot on generation */
