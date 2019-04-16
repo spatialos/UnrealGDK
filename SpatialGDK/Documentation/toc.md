@@ -16,7 +16,8 @@
         - [Port your own project to the GDK]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
     - [What's new in alpha]({{urlRoot}}/content/whatsnew)
 - <h3>Concepts and terminology</h3>
-    - [SpatialOS concepts]({{urlRoot}}/content/spatialos-concepts/concepts)
+    - SpatialOS concepts
+        - [Summary]({{urlRoot}}/content/spatialos-concepts/concepts)
         - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
         - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
     - [Glossary]({{urlRoot}}/content/glossary)

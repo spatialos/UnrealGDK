@@ -108,7 +108,7 @@ You set the size of chunks for your world in [launch configuration files](https:
 See [SpatialOS component](#spatialos-component).
 
 ### Command-line tool (CLI)
-See [Spatial command-line tool (CLI)](#spatial-command-line-tool-cli).
+See [Spatial command-line tool (CLI)](#spatialos-command-line-tool-cli).
 
 ### Configuration files
 The configuration files contain information on how elements of your project must work. There are four configuration files:
