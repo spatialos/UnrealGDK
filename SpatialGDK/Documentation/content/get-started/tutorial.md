@@ -150,7 +150,7 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 
 Notice that the workflow you just used mirrors that of native Unreal.
 
-Because you’ve changed code in a function you now need to build your project, generate schema and a new snapshot. To do this:
+Because you have changed code in a function you now need to rebuild your project. Additionally, because you have enabled replication for a variable you need to generate schema and a new snapshot. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
@@ -245,7 +245,7 @@ void ATPSCharacter::TakeGunDamageCrossServer_Implementation(float Damage, const 
 
 This snippet implements the functionality that was previously contained within `TakeDamage` as a cross-server RPC called `TakeGunDamageCrossServer`.
 
-Because you’ve changed code in a function you now need build **ThirdPersonShooter.sln**, generate schema and a new snapshot. To do this:
+Because you have changed code in a function you now need to rebuild your project. Additionally, you need to generate schema and a new snapshot. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
