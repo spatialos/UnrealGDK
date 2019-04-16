@@ -339,7 +339,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td></td>
 </tr>
   <tr>
-    <td>Matinee Sequences</td>
+    <td><a href="https://docs.unrealengine.com/Engine/Sequencer">Sequence Editor</td>
     <td class="supported"></td>
     <td></td>
 </tr>
