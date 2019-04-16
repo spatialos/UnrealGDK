@@ -241,7 +241,7 @@ private:
 	TArray<FString> SpatialOSCommandLineLaunchFlags;
 
 public:
-	/** Auto generated launch configuration description. */
+	/** Auto-generated launch configuration file description. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration description"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
