@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Engine/World.h"
 #include "SpatialConstants.h"
 
 #include "SchemaDatabase.generated.h"
@@ -41,6 +42,17 @@ class SPATIALGDK_API USchemaDatabase : public UDataAsset
 public:
 
 	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID) {}
+
+	bool GetComponentIdFromLevelPath(const FString& LevelPath, uint32& OutComponentId) const
+	{
+		FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
+		if (const uint32* ComponentId = LevelPathToComponentId.Find(CleanLevelPath))
+		{
+			OutComponentId = *ComponentId;
+			return true;
+		}
+		return false;
+	}
 
 	UPROPERTY(VisibleAnywhere)
 	TMap<FString, FSchemaData> ClassPathToSchema;

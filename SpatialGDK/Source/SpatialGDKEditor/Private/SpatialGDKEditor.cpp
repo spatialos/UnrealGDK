@@ -142,11 +142,11 @@ void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()
 		return;
 	}
 
-	if (UEditorEngine* EdEngine = Cast<UEditorEngine>(GEngine))
+	if (GEditor != nullptr)
 	{
-		UE_LOG(LogSpatialGDKEditor, Log, TEXT("Removing UEditorEngine::OnAssetLoaded."));
-		FCoreUObjectDelegates::OnAssetLoaded.RemoveAll(EdEngine);
-		UE_LOG(LogSpatialGDKEditor, Log, TEXT("Replacing UEditorEngine::OnAssetLoaded with spatial version that won't run during schema gen."));
+		UE_LOG(LogSpatialGDKEditor, Verbose, TEXT("Removing UEditorEngine::OnAssetLoaded."));
+		FCoreUObjectDelegates::OnAssetLoaded.RemoveAll(GEditor);
+		UE_LOG(LogSpatialGDKEditor, Verbose, TEXT("Replacing UEditorEngine::OnAssetLoaded with spatial version that won't run during schema gen."));
 		OnAssetLoadedHandle = FCoreUObjectDelegates::OnAssetLoaded.AddLambda([this](UObject* Asset) {
 			OnAssetLoaded(Asset);
 		});
@@ -163,8 +163,7 @@ void FSpatialGDKEditor::OnAssetLoaded(UObject* Asset)
 		return;
 	}
 
-	UWorld* World = Cast<UWorld>(Asset);
-	if (World)
+	if (UWorld* World = Cast<UWorld>(Asset))
 	{
 		// Init inactive worlds here instead of UWorld::PostLoad because it is illegal to call UpdateWorldComponents while IsRoutingPostLoad
 		if (!World->bIsWorldInitialized && World->WorldType == EWorldType::Inactive)

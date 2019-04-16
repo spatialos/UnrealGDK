@@ -245,18 +245,16 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 	// Create component constraints for every loaded sublevel
 	for (const auto& LevelPath : LoadedLevels)
 	{
-		FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath.ToString());
-		
-		uint32* ComponentId = NetDriver->ClassInfoManager->SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath);
-		if (ComponentId != nullptr)
+		uint32 ComponentId;
+		if (NetDriver->ClassInfoManager->SchemaDatabase->GetComponentIdFromLevelPath(LevelPath.ToString(), ComponentId))
 		{
 			QueryConstraint SpecificLevelConstraint;
-			SpecificLevelConstraint.ComponentConstraint = *ComponentId;
+			SpecificLevelConstraint.ComponentConstraint = ComponentId;
 			LevelConstraint.OrConstraint.Add(SpecificLevelConstraint);
 		}
 		else
 		{
-			UE_LOG(LogInterestFactory, Error, TEXT("Could not find Streaming Level Component for Level %s. Have you generated schema?"), *CleanLevelPath);
+			UE_LOG(LogInterestFactory, Error, TEXT("Could not find Streaming Level Component for Level %s. Have you generated schema?"), *LevelPath.ToString());
 		}
 	}
 

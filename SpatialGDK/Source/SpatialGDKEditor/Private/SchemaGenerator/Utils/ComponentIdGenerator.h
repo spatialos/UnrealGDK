@@ -8,25 +8,15 @@ struct FComponentIdGenerator
 	const uint32 RESERVED_COMPONENT_ID_END = 19999;
 
 	FComponentIdGenerator(uint32 InNextId)
+		: NextId(InNextId)
 	{
-		if (RESERVED_COMPONENT_ID_START <= InNextId && InNextId <= RESERVED_COMPONENT_ID_END)
-		{
-			InNextId = RESERVED_COMPONENT_ID_END + 1;
-		}
-		else
-		{
-			NextId = InNextId;
-		}
+		ValidateNextId();
 	}
 
 	uint32 Next()
 	{
-		uint32 Result = NextId;
-		NextId++;
-		if (RESERVED_COMPONENT_ID_START <= NextId && NextId <= RESERVED_COMPONENT_ID_END)
-		{
-			NextId = RESERVED_COMPONENT_ID_END + 1;
-		}
+		uint32 Result = NextId++;
+		ValidateNextId();
 		return Result;
 	}
 
@@ -36,5 +26,14 @@ struct FComponentIdGenerator
 	}
 
 private:
+
+	void ValidateNextId()
+	{
+		if (RESERVED_COMPONENT_ID_START <= NextId && NextId <= RESERVED_COMPONENT_ID_END)
+		{
+			NextId = RESERVED_COMPONENT_ID_END + 1;
+		}
+	}
+
 	uint32 NextId;
 };
