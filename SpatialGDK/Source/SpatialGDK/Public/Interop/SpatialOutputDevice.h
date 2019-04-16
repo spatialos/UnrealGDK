@@ -12,7 +12,7 @@ class USpatialWorkerConnection;
 class SPATIALGDK_API FSpatialOutputDevice : public FOutputDevice
 {
 public:
-	FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FString LoggerName, int32 InPIEIndex);
+	FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FName LoggerName, int32 InPIEIndex);
 	~FSpatialOutputDevice();
 
 	void AddRedirectCategory(const FName& Category);
@@ -26,7 +26,7 @@ protected:
 	ELogVerbosity::Type FilterLevel;
 	TSet<FName> CategoriesToRedirect;
 	USpatialWorkerConnection* Connection;
-	FString Name;
+	FName WorkerName;
 
 	int32 PIEIndex;
 	bool bLogToSpatial;
