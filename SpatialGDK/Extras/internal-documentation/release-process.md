@@ -53,28 +53,49 @@ This document outlines the process for releasing a version of the GDK for Unreal
 It is vital that you test using the docs for the release version that you are about to publish, not with the currently live docs that relate to the previous version.
 1. `improbadoc serve <path to x.y.z-rc-x docs>`
 
-### Build your release candidate engine
-1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/dependencies. When you clone the `UnrealEngine`, be sure to checkout `x.y.z-rc-x` so you're building the release version.
+## Build your release candidate engine
+1. Open http://localhost:8080/reference/1.0/content/get-started/dependencies.
+1. Uninstall all dependencies listed on this page so that you can accurately validate our installation steps.
+1. If you have one, delete your local clone of `UnrealEngine`.
+1. Follow the installation steps on http://localhost:8080/reference/1.0/content/get-started/dependencies.
+1. When you clone the `UnrealEngine`, be sure to checkout `x.y.z-rc-x` so you're building the release version.
 
 ## Implementing fixes
 
 If at any point in the below validation steps you encounter a blocker, you must fix that defect prior to releasing.
 
-There are two ways to do this, you must decide on the most appropraite one.
-* Delete the existing release branches and branch new ones from the HEAD of `master` (in the case of the GDK and tutorials) and from the HEAD of .
-* `git cherry-[i`
+There are two ways to do this, you must decide on the most appropriate one.
+* Delete the existing release branches and branch new ones from the HEAD of `master` (in the case of the GDK and tutorials) and from the HEAD of `4.xx-SpatialOSUnrealGDK` (in `improbableio/UnrealEngine`).
+* `git cherry-[commit-hash]` the change into your release candidate branch. Be sure to cherry-pick any changes that your cherry-pick depends on. GDK changes often depend on engine changes, for example.
 
-The workflow for this is:
+The workflow for creating new release branches is:
 
-* Raise a bug ticket detailing the blocker.
+1. Raise a bug ticket detailing the blocker.
 1. `git checkout master`
 1. `git pull`
 1. `git checkout -b bugfix/UNR-xxx`
 1. Fix the defect.
 1. Make a commit, push, open a PR into `master`.
-1. `git checkout master`
-1. When the PR is merged, branch off of master using `git checkout -b x.y.z-rc-[n+1]` in order to create a new release candidate branch, and re-test the defect to ensure you fixed it.
+1. When the PR is merged, `git checkout master` and `git pull`.
+1. Branch off of master using `git checkout -b x.y.z-rc-[n+1]` in order to create a new release candidate branch, and re-test the defect to ensure you fixed it.
+1. Notify #unreal-gdk-release that the release candidate has been updated.
 1. Judgment call: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch.
+
+The workflow for cherry-picking the fix is:
+
+1. Raise a bug ticket detailing the blocker.
+1. `git checkout master`
+1. `git pull`
+1. `git checkout -b bugfix/UNR-xxx`
+1. Fix the defect.
+1. Make a commit, push, open a PR into `master`.
+1. When the PR is merged, `git checkout x.y.z-rc`.
+1. `git cherry-[commit-hash]` where `[commit-hash]` is the hash of `bugfix/UNR-xxx` merging into `master`.
+1. `git push`
+1. Notify #unreal-gdk-release that the release candidate has been updated.
+1. Judgment call: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch.
+
+* Raise a bug ticket detailing the blocker.
 
 ## Validation (Multiserver Shooter tutorial)
 1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/tutorial, bearing in mind the following caveats:

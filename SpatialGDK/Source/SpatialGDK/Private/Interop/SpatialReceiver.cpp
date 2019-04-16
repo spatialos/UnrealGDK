@@ -27,20 +27,6 @@ DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
 using namespace improbable;
 
-template <typename T>
-T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
-{
-	for (PendingAddComponentWrapper& PendingAddComponent : Receiver.PendingAddComponents)
-	{
-		if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.ComponentId == T::ComponentId)
-		{
-			return static_cast<T*>(PendingAddComponent.Data.Get());
-		}
-	}
-
-	return nullptr;
-}
-
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
@@ -109,15 +95,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
 
-	if (!bInCriticalSection)
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received a dynamically added component, these are currently unsupported - component ID: %u entity ID: %lld"),
-			Op.data.component_id, Op.entity_id);
-		return;
-	}
-
-	TSharedPtr<improbable::Component> Data;
-
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
@@ -142,17 +119,43 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
- 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
+		GlobalStateManager->ApplyDeploymentMapData(Op.data);
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
- 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
+		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
 		return;
-	default:
-		Data = MakeShared<improbable::DynamicComponent>(Op.data);
-		break;
 	}
 
-	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, Data);
+	if (ClassInfoManager->IsSublevelComponent(Op.data.component_id))
+	{
+		return;
+	}
+
+	// If a client gains ownership over something it had already checked out, it will
+	// add component interest on the owner only data components, which will trigger an
+	// AddComponentOp, but it is not guaranteed to be inside a critical section.
+	if (!NetDriver->IsServer())
+	{
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+		{
+			if (ClassInfoManager->GetCategoryByComponentId(Op.data.component_id) == SCHEMA_OwnerOnly)
+			{
+				// We received owner only data, and we have the entity checked out already,
+				// so this happened as a result of adding component interest. Apply the data
+				// immediately instead of queuing it up (since there will be no AddEntityOp).
+				ApplyComponentData(Op.entity_id, Op.data, Channel);
+				return;
+			}
+		}
+	}
+
+	if (!bInCriticalSection)
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received a dynamically added component, these are currently unsupported - component ID: %u entity ID: %lld"),
+			Op.data.component_id, Op.entity_id);
+		return;
+	}
+	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<improbable::DynamicComponent>(Op.data));
 }
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
@@ -347,7 +350,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			continue;
 		}
 
-		Worker_ComponentData* ComponentData = static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data;
+		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData;
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
 		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
@@ -424,16 +427,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				continue;
 			}
 
-			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic)
+			if (PendingAddComponent.EntityId == EntityId)
 			{
-				ApplyComponentData(EntityId, *static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data, Channel);
+				ApplyComponentData(EntityId, *PendingAddComponent.Data->ComponentData, Channel);
 			}
 		}
 
 		if (!NetDriver->IsServer())
 		{
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-			Sender->SendComponentInterest(EntityActor, EntityId);
+			Sender->SendComponentInterest(EntityActor, EntityId, Channel->IsOwnedByWorker());
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.
