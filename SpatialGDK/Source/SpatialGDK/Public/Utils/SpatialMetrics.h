@@ -18,7 +18,7 @@ class USpatialMetrics : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver, double InTargetFPS);
+	void Init(USpatialNetDriver* InNetDriver);
 
 	void TickMetrics();
 

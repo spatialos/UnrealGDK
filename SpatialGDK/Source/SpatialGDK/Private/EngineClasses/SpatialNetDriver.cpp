@@ -221,7 +221,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	GlobalStateManager->Init(this, &TimerManager);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
-	SpatialMetrics->Init(this, NetServerMaxTickRate);
+	SpatialMetrics->Init(this);
 
 	// Entity Pools should never exist on clients
 	if (IsServer())

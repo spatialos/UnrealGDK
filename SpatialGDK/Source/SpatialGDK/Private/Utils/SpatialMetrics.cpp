@@ -9,7 +9,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 
-void USpatialMetrics::Init(USpatialNetDriver* InNetDriver, double InTargetFPS)
+void USpatialMetrics::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 	TimeBetweenMetricsReports = 2.0;
