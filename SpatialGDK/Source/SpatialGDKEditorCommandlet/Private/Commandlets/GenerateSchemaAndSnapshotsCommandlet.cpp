@@ -50,19 +50,25 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 		while (RemainingMapPaths.Split(TEXT(";"), &ThisMapName, &RemainingMapPaths))
 		{
 			if (!GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, ThisMapName))
+			{
 				return 1;	// Error
+			}
 		}
 		// When we get to this point, one of two things is true:
 		// 1) RemainingMapPaths was NEVER split, and should be interpreted as a single map name
 		// 2) RemainingMapPaths was split n times, and the last map that needs to be run after the loop is still in it
 		if (!GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, RemainingMapPaths))
+		{
 			return 1;	// Error
+		}
 	}
 	else
 	{
 		// Default to everything in the project
 		if (!GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, TEXT("")))
+		{
 			return 1;	// Error
+		}
 	}
 
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema & Snapshot Generation Commandlet Complete"));
@@ -126,7 +132,9 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 			FString MapPath = AssetData.PackageName.ToString();
 			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Selecting map %s"), *MapPath);
 			if (!GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, MapPath))
+			{
 				return false;
+			}
 		}
 	}
 	else
@@ -181,11 +189,15 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 
 	// Generate Schema Iteration
 	if (!GenerateSchemaForLoadedMap(InSpatialGDKEditor))
+	{
 		return false;
+	}
 
 	// Generate Snapshot
 	if (!GenerateSnapshotForLoadedMap(InSpatialGDKEditor, FPaths::GetCleanFilename(InMapName)))
+	{
 		return false;
+	}
 
 	return true;
 }
