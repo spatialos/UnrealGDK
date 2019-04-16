@@ -26,6 +26,7 @@ enum class EOutgoingMessageType : int32
 	LogMessage,
 	ComponentInterest,
 	EntityQueryRequest,
+	Metrics
 };
 
 struct FOutgoingMessage
@@ -163,6 +164,64 @@ struct FEntityQueryRequest : FOutgoingMessage
 	Worker_EntityQuery EntityQuery;
 	TArray<TUniquePtr<Worker_Constraint[]>> ConstraintStorage;
 	TArray<Worker_ComponentId> ComponentIdStorage;
+};
+
+struct FMetrics : FOutgoingMessage
+{
+	FMetrics(const Worker_Metrics& InMetrics)
+		: Metrics(InMetrics)
+	{
+		Load = Metrics.load != nullptr ? MakeUnique<double>(*Metrics.load) : nullptr;
+		Metrics.load = Load.Get();
+
+		for(int i = 0; i < Metrics.gauge_metric_count; i++)
+		{
+			Worker_GaugeMetric GaugeMetric;
+			GaugeMetric = Metrics.gauge_metrics[i];
+
+			std::string GaugeMetricKey(Metrics.gauge_metrics[i].key);
+			GaugeMetric.key = GaugeMetricKey.c_str();
+
+			GaugeMetricsKeyStorage.Add(GaugeMetricKey);
+			GaugeMetricStorage.Add(GaugeMetric);
+		}
+
+		for (int i = 0; i < Metrics.histogram_metric_count; i++)
+		{
+			Worker_HistogramMetric HistogramMetric;
+			HistogramMetric = Metrics.histogram_metrics[i];
+
+			std::string HistogramMetricKey(Metrics.histogram_metrics[i].key);
+			HistogramMetric.key = HistogramMetricKey.c_str();
+
+			TArray<Worker_HistogramMetricBucket> Buckets;
+			for (int j = 0; j < Metrics.histogram_metrics[i].bucket_count; j++)
+			{
+				Worker_HistogramMetricBucket Bucket = Metrics.histogram_metrics[i].buckets[j];
+				Buckets.Add(Bucket);
+			}
+
+			BucketStorage.Add(Buckets);
+			HistogramMetric.buckets = Buckets.GetData();
+
+			HistogramMetricStorage.Add(HistogramMetric);
+		}
+
+		Metrics.gauge_metrics = GaugeMetricStorage.GetData();
+		Metrics.histogram_metrics = HistogramMetricStorage.GetData();
+	}
+
+	Worker_Metrics Metrics;
+
+	TUniquePtr<double> Load;
+
+	TArray<Worker_GaugeMetric> GaugeMetricStorage;
+	TArray<std::string> GaugeMetricsKeyStorage;
+
+	TArray<Worker_HistogramMetric> HistogramMetricStorage;
+	TArray<std::string> HistogramMetricsKeyStorage;
+
+	TArray<TArray<Worker_HistogramMetricBucket>> BucketStorage;
 };
 
 }
