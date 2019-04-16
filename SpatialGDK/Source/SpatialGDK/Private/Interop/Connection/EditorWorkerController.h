@@ -4,7 +4,9 @@
 #if WITH_EDITOR
 
 #include "Editor.h"
+#include "Modules/ModuleManager.h"
 #include "Settings/LevelEditorPlaySettings.h"
+#include "SpatialGDKEditorToolbar.h"
 
 namespace improbable
 {
@@ -14,6 +16,14 @@ struct EditorWorkerController
 	void OnPrePIEEnded(bool bValue)
 	{
 		LastPIEEndTime = FDateTime::Now().ToUnixTimestamp();
+		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
+	}
+
+	void OnSpatialShutdown()
+	{
+		LastPIEEndTime = -1;
+		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
+		Toolbar.OnSpatialShutdown.Remove(SpatialShutdownHandle);
 		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
 	}
 
@@ -31,6 +41,9 @@ struct EditorWorkerController
 		UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Seconds since last session - %d"), SecondsSinceLastSession);
 
 		PIEEndHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &EditorWorkerController::OnPrePIEEnded);
+
+		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
+		SpatialShutdownHandle = Toolbar.OnSpatialShutdown.AddRaw(this, &EditorWorkerController::OnSpatialShutdown);
 
 		int32 PlayNumberOfServers;
 		GetDefault<ULevelEditorPlaySettings>()->GetPlayNumberOfServers(PlayNumberOfServers);
@@ -80,6 +93,7 @@ struct EditorWorkerController
 	TArray<FProcHandle> ReplaceProcesses;
 	int64 LastPIEEndTime = -1;
 	FDelegateHandle PIEEndHandle;
+	FDelegateHandle SpatialShutdownHandle;
 };
 
 } // namespace improbable

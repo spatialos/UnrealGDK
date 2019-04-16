@@ -38,6 +38,8 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
 	}
 
+	FSimpleMulticastDelegate OnSpatialShutdown;
+
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
@@ -59,6 +61,7 @@ private:
 	bool CanExecuteSnapshotGenerator() const;
 	void StopRunningStack();
 	void CheckForRunningStack();
+	void CleanupSpatialProcess();
 
 	void ShowTaskStartNotification(const FString& NotificationText);
 	void ShowSuccessNotification(const FString& NotificationText);
