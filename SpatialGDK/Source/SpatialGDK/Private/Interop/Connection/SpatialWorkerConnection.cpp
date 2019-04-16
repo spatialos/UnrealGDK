@@ -3,6 +3,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
 #include "Async/Async.h"
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "Misc/Paths.h"
 
