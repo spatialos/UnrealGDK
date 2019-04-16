@@ -1193,7 +1193,6 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 			UE_LOG(LogNetTraffic, Verbose, TEXT("%s replicated %d actors"), *GetDescription(), Updated);
 		}
 		LastUpdateCount = Updated;
-
 #endif // WITH_SERVER_CODE
 	}
 
