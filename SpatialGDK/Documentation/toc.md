@@ -28,7 +28,9 @@
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
-- <h3>Troubleshooting</h3>
+- <h3>Workflows</h3>
+    - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
+    - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Known issues]({{urlRoot}}/known-issues)
     - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
