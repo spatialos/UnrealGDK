@@ -129,7 +129,7 @@ struct FWorkerTypeLaunchSection
 	FWorkerPermissionsSection WorkerPermissions;
 
 	/** Defines the maximum number of worker instances that can connect. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Max connection capacity limit (0 = Unlimited capacity)", ClampMin = "0", UIMin = "0"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Max connection capacity limit (0 = unlimited capacity)", ClampMin = "0", UIMin = "0"))
 	int32 MaxConnectionCapacityLimit;
 
 	/** Enable connection rate limiting. */
