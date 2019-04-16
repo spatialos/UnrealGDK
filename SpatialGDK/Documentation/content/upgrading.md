@@ -3,7 +3,7 @@
 
 To use the SpatialOS GDK for Unreal, you need software from two git repositories:<br>
 
-* [The SpatialOS Unreal Engine fork.](https://github.com/improbableio/UnrealEngine)
+* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine)
 * [The GDK](https://github.com/spatialos/UnrealGDK)<br>
 
 It is good practice to always develop your game on the latest version of the software by regularly updating it. This ensures you benefit from the most up-to-date functionality. Whenever you update your GDK software, you **must** also update your SpatialOS Unreal Engine fork software. If you don't, you may get errors from them being out of synch.
