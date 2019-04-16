@@ -34,6 +34,7 @@ enum class EOutgoingMessageType : int32
 struct FOutgoingMessage
 {
 	FOutgoingMessage(const EOutgoingMessageType& InType) : Type(InType) {}
+	virtual ~FOutgoingMessage() {}
 
 	EOutgoingMessageType Type;
 };
