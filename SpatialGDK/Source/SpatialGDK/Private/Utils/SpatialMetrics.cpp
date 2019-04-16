@@ -31,7 +31,8 @@ void USpatialMetrics::TickMetrics()
 	WorkerLoad = CalculateLoad(NetDriver->NetServerMaxTickRate, AverageFPS);
 
 	Worker_GaugeMetric DynamicFPSGauge{};
-	DynamicFPSGauge.key = TCHAR_TO_ANSI(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
+	FTCHARToUTF8 DynamicFPSKeyCStr(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
+	DynamicFPSGauge.key = DynamicFPSKeyCStr.Get();
 	DynamicFPSGauge.value = AverageFPS;
 
 	Worker_Metrics DynamicFPSMetric{};
@@ -41,8 +42,6 @@ void USpatialMetrics::TickMetrics()
 
 	TimeSinceLastReport = NetDriver->Time;
 	FramesSinceLastReport = 0;
-
-	UE_LOG(LogTemp, Error, TEXT("FPS: %f, Load: %f"), AverageFPS, WorkerLoad);
 
 	NetDriver->Connection->SendMetrics(&DynamicFPSMetric);
 }
