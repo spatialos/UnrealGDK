@@ -9,6 +9,8 @@
 #include "Templates/UniquePtr.h"
 #include "UObject/NameTypes.h"
 
+#include <string>
+
 #include <WorkerSDK/improbable/c_worker.h>
 
 namespace improbable
@@ -166,62 +168,55 @@ struct FEntityQueryRequest : FOutgoingMessage
 	TArray<Worker_ComponentId> ComponentIdStorage;
 };
 
+namespace metrics
+{
+	/** Parameters for a gauge metric. */
+	struct GaugeMetric {
+		/* The name of the metric. */
+		std::string Key;
+		/* The current value of the metric. */
+		double Value;
+	};
+
+	/* Parameters for a histogram metric bucket. */
+	struct HistogramMetricBucket {
+		/* The upper bound. */
+		double UpperBound;
+		/* The number of observations that were less than or equal to the upper bound. */
+		uint32 Samples;
+	};
+
+	/* Parameters for a histogram metric. */
+	struct HistogramMetric {
+		/* The name of the metric. */
+		std::string Key;
+		/* The sum of all observations. */
+		double Sum;
+		/* Array of buckets. */
+		TArray<HistogramMetricBucket> Buckets;
+	};
+
+	/** Parameters for sending metrics to SpatialOS. */
+	struct Metrics {
+		/** The load value of this worker. If NULL, do not report load. */
+		TOptional<double> Load;
+		/** Array of gauge metrics. */
+		TArray<GaugeMetric> GaugeMetrics;
+		/** Array of histogram metrics. */
+		TArray<HistogramMetric> HistogramMetrics;
+	};
+}
+
 struct FMetrics : FOutgoingMessage
 {
-	FMetrics(const Worker_Metrics& InMetrics)
-		: Metrics(InMetrics)
+	FMetrics(const metrics::Metrics& InMetrics)
+		: FOutgoingMessage(EOutgoingMessageType::Metrics)
+		, Metrics(InMetrics)
 	{
-		Load = Metrics.load != nullptr ? MakeUnique<double>(*Metrics.load) : nullptr;
-		Metrics.load = Load.Get();
-
-		for(int i = 0; i < Metrics.gauge_metric_count; i++)
-		{
-			Worker_GaugeMetric GaugeMetric;
-			GaugeMetric = Metrics.gauge_metrics[i];
-
-			std::string GaugeMetricKey(Metrics.gauge_metrics[i].key);
-			GaugeMetric.key = GaugeMetricKey.c_str();
-
-			GaugeMetricsKeyStorage.Add(GaugeMetricKey);
-			GaugeMetricStorage.Add(GaugeMetric);
-		}
-
-		for (int i = 0; i < Metrics.histogram_metric_count; i++)
-		{
-			Worker_HistogramMetric HistogramMetric;
-			HistogramMetric = Metrics.histogram_metrics[i];
-
-			std::string HistogramMetricKey(Metrics.histogram_metrics[i].key);
-			HistogramMetric.key = HistogramMetricKey.c_str();
-
-			TArray<Worker_HistogramMetricBucket> Buckets;
-			for (int j = 0; j < Metrics.histogram_metrics[i].bucket_count; j++)
-			{
-				Worker_HistogramMetricBucket Bucket = Metrics.histogram_metrics[i].buckets[j];
-				Buckets.Add(Bucket);
-			}
-
-			BucketStorage.Add(Buckets);
-			HistogramMetric.buckets = Buckets.GetData();
-
-			HistogramMetricStorage.Add(HistogramMetric);
-		}
-
-		Metrics.gauge_metrics = GaugeMetricStorage.GetData();
-		Metrics.histogram_metrics = HistogramMetricStorage.GetData();
 	}
 
-	Worker_Metrics Metrics;
-
-	TUniquePtr<double> Load;
-
-	TArray<Worker_GaugeMetric> GaugeMetricStorage;
-	TArray<std::string> GaugeMetricsKeyStorage;
-
-	TArray<Worker_HistogramMetric> HistogramMetricStorage;
-	TArray<std::string> HistogramMetricsKeyStorage;
-
-	TArray<TArray<Worker_HistogramMetricBucket>> BucketStorage;
+	metrics::Metrics Metrics;
+	TArray<> KeyStorage;
 };
 
 }

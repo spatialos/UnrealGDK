@@ -20,6 +20,8 @@ void USpatialMetrics::TickMetrics()
 {
 	FramesSinceLastReport++;
 
+	// Future Josh: Change this to an improbable::metrics::Metrics.
+
 	// Should we report metrics?
 	// Check that there has been a sufficient amount of time since the last report.
 	if ((NetDriver->Time - TimeSinceLastReport) < TimeBetweenMetricsReports)
