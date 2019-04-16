@@ -23,7 +23,7 @@ struct FWorldLaunchSection
 		LegacyFlags.Add(TEXT("enable_chunk_interest"), TEXT("false"));
 	}
 
-	/** The size of the simulation in meters for the auto generated launch config. */
+	/** The size of the simulation, in meters, for the auto-generated launch configuration file. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Simulation dimensions in metres"))
 	FIntPoint Dimensions;
 
