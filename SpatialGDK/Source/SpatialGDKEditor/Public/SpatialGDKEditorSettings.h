@@ -245,7 +245,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration file description"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
-	/** If checked, placeholder entities will be added to the snapshot on generation */
+	/** If checked, placeholder entities are added to the snapshot on generation. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Generate placeholder entities in snapshot"))
 	bool bGeneratePlaceholderEntitiesInSnapshot;
 
