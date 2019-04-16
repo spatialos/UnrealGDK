@@ -120,7 +120,7 @@ struct FWorkerTypeLaunchSection
 	{
 	}
 
-	/** Worker type name, defined in the filename of the worker’s spatialos.<worker_type>.worker.json file. */
+	/** The name of the worker type, defined in the filename of its spatialos.<worker_type>.worker.json file. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker type name"))
 	FString WorkerTypeName;
 
