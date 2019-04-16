@@ -2,6 +2,9 @@
 
 #include "Utils/SpatialMetrics.h"
 
+#include <EngineGlobals.h>
+#include <Runtime/Engine/Classes/Engine/Engine.h>
+
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
@@ -25,7 +28,7 @@ void USpatialMetrics::TickMetrics()
 	}
 
 	AverageFPS = FramesSinceLastReport / (NetDriver->Time - TimeSinceLastReport);
-	Load = CalculateLoad(NetDriver->NetServerMaxTickRate, AverageFPS);
+	WorkerLoad = CalculateLoad(NetDriver->NetServerMaxTickRate, AverageFPS);
 
 	Worker_GaugeMetric DynamicFPSGauge{};
 	DynamicFPSGauge.key = TCHAR_TO_ANSI(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
@@ -34,10 +37,12 @@ void USpatialMetrics::TickMetrics()
 	Worker_Metrics DynamicFPSMetric{};
 	DynamicFPSMetric.gauge_metric_count = 1;
 	DynamicFPSMetric.gauge_metrics = &DynamicFPSGauge;
-	DynamicFPSMetric.load = &Load;
+	DynamicFPSMetric.load = &WorkerLoad;
 
 	TimeSinceLastReport = NetDriver->Time;
 	FramesSinceLastReport = 0;
+
+	UE_LOG(LogTemp, Error, TEXT("FPS: %f, Load: %f"), AverageFPS, WorkerLoad);
 
 	NetDriver->Connection->SendMetrics(&DynamicFPSMetric);
 }
@@ -49,6 +54,3 @@ double USpatialMetrics::CalculateLoad(double TargetFPS, double CalculatedFPS)
 {
 	return FMath::Max(0.0, 0.5 * (TargetFPS / CalculatedFPS));
 }
-
-
-

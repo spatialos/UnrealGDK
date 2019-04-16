@@ -35,7 +35,7 @@ private:
 	int FramesSinceLastReport;
 
 	double AverageFPS;
-	double Load;
+	double WorkerLoad;
 
 };
 
