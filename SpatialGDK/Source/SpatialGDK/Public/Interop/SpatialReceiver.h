@@ -21,6 +21,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 
+class APlayerController;
 class USpatialSender;
 class UGlobalStateManager;
 
@@ -155,7 +156,7 @@ private:
 
 	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
 
-	void HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, const class APlayerController* PlayerController);
+	void HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, const APlayerController* PlayerController);
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);

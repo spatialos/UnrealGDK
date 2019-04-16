@@ -6,17 +6,14 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include "LatencyManager.generated.h"
 
 class USpatialNetConnection;
 class USpatialNetDriver;
 
-UCLASS()
-class SPATIALGDK_API ULatencyManager : public UObject
+class ULatencyManager
 {
-	GENERATED_BODY()
 public:
-	ULatencyManager(const FObjectInitializer& ObjectInitializer);
+	ULatencyManager(USpatialNetConnection* InConnection);
 
 	void Enable(Worker_EntityId InPlayerControllerEntity);
 	void Disable();
@@ -27,6 +24,6 @@ private:
 	Worker_EntityId PlayerControllerEntity;
 	float LastPingSent;
 
-	TWeakObjectPtr<USpatialNetConnection> NetConnection;
-	TWeakObjectPtr<USpatialNetDriver> NetDriver;
+	USpatialNetConnection* NetConnection;
+	USpatialNetDriver* NetDriver;
 };

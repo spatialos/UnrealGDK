@@ -20,7 +20,7 @@ namespace improbable
 		{
 		}
 
-		FORCEINLINE Worker_ComponentData CreateServerPingData()
+		inline Worker_ComponentData CreateServerPingData()
 		{
 			Worker_ComponentData Data = {};
 			Data.component_id = ComponentId;
@@ -39,7 +39,7 @@ namespace improbable
 		{
 		}
 
-		FORCEINLINE Worker_ComponentData CreateClientPongData()
+		inline Worker_ComponentData CreateClientPongData()
 		{
 			Worker_ComponentData Data = {};
 			Data.component_id = ComponentId;

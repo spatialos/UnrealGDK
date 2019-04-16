@@ -12,8 +12,8 @@
 #include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
 
-ULatencyManager::ULatencyManager(const FObjectInitializer& ObjectInitializer)
-	: Super(ObjectInitializer)
+ULatencyManager::ULatencyManager(USpatialNetConnection* InConnection)
+	: NetConnection(InConnection)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
 {
 }
@@ -23,25 +23,25 @@ void ULatencyManager::Enable(Worker_EntityId InPlayerControllerEntity)
 	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID, TEXT("LatencyManager::Enable : PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
 	PlayerControllerEntity = InPlayerControllerEntity;
 
-	NetConnection = Cast<USpatialNetConnection>(GetOuter());
+	TWeakObjectPtr<USpatialNetConnection> ConnectionPtr = NetConnection;
 	NetDriver = Cast<USpatialNetDriver>(NetConnection->GetDriver());
-	LastPingSent = GetWorld()->RealTimeSeconds;
+	LastPingSent = NetConnection->GetWorld()->RealTimeSeconds;
 
-	auto Delegate = TBaseDelegate<void, Worker_ComponentUpdateOp &>::CreateLambda([this](const Worker_ComponentUpdateOp& Op)
+	auto Delegate = TBaseDelegate<void, Worker_ComponentUpdateOp &>::CreateLambda([ConnectionPtr, this](const Worker_ComponentUpdateOp& Op)
 	{
-		float ReceivedTimestamp = GetWorld()->RealTimeSeconds;
-
-		if (!NetConnection.IsValid())
+		if (!ConnectionPtr.IsValid())
 		{
 			return;
 		}
+
+		float ReceivedTimestamp = ConnectionPtr->GetWorld()->RealTimeSeconds;
 
 		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 		uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::PING_PONG_EVENT_ID);
 
 		if (EventCount > 0)
 		{
-			NetConnection->PlayerController->PlayerState->UpdatePing(ReceivedTimestamp - LastPingSent);
+			ConnectionPtr->PlayerController->PlayerState->UpdatePing(ReceivedTimestamp - LastPingSent);
 			SendPingOrPong(NetDriver->IsServer() ? SpatialConstants::SERVER_PING_COMPONENT_ID : SpatialConstants::CLIENT_PONG_COMPONENT_ID);
 		}
 	});
@@ -76,6 +76,6 @@ void ULatencyManager::SendPingOrPong(Worker_ComponentId ComponentId)
 	if (WorkerConnection->IsConnected())
 	{
 		WorkerConnection->SendComponentUpdate(PlayerControllerEntity, &ComponentUpdate);
-		LastPingSent = GetWorld()->RealTimeSeconds;
+		LastPingSent = NetConnection->GetWorld()->RealTimeSeconds;
 	}
 }

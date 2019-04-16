@@ -200,7 +200,7 @@ void USpatialNetConnection::SetupLatencyManager(Worker_EntityId InPlayerControll
 {
 	if (LatencyManager == nullptr)
 	{
-		LatencyManager = NewObject<ULatencyManager>(this);
+		LatencyManager = new ULatencyManager(this);
 	}
 
 	LatencyManager->Enable(InPlayerControllerEntity);

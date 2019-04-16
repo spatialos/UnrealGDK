@@ -14,6 +14,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetConnection, Log, All);
 
+class ULatencyManager;
+
 UCLASS(transient)
 class SPATIALGDK_API USpatialNetConnection : public UIpConnection
 {
@@ -63,8 +65,7 @@ public:
 	Worker_EntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
 
-	UPROPERTY(transient)
-	class ULatencyManager* LatencyManager;
+	ULatencyManager* LatencyManager;
 
 	void SetupLatencyManager(Worker_EntityId InPlayerControllerEntity);
 	void DisableLatencyManager();
