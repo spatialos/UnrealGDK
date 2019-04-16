@@ -24,7 +24,7 @@ struct FWorldLaunchSection
 	}
 
 	/** The size of the simulation, in meters, for the auto-generated launch configuration file. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Simulation dimensions in metres"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Simulation dimensions in meters"))
 	FIntPoint Dimensions;
 
 	/** The size of the grid squares that the world is divided into, in “world units” (an arbitrary unit that workers can interpret as they choose. */
