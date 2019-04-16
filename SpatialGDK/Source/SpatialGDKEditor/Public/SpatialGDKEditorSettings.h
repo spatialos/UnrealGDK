@@ -31,7 +31,7 @@ struct FWorldLaunchSection
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Chunk edge length in meters"))
 	int32 ChunkEdgeLengthMeters;
 
-	/** The time between streaming query updates (in seconds). */
+	/** The time in seconds between streaming query updates. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Streaming query interval in seconds"))
 	int32 StreamingQueryIntervalSeconds;
 
