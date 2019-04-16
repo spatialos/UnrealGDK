@@ -62,7 +62,7 @@ struct FWorkerPermissionsSection
 	{
 	}
 
-	/** Gives all permissions to a worker. */
+	/** Gives all permissions to a worker instance. */
 	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "All"))
 	bool bAllPermissions;
 
