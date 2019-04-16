@@ -257,7 +257,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	}
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
-	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(ComponentDatas.Num(), ComponentDatas.GetData(), &EntityId);
+	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
 	PendingActorRequests.Add(CreateEntityRequestId, Channel);
 
 	return CreateEntityRequestId;
