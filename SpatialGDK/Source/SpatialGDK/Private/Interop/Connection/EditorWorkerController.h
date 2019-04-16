@@ -21,7 +21,7 @@ struct EditorWorkerController
 
 	void OnSpatialShutdown()
 	{
-		LastPIEEndTime = -1;	// Reset PIE end time to ensure replace-a-worker isn't called
+		LastPIEEndTime = 0;	// Reset PIE end time to ensure replace-a-worker isn't called
 		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 		Toolbar.OnSpatialShutdown.Remove(SpatialShutdownHandle);
 		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
@@ -91,7 +91,7 @@ struct EditorWorkerController
 
 	TArray<FString> WorkerIds;
 	TArray<FProcHandle> ReplaceProcesses;
-	int64 LastPIEEndTime = -1;
+	int64 LastPIEEndTime = 0;	// Unix epoch time in seconds
 	FDelegateHandle PIEEndHandle;
 	FDelegateHandle SpatialShutdownHandle;
 };
