@@ -8,7 +8,7 @@
         - Next steps - either:
             - [Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
             - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
-    - [Unreal features support matrix]({{urlRoot}}/unreal-features-support-matrix)
+    - [Unreal features support]({{urlRoot}}/unreal-features-support)
     - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
     - [SpatialOS concepts]({{urlRoot}}/content/concepts)
@@ -24,13 +24,13 @@
     - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
     - [Schema]({{urlRoot}}/content/schema)
     - [Snapshots]({{urlRoot}}/content/generating-a-snapshot)
-    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
-    - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
 - <h3>Workflows</h3>
     - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
     - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
+    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
 - <h3>Get involved</h3>
     - Contributing to the GDK

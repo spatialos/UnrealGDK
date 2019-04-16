@@ -1,6 +1,6 @@
-# Unreal features support matrix
+# Unreal features support 
 
-The aim of the GDK is to seemlessly support all native Unreal Engine features, making it easy to create and port any Unreal game code to run on SpatialOS, both in single server and multi-server configurations. 
+The aim of the GDK is to seemlessly support all native Unreal Engine features, making it easy to create and port any Unreal game code to run on SpatialOS, both in single server and multiserver configurations. 
 
 We are not there yet, and the  tables below provide the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of.
 
@@ -375,7 +375,6 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
 </table>
 
-## Multi-Server Support
+## Multiserver Support
 
-Support matrix coming soon.
-
+The table for multiserver support is coming soon. 
