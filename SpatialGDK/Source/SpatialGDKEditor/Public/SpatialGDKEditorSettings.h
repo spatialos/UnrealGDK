@@ -70,7 +70,7 @@ struct FWorkerPermissionsSection
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity creation"))
 	bool bAllowEntityCreation;
 
-	/** Enables a worker to delete entities */
+	/** Enables a worker instance to delete entities. */
 	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "!bAllPermissions", ConfigRestartRequired = false, DisplayName = "Allow entity deletion"))
 	bool bAllowEntityDeletion;
 
