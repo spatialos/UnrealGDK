@@ -12,7 +12,7 @@ We recommend that you update your version of the GDK and SpatialOS Unreal Engine
 
 ## Step 1: Ensure you're on the release branches.
 
-If you followed our [get started]({{urlRoot}}/content/get-started/introduction) guide, you have these repositories cloned on your computer.<br>
+If you followed our [Get started]({{urlRoot}}/content/get-started/introduction) guide, you have these repositories cloned on your computer.<br>
 
 * Your `UnrealGDK` repository should have the `release` branch checked out.<br>
 * Your `UnrealEngine` repository should have the branch ending with `-SpatialOSUnrealGDK-release`checked out.<br>
