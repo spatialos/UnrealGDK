@@ -803,7 +803,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			// Actors not replicated this frame will have their priority increased based on the time since the last replicated.
 			// TearOff actors would normally replicate their final tick due to RecentlyRelevant, after which the channel is closed.
 			// With throttling we no longer always replicate when RecentlyRelevant is true, thus we ensure to always replicate a TearOff actor while it still has a channel.
-			else if ((FinalReplicatedCount < MaxActorsToReplicate && !Actor->GetTearOff()) || (Actor->GetTearOff() && Channel))
+			else if ((FinalReplicatedCount < MaxActorsToReplicate && !Actor->GetTearOff()) || (Actor->GetTearOff() && Channel != nullptr))
 			{
 				bIsRelevant = true;
 				FinalReplicatedCount++;
