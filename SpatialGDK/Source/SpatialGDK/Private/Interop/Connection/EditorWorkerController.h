@@ -21,7 +21,7 @@ struct EditorWorkerController
 
 	void OnSpatialShutdown()
 	{
-		LastPIEEndTime = -1;
+		LastPIEEndTime = -1;	// Reset PIE end time to ensure replace-a-worker isn't called
 		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 		Toolbar.OnSpatialShutdown.Remove(SpatialShutdownHandle);
 		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
