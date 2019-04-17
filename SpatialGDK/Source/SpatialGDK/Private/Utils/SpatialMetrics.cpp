@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
+#pragma optimize("", off)
 #include "Utils/SpatialMetrics.h"
 
 #include "Engine/Engine.h"
@@ -28,7 +28,7 @@ void USpatialMetrics::TickMetrics()
 	}
 
 	AverageFPS = FramesSinceLastReport / (NetDriver->Time - TimeSinceLastReport);
-	WorkerLoad = CalculateLoad(NetDriver->NetServerMaxTickRate, AverageFPS);
+	WorkerLoad = CalculateLoad();
 
 	improbable::GaugeMetric DynamicFPSGauge;
 	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
@@ -44,10 +44,17 @@ void USpatialMetrics::TickMetrics()
 	NetDriver->Connection->SendMetrics(DynamicFPSMetrics);
 }
 
-// Load defined as performance relative to target FPS.
-// i.e. a load of 0.5 means that the worker is hitting the target FPS
-// but achieving less than half the target FPS takes load above 1.0
-double USpatialMetrics::CalculateLoad(double TargetFPS, double CalculatedFPS)
+// Load defined as performance relative to target frame time or just frame time based on config value.
+double USpatialMetrics::CalculateLoad()
 {
-	return FMath::Max(0.0, 0.5 * (TargetFPS / CalculatedFPS));
+	double AverageFrameTime = (NetDriver->Time - TimeSinceLastReport) / FramesSinceLastReport;
+
+	if (GetDefault<USpatialGDKSettings>()->bUseFrameTimeAsLoad)
+	{
+		return AverageFrameTime;
+	}
+
+	double TargetFrameTime = 1.0f / NetDriver->NetServerMaxTickRate;
+
+	return AverageFrameTime / TargetFrameTime;
 }

@@ -22,7 +22,7 @@ public:
 
 	void TickMetrics();
 
-	double CalculateLoad(double TargetFPS, double CalculatedFPS);
+	double CalculateLoad();
 
 private:
 	UPROPERTY()

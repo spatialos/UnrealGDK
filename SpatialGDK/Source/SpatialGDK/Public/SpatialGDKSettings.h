@@ -74,5 +74,9 @@ public:
 	/** Frequency that metrics are reported to SpatialOS.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false), DisplayName = "Metrics Report Rate (seconds)")
 	float MetricsReportRate;
+
+	/** Change 'Load' value in inspector to represent worker Frame Time instead of a fraction of target FPS.*/
+	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false, DisplayName = "Use Frame Time As Load"))
+	bool bUseFrameTimeAsLoad;
 };
 
