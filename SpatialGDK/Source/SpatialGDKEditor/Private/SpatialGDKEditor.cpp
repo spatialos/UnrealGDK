@@ -201,7 +201,6 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 
 	FScopedSlowTask Progress(static_cast<float>(FoundAssets.Num()), FText::FromString(FString::Printf(TEXT("Loading %d Assets before generating schema"), FoundAssets.Num())));
 
-
 	for (const FAssetData& Data : FoundAssets)
 	{
 		if (Progress.ShouldCancel())
