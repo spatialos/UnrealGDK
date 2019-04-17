@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "NoExportTypes.h"
+#include "UObject/NoExportTypes.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>

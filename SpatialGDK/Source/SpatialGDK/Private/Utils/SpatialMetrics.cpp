@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
+
 #include "Utils/SpatialMetrics.h"
 
 #include "Engine/Engine.h"
