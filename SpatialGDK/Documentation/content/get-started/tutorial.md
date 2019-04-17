@@ -150,11 +150,11 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 
 Notice that the workflow you just used mirrors that of native Unreal.
 
-Because you have changed code in a function, you now need to rebuild your project. Additionally, because you've enabled replication for a variable, you need to generate schema and a new snapshot. To do this:
+Because you have changed code in a function, you now need to rebuild your project. Additionally, because you've enabled replication for a variable, you need to generate schema. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.
-1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
-1. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
+2. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
+3. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
 
 Now let’s test our health replication in another local deployment.
 
@@ -245,11 +245,11 @@ void ATPSCharacter::TakeGunDamageCrossServer_Implementation(float Damage, const 
 
 This snippet implements the functionality that was previously contained within `TakeDamage` as a cross-server RPC called `TakeGunDamageCrossServer`.
 
-Because you have changed code in a function, you now need to rebuild your project. Additionally, because you've modified code related to replication, you need to generate schema and a new snapshot. To do this:
+Because you have changed code in a function, you now need to rebuild your project. Additionally, because you've modified code related to replication, you need to generate schema. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.
-1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
-1. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
+2. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
+3. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
 
 Now let’s test our new cross-server functionality in another local deployment.
 
