@@ -42,7 +42,7 @@ struct FWorldLaunchSection
 	int32 SnapshotWritePeriodSeconds;
 
 	/** Legacy non-worker flag configurations. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Legacy flags"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false))
 	TMap<FString, FString> LegacyFlags;
 
 	/** Legacy JVM configurations. */
@@ -97,11 +97,11 @@ struct FLoginRateLimitSection
 	}
 
 	/** The duration for which worker connection requests will be limited. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Duration"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false)
 	FString Duration;
 
 	/** The connection request limit for the duration. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Requests per duration", ClampMin = "1", UIMin = "1"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, ClampMin = "1", UIMin = "1"))
 	int32 RequestsPerDuration;
 };
 
@@ -123,11 +123,11 @@ struct FWorkerTypeLaunchSection
 	}
 
 	/** The name of the worker type, defined in the filename of its spatialos.<worker_type>.worker.json file. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker type name"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false))
 	FString WorkerTypeName;
 
 	/** Defines the worker instance's permissions. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Worker permissions"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false))
 	FWorkerPermissionsSection WorkerPermissions;
 
 	/** Defines the maximum number of worker instances that can connect. */
@@ -139,7 +139,7 @@ struct FWorkerTypeLaunchSection
 	bool bLoginRateLimitEnabled;
 
 	/** Login rate limiting configuration. */
-	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "bLoginRateLimitEnabled", ConfigRestartRequired = false, DisplayName = "Login rate limit"))
+	UPROPERTY(EditAnywhere, config, meta = (EditCondition = "bLoginRateLimitEnabled", ConfigRestartRequired = false))
 	FLoginRateLimitSection LoginRateLimit;
 
 	/** Number of columns in the rectangle grid load balancing config. */
@@ -178,15 +178,15 @@ struct FSpatialLaunchConfigDescription
 	}
 
 	/** Deployment template. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Template"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false))
 	FString Template;
 
 	/** Configuration for the simulated world. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "World"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false))
 	FWorldLaunchSection World;
 
 	/** Worker-specific configuration parameters. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Workers"))
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false))
 	TArray<FWorkerTypeLaunchSection> Workers;
 };
 
