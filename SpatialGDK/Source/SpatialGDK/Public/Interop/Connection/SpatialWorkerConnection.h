@@ -7,6 +7,7 @@
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/Connection/OutgoingMessages.h"
+#include "UObject/WeakObjectPtr.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -15,6 +16,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialWorkerConnection, Log, All);
 
+class USpatialGameInstance;
 class UWorld;
 
 enum class SpatialConnectionType
@@ -30,6 +32,8 @@ class SPATIALGDK_API USpatialWorkerConnection : public UObject, public FRunnable
 	GENERATED_BODY()
 
 public:
+	void Init(USpatialGameInstance* InGameInstance);
+
 	virtual void FinishDestroy() override;
 	void DestroyConnection();
 
@@ -87,6 +91,8 @@ private:
 private:
 	Worker_Connection* WorkerConnection;
 	Worker_Alpha_Locator* WorkerLocator;
+
+	TWeakObjectPtr<USpatialGameInstance> GameInstance;
 
 	bool bIsConnected;
 
