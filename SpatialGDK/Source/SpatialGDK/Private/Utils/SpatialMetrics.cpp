@@ -14,19 +14,22 @@ void USpatialMetrics::Init(USpatialNetDriver* InNetDriver)
 	NetDriver = InNetDriver;
 	TimeBetweenMetricsReports = GetDefault<USpatialGDKSettings>()->MetricsReportRate;
 	FramesSinceLastReport = 0;
+	TimeOfLastReport = 0.0f;
 }
 
 void USpatialMetrics::TickMetrics()
 {
 	FramesSinceLastReport++;
 
+	TimeSinceLastReport = NetDriver->Time - TimeOfLastReport;
+
 	// Check that there has been a sufficient amount of time since the last report.
-	if ((NetDriver->Time - TimeSinceLastReport) < TimeBetweenMetricsReports)
+	if (TimeSinceLastReport > 0 && TimeSinceLastReport < TimeBetweenMetricsReports)
 	{
 		return;
 	}
 
-	AverageFPS = FramesSinceLastReport / (NetDriver->Time - TimeSinceLastReport);
+	AverageFPS = FramesSinceLastReport / TimeSinceLastReport;
 	WorkerLoad = CalculateLoad();
 
 	improbable::GaugeMetric DynamicFPSGauge;
@@ -37,7 +40,7 @@ void USpatialMetrics::TickMetrics()
 	DynamicFPSMetrics.GaugeMetrics.Add(DynamicFPSGauge);
 	DynamicFPSMetrics.Load = WorkerLoad;
 
-	TimeSinceLastReport = NetDriver->Time;
+	TimeOfLastReport = NetDriver->Time;
 	FramesSinceLastReport = 0;
 
 	NetDriver->Connection->SendMetrics(DynamicFPSMetrics);
@@ -46,14 +49,14 @@ void USpatialMetrics::TickMetrics()
 // Load defined as performance relative to target frame time or just frame time based on config value.
 double USpatialMetrics::CalculateLoad()
 {
-	double AverageFrameTime = (NetDriver->Time - TimeSinceLastReport) / FramesSinceLastReport;
+	float AverageFrameTime = TimeSinceLastReport / FramesSinceLastReport;
 
 	if (GetDefault<USpatialGDKSettings>()->bUseFrameTimeAsLoad)
 	{
 		return AverageFrameTime;
 	}
 
-	double TargetFrameTime = 1.0f / NetDriver->NetServerMaxTickRate;
+	float TargetFrameTime = 1.0f / NetDriver->NetServerMaxTickRate;
 
 	return AverageFrameTime / TargetFrameTime;
 }

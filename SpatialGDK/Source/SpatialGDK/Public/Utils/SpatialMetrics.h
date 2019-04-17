@@ -28,8 +28,8 @@ private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
+	float TimeOfLastReport;
 	float TimeSinceLastReport;
-
 	float TimeBetweenMetricsReports;
 	int FramesSinceLastReport;
 
