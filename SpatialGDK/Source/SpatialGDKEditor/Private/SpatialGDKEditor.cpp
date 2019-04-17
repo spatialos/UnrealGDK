@@ -33,7 +33,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	const bool bFastSave = false;
 	const bool bNotifyNoPackagesSaved = false;
 	const bool bCanBeDeclined = true;
-	if (!FEditorFileUtils::SaveDirtyPackages(bPromptUserToSave, bSaveMapPackages, bSaveContentPackages, bFastSave, bNotifyNoPackagesSaved, bCanBeDeclined);
+	if (!FEditorFileUtils::SaveDirtyPackages(bPromptUserToSave, bSaveMapPackages, bSaveContentPackages, bFastSave, bNotifyNoPackagesSaved, bCanBeDeclined))
 	{
 		// User hit cancel don't generate schema.
 		return false;
