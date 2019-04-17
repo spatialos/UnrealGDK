@@ -5,6 +5,8 @@
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
 
+#include "SpatialConstants.h"
+
 #include "SpatialGDKEditorSettings.generated.h"
 
 USTRUCT()

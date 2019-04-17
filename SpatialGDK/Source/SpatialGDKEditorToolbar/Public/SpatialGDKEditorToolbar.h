@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 #include "Serialization/JsonWriter.h"
-#include "SpatialGDKEditorSettings.h"
 #include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
@@ -16,6 +15,8 @@ class FMenuBuilder;
 class FUICommandList;
 class USoundBase;
 class FSpatialGDKEditor;
+
+struct FWorkerTypeLaunchSection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
 

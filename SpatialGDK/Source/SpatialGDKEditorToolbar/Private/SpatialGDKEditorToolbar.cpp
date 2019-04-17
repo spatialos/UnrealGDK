@@ -17,6 +17,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialGDKEditorSettings.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -322,6 +323,8 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	}
 	else
 	{
+		FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("The legacy flag \"enable_chunk_interest\" is set to false in the generated launch configuration. This flag needs to be set to true when QBI is disabled.\n\nDo you want to configure your launch config settings now?"))));
+
 		return false;
 	}
 
