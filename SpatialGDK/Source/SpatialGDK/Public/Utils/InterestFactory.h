@@ -5,11 +5,11 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
 
-#include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
 class USpatialNetDriver;
 class USpatialPackageMapClient;
+class AActor;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 

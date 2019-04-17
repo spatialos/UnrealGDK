@@ -3,12 +3,14 @@
 #include "Utils/InterestFactory.h"
 
 #include "Engine/World.h"
+#include "Engine/Classes/GameFramework/Actor.h"
+#include "GameFramework/PlayerController.h"
+
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "GameFramework/PlayerController.h"
-
 #include "SpatialGDKSettings.h"
+#include "SpatialConstants.h"
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
 
@@ -254,11 +256,12 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 		}
 		else
 		{
-			UE_LOG(LogInterestFactory, Error, TEXT("Could not find Streaming Level Component for Level %s. Have you generated schema?"), *LevelPath.ToString());
+			UE_LOG(LogInterestFactory, Error, TEXT("Error creating level constraints for Actor %s. "
+				"Could not find Streaming Level Component for Level %s. Have you generated schema?"), *Actor->GetName(), *LevelPath.ToString());
 		}
 	}
 
 	return LevelConstraint;
 }
 
-}
+}  // ::improbable 

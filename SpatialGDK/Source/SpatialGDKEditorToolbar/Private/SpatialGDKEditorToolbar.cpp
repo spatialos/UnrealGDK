@@ -209,7 +209,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 		FUIAction(),
 		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuContent),
 		LOCTEXT("GDKSchemaCombo_Label", "Schema Generation Options"),
-		LOCTEXT("GDKSchemaCombo_ToolTip", "Schema Generation Options Menu"),
+		TAttribute<FText>(),
 		FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.Schema"),
 		true
 	);
