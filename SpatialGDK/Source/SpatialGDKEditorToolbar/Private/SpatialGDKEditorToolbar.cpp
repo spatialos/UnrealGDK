@@ -323,7 +323,12 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	}
 	else
 	{
-		FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("The legacy flag \"enable_chunk_interest\" is set to false in the generated launch configuration. This flag needs to be set to true when QBI is disabled.\n\nDo you want to configure your launch config settings now?"))));
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("The legacy flag \"enable_chunk_interest\" is not specified in the generated launch configuration.\n\nDo you want to configure your launch config settings now?"))));
+
+		if (Result == EAppReturnType::Yes)
+		{
+			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+		}
 
 		return false;
 	}
