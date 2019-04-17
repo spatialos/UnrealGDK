@@ -155,6 +155,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		}
 	}
 
+	GameInstance->OnConnected.AddUObject(this, &USpatialNetDriver::OnConnectedToSpatialOS);
 	Connection->Connect(bConnectAsClient);
 }
 
@@ -1576,17 +1577,4 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
-}
-
-void USpatialNetDriver::HandleOnConnected()
-{
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Succesfully connected to SpatialOS"));
-	OnConnectedToSpatialOS();
-	OnConnected.Broadcast();
-}
-
-void USpatialNetDriver::HandleOnConnectionFailed(const FString& Reason)
-{
-	UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
-	OnConnectionFailed.Broadcast(Reason);
 }
