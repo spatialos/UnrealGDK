@@ -97,7 +97,7 @@ struct FLoginRateLimitSection
 	}
 
 	/** The duration for which worker connection requests will be limited. */
-	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false)
+	UPROPERTY(EditAnywhere, config, meta = (ConfigRestartRequired = false))
 	FString Duration;
 
 	/** The connection request limit for the duration. */
