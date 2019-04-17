@@ -69,6 +69,7 @@ private:
 	void ShowSuccessNotification(const FString& NotificationText);
 	void ShowFailedNotification(const FString& NotificationText);
 
+	bool ValidateGeneratedLaunchConfig() const;
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
 	bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const;
