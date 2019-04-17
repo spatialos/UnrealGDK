@@ -892,7 +892,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						OutUpdated++;
 					}
 
-					// SpatialGDK: Here Unreal would do a second check for channel saturation and early out if needed. Removed such checks.
+					// SpatialGDK - Here Unreal would do a second check for channel saturation and early out if needed. Removed such checks.
 				}
 			}
 
