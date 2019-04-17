@@ -16,6 +16,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUsingQBI(false)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
+	, bEnableMetrics(true)
+	, MetricsReportRate(2.0f)
 {
 }
 
