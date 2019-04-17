@@ -718,12 +718,12 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 	return FinalSortedCount;
 }
 
-int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
+void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
 {
 	if (!InConnection->IsNetReady(0))
 	{
 		// Connection saturated, don't process any actors
-		return 0;
+		return;
 	}
 
 	int32 ActorUpdatesThisConnection = 0;
@@ -794,7 +794,7 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 			// SpatialGDK - Creation of new entities should always be handled and therefore is checked prior to actor throttling.
 			// There is an EntityCreationRateLimit to prevent overloading Spatial with creation requests if the developer desires.
 			// Creation of a new entity occurs when the channel is currently nullptr or if the channel does not have bCreatedEntity set to true.
-			if (FinalCreationCount < MaxEntitiesToCreate && !Actor->GetTearOff() && (Channel == nullptr || !Channel->bCreatedEntity))
+			if (FinalCreationCount < MaxEntitiesToCreate && !Actor->GetTearOff() && (Channel == nullptr || Channel->bCreatingNewEntity))
 			{
 				bIsRelevant = true;
 				FinalCreationCount++;
@@ -912,7 +912,8 @@ int32 USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConn
 		}
 	}
 
-	return FinalReplicatedCount;
+	// SpatialGDK - Here Unreal would return the position of the last replicated actor in PriorityActors before the channel became saturated.
+	// In Spatial we use ActorReplicationRateLimit and EntityCreationRateLimit to limit replication so this return value is not relevant.
 }
 #endif
 
@@ -1006,38 +1007,10 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	const int32 FinalSortedCount = ServerReplicateActors_PrioritizeActors(SpatialConnection, ConnectionViewers, ConsiderList, bCPUSaturated, PriorityList, PriorityActors);
 
 	// Process the sorted list of actors for this connection
-	const int32 LastProcessedActor = ServerReplicateActors_ProcessPrioritizedActors(SpatialConnection, ConnectionViewers, PriorityActors, FinalSortedCount, Updated);
+	ServerReplicateActors_ProcessPrioritizedActors(SpatialConnection, ConnectionViewers, PriorityActors, FinalSortedCount, Updated);
 
-	// relevant actors that could not be processed this frame are marked to be considered for next frame
-	for (int32 k = LastProcessedActor; k < FinalSortedCount; k++)
-	{
-		if (!PriorityActors[k]->ActorInfo)
-		{
-			// A deletion entry, skip it because we don't have anywhere to store a 'better give higher priority next time'
-			continue;
-		}
+	// SpatialGDK - Here Unreal would mark relevant actors that weren't processed this frame as bPendingNetUpdate. This is not used in the SpatialGDK and so has been removed.
 
-		AActor* Actor = PriorityActors[k]->ActorInfo->Actor;
-
-		UActorChannel* Channel = PriorityActors[k]->Channel;
-
-		UE_LOG(LogNetTraffic, Verbose, TEXT("Saturated. %s"), *Actor->GetName());
-		if (Channel != NULL && Time - Channel->RelevantTime <= 1.f)
-		{
-			UE_LOG(LogNetTraffic, Log, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
-			PriorityActors[k]->ActorInfo->bPendingNetUpdate = true;
-		}
-		else if (IsActorRelevantToConnection(Actor, ConnectionViewers))
-		{
-			// If this actor was relevant but didn't get processed, force another update for next frame
-			UE_LOG(LogNetTraffic, Log, TEXT(" Saturated. Mark %s NetUpdateTime to be checked for next tick"), *Actor->GetName());
-			PriorityActors[k]->ActorInfo->bPendingNetUpdate = true;
-			if (Channel != NULL)
-			{
-				Channel->RelevantTime = Time + 0.5f * FMath::SRand();
-			}
-		}
-	}
 	RelevantActorMark.Pop();
 	ConnectionViewers.Reset();
 
