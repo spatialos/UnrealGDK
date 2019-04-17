@@ -27,14 +27,13 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	}
 
 	// Prompt the user to save packages/maps.
-	bool bHadPackagesToSave = false;
 	const bool bPromptUserToSave = true;
 	const bool bSaveMapPackages = true;
 	const bool bSaveContentPackages = true;
 	const bool bFastSave = false;
 	const bool bNotifyNoPackagesSaved = false;
 	const bool bCanBeDeclined = true;
-	if (!FEditorFileUtils::SaveDirtyPackages(bPromptUserToSave, bSaveMapPackages, bSaveContentPackages, bFastSave, bNotifyNoPackagesSaved, bCanBeDeclined, &bHadPackagesToSave))
+	if (!FEditorFileUtils::SaveDirtyPackages(bPromptUserToSave, bSaveMapPackages, bSaveContentPackages, bFastSave, bNotifyNoPackagesSaved, bCanBeDeclined);
 	{
 		// User hit cancel don't generate schema.
 		return false;
