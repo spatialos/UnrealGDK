@@ -43,15 +43,14 @@ public:
 
 	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID) {}
 
-	bool GetComponentIdFromLevelPath(const FString& LevelPath, uint32& OutComponentId) const
+	uint32 GetComponentIdFromLevelPath(const FString& LevelPath) const
 	{
 		FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
 		if (const uint32* ComponentId = LevelPathToComponentId.Find(CleanLevelPath))
 		{
-			OutComponentId = *ComponentId;
-			return true;
+			return *ComponentId;
 		}
-		return false;
+		return SpatialConstants::INVALID_COMPONENT_ID;
 	}
 
 	UPROPERTY(VisibleAnywhere)

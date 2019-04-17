@@ -263,14 +263,14 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	UWorld* ActorWorld = Actor->GetTypedOuter<UWorld>();
 	if (ActorWorld != NetDriver->World)
 	{
-		uint32 ComponentId;
-		if (ClassInfoManager->SchemaDatabase->GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName(), ComponentId))
+		const uint32 ComponentId = ClassInfoManager->SchemaDatabase->GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			return ComponentFactory::CreateEmptyComponentData(ComponentId);
 		}
 		else
 		{
-			UE_LOG(LogSpatialSender, Error, TEXT("Could not find Streaming Level Component for Level %s Processing Actor %s. Have you generated schema?"),
+			UE_LOG(LogSpatialSender, Error, TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
 				*ActorWorld->GetOuter()->GetPathName(), *Actor->GetPathName());
 		}
 	}
