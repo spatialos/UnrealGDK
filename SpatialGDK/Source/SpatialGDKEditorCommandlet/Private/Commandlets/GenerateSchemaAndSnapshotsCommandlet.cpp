@@ -49,17 +49,26 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 		FString RemainingMapPaths = MapNameParam;
 		while (RemainingMapPaths.Split(TEXT(";"), &ThisMapName, &RemainingMapPaths))
 		{
-			GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, ThisMapName);
+			if (!GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, ThisMapName))
+			{
+				return 1;	// Error
+			}
 		}
 		// When we get to this point, one of two things is true:
 		// 1) RemainingMapPaths was NEVER split, and should be interpreted as a single map name
 		// 2) RemainingMapPaths was split n times, and the last map that needs to be run after the loop is still in it
-		GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, RemainingMapPaths);
+		if (!GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, RemainingMapPaths))
+		{
+			return 1;	// Error
+		}
 	}
 	else
 	{
 		// Default to everything in the project
-		GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, TEXT(""));
+		if (!GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, TEXT("")))
+		{
+			return 1;	// Error
+		}
 	}
 
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema & Snapshot Generation Commandlet Complete"));
@@ -67,7 +76,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 	return 0;
 }
 
-void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InPath)
+bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InPath)
 {
 	// Massage input to allow some flexibility in command line path argument:
 	// 	/Game/Path/MapName = Single map
@@ -97,12 +106,12 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 			if (!FPackageName::SearchForPackageOnDisk(*InPath, &LongPackageName, &Filename))
 			{
 				UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("Could not find map matching pattern %s"), *InPath);
-				return;
+				return false;
 			}
 			MapPathToLoad = LongPackageName;
 		}
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Selecting direct map %s"), *MapPathToLoad);
-		GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, MapPathToLoad);
+		return GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, MapPathToLoad);
 	}
 	else if (CorrectedPath.EndsWith(TEXT("/")))
 	{
@@ -122,7 +131,10 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 		{
 			FString MapPath = AssetData.PackageName.ToString();
 			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Selecting map %s"), *MapPath);
-			GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, MapPath);
+			if (!GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, MapPath))
+			{
+				return false;
+			}
 		}
 	}
 	else
@@ -131,17 +143,19 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 		FString Dummy;
 		FPackageName::TryConvertFilenameToLongPackageName(CorrectedPath, Dummy, &CorrectedLongPackageNameError);
 		UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("Requested path \"%s\" is not in the expected format. %s"), *InPath, *CorrectedLongPackageNameError);
-		return;	// Future-proofing
+		return false;	// Future-proofing
 	}
+
+	return true;
 }
 
-void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName)
+bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName)
 {
 	// Check if this map path has already been generated and early exit if so
 	if (GeneratedMapPaths.Contains(InMapName))
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Warning, TEXT("Map %s has already been generated against. Skipping duplicate generation."), *InMapName);
-		return;
+		return true;
 	}
 	GeneratedMapPaths.Add(InMapName);
 
@@ -149,7 +163,7 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 	if (!FEditorFileUtils::LoadMap(InMapName))	// This loads the world into GWorld
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Failed to load map %s"), *InMapName);
-		return;
+		return false;
 	}
 
 	// Ensure all sub-levels are also loaded
@@ -174,30 +188,48 @@ void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 	}
 
 	// Generate Schema Iteration
-	GenerateSchemaForLoadedMap(InSpatialGDKEditor);
+	if (!GenerateSchemaForLoadedMap(InSpatialGDKEditor))
+	{
+		return false;
+	}
 
 	// Generate Snapshot
-	GenerateSnapshotForLoadedMap(InSpatialGDKEditor, FPaths::GetCleanFilename(InMapName));
+	if (!GenerateSnapshotForLoadedMap(InSpatialGDKEditor, FPaths::GetCleanFilename(InMapName)))
+	{
+		return false;
+	}
+
+	return true;
 }
 
-void UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor)
+bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor)
 {
+	bool bSchemaGenSuccess;
 	if (InSpatialGDKEditor.GenerateSchema(true))
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!"));
+		bSchemaGenSuccess = true;
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Failed"));
+		bSchemaGenSuccess = false;
 	}
+	return bSchemaGenSuccess;
 }
 
-void UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshotForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& MapName)
+bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshotForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& MapName)
 {
 	// Generate the Snapshot!
+	bool bSnapshotGenSuccess = false;
 	InSpatialGDKEditor.GenerateSnapshot(
 		GWorld, FPaths::SetExtension(FPaths::GetCleanFilename(MapName), TEXT(".snapshot")),
-		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Snapshot Generation Completed!")); }),
+		FSimpleDelegate::CreateLambda([&bSnapshotGenSuccess]()
+		{
+			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Snapshot Generation Completed!"));
+			bSnapshotGenSuccess = true;
+		}),
 		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Snapshot Generation Failed")); }),
 		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s"), *ErrorText); }));
+	return bSnapshotGenSuccess;
 }

@@ -51,6 +51,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Actor Replication Rate Limit"))
 	uint32 ActorReplicationRateLimit;
 
+	/** Limits the number of entities which can be created in a game tick. Entity creation is handled seperately to actor replication to ensure creation requests are always handled when under load. **/
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Entity Creation Rate Limit"))
+	uint32 EntityCreationRateLimit;
+
 	/** Rate at which updates are sent to SpatialOS and processed from SpatialOS.*/
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS Network Update Rate"))
 	float OpsUpdateRate;

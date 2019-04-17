@@ -12,6 +12,7 @@
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/SpatialOutputDevice.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -37,10 +38,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialOSNetDriver, Log, All);
 
 DECLARE_STATS_GROUP(TEXT("SpatialNet"), STATGROUP_SpatialNet, STATCAT_Advanced);
 DECLARE_DWORD_ACCUMULATOR_STAT_EXTERN(TEXT("Consider List Size"), STAT_SpatialConsiderList, STATGROUP_SpatialNet,);
-
-DECLARE_EVENT(USpatialNetDriver, FOnConnectedEvent);
-DECLARE_EVENT_OneParam(USpatialNetDriver, FOnDisconnectedEvent, const FString&);
-DECLARE_EVENT_OneParam(USpatialNetDriver, FOnConnectionFailedEvent, const FString&);
 
 UCLASS()
 class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
@@ -94,14 +91,6 @@ public:
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
 	void WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe);
-
-	void HandleOnConnected();
-	void HandleOnConnectionFailed(const FString& Reason);
-
-	// Invoked when this worker has successfully connected to SpatialOS
-	FOnConnectedEvent OnConnected;
-	// Invoked when this worker fails to initiate a connection to SpatialOS
-	FOnConnectionFailedEvent OnConnectionFailed;
 
 	UPROPERTY()
 	USpatialWorkerConnection* Connection;
@@ -194,10 +183,11 @@ private:
 	// Could have marked them virtual in base class but that's a pointless source change as these functions are not meant to be called from anywhere except USpatialNetDriver::ServerReplicateActors.
 	int32 ServerReplicateActors_PrepConnections(const float DeltaSeconds);
 	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors);
-	int32 ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
+	void ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
 #endif
 
-	friend class USpatialNetConnection;
+	friend USpatialNetConnection;
+	friend USpatialWorkerConnection;
 
 	// This index is incremented and assigned to every new RPC in ProcessRemoteFunction.
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs

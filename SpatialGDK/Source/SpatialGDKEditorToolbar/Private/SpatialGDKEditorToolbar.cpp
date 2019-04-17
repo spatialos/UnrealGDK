@@ -111,8 +111,7 @@ void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 {
 	if (SpatialOSStackProcessID != 0 && !FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID))
 	{
-		FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
-		SpatialOSStackProcessID = 0;
+		CleanupSpatialProcess();
 	}
 }
 
@@ -400,8 +399,8 @@ void FSpatialGDKEditorToolbarModule::StopRunningStack()
 		{
 			FPlatformProcess::TerminateProc(SpatialOSStackProcHandle, true);
 		}
-		FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
-		SpatialOSStackProcessID = 0;
+
+		CleanupSpatialProcess();
 	}
 }
 
@@ -447,6 +446,14 @@ void FSpatialGDKEditorToolbarModule::CheckForRunningStack()
 			}
 		}
 	} while (ProcEnumerator.MoveNext() && !SpatialOSStackProcHandle.IsValid());
+}
+
+void FSpatialGDKEditorToolbarModule::CleanupSpatialProcess()
+{
+	FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
+	SpatialOSStackProcessID = 0;
+
+	OnSpatialShutdown.Broadcast();
 }
 
 /**

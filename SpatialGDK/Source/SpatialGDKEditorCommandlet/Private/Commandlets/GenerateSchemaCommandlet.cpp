@@ -23,17 +23,20 @@ int32 UGenerateSchemaCommandlet::Main(const FString& Args)
 	//ParseCommandLine(*Args, Tokens, Switches, Params);
 
 	//Generate Schema!
+	bool bSchemaGenSuccess;
 	FSpatialGDKEditor SpatialGDKEditor;
 	if (SpatialGDKEditor.GenerateSchema(true))
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!"));
+		bSchemaGenSuccess = true;
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Failed"));
+		bSchemaGenSuccess = false;
 	}
 
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Commandlet Complete"));
 
-	return 0;
+	return bSchemaGenSuccess ? 0 : 1;
 }
