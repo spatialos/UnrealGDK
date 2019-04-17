@@ -169,54 +169,50 @@ struct FEntityQueryRequest : FOutgoingMessage
 	TArray<Worker_ComponentId> ComponentIdStorage;
 };
 
-namespace metrics
-{
-	/** Parameters for a gauge metric. */
-	struct GaugeMetric {
-		/* The name of the metric. */
-		std::string Key;
-		/* The current value of the metric. */
-		double Value;
-	};
+/** Parameters for a gauge metric. */
+struct GaugeMetric {
+	/* The name of the metric. */
+	std::string Key;
+	/* The current value of the metric. */
+	double Value;
+};
 
-	/* Parameters for a histogram metric bucket. */
-	struct HistogramMetricBucket {
-		/* The upper bound. */
-		double UpperBound;
-		/* The number of observations that were less than or equal to the upper bound. */
-		uint32 Samples;
-	};
+/* Parameters for a histogram metric bucket. */
+struct HistogramMetricBucket {
+	/* The upper bound. */
+	double UpperBound;
+	/* The number of observations that were less than or equal to the upper bound. */
+	uint32 Samples;
+};
 
-	/* Parameters for a histogram metric. */
-	struct HistogramMetric {
-		/* The name of the metric. */
-		std::string Key;
-		/* The sum of all observations. */
-		double Sum;
-		/* Array of buckets. */
-		TArray<HistogramMetricBucket> Buckets;
-	};
+/* Parameters for a histogram metric. */
+struct HistogramMetric {
+	/* The name of the metric. */
+	std::string Key;
+	/* The sum of all observations. */
+	double Sum;
+	/* Array of buckets. */
+	TArray<HistogramMetricBucket> Buckets;
+};
 
-	/** Parameters for sending metrics to SpatialOS. */
-	struct Metrics {
-		/** The load value of this worker. If NULL, do not report load. */
-		TOptional<double> Load;
-		/** Array of gauge metrics. */
-		TArray<GaugeMetric> GaugeMetrics;
-		/** Array of histogram metrics. */
-		TArray<HistogramMetric> HistogramMetrics;
-	};
-}
-
+/** Parameters for sending metrics to SpatialOS. */
+struct Metrics {
+	/** The load value of this worker. If NULL, do not report load. */
+	TOptional<double> Load;
+	/** Array of gauge metrics. */
+	TArray<GaugeMetric> GaugeMetrics;
+	/** Array of histogram metrics. */
+	TArray<HistogramMetric> HistogramMetrics;
+};
 
 struct FMetrics : FOutgoingMessage
 {
-	FMetrics(const metrics::Metrics& InMetrics)
+	FMetrics(const Metrics& InMetrics)
 		: FOutgoingMessage(EOutgoingMessageType::Metrics)
 		, Metrics(InMetrics)
 	{}
 
-	metrics::Metrics Metrics;
+	Metrics Metrics;
 };
 
 }

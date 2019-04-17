@@ -30,7 +30,7 @@ private:
 
 	float TimeSinceLastReport;
 
-	int TimeBetweenMetricsReports;
+	float TimeBetweenMetricsReports;
 	int FramesSinceLastReport;
 
 	double AverageFPS;

@@ -66,5 +66,13 @@ public:
 	/** Threshold an Actor needs to move before its SpatialOS Position is updated.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false))
 	float PositionDistanceThreshold;
+
+	/** Metrics about client and server performance can be reported to SpatialOS to monitor a deployments health.*/
+	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false, DisplayName = "Enable Metrics"))
+	bool bEnableMetrics;
+
+	/** Frequency that metrics are reported to SpatialOS.*/
+	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false), DisplayName = "Metrics Report Rate (seconds)")
+	float MetricsReportRate;
 };
 

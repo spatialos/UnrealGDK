@@ -311,7 +311,7 @@ Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_E
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendMetrics(const improbable::metrics::Metrics& Metrics)
+void USpatialWorkerConnection::SendMetrics(const improbable::Metrics& Metrics)
 {
 	QueueOutgoingMessage<FMetrics>(Metrics);
 }
