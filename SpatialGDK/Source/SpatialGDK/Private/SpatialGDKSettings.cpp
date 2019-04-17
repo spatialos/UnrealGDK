@@ -19,7 +19,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, ActorReplicationRateLimit(0)
 	, EntityCreationRateLimit(0)
 	, OpsUpdateRate(30.0f)
-	, bUsingQBI(false)
+	, bUsingQBI(true)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 {
