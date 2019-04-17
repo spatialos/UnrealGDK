@@ -121,15 +121,7 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 
 	Connection = GameInstance->GetSpatialWorkerConnection();
 
-	if (URL.HasOption(TEXT("legacylocator")))
-	{
-		Connection->LegacyLocatorConfig.ProjectName = URL.GetOption(TEXT("project="), TEXT(""));
-		Connection->LegacyLocatorConfig.DeploymentName = URL.GetOption(TEXT("deployment="), TEXT(""));
-		Connection->LegacyLocatorConfig.LoginToken = URL.GetOption(TEXT("token="), TEXT(""));
-		Connection->LegacyLocatorConfig.UseExternalIp = true;
-		Connection->LegacyLocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType();
-	}
-	else if (URL.HasOption(TEXT("locator")))
+	if (URL.HasOption(TEXT("locator")))
 	{
 		// Obtain PIT and LT.
 		Connection->LocatorConfig.PlayerIdentityToken = URL.GetOption(TEXT("playeridentity="), TEXT(""));
@@ -1066,13 +1058,16 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	// Not calling Super:: on purpose.
 	UNetDriver::TickDispatch(DeltaTime);
 
-	if (Connection != nullptr && Connection->IsConnected())
+	if (Connection != nullptr)
 	{
-		Worker_OpList* OpList = Connection->GetOpList();
+		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
 
-		Dispatcher->ProcessOps(OpList);
+		for (Worker_OpList* OpList : OpLists)
+		{
+			Dispatcher->ProcessOps(OpList);
 
-		Worker_OpList_Destroy(OpList);
+			Worker_OpList_Destroy(OpList);
+		}
 	}
 }
 
@@ -1084,7 +1079,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	FFrame* Stack,
 	UObject* SubObject)
 {
-	if (Connection == nullptr || !Connection->IsConnected())
+	if (Connection == nullptr)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));
 		return;
@@ -1167,7 +1162,8 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #if USE_SERVER_PERF_COUNTERS
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
-	if (IsServer() && ClientConnections.Num() > 0 && Connection->IsConnected() && EntityPool->IsReady())
+
+	if (IsServer() && ClientConnections.Num() > 0 && EntityPool->IsReady())
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
