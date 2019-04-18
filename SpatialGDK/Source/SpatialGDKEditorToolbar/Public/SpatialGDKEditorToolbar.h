@@ -4,6 +4,7 @@
 #include "Async/Future.h"
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
+#include "Serialization/JsonWriter.h"
 #include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
@@ -14,6 +15,8 @@ class FMenuBuilder;
 class FUICommandList;
 class USoundBase;
 class FSpatialGDKEditor;
+
+struct FWorkerTypeLaunchSection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
 
@@ -67,7 +70,12 @@ private:
 	void ShowSuccessNotification(const FString& NotificationText);
 	void ShowFailedNotification(const FString& NotificationText);
 
+	bool ValidateGeneratedLaunchConfig() const;
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
+
+	bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const;
+	bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLaunchSection& FWorkerTypeLaunchSection) const;
+	bool WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, const int32 Columns, const int32 Rows, const bool bManualWorkerConnectionOnly) const;
 
 	static void ShowCompileLog();
 

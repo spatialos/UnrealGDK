@@ -80,6 +80,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 	// Servers only need the defined constraints
 	Query ServerQuery;
 	ServerQuery.Constraint = DefinedConstraints;
+	ServerQuery.FullSnapshotResult = true;
 
 	ComponentInterest ServerComponentInterest;
 	ServerComponentInterest.Queries.Add(ServerQuery);
