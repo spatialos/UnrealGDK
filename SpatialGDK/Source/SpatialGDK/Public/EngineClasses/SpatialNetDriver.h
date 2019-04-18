@@ -31,6 +31,7 @@ class UGlobalStateManager;
 class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
 class USnapshotManager;
+class USpatialMetrics;
 
 class UEntityPool;
 
@@ -114,6 +115,8 @@ public:
 	USnapshotManager* SnapshotManager;
 	UPROPERTY()
 	UEntityPool* EntityPool;
+	UPROPERTY()
+	USpatialMetrics* SpatialMetrics;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
