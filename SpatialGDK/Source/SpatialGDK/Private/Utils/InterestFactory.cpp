@@ -3,12 +3,16 @@
 #include "Utils/InterestFactory.h"
 
 #include "Engine/World.h"
+#include "Engine/Classes/GameFramework/Actor.h"
+#include "GameFramework/PlayerController.h"
+
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "GameFramework/PlayerController.h"
-
 #include "SpatialGDKSettings.h"
+#include "SpatialConstants.h"
+
+DEFINE_LOG_CATEGORY(LogInterestFactory);
 
 namespace improbable
 {
@@ -80,6 +84,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 	// Servers only need the defined constraints
 	Query ServerQuery;
 	ServerQuery.Constraint = DefinedConstraints;
+	ServerQuery.FullSnapshotResult = true;
 
 	ComponentInterest ServerComponentInterest;
 	ServerComponentInterest.Queries.Add(ServerQuery);
@@ -240,25 +245,24 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 
 	const TSet<FName>& LoadedLevels = PlayerController->NetConnection->ClientVisibleLevelNames;
 
-	FLevelData* LevelData = NetDriver->ClassInfoManager->SchemaDatabase->LevelPathToLevelData.Find(NetDriver->World->GetName());
-	if (LevelData == nullptr)
-	{
-		return LevelConstraint;
-	}
-
 	// Create component constraints for every loaded sublevel
 	for (const auto& LevelPath : LoadedLevels)
 	{
-		UPackage* TempPkg = FindPackage(nullptr, *LevelPath.ToString());
-		UWorld* LevelWorld = (UWorld*)FindObjectWithOuter(TempPkg, UWorld::StaticClass());
-		uint32 ComponentId = LevelData->SublevelNameToComponentId[LevelWorld->GetName()];
-
-		QueryConstraint SpecificLevelConstraint;
-		SpecificLevelConstraint.ComponentConstraint = ComponentId;
-		LevelConstraint.OrConstraint.Add(SpecificLevelConstraint);
+		const uint32 ComponentId = NetDriver->ClassInfoManager->SchemaDatabase->GetComponentIdFromLevelPath(LevelPath.ToString());
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			QueryConstraint SpecificLevelConstraint;
+			SpecificLevelConstraint.ComponentConstraint = ComponentId;
+			LevelConstraint.OrConstraint.Add(SpecificLevelConstraint);
+		}
+		else
+		{
+			UE_LOG(LogInterestFactory, Error, TEXT("Error creating query constraints for Actor %s. "
+				"Could not find Streaming Level Component for Level %s. Have you generated schema?"), *Actor->GetName(), *LevelPath.ToString());
+		}
 	}
 
 	return LevelConstraint;
 }
 
-}
+}  // ::improbable 

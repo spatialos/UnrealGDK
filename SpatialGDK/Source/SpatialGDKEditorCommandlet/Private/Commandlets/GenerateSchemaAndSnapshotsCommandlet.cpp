@@ -204,18 +204,16 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 
 bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor)
 {
-	bool bSchemaGenSuccess = false;
-	InSpatialGDKEditor.GenerateSchema(
-		FSimpleDelegate::CreateLambda([&bSchemaGenSuccess]()
-		{
-			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!"));
-			bSchemaGenSuccess = true;
-		}),
-		FSimpleDelegate::CreateLambda([]() { UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Failed")); }),
-		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { UE_LOG(LogSpatialGDKEditorCommandlet, Error, TEXT("%s"), *ErrorText); }));
-	while (InSpatialGDKEditor.IsSchemaGeneratorRunning())
+	bool bSchemaGenSuccess;
+	if (InSpatialGDKEditor.GenerateSchema(true))
 	{
-		FPlatformProcess::Sleep(0.1f);
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!"));
+		bSchemaGenSuccess = true;
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Failed"));
+		bSchemaGenSuccess = false;
 	}
 	return bSchemaGenSuccess;
 }
