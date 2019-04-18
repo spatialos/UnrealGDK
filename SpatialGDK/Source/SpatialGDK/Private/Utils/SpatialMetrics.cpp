@@ -24,7 +24,7 @@ void USpatialMetrics::TickMetrics()
 	TimeSinceLastReport = NetDriver->Time - TimeOfLastReport;
 
 	// Check that there has been a sufficient amount of time since the last report.
-	if (TimeSinceLastReport > 0 && TimeSinceLastReport < TimeBetweenMetricsReports)
+	if (TimeSinceLastReport > 0.f && TimeSinceLastReport < TimeBetweenMetricsReports)
 	{
 		return;
 	}
@@ -47,7 +47,7 @@ void USpatialMetrics::TickMetrics()
 }
 
 // Load defined as performance relative to target frame time or just frame time based on config value.
-double USpatialMetrics::CalculateLoad()
+double USpatialMetrics::CalculateLoad() const
 {
 	float AverageFrameTime = TimeSinceLastReport / FramesSinceLastReport;
 

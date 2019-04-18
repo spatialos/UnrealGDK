@@ -170,7 +170,8 @@ struct FEntityQueryRequest : FOutgoingMessage
 };
 
 /** Parameters for a gauge metric. */
-struct GaugeMetric {
+struct GaugeMetric
+{
 	/* The name of the metric. */
 	std::string Key;
 	/* The current value of the metric. */
@@ -178,7 +179,8 @@ struct GaugeMetric {
 };
 
 /* Parameters for a histogram metric bucket. */
-struct HistogramMetricBucket {
+struct HistogramMetricBucket
+{
 	/* The upper bound. */
 	double UpperBound;
 	/* The number of observations that were less than or equal to the upper bound. */
@@ -186,7 +188,8 @@ struct HistogramMetricBucket {
 };
 
 /* Parameters for a histogram metric. */
-struct HistogramMetric {
+struct HistogramMetric
+{
 	/* The name of the metric. */
 	std::string Key;
 	/* The sum of all observations. */
@@ -196,7 +199,8 @@ struct HistogramMetric {
 };
 
 /** Parameters for sending metrics to SpatialOS. */
-struct Metrics {
+struct Metrics
+{
 	/** The load value of this worker. If NULL, do not report load. */
 	TOptional<double> Load;
 	/** Array of gauge metrics. */

@@ -22,7 +22,7 @@ public:
 
 	void TickMetrics();
 
-	double CalculateLoad();
+	double CalculateLoad() const;
 
 private:
 	UPROPERTY()
@@ -31,7 +31,7 @@ private:
 	float TimeOfLastReport;
 	float TimeSinceLastReport;
 	float TimeBetweenMetricsReports;
-	int FramesSinceLastReport;
+	int32 FramesSinceLastReport;
 
 	double AverageFPS;
 	double WorkerLoad;

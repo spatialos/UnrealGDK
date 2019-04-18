@@ -72,7 +72,7 @@ public:
 	float PositionDistanceThreshold;
 
 	/** Metrics about client and server performance can be reported to SpatialOS to monitor a deployments health.*/
-	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false, DisplayName = "Enable Metrics"))
+	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bEnableMetrics;
 
 	/** Frequency that metrics are reported to SpatialOS.*/
@@ -80,7 +80,7 @@ public:
 	float MetricsReportRate;
 
 	/** Change 'Load' value in inspector to represent worker Frame Time instead of a fraction of target FPS.*/
-	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false, DisplayName = "Use Frame Time As Load"))
+	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bUseFrameTimeAsLoad;
 };
 
