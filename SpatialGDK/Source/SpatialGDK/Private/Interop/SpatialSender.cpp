@@ -260,11 +260,18 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 {
-	if (FLevelData* LevelData = ClassInfoManager->SchemaDatabase->LevelPathToLevelData.Find(NetDriver->World->GetName()))
+	UWorld* ActorWorld = Actor->GetTypedOuter<UWorld>();
+	if (ActorWorld != NetDriver->World)
 	{
-		if (uint32* ComponentId = LevelData->SublevelNameToComponentId.Find(Actor->GetTypedOuter<UWorld>()->GetName()))
+		const uint32 ComponentId = ClassInfoManager->SchemaDatabase->GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
-			return ComponentFactory::CreateEmptyComponentData(*ComponentId);
+			return ComponentFactory::CreateEmptyComponentData(ComponentId);
+		}
+		else
+		{
+			UE_LOG(LogSpatialSender, Error, TEXT("Could not find Streaming Level Component for Level %s, processing Actor %s. Have you generated schema?"),
+				*ActorWorld->GetOuter()->GetPathName(), *Actor->GetPathName());
 		}
 	}
 

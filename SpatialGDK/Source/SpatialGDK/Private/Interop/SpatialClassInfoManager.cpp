@@ -3,16 +3,13 @@
 #include "Interop/SpatialClassInfoManager.h"
 
 #include "AssetRegistryModule.h"
-#include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/Engine.h"
-#include "Engine/SCS_Node.h"
 #include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
 #if WITH_EDITOR
-#include "Runtime/Engine/Classes/Engine/World.h"
 #include "Kismet/KismetSystemLibrary.h"
 #endif
 
@@ -288,6 +285,5 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 
 bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
-	return SchemaDatabase->FirstSublevelComponentId <= ComponentId &&
-		SchemaDatabase->LastSublevelComponentId >= ComponentId;
+	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
 }
