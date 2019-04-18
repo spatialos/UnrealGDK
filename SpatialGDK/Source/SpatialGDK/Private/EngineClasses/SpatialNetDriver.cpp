@@ -30,6 +30,7 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/EngineVersionCheck.h"
 #include "Utils/EntityPool.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
