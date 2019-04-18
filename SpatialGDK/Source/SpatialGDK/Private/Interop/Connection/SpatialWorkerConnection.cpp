@@ -2,6 +2,10 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Engine/World.h"
+#include "UnrealEngine.h"
 #include "Async/Async.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -22,6 +26,11 @@ using namespace improbable;
 #if WITH_EDITOR
 static EditorWorkerController WorkerController;
 #endif
+
+void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
+{
+	GameInstance = InGameInstance;
+}
 
 void USpatialWorkerConnection::FinishDestroy()
 {
@@ -340,7 +349,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
-	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
 	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
 
 	// On the client, the world might not be completely set up.
@@ -364,28 +372,25 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 		InitializeOpsProcessingThread();
 	}
 
-	GetSpatialNetDriverChecked()->HandleOnConnected();
+	GameInstance->HandleOnConnected();
 }
 
 void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
 {
 	bIsConnected = false;
-	GetSpatialNetDriverChecked()->HandleOnConnectionFailed(Reason);
+	GameInstance->HandleOnConnectionFailed(Reason);
 }
 
 void USpatialWorkerConnection::OnConnectionFailure()
 {
 	bIsConnected = false;
 
-	if (UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter()))
+	if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 	{
-		if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
-		{
-			uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
-			const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
+		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
+		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
 
-			GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
-		}
+		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
 	}
 }
 
