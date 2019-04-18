@@ -134,6 +134,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator));
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaFull,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator));
+
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator));
@@ -200,10 +205,30 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 {
 	Builder.AddSeparator(NAME_None);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
+	Builder.AddComboButton(
+		FUIAction(),
+		FOnGetContent::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuContent),
+		LOCTEXT("GDKSchemaCombo_Label", "Schema Generation Options"),
+		TAttribute<FText>(),
+		FSlateIcon(FEditorStyle::GetStyleSetName(), "GDK.Schema"),
+		true
+	);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+}
+
+TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuContent()
+{
+	FMenuBuilder MenuBuilder(true, PluginCommands);
+	MenuBuilder.BeginSection(NAME_None, LOCTEXT("GDKSchemaOptionsHeader", "Schema Generation"));
+	{
+		MenuBuilder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchemaFull);
+	}
+	MenuBuilder.EndSection();
+
+	return MenuBuilder.MakeWidget();
 }
 
 void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
@@ -221,11 +246,30 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 {
-	ShowTaskStartNotification("Generating Schema");
-	SpatialGDKEditorInstance->GenerateSchema(
-		FSimpleDelegate::CreateLambda([this]() { ShowSuccessNotification("Schema Generation Completed!"); }),
-		FSimpleDelegate::CreateLambda([this]() { ShowFailedNotification("Schema Generation Failed"); }),
-		FSpatialGDKEditorErrorHandler::CreateLambda([](FString ErrorText) { FMessageDialog::Debugf(FText::FromString(ErrorText)); }));
+	ShowTaskStartNotification("Generating Schema (Incremental)");
+
+	if (SpatialGDKEditorInstance->GenerateSchema(false))
+	{
+		ShowSuccessNotification("Incremental Schema Generation Completed!");
+	}
+	else
+	{
+		ShowFailedNotification("Incremental Schema Generation Failed");
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
+{
+	ShowTaskStartNotification("Generating Schema (Full)");
+
+	if (SpatialGDKEditorInstance->GenerateSchema(true))
+	{
+		ShowSuccessNotification("Full Schema Generation Completed!");
+	}
+	else
+	{
+		ShowFailedNotification("Full Schema Generation Failed");
+	}
 }
 		
 
