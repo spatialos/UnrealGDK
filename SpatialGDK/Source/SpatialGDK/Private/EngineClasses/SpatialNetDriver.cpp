@@ -30,7 +30,9 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/EngineVersionCheck.h"
 #include "Utils/EntityPool.h"
+#include "Utils/SpatialMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -210,6 +212,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
+	SpatialMetrics = NewObject<USpatialMetrics>();
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->Init(this);
@@ -220,6 +223,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	GlobalStateManager->Init(this, &TimerManager);
 	SnapshotManager->Init(this);
 	PlayerSpawner->Init(this, &TimerManager);
+	SpatialMetrics->Init(this);
 
 	// Entity Pools should never exist on clients
 	if (IsServer())
@@ -1044,6 +1048,11 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 			Dispatcher->ProcessOps(OpList);
 
 			Worker_OpList_Destroy(OpList);
+		}
+
+		if (SpatialMetrics != nullptr && GetDefault<USpatialGDKSettings>()->bEnableMetrics)
+		{
+			SpatialMetrics->TickMetrics();
 		}
 	}
 }
