@@ -152,7 +152,7 @@ TODO: add link from server-workers to concepts
 
 <!--<%(#Expandable title="More information about worker assemblies")%>More info<%(/Expandable)%>-->
 
-**Note:** In the following commands, you must replace **`YourProject`** with the name of your Unreal project (chosen when you created the project from the Unreal Editor).
+**Note:** In the following commands, you must replace **`YourProject`** with the name of your Unreal project (the one you chose when you created the project from the Unreal Editor - not the name of your SpatialOS project).
 
 1. In a terminal window, navigate to your `<ProjectRoot>` directory.
 2. Build a server-worker assembly by running the following command: 
