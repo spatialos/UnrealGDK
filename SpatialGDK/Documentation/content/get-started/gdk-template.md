@@ -89,7 +89,7 @@ _Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
 
-<%(#Expandable title="What is schema?")%>Schema is where you define all the components in your world. Schema is defined in .schema files, written in schemalang, which is a wrapper around Google’s protobuf.
+<%(#Expandable title="What is schema?")%>Schema is a set of definitions which represent your game's objects in SpatialOS. Schema is defined in `.schema` files and written in schemalang.  When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
 
 You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/spatialos-concepts/schema).
 <%(/Expandable)%>
