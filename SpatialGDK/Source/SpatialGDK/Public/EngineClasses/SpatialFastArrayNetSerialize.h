@@ -10,7 +10,7 @@ class FSpatialNetBitReader;
 class FSpatialNetBitWriter;
 class USpatialNetDriver;
 
-namespace improbable
+namespace SpatialGDK
 {
 
 class SpatialFastArrayNetSerializeCB : public INetSerializeCB

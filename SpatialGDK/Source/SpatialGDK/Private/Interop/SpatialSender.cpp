@@ -27,7 +27,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
 
-using namespace improbable;
+using namespace SpatialGDK;
 
 DECLARE_CYCLE_STAT(TEXT("SendComponentUpdates"), STAT_SpatialSenderSendComponentUpdates, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("ResetOutgoingUpdate"), STAT_SpatialSenderResetOutgoingUpdate, STATGROUP_SpatialNet);
@@ -71,7 +71,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	AActor* Actor = Channel->Actor;
 	UClass* Class = Actor->GetClass();
 
-	FString ClientWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
+	FString ClientWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
 	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
@@ -172,16 +172,16 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	}
 
 	TArray<Worker_ComponentData> ComponentDatas;
-	ComponentDatas.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
-	ComponentDatas.Add(improbable::Metadata(Class->GetName()).CreateMetadataData());
-	ComponentDatas.Add(improbable::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
-	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
-	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
+	ComponentDatas.Add(SpatialGDK::Position(SpatialGDK::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
+	ComponentDatas.Add(SpatialGDK::Metadata(Class->GetName()).CreateMetadataData());
+	ComponentDatas.Add(SpatialGDK::EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
+	ComponentDatas.Add(SpatialGDK::Persistence().CreatePersistenceData());
+	ComponentDatas.Add(SpatialGDK::SpawnData(Actor).CreateSpawnDataData());
+	ComponentDatas.Add(SpatialGDK::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
-		ComponentDatas.Add(improbable::Singleton().CreateSingletonData());
+		ComponentDatas.Add(SpatialGDK::Singleton().CreateSingletonData());
 	}
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.
@@ -189,7 +189,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	if (Actor->IsA<APlayerController>())
 	{
-		ComponentDatas.Add(improbable::Heartbeat().CreateHeartbeatData());
+		ComponentDatas.Add(SpatialGDK::Heartbeat().CreateHeartbeatData());
 	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;
@@ -402,7 +402,7 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 	}
 #endif
 
-	Worker_ComponentUpdate Update = improbable::Position::CreatePositionUpdate(improbable::Coordinates::FromFVector(Location));
+	Worker_ComponentUpdate Update = SpatialGDK::Position::CreatePositionUpdate(SpatialGDK::Coordinates::FromFVector(Location));
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
@@ -857,7 +857,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 // This function updates the authority of that component as the owning connection can change.
 bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute)
 {
-	improbable::EntityAcl* EntityACL = StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId);
+	SpatialGDK::EntityAcl* EntityACL = StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId);
 
 	if (EntityACL == nullptr)
 	{
@@ -882,7 +882,7 @@ bool USpatialSender::UpdateEntityACLs(Worker_EntityId EntityId, const FString& O
 
 void USpatialSender::UpdateInterestComponent(AActor* Actor)
 {
-	improbable::InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver);
+	SpatialGDK::InterestFactory InterestUpdateFactory(Actor, ClassInfoManager->GetOrCreateClassInfoByObject(Actor), NetDriver);
 	Worker_ComponentUpdate Update = InterestUpdateFactory.CreateInterestUpdate();
 
 	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);

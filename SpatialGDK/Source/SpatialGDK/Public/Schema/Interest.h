@@ -4,7 +4,7 @@
 
 #include "StandardLibrary.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 using EdgeLength = Coordinates;
@@ -412,7 +412,7 @@ struct Interest : Component
 		{
 			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			improbable::ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+			SpatialGDK::ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 			ComponentInterest.Add(Key, Value);
 		}
@@ -436,7 +436,7 @@ struct Interest : Component
 			{
 				Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 				uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-				improbable::ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+				SpatialGDK::ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
 				ComponentInterest.Add(Key, Value);
 			}

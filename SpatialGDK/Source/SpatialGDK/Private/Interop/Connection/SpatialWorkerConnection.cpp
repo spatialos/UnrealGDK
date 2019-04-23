@@ -21,7 +21,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
-using namespace improbable;
+using namespace SpatialGDK;
 
 #if WITH_EDITOR
 static EditorWorkerController WorkerController;
@@ -320,7 +320,7 @@ Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_E
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendMetrics(const improbable::Metrics& Metrics)
+void USpatialWorkerConnection::SendMetrics(const SpatialGDK::Metrics& Metrics)
 {
 	QueueOutgoingMessage<FMetrics>(Metrics);
 }

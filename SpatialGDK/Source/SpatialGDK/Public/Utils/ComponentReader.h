@@ -7,7 +7,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialComponentReader, All, All);
 
-namespace improbable
+namespace SpatialGDK
 {
 
 class ComponentReader

@@ -16,7 +16,7 @@
 
 using SubobjectToOffsetMap = TMap<UObject*, uint32>;
 
-namespace improbable
+namespace SpatialGDK
 {
 
 struct UnrealMetadata : Component

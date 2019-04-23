@@ -14,7 +14,7 @@
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
 
-namespace improbable
+namespace SpatialGDK
 {
 
 InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialNetDriver* InNetDriver)

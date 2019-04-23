@@ -6,7 +6,7 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-namespace improbable
+namespace SpatialGDK
 {
 
 // Represents any Unreal rep component

@@ -16,7 +16,7 @@
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/InterestFactory.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 ComponentFactory::ComponentFactory(FUnresolvedObjectsMap& RepUnresolvedObjectsMap, FUnresolvedObjectsMap& HandoverUnresolvedObjectsMap, bool bInterestDirty, USpatialNetDriver* InNetDriver)

@@ -28,8 +28,8 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	// Prompt the user to save packages/maps.
 	const bool bPromptUserToSave = true;
-	const bool bSaveMapPackages = true;
-	const bool bSaveContentPackages = true;
+	const bool bSaveMapPackages = false;
+	const bool bSaveContentPackages = false;
 	const bool bFastSave = false;
 	const bool bNotifyNoPackagesSaved = false;
 	const bool bCanBeDeclined = true;

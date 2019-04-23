@@ -14,7 +14,7 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-namespace improbable
+namespace SpatialGDK
 {
 
 struct Coordinates

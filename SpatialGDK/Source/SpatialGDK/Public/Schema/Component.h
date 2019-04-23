@@ -4,7 +4,7 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-namespace improbable
+namespace SpatialGDK
 {
 
 struct Component
