@@ -118,7 +118,7 @@ _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** 
 _Image: Two clients running in the editor, with player Actors replicated by SpatialOS and the GDK_<br/>
 1. Open the Inspector. You should see that a local SpatialOS deployment is running with one server-worker instance and two client-worker instances connected. You can also find and follow around the two player entities.<br/><br/>
 ![]({{assetRoot}}assets/set-up-template/template-two-client-inspector.png)<br/>
-_Image: The inspector showing the state of your local deployment_<br/>
+_Image: The Inspector showing the state of your local deployment_<br/>
 1. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 
