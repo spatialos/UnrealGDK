@@ -88,7 +88,7 @@ _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** 
 1. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 
-If you want to run multiple server-workers in the Editor, see the [Toolbar documentation]({{urlRoot}}/content/toolbars#launching-multiple-pie-server-workers) for details on launching multiple PIE server-workers.
+If you want to run multiple server-workers in the Editor, see the [Toolbar documentation]({{urlRoot}}/content/toolbars#auto-generated-launch-config-for-pie-server-worker-types) for details on launching multiple PIE server-workers.
 
 #### Deploy in the cloud
 
