@@ -144,7 +144,7 @@ The name should look something like `beta_randomword_anotherword_randomnumber`. 
 You can find out more about the [Console]({{urlRoot}}/content/glossary#console) in the _Glossary_. <%(/Expandable)%>
 ##### Step 2: Build your worker assemblies
 
-Workers are the programs that connect to a SpatialOS world. In general, you use server-worker instances simulate the world, and players use client-worker instances to connect to your game. Worker assemblies are `.zip` files that contain all the files that your game uses when running in the cloud.
+Workers are the programs that compute a SpatialOS world. In general, server-worker instances simulate the world, while game players connect to the world through client-worker instances. Worker assemblies are `.zip` files that contain built-out workers; that is all the files with compiled code that your game uses for running in the cloud.
 
 <!---
 TODO: add link from server-workers to concepts
