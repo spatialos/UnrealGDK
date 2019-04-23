@@ -328,21 +328,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	improbable::SpawnData* SpawnData = StaticComponentView->GetComponentData<improbable::SpawnData>(EntityId);
 	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
-	/*
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(ATPSCharacter::StaticClass());
-	if (QueuedRPCs->RPCs.Num() > 0)
+	improbable::RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<improbable::RPCsOnEntityCreation>(EntityId);
+
+	if (QueuedRPCs && QueuedRPCs->RPCs.Num() > 0)
 	{
-		for (auto It : Info.RPCInfoMap)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("!!!!! %d %s"), It.Value.Index, *It.Key->GetName());
-			if (It.Key->GetName().Contains(TEXT("PrintMessage")))
-			{
-				RPCPayload MyRPC(0, It.Value.Index);
-				QueuedRPCs.RPCs.Add(MyRPC);
-			}
-		}
+		UE_LOG(LogTemp, Log, TEXT("There are some rpcs"));
 	}
-	*/
 
 	if (UnrealMetadata == nullptr)
 	{
