@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Multiserver Shooter Tutorial
+# Multiserver Shooter tutorial
 
 **What the tutorial covers**<br/>
 In this tutorial you’ll implement cross-server remote procedure calls (RPCs) in a simple third person shooter. The end result will be a multiplayer, cloud-hosted Unreal game running across multiple [server-workers]({{urlRoot}}/content/glossary#inspector) that players can seamlessly move between and shoot across. It will look something like this:
