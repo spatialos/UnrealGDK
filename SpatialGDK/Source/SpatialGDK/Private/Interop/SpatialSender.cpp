@@ -109,6 +109,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
+	 ComponentWriteAcl.Add(SpatialConstants::RPC_ON_ENTITY_CREATION_ID, OwningClientOnly);
 	// ComponentWriteAcl.Add(SpatialConstants::RPC_ON_ENTITY_CREATION_ID, /* who owns this? who will be responsible for clearing it after client processes the functions? */);
 	if (Actor->IsA<APlayerController>())
 	{
@@ -196,7 +197,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			}
 		}
 	}
-	ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
+	if (QueuedRPCs.RPCs.Num() > 0)
+	{
+		ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
+	}
 	
 	//ComponentDatas.Add(improbable::RPCPayload(Actor).CreateRPCPayloadData());
 

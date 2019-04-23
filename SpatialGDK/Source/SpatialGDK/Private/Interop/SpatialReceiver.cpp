@@ -113,6 +113,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
+	case SpatialConstants::RPC_ON_ENTITY_CREATION_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -333,6 +334,18 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	if (QueuedRPCs && QueuedRPCs->RPCs.Num() > 0)
 	{
 		UE_LOG(LogTemp, Log, TEXT("There are some rpcs"));
+		if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
+		{
+			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(EntityActor->GetClass());
+			Info.RPCInfoMap;
+			for (auto It : Info.RPCInfoMap)
+			{
+				if (It.Value.Index == QueuedRPCs->RPCs[0].Index)
+				{
+					UE_LOG(LogTemp, Log, TEXT("RPC: %s"), *It.Key->GetName());
+				}
+			}
+		}
 	}
 
 	if (UnrealMetadata == nullptr)
@@ -811,6 +824,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
+	case SpatialConstants::RPC_ON_ENTITY_CREATION_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:

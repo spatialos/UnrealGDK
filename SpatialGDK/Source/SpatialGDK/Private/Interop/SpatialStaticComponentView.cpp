@@ -60,10 +60,13 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 		Data = MakeUnique<improbable::ComponentStorage<improbable::Heartbeat>>(Op.data);
 		break;
+	case SpatialConstants::RPC_ON_ENTITY_CREATION_ID:
+		Data = MakeUnique<improbable::ComponentStorage<improbable::RPCsOnEntityCreation>>(Op.data);
+		break;
 	default:
 		return;
 	}
-
+						
 	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = std::move(Data);
 }
 
