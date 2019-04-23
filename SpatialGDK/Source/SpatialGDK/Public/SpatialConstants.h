@@ -172,4 +172,6 @@ namespace SpatialConstants
 
 	const Worker_ComponentId MIN_EXTERNAL_SCHEMA_ID = 1000;
 	const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
+
+	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 }
