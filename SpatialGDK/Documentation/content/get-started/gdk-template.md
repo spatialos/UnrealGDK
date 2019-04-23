@@ -179,7 +179,7 @@ spatial cloud upload myassembly
 
 ### Launch a cloud deployment
 
-The next step is to launch a cloud deployment using the assembly that you just uploaded. You can only do this through the SpatialOS command-line tool (also known as the [SpatialOS CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
+The next step is to launch a cloud deployment using the assembly that you just uploaded. You can only do this through the SpatialOS command-line tool (also known as the [SpatialOS CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli)).
 
 When launching a cloud deployment you must provide three parameters:
 
