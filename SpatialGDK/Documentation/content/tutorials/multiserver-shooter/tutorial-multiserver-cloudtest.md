@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Multiserver Shooter Tutorial
+# Multiserver Shooter tutorial
 
 ## Step 4: Test your changes in the cloud
 
