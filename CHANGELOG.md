@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Schema files are now generated correctly for subobjects of the Blueprint classes.
 - Fixed being unable to launch SpatialOS if project path had spaces in it.
 - Editor no longer crashes when setting LogSpatialSender to Verbose.
+- Server-workers quickly restarted in the editor will connect to runtime correctly.
 
 ### External contributors:
 

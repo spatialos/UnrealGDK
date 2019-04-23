@@ -23,6 +23,7 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialActorUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialActorChannel);
 
@@ -72,6 +73,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bFirstTick(true)
 	, bInterestDirty(false)
+	, bNetOwned(false)
 	, NetDriver(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, TimeWhenPositionLastUpdated(0.0f)
@@ -741,11 +743,11 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 }
 
-void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId EntityId, const FVector& NewPosition)
+void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
-	if (EntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->StaticComponentView->HasAuthority(InEntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
-		Sender->SendPositionUpdate(EntityId, NewPosition);
+		Sender->SendPositionUpdate(InEntityId, NewPosition);
 	}
 
 	for (const auto& Child : InActor->Children)
@@ -807,39 +809,50 @@ void USpatialActorChannel::RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*
 	});
 }
 
-void USpatialActorChannel::SpatialViewTick()
+void USpatialActorChannel::ServerProcessOwnershipChange()
 {
-	if (Actor != nullptr && !Actor->IsPendingKill() && IsReadyForReplication())
+	if (!IsAuthoritativeServer())
 	{
-		bool bOldNetOwned = bNetOwned;
+		return;
+	}
 
-		// Use Actor's connection to determine if client owned
-		bNetOwned = false;
-		if (UNetConnection* NetConnection = Actor->GetNetConnection())
+	FString NewOwnerWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
+
+	if (bFirstTick || SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
+	{
+		bool bSuccess = Sender->UpdateEntityACLs(GetEntityId(), NewOwnerWorkerAttribute);
+
+		if (bSuccess)
 		{
-			if (APlayerController* PlayerController = NetConnection->PlayerController)
-			{
-				bNetOwned = PlayerController->PlayerState != nullptr;
-			}
+			bFirstTick = false;
+			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		}
+	}
+}
 
-		if (bFirstTick || bOldNetOwned != bNetOwned)
+void USpatialActorChannel::ClientProcessOwnershipChange()
+{
+	bool bOldNetOwned = bNetOwned;
+	bNetOwned = IsOwnedByWorker();
+
+	if (bFirstTick || bOldNetOwned != bNetOwned)
+	{
+		Sender->SendComponentInterest(Actor, GetEntityId(), bNetOwned);
+		bFirstTick = false;
+	}
+}
+
+void USpatialActorChannel::ProcessOwnershipChange()
+{
+	if (Actor != nullptr && !Actor->IsPendingKill())
+	{
+		if (NetDriver->IsServer())
 		{
-			if (IsAuthoritativeServer())
-			{
-				bool bSuccess = Sender->UpdateEntityACLs(Actor, GetEntityId());
-
-				if (bFirstTick && bSuccess)
-				{
-					bFirstTick = false;
-				}
-			}
-			else if (!NetDriver->IsServer())
-			{
-				Sender->SendComponentInterest(Actor, GetEntityId());
-
-				bFirstTick = false;
-			}
+			ServerProcessOwnershipChange();
+		}
+		else
+		{
+			ClientProcessOwnershipChange();
 		}
 	}
 }

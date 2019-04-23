@@ -4,10 +4,10 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
-FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FString LoggerName, int32 InPIEIndex)
+FSpatialOutputDevice::FSpatialOutputDevice(USpatialWorkerConnection* InConnection, FName LoggerName, int32 InPIEIndex)
 	: FilterLevel(ELogVerbosity::Warning)
 	, Connection(InConnection)
-	, Name(LoggerName)
+	, WorkerName(LoggerName)
 	, PIEIndex(InPIEIndex)
 {
 	const TCHAR* CommandLine = FCommandLine::Get();
@@ -36,7 +36,7 @@ void FSpatialOutputDevice::Serialize(const TCHAR* InData, ELogVerbosity::Type Ve
 			return;
 		}
 #endif //WITH_EDITOR
-		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), TCHAR_TO_UTF8(*Name), TCHAR_TO_UTF8(InData));
+		Connection->SendLogMessage(ConvertLogLevelToSpatial(Verbosity), WorkerName, InData);
 	}
 }
 
