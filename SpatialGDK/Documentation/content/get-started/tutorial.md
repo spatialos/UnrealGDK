@@ -76,14 +76,14 @@ In this section you’ll run a [local deployment](https://docs.improbable.io/ref
 
 1. In a text editor, open `UnrealGDKThirdPersonShooter\spatial\default_launch.json` and in the `layer_configurations` section set `rows` to `2`. This instructs SpatialOS that you will be launching two server-workers.
 1. In the Unreal Editor, in the Unreal toolbar, open the **Play** drop-down menu.<br/>
-2. Under **Multiplayer Options**, enter the number of players as **2**.
-3. Enter the number of servers as **2**.
-4. Ensure the box next to **Run Dedicated Server** is checked.<br/>
+1. Under **Multiplayer Options**, enter the number of players as **2**.
+1. Enter the number of servers as **2**.
+1. Ensure the box next to **Run Dedicated Server** is checked.<br/>
 ![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
 _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
-5. In the Unreal Editor, in the SpatialOS GDK toolbar, select **Start** (the green play icon). This opens a terminal window and runs the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime).
-6. It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
-7. From the Unreal Editor toolbar, select **Play** to run the game. This starts two SpatialOS server-worker instances and two SpatialOS client-worker instances locally, in your Unreal Editor.
+1. In the Unreal Editor, in the SpatialOS GDK toolbar, select **Start** (the green play icon). This opens a terminal window and runs the [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch#spatial-local-launch) command, which starts the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#the-runtime).
+1. It's ready when you see `SpatialOS ready. Access the inspector at http://localhost:21000/inspector`.
+1. From the Unreal Editor toolbar, select **Play** to run the game. This starts two SpatialOS server-worker instances and two SpatialOS client-worker instances locally, in your Unreal Editor.
 <br/>The two server-worker instances are acting as two Unreal servers and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
 <br/>(You can find out about workers in the [glossary](https://docs.improbable.io/unreal/alpha/content/glossary#workers).)
 
@@ -248,8 +248,8 @@ This snippet implements the functionality that was previously contained within `
 Because you have changed code in a function, you now need to rebuild your project. Additionally, because you've modified code related to replication, you need to generate schema. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.
-2. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
-3. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
+1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
+1. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
 
 Now let’s test our new cross-server functionality in another local deployment.
 
@@ -258,7 +258,7 @@ Now let’s test our new cross-server functionality in another local deployment.
 
 1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
 1. From the Unreal Editor toolbar, click **Play** to run the game.
-2. Using the Inspector to track the location of your two players, notice that you can now shoot between two Unreal servers and cause damage across their boundaries (provided the two players are on different teams!).
+1. Using the Inspector to track the location of your two players, notice that you can now shoot between two Unreal servers and cause damage across their boundaries (provided the two players are on different teams!).
 
 ![]({{assetRoot}}assets/tutorial/shooting-across-boundaries.gif)<br/>
 *Image: Players running and shooting between two Unreal Servers*
