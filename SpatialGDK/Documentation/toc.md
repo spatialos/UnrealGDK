@@ -34,6 +34,8 @@
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+    - [Editor Settings]({{urlRoot}}/content/editor-settings)
+    - [Runtime Settings]({{urlRoot}}/content/runtime-settings)
 - <h3>Workflows</h3>
     - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
     - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
