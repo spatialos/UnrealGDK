@@ -2,6 +2,10 @@
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
 
+#include "EngineClasses/SpatialGameInstance.h"
+#include "EngineClasses/SpatialNetDriver.h"
+#include "Engine/World.h"
+#include "UnrealEngine.h"
 #include "Async/Async.h"
 #include "Engine/Engine.h"
 #include "Engine/World.h"
@@ -22,6 +26,11 @@ using namespace improbable;
 #if WITH_EDITOR
 static EditorWorkerController WorkerController;
 #endif
+
+void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
+{
+	GameInstance = InGameInstance;
+}
 
 void USpatialWorkerConnection::FinishDestroy()
 {
@@ -311,6 +320,11 @@ Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_E
 	return NextRequestId++;
 }
 
+void USpatialWorkerConnection::SendMetrics(const improbable::Metrics& Metrics)
+{
+	QueueOutgoingMessage<FMetrics>(Metrics);
+}
+
 FString USpatialWorkerConnection::GetWorkerId() const
 {
 	return FString(UTF8_TO_TCHAR(Worker_Connection_GetWorkerId(WorkerConnection)));
@@ -340,7 +354,6 @@ void USpatialWorkerConnection::CacheWorkerAttributes()
 
 USpatialNetDriver* USpatialWorkerConnection::GetSpatialNetDriverChecked() const
 {
-	UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter());
 	UNetDriver* NetDriver = GameInstance->GetWorld()->GetNetDriver();
 
 	// On the client, the world might not be completely set up.
@@ -364,28 +377,25 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 		InitializeOpsProcessingThread();
 	}
 
-	GetSpatialNetDriverChecked()->HandleOnConnected();
+	GameInstance->HandleOnConnected();
 }
 
 void USpatialWorkerConnection::OnPreConnectionFailure(const FString& Reason)
 {
 	bIsConnected = false;
-	GetSpatialNetDriverChecked()->HandleOnConnectionFailed(Reason);
+	GameInstance->HandleOnConnectionFailed(Reason);
 }
 
 void USpatialWorkerConnection::OnConnectionFailure()
 {
 	bIsConnected = false;
 
-	if (UGameInstance* GameInstance = Cast<UGameInstance>(GetOuter()))
+	if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
 	{
-		if (GEngine != nullptr && GameInstance->GetWorld() != nullptr)
-		{
-			uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
-			const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
+		uint8_t ConnectionStatusCode = Worker_Connection_GetConnectionStatusCode(WorkerConnection);
+		const FString ErrorMessage(UTF8_TO_TCHAR(Worker_Connection_GetConnectionStatusDetailString(WorkerConnection)));
 
-			GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
-		}
+		GEngine->BroadcastNetworkFailure(GameInstance->GetWorld(), GetSpatialNetDriverChecked(), ENetworkFailure::FromDisconnectOpStatusCode(ConnectionStatusCode), *ErrorMessage);
 	}
 }
 
@@ -539,6 +549,51 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			Worker_Connection_SendEntityQueryRequest(WorkerConnection,
 				&Message->EntityQuery,
 				nullptr);
+			break;
+		}
+		case EOutgoingMessageType::Metrics:
+		{
+			FMetrics* Message = static_cast<FMetrics*>(OutgoingMessage.Get());
+
+			// Do the conversion here so we can store everything on the stack.
+			Worker_Metrics WorkerMetrics;
+
+			WorkerMetrics.load = Message->Metrics.Load.IsSet() ? &Message->Metrics.Load.GetValue() : nullptr;
+
+			TArray<Worker_GaugeMetric> WorkerGaugeMetrics;
+			WorkerGaugeMetrics.SetNum(Message->Metrics.GaugeMetrics.Num());
+			for (int i = 0; i < Message->Metrics.GaugeMetrics.Num(); i++)
+			{
+				WorkerGaugeMetrics[i].key = Message->Metrics.GaugeMetrics[i].Key.c_str();
+				WorkerGaugeMetrics[i].value = Message->Metrics.GaugeMetrics[i].Value;
+			}
+
+			WorkerMetrics.gauge_metric_count = static_cast<uint32_t>(WorkerGaugeMetrics.Num());
+			WorkerMetrics.gauge_metrics = WorkerGaugeMetrics.GetData();
+
+			TArray<Worker_HistogramMetric> WorkerHistogramMetrics;
+			TArray<TArray<Worker_HistogramMetricBucket>> WorkerHistogramMetricBuckets;
+			WorkerHistogramMetrics.SetNum(Message->Metrics.HistogramMetrics.Num());
+			for (int i = 0; i < Message->Metrics.HistogramMetrics.Num(); i++)
+			{
+				WorkerHistogramMetrics[i].key = Message->Metrics.HistogramMetrics[i].Key.c_str();
+				WorkerHistogramMetrics[i].sum = Message->Metrics.HistogramMetrics[i].Sum;
+
+				WorkerHistogramMetricBuckets[i].SetNum(Message->Metrics.HistogramMetrics[i].Buckets.Num());
+				for (int j = 0; j < Message->Metrics.HistogramMetrics[i].Buckets.Num(); j++)
+				{
+					WorkerHistogramMetricBuckets[i][j].upper_bound = Message->Metrics.HistogramMetrics[i].Buckets[j].UpperBound;
+					WorkerHistogramMetricBuckets[i][j].samples = Message->Metrics.HistogramMetrics[i].Buckets[j].Samples;
+				}
+
+				WorkerHistogramMetrics[i].bucket_count = static_cast<uint32_t>(WorkerHistogramMetricBuckets[i].Num());
+				WorkerHistogramMetrics[i].buckets = WorkerHistogramMetricBuckets[i].GetData();
+			}
+
+			WorkerMetrics.histogram_metric_count = static_cast<uint32_t>(WorkerHistogramMetrics.Num());
+			WorkerMetrics.histogram_metrics = WorkerHistogramMetrics.GetData();
+
+			Worker_Connection_SendMetrics(WorkerConnection, &WorkerMetrics);
 			break;
 		}
 		default:

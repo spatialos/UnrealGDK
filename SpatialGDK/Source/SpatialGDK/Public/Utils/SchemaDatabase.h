@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Engine/World.h"
 #include "SpatialConstants.h"
 
 #include "SchemaDatabase.generated.h"
@@ -33,15 +34,6 @@ struct FSchemaData
 	TMap<uint32, FSubobjectSchemaData> SubobjectData;
 };
 
-USTRUCT()
-struct FLevelData
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY(VisibleAnywhere)
-	TMap<FString, uint32> SublevelNameToComponentId;
-};
-
 UCLASS()
 class SPATIALGDK_API USchemaDatabase : public UDataAsset
 {
@@ -51,17 +43,24 @@ public:
 
 	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID) {}
 
+	uint32 GetComponentIdFromLevelPath(const FString& LevelPath) const
+	{
+		FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
+		if (const uint32* ComponentId = LevelPathToComponentId.Find(CleanLevelPath))
+		{
+			return *ComponentId;
+		}
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+
 	UPROPERTY(VisibleAnywhere)
 	TMap<FString, FSchemaData> ClassPathToSchema;
 
 	UPROPERTY(VisibleAnywhere)
-	TMap<FString, FLevelData> LevelPathToLevelData;
+	TMap<FString, uint32> LevelPathToComponentId;
 
 	UPROPERTY(VisibleAnywhere)
-	uint32 FirstSublevelComponentId;
-
-	UPROPERTY(VisibleAnywhere)
-	uint32 LastSublevelComponentId;
+	TSet<uint32> LevelComponentIds;
 
 	UPROPERTY(VisibleAnywhere)
 	uint32 NextAvailableComponentId;
