@@ -44,4 +44,4 @@
         - [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368)
         - [Forums](https://forums.improbable.io/)
         - [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
-    - [Development roadmap](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap)
+    - [Development roadmap](https://github.com/spatialos/UnrealGDK/projects/1)
