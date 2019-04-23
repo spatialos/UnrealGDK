@@ -32,7 +32,6 @@
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
-    - [Known issues]({{urlRoot}}/known-issues)
     - [Keep your GDK up to date]({{urlRoot}}/content/upgrading)
 - <h3>Get involved</h3>
     - Contributing to the GDK
