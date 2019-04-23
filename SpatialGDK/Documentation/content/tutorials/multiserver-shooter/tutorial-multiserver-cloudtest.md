@@ -23,7 +23,7 @@ An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip f
 spatial cloud upload myassembly
 ```
 
-> **Note:** Based on your network speed it may take a little while (1-10 minutes) to upload your assembly.
+> **Note:** Depending on your network speed it may take a little while (1-10 minutes) to upload your assembly.
 
 <br/>
 ### Launch a cloud deployment
