@@ -70,7 +70,7 @@ To test your game, you need to launch a deployment. This means launching your ga
 TODO: add links from deployments to concepts and SpatialOS Runtime
 -->
 
-When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot), then starts up the worker instances needed to run the game world.
+When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot), and then starts up the worker instances needed to run the game world.
 
 <!---
 TODO: add links from workers to concepts
