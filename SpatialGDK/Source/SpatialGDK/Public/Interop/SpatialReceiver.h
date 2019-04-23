@@ -10,6 +10,7 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/SpawnData.h"
+#include "Schema/RPCPayload.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"

@@ -17,6 +17,7 @@
 #include "Schema/Interest.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
+#include "Schema/RPCPayload.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -108,6 +109,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
+	// ComponentWriteAcl.Add(SpatialConstants::RPC_ON_ENTITY_CREATION_ID, /* who owns this? who will be responsible for clearing it after client processes the functions? */);
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
@@ -178,6 +180,25 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(improbable::Persistence().CreatePersistenceData());
 	ComponentDatas.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(improbable::UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
+
+	//TArray<RPCPayload> QueuedRPCs = GetQueuedRPCsForActor(Actor);
+	RPCsOnEntityCreation QueuedRPCs;
+	//RPCPayload MyRPC(0, 0);
+	if (Actor->GetClass()->GetName().Contains(TEXT("TPSCharacter")))
+	{
+		for (auto It : Info.RPCInfoMap)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("!!!!! %d %s"), It.Value.Index, *It.Key->GetName());
+			if (It.Key->GetName().Contains(TEXT("PrintMessage")))
+			{
+				RPCPayload MyRPC(0, It.Value.Index);
+				QueuedRPCs.RPCs.Add(MyRPC);
+			}
+		}
+	}
+	ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
+	
+	//ComponentDatas.Add(improbable::RPCPayload(Actor).CreateRPCPayloadData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
@@ -741,9 +762,8 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 
 void USpatialSender::WriteRpcPayload(Schema_Object* Object, uint32 Offset, Schema_FieldId Index, FSpatialNetBitWriter& PayloadWriter)
 {
-	Schema_AddUint32(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
-	Schema_AddUint32(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
-	AddBytesToSchema(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadWriter);
+	RPCPayload Data(Offset, Index);
+	Data.WriteToSchemaObject(Object, PayloadWriter);
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)

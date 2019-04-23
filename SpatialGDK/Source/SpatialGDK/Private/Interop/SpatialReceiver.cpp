@@ -17,6 +17,7 @@
 #include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/SpawnData.h"
+#include "Schema/RPCPayload.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
@@ -327,6 +328,21 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	improbable::SpawnData* SpawnData = StaticComponentView->GetComponentData<improbable::SpawnData>(EntityId);
 	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
+	/*
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(ATPSCharacter::StaticClass());
+	if (QueuedRPCs->RPCs.Num() > 0)
+	{
+		for (auto It : Info.RPCInfoMap)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("!!!!! %d %s"), It.Value.Index, *It.Key->GetName());
+			if (It.Key->GetName().Contains(TEXT("PrintMessage")))
+			{
+				RPCPayload MyRPC(0, It.Value.Index);
+				QueuedRPCs.RPCs.Add(MyRPC);
+			}
+		}
+	}
+	*/
 
 	if (UnrealMetadata == nullptr)
 	{
@@ -921,25 +937,23 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 	{
 		Schema_Object* EventData = Schema_IndexObject(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID, i);
 
-		uint32 Offset = Schema_GetUint32(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
-		uint32 Index = Schema_GetUint32(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
-		TArray<uint8> PayloadData = GetBytesFromSchema(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
-		int64 CountBits = PayloadData.Num() * 8;
+		RPCPayload Data(EventData);
+		int64 CountBits = Data.PayloadData.Num() * 8;
 
-		FUnrealObjectRef ObjectRef(EntityId, Offset);
+		FUnrealObjectRef ObjectRef(EntityId, Data.Offset);
 
 		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 
 		if (!TargetObject)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Index);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Data.Index);
 			continue;
 		}
 
 		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-		UFunction* Function = ClassInfo.RPCs[Index];
-		ApplyRPC(TargetObject, Function, PayloadData, CountBits, FString());
+		UFunction* Function = ClassInfo.RPCs[Data.Index];
+		ApplyRPC(TargetObject, Function, Data.PayloadData, CountBits, FString());
 	}
 }
 

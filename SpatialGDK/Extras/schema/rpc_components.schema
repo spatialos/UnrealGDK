@@ -26,3 +26,10 @@ component UnrealMulticastRPCEndpoint {
     id = 9987;
     event UnrealRPCPayload unreliable_multicast_rpc;
 }
+
+component RPCsOnEntityCreation {
+	id = 9985;
+	//UnrealRPCPayload rpc = 1;
+	list<UnrealRPCPayload> rpcs = 1;
+}
+

@@ -6,6 +6,7 @@
 #include "Schema/Interest.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/SpawnData.h"
+#include "Schema/RPCPayload.h"
 #include "Schema/UnrealMetadata.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
