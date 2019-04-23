@@ -248,8 +248,8 @@ This snippet implements the functionality that was previously contained within `
 Because you have changed code in a function, you now need to rebuild your project. Additionally, because you've modified code related to replication, you need to generate schema. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.
-1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
-1. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
+2. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
+3. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
 
 Now let’s test our new cross-server functionality in another local deployment.
 
