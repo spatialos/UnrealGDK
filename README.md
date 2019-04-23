@@ -12,7 +12,7 @@ The GDK offers:
 ----
 * [Get started](https://docs.improbable.io/unreal/latest/content/get-started/introduction) (on the SpatialOS documentation website)
 * [Documentation](https://docs.improbable.io/unreal/latest) (on the SpatialOS documentation website)
-* [Development roadmap](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap) (Trello board)
+* [Development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) (Github project board)
 * Community: [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368) - [Forums](https://forums.improbable.io/) -  [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
 ----
 
