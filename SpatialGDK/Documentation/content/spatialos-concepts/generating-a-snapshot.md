@@ -5,9 +5,11 @@ A snapshot is a representation of the state of a [SpatialOS world]({{urlRoot}}/c
 
 You can find out more about snapshots in the [SpatialOS snapshot documentation](https://docs.improbable.io/reference/latest/shared/operate/snapshot) but note that this documentation concentrates on working with snapshots using the [SpatialOS SDK]({{urlRoot}}/content/glossary#spatialos-sdk).
 
-## Generating a snapshot
+
 
 You must generate a snapshot as the starting point for your [SpatialOS world]({{urlRoot}}/content/glossary#spatialos-world) when you create a new Unreal GDK project.
+
+#### How to generate a snapshot
 
 To generate a snapshot, on the [SpatialOS GDK toolbar]({{urlRoot}}/content/toolbars.md) in the Unreal Editor, select **Snapshot** .
 
@@ -19,7 +21,7 @@ This creates a snapshot called `default.snapshot` which you can find in `spatial
 
 If you want your snapshots to be exported to a different path you can specify the output path and file name of the snapshot using the [GDK toolbar settings]({{urlRoot}}/content/toolbars.md).
 
-## What’s listed in snapshots
+### What’s listed in snapshots
 
 The GDK snapshots contain two kinds of [SpatialOS entities]({{urlRoot}}/content/glossary#spatialos-entity): 
 Critical entities, and placeholder entities.
