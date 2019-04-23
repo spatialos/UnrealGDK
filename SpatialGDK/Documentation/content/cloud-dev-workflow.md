@@ -44,7 +44,7 @@ Replacing:
 
 * `<myassembly>` - identifies the worker assemblies to use (as chosen in the `spatial cloud upload` command).
 * `<launch_config>.json` - declares the world and load balancing configuration.
-* `<deployment_name>` - labels the deployment for SpatialOS to reference in the [Console]{{urlroot}}/content/glossary#console).
+* `<deployment_name>` - labels the deployment for SpatialOS to reference in the [Console]({{urlroot}}/content/glossary#console).
 
 ----
 
