@@ -8,6 +8,10 @@
         - Next steps - either:
             - [Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
             - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
+    - Technical overview
+        - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
+        - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
+        - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
     - [Feature list]({{urlRoot}}/features)
     - [What's new in alpha]({{urlRoot}}/content/whatsnew)
 - <h3>Concepts and terminology</h3>
