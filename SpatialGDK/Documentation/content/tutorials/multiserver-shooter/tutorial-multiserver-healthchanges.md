@@ -8,7 +8,7 @@ In this project each `TPSCharacter` contains a variable called `CurrentHealth`, 
 To resolve this you need to mark the `CurrentHealth` property for replication, just as you would in the native [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1) workflow. To do this:
 
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
-2. Navigate to the declaration of the `CurrentHealth` variable, and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`. The UProperty should now look like this:
+1. Navigate to the declaration of the `CurrentHealth` variable, and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`. The UProperty should now look like this:
 
 ```
     UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)
@@ -19,8 +19,8 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
     
     Next you need to update the [GetLifetimeReplicatedProps](https://wiki.unrealengine.com/Replication#Actor_Property_Replication) implementation of the `TPSCharacter` to specify the [replication conditions](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/Conditions) for the `CurrentHealth` variable:
 
-3. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp`.
-4. Navigate to the `GetLifetimeReplicatedProps` function (which is implementd around line 182), and insert the following snippet:
+1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp`.
+1. Navigate to the `GetLifetimeReplicatedProps` function (which is implementd around line 182), and insert the following snippet:
 
 ```
     // Only replicate health to the owning client.
@@ -31,15 +31,15 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
     
     Finally, you need to implement the `OnRep_CurrentHealth` function so that the player health UI gets updated when the `CurrentHealth` variable is replicated:
 
-5. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
-6. In the public scope of the class, insert the following snippet:
+1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
+1. In the public scope of the class, insert the following snippet:
 
 ```	
     UFUNCTION()
     void OnRep_CurrentHealth();
 ```
 
-7. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp` and insert the following snippet:
+1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp` and insert the following snippet:
 
 ```
     void ATPSCharacter::OnRep_CurrentHealth()
@@ -61,11 +61,11 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 
 Notice that the workflow you just used mirrors that of native Unreal.
 
-Because you’ve changed code in a function you now need to build your project, generate schema and a new snapshot. To do this:
+Because you have changed code in a function, you now need to rebuild your project. Additionally, because you've modified code related to replication, you need to generate schema. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.
-2. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
-3. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
+1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
+1. Open **ThirdPersonShooter.uproject** in the Unreal Editor and click `Schema` and then `Snapshot`.
 
 Now let’s test our health replication in another local deployment.
 
