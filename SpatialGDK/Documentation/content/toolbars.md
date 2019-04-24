@@ -64,7 +64,7 @@ You can also access these from the **Window** menu:
 
 | Button | Description |
 | --- | --- |
-| Snapshot | Generates a [SpatialOS snapshot]({{urlRoot}}/content/glossary#snapshot). | 
+| Snapshot | Generates a [SpatialOS snapshot]({{urlRoot}}/content/glossary#snapshot). |
 | Schema | Creates [schema]({{urlRoot}}/content/glossary#schema) for your Unreal project. |
 | Start | Runs [`spatial worker build build-config`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)). |
 | Stop | Stops `spatial local launch`. |
@@ -104,7 +104,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 | --- | --- |
 | Snapshot path | Use this to specify the filepath of your [snapshot]({{urlRoot}}/content/glossary#snapshot). If you leave this empty, it defaults to `<GameRoot>/../spatial/snapshots`. |
 | Snapshot file name |  Name of your snapshot file. |
-| Generate placeholder entities in snapshot | If checked, the GDK adds [placeholder entities]({{urlRoot}}/content/generating-a-snapshot#placeholder-entities) to the snapshot when it is generated |
+| Generate placeholder entities in snapshot | If checked, the GDK adds [placeholder entities]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot#placeholder-entities) to the snapshot when it is generated |
 
 ##### Schema Generation
 
