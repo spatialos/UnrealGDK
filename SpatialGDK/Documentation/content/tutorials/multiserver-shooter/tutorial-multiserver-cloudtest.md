@@ -5,7 +5,7 @@
 
 ### Build your assemblies
 
-An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip files that contains all the files that your game uses when running in the cloud.
+An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip files that contain all the files that your game uses when running in the cloud.
 
 1. In a terminal window, change directory to the root directory of the Third-Person Shooter repository.
 1. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`
