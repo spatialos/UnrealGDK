@@ -16,7 +16,7 @@ Key concepts in Unreal Engine map to concepts in the GDK, as shown in the table 
 | Conditional property replication | dynamic `component_delivery` filter | |
 | Server | Server-worker instance | You can have multiple server-worker instances running the cloud element of your game. |
 
-You can find out more about [entities]({{urlRoot}}/content/glossary#spatialos-entity), SpatialOS [components]({{urlRoot}}/content/glossary#spatialos-component) and their properties, commands, events and [EntityACLs]({{urlRoot}}/content/glossary#access-control-list-acl), as well as the [`component_delivery` filter]({{urlRoot}}/content/glossary#component-interest) and [server-workers]({{urlRoot}}/content/glossary#workers), in the _Glossary_.
+You can find out more about [entities]({{urlRoot}}/content/glossary#spatialos-entity), SpatialOS [components]({{urlRoot}}/content/glossary#spatialos-component) and their properties, commands, events and [EntityACLs]({{urlRoot}}/content/glossary#access-control-list-acl), as well as the [`component_delivery` filter]({{urlRoot}}/content/glossary#component-interest) and [server-workers]({{urlRoot}}/content/glossary#workers), in the [glossary]({{urlRoot}}/content/glossary).
 
 ## GDK for Unreal concepts
 We’ve introduced some new concepts to facilitate the fact that SpatialOS enables you to spread computation between multiple servers - known as “server-worker instances” in SpatialOS.
@@ -24,7 +24,7 @@ We’ve introduced some new concepts to facilitate the fact that SpatialOS enabl
 ### Zoning
 Because the GDK uses SpatialOS networking, you can have multiple server-worker instances simulating your game world. This allows you to extend the size of the world.
 
-We call this zoning - splitting up the world into zones, known as “areas of authority”, each area simulated by one server-worker instance. This means that only one server-worker instance has authority to make updates to components at a time.
+We call this _zoning_ - splitting up the world into zones, known as “areas of authority”, each area simulated by one server-worker instance. This means that only one server-worker instance has authority to make updates to components at a time.
 
 > Support for zoning is currently in pre-alpha. We invite you to try out the demo and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
@@ -52,9 +52,9 @@ If your game uses zoning, you need to make sure that entities can move between a
 
 In Unreal’s single-server architecture, authority over an Actor stays with the single server; an Actor’s properties never leave the server’s memory. With SpatialOS multiple server-worker instances, authority needs to pass from one server-worker instance to another as an Actor moves around the game world. Passing authority, known as “Actor handover”, allows the second server-worker instance to continue where the first one left off. You set this up by adding the `Handover` tag to the Actor’s properties. 
 
-> **Tip**: 
-* Actors approximate to “entities” in SpatialOS, so we refer to them as “entities” when we’re talking about what happens to them in the GDK, and “Actors” when we’re talking about what you need to do with them in Unreal. 
-* Replicated Actor properties map to “properties” in an entity’s components in SpatialOS.
+> * Actors approximate to “entities” in SpatialOS, so we refer to them as “entities” when we’re talking about what happens to them in the GDK, and “Actors” when we’re talking about what you need to do with them in Unreal. 
+> 
+> * Replicated Actor properties map to “properties” in an entity’s components in SpatialOS.
 
 ![Moving across boundaries]({{assetRoot}}assets/screen-grabs/moving-across-boundaries.gif)
 
