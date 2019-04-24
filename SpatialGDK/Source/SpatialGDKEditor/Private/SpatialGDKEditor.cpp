@@ -97,7 +97,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	if (bResult)
 	{
-		UE_LOG(LogSpatialGDKEditor, Display, TEXT("Schema Generation Succeed!"));
+		UE_LOG(LogSpatialGDKEditor, Display, TEXT("Schema Generation Succeeded!"));
 	}
 	else
 	{
