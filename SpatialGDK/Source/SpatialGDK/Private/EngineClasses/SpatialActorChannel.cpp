@@ -70,6 +70,7 @@ void UpdateChangelistHistory(TSharedPtr<FRepState>& RepState)
 USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectInitializer /*= FObjectInitializer::Get()*/)
 	: Super(ObjectInitializer)
 	, bCreatedEntity(false)
+	, bCreatingNewEntity(false)
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bFirstTick(true)
 	, bInterestDirty(false)
@@ -77,7 +78,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, NetDriver(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
 	, TimeWhenPositionLastUpdated(0.0f)
-	, bCreatingNewEntity(false)
 {
 }
 
@@ -743,11 +743,11 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 }
 
-void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId EntityId, const FVector& NewPosition)
+void USpatialActorChannel::SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition)
 {
-	if (EntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::POSITION_COMPONENT_ID))
+	if (InEntityId != SpatialConstants::INVALID_ENTITY_ID && NetDriver->StaticComponentView->HasAuthority(InEntityId, SpatialConstants::POSITION_COMPONENT_ID))
 	{
-		Sender->SendPositionUpdate(EntityId, NewPosition);
+		Sender->SendPositionUpdate(InEntityId, NewPosition);
 	}
 
 	for (const auto& Child : InActor->Children)

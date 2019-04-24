@@ -4,6 +4,11 @@
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
 
+#if WITH_EDITOR
+#include "Modules/ModuleManager.h"
+#include "ISettingsModule.h"
+#endif
+
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, EntityPoolInitialReservationCount(3000)
@@ -12,9 +17,13 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, HeartbeatIntervalSeconds(2.0f)
 	, HeartbeatTimeoutSeconds(10.0f)
 	, ActorReplicationRateLimit(0)
-	, bUsingQBI(false)
+	, EntityCreationRateLimit(0)
+	, OpsUpdateRate(30.0f)
+	, bUsingQBI(true)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
+	, bEnableMetrics(true)
+	, MetricsReportRate(2.0f)
 {
 }
 
@@ -39,9 +48,14 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 
 	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUsingQBI))
 	{
-		FMessageDialog::Open(EAppMsgType::Ok,
-			FText::FromString(FString::Printf(TEXT("If you are not using auto-generated launch config, you must make sure to set the value of the \"enable_chunk_interest\" field to \"%s\" in your launch configuration for this to work. (You can check what launch configuration you are using in the SpatialOS GDK for Unreal Editor Settings.)"),
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo,
+			FText::FromString(FString::Printf(TEXT("You must set the value of the \"enable_chunk_interest\" Legacy flag to \"%s\" in your launch configuration file for this to work.\n\nIf you are using an auto-generated launch config, you can set this value from within Unreal Editor by going to Edit > Project Settings > SpatialOS GDK for Unreal > Settings.\n\nDo you want to configure your launch config settings now?"),
 				bUsingQBI ? TEXT("false") : TEXT("true"))));
+
+		if (Result == EAppReturnType::Yes)
+		{
+			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+		}
 	}
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }

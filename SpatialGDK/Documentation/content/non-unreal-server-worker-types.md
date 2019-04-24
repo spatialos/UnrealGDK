@@ -39,20 +39,22 @@ There is a basic example in the _Examples_ section below. For more examples of h
 
 >**Note:** Your external SpatialOS components must have an ID between 1000 and 2000 to be registered by the pipeline.
 
-You set up your game to receive component updates through implementing callbacks for specified SpatialOS component IDs and operation types. The GDK detects your callbacks when it’s initialized and uses them for all received data relating to components with IDs in the range 1000 to 2000.
-To create callbacks, you need to create a class derived from the GDK `UOpCallbackTemplate` base class and implement `GetComponentId` and one or more of the callback methods. These callback methods are parameterized by the following network operation types:
+You set up your game to receive network operations using the `USpatialDispatcher::AddOpCallback` functions. These overloaded functions are parameterized with a `Worker_ComponentId` and a callback function const reference that takes one of the following network operation types as an argument:
 
-* `virtual void OnAddComponent(const Worker_AddComponentOp& Op) {}`
-* `virtual void OnRemoveComponent(const Worker_RemoveComponentOp& Op) {}`
-* `virtual void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) {}`
-* `virtual void OnAuthorityChange(const Worker_AuthorityChangeOp& Op) {}`
-* `virtual void OnCommandRequest(const Worker_CommandRequestOp& Op) {}`
-* `virtual void OnCommandResponse(const Worker_CommandResponseOp& Op) {}`
+* `Worker_AddComponentOp`
+* `Worker_RemoveComponentOp`
+* `Worker_AuthorityChangeOp`
+* `Worker_ComponentUpdateOp`
+* `Worker_CommandRequestOp`
+* `Worker_CommandResponseOp`
 
+`Worker_ComponentId` and each network operation type are defined in the [Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/api-reference).
 
-The `UOpCallbackTemplate` base class contains protected references to the `UWorld` and GDK `StaticComponentView` enabling you to write more meaningful callbacks.
+If you want to ensure that the SpatialOS worker connection receives your callback for initial network operations, you need to register the callbacks inside your game instance's `OnConnected` event callback.
 
-There is a basic example in the _Examples_ section below. For more examples of how to deserialize see the SpatialOS documentation on  [serialization in the Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/serialization).
+Each `USpatialDispatcher::AddOpCallback` function returns a `CallbackId`. You can deregister your callbacks using the `USpatialDispatcher::RemoveOpCallback` function and passing the `CallbackId` parameter that was returned by the corresponding call to `USpatialDispatcher::AddOpCallback`.
+
+There is a basic example in the _Examples_ section below. For more examples of how to deserialize the `Worker_Op` type see the SpatialOS documentation on [serialization in the Worker SDK in C’s API](https://docs.improbable.io/reference/latest/capi/serialization).
 
 #### Add to the snapshot
 You can customize snapshot generation by creating a class derived from the GDK `USnapshotGenerationTemplate` base class, and implementing the method below. You have the responsibility of incrementing the `NextEntityId` reference. If you don’t, snapshot generation will fail by attempting to add multiple entities to the snapshot with the same ID.
@@ -72,23 +74,30 @@ There is a basic example in the _Examples_ section below. For more examples of h
 Below is a simple example schema file which a non-Unreal server-worker type could use to track player statistics:
 
 ```
-package improbable.session;
+package improbable.testing;
 
-type MyRequest {
-  string player_name = 1;
+type UnrealRequest {
+    string some_request_string = 1;
 }
-type MyResponse {}
+type UnrealResponse {
+    string some_response_string = 1;
+}
 
-component Session {
+component NonUnrealAuthoritative {
     id = 1337;
-    uint32 player_count = 1;
-    command MyResponse some_command(My_Request);
+    uint32 counter = 1;
+}
+
+component UnrealAuthoritative {
+    id = 1338;
+    uint32 other_counter = 1;
+    command UnrealResponse test_command(UnrealRequest);
 }
 ```
 
 #### Send data
 You could serialize and send a component update in your Unreal project code in the following way:
- 
+
 ```
 void SendSomeUpdate(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId)
 {
@@ -106,7 +115,7 @@ You could serialize and send a command response in your Unreal project code in t
 
 
 ```
-Worker_RequestId SendSomeCommandRequest(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandId) {
+Worker_RequestId SendSomeCommandResponse(Worker_EntityId TargetEntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandId) {
     Worker_CommandResponse Response = {};
     Response.component_id = ComponentId;
     Response.schema_type = Schema_CreateCommandResponse(ComponentId, CommandId);
@@ -121,48 +130,48 @@ Worker_RequestId SendSomeCommandRequest(Worker_EntityId TargetEntityId, Worker_C
 #### Receive data
 You could receive and deserialize a component update and command request in your Unreal project code in the following way:
 ```
-UCLASS()
-class SPATIALGDK_API SessionComponentCallbacks : UOpCallbackTemplate
+void UTPSGameInstance::Init()
 {
-    GENERATED_BODY()
-
-public:
-    Worker_ComponentId GetComponentId()
-    {
-        return 1337;
-    }
-
-    void OnComponentUpdate(const Worker_ComponentUpdateOp& Op) override
-    {
-        Worker_ComponentUpdate Update = {};
-        Update.component_id = 1338;
-        Update.schema_type = Schema_CreateComponentUpdate(1338);
-        Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update.schema_type);
-        Schema_AddInt32(FieldsObject, 1, ++UnrealCounter);
-        Cast<USpatialNetDriver>(World->GetNetDriver())->Connection-> SendComponentUpdate(39, &Update);
-    }
-
-    void OnCommandRequest(const Worker_CommandRequestOp& Op) override
-    {
-        Worker_CommandResponse Response = {};
-        Response.component_id = 1338;
-        Response.schema_type = Schema_CreateCommandResponse(1338, 1);
-        Schema_Object* ResponseObject = Schema_GetCommandResponseObject(Response.schema_type);
-
-        const char* Text = "My Response text.";
-        Schema_AddBytes(ResponseObject, 1, (const uint8_t*)Text, sizeof(char) * strlen(Text));
-
-        // Spawn an actor using the World pointer
-        // (where CubeClass is a Blueprint Actor UClass pointer)
-        if (StaticComponentView->HasAuthority(Op.entity_id, GetComponentId()))
+    // OnConnected is an event declared in USpatialGameInstance
+    OnConnected.AddLambda([this]() {
+        // On the client the world may not be completely set up, if s we can use the PendingNetGame
+        USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
+        if (NetDriver == nullptr)
         {
-            const FVector Location(0.0f, 0.0f, 0.0f);
-            const FRotator Rotation = FRotator::ZeroRotator;
-            World->SpawnActor(CubeClass, &Location, &Rotation);
+            NetDriver = Cast<USpatialNetDriver>(GetWorldContext()->PendingNetGame->GetNetDriver());
         }
+        USpatialDispatcher* Dispatcher = NetDriver->Dispatcher;
 
-        Cast<USpatialNetDriver>(World->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);
-    }
+        Dispatcher->AddOpCallback(1337, [this](const Worker_ComponentUpdateOp& Op) {
+            // Example deserializing network operation
+            uint32 PlayerCount = Schema_GetUint32(Schema_GetComponentUpdateFields(Op.update.schema_type), 1);
+
+            // Example actor spawning
+            const FVector Location = FVector::ZeroVector;
+            const FRotator Rotation = FRotator::ZeroRotator;
+            GetWorld()->SpawnActor(CubeClass, &Location, &Rotation);
+
+            // Example serializing and sending another network operation
+            Worker_ComponentUpdate Update = {};
+            Update.component_id = 1338;
+            Update.schema_type = Schema_CreateComponentUpdate(1338);
+            Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Update.schema_type);
+            Schema_AddInt32(FieldsObject, 1, PlayerCount);
+            Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->SendComponentUpdate(Op.entity_id, &Update);
+
+        });
+
+        Dispatcher->AddOpCallback(1338, [this](const Worker_CommandRequestOp& Op) {
+            // Example serializing and sending command response
+            Worker_CommandResponse Response = {};
+            Response.component_id = 1338;
+            Response.schema_type = Schema_CreateCommandResponse(1338, 1);
+            Schema_Object* response_object = Schema_GetCommandResponseObject(Response.schema_type);
+            FString text = "Here's my response.";
+            Schema_AddBytes(response_object, 1, (const uint8_t*)TCHAR_TO_ANSI(*text), sizeof(char) * strlen(TCHAR_TO_ANSI(*text)));
+            Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->SendCommandResponse(Op.request_id, &Response);
+        });
+    });
 }
 ```
 
@@ -171,54 +180,66 @@ You could add a new entity with the given component in your Unreal project code 
 
 ```
 UCLASS()
-class SPATIALGDK_API USessionEntitySnapshotGeneration : USnapshotGenerationTemplate
+class UTestEntitySnapshotGeneration : public USnapshotGenerationTemplate
 {
-    GENERATED_BODY()
+	GENERATED_BODY()
 
 public:
-    bool WriteToSnapshotOutput(Worker_SnapshotOutputStream* OutputStream, Worker_Entity& NextEntityId) override
-    {
-        Worker_Entity SomeEntity;
-        SomeEntity.entity_id = NextEntityId;
-        TArray<Worker_ComponentData> Components;
-        const WorkerAttributeSet ExternalWorkerAttributeSet{ TArray<FString>{TEXT("some_external_worker_type")} };
-        const WorkerRequirementSet ExternalWorkerPermission{ ExternalWorkerAttributeSet};
-        const WorkerRequirementSet AnyWorkerPermission{ {SpatialConstants::UnrealClientAttributeSet, SpatialConstants::UnrealServerAttributeSet, ExternalWorkerAttributeSet} };
-        WriteAclMap ComponentWriteAcl;
-        ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-        ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-        ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-        ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-        ComponentWriteAcl.Add(1337, ExternalWorkerPermission);
+	bool WriteToSnapshotOutput(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextEntityId) override {
+		Worker_Entity TestEntity;
+		TestEntity.entity_id = NextEntityId;
 
-        // Serialize SomeComponent data
-        Worker_ComponentData SomeComponentComponentData{};
-        FromUnrealComponentData.component_id = 1337;
-        FromUnrealComponentData.schema_type = Schema_CreateComponentData(1337);
-        Schema_Object* FromUnrealComponentDataObject = Schema_GetComponentDataFields(FromUnrealComponentData.schema_type);
-        Schema_AddInt32(FromUnrealComponentDataObject, 1, 1); // set some_counter to 1 initially
+		TArray<Worker_ComponentData> Components;
 
-        Components.Add(improbable::Position(improbable::Origin).CreatePositionData());
-        Components.Add(improbable::Metadata(TEXT("SessionManager")).CreateMetadataData());
-        Components.Add(improbable::Persistence().CreatePersistenceData());
-        Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
-        Components.Add(SessionComponentData);
-        Components.Add(FromUnrealComponentData);
+		const WorkerAttributeSet TestWorkerAttributeSet{ TArray<FString>{TEXT("test_attribute")} };
+		const WorkerRequirementSet TestWorkerPermission{ TestWorkerAttributeSet };
+		const WorkerRequirementSet AnyWorkerPermission{ {SpatialConstants::UnrealClientAttributeSet, SpatialConstants::UnrealServerAttributeSet, TestWorkerAttributeSet } };
 
-        SomeEntity.component_count = Components.Num();
-        SomeEntity.components = Components.GetData();
+		WriteAclMap ComponentWriteAcl;
+		ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+		ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+		ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+		ComponentWriteAcl.Add(1337, TestWorkerPermission);
+		ComponentWriteAcl.Add(1338, SpatialConstants::UnrealServerPermission);
 
-        bool bSuccess = Worker_SnapshotOutputStream_WriteEntity(OutputStream, &SomeEntity) != 0;
-        if (bSuccess)
-        {
-            NextEntityId++;
-        }
-        return bSuccess;
-    }
-}
+		// Serialize NonUnrealAuthoritative component data
+		Worker_ComponentData NonUnrealAuthoritativeComponentData{};
+		NonUnrealAuthoritativeComponentData.component_id = 1337;
+		NonUnrealAuthoritativeComponentData.schema_type = Schema_CreateComponentData(1337);
+		Schema_Object* NonUnrealAuthoritativeComponentDataObject = Schema_GetComponentDataFields(NonUnrealAuthoritativeComponentData.schema_type);
+		Schema_AddInt32(NonUnrealAuthoritativeComponentDataObject, 1, 1); // set counter field to 1 initially
+
+		// Serialize FromUnreal component data
+		Worker_ComponentData UnrealAuthoritativeComponentData{};
+		UnrealAuthoritativeComponentData.component_id = 1338;
+		UnrealAuthoritativeComponentData.schema_type = Schema_CreateComponentData(1338);
+		Schema_Object* UnrealAuthoritativeComponentDataObject = Schema_GetComponentDataFields(UnrealAuthoritativeComponentData.schema_type);
+		Schema_AddInt32(UnrealAuthoritativeComponentDataObject, 1, 1); // set other_counter field to 1 initially
+
+		Components.Add(improbable::Position(improbable::Origin).CreatePositionData());
+		Components.Add(improbable::Metadata(TEXT("TestEntity")).CreateMetadataData());
+		Components.Add(improbable::Persistence().CreatePersistenceData());
+		Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+		Components.Add(NonUnrealAuthoritativeComponentData);
+		Components.Add(UnrealAuthoritativeComponentData);
+
+		TestEntity.component_count = Components.Num();
+		TestEntity.components = Components.GetData();
+
+		bool bSuccess = Worker_SnapshotOutputStream_WriteEntity(OutputStream, &TestEntity) != 0;
+		if (bSuccess)
+		{
+			NextEntityId++;
+		}
+
+		return bSuccess;
+	}
+};
 ```
 
 <br/>
-------------
-2019-04-11 Page updated with limited editorial review<br>
-2019-03-15 Page added with full editorial review
+
+------
+_2019-04-11 Page updated with limited editorial review_<br/>
+_2019-03-15 Page added with full editorial review_

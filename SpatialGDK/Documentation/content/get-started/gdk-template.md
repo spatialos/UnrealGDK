@@ -88,7 +88,7 @@ _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** 
 1. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 
-If you want to run multiple server-workers in the Editor, see the [Toolbar documentation]({{urlRoot}}/content/toolbars#launching-multiple-pie-server-workers) for details on launching multiple PIE server-workers.
+If you want to run multiple server-workers in the Editor, see the [Toolbar documentation]({{urlRoot}}/content/toolbars#auto-generated-launch-config-for-pie-server-worker-types) for details on launching multiple PIE server-workers.
 
 #### Deploy in the cloud
 
@@ -135,11 +135,11 @@ When launching a cloud deployment you must provide three parameters:
 * **a launch configuration**, which declares the world and load balancing configuration.
 * **a name for your deployment**, which labels the deployment in the [Console](https://console.improbable.io).
 
-1. In a  terminal window, navigate to `<ProjectRoot>\spatial\` and run: `spatial cloud launch --snapshot=snapshots/default.snapshot <assembly_name> two_worker_test.json <deployment_name>` 
+1. In a  terminal window, navigate to `<ProjectRoot>\spatial\` and run: `spatial cloud launch --snapshot=snapshots/default.snapshot <assembly_name> one_worker_test.json <deployment_name>` 
 <br/>where `assembly_name` is the name you gave the assembly in the previous step and `deployment_name` is a name of your choice. A valid launch command would look like this:
 
 ```
-spatial cloud launch --snapshot=snapshots/default.snapshot myassembly two_worker_test.json mydeployment
+spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
 ```
 
 **Note:** This command defaults to deploying to clusters located in the US. If you’re in Europe, add the `--cluster_region=eu` flag for lower latency.

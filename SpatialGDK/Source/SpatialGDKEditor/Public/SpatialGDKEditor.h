@@ -4,6 +4,7 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
+#include "UObject/StrongObjectPtr.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditor, Log, All);
 
@@ -12,9 +13,11 @@ DECLARE_DELEGATE_OneParam(FSpatialGDKEditorErrorHandler, FString);
 class SPATIALGDKEDITOR_API FSpatialGDKEditor
 {
 public:
-	FSpatialGDKEditor();
+	FSpatialGDKEditor() : bSchemaGeneratorRunning(false)
+	{
+	}
 
-	void GenerateSchema(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
+	bool GenerateSchema(bool bFullScan);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 	void LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
@@ -26,4 +29,10 @@ private:
 	TFuture<bool> SchemaGeneratorResult;
 	TFuture<bool> LaunchCloudResult;
 	TFuture<bool> StopCloudResult;
+
+	bool LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets);
+
+	FDelegateHandle OnAssetLoadedHandle;
+	void OnAssetLoaded(UObject* Asset);
+	void RemoveEditorAssetLoadedCallback();
 };

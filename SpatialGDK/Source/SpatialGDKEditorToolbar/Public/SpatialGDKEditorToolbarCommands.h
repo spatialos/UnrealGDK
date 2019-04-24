@@ -21,6 +21,7 @@ public:
 
 public:
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSchema;
+	TSharedPtr<FUICommandInfo> CreateSpatialGDKSchemaFull;
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
 	TSharedPtr<FUICommandInfo> StartSpatialOSStackAction;
 	TSharedPtr<FUICommandInfo> StopSpatialOSStackAction;
