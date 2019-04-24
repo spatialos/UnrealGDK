@@ -141,6 +141,9 @@ public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
 	bool bCreatedEntity;
 
+	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
+	bool bCreatingNewEntity;
+
 protected:
 	// UChannel Interface
 	virtual bool CleanUp(const bool bForDestroy) override;
@@ -186,7 +189,4 @@ private:
 	// when those properties change.
 	TArray<uint8>* ActorHandoverShadowData;
 	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>> HandoverShadowDataMap;
-
-	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
-	bool bCreatingNewEntity;
 };
