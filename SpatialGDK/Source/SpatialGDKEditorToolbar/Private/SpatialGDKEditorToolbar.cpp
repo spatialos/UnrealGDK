@@ -250,11 +250,11 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 
 	if (SpatialGDKEditorInstance->GenerateSchema(false))
 	{
-		ShowSuccessNotification("Incremental Schema Generation Completed!");
+		ShowSuccessNotification("Incremental Schema Generation completed!");
 	}
 	else
 	{
-		ShowFailedNotification("Incremental Schema Generation Failed");
+		ShowFailedNotification("Incremental Schema Generation failed");
 	}
 }
 
@@ -264,11 +264,11 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 
 	if (SpatialGDKEditorInstance->GenerateSchema(true))
 	{
-		ShowSuccessNotification("Full Schema Generation Completed!");
+		ShowSuccessNotification("Full Schema Generation completed!");
 	}
 	else
 	{
-		ShowFailedNotification("Full Schema Generation Failed");
+		ShowFailedNotification("Full Schema Generation failed");
 	}
 }
 		
