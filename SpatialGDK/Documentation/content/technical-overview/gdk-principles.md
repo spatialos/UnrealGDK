@@ -14,7 +14,7 @@ The SpatialOS Game Development Kit (GDK) for Unreal is a plugin which allows you
 
 * **No limits**
     
-    An Unreal dedicated server can only be as powerful as the single machine running it, which quickly becomes a bottleneck in games with high numbers of Actors or complex game logic. 
+    An Unreal dedicated server is only as powerful as the single machine running it. The single machine quickly becomes a bottleneck in games with high numbers of Actors or complex game logic. 
 
     You don’t have to make these technical tradeoffs with the GDK. SpatialOS can spread computation across multiple servers, allowing for far more complex games and much higher player counts.</br></br>
 
