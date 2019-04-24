@@ -20,7 +20,7 @@ To set up your game to interact with SpatialOS components defined outside the GD
 * To receive [network operations](https://docs.improbable.io/reference/latest/shared/design/operations) for external SpatialOS components, you must provide custom callbacks for specific component IDs and operation types. The GDK then forwards the operations to your callbacks. (This is described in the examples section below.)
 
 
->**TIP:** If you’re using schema from outside the GDK, you can customise [snapshot generation](https://docs.improbable.io/unreal/alpha/content/generating-a-snapshot#when-to-generate-a-snapshot) from the GDK toolbar’s  **Snapshot** button. This is to serialize additional entities with these external components which the default Unreal snapshot generation cannot currently do. See [Add to the snapshot](#add-to-the-snapshot) below for how to do this.
+>**TIP:** If you’re using schema from outside the GDK, you can customise [snapshot generation](https://docs.improbable.io/unreal/alpha/content/generating-a-snapshot#generating-a-snapshot) from the GDK toolbar’s  **Snapshot** button. This is to serialize additional entities with these external components which the default Unreal snapshot generation cannot currently do. See [Add to the snapshot](#add-to-the-snapshot) below for how to do this.
 
 #### Send data
 You set up your game to send SpatialOS component updates, command requests, and command responses directly using the `SpatialWorkerConnection.h` public methods:
