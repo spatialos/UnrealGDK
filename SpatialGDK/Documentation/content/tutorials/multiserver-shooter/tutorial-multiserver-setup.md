@@ -64,7 +64,7 @@ _Image: The Visual Studio toolbar_
 <br/>
 ### Deploy the project locally
 
-In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will [cloud deploy](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
+In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will run a [cloud deployment](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
 
 1. In the Unreal Editor, on the Unreal toolbar, open the **Play** drop-down menu.<br/>
 1. Under **Multiplayer Options**, enter the number of players as **2**.
