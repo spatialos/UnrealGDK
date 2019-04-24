@@ -55,7 +55,7 @@ In this step, you're going to build the Unreal GDK's dependencies.
 1. In **File Explorer**, navigate to the ThirdPersonShooter directory, right-click `ThirdPersonShooter.uproject` and select Generate Visual Studio Project files.
 1. In the same directory, double-click `ThirdPersonShooter.sln` to open it with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
-1. When Visual Studio has finished building your project, right-click on **ThirdPersonShooter** and select **Set as StartUp Project**.
+1. When Visual Studio has finished building your project, right-click **ThirdPersonShooter** and select **Set as StartUp Project**.
 1. Press F5 on your keyboard or select **Local Windows Debugger** in the Visual Studio toolbar to open your project in the Unreal Editor.<br/>
 ![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
 _Image: The Visual Studio toolbar_
