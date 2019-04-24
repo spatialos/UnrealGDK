@@ -11,9 +11,9 @@ Key concepts in Unreal Engine map to concepts in the GDK, as shown in the table 
 | --- | --- | --- |
 | Actor | Entity | An entity is made up of a set of SpatialOS components, each storing data about the entity. Note that SpatialOS components are **not** the same thing as Unreal Components. |
 | Replicated property | SpatialOS component’s property | A type of data stored in a SpatialOS component.|
-| RPC | SpatialOS component’s command or event | A type of data stored in a SpatialOS component. Note this is **not** the same as an Unreal command. |
+| RPC | SpatialOS component’s command or event | A type of data stored in a SpatialOS component. Note that a SpatialOS component’s command is **not** the same as an Unreal command. |
 | Owning connection | EntityACL component | |
-| Conditional property replication | dynamic `component_delivery` filter | |
+| Conditional property replication | Dynamic `component_delivery` filter | |
 | Server | Server-worker instance | You can have multiple server-worker instances running the cloud element of your game. |
 
 You can find out more about [entities]({{urlRoot}}/content/glossary#spatialos-entity), SpatialOS [components]({{urlRoot}}/content/glossary#spatialos-component) and their properties, commands, events and [EntityACLs]({{urlRoot}}/content/glossary#access-control-list-acl), as well as the [`component_delivery` filter]({{urlRoot}}/content/glossary#component-interest) and [server-workers]({{urlRoot}}/content/glossary#workers), in the [glossary]({{urlRoot}}/content/glossary).
@@ -24,9 +24,9 @@ We’ve introduced some new concepts to facilitate the fact that SpatialOS enabl
 ### Zoning
 Because the GDK uses SpatialOS networking, you can have multiple server-worker instances simulating your game world. This allows you to extend the size of the world.
 
-We call this _zoning_ - splitting up the world into zones, known as “areas of authority”, each area simulated by one server-worker instance. This means that only one server-worker instance has authority to make updates to components at a time.
+We call this _zoning_ - splitting up the world into zones, known as “areas of authority”, each area simulated by one server-worker instance. This means that only one server-worker instance has authority to make updates to SpatialOS components at a time.
 
-> Support for zoning is currently in pre-alpha. We invite you to try out the demo and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
+> **Note**: Support for zoning is currently in pre-alpha. We invite you to try out the [Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
 ### Cross-server RPCs
 To facilitate zoning, we created the concept of a cross-server RPC to make updates to Actors, known as “entities” in SpatialOS. This is a type of RPC that enables a server-worker instance  which does not have authority over an entity to tell the server-worker instance that does have authority over that entity to make an update to it. This is necessary if you’re using zoning, because areas of authority mean that one server-worker instance can't make updates to every entity in the world; it can only make updates to the entities in its area of authority.
@@ -48,9 +48,9 @@ void TakeDamage(int Damage);
 For more information, see the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs).
 
 ### Actor handover
-If your game uses zoning, you need to make sure that entities can move between areas of authority and the relevant server-worker instances can simulate them seamlessly. 
+If your game uses zoning, you need to make sure that entities can move seamlessly between areas of authority and the relevant server-worker instances can simulate them. 
 
-In Unreal’s single-server architecture, authority over an Actor stays with the single server; an Actor’s properties never leave the server’s memory. With SpatialOS multiple server-worker instances, authority needs to pass from one server-worker instance to another as an Actor moves around the game world. Passing authority, known as “Actor handover”, allows the second server-worker instance to continue where the first one left off. You set this up by adding the `Handover` tag to the Actor’s properties. 
+In Unreal’s single-server architecture, authority over an Actor stays with the single server; an Actor’s properties never leave the server’s memory. With multiple server-worker instances in SpatialOS, authority needs to pass from one server-worker instance to another as an Actor moves around the game world. Passing authority, known as “Actor handover”, allows the second server-worker instance to continue where the first one left off. You set this up by adding the `Handover` tag to the Actor’s properties. 
 
 > * Actors approximate to “entities” in SpatialOS, so we refer to them as “entities” when we’re talking about what happens to them in the GDK, and “Actors” when we’re talking about what you need to do with them in Unreal. 
 > 
@@ -60,7 +60,7 @@ In Unreal’s single-server architecture, authority over an Actor stays with the
 
  _An AI following a player across the boundary between two server-worker instances' areas of authority. To demonstrate Actor handover, the AI changes its material every time authority is handed over._
 
-See the [zoned Multiserver Shooter tutorial](https://docs.improbable.io/unreal/alpha/content/get-started/tutorial#clone-the-gdk-into-the-plugins-directory) for a tutorial that demonstrates this functionality.
+See the [Multiserver Shooter tutorial](https://docs.improbable.io/unreal/alpha/content/get-started/tutorial) for a tutorial that demonstrates this functionality.
 
 For more information, see the documentation on [Actor handover]({{urlRoot}}/content/handover-between-server-workers).
 
