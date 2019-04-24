@@ -1,7 +1,9 @@
 <%(TOC)%>
 # Schema
 
-SpatialOS uses [schema](https://docs.improbable.io/reference/latest/shared/concepts/schema#schema) to generate APIs specific to the components in your project. These APIs define how you can operate on entity components within SpatialOS.
+Schema is a set of definitions which represent your game's objects in SpatialOS. SpatialOS uses schema to generate APIs specific to the components in your project. You can then use these APIs in your game's [worker types]({{urlRoot}}//content/glossary#spatialos-component) so their instances can interact with [SpatialOS entity components]({{urlRoot}}/content/glossary#spatialos-component). </br>
+
+Schema is defined in `.schema` files and written in schemalang.  When you use the GDK, the schema files and their contents are generated and deleted automatically so you do not have to write or edit schema files manually. The GDK generates and deletes schema for you, when you start schema generation.
 
 #### How to generate schema
 

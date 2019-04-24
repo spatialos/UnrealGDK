@@ -116,7 +116,7 @@ _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** 
 1. On the Unreal Engine toolbar, select **Play** to run the game, and you should see two clients start.<br/><br/>
 ![]({{assetRoot}}assets/set-up-template/template-two-clients.png)<br/>
 _Image: Two clients running in the Editor, with player Actors replicated by SpatialOS and the GDK_<br/>
-1. Open the Inspector. You should see that a local SpatialOS deployment is running with one server-worker instance and two client-worker instances connected. You can also find and follow around the two player entities.<br/><br/>
+1. Open the Inspector using the local URL you were given above: `http://localhost:21000/inspector`.</br>  You should see that a local SpatialOS deployment is running with one server-worker instance and two client-worker instances connected. You can also find and follow around the two player entities.<br/><br/>
 ![]({{assetRoot}}assets/set-up-template/template-two-client-inspector.png)<br/>
 _Image: The Inspector showing the state of your local deployment_<br/>
 1. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
