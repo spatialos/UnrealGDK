@@ -10,7 +10,7 @@ After this you can either:
 
 ## Your feedback and ideas
 
-We'd love to hear from you - drop into our forums or discord to give us feedback on your getting started experience, our documentation, our [development roadmap](https://trello.com/b/7wtbtwmL/unreal-gdk-roadmap), or anything else!
+We'd love to hear from you - drop into our forums or discord to give us feedback on your getting started experience, our documentation, our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1), or anything else!
 
 **Discord**</br>
 Find us on the [SpatialOS Discord](https://discord.gg/vAT7RSU) in the [**#unreal** channel](https://discordapp.com/channels/311273633307951114/339471548647866368).
