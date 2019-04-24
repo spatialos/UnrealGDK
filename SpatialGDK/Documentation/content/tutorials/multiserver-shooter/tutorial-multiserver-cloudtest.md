@@ -62,7 +62,7 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 1. To invite other players to this game, head back to the Deployment Overview page in your [Console](https://console.improbable.io), and select the **Share** button.
 1. Share the generated link with your friends!
 
-When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to halt your deployment.
+When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to stop your deployment.
 
 <br/>
 ### Next steps
