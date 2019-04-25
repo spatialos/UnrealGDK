@@ -4,7 +4,6 @@ The aim of the GDK is to seamlessly support all native Unreal Engine features, m
 
 We are not there yet, so the tables below show the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of. The Unreal Engine features support for multiserver configurations of the GDK will be available in Q3 2019.
 
-**Legend**
 <style type="text/css">
     th {
         vertical-align:middle;
@@ -33,7 +32,10 @@ We are not there yet, so the tables below show the state of support of Unreal En
     /* .na {
         background-color:#808080;
     } */
-</style> 
+</style>
+
+**Legend**
+
 <table >
     <tr>
         <td>Fully supported, available now</td>
@@ -378,3 +380,9 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 ## Multiserver Support
 
 The table for multiserver support is coming soon. 
+
+<br/>
+
+------------
+*2019-04-25 Page added with full editorial review*
+<br/>
