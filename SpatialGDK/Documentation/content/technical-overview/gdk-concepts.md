@@ -81,3 +81,9 @@ By default, the GDK uses a single Unreal server-worker type (the template for a 
 You can use these non-Unreal server-worker types to modularize your game’s functionality so you can re-use the functionality across different games. For example, you could use a non-Unreal server-worker type written in Python that interacts with a database or other third-party service, such as [Firebase](https://firebase.google.com/) or [PlayFab](https://playfab.com/).
 
 For more information, see the documentation on [non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types).
+
+<br/>
+
+------------
+2019-04-25 Page added with full editorial review 
+<br/>
