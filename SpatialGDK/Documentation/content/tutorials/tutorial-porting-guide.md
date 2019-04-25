@@ -8,13 +8,13 @@ This guide shows you how to port your own Unreal project to SpatialOS using the 
 ## Before you start
 
 Before porting your project: 
- 
+
 * If you haven't done this already, follow our Get Started guide before porting your game:
     * [Get started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     * [Get started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
     * [Get started: 3 - Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
 
-* Open a terminal window and run the command `spatial update` to ensure your [spatial CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) installation is up to date. 
+* Open a terminal window and run the command `spatial update` to ensure your [spatial CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli) installation is up to date. 
 
 ### Terms used in this guide
 * `<GameRoot>` - The directory containing your project's `.uproject` file and `Source` directory.  
@@ -70,14 +70,14 @@ Before porting your project:
 1. You need to configure the GDK helper scripts to work with your project. 
 
 Follow this step to set up your project paths: 
-   
+
    * Open **`\<ProjectRoot>\ProjectPaths.bat`** in a text editor.  
 
-    * In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.  
-    * In `set GAME_NAME= TP_SpatialGDK `, replace `TP_SpatialGDK ` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
+        * In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.  
+        * In `set GAME_NAME= TP_SpatialGDK `, replace `TP_SpatialGDK ` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
 
     **Note**: The helper scripts `LaunchClient.bat` and `LaunchServer.bat` will not work if you do not follow this step correctly. 
-    
+
 ### 2. Clone the GDK
 
 Now you need to clone the SpatialOS GDK for Unreal into your project. To do this: 
@@ -87,17 +87,18 @@ Now you need to clone the SpatialOS GDK for Unreal into your project. To do this
     * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
     * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`<br/><br/>
 **Note:** You need to ensure that the root directory of the GDK for Unreal repository is called `UnrealGDK` so the file path is: `<GameRoot>\Plugins\UnrealGDK\...`<br/>
-1. Run `Setup.bat` which is in the root directory of the GDK repository (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
+3. Run `Setup.bat` which is in the root directory of the GDK repository (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
     - In a terminal window, navigate to the root directory of the GDK and run: `Setup.bat` or
     - In your file manager, double-click the `Setup.bat` file.
-  
+      
+
     **Note**:`Setup.bat` will automatically open the SpatialOS authorization page in your default browser. You may be prompted to sign into your SpatialOS account if you have not already. 
 
 ### 3. Add the SpatialGDK module to your project
 
 1. In **File Explorer**, navigate to `\<ProjectRoot>\<GameRoot>\Source\<YourProject>\`.
 2. Open the `<YourProject>.build.cs` file in a code editor and add add `"SpatialGDK"` to `PublicDependencyModuleNames`.
-    
+   
     For example:  
 
     ``` csharp
@@ -165,7 +166,7 @@ You must modify your `GameInstance` class to work properly with the GDK.
     ![spatial game instance reparent]({{assetRoot}}assets/screen-grabs/spatial-game-instance-reparent.png)<br/>_Image: The Blueprint class settings screen_<br/>
 
 ### 6. Generate schema and a snapshot
-You need to generate [schema]({{urlRoot}}/content/schema) and generate a [snapshot]({{urlRoot}}/content/generating-a-snapshot) before you start your deployment. To do this:
+You need to generate [schema]({{urlRoot}}/content/spatialos-concepts/schema) and generate a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) before you start your deployment. To do this:
 
 1. In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars), select **Schema** to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
 1. On the same toolbar, select **Snapshot**, which will generate a snapshot for the map currently open in the editor.
@@ -185,7 +186,7 @@ You need to generate [schema]({{urlRoot}}/content/schema) and generate a [snapsh
     > You can increase the number of servers that you launch by changing the **Number of servers** value. Leave this value at 1 for now. This is because there is currently no multiserver logic in your code. After you have completed this guide you can start building multiserver game logic.  
     
 1. On the [GDK toolbar]({{urlRoot}}/content/toolbars), select **Start**. This builds your [worker configuration]({{urlRoot}}/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>_Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/><br/>
-Selecting **Start** opens a terminal window and runs two SpatialOS command line interface ([CLI]({{urlRoot}}/content/glossary#spatial-command-line-tool-cli) commands: `spatial build build-config` and `spatial local launch`. Your deployment has started when you see `SpatialOS ready` in the terminal window.<br/><br/>
+Selecting **Start** opens a terminal window and runs two SpatialOS command line interface ([CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli) commands: `spatial build build-config` and `spatial local launch`. Your deployment has started when you see `SpatialOS ready` in the terminal window.<br/><br/>
 1. On the main Unreal toolbar, select **Play**. <br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/play-button.png)<br/>_Image: On the Unreal Engine toolbar **Play**_<br/><br/>
 1. From the SpatialOS [GDK toolbar]({{urlRoot}}/content/toolbars) select **Inspector**, which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your default web browser. Here you can see the entities and their components present in your deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>_Image: On the GDK toolbar in the Unreal Editor select **Inspector**_<br/>
 
@@ -203,7 +204,7 @@ You can find Spatial log files for your local deployments in `<ProjectRoot>\spat
 * `spatial_<datetime>.log` contains all of the logs printed to your terminal during the local deployment.  
 * There are also timestamped folders here which contain additional logs:
   1. `<ProjectRoot>\spatial\logs\workers\` contain managed worker logs which are the workers started by SpatialOS, specified in your [launch configuration]({{urlRoot}}/content/glossary#launch-configuration).
-  1. `<ProjectRoot>\spatial\logs\runtime.log` contains the logs printed by the SpatialOS runtime. These are the services required for SpatialOS to run a local deployment.  
+  1. `<ProjectRoot>\spatial\logs\runtime.log` contains the logs printed by the SpatialOS Runtime. These are the services required for SpatialOS to run a local deployment.  
 
 If you require additional debugging logs you can run `spatial local launch` with the flag `--log_level=debug`.
 
@@ -216,7 +217,7 @@ You can change:
 
 ## Next steps
 
-If you haven't already, check out the tutorial on how to implement [cross-server shooting]({{urlRoot}}/content/get-started/tutorial).  
+If you haven't already, check out the Multiserver shooter tutorial tutorial to learn how to implement [cross-server interactions]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro).  
 Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 

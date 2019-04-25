@@ -1,33 +1,39 @@
 - <h3>SpatialOS GDK for Unreal</h3>
     - [Welcome]({{urlRoot}}/index)
+    - [Feature list]({{urlRoot}}/features)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
         - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
         - [3: Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
-        - Next steps - either:
-            - [Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
-            - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
     - Technical overview
         - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
         - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
         - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
-    - [Feature list]({{urlRoot}}/features)
+    - Tutorials
+        - Multiserver Shooter tutorial
+            - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
+            - [Step 1: Set up]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
+            - [Step 2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
+            - [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+            - [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+        - [Port your own project to the GDK]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
     - [What's new in alpha]({{urlRoot}}/content/whatsnew)
 - <h3>Concepts and terminology</h3>
-    - [SpatialOS concepts]({{urlRoot}}/content/concepts)
+    - SpatialOS concepts
+        - [Summary]({{urlRoot}}/content/spatialos-concepts/concepts)
+        - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
+        - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
     - [Glossary]({{urlRoot}}/content/glossary)
     - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
     - [Spatial Type]({{urlRoot}}/content/spatial-type)
     - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
-    - [Authority]({{urlRoot}}/content/authority)
+    - [Unreal networking authority]({{urlRoot}}/content/authority)
     - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
     - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
     - [Map travel]({{urlRoot}}/content/map-travel)
     - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
-    - [Schema]({{urlRoot}}/content/schema)
-    - [Snapshots]({{urlRoot}}/content/generating-a-snapshot)
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
@@ -48,4 +54,4 @@
         - [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368)
         - [Forums](https://forums.improbable.io/)
         - [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
-    - [Development roadmap](https://trello.com/b/7wtbtwmL/spatialos-gdk-for-unreal-roadmap)
+    - [Development roadmap](https://github.com/spatialos/UnrealGDK/projects/1)

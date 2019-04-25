@@ -19,12 +19,13 @@ To get access to our fork, you need to link your GitHub account to a verified Ep
     | HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |
     | SSH |`git clone git@github.com:improbableio/UnrealEngine.git`
 
-
-
-
 2.  To build Unreal server-workers for SpatialOS deployments you need to build the Unreal Engine fork targeting Linux. This requires cross-compilation of your SpatialOS project and the Unreal Engine fork.
 
     For guidance on this, see the _Getting the toolchain_ section of Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation. As you follow the guidance there, select **v11 clang 5.0.0-based** to download the `v11_clang-5.0.0-centos7.zip` archive, then unzip this file into a suitable directory.
+
+<!---
+TODO: add link from "server-workers" to concepts page.
+-->
 
 ### Step 3: Add environment variables
 
