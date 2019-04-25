@@ -1,10 +1,10 @@
 # Unreal features support 
 
-The aim of the GDK is to seemlessly support all native Unreal Engine features, making it easy to create and port any Unreal game code to run on SpatialOS, both in single server and multiserver configurations. 
+The aim of the GDK is to seamlessly support all native Unreal Engine features, making it easy to create and port any Unreal game code to run on SpatialOS, both in single server and multiserver configurations.
 
-We are not there yet, and the  tables below provide the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of.
+We are not there yet, so the tables below show the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of. The Unreal Engine features support for multiserver configurations of the GDK will be available in Q3 2019.
 
-### Legend
+**Legend**
 <style type="text/css">
     th {
         vertical-align:middle;
@@ -42,10 +42,10 @@ We are not there yet, and the  tables below provide the state of support of Unre
         <td>Supported with caveats or workarounds</td>
         <td class="caveats"></td>
     </tr>
-        <td>Planned to be delivered in Q2 - Q3 2019</td>
+        <td>Q2 - Q3 2019</td>
         <td class="indev"></td>
     </tr>
-        <td>Planned to be delivered in the longer term</td>
+        <td>Planned for post Q3 2019</td>
         <td class="roadmap"></td>
     </tr>
     <!-- </tr>
@@ -60,8 +60,8 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
 <table style="width:100%">
   <tr style="background-color:#f0f0f0;">
-    <th>Feature Area</th>
-    <th style="width:25%">Feature</th>
+    <th>Feature Area (Links are to Unreal documentation)</th>
+    <th style="width:25%">Feature (Links are to Unreal documentation)</th>
     <th style="width:2%;">Support Level</th>
     <th>Notes & Caveats</th>
   </tr>
@@ -69,7 +69,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <!-- ------ Gameplay Framework ------ -->
 
   <tr>
-    <td rowspan="7"><a href="https://docs.unrealengine.com/en-us/Gameplay/Framework"><b>Gameplay Framework<b></a></td>
+    <td rowspan="7"><a href="https://docs.unrealengine.com/en-us/Gameplay/Framework"><b>Gameplay framework<b></a></td>
     <td>GameMode</td>
     <td class="supported"></td>
     <td></td>
@@ -108,7 +108,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <!-- ------ Property Replication ------ -->
   
    <tr>
-    <td rowspan="9"><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/Properties"><b>Property Replication<b></a></td>
+    <td rowspan="9"><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/Properties"><b>Property replication<b></a></td>
     <td>Data property replication (C++ classes)</td>
     <td class="supported"></td>
     <td>Using fixed arrays instead of TArrays is significantly faster.</td>
