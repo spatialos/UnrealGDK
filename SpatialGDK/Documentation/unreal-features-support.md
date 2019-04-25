@@ -2,7 +2,7 @@
 
 The aim of the GDK is to seamlessly support all native Unreal Engine features, making it easy to create and port any Unreal game code to run on SpatialOS, both in single server and multiserver configurations.
 
-We are not there yet, so the tables below show the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of. The Unreal Engine features support for multiserver configurations of the GDK will be available in Q3 2019.
+The following tables show the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of. The Unreal Engine features support for multiserver configurations of the GDK will be available in Q3 2019.
 
 <style type="text/css">
     th {
@@ -71,7 +71,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <!-- ------ Gameplay Framework ------ -->
 
   <tr>
-    <td rowspan="7"><a href="https://docs.unrealengine.com/en-us/Gameplay/Framework"><b>Gameplay framework<b></a></td>
+    <td rowspan="7"><a href="https://docs.unrealengine.com/en-us/Gameplay/Framework"><b>Gameplay Framework<b></a></td>
     <td>GameMode</td>
     <td class="supported"></td>
     <td></td>
@@ -110,35 +110,35 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <!-- ------ Property Replication ------ -->
   
    <tr>
-    <td rowspan="9"><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/Properties"><b>Property replication<b></a></td>
-    <td>Data property replication (C++ classes)</td>
+    <td rowspan="9"><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/Properties"><b>Property Replication<b></a></td>
+    <td>Data Property Replication (C++ classes)</td>
     <td class="supported"></td>
     <td>Using fixed arrays instead of TArrays is significantly faster.</td>
   </tr>
   <tr>
-    <td>Data property replication (Blueprint classes)</td>
+    <td>Data Property Replication (Blueprint classes)</td>
     <td class="supported"></td>
     <td></td>
   </tr>
   <tr>
-    <td>Dynamic object reference replication (C++ classes)</td>
+    <td>Dynamic Object Reference Replication (C++ classes)</td>
     <td class="supported"></td>
     <td></td>
   </tr>
   <tr>
-    <td>Dynamic object reference replication (Blueprint classes)</td>
+    <td>Dynamic Object Reference Replication (Blueprint classes)</td>
    <td class="supported"></td>
     <td></td>
   </tr>
   <tr>
-    <td>Stably named object reference replication</td>
+    <td>Stably Named Object Reference Replication</td>
     <td class="supported"></td>
     <td></td>
   </tr>
   <tr>
-    <td>Conditional replication</td>
+    <td>Conditional Replication</td>
     <td class="supported"></td>
-    <td>Replication condition active overrides (DOREPLIFETIME_ACTIVE_OVERRIDE as defined on <a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/Properties/Conditions">this page</a>) do not work.</td>
+    <td>Replication condition active overrides (DOREPLIFETIME_ACTIVE_OVERRIDE as defined  <a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/Properties/Conditions">in Unreal documentation</a>) do not work.</td>
   </tr>
   <tr>
     <td>Delta Serialization</td>
@@ -146,12 +146,12 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td></td>
   </tr>
     <tr>
-    <td>Fast TArray serialization</td>
+    <td>Fast TArray Serialization</td>
     <td class="roadmap"></td>
-    <td>Supported, but not faster than native UE.</td>
+    <td>Supported, but slower than native UE.</td>
   </tr>
   <tr>
-    <td>RepNotify callbacks</td>
+    <td>RepNotify Callbacks</td>
     <td class="supported"></td>
     <td></td>
   </tr>
@@ -162,17 +162,17 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td rowspan="7"><b><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors">Actor Replication</a><b></td>
     <td>Client and server RPCs (C++)</td>
     <td class="supported"></td>
-    <td>Ordering of reliable RPCs not respected.</td>
+    <td>Ordering of reliable RPCs is not respected.</td>
   </tr>
   <tr>
-    <td>Client and server RPCs (Blueprint)</td>
+    <td>Client and Server RPCs (Blueprint)</td>
     <td class="supported"></td>
-    <td>Ordering of reliable RPCs not respected.</td>
+    <td>Ordering of reliable RPCs is not respected.</td>
   </tr>
   <tr>
     <td>Multicast RPCs</td>
     <td class="supported"></td>
-    <td>RPCs cannot be reliable.</td>
+    <td>RPCs cannot be reliable. (This is due to the distributed systems nature of SpatialOS.)</td>
   </tr>
   <tr>
     <td>Actor Roles</td>
@@ -180,12 +180,12 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td></td>
   </tr>
   <tr>
-    <td>Static subobject replication</td>
+    <td>Static Subobject Replication</td>
     <td class="supported"></td>
     <td></td>
   </tr>
   <tr>
-    <td>Dynamic component replication</td>
+    <td>Dynamic Component Replication</td>
     <td class="indev"></td>
     <td></td>
   </tr>
@@ -238,7 +238,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td rowspan="3"><b>Optimization<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Networking/ReplicationGraph">Replication Graph</a></td>
     <td class="indev"></td>
-    <td>We may present a different system for the same purpose instead.</td>
+    <td>We will present a different system for the same purpose instead.</td>
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/ReplicationFlow">Net Dormancy</a></td>
@@ -267,7 +267,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Gameplay/Tools/NetworkProfiler">Network Profiler</td>
     <td class="roadmap"></td>
-    <td>We may not support this tool fully but will at least have equivalent functionality in <a href="https://docs.improbable.io/reference/13.7/shared/operate/metrics"> SpatialOS metrics</a>.</td>
+    <td>We may not support this tool fully but will have equivalent functionality in <a href="https://docs.improbable.io/reference/13.7/shared/operate/metrics"> SpatialOS metrics</a>.</td>
   </tr>
 
 <!-- ------ World Building ------ -->
@@ -336,7 +336,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td></td>
 </tr>
   <tr>
-    <td><a href="https://docs.unrealengine.com/en-us/Engine/Animation">Skeletal Mesh Animations</a></td>
+    <td><a href="https://docs.unrealengine.com/en-us/Engine/Animation">Skeletal Mesh Animation System</a></td>
     <td class="supported"></td>
     <td></td>
 </tr>
