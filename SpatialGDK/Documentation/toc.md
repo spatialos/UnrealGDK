@@ -14,7 +14,8 @@
             - [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
         - [Port your own project to the GDK]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
-    - [What's new in alpha]({{urlRoot}}/content/whatsnew)
+    - [Unreal features support]({{urlRoot}}/unreal-features-support)
+    - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
     - SpatialOS concepts
         - [Summary]({{urlRoot}}/content/spatialos-concepts/concepts)
@@ -30,6 +31,8 @@
     - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
     - [Map travel]({{urlRoot}}/content/map-travel)
     - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
+    - [Schema]({{urlRoot}}/content/schema)
+    - [Snapshots]({{urlRoot}}/content/generating-a-snapshot)
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
@@ -37,8 +40,9 @@
 - <h3>Workflows</h3>
     - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
     - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
+    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
-    - [Known issues]({{urlRoot}}/known-issues)
     - [Keep your GDK up to date]({{urlRoot}}/content/upgrading)
 - <h3>Get involved</h3>
     - Contributing to the GDK
