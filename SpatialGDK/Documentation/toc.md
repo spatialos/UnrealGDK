@@ -1,6 +1,5 @@
 - <h3>SpatialOS GDK for Unreal</h3>
     - [Welcome]({{urlRoot}}/index)
-    - [Feature list]({{urlRoot}}/features)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
@@ -31,8 +30,6 @@
     - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
     - [Map travel]({{urlRoot}}/content/map-travel)
     - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
-    - [Schema]({{urlRoot}}/content/schema)
-    - [Snapshots]({{urlRoot}}/content/generating-a-snapshot)
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
@@ -43,7 +40,7 @@
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
-    - [Keep your GDK up to date]({{urlRoot}}/content/upgrading)
+    - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
 - <h3>Get involved</h3>
     - Contributing to the GDK
         - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)
