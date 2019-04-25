@@ -15,8 +15,13 @@ You can define any class as a Singleton Actor. Unreal engine classes we have exp
 
 * As `SpatialType` is inheritable, all classes that derive off these classes are also considered Singleton Actors. You can opt out using the `NotSpatialType` tag.
 
-# Singleton Usage Guidelines
-Each server-worker should instantiate their own local version of each Singleton Actor. For `AGameMode` and `AGameState`, Unreal Engine does this automatically. Client-workers receive Public Singletons Actors from the server-workers via the normal Actor replication lifecycle.
+# Singleton Spawning Rules
+
+1. Never explicitly spawn any Singleton Actor on client-workers. The runtime will ensure each client receives the Singleton Actor via the normal actor replication pipeline.
+1. Always explicity spawn all Singleton Actors on server-workers. The Unreal GDK will ensure that only one server-worker is authoritive over the Singleton Actor. See Coordinating Singletons.
+1. A caveat to the above rule is `AGameMode` and `AGameState` Singletons Actors will be spawned automatically on server-workers in the Unreal Engine startup flow, so the user doesn't need to explicitly spawn these Singleton Actors.
+
+# Coordinating Singletons
 
 Due to server-workers spawning their own instances of each Singleton Actor, proper replication and authority management of Singleton Actors becomes a bit tricky. To solve this issue, we have introduced the concept of a Global State Manager (GSM) to enable proper replication of Singleton Actors. The GSM solves the problem of replicating Singleton Actors by only allowing the server-worker with [authority]({{urlRoot}}/content/glossary#authority) over the GSM to execute the initial replication of these Actors. All other server-workers will then link their local Singleton Actors to their respective SpatialOS entity. Because of this, you must update your snapshot whenever adding a new Singleton Actor to your project.
 
