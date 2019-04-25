@@ -70,4 +70,4 @@ void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, F
 	}
 }
 
-}
+} // namespace SpatialGDK

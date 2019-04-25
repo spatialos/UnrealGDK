@@ -111,4 +111,4 @@ FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const F
 	return SubobjectNameToOffset;
 }
 
-}
+} // namespace SpatialGDK

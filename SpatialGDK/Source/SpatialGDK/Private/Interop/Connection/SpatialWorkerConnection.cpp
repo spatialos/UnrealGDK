@@ -320,7 +320,7 @@ Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_E
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendMetrics(const SpatialGDK::Metrics& Metrics)
+void USpatialWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
 {
 	QueueOutgoingMessage<FMetrics>(Metrics);
 }

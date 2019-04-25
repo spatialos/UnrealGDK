@@ -35,4 +35,4 @@ private:
 	TSet<FUnrealObjectRef>& UnresolvedRefs;
 };
 
-}
+} // namespace SpatialGDK

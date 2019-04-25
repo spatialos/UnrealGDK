@@ -468,4 +468,4 @@ Worker_ComponentUpdate ComponentFactory::CreateHandoverComponentUpdate(Worker_Co
 	return ComponentUpdate;
 }
 
-}
+} // namespace SpatialGDK

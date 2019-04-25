@@ -57,4 +57,4 @@ private:
 	USpatialPackageMapClient* PackageMap;
 };
 
-}
+} // namespace SpatialGDK

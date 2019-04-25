@@ -59,4 +59,4 @@ struct SpawnData : Component
 	FVector Velocity;
 };
 
-}
+} // namespace SpatialGDK

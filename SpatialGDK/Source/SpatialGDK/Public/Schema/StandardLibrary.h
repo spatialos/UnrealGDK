@@ -262,4 +262,4 @@ struct Persistence : Component
 	}
 };
 
-}
+} // namespace SpatialGDK

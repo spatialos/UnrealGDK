@@ -27,4 +27,4 @@ struct DynamicComponent : Component
 	Worker_ComponentData* ComponentData;
 };
 
-}
+} // namespace SpatialGDK

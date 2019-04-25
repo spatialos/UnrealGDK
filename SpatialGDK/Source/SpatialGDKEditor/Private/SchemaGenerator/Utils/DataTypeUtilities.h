@@ -25,10 +25,6 @@ FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UClass* Class);
 // For example: UnrealCharacterHandoverData
 FString SchemaHandoverDataName(UClass* Class);
 
-// Given an RPC type and Unreal type, generates the name of the corresponding RPC container component.
-// For example: UnrealCharacterClientRPCs
-FString SchemaRPCComponentName(ERPCType RpcType, UClass* Class);
-
 // Given a UFunction, generates the schema command name. Currently just returns the function name in lowercase.
 FString SchemaRPCName(UFunction* Function);
 

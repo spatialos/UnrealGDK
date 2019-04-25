@@ -11,22 +11,23 @@
 namespace SpatialGDK
 {
 
-	struct Singleton : Component
+struct Singleton : Component
+{
+	static const Worker_ComponentId ComponentId = SpatialConstants::SINGLETON_COMPONENT_ID;
+
+	Singleton() = default;
+	Singleton(const Worker_ComponentData& Data)
 	{
-		static const Worker_ComponentId ComponentId = SpatialConstants::SINGLETON_COMPONENT_ID;
+	}
 
-		Singleton() = default;
-		Singleton(const Worker_ComponentData& Data)
-		{
-		}
+	FORCEINLINE Worker_ComponentData CreateSingletonData()
+	{
+		Worker_ComponentData Data = {};
+		Data.component_id = ComponentId;
+		Data.schema_type = Schema_CreateComponentData(ComponentId);
 
-		FORCEINLINE Worker_ComponentData CreateSingletonData()
-		{
-			Worker_ComponentData Data = {};
-			Data.component_id = ComponentId;
-			Data.schema_type = Schema_CreateComponentData(ComponentId);
+		return Data;
+	}
+};
 
-			return Data;
-		}
-	};
-}
+} // namespace SpatialGDK

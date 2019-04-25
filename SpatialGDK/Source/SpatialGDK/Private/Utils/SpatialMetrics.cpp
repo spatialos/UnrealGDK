@@ -36,7 +36,7 @@ void USpatialMetrics::TickMetrics()
 	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
 	DynamicFPSGauge.Value = AverageFPS;
 
-	SpatialGDK::Metrics DynamicFPSMetrics;
+	SpatialGDK::SpatialMetrics DynamicFPSMetrics;
 	DynamicFPSMetrics.GaugeMetrics.Add(DynamicFPSGauge);
 	DynamicFPSMetrics.Load = WorkerLoad;
 

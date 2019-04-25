@@ -213,4 +213,4 @@ inline UScriptStruct* GetFastArraySerializerProperty(UArrayProperty* Property)
 	return nullptr;
 }
 
-}
+} // namespace SpatialGDK

@@ -243,4 +243,4 @@ inline Schema_ComponentData* DeepCopyComponentData(Schema_ComponentData* Source)
 // Does not clear OutPath first.
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);
 
-}
+} // namespace SpatialGDK
