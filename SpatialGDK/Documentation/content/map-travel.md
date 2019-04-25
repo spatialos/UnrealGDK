@@ -72,7 +72,7 @@ When `ServerTravel` is triggered, the server tells all clients to begin to [`Cli
 To use `ServerTravel` with the GDK there are a couple of extra steps to ensure the SpatialOS deployment is in the correct state when transitioning maps. 
 
 #### Generate snapshot 
-Generate a snapshot for the map you intend to server transition to using the [snapshot generator]({{urlRoot}}/content/generating-a-snapshot#when-to-generate-a-snapshot) and save it to `<GameRoot>\Content\Spatial\Snapshots\`. You can either copy your generated snapshot manually (from `<ProjectRoot>\spatial\snapshots\default.snapshot`) or set up your project settings to generate the snapshot for your level into that folder. You can find these settings via **Edit** > **Project Settings** > **SpatialOS Unreal GDK** > **Snapshot path**.
+Generate a snapshot for the map you intend to server transition to using the [snapshot generator]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) and save it to `<GameRoot>\Content\Spatial\Snapshots\`. You can either copy your generated snapshot manually (from `<ProjectRoot>\spatial\snapshots\default.snapshot`) or set up your project settings to generate the snapshot for your level into that folder. You can find these settings via **Edit** > **Project Settings** > **SpatialOS Unreal GDK** > **Snapshot path**.
 
 The snapshot is read from `<GameRoot>\Content\Spatial\Snapshots\` when you call the `UWorld::ServerTravel`. To ensure this works in a cloud deployment, add the `Spatial\Snapshots` folder to your  **Additional Non-Asset Directories To Copy for dedicated server only** found at **File** > **Package Project** > **Packaging settings**. For example:
 
