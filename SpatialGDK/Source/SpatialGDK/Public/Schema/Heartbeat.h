@@ -31,4 +31,4 @@ struct Heartbeat : Component
 	}
 };
 
-}
+} // namespace SpatialGDK

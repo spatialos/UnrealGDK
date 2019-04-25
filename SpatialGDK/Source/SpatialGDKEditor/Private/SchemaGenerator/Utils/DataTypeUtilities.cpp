@@ -65,11 +65,6 @@ FString SchemaHandoverDataName(UClass* Class)
 	return FString::Printf(TEXT("%sHandover"), *UnrealNameToSchemaComponentName(ClassToSchemaName[Class]));
 }
 
-FString SchemaRPCComponentName(ERPCType RpcType, UClass* Class)
-{
-	return FString::Printf(TEXT("%s%sRPCs"), *UnrealNameToSchemaComponentName(ClassToSchemaName[Class]), *GetRPCTypeName(RpcType));
-}
-
 FString SchemaRPCName(UFunction* Function)
 {
 	return UnrealNameToSchemaName(Function->GetName().ToLower());

@@ -42,4 +42,4 @@ private:
 	T data;
 };
 
-}
+} // namespace SpatialGDK

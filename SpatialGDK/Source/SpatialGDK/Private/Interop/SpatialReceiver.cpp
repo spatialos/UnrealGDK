@@ -156,7 +156,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 			Op.data.component_id, Op.entity_id);
 		return;
 	}
-	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<SpatialGDK::DynamicComponent>(Op.data));
+	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data));
 }
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
@@ -326,8 +326,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
 	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
 
-	SpatialGDK::SpawnData* SpawnData = StaticComponentView->GetComponentData<SpatialGDK::SpawnData>(EntityId);
-	SpatialGDK::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(EntityId);
+	SpawnData* SpawnData = StaticComponentView->GetComponentData<SpatialGDK::SpawnData>(EntityId);
+	UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(EntityId);
 
 	if (UnrealMetadata == nullptr)
 	{
@@ -366,7 +366,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			*EntityActor->GetName());
 
 		// Assume SimulatedProxy until we've been delegated Authority
-		bool bAuthority = StaticComponentView->GetAuthority(EntityId, SpatialGDK::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+		bool bAuthority = StaticComponentView->GetAuthority(EntityId, Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 		EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
 		EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
 		if (bAuthority)
@@ -624,7 +624,7 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
-AActor* USpatialReceiver::TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData)
+AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadata, SpawnData* SpawnData)
 {
 	if (UnrealMetadata->StablyNamedRef.IsSet())
 	{
@@ -647,7 +647,7 @@ AActor* USpatialReceiver::TryGetOrCreateActor(SpatialGDK::UnrealMetadata* Unreal
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData)
+AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadata, SpawnData* SpawnData)
 {
 	UClass* ActorClass = UnrealMetadata->GetNativeEntityClass();
 

@@ -23,4 +23,4 @@ void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FSt
 	OutPath.Append(*ObjectRef.Path);
 }
 
-}  // namespace SpatialGDK
+} // namespace SpatialGDK

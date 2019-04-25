@@ -48,8 +48,8 @@ private:
 
 	Worker_ComponentData CreateInterestComponentData(UObject* Object, const FClassInfo& Info);
 	Worker_ComponentUpdate CreateInterestComponentUpdate(UObject* Object, const FClassInfo& Info);
-	SpatialGDK::Interest CreateInterestComponent(UObject* Object, const FClassInfo& Info);
-	void AddObjectToComponentInterest(UObject* Object, UObjectPropertyBase* Property, uint8* Data, SpatialGDK::ComponentInterest& ComponentInterest);
+	Interest CreateInterestComponent(UObject* Object, const FClassInfo& Info);
+	void AddObjectToComponentInterest(UObject* Object, UObjectPropertyBase* Property, uint8* Data, ComponentInterest& ComponentInterest);
 
 	void AddProperty(Schema_Object* Object, Schema_FieldId FieldId, UProperty* Property, const uint8* Data, FUnresolvedObjectsSet& UnresolvedObjects, TArray<Schema_FieldId>* ClearedIds);
 
@@ -63,4 +63,4 @@ private:
 	bool bInterestHasChanged;
 };
 
-}
+} // namespace SpatialGDK
