@@ -480,7 +480,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
 
-			static const Worker_Alpha_UpdateParameters DisableLoopback{ false /* loopback */ };
+			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
 			Worker_Alpha_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
 				&Message->Update,
