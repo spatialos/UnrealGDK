@@ -66,6 +66,8 @@ public:
 
 	virtual void OnOwnerUpdated(AActor* Actor);
 
+	void OnConnectedToSpatialOS();
+
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
 #endif
@@ -161,8 +163,6 @@ private:
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
-	UFUNCTION()
-	void OnConnectedToSpatialOS();
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
