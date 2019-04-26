@@ -329,24 +329,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 	improbable::SpawnData* SpawnData = StaticComponentView->GetComponentData<improbable::SpawnData>(EntityId);
 	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
-	improbable::RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<improbable::RPCsOnEntityCreation>(EntityId);
-
-	if (QueuedRPCs && QueuedRPCs->RPCs.Num() > 0)
-	{
-		UE_LOG(LogTemp, Log, TEXT("There are some rpcs"));
-		if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
-		{
-			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(EntityActor->GetClass());
-			Info.RPCInfoMap;
-			for (auto It : Info.RPCInfoMap)
-			{
-				if (It.Value.Index == QueuedRPCs->RPCs[0].Index)
-				{
-					UE_LOG(LogTemp, Log, TEXT("RPC: %s"), *It.Key->GetName());
-				}
-			}
-		}
-	}
 
 	if (UnrealMetadata == nullptr)
 	{
@@ -482,6 +464,28 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		EntityActor->UpdateOverlaps();
+
+		improbable::RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<improbable::RPCsOnEntityCreation>(EntityId);
+
+		//if (QueuedRPCs && QueuedRPCs->RPCs.Num() > 0)
+		if (false)
+		{
+			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(EntityActor->GetClass());
+
+			//for (const auto& RPC : QueuedRPCs->RPCs)
+			for (auto RPC : QueuedRPCs->RPCs)
+			{
+				for (const auto& It : Info.RPCInfoMap)
+				{
+					if (It.Value.Index == RPC.Index)
+					{
+						UE_LOG(LogTemp, Log, TEXT("RPC: %s"), *It.Key->GetName());
+						int64 CountBits = RPC.PayloadData.Num() * 8;
+						ApplyRPC(EntityActor, It.Key, RPC.PayloadData, CountBits, FString("Test"));
+					}
+				}
+			}
+		}
 	}
 }
 

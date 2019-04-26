@@ -189,8 +189,14 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	{
 		for (auto It : Info.RPCInfoMap)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("!!!!! %d %s"), It.Value.Index, *It.Key->GetName());
+			//UE_LOG(LogTemp, Warning, TEXT("!!!!! %d %s"), It.Value.Index, *It.Key->GetName());
 			if (It.Key->GetName().Contains(TEXT("PrintMessage")))
+			{
+				RPCPayload MyRPC(0, It.Value.Index);
+				QueuedRPCs.RPCs.Add(MyRPC);
+			}
+
+			if (It.Key->GetName().Contains(TEXT("PrintSecondMessage")))
 			{
 				RPCPayload MyRPC(0, It.Value.Index);
 				QueuedRPCs.RPCs.Add(MyRPC);
@@ -198,6 +204,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		}
 	}
 	if (QueuedRPCs.RPCs.Num() > 0)
+	//if(false)
 	{
 		ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
 	}
@@ -435,6 +442,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	UObject* TargetObject = Params->TargetObject.Get();
 	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
+		// This is where we'll serialize this RPC and queue it to be added on entity creation
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s on unresolved Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
 		QueueOutgoingRPC(TargetObject, Params);
 		return;
@@ -525,6 +533,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
 			{
+				// TODO: Fix log
 				UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send MulticastRPC component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 				return;
 			}

@@ -9,6 +9,7 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
+#pragma optimize("", off)
 namespace improbable
 {
 
@@ -49,9 +50,15 @@ struct RPCsOnEntityCreation : Component
 
 	RPCsOnEntityCreation(const Worker_ComponentData& Data)
 	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* ComponentsObject = Schema_GetComponentDataFields(Data.schema_type);
 
-		RPCs.Add(RPCPayload(ComponentObject));
+		uint32 RPCCount = Schema_GetObjectCount(ComponentsObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
+
+		for (uint32 i = 0; i < RPCCount; i++)
+		{
+			Schema_Object* ComponentObject = Schema_IndexObject(ComponentsObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, i);
+			RPCs.Add(RPCPayload(ComponentObject));
+		}
 	}
 
 	Worker_ComponentData CreateRPCPayloadData()
@@ -64,8 +71,8 @@ struct RPCsOnEntityCreation : Component
 		for (const auto& elem : RPCs)
 		{
 			FBitWriter DefaultWriter;
-			elem.WriteToSchemaObject(ComponentObject, DefaultWriter);
-			break;
+			Schema_Object* Obj = Schema_AddObject(ComponentObject, SpatialConstants::RPC_ON_ENTITY_CREATION_RPCS_ID);
+			elem.WriteToSchemaObject(Obj, DefaultWriter);
 		}
 
 		return Data;
@@ -75,3 +82,4 @@ struct RPCsOnEntityCreation : Component
 };
 
 }
+#pragma optimize("", on)
