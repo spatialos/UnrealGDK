@@ -377,6 +377,7 @@ void USpatialWorkerConnection::OnConnectionSuccess()
 		InitializeOpsProcessingThread();
 	}
 
+	GetSpatialNetDriverChecked()->OnConnectedToSpatialOS();
 	GameInstance->HandleOnConnected();
 }
 

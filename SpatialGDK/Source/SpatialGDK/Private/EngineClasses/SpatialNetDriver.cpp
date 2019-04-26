@@ -165,7 +165,6 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		}
 	}
 
-	GameInstance->OnConnected.AddUObject(this, &USpatialNetDriver::OnConnectedToSpatialOS);
 	Connection->Connect(bConnectAsClient);
 }
 
