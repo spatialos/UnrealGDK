@@ -56,7 +56,7 @@ To learn more about all the settings available in the **Editor Settings** panel,
 <tr>
 <td>Stop local launch on exit</td>
 <td>
-<p>Stop <code>spatial local launch</code> when you shut down Unreal Editor. By default, the check box is deselected.</p>
+<p>Decide whether to stop <code>spatial local launch</code> when you shut down Unreal Editor. By default, the check box is deselected.</p>
 </td>
 </tr>
 <tr>
