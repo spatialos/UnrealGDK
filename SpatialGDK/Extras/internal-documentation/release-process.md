@@ -65,38 +65,17 @@ It is vital that you test using the docs for the release version that you are ab
 
 If at any point in the below validation steps you encounter a blocker, you must fix that defect prior to releasing.
 
-There are two ways to do this, you must decide on the most appropriate one.
-* Delete the existing release branches and branch new ones from the HEAD of `master` (in the case of the GDK and tutorials) and from the HEAD of `4.xx-SpatialOSUnrealGDK` (in `improbableio/UnrealEngine`).
-* `git cherry-[commit-hash]` the change into your release candidate branch. Be sure to cherry-pick any changes that your cherry-pick depends on. GDK changes often depend on engine changes, for example.
+The workflow for this is:
 
-The workflow for creating new release branches is:
-
-1. Raise a bug ticket detailing the blocker.
-1. `git checkout master`
+1. Raise a bug ticket in JIRA detailing the blocker.
+1. `git checkout x.y.z-rc`
 1. `git pull`
 1. `git checkout -b bugfix/UNR-xxx`
 1. Fix the defect.
-1. Make a commit, push, open a PR into `master`.
-1. When the PR is merged, `git checkout master` and `git pull`.
-1. Branch off of master using `git checkout -b x.y.z-rc-[n+1]` in order to create a new release candidate branch, and re-test the defect to ensure you fixed it.
+1. `git commit`, `git push`, target your PR at `x.y.z-rc`.
+1. When the PR is merged, `git checkout x.y.z-rc` and re-test the defect to ensure you fixed it.
 1. Notify #unreal-gdk-release that the release candidate has been updated.
-1. Judgment call: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch.
-
-The workflow for cherry-picking the fix is:
-
-1. Raise a bug ticket detailing the blocker.
-1. `git checkout master`
-1. `git pull`
-1. `git checkout -b bugfix/UNR-xxx`
-1. Fix the defect.
-1. Make a commit, push, open a PR into `master`.
-1. When the PR is merged, `git checkout x.y.z-rc`.
-1. `git cherry-[commit-hash]` where `[commit-hash]` is the hash of `bugfix/UNR-xxx` merging into `master`.
-1. `git push`
-1. Notify #unreal-gdk-release that the release candidate has been updated.
-1. Judgment call: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch.
-
-* Raise a bug ticket detailing the blocker.
+1. **Judgment call**: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch. Consult the rest of the team if you are unsure which to choose.
 
 ## Validation (Multiserver Shooter tutorial)
 1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/tutorial, bearing in mind the following caveats:
@@ -149,17 +128,21 @@ call "%~dp0ProjectPaths.bat"
 
 ## Release
 
-All of the above tests must have passed and there must be no outstanding blocking issues before you start this, the release phase.
+All of the above tests **must** have passed and there must be no outstanding blocking issues before you start this, the release phase.
 
-1. In `UnrealGDK` merge `x.y.z-rc` into `release`.
+1. In `UnrealGDK`, merge `x.y.z-rc` into `master`.
+1. In `UnrealGDK`, merge `x.y.z-rc` into `release`.
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
+1. In `improbableio/UnrealEngine` merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`.
 1. In `improbableio/UnrealEngine` merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-release`.
 1. Use the GitHub Release UI to tag the commit you just made as `4.xx-SpatialOSUnrealGDK-x.y.z`.<br/>
+1. In `UnrealGDKThirdPersonShooter` merge `x.y.z-rc` into `master`, and tag that commit as `x.y.z`.
 1. In `UnrealGDKThirdPersonShooter` merge `x.y.z-rc` into `release`, and tag that commit as `x.y.z`.
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
 1. In `UnrealGDKThirdPersonShooter`, `git rebase` `release` into `tutorial`.
 1. In `UnrealGDKThirdPersonShooter`, `git rebase` `release` into `tutorial-complete`.
+1. In `UnrealGDKTestSuite` merge `x.y.z-rc` into `master`, and tag that commit as `x.y.z`.
 1. In `UnrealGDKTestSuite` merge `x.y.z-rc` into `release`, and tag that commit as `x.y.z`.
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
 1. Publish the docs to live using Improbadoc commands listed [here](https://improbableio.atlassian.net/wiki/spaces/GBU/pages/327485360/Publishing+GDK+Docs).
