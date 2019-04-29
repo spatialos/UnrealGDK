@@ -22,7 +22,7 @@ To learn more about all the settings available in the **Editor Settings** panel,
 <tr>
 <td>General</td>
 <td><span style="font-weight: 400;">SpatialOS directory</span></td>
-<td><span style="font-weight: 400;">Specify the directory for SpatialOS-related files.</span></td>
+<td><span style="font-weight: 400;">Specify the directory for SpatialOS-related files, for example, <code>C:/Projects/MyGame/spatial/</code>.</td>
 </tr>
 <tr>
 <td>Play in Editor Settings</td>
@@ -49,21 +49,21 @@ To learn more about all the settings available in the **Editor Settings** panel,
 <tr>
 <td>Upload launch configuration file</td>
 <td>
-<p>Select the launch configuration file used for `spatial local launch`, for example, `C:/Projects/MyGame/spatial/default_launch.json`.</p>
+  <p>Select the launch configuration file used for <code>spatial local launch</code>, for example, <code>C:/Projects/MyGame/spatial/default_launch.json</code>.</p>
 <p><span style="font-weight: 400;"><strong>Note</strong>: This field is valid only when <strong>Generate launch configuration file</strong> is deselected.</span></p>
 </td>
 </tr>
 <tr>
 <td>Stop local launch on exit</td>
 <td>
-<p>Stop `spatial local launch` when you shut down Unreal Editor. By default, the check box is deselected.</p>
+<p>Stop <code>spatial local launch</code> when you shut down Unreal Editor. By default, the check box is deselected.</p>
 </td>
 </tr>
 <tr>
 <td>Command line flags for local launch</td>
 <td>
-<p>Specify command line flags passed to `spatial local launch`.</p>
-<p><strong>Tip</strong>: To check available flags, open the CLI and run `spatial local launch --help`. For example, to connect to the local deployment from a different machine on the local network, add the `--runtime_ip` flag.</p>
+<p>Specify command line flags passed to <code>spatial local launch</code>.</p>
+<p><strong>Tip</strong>: To check available flags, open the CLI and run <code>spatial local launch --help</code>. For example, to connect to the local deployment from a different machine on the local network, add the <code>--runtime_ip</code> flag.</p>
 </td>
 </tr>
 <tr>
@@ -76,23 +76,23 @@ To learn more about all the settings available in the **Editor Settings** panel,
 <tr>
 <td rowspan="3">Snapshots</td>
 <td>Snapshot directory</td>
-<td>Specify the directory for your SpatialOS snapshot.</td>
+<td>Specify the directory for your SpatialOS snapshot, for example, <code>C:/Projects/MyGame/spatial/snapshots/</code>.</td>
 </tr>
 <tr>
 <td>Snapshot file name</td>
-<td>Specify the name of your SpatialOS snapshot file.</td>
+<td>Specify the name of your SpatialOS snapshot file, for example, <code>`default.snapshot`</code>.</td>
 </tr>
 <tr>
 <td>Generate placeholder entities in snapshot</td>
 <td>
 <p>Decide whether to add placeholder entities to the snapshot on generation. By default, the check box is selected.</span></p>
-<p>If you select it, you can see these entities in the Inspector, which shows the areas that the server-worker instance has authority over.</p>
+<p>If you select it, you can see these entities in the Inspector, which shows the areas that a server-worker instance has authority over.</p>
 </td>
 </tr>
 <tr>
 <td>Schema</td>
 <td>Generated schema directory</td>
-<td>Specify the directory that stores the generated schema files.</td>
+<td>Specify the directory that stores the generated schema files, for example, <code>C:/Projects/MyGame/spatial/schema/unreal/generated/</code>.</td>
 </tr>
 </tbody>
 </table>
