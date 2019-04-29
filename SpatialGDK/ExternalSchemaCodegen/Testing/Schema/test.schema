@@ -1,0 +1,258 @@
+package improbable.test_schema;
+
+type EmptyType {}
+
+type Integer {
+  int32 x = 1;
+}
+
+[EmptyType]
+type Coordinates {
+  [EmptyType]
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+[EmptyType]
+enum TopLevelEnum {
+  [EmptyType]
+  ZED = 1;
+  ZOD = 2;
+}
+
+type Quaternion {
+  float w = 1;
+  float x = 2;
+  float y = 3;
+  float z = 4;
+}
+
+// A fake, uncompressed, transform component.
+component Transform {
+  id = 20000;
+  Coordinates position = 1;
+  Quaternion orientation = 2;
+  int64 timestamp = 3;
+}
+
+
+type TestComponentData {
+  type EmptyEvent {}
+
+  type ParameterizedEvent {
+    int32 test_value = 1;
+    map<string, string> other = 2;
+  }
+
+  int32 test_int = 1;
+  float test_float = 2;
+  bool test_bool = 3;
+  double test_double = 4;
+  list<double> test_list = 5;
+  map<string, double> test_map = 6;
+  bytes test_bytes = 7;
+}
+
+component TestComponent {
+  id = 198703;
+  data TestComponentData;
+
+  [EmptyType]
+  event TestComponentData.EmptyEvent empty;
+  event TestComponentData.ParameterizedEvent params;
+
+  [EmptyType]
+  command Integer test_command(Integer);
+  command Nested.Recursive another_test_command(Integer);
+}
+
+[TypeUsageData(Integer(1), [Integer(2)], Integer(3), {})]
+type TypeUsageData {
+  type TypeEvent {
+    Integer value = 1;
+  }
+  Integer value_singular = 1;
+  list<Integer> value_list = 2;
+  option<Integer> value_option = 3;
+  map<string, Integer> value_map = 4;
+}
+
+component TypeUsage {
+  id = 198710;
+  data TypeUsageData;
+  event TypeUsageData.TypeEvent type_event;
+  event TypeUsageData type_usage_event;
+  command TypeUsageData type_command(TypeUsageData.TypeEvent);
+}
+
+[MapUsageData({}, {MapUsageData.KeyEnum.A : true, MapUsageData.KeyEnum.B : false})]
+type MapUsageData {
+  enum KeyEnum {
+    A = 0;
+    B = 2;
+    Z = 3;
+  }
+
+  map<KeyEnum, string> enum_map = 1;
+  map<KeyEnum, bool> enum_map_two = 2;
+}
+
+component MapUsage {
+  id = 198713;
+  data MapUsageData;
+}
+
+[ListUsageData([Integer(5), Integer(1), Integer(x = -1)], [], [TopLevelEnum.ZED], [-1, 0, 1])]
+type ListUsageData {
+  list<Integer> list_type = 1;
+  list<string> list_string = 2;
+  list<TopLevelEnum> list_enum = 3;
+  list<int32> list_int = 4;
+}
+
+component ListUsage {
+  id = 198714;
+  data ListUsageData;
+}
+
+[OptionUsageData(_, "Foo", TopLevelEnum.ZOD, 4)]
+type OptionUsageData {
+  option<Integer> option_type = 1;
+  option<string> option_string = 2;
+  option<TopLevelEnum> option_enum = 3;
+  option<int32> option_int = 4;
+}
+
+component OptionUsage {
+  id = 198712;
+  data OptionUsageData;
+}
+
+type DirectRecursive {
+  option<Recursive> a = 1;
+  list<Recursive> b = 2;
+  map<string, Recursive> c = 3;
+}
+
+type Recursive {
+
+}
+
+// Test whether large block comments are parsed correctly.
+/*
+Life finds a way. They're using our own satellites against us. And the clock is ticking. You know
+what? It is beets. I've crashed into a beet truck. So you two dig up, dig up dinosaurs? Do you have
+any idea how long it takes those cups to decompose. What do they got in there? King Kong?
+
+We gotta burn the rain forest, dump toxic waste, pollute the air, and rip up the OZONE! 'Cause maybe
+if we screw up this planet enough, they won't want it anymore! My dad once told me, laugh and the
+world laughs with you, Cry, and I'll give you something to cry about you little bastard!
+
+Yeah, but John, if The Pirates of the Caribbean breaks down, the pirates don’t eat the tourists. God
+creates dinosaurs. God destroys dinosaurs. God creates Man. Man destroys God. Man creates Dinosaurs.
+Jaguar shark! So tell me - does it really exist?
+
+Must go faster... go, go, go, go, go! You're a very talented young man, with your own clever
+thoughts and ideas. Do you need a manager? I was part of something special. What do they got in
+there? King Kong? Must go faster. Do you have any idea how long it takes those cups to decompose.
+
+Yeah, but your scientists were so preoccupied with whether or not they could, they didn't stop to
+think if they should. You're a very talented young man, with your own clever thoughts and ideas. Do
+you need a manager? God creates dinosaurs. God destroys dinosaurs. God creates Man. Man destroys
+God. Man creates Dinosaurs.
+
+I was part of something special. They're using our own satellites against us. And the clock is
+ticking. Yeah, but John, if The Pirates of the Caribbean breaks down, the pirates don’t eat the
+tourists. Checkmate... Is this my espresso machine? Wh-what is-h-how did you get my espresso
+machine?
+
+I gave it a cold? I gave it a virus. A computer virus. I gave it a cold? I gave it a virus. A
+computer virus. I gave it a cold? I gave it a virus. A computer virus. Eventually, you do plan to
+have dinosaurs on your dinosaur tour, right? Yeah, but John, if The Pirates of the Caribbean breaks
+down, the pirates don’t eat the tourists.
+
+They're using our own satellites against us. And the clock is ticking. You're a very talented young
+man, with your own clever thoughts and ideas. Do you need a manager? Jaguar shark! So tell me - does
+it really exist? Jaguar shark! So tell me - does it really exist?
+
+God help us, we're in the hands of engineers. I was part of something special. Hey, take a look at
+the earthlings. Goodbye! What do they got in there? King Kong? They're using our own satellites
+against us. And the clock is ticking. Must go faster. This thing comes fully loaded. AM/FM radio,
+reclining bucket seats, and... power windows.
+
+Did he just throw my cat out of the window? God creates dinosaurs. God destroys dinosaurs. God
+creates Man. Man destroys God. Man creates Dinosaurs. Checkmate... Yeah, but your scientists were so
+preoccupied with whether or not they could, they didn't stop to think if they should.
+
+What do they got in there? King Kong? Do you have any idea how long it takes those cups to decompose.
+Forget the fat lady! You're obsessed with the fat lady! Drive us out of here! I was part of
+something special. I gave it a cold? I gave it a virus. A computer virus.
+
+What do they got in there? King Kong? So you two dig up, dig up dinosaurs? Is this my espresso
+machine? Wh-what is-h-how did you get my espresso machine? So you two dig up, dig up dinosaurs?
+Jaguar shark! So tell me - does it really exist? They're using our own satellites against us. And
+the clock is ticking.
+
+Did he just throw my cat out of the window? They're using our own satellites against us. And the
+clock is ticking. God creates dinosaurs. God destroys dinosaurs. God creates Man. Man destroys God.
+Man creates Dinosaurs. Jaguar shark! So tell me - does it really exist?
+
+Do you have any idea how long it takes those cups to decompose. You know what? It is beets. I've
+crashed into a beet truck. Remind me to thank John for a lovely weekend. Did he just throw my cat
+out of the window? Is this my espresso machine? Wh-what is-h-how did you get my espresso machine?
+
+Is this my espresso machine? Wh-what is-h-how did you get my espresso machine? Is this my espresso
+machine? Wh-what is-h-how did you get my espresso machine? Yes, Yes, without the oops! I was part of
+something special. Remind me to thank John for a lovely weekend.
+*/
+
+type Nested {
+  enum Enum {
+    FOO = 0;
+    BAR = 1;
+  }
+
+  type Recursive {
+    list<.improbable.test_schema.Recursive> a = 1;
+  }
+}
+
+// A few special cases: not necessarily used in tests; just to check the generated code still makes
+// sense.
+component EmptyComponent {
+  id = 189718;
+}
+
+component EventsButNoData {
+  id = 198715;
+  event Integer foo_event;
+  event EmptyType bar_event;
+}
+
+component CommandsButNoData {
+  id = 198716;
+  command Integer foo_command(Integer);
+  command EmptyType bar_command(EmptyType);
+}
+
+component EventsAndCommandsButNoData {
+  id = 189720;
+  event EmptyType foo_command;
+  command Nested.Recursive foo_event(Integer);
+}
+
+component EmptyDataType {
+  id = 198717;
+  data EmptyType;
+}
+
+component NestedDataType {
+  id = 198704;
+  data Nested.Recursive;
+}
+
+component CommandName {
+  id = 198705;
+  command Integer command_name(Integer);
+}

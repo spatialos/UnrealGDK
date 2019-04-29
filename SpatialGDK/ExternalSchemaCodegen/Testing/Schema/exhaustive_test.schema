@@ -1,0 +1,139 @@
+package improbable.gdk.tests;
+
+type SomeType {}
+
+enum SomeEnum {
+ FIRST_VALUE = 0;
+ SECOND_VALUE = 1;
+}
+
+component ExhaustiveSingular {
+ id = 197715;
+ bool field1 = 1;
+ float field2 = 2;
+ bytes field3 = 3;
+ int32 field4 = 4;
+ int64 field5 = 5;
+ double field6 = 6;
+ string field7 = 7;
+ uint32 field8 = 8;
+ uint64 field9 = 9;
+ sint32 field10 = 10;
+ sint64 field11 = 11;
+ fixed32 field12 = 12;
+ fixed64 field13 = 13;
+ sfixed32 field14 = 14;
+ sfixed64 field15 = 15;
+ EntityId field16 = 16;
+ SomeType field17 = 17;
+ SomeEnum field18 = 18;
+}
+
+component ExhaustiveOptional {
+ id = 197716;
+ option<bool> field1 = 1;
+ option<float> field2 = 2;
+ option<bytes> field3 = 3;
+ option<int32> field4 = 4;
+ option<int64> field5 = 5;
+ option<double> field6 = 6;
+ option<string> field7 = 7;
+ option<uint32> field8 = 8;
+ option<uint64> field9 = 9;
+ option<sint32> field10 = 10;
+ option<sint64> field11 = 11;
+ option<fixed32> field12 = 12;
+ option<fixed64> field13 = 13;
+ option<sfixed32> field14 = 14;
+ option<sfixed64> field15 = 15;
+ option<EntityId> field16 = 16;
+ option<SomeType> field17 = 17;
+ option<SomeEnum> field18 = 18;
+}
+
+component ExhaustiveRepeated {
+ id = 197717;
+ list<bool> field1 = 1;
+ list<float> field2 = 2;
+ list<bytes> field3 = 3;
+ list<int32> field4 = 4;
+ list<int64> field5 = 5;
+ list<double> field6 = 6;
+ list<string> field7 = 7;
+ list<uint32> field8 = 8;
+ list<uint64> field9 = 9;
+ list<sint32> field10 = 10;
+ list<sint64> field11 = 11;
+ list<fixed32> field12 = 12;
+ list<fixed64> field13 = 13;
+ list<sfixed32> field14 = 14;
+ list<sfixed64> field15 = 15;
+ list<EntityId> field16 = 16;
+ list<SomeType> field17 = 17;
+ list<SomeEnum> field18 = 18;
+}
+
+component ExhaustiveMapValue {
+ id = 197718;
+ map<string, bool> field1 = 1;
+ map<string, float> field2 = 2;
+ map<string, bytes> field3 = 3;
+ map<string, int32> field4 = 4;
+ map<string, int64> field5 = 5;
+ map<string, double> field6 = 6;
+ map<string, string> field7 = 7;
+ map<string, uint32> field8 = 8;
+ map<string, uint64> field9 = 9;
+ map<string, sint32> field10 = 10;
+ map<string, sint64> field11 = 11;
+ map<string, fixed32> field12 = 12;
+ map<string, fixed64> field13 = 13;
+ map<string, sfixed32> field14 = 14;
+ map<string, sfixed64> field15 = 15;
+ map<string, EntityId> field16 = 16;
+ map<string, SomeType> field17 = 17;
+ map<string, SomeEnum> field18 = 18;
+}
+
+component ExhaustiveMapKey {
+ id = 197719;
+ map<bool, string> field1 = 1;
+ map<float, string> field2 = 2;
+ map<bytes, string> field3 = 3;
+ map<int32, string> field4 = 4;
+ map<int64, string> field5 = 5;
+ map<double, string> field6 = 6;
+ map<string, string> field7 = 7;
+ map<uint32, string> field8 = 8;
+ map<uint64, string> field9 = 9;
+ map<sint32, string> field10 = 10;
+ map<sint64, string> field11 = 11;
+ map<fixed32, string> field12 = 12;
+ map<fixed64, string> field13 = 13;
+ map<sfixed32, string> field14 = 14;
+ map<sfixed64, string> field15 = 15;
+ map<EntityId, string> field16 = 16;
+ map<SomeType, string> field17 = 17;
+ map<SomeEnum, string> field18 = 18;
+}
+
+// Blittable subset
+component ExhaustiveBlittableSingular {
+ id = 197720;
+ bool field1 = 1;
+ float field2 = 2;
+ int32 field4 = 4;
+ int64 field5 = 5;
+ double field6 = 6;
+ uint32 field8 = 8;
+ uint64 field9 = 9;
+ sint32 field10 = 10;
+ sint64 field11 = 11;
+ fixed32 field12 = 12;
+ fixed64 field13 = 13;
+ sfixed32 field14 = 14;
+sfixed64 field15 = 15;
+ EntityId field16 = 16;
+ SomeType field17 = 17;
+ SomeEnum field18 = 18;
+}

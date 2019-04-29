@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <ApplicationIcon />
+    <OutputPath>bin</OutputPath>
+    <OutputType>Exe</OutputType>
+    <StartupObject />
+    <LangVersion>latest</LangVersion>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win10-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.4.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Improbable.CodeGen.Base\Improbable.CodeGen.Base.csproj" />
+    <ProjectReference Include="..\Improbable.CodeGen.Unreal\Improbable.CodeGen.Unreal.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PostBuildEvent>xcopy "$(SolutionDir)CodeGenerator\bin\netcoreapp2.2\win10-x64" "$(SolutionDir)..\..\Binaries\ThirdParty\Improbable\Programs\codegen\" /E /Y</PostBuildEvent>
+  </PropertyGroup>
+
+</Project>
