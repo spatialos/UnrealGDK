@@ -10,7 +10,7 @@ class FSpatialNetBitReader;
 class FSpatialNetBitWriter;
 class USpatialNetDriver;
 
-namespace improbable
+namespace SpatialGDK
 {
 
 class SpatialFastArrayNetSerializeCB : public INetSerializeCB
@@ -37,4 +37,4 @@ struct FSpatialNetDeltaSerializeInfo : FNetDeltaSerializeInfo
 	static bool DeltaSerializeWrite(USpatialNetDriver* NetDriver, FSpatialNetBitWriter& Writer, UObject* Object, int32 ArrayIndex, UProperty* ParentProperty, UScriptStruct* NetDeltaStruct);
 };
 
-}
+} // namespace SpatialGDK

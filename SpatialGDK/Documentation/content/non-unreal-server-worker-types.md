@@ -215,10 +215,10 @@ public:
 		Schema_Object* UnrealAuthoritativeComponentDataObject = Schema_GetComponentDataFields(UnrealAuthoritativeComponentData.schema_type);
 		Schema_AddInt32(UnrealAuthoritativeComponentDataObject, 1, 1); // set other_counter field to 1 initially
 
-		Components.Add(improbable::Position(improbable::Origin).CreatePositionData());
-		Components.Add(improbable::Metadata(TEXT("TestEntity")).CreateMetadataData());
-		Components.Add(improbable::Persistence().CreatePersistenceData());
-		Components.Add(improbable::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
+		Components.Add(SpatialGDK::Position(SpatialGDK::Origin).CreatePositionData());
+		Components.Add(SpatialGDK::Metadata(TEXT("TestEntity")).CreateMetadataData());
+		Components.Add(SpatialGDK::Persistence().CreatePersistenceData());
+		Components.Add(SpatialGDK::EntityAcl(AnyWorkerPermission, ComponentWriteAcl).CreateEntityAclData());
 		Components.Add(NonUnrealAuthoritativeComponentData);
 		Components.Add(UnrealAuthoritativeComponentData);
 

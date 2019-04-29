@@ -4,7 +4,7 @@
 
 #include "StandardLibrary.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 using EdgeLength = Coordinates;
@@ -412,15 +412,15 @@ struct Interest : Component
 		{
 			Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 			uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-			improbable::ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+			ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
-			ComponentInterest.Add(Key, Value);
+			ComponentInterestMap.Add(Key, Value);
 		}
 	}
 
 	bool IsEmpty()
 	{
-		return ComponentInterest.Num() == 0;
+		return ComponentInterestMap.Num() == 0;
 	}
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
@@ -431,14 +431,14 @@ struct Interest : Component
 		uint32 KVPairCount = Schema_GetObjectCount(ComponentObject, 1);
 		if (KVPairCount > 0)
 		{
-			ComponentInterest.Empty();
+			ComponentInterestMap.Empty();
 			for (uint32 i = 0; i < KVPairCount; i++)
 			{
 				Schema_Object* KVPairObject = Schema_IndexObject(ComponentObject, 1, i);
 				uint32 Key = Schema_GetUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID);
-				improbable::ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
+				ComponentInterest Value = GetComponentInterestFromSchema(KVPairObject, SCHEMA_MAP_VALUE_FIELD_ID);
 
-				ComponentInterest.Add(Key, Value);
+				ComponentInterestMap.Add(Key, Value);
 			}
 		}
 	}
@@ -469,7 +469,7 @@ struct Interest : Component
 
 	void FillComponentData(Schema_Object* InterestComponentObject)
 	{
-		for (const auto& KVPair : ComponentInterest)
+		for (const auto& KVPair : ComponentInterestMap)
 		{
 			Schema_Object* KVPairObject = Schema_AddObject(InterestComponentObject, 1);
 			Schema_AddUint32(KVPairObject, SCHEMA_MAP_KEY_FIELD_ID, KVPair.Key);
@@ -477,6 +477,7 @@ struct Interest : Component
 		}
 	}
 
-	TMap<uint32, ComponentInterest> ComponentInterest;
+	TMap<uint32, ComponentInterest> ComponentInterestMap;
 };
-}
+
+} // namespace SpatialGDK
