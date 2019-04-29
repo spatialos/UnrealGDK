@@ -3,14 +3,14 @@
 
 Use Editor Settings as advanced configurations to configure a local deployment, and schema and snapshot generation.
 
-The following use cases show when you need to use Editor Settings:
+The following use cases show when you use Editor Settings to configure the properties:
 
-- When your game world is larger than the default setting of 2km*2km, you should modify the values of simulation dimensions for the launch configuration file in the **Editor Settings** panel. Alternatively, write your own launch configuration file and upload it in the **Editor Settings** panel.
-- When you are testing your multiserver simulation, to configure the grid size, you might want to specify rectangle grid column count and row count in the **Editor Settings** panel. Alternatively, specify them in your own launch configuration file and upload it in the **Editor Settings** panel.
+- When your game world is larger than the default setting of 2km*2km, you should modify the values of simulation dimensions for the launch configuration file. Alternatively, write and upload your own launch configuration file.
+- When you are testing your multiserver simulation, to configure the grid size, you might want to specify rectangle grid column count and row count. Alternatively, specify them in your own launch configuration file and upload the file.
 
 > **Note**: You can find all the settings that you configure using Editor Settings in the `DefaultSpatialGDKEditorSettings.ini` file from the `<GameRoot>\Config\` directory.
 
-To learn more about all the settings available in the **Editor Settings** panel, check the following table that lists the properties and their description:
+To learn more about all the properties available in the **Editor Settings** panel, check the following table:
 
 <table>
 <tbody>
@@ -22,7 +22,7 @@ To learn more about all the settings available in the **Editor Settings** panel,
 <tr>
 <td>General</td>
 <td><span style="font-weight: 400;">SpatialOS directory</span></td>
-<td><span style="font-weight: 400;">Specify the directory for SpatialOS-related files, for example, <code>C:/Projects/MyGame/spatial/</code>.</td>
+<td><span style="font-weight: 400;">The directory for SpatialOS-related files, for example, <code>C:/Projects/MyGame/spatial/</code>.</td>
 </tr>
 <tr>
 <td>Play in Editor Settings</td>
@@ -49,7 +49,7 @@ To learn more about all the settings available in the **Editor Settings** panel,
 <tr>
 <td>Upload launch configuration file</td>
 <td>
-  <p>Select the launch configuration file used for <code>spatial local launch</code>, for example, <code>C:/Projects/MyGame/spatial/default_launch.json</code>.</p>
+  <p>The launch configuration file used for <code>spatial local launch</code>, for example, <code>C:/Projects/MyGame/spatial/default_launch.json</code>.</p>
 <p><span style="font-weight: 400;"><strong>Note</strong>: This field is valid only when <strong>Generate launch configuration file</strong> is deselected.</span></p>
 </td>
 </tr>
@@ -62,25 +62,25 @@ To learn more about all the settings available in the **Editor Settings** panel,
 <tr>
 <td>Command line flags for local launch</td>
 <td>
-<p>Specify command line flags passed to <code>spatial local launch</code>.</p>
+<p>The command line flags passed to <code>spatial local launch</code>.</p>
 <p><strong>Tip</strong>: To check available flags, open the CLI and run <code>spatial local launch --help</code>. For example, to connect to the local deployment from a different machine on the local network, add the <code>--runtime_ip</code> flag.</p>
 </td>
 </tr>
 <tr>
 <td>Launch configuration file description</td>
 <td>
-<p>Specify the properties for the launch configuration file.</p>
+<p>The properties for the launch configuration file.</p>
 <p><strong>Note</strong>: The fields in this section are valid only when you select <strong>Generate launch configuration file</strong>. For information about the definition of each property, see <a href="https://docs.improbable.io/reference/13.7/shared/project-layout/launch-config">Launch configuration file</a>.</p>
 </td>
 </tr>
 <tr>
 <td rowspan="3">Snapshots</td>
 <td>Snapshot directory</td>
-<td>Specify the directory for your SpatialOS snapshot, for example, <code>C:/Projects/MyGame/spatial/snapshots/</code>.</td>
+<td>The directory for your SpatialOS snapshot, for example, <code>C:/Projects/MyGame/spatial/snapshots/</code>.</td>
 </tr>
 <tr>
 <td>Snapshot file name</td>
-<td>Specify the name of your SpatialOS snapshot file, for example, <code>default.snapshot</code>.</td>
+<td>The name of your SpatialOS snapshot file, for example, <code>default.snapshot</code>.</td>
 </tr>
 <tr>
 <td>Generate placeholder entities in snapshot</td>
@@ -92,7 +92,7 @@ To learn more about all the settings available in the **Editor Settings** panel,
 <tr>
 <td>Schema</td>
 <td>Generated schema directory</td>
-<td>Specify the directory that stores the generated schema files, for example, <code>C:/Projects/MyGame/spatial/schema/unreal/generated/</code>.</td>
+<td>The directory that stores the generated schema files, for example, <code>C:/Projects/MyGame/spatial/schema/unreal/generated/</code>.</td>
 </tr>
 </tbody>
 </table>
