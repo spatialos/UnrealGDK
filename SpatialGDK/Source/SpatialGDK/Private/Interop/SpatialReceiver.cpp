@@ -9,6 +9,7 @@
 
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
@@ -707,7 +708,7 @@ AActor* USpatialReceiver::CreateActor(improbable::UnrealMetadata* UnrealMetadata
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
+	SpawnInfo.bRemoteOwned = true;
 	SpawnInfo.bNoFail = true;
 
 	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
