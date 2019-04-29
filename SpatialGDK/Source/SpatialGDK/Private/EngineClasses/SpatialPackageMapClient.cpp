@@ -280,7 +280,7 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 	}
 
 	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-	const SubobjectToOffsetMap& SubobjectToOffset = improbable::CreateOffsetMapFromActor(Actor, Info);
+	const SubobjectToOffsetMap& SubobjectToOffset = SpatialGDK::CreateOffsetMapFromActor(Actor, Info);
 
 	for (auto& Pair : SubobjectToOffset)
 	{
@@ -369,7 +369,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	// Remove actor subobjects.
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
 
-	improbable::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
+	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(EntityId);
 
 	// There are times when the Editor is quitting out of PIE that UnrealMetadata is nullptr.
 	// Due to GetNativeEntityClass using LoadObject, if we are shutting down and garbage collecting, this will crash the editor.
@@ -381,7 +381,7 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 
 	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
 
-	improbable::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
+	SpatialGDK::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{

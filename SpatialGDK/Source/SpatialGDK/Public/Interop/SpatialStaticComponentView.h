@@ -26,11 +26,11 @@ public:
 	template <typename T>
 	T* GetComponentData(Worker_EntityId EntityId)
 	{
-		if (TMap<Worker_ComponentId, TUniquePtr<improbable::ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
+		if (TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::ComponentStorageBase>>* ComponentStorageMap = EntityComponentMap.Find(EntityId))
 		{
-			if (TUniquePtr<improbable::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
+			if (TUniquePtr<SpatialGDK::ComponentStorageBase>* Component = ComponentStorageMap->Find(T::ComponentId))
 			{
-				return &(static_cast<improbable::ComponentStorage<T>*>(Component->Get())->Get());
+				return &(static_cast<SpatialGDK::ComponentStorage<T>*>(Component->Get())->Get());
 			}
 		}
 
@@ -44,5 +44,5 @@ public:
 
 private:
 	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, Worker_Authority>> EntityComponentAuthorityMap;
-	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TUniquePtr<improbable::ComponentStorageBase>>> EntityComponentMap;
+	TMap<Worker_EntityId_Key, TMap<Worker_ComponentId, TUniquePtr<SpatialGDK::ComponentStorageBase>>> EntityComponentMap;
 };

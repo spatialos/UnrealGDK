@@ -26,7 +26,7 @@
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
-using namespace improbable;
+using namespace SpatialGDK;
 
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {

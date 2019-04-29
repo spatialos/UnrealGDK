@@ -32,11 +32,11 @@ void USpatialMetrics::TickMetrics()
 	AverageFPS = FramesSinceLastReport / TimeSinceLastReport;
 	WorkerLoad = CalculateLoad();
 
-	improbable::GaugeMetric DynamicFPSGauge;
+	SpatialGDK::GaugeMetric DynamicFPSGauge;
 	DynamicFPSGauge.Key = TCHAR_TO_UTF8(*SpatialConstants::SPATIALOS_METRICS_DYNAMIC_FPS);
 	DynamicFPSGauge.Value = AverageFPS;
 
-	improbable::Metrics DynamicFPSMetrics;
+	SpatialGDK::SpatialMetrics DynamicFPSMetrics;
 	DynamicFPSMetrics.GaugeMetrics.Add(DynamicFPSGauge);
 	DynamicFPSMetrics.Load = WorkerLoad;
 
