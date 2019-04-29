@@ -7,6 +7,7 @@
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
 #if WITH_EDITOR
@@ -94,7 +95,12 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 #if WITH_EDITOR
 		// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
 		// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
+#if ENGINE_MINOR_VERSION <= 20
 		UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit);
+#else
+		UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit, false);
+#endif
+
 #else
 		FGenericPlatformMisc::RequestExit(false);
 #endif

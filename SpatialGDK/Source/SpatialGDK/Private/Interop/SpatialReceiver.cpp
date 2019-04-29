@@ -406,7 +406,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		// Set up actor channel.
-		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
+		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
 		if (!Channel)
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
@@ -1422,7 +1422,10 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		}
 
 		FObjectReferences& ObjectReferences = It.Value();
+
+
 		UProperty* Property = ObjectReferences.Property;
+		const FRepLayoutCmd& Cmd = RepLayout.Cmds[ObjectReferences.CmdIndex];
 		// ParentIndex is -1 for handover properties
 		FRepParentCmd* Parent = ObjectReferences.ParentIndex >= 0 ? &RepLayout.Parents[ObjectReferences.ParentIndex] : nullptr;
 
@@ -1430,9 +1433,9 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		{
 			check(Property->IsA<UArrayProperty>());
 
-			Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
+			Property->CopySingleValue(StoredData + Cmd.ShadowOffset, Data + AbsOffset);
 
-			FScriptArray* StoredArray = (FScriptArray*)(StoredData + AbsOffset);
+			FScriptArray* StoredArray = (FScriptArray*)(StoredData + Cmd.ShadowOffset);
 			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
 			int32 NewMaxOffset = Array->Num() * Property->ElementSize;
@@ -1485,7 +1488,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
+				Property->CopySingleValue(StoredData + Cmd.ShadowOffset, Data + AbsOffset);
 			}
 
 			if (ObjectReferences.bSingleProp)
@@ -1520,7 +1523,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				if (Parent->RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + AbsOffset, Data + AbsOffset))
+				if (Parent->RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + Cmd.ShadowOffset, Data + AbsOffset))
 				{
 					RepNotifies.AddUnique(Parent->Property);
 				}

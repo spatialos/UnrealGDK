@@ -262,7 +262,7 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 
 	// We're now ready to start replicating this actor, create a channel
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
-	Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
+	Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 
 	if (StaticComponentView->GetAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -327,7 +327,7 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	{
 		// We have control over the GSM, so can safely setup a new channel and let it allocate an entity id
 		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
-		Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
+		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 
 		// If entity id already exists for this singleton, set the actor to it
 		// Otherwise SetChannelActor will issue a new entity id request
