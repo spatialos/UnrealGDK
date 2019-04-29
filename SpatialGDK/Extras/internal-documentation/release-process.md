@@ -117,6 +117,7 @@ The workflow for cherry-picking the fix is:
 3. On a seperate Windows PC, launch a local SpatialOS deployment, then a standalone server-worker, and then on your original Windows PC, connect two standalone clients to it. To do this:
 * Ensure that both machines are on the same network.
 * On your the machine you're going to run the server on, follow the setup steps listed with caveats in step 1.
+* Build out a windows client of the game using `BuildWorker.bat`. Send this client to the other machine you'll be using to connect.
 * Still on your server machine, run `UnrealGDKThirdPersonShooter\LaunchSpatial.bat`
 * Still on your server machine, run `UnrealGDKThirdPersonShooter\LaunchServer.bat`.
 * Still on your server machine, discover your local IP address by following these [steps](https://lifehacker.com/5833108/how-to-find-your-local-and-external-ip-address).
