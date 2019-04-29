@@ -17,7 +17,7 @@ Default single Unreal server-worker type development doesn’t accommodate schem
 To set up your game to interact with SpatialOS components defined outside the GDK (external SpatialOS components), you use the following:
 
 * To send SpatialOS component updates and commands, use methods defined in the `SpatialWorkerConnection.h` file (described in the examples section below).
-* To receive [network operations](https://docs.improbable.io/reference/latest/shared/design/operations) for external SpatialOS components, you must provide register callbacks for specific component IDs and networks operation types using methods defined in the `SpatialDispatcher.h` file . The GDK then forwards the operations to your callbacks. (This is described in the examples section below.)
+* To receive [network operations](https://docs.improbable.io/reference/latest/shared/design/operations) for external SpatialOS components, you must register callbacks for specific component IDs and network operation types using methods defined in the `SpatialDispatcher.h` file . The GDK then forwards the operations to your callbacks. (This is described in the examples section below.)
 
 >**TIP:** If you’re using schema from outside the GDK, you can customise [snapshot generation]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) from the GDK toolbar’s  **Snapshot** button. This is to serialize additional entities with these external components which the default Unreal snapshot generation cannot currently do. See [Add to the snapshot](#add-to-the-snapshot) below for how to do this.
 
