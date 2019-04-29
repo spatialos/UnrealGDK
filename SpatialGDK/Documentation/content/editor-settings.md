@@ -80,7 +80,7 @@ To learn more about all the settings available in the **Editor Settings** panel,
 </tr>
 <tr>
 <td>Snapshot file name</td>
-<td>Specify the name of your SpatialOS snapshot file, for example, <code>`default.snapshot`</code>.</td>
+<td>Specify the name of your SpatialOS snapshot file, for example, <code>default.snapshot</code>.</td>
 </tr>
 <tr>
 <td>Generate placeholder entities in snapshot</td>
