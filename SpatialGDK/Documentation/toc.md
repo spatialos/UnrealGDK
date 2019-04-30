@@ -27,17 +27,18 @@
     - [Glossary]({{urlRoot}}/content/glossary)
     - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
-    - [Spatial Type]({{urlRoot}}/content/spatial-type)
-    - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
+    - Actors and entities
+        - [Spatial Type]({{urlRoot}}/content/spatial-type)
+        - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
+        - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
+    - Authority and interest
+        - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
+        - [Map travel]({{urlRoot}}/content/map-travel)
+        - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
+    - Workers and load balancing
+        - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
     - [Unreal networking authority]({{urlRoot}}/content/authority)
-    - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
-    - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
-    - [Map travel]({{urlRoot}}/content/map-travel)
-    - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
-    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
-    - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
-    - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
 - <h3>Workflows</h3>
     - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
     - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
