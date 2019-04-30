@@ -18,29 +18,11 @@ The executable can be created by either:
 * Running the `./Scripts/Build.sh` script.
 * Building the `./Programs.Codegen.sln` solution in JetBrains Rider, Visual Studio, Visual Studio Code.
 
-## Testing / Example Code
-
-The `Testing` directory contains some example schema to demonstrate the code generator.
-
-Running `./Scripts/Test.sh` will:
-* Download the SpatialOS schema compiler tool and standard library schema files to the `Testing/Intermediate` directory,
-* Run the schema compiler on the example schema (and the standard library schema) to generate a schema bundle,
-* Run the code generator executable created by the `./Scripts/Publish.sh` script to generate files in `./Testing/SpatialCppCodegen` directory.
-* Download the C API files to `./Testing/WorkerSdk`.
-
-You can also open and try building `./Testing/CodegenTest` Visual Studio solution.
-
 ## Running from Visual Studio
 
 For debugging purposes, the code generator can be run from Visual Studio. To do this, you'll need to add values for the `input-bundle` and `output-dir` parameters.
 
 This can be done through right-clicking the `CodeGenerator` project in the Solution Explorer, and inserting into `Properties -> Debug -> Application arguments`.
-
-For example, you could use the below arguments to execute the same functionality as the `./Scripts/Test.sh` script. NOTE you'll have to run the `./Scripts/Test.sh` at least once before running via Visual Studio, this is because the script also generates the schema bundle file.
-
-```
---input-bundle ../../../../../Testing/Intermediate/schema_bundle.json --output-dir ../../../../../Testing/Output
-```
 
 ## Example Output
 
