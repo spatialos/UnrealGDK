@@ -4,6 +4,8 @@
 
 The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine plugin which gives you the features of SpatialOS, within the familiar workflows and APIs of Unreal. 
 
+<img src="{{assetRoot}}assets/unrealgdk-headline-image.png" style=" float: right; margin: 0; display: block; width: 50%; padding: 20px 20px"/>
+
 SpatialOS provides:<br/>
 
 * **Global hosting**: Scalable dedicated hosting for your game in every major gaming region.<br/>
@@ -22,8 +24,8 @@ It takes you through setting up the GDK and getting the Starter Template project
 After you set up the SpatialOS GDK Starter Template, you can learn more about the GDK’s functionality with:
 
 <!-- * **The Example Project tutorial**:  Upload a session-based FPS example game to the cloud. -->
-* **The Multiserver Shooter tutorial**: Implement shooting across the boundaries of different servers simulating one game world.
-* **The Porting guide**: Porting your existing UE project to SpatialOS.
+* **The Multiserver Shooter tutorial**: implement shooting across the boundaries of different servers simulating one game world.
+* **The Porting guide**: porting your existing UE project to SpatialOS.
 
 ## Find out more
 
