@@ -107,7 +107,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	{
 		if (GPlayInEditorID == FirstServerEditorID)
 		{
-			WorkerController.InitWorkers(ReceptionistConfig.WorkerType);
+			WorkerController.InitWorkers();
 		}
 
 		ReceptionistConfig.WorkerId = WorkerController.WorkerIds[GPlayInEditorID - 1];
