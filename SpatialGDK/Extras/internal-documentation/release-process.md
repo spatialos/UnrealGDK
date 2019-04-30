@@ -107,6 +107,7 @@ The workflow for cherry-picking the fix is:
   * [Deploy the project locally (again)](http://localhost:8080/reference/1.0/content/get-started/tutorial#deploy-the-project-locally-again)
   * [Enable cross server RPCs](http://localhost:8080/reference/1.0/content/get-started/tutorial#enable-cross-server-rpcs)
   * [Deploy the project locally (last time)](http://localhost:8080/reference/1.0/content/get-started/tutorial#deploy-the-project-locally-last-time)
+
 2. Launch a local SpatialOS deployment, then a standalone server-worker, and then connect two standalone clients to it. To do this:
 * In your file browser, click `UnrealGDKThirdPersonShooter\LaunchSpatial.bat` in order to run it.
 * In your file browser, click `UnrealGDKThirdPersonShooter\LaunchServer.bat` in order to run it.
@@ -114,24 +115,16 @@ The workflow for cherry-picking the fix is:
 * Run the same script again in order to launch the second client
 * Run and shoot eachother with the clients as a smoke test.
 * Open the `UE4 Console` and enter the command `open 127.0.0.1`. The desired effect is that the client disconnect and then re-connects to the map. If you can continue to play after executing the command then you've succesfully tested client travel.
-3. On a seperate Windows PC, launch a local SpatialOS deployment, then a standalone server-worker, and then on your original Windows PC, connect two standalone clients to it. To do this:
+
+3. Launch a local SpatialOS deployment, then connect two machines on your local network as clients. To do this:
 * Ensure that both machines are on the same network.
-* On your the machine you're going to run the server on, follow the setup steps listed with caveats in step 1.
-* Build out a windows client of the game using `BuildWorker.bat`. Send this client to the other machine you'll be using to connect.
+* On your own machine, in your terminal, `cd` to `<ProjectRoot>`.
+* Build out a windows client by running:
+`Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooter Win64 Development ThirdPersonShooter.uproject`
+* Send the client you just built to the other machine you'll be using to connect. You can find it at: `\spatial\build\assembly\worker\UnrealClient@Windows.zip`
 * Still on your server machine, run `UnrealGDKThirdPersonShooter\LaunchSpatial.bat`
 * Still on your server machine, run `UnrealGDKThirdPersonShooter\LaunchServer.bat`.
-* Still on your server machine, discover your local IP address by following these [steps](https://lifehacker.com/5833108/how-to-find-your-local-and-external-ip-address).
-* On the machine you're going to run your clients on, open `UnrealGDKThirdPersonShooter\LaunchClient.bat` in your code editor of choice and:
-  * Change `127.0.0.1`to the local IP of your server machine.
-  * Add `-OverrideSpatialNetworking` after the ip address
-  * Add `-NetDriverOverrides=/Script/SpatialGDK.SpatialNetDriver` after that
-  * Add `+useExternalIpForBridge true` after that
-  * Your final script shoudl look somethisn like: `@echo off
-call "%~dp0ProjectPaths.bat"
-"%UNREAL_HOME%\Engine\Binaries\Win64\UE4Editor.exe" "%~dp0%PROJECT_PATH%\%GAME_NAME%.uproject" 172.16.120.76 -game -log -OverrideSpatialNetworking -NoLogToSpatial -windowed -ResX=1280 -ResY=720  +workerType UnrealClient -NetDriverOverrides=/Script/SpatialGDK.SpatialNetDriver +useExternalIpForBridge true`
-* Save your changes.
-* In your file browser, click `UnrealGDKThirdPersonShooter\LaunchClient.bat` in order to run it.
-* Run the same script again in order to launch the second client
+* On the machine you sent the client to TODO.
 * Run and shoot eachother with the clients as a smoke test.
 * You can now turn off your server machine.
 
