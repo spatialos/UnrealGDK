@@ -487,7 +487,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("RemoveActor: actor for entity %lld was already deleted (likely on the authoritative worker) but still has an open actor channel."), EntityId);
-			ActorChannel->ConditionalCleanUp();
+			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
 			CleanupDeletedEntity(EntityId);
 		}
 		return;
@@ -498,7 +498,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
-			ActorChannel->ConditionalCleanUp();
+			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 			CleanupDeletedEntity(EntityId);
 		}
 		return;
@@ -592,7 +592,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		ActorChannel->ConditionalCleanUp();
+		ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
 	}
 	else
 	{
@@ -1072,7 +1072,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		// Check if bTearOff has been set to true
 		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
-			Channel->ConditionalCleanUp();
+			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 			CleanupDeletedEntity(Channel->GetEntityId());
 		}
 	}
