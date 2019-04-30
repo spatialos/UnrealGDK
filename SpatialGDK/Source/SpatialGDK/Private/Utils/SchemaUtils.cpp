@@ -4,7 +4,7 @@
 
 #include "Schema/UnrealObjectRef.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath)
@@ -23,4 +23,4 @@ void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FSt
 	OutPath.Append(*ObjectRef.Path);
 }
 
-}  // namespace improbable
+} // namespace SpatialGDK

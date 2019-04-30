@@ -11,7 +11,7 @@
 
 DEFINE_LOG_CATEGORY(LogSnapshotManager);
 
-using namespace improbable;
+using namespace SpatialGDK;
 
 void USnapshotManager::Init(USpatialNetDriver* InNetDriver)
 {
