@@ -98,7 +98,7 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		return;
 	}
 
-	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->StaticComponentView->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+	bool bHasAuthority = NetDriver->IsAuthoritativeDestructionAllowed() && NetDriver->StaticComponentView->GetAuthority(EntityId, SpatialGDK::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 
 	UE_LOG(LogSpatialActorChannel, Log, TEXT("Delete entity request on %lld. Has authority: %d"), EntityId, (int)bHasAuthority);
 
@@ -816,7 +816,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		return;
 	}
 
-	FString NewOwnerWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
+	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 
 	if (bFirstTick || SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{

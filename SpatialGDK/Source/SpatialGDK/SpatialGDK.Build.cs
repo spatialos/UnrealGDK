@@ -89,8 +89,5 @@ public class SpatialGDK : ModuleRules
         {
             PublicDelayLoadDLLs.Add(WorkerSharedLib);
         }
-
-        // Point generated code to the correct API spec.
-        PublicDefinitions.Add("IMPROBABLE_DLL_API=SPATIALGDK_API");
 	}
 }

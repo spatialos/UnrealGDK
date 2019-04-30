@@ -29,35 +29,35 @@ bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_
 
 void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
-	TUniquePtr<improbable::ComponentStorageBase> Data;
+	TUniquePtr<SpatialGDK::ComponentStorageBase> Data;
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::EntityAcl>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::EntityAcl>>(Op.data);
 		break;
 	case SpatialConstants::METADATA_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::Metadata>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Metadata>>(Op.data);
 		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::Position>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Position>>(Op.data);
 		break;
 	case SpatialConstants::PERSISTENCE_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::Persistence>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Persistence>>(Op.data);
 		break;
 	case SpatialConstants::SPAWN_DATA_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::SpawnData>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::SpawnData>>(Op.data);
 		break;
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::Singleton>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Singleton>>(Op.data);
 		break;
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::UnrealMetadata>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::UnrealMetadata>>(Op.data);
 		break;
 	case SpatialConstants::INTEREST_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::Interest>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Interest>>(Op.data);
 		break;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::Heartbeat>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Heartbeat>>(Op.data);
 		break;
 	default:
 		return;
@@ -73,15 +73,15 @@ void USpatialStaticComponentView::OnRemoveEntity(Worker_EntityId EntityId)
 
 void USpatialStaticComponentView::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
-	improbable::Component* Component = nullptr;
+	SpatialGDK::Component* Component = nullptr;
 
 	switch (Op.update.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
-		Component = GetComponentData<improbable::EntityAcl>(Op.entity_id);
+		Component = GetComponentData<SpatialGDK::EntityAcl>(Op.entity_id);
 		break;
 	case SpatialConstants::POSITION_COMPONENT_ID:
-		Component = GetComponentData<improbable::Position>(Op.entity_id);
+		Component = GetComponentData<SpatialGDK::Position>(Op.entity_id);
 		break;
 	default:
 		return;
