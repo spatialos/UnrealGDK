@@ -221,10 +221,6 @@ private:
 	FFilePath SpatialOSLaunchConfig;
 
 public:
-	/** Launch configuration description. */
-	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration description"))
-	FSpatialLaunchConfigDescription LaunchConfigDesc;
-
 	/** Stop `spatial local launch` when shutting down editor. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Stop on exit"))
 	bool bStopSpatialOnExit;
