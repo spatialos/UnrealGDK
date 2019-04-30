@@ -20,24 +20,24 @@
     - [Unreal features support]({{urlRoot}}/unreal-features-support)
     - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
-    - SpatialOS concepts
-        - [Summary]({{urlRoot}}/content/spatialos-concepts/concepts)
-        - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
-        - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
+    - [SpatialOS concepts]({{urlRoot}}/content/spatialos-concepts/concepts)
     - [Glossary]({{urlRoot}}/content/glossary)
     - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
-    - [Spatial Type]({{urlRoot}}/content/spatial-type)
-    - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
-    - [Unreal networking authority]({{urlRoot}}/content/authority)
-    - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
-    - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
-    - [Map travel]({{urlRoot}}/content/map-travel)
-    - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
-    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
-    - [Directory structure]({{urlRoot}}/content/directory-structure)
+    - Actors and entities
+        - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
+        - [Spatial Type]({{urlRoot}}/content/spatial-type)
+        - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
+        - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
+    - Authority and interest
+        - [Authority]({{urlRoot}}/content/authority)
+        - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
+        - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
+    - Workers and load balancing
+        - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+    - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
-    - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+    - [Map travel]({{urlRoot}}/content/map-travel)
 - <h3>Workflows</h3>
     - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
     - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
@@ -45,6 +45,9 @@
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
+- <h3>Pricing and support</h3>
+    - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)
+    - [Support]({{urlRoot}}/content/pricing-and-support/support)
 - <h3>Get involved</h3>
     - Contributing to the GDK
         - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)
