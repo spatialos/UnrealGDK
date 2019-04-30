@@ -68,6 +68,7 @@ bool USpatialGameInstance::HasSpatialNetDriver() const
 void USpatialGameInstance::CreateNewSpatialWorkerConnection()
 {
 	SpatialConnection = NewObject<USpatialWorkerConnection>(this);
+	SpatialConnection->Init(this);
 }
 
 #if WITH_EDITOR
@@ -113,16 +114,14 @@ void USpatialGameInstance::StartGameInstance()
 	Super::StartGameInstance();
 }
 
-void USpatialGameInstance::Shutdown()
+void USpatialGameInstance::HandleOnConnected()
 {
-	UWorld* World = GetWorld();
-	if (World != nullptr && SpatialConnection != nullptr && SpatialConnection->IsConnected())
-	{
-		if (World->GetNetDriver() != nullptr)
-		{
-			Cast<USpatialNetDriver>(World->GetNetDriver())->HandleOnDisconnected(TEXT("Client shutdown"));
-		}
-	}
+	UE_LOG(LogSpatialGameInstance, Log, TEXT("Succesfully connected to SpatialOS"));
+	OnConnected.Broadcast();
+}
 
-	Super::Shutdown();
+void USpatialGameInstance::HandleOnConnectionFailed(const FString& Reason)
+{
+	UE_LOG(LogSpatialGameInstance, Error, TEXT("Could not connect to SpatialOS. Reason: %s"), *Reason);
+	OnConnectionFailed.Broadcast(Reason);
 }

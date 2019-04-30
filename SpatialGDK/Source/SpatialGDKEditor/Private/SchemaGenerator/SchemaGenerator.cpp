@@ -306,13 +306,11 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassToSchemaName[Class]));
 }
 
-int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
+void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
 	const FSchemaData* const SchemaData = ClassPathToSchema.Find(*Class->GetPathName());
 
 	FCodeWriter Writer;
-
-	FComponentIdGenerator IdGenerator(ComponentId);
 
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
@@ -336,15 +334,15 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 			continue;
 		}
 
-		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
+		const Worker_ComponentId ComponentId = SchemaData ? SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : IdGenerator.Next();
 
 		Writer.PrintNewLine();
 
 		Writer.Printf("component {0} {", *SchemaReplicatedDataName(Group, Class));
 		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
+		Writer.Printf("id = {0};", ComponentId);
 
-		ActorSchemaData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
+		ActorSchemaData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
 
 		int FieldCounter = 0;
 		for (auto& RepProp : RepData[Group])
@@ -361,16 +359,16 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
-		const Worker_ComponentId CachedComponentId = SchemaData ? SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : SpatialConstants::INVALID_COMPONENT_ID;
+		const Worker_ComponentId ComponentId = SchemaData ? SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : IdGenerator.Next();
 
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
 		Writer.Printf("component {0} {", *SchemaHandoverDataName(Class));
 		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
+		Writer.Printf("id = {0};", ComponentId);
 
-		ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = IdGenerator.GetCurrentId();
+		ActorSchemaData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = ComponentId;
 
 		int FieldCounter = 0;
 		for (auto& Prop : HandoverData)
@@ -388,8 +386,6 @@ int GenerateActorSchema(int ComponentId, UClass* Class, TSharedPtr<FUnrealType> 
 	ClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
 
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassToSchemaName[Class]));
-
-	return IdGenerator.GetNumUsedIds();
 }
 
 FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex)
@@ -409,35 +405,35 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 			continue;
 		}
 
-		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : SpatialConstants::INVALID_COMPONENT_ID;
+		const Worker_ComponentId ComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : IdGenerator.Next();
 
 		Writer.PrintNewLine();
 
 		FString ComponentName = PropertyName + GetReplicatedPropertyGroupName(Group);
 		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
+		Writer.Printf("id = {0};", ComponentId);
 		Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
-		SubobjectData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = IdGenerator.GetCurrentId();
+		SubobjectData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
 	}
 
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
-		const Worker_ComponentId CachedComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : SpatialConstants::INVALID_COMPONENT_ID;
+		const Worker_ComponentId ComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : IdGenerator.Next();
 
 		Writer.PrintNewLine();
 
 		// Handover (server to server) replicated properties.
 		Writer.Printf("component {0} {", *(PropertyName + TEXT("Handover")));
 		Writer.Indent();
-		Writer.Printf("id = {0};", IdGenerator.GetNextAvailableId(CachedComponentId));
+		Writer.Printf("id = {0};", ComponentId);
 		Writer.Printf("data {0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
-		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = IdGenerator.GetCurrentId();
+		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = ComponentId;
 	}
 
 	return SubobjectData;

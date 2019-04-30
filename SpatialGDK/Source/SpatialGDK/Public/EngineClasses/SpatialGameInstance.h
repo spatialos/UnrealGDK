@@ -7,9 +7,12 @@
 
 #include "SpatialGameInstance.generated.h"
 
+class USpatialWorkerConnection;
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGameInstance, Log, All);
 
-class USpatialWorkerConnection;
+DECLARE_EVENT(USpatialWorkerConnection, FOnConnectedEvent);
+DECLARE_EVENT_OneParam(USpatialWorkerConnection, FOnConnectionFailedEvent, const FString&);
 
 UCLASS(config = Engine)
 class SPATIALGDK_API USpatialGameInstance : public UGameInstance
@@ -21,7 +24,6 @@ public:
 	virtual FGameInstancePIEResult StartPlayInEditorGameInstance(ULocalPlayer* LocalPlayer, const FGameInstancePIEParameters& Params) override;
 #endif
 	virtual void StartGameInstance() override;
-	virtual void Shutdown() override;
 
 	// bResponsibleForSnapshotLoading exists to have persistent knowledge if this worker has authority over the GSM during ServerTravel.
 	bool bResponsibleForSnapshotLoading = false;
@@ -30,6 +32,14 @@ public:
 	void CreateNewSpatialWorkerConnection();
 
 	FORCEINLINE USpatialWorkerConnection* GetSpatialWorkerConnection() { return SpatialConnection; }
+
+	void HandleOnConnected();
+	void HandleOnConnectionFailed(const FString& Reason);
+
+	// Invoked when this worker has successfully connected to SpatialOS
+	FOnConnectedEvent OnConnected;
+	// Invoked when this worker fails to initiate a connection to SpatialOS
+	FOnConnectionFailedEvent OnConnectionFailed;
 
 protected:
 	// Checks whether the current net driver is a USpatialNetDriver.

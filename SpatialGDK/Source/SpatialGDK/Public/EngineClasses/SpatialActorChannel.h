@@ -66,6 +66,7 @@ public:
 		return NetDriver->StaticComponentView->HasAuthority(EntityId, SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID);
 	}
 
+	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
 	FORCEINLINE bool IsOwnedByWorker() const
 	{
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
@@ -122,7 +123,7 @@ public:
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
-	void SpatialViewTick();
+	void ProcessOwnershipChange();
 	FObjectReplicator& PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
 
@@ -140,15 +141,22 @@ public:
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
 	bool bCreatedEntity;
 
+	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
+	bool bCreatingNewEntity;
+
 protected:
 	// UChannel Interface
 	virtual bool CleanUp(const bool bForDestroy) override;
 
 private:
+	void ServerProcessOwnershipChange();
+	void ClientProcessOwnershipChange();
+
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
 
 	void UpdateSpatialPosition();
+	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
@@ -157,7 +165,11 @@ private:
 	Worker_EntityId EntityId;
 	bool bFirstTick;
 	bool bInterestDirty;
+
+	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;
+	// Used on the server to track when the owner changes.
+	FString SavedOwnerWorkerAttribute;
 
 	UPROPERTY(transient)
 	USpatialNetDriver* NetDriver;
@@ -168,7 +180,8 @@ private:
 	UPROPERTY(transient)
 	class USpatialReceiver* Receiver;
 
-	FVector LastSpatialPosition;
+	FVector LastPositionSinceUpdate;
+	float TimeWhenPositionLastUpdated;
 
 	// Shadow data for Handover properties.
 	// For each object with handover properties, we store a blob of memory which contains
@@ -176,7 +189,4 @@ private:
 	// when those properties change.
 	TArray<uint8>* ActorHandoverShadowData;
 	TMap<TWeakObjectPtr<UObject>, TSharedRef<TArray<uint8>>> HandoverShadowDataMap;
-
-	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
-	bool bCreatingNewEntity;
 };

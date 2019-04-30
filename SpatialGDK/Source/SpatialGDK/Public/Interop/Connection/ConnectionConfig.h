@@ -15,7 +15,7 @@ struct FConnectionConfig
 	FConnectionConfig()
 		: UseExternalIp(false)
 		, EnableProtocolLoggingAtStartup(false)
-		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_TCP)
+		, LinkProtocol(WORKER_NETWORK_CONNECTION_TYPE_KCP)
 		, TcpMultiplexLevel(2) // This is a "finger-in-the-air" number.
 	{
 		const TCHAR* CommandLine = FCommandLine::Get();
@@ -30,7 +30,6 @@ struct FConnectionConfig
 		WorkerType = SpatialConstants::ClientWorkerType;
 		UseExternalIp = true;
 #endif
-
 		FString LinkProtocolString;
 		FParse::Value(CommandLine, TEXT("linkProtocol"), LinkProtocolString);
 		if (LinkProtocolString == TEXT("Tcp"))
@@ -41,13 +40,10 @@ struct FConnectionConfig
 		{
 			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_KCP;
 		}
-#if !(PLATFORM_PS4 || PLATFORM_XBOXONE)
-		// RakNet is not compiled for console platforms.
-		else if (LinkProtocolString == TEXT("RakNet"))
+		else if (!LinkProtocolString.IsEmpty())
 		{
-			LinkProtocol = WORKER_NETWORK_CONNECTION_TYPE_RAKNET;
+			UE_LOG(LogTemp, Warning, TEXT("Unknown network protocol %s specified for connecting to SpatialOS. Defaulting to KCP."), *LinkProtocolString);
 		}
-#endif // !(PLATFORM_PS4 || PLATFORM_XBOXONE)
 	}
 
 	FString WorkerId;
@@ -89,25 +85,6 @@ struct FReceptionistConfig : public FConnectionConfig
 
 	FString ReceptionistHost;
 	uint16 ReceptionistPort;
-};
-
-struct FLegacyLocatorConfig : public FConnectionConfig
-{
-	FLegacyLocatorConfig()
-		: LocatorHost(TEXT("locator.improbable.io"))
-	{
-		const TCHAR* CommandLine = FCommandLine::Get();
-
-		FParse::Value(CommandLine, TEXT("projectName"), ProjectName);
-		FParse::Value(CommandLine, TEXT("deploymentName"), DeploymentName);
-		FParse::Value(CommandLine, TEXT("loginToken"), LoginToken);
-		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
-	}
-
-	FString ProjectName;
-	FString DeploymentName;
-	FString LocatorHost;
-	FString LoginToken;
 };
 
 struct FLocatorConfig : public FConnectionConfig

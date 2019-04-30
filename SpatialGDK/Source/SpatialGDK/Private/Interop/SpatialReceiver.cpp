@@ -2,12 +2,14 @@
 
 #include "Interop/SpatialReceiver.h"
 
+#include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
@@ -20,24 +22,11 @@
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/ErrorCodeRemapping.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
 using namespace improbable;
-
-template <typename T>
-T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId)
-{
-	for (PendingAddComponentWrapper& PendingAddComponent : Receiver.PendingAddComponents)
-	{
-		if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.ComponentId == T::ComponentId)
-		{
-			return static_cast<T*>(PendingAddComponent.Data.Get());
-		}
-	}
-
-	return nullptr;
-}
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
@@ -107,15 +96,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
 
-	if (!bInCriticalSection)
-	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received a dynamically added component, these are currently unsupported - component ID: %u entity ID: %lld"),
-			Op.data.component_id, Op.entity_id);
-		return;
-	}
-
-	TSharedPtr<improbable::Component> Data;
-
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
@@ -140,17 +120,43 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		GlobalStateManager->LinkAllExistingSingletonActors();
 		return;
 	case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
- 		GlobalStateManager->ApplyDeploymentMapData(Op.data);
+		GlobalStateManager->ApplyDeploymentMapData(Op.data);
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
- 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
+		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
 		return;
-	default:
-		Data = MakeShared<improbable::DynamicComponent>(Op.data);
-		break;
 	}
 
-	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, Data);
+	if (ClassInfoManager->IsSublevelComponent(Op.data.component_id))
+	{
+		return;
+	}
+
+	// If a client gains ownership over something it had already checked out, it will
+	// add component interest on the owner only data components, which will trigger an
+	// AddComponentOp, but it is not guaranteed to be inside a critical section.
+	if (!NetDriver->IsServer())
+	{
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+		{
+			if (ClassInfoManager->GetCategoryByComponentId(Op.data.component_id) == SCHEMA_OwnerOnly)
+			{
+				// We received owner only data, and we have the entity checked out already,
+				// so this happened as a result of adding component interest. Apply the data
+				// immediately instead of queuing it up (since there will be no AddEntityOp).
+				ApplyComponentData(Op.entity_id, Op.data, Channel);
+				return;
+			}
+		}
+	}
+
+	if (!bInCriticalSection)
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received a dynamically added component, these are currently unsupported - component ID: %u entity ID: %lld"),
+			Op.data.component_id, Op.entity_id);
+		return;
+	}
+	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<improbable::DynamicComponent>(Op.data));
 }
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
@@ -345,7 +351,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			continue;
 		}
 
-		Worker_ComponentData* ComponentData = static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data;
+		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData;
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
 		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
@@ -422,16 +428,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				continue;
 			}
 
-			if (PendingAddComponent.EntityId == EntityId && PendingAddComponent.Data.IsValid() && PendingAddComponent.Data->bIsDynamic)
+			if (PendingAddComponent.EntityId == EntityId)
 			{
-				ApplyComponentData(EntityId, *static_cast<improbable::DynamicComponent*>(PendingAddComponent.Data.Get())->Data, Channel);
+				ApplyComponentData(EntityId, *PendingAddComponent.Data->ComponentData, Channel);
 			}
 		}
 
 		if (!NetDriver->IsServer())
 		{
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-			Sender->SendComponentInterest(EntityActor, EntityId);
+			Sender->SendComponentInterest(EntityActor, EntityId, Channel->IsOwnedByWorker());
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.
@@ -1269,7 +1275,10 @@ void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealOb
 
 void USpatialReceiver::OnDisconnect(Worker_DisconnectOp& Op)
 {
-	NetDriver->HandleOnDisconnected(UTF8_TO_TCHAR(Op.reason));
+	if (GEngine != nullptr)
+	{
+		GEngine->BroadcastNetworkFailure(NetDriver->GetWorld(), NetDriver, ENetworkFailure::FromDisconnectOpStatusCode(Op.connection_status_code), UTF8_TO_TCHAR(Op.reason));
+	}
 }
 
 void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs)
@@ -1302,7 +1311,7 @@ void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& Unresolved
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)
 {
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving pending object refs and RPCs which depend on object: %s %s."), *Object->GetName(), *ObjectRef.ToString());
 
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
@@ -1322,7 +1331,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		return;
 	}
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving incoming operations depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
 
 	for (FChannelObjectPair& ChannelObjectPair : *TargetObjectSet)
 	{
@@ -1375,7 +1384,7 @@ void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const FUnrealObjectR
 		return;
 	}
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Resolving incoming RPCs depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving incoming RPCs depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
 
 	for (const TSharedPtr<FPendingIncomingRPC>& IncomingRPC : *IncomingRPCArray)
 	{
