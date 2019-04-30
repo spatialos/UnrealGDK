@@ -106,17 +106,17 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 		Canvas->DrawText(RenderFont, StatColumnTitles[i], x, y, 1.0f, 1.0f, FontRenderInfo);
 	}
 
-	x = StatColumnOffsets[StatColumn_Worker];
 	y += StatRowOffset;
 
 	for (const FWorkerStats& OneWorkerStats : WorkerStats)
 	{
+		x = StatDisplayStartX + StatColumnOffsets[StatColumn_Worker];
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%s"), *OneWorkerStats.WorkerName), x, y, 1.0f, 1.0f, FontRenderInfo);
+
 		x += StatColumnOffsets[StatColumn_AverageFPS];
-
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.AverageFPS), x, y, 1.0f, 1.0f, FontRenderInfo);
-		x += StatColumnOffsets[StatColumn_WorkerLoad];
 
+		x += StatColumnOffsets[StatColumn_WorkerLoad];
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.WorkerLoad), x, y, 1.0f, 1.0f, FontRenderInfo);
 	}
 }
