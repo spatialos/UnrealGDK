@@ -74,6 +74,14 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
+	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
+	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
+	// from OnConnectedToSpatialOS callback which could be executed with the async
+	// loading thread suspended (e.g. when resuming rendering thread), in which
+	// case we'll crash upon trying to load SchemaDatabase.
+	ClassInfoManager = NewObject<USpatialClassInfoManager>();
+	ClassInfoManager->Init(this);
+
 	InitiateConnectionToSpatialOS(URL);
 
 	return true;
@@ -157,7 +165,6 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		}
 	}
 
-	GameInstance->OnConnected.AddUObject(this, &USpatialNetDriver::OnConnectedToSpatialOS);
 	Connection->Connect(bConnectAsClient);
 }
 
@@ -211,12 +218,10 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PlayerSpawner = NewObject<USpatialPlayerSpawner>();
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
-	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->Init(this);
-	ClassInfoManager->Init(this);
 	Dispatcher->Init(this);
 	Sender->Init(this);
 	Receiver->Init(this, &TimerManager);

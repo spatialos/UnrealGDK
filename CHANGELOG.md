@@ -4,7 +4,9 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2019-xx-xx
+## [Unreleased] - yyyy-mm-dd
+
+## [`0.4.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.0) - 2019-04-30
 
 ### New Known Issues:
 
@@ -27,12 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed being unable to launch SpatialOS if project path had spaces in it.
 - Editor no longer crashes when setting LogSpatialSender to Verbose.
 - Server-workers quickly restarted in the editor will connect to runtime correctly.
-
-### External contributors:
-
-In addition to all of the updates from Improbable, this release includes x improvements submitted by the incredible community of SpatialOS developers on GitHub! Thanks to these contributors:
-
-* 
+- Game no longer crashes when connecting to Spatial with async loading thread suspended.
 
 ## [`0.3.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.3.0) - 2019-04-04
 

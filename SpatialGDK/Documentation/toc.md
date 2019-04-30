@@ -5,25 +5,35 @@
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
         - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
         - [3: Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
-        - Next steps - either:
-            - [Follow the Multiserver Shooter tutorial]({{urlRoot}}/content/get-started/tutorial)
-            - [Port your own project to the GDK]({{urlRoot}}/content/get-started/porting-unreal-project-to-gdk)
-    - [Feature list]({{urlRoot}}/features)
-    - [What's new in alpha]({{urlRoot}}/content/whatsnew)
+    - Technical overview
+        - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
+        - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
+        - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
+    - Tutorials
+        - Multiserver Shooter tutorial
+            - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
+            - [Step 1: Set up]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
+            - [Step 2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
+            - [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+            - [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+        - [Port your own project to the GDK]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
+    - [Unreal features support]({{urlRoot}}/unreal-features-support)
+    - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
-    - [SpatialOS concepts]({{urlRoot}}/content/concepts)
+    - SpatialOS concepts
+        - [Summary]({{urlRoot}}/content/spatialos-concepts/concepts)
+        - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
+        - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
     - [Glossary]({{urlRoot}}/content/glossary)
     - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
     - [Spatial Type]({{urlRoot}}/content/spatial-type)
     - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
-    - [Authority]({{urlRoot}}/content/authority)
+    - [Unreal networking authority]({{urlRoot}}/content/authority)
     - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
     - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
     - [Map travel]({{urlRoot}}/content/map-travel)
     - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
-    - [Schema]({{urlRoot}}/content/schema)
-    - [Snapshots]({{urlRoot}}/content/generating-a-snapshot)
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
@@ -31,9 +41,10 @@
 - <h3>Workflows</h3>
     - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
     - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
+    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
-    - [Known issues]({{urlRoot}}/known-issues)
-    - [Keep your GDK up to date]({{urlRoot}}/content/upgrading)
+    - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
 - <h3>Get involved</h3>
     - Contributing to the GDK
         - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)

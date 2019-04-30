@@ -108,7 +108,7 @@ You set the size of chunks for your world in [launch configuration files](https:
 See [SpatialOS component](#spatialos-component).
 
 ### Command-line tool (CLI)
-See [Spatial command-line tool (CLI)](#spatial-command-line-tool-cli).
+See [Spatial command-line tool (CLI)](#spatialos-command-line-tool-cli).
 
 ### Configuration files
 The configuration files contain information on how elements of your project must work. There are four configuration files:
@@ -116,7 +116,7 @@ The configuration files contain information on how elements of your project must
 * The [launch configuration file - `*.json`](#launch-configuration-file) contains the information that the “launch a deployment” commands use to use to  run a [deployment](#deployment).
 * The [worker configuration file - `*.worker.json`](#worker-configuration-file) tells SpatialOS how to build, launch, and interact with [workers](#workers).
 * The [project definition file - `spatialos.json`](#project-definition-file) 
-* The [worker packages file - `spatialos_worker_packages.json`(SpatialOS documentation)](https://docs.improbable.io/reference/latest/shared/reference/file-formats/spatial-worker-packages)
+* The [worker packages file - `spatialos_worker_packages.json`](https://docs.improbable.io/reference/latest/shared/reference/file-formats/spatial-worker-packages)
 
 ### Console
 
@@ -198,7 +198,7 @@ The [launch configuration file](#launch-configuration-file) is a `.json` file co
 
 >Related:
 >
->[Launch configuration file (SpatialOS documenation)](https://docs.improbable.io/reference/latest/shared/reference/file-formats/launch-config)
+>[Launch configuration file](https://docs.improbable.io/reference/latest/shared/reference/file-formats/launch-config)
 
 ### Launcher
 The Launcher is a tool that can download and start clients that connect to [cloud deployments](#deployment). It's available as an application for Windows and macOS. From the [Console](#console), you can use the Launcher to connect a game client to your own cloud deployment or generate a share link so anyone with the link can download a game client and join your game.
@@ -245,7 +245,7 @@ To facilitate this continuity in an entity's state between deployments, there is
 
 >Related:
 >
->[The persistence component in the standard schema library (SpatialOS documentation](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library#persistence-optional)
+>[The persistence component in the standard schema library](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library#persistence-optional)
 
 ### Project name
 Your project name is a unique identifier for your game project as a deployment. It’s generated for you when you sign up for SpatialOS. It’s usually something like `beta_someword_anotherword_000`.
@@ -278,17 +278,17 @@ SpatialOS uses the schema to generate code. You can use this generated code in y
 
 > Related:
 >
-> * [Schema (Unreal GDK documentation)]({{urlRoot}}/content/schema)
+> * [Schema (GDK for Unreal documentation)]({{urlRoot}}/content/spatialos-concepts/schema)
 > * [Introduction to schema](https://docs.improbable.io/reference/latest/shared/schema/introduction)
 > * [Schema reference](https://docs.improbable.io/reference/latest/shared/schema/reference)
 
-### `spatial` command-line tool (CLI)
-The `spatial` command-line tool (also known as the “CLI”) provides a set of commands that you use to interact with a [SpatialOS project](https://docs.improbable.io/reference/latest/shared/reference/project-structure#structure-of-a-spatialos-project). Among other things, you use it to [deploy](#deployment) your game (using [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch) or [`spatial cloud launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-cloud-launch)). You can run the CLI commands `spatial build` and `spatial local launch` from the [GDK toolbar]({{urlRoot}}/content/toolbars.md#spatialos-gdk-for-unreal-toolbar) in the Unreal Editor.
+### SpatialOS command-line tool (CLI)
+The SpatialOS command-line tool (also known as the “CLI”) provides a set of commands that you use to interact with a [SpatialOS project](https://docs.improbable.io/reference/latest/shared/reference/project-structure#structure-of-a-spatialos-project). Among other things, you use it to [deploy](#deployment) your game (using [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch) or [`spatial cloud launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-cloud-launch)). You can run the CLI commands `spatial build` and `spatial local launch` from the [GDK toolbar]({{urlRoot}}/content/toolbars#spatialos-gdk-for-unreal-toolbar) in the Unreal Editor.
 
 > Related:
 > 
-> * [An introduction to the `spatial` command-line tool](https://docs.improbable.io/reference/latest/shared/spatial-cli-introduction). Note that the GDK does not support any `spatial worker` commands.
-> * [`spatial` reference](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial)
+> * [An introduction to the SpatialOS command-line tool](https://docs.improbable.io/reference/latest/shared/spatial-cli-introduction). Note that the GDK does not support any `spatial worker` commands.
+> * [SpatialOS CLI reference](https://docs.improbable.io/reference/latest/shared/spatialos-cli-introduction)
 
 
 ### SpatialOS component
@@ -361,7 +361,7 @@ You use a snapshot as the starting point (using an an “initial snapshot”) fo
 
 > Related:
 > 
-> * [How to generate a snapshot]({{urlRoot}}/content/generating-a-snapshot)
+> * [How to generate a snapshot (GDK for Unreal documentation)]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot)
 > * [Snapshots](https://docs.improbable.io/reference/latest/shared/operate/snapshots)
 
 ### Streaming queries
@@ -424,7 +424,7 @@ Once you’ve chosen a label for the worker type (for example, myWorkerType), yo
 
 > Related:
 >
->[Worker configuration file `worker.json` (SpatialOS documenation)](https://docs.improbable.io/reference/latest/shared/worker-configuration/worker-configuration)
+>[Worker configuration file `worker.json`](https://docs.improbable.io/reference/latest/shared/worker-configuration/worker-configuration)
 
 ### Worker types
 
