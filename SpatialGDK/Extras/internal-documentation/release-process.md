@@ -157,6 +157,8 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 
 Congratulations, you've done the release!
 
+## Clean up
+
 There are potentially changes that were merged into the release candidate branches that aren't merged into the corresponding development (master) branches yet. Because there are some race conditions involved, a GDK engineer should be in charge of doing this.
 
 indirect-merge from `A` into `B` (`premerge-x.y.z-rc` into `master`, except `improbableio/UnrealEngine` repo where this is `premerge-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`) is defined as:
