@@ -27,7 +27,7 @@ struct EditorWorkerController
 		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
 	}
 
-	void InitWorkers(const FString& WorkerType)
+	void InitWorkers()
 	{
 		ReplaceProcesses.Empty();
 
@@ -45,20 +45,30 @@ struct EditorWorkerController
 		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 		SpatialShutdownHandle = Toolbar.OnSpatialShutdown.AddRaw(this, &EditorWorkerController::OnSpatialShutdown);
 
-		int32 PlayNumberOfServers;
-		GetDefault<ULevelEditorPlaySettings>()->GetPlayNumberOfServers(PlayNumberOfServers);
-
-		WorkerIds.SetNum(PlayNumberOfServers);
-		for (int i = 0; i < PlayNumberOfServers; ++i)
+		const TMap<FString, int32>& WorkersToLaunch = GetDefault<ULevelEditorPlaySettings>()->WorkersToLaunch;
+		int32 WorkerCount = 0;
+		for (const TPair<FString, int32>& WorkerType : WorkersToLaunch)
 		{
-			FString NewWorkerId = WorkerType + FGuid::NewGuid().ToString();
+			WorkerCount += WorkerType.Value;
+		}
 
-			if (!WorkerIds[i].IsEmpty() && SecondsSinceLastSession < WorkerReplaceThresholdSeconds)
+		WorkerIds.SetNum(WorkerCount);
+
+		int32 WorkerIdIndex = 0;
+		for (const TPair<FString, int32>& WorkerType : WorkersToLaunch)
+		{	
+			for (int i = 0; i < WorkerType.Value; ++i)
 			{
-				ReplaceProcesses.Add(ReplaceWorker(WorkerIds[i], NewWorkerId));
-			}
+				const FString NewWorkerId = WorkerType.Key + FGuid::NewGuid().ToString();
 
-			WorkerIds[i] = NewWorkerId;
+				if (!WorkerIds[WorkerIdIndex].IsEmpty() && SecondsSinceLastSession < WorkerReplaceThresholdSeconds)
+				{
+					ReplaceProcesses.Add(ReplaceWorker(WorkerIds[WorkerIdIndex], NewWorkerId));
+				}
+
+				WorkerIds[WorkerIdIndex] = NewWorkerId;
+				WorkerIdIndex++;
+			}
 		}
 	}
 

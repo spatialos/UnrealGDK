@@ -693,48 +693,6 @@ bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJson
 	return true;
 }
 
-bool FSpatialGDKEditorToolbarModule::WriteLegacyFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const
-{
-	Writer->WriteObjectStart();
-		Writer->WriteValue(TEXT("name"), Key);
-		Writer->WriteValue(TEXT("value"), Value);
-	Writer->WriteObjectEnd();
-
-	return true;
-}
-
-bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType) const
-{
-	Writer->WriteObjectStart();
-		Writer->WriteValue(TEXT("worker_type"), *WorkerType);
-		Writer->WriteRawJSONValue("flags", TEXT("[]"));
-		Writer->WriteArrayStart("permissions");
-			Writer->WriteObjectStart();
-				Writer->WriteObjectStart(TEXT("all"));
-				Writer->WriteObjectEnd();
-			Writer->WriteObjectEnd();
-		Writer->WriteArrayEnd();
-	Writer->WriteObjectEnd();
-
-	return true;
-}
-
-bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, int32 Columns, int32 Rows, bool ManualWorkerConnectionOnly) const
-{
-	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("layer"), WorkerType);
-		Writer->WriteObjectStart("rectangle_grid");
-			Writer->WriteValue(TEXT("cols"), Columns);
-			Writer->WriteValue(TEXT("rows"), Rows);
-		Writer->WriteObjectEnd();
-		Writer->WriteObjectStart(TEXT("options"));
-			Writer->WriteValue(TEXT("manual_worker_connection_only"), ManualWorkerConnectionOnly);
-		Writer->WriteObjectEnd();
-	Writer->WriteObjectEnd();
-
-	return true;
-}
-
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FSpatialGDKEditorToolbarModule, SpatialGDKEditorToolbar)
