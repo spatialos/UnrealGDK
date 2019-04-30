@@ -13,7 +13,7 @@ class AActor;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 
-namespace improbable
+namespace SpatialGDK
 {
 
 class SPATIALGDK_API InterestFactory
@@ -57,4 +57,4 @@ private:
 	USpatialPackageMapClient* PackageMap;
 };
 
-}
+} // namespace SpatialGDK

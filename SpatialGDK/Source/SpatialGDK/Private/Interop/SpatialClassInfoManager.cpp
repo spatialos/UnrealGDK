@@ -101,7 +101,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		return;
 	}
 
-	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
+	TArray<UFunction*> RelevantClassFunctions = SpatialGDK::GetClassRPCFunctions(Class);
 
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
 	{
