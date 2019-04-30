@@ -1,16 +1,16 @@
 <%(TOC)%>
-# GDK Runtime Settings
+# SpatialOS Runtime Settings
 
-Before you run or package the game for testing outside the Unreal Editor, you can use Runtime Settings as advanced configurations to affect your game project at runtime and gameplay outside the Unreal Editor as well.
+Before you run or package the game for testing outside the Unreal Editor, you can use SpatialOS runtime settings as advanced configurations to affect your game project at runtime and gameplay outside the Unreal Editor as well.
 
-The following use cases show that you use Runtime Settings to configure **Entity Pool** related properties:
+The following use cases show when you need to use SpatialOs runtime settings to configure the properties:
 
-- When you decide the number of Actors that the server spawns at the beginning, if the number that you want is greater than the default initial value of the pool, which is 3,000, you can increase the value there.
-- When you decide the number of Actors that the server should be able to spawn in a short interval, if the number that you want is greater than the default threshold number, which is 1,000, you can increase the value there.
+- When you decide the number of Actors that the server spawns at the beginning, if the number that you want is greater than the default initial value of the pool, which is 3,000, you should increase the value.
+- When you decide the number of Actors that the server should be able to spawn in a short interval, if the number that you want is greater than the default threshold number, which is 1,000, you should increase the value.
 
-> **Note**: You can find the `DefaultSpatialGDKSettings.ini` file from the `<GameRoot>\Config\` directory only when you change one of the properties from their default values. And the file shows only the changed values.
+> **Note**: When you change one of the properties from their default values, the changes values are saved in the `DefaultSpatialGDKSettings.ini` file, and you can find the file from the `<GameRoot>\Config\` directory.
 
-To learn more about all the properties available in the **Runtime Settings** panel, check the following table:
+To learn more about all the properties available in the **SpatialOS Editor Settings** panel, check the following table:
 
 <table>
 <tbody>
@@ -102,7 +102,7 @@ To learn more about all the properties available in the **Runtime Settings** pan
 </tr>
 <tr>
 <td>Use frame time as load</td>
-  <td><span style="font-weight: 400;">Choose whether to use <code>AverageFrameTime</code> instead of <code>AverageFrameTime / TargetFrameTime</code> as the <code>load</code> value in the Inspector to represent frame time of a worker instance.</p>
+  <td><span style="font-weight: 400;">Choose whether to use <code>AverageFrameTime</code> instead of <code>AverageFrameTime / TargetFrameTime</code> as the <code>load</code> value in the Inspector to represent frame time of a worker instance. By default, the check box is not selected.</p>
 <p>For example, if you have a target frame rate of 30 FPS, and your game is running at 30 FPS, which is the average FPS.</p>
 <ul>
   <li>If the check box is not selected, the <code>load</code> value in the Inspector is <code>AverageFrameTime / TargetFrameTime</code>, which is 1.0.</li>
