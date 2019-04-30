@@ -1,38 +1,46 @@
-<%(TOC)%>
-# Welcome to the SpatialOS GDK for Unreal Alpha
-<%(Callout type="warn" message=" The SpatialOS GDK for Unreal is in alpha. Its API may change as we learn from feedback. Although not fully ready in terms of performance, stability and documentation, this is a great time to get involved with the GDK and shape it with us. We are committed to improving the GDK rapidly, aiming for a more stable release in Q2 2019: see [Development roadmap](https://github.com/spatialos/UnrealGDK/projects/1). If you are interested in developing with the GDK before then, please contact us via our [forums](https://forums.improbable.io/), or [Discord](https://discord.gg/vAT7RSU).")%>
+# SpatialOS GDK for Unreal
 
-<img src="{{assetRoot}}assets/unrealgdk-headline-image.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
+<%(Callout type="warn" message="The SpatialOS GDK for Unreal is in alpha. It is ready to use for development of games using a single Unreal server. It it not yet recommended for development of multiserver games, and is not ready for public releases. For more information, please follow our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages.")%>
 
-The SpatialOS Game Development Kit (GDK) for Unreal is a plugin which allows you to host your game and combine multiple dedicated server instances across one seamless game world, whilst using the Unreal Engine networking API. 
+The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine plugin which gives you the features of SpatialOS, within the familiar workflows and APIs of Unreal. 
 
-The GDK offers:<br/>
+SpatialOS provides:<br/>
 
-* **Multiserver support:** leveraging our cloud platform, the GDK enables you to use more than one Unreal game server in a single instance so that games can have more players, Actors, and gameplay systems than previously possible. <br/>
-* **An Unreal-native experience:** keeping traditional workflows and networking APIs that Unreal Engine developers are familiar with, the GDK introduces new native-feeling concepts that turn a single-server engine into a distributed one. This enables the GDK to retain the functionality of the networking features which Unreal offers out of the box, including transform synchronization, character movement, and map travel.<br/>
-* **An easy way to get started:** we have made sure it’s easy to [get started]({{urlRoot}}/content/get-started/introduction) with the GDK by including a Starter Template which you can use as a tour of SpatialOS and a base for your own game, as well as a guide to porting your current multiplayer Unreal game to run on SpatialOS.
+* **Global hosting**: Scalable dedicated hosting for your game in every major gaming region.<br/>
+* **Easy playtesting**: Deploy and test your game from the start of development, and distribute it to your team and players quickly and easily with a ready-made link.<br/>
+* **Profiling and debugging tools**: Logs and metrics out of the box to help you quickly understand any bugs and performance issues.
+* **Multiserver networking**: Multiple dedicated servers across one seamless game world, enabling greater numbers of Actors, players and gameplay systems. Note: this feature is currently in preview as we work to improve its stability - we recommend you try it out using the Multiserver Shooter Tutorial, but avoid development with it. 
 
-## What next?
+## Get started
 
-#### Want to get going with SpatialOS?
+If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started]({{urlRoot}}/content/get-started/introduction) guide.
 
-* **[Get started]({{urlRoot}}/content/get-started/introduction) with the SpatialOS GDK for Unreal.** If you’re an Unreal game developer and you're ready to get started with SpatialOS, the _Get started_ guide takes you through setting up the SpatialOS Unreal Engine fork and the GDK. (Note that the GDK is aimed at users comfortable with programming in Unreal.) 
+It takes you through setting up the GDK and getting the Starter Template project uploaded to and running in the cloud, as well as running locally on your computer, as if it’s a server. This gives an overview of the GDK and using SpatialOS, and you can use the Starter Template as a basis for your own projects.
 
-#### Want to find out more? 
+<!-- <img src="{{assetRoot}}assets/screen-grabs/exampleproject/example-project-gameplay.png" style=" float: right; margin: 0; display: block; width: 50%; padding: 15px 15x"/> -->
 
-* Check out our **blogs** on **<a href="https://improbable.io/games/blog/category/featured-games" data-track-link="Featured Games Clicked|product=Docs" target="_blank">SpatialOS games</a>** currently in development and the **<a href="https://improbable.io/games/blog/category/game-design" data-track-link="Game Design Clicked|product=Docs" target="_blank">game design</a>** opportunities and challenges associated with working with SpatialOS. 
-<br/>
-<br/>
-* We’d love to hear your game ideas and answer any questions you have about making games on SpatialOS. <br/>
-**Join the community on our <a href="https://forums.improbable.io" data-track-link="Join Forums Clicked|product=Docs" target="_blank">forums</a>, or on <a href="https://discord.gg/vAT7RSU" data-track-link="Join Discord Clicked|product=Docs|platform=Win|label=Win" target="_blank">Discord</a>.**
+After you set up the SpatialOS GDK Starter Template, you can learn more about the GDK’s functionality with:
+
+<!-- * **The Example Project tutorial**:  Upload a session-based FPS example game to the cloud. -->
+* **The Multiserver Shooter tutorial**: Implement shooting across the boundaries of different servers simulating one game world.
+* **The Porting guide**: Porting your existing UE project to SpatialOS.
+
+## Find out more
+
+* Learn more about how the GDK works and how it fits into your game stack. 
+<br/>**Read the [Technical overview]({{urlRoot}}/content/technical-overview/gdk-concepts)** (3-minute read).
 <br/>
 <br/>
 * If you aren’t already familiar with SpatialOS, you can find out about the concepts which enable it to support game worlds with more persistence, scale, and complexity than previously possible.
 <br/> **Read the [SpatialOS concept docs](https://docs.improbable.io/reference/latest/shared/concepts/spatialos)** on the SpatialOS documentation website (5 minute read).
 <br/>
 <br/>
-
+* We’d love to hear your game ideas and answer any questions you have about making games on SpatialOS. <br/>
+**Join the community on our <a href="https://forums.improbable.io" data-track-link="Join Forums Clicked|product=Docs" target="_blank">forums</a>, or on <a href="https://discordapp.com/invite/vAT7RSU" data-track-link="Join Discord Clicked|product=Docs|platform=Win|label=Win" target="_blank">Discord</a>.**
+<br/>
 <br/>
 
+#### Next: [Get started]({{urlRoot}}/content/get-started/dependencies.md)
+
 ------
-_2019-03-25 Page updated with editorial review_
+_2019-04-26 Page updated_
