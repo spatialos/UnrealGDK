@@ -39,12 +39,13 @@
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Map travel]({{urlRoot}}/content/map-travel)
 - <h3>Workflows</h3>
-    - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
-    - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
-    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
-    - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
+    - Deployment workflows
+        - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
+        - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
+    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Pricing and support</h3>
     - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)
     - [Support]({{urlRoot}}/content/pricing-and-support/support)

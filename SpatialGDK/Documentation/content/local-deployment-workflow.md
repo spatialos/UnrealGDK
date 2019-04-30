@@ -1,6 +1,6 @@
-# Local development workflow
+# Local deployment workflow
 
-The following flowchart provides a reference of the local development workflow on the GDK.
+The following flowchart provides a reference of the local deployment workflow on the GDK.
  
 If you haven't already, please follow the [GDK Starter Template guide]({{urlRoot}}/content/get-started/gdk-template) which provides a detailed explanation of the different steps. 
 
