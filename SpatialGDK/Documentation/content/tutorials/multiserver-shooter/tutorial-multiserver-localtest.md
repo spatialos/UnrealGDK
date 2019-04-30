@@ -11,8 +11,7 @@ Notice that health now decrements when you are shot.
 <br/>
 ### View your SpatialOS world in the Inspector
 
-![]({{assetRoot}}assets/tutorial/inspector-two-workers.png)
-
+![]({{assetRoot}}assets/tutorial/inspector-two-workers.png)<br/>
 _Image: A local Inspector showing two server-worker instances (two Unreal servers) managing your game_<br/>
 
 [The Inspector]({{urlRoot}}/content/glossary#inspector) provides a real-time view of what is happening in your [SpatialOS world]({{urlRoot}}/content/glossary#game-world). It’s a powerful tool for monitoring and debugging both during development and when your game is live in production. Let’s use the Inspector to visualise the areas that each of our server-worker instances have [authority]({{urlRoot}}/content/glossary#authority) (that is, read and write access) over.
@@ -108,5 +107,12 @@ Now let’s test our new cross-server functionality in another local deployment.
 Now that you're free of the single-server paradigm, have a think about the huge, seamless multiplayer worlds you can build and host using the Unreal GDK.
 
 Speaking of hosting, let’s upload your game.
-
+</br>
+</br>
+**Next:** 
 [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+<br/>
+<br/>
+
+-------------
+_2019-04-30 Page updated with limited editorial review_

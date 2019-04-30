@@ -27,5 +27,5 @@ The SpatialOS Game Development Kit (GDK) for Unreal is a plugin which allows you
 <br/>
 
 ------------
-2019-04-25 Page added with full editorial review 
+_2019-04-25 Page added with full editorial review_
 <br/>
