@@ -25,7 +25,7 @@ To learn more about all the properties available in the **SpatialOS Editor Setti
 <td><span style="font-weight: 400;">The directory for SpatialOS-related files, for example, <code>C:/Projects/MyGame/spatial/</code>.</td>
 </tr>
 <tr>
-<td>Play in Editor Settings</td>
+<td>Play in Editor settings</td>
 <td>Delete dynamically spawned entities</td>
 <td>
 <p>Choose whether to delete all the dynamically spawned entities when server workers disconnect. By default, the check box is selected.</p>
