@@ -54,13 +54,14 @@ namespace Improbable.CodeGen.Unreal
 
         public static string GetFieldClearingCheck(FieldDefinition field)
         {
+            var fieldName = Text.SnakeCaseToPascalCase(field.Identifier.Name);
             switch (field.TypeSelector)
             {
                 case FieldType.Option:
-                    return $"!_{Text.SnakeCaseToPascalCase(field.Identifier.Name)}.GetValue().IsSet()";
+                    return $"!_{Text.SnakeCaseToPascalCase(fieldName)}.GetValue().IsSet()";
                 case FieldType.List:
                 case FieldType.Map:
-                    return $"_{Text.SnakeCaseToPascalCase(field.Identifier.Name)}.GetValue().Num() == 0";
+                    return $"_{Text.SnakeCaseToPascalCase(fieldName)}.GetValue().Num() == 0";
                 case FieldType.Singular:
                     throw new InvalidOperationException("Trying to check if singular type should be clear should never happen");
                 default:

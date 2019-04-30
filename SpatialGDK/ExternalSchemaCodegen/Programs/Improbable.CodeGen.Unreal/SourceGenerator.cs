@@ -390,25 +390,26 @@ namespace Improbable.CodeGen.Unreal
                 return builder.ToString();
             }
 
-            var updatesObjectName = "updates_object";
-            var eventsObjectName = "events_object";
-            var targetObjectName = "data";
+            var componentUpdateObjectName = "ComponentUpdate";
+            var updatesObjectName = "UpdatesObject";
+            var eventsObjectName = "EventsObject";
+            var targetObjectName = "Data";
 
-            builder.AppendLine($@"{name}::Update {name}::Update::Deserialize(Schema_ComponentUpdate* ComponentUpdate)");
+            builder.AppendLine($@"{name}::Update {name}::Update::Deserialize(Schema_ComponentUpdate* {componentUpdateObjectName})");
             builder.AppendLine("{");
             if (type.Fields.Count > 0)
             {
-                builder.AppendLine(Text.Indent(1, $"Schema_Object* {updatesObjectName} = Schema_GetComponentUpdateFields(ComponentUpdate);"));
+                builder.AppendLine(Text.Indent(1, $"Schema_Object* {updatesObjectName} = Schema_GetComponentUpdateFields({componentUpdateObjectName});"));
             }
 
             if (type.Events.Count > 0)
             {
-                builder.AppendLine(Text.Indent(1, $"Schema_Object* {eventsObjectName} = Schema_GetComponentUpdateEvents(ComponentUpdate);"));
+                builder.AppendLine(Text.Indent(1, $"Schema_Object* {eventsObjectName} = Schema_GetComponentUpdateEvents({componentUpdateObjectName});"));
             }
 
             // setup fields to clear
-            builder.AppendLine(Text.Indent(1, $"auto FieldsToClear = new Schema_FieldId[Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate)];"));
-            builder.AppendLine(Text.Indent(1, $"Schema_GetComponentUpdateClearedFieldList(ComponentUpdate, FieldsToClear);"));
+            builder.AppendLine(Text.Indent(1, $"auto FieldsToClear = new Schema_FieldId[Schema_GetComponentUpdateClearedFieldCount({componentUpdateObjectName})];"));
+            builder.AppendLine(Text.Indent(1, $"Schema_GetComponentUpdateClearedFieldList({componentUpdateObjectName}, FieldsToClear);"));
             builder.AppendLine(Text.Indent(1, $"std::set<Schema_FieldId> FieldsToClearSet(FieldsToClear, FieldsToClear + sizeof(FieldsToClear) / sizeof(Schema_FieldId));"));
             builder.Append(Environment.NewLine);
 
@@ -434,9 +435,9 @@ namespace Improbable.CodeGen.Unreal
             }
 
             // get fields to clear
-            builder.AppendLine(Text.Indent(1, $"for (auto i = 0; i < Schema_GetComponentUpdateClearedFieldCount(component_update); ++i)"));
+            builder.AppendLine(Text.Indent(1, $"for (uint32 i = 0; i < Schema_GetComponentUpdateClearedFieldCount({componentUpdateObjectName}); ++i)"));
             builder.AppendLine(Text.Indent(1, "{"));
-            builder.AppendLine(Text.Indent(2, "auto clearedFieldId = Schema_IndexComponentUpdateClearedField(component_update, i);"));
+            builder.AppendLine(Text.Indent(2, $"auto clearedFieldId = Schema_IndexComponentUpdateClearedField({componentUpdateObjectName}, i);"));
             builder.AppendLine(Text.Indent(2, ""));
             builder.AppendLine(Text.Indent(1, "}"));
 
