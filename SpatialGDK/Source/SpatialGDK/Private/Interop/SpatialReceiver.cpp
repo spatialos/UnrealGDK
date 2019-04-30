@@ -1423,25 +1423,29 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		FObjectReferences& ObjectReferences = It.Value();
 
-
 		UProperty* Property = ObjectReferences.Property;
-		const FRepLayoutCmd& Cmd = RepLayout.Cmds[ObjectReferences.CmdIndex];
+
 		// ParentIndex is -1 for handover properties
+		bool bIsHandover = ObjectReferences.ParentIndex == -1;
+		FRepLayoutCmd* Cmd = ObjectReferences.CmdIndex >= 0 ? &RepLayout.Cmds[ObjectReferences.CmdIndex] : nullptr;
 		FRepParentCmd* Parent = ObjectReferences.ParentIndex >= 0 ? &RepLayout.Parents[ObjectReferences.ParentIndex] : nullptr;
 
 		if (ObjectReferences.Array)
 		{
 			check(Property->IsA<UArrayProperty>());
 
-			Property->CopySingleValue(StoredData + Cmd.ShadowOffset, Data + AbsOffset);
+			if (!bIsHandover)
+			{
+				Property->CopySingleValue(StoredData + Cmd->ShadowOffset, Data + AbsOffset);
+			}
 
-			FScriptArray* StoredArray = (FScriptArray*)(StoredData + Cmd.ShadowOffset);
+			FScriptArray* StoredArray = bIsHandover ? nullptr : (FScriptArray*)(StoredData + Cmd->ShadowOffset);
 			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
 			int32 NewMaxOffset = Array->Num() * Property->ElementSize;
 
 			bool bArrayHasUnresolved = false;
-			ResolveObjectReferences(RepLayout, ReplicatedObject, *ObjectReferences.Array, (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped, bArrayHasUnresolved);
+			ResolveObjectReferences(RepLayout, ReplicatedObject, *ObjectReferences.Array, bIsHandover ? nullptr : (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped, bArrayHasUnresolved);
 			if (!bArrayHasUnresolved)
 			{
 				It.RemoveCurrent();
@@ -1488,7 +1492,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				Property->CopySingleValue(StoredData + Cmd.ShadowOffset, Data + AbsOffset);
+				Property->CopySingleValue(StoredData + Cmd->ShadowOffset, Data + AbsOffset);
 			}
 
 			if (ObjectReferences.bSingleProp)
@@ -1523,7 +1527,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				if (Parent->RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + Cmd.ShadowOffset, Data + AbsOffset))
+				if (Parent->RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + Cmd->ShadowOffset, Data + AbsOffset))
 				{
 					RepNotifies.AddUnique(Parent->Property);
 				}
