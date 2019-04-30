@@ -20,25 +20,24 @@
     - [Unreal features support]({{urlRoot}}/unreal-features-support)
     - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
-    - SpatialOS concepts
-        - [Summary]({{urlRoot}}/content/spatialos-concepts/concepts)
-        - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
-        - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
+    - [SpatialOS concepts]({{urlRoot}}/content/spatialos-concepts/concepts)
     - [Glossary]({{urlRoot}}/content/glossary)
     - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
     - Actors and entities
+        - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
         - [Spatial Type]({{urlRoot}}/content/spatial-type)
         - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
         - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
     - Authority and interest
+        - [Authority]({{urlRoot}}/content/authority)
         - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
-        - [Map travel]({{urlRoot}}/content/map-travel)
         - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
     - Workers and load balancing
         - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
-    - [Unreal networking authority]({{urlRoot}}/content/authority)
+    - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
+    - [Map travel]({{urlRoot}}/content/map-travel)
 - <h3>Workflows</h3>
     - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
     - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
