@@ -2,10 +2,8 @@
 
 #include "SpatialMetricsDisplay.h"
 
-#include "DebugRenderSceneProxy.h"
 #include "Debug/DebugDrawService.h"
 #include "Engine/Canvas.h"
-#include "Engine/Engine.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Net/UnrealNetwork.h"
