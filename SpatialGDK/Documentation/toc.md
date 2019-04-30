@@ -45,6 +45,9 @@
     - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
+- <h3>Pricing and support</h3>
+    - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)
+    - [Support]({{urlRoot}}/content/pricing-and-support/support)
 - <h3>Get involved</h3>
     - Contributing to the GDK
         - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)
@@ -56,4 +59,3 @@
         - [Forums](https://forums.improbable.io/)
         - [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
     - [Development roadmap](https://github.com/spatialos/UnrealGDK/projects/1)
-    - [Pricing]({{urlRoot}}/content/pricing/pricing)
