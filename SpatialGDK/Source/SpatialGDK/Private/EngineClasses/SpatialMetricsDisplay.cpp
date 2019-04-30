@@ -11,8 +11,6 @@
 #include "Net/UnrealNetwork.h"
 #include "Utils/SpatialMetrics.h"
 
-#pragma optimize("", off)
-
 ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
