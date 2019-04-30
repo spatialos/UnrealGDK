@@ -56,3 +56,4 @@
         - [Forums](https://forums.improbable.io/)
         - [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
     - [Development roadmap](https://github.com/spatialos/UnrealGDK/projects/1)
+    - [Pricing]({{urlRoot}}/content/pricing/pricing)
