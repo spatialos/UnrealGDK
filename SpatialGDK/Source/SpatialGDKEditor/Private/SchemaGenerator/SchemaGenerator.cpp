@@ -334,7 +334,15 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			continue;
 		}
 
-		const Worker_ComponentId ComponentId = SchemaData ? SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : IdGenerator.Next();
+		Worker_ComponentId ComponentId = 0;
+		if (SchemaData && SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)])
+		{
+			ComponentId = SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
+		}
+		else
+		{
+			ComponentId = IdGenerator.Next();
+		}
 
 		Writer.PrintNewLine();
 
@@ -359,7 +367,15 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
-		const Worker_ComponentId ComponentId = SchemaData ? SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : IdGenerator.Next();
+		Worker_ComponentId ComponentId = 0;
+		if (SchemaData && SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover])
+		{
+			ComponentId = SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
+		}
+		else
+		{
+			ComponentId = IdGenerator.Next();
+		}
 
 		Writer.PrintNewLine();
 
@@ -405,7 +421,15 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 			continue;
 		}
 
-		const Worker_ComponentId ComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : IdGenerator.Next();
+		Worker_ComponentId ComponentId = 0;
+		if (SubobjectSchemaData && SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)])
+		{
+			ComponentId = SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
+		}
+		else
+		{
+			ComponentId = IdGenerator.Next();
+		}
 
 		Writer.PrintNewLine();
 
@@ -422,7 +446,15 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
-		const Worker_ComponentId ComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : IdGenerator.Next();
+		Worker_ComponentId ComponentId = 0;
+		if (SubobjectSchemaData && SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover])
+		{
+			ComponentId = SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
+		}
+		else
+		{
+			ComponentId = IdGenerator.Next();
+		}
 
 		Writer.PrintNewLine();
 
@@ -442,7 +474,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath, FSchemaData& ActorSchemaData)
 {
 	FCodeWriter Writer;
-
+	 
 	Writer.Printf(R"""(
 		// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 		// Note that this file has been generated automatically
