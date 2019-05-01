@@ -8,7 +8,7 @@ The following use cases show when you need to use SpatialOs runtime settings to 
 - When you decide the number of Actors that the server spawns at the beginning, if the number that you want is greater than the default initial value of the pool, which is 3,000, you should increase the value.
 - When you decide the number of Actors that the server should be able to spawn in a short interval, if the number that you want is greater than the default threshold number, which is 1,000, you should increase the value.
 
-> **Note**: When you change one of the properties from their default values, the changes values are saved in the `DefaultSpatialGDKSettings.ini` file, and you can find the file from the `<GameRoot>\Config\` directory.
+> **Note**: When you change one of the properties from their default values, the changed values are saved in the `DefaultSpatialGDKSettings.ini` file, and you can find the file from the `<GameRoot>\Config\` directory.
 
 To learn more about all the properties available in the **SpatialOS Editor Settings** panel, check the following table:
 
