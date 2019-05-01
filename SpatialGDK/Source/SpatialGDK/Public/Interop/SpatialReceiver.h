@@ -45,6 +45,7 @@ struct FObjectReferences
 		, Buffer(MoveTemp(Other.Buffer))
 		, NumBufferBits(Other.NumBufferBits)
 		, Array(MoveTemp(Other.Array))
+		, CmdIndex(Other.CmdIndex)
 		, ParentIndex(Other.ParentIndex)
 		, Property(Other.Property) {}
 

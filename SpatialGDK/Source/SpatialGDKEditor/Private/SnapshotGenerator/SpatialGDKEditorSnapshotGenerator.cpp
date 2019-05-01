@@ -195,7 +195,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 void SetupStartupActorCreation(USpatialNetDriver*& NetDriver, USpatialNetConnection*& NetConnection, USpatialPackageMapClient*& PackageMap, USpatialClassInfoManager*& ClassInfoManager, UWorld* World)
 {
 	NetDriver = NewObject<USpatialNetDriver>();
-	NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
+	//NetDriver->ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
 	NetDriver->GuidCache = MakeShareable(new FSpatialNetGUIDCache(NetDriver));
 	NetDriver->World = World;
 
