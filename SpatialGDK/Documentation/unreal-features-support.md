@@ -281,7 +281,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <tr>
     <td>World Origin Shifting</td>
     <td class="roadmap"></td>
-    <td></td>
+    <td>World origin shifting is not supported in multiplayer by Unreal. We will likely provide an alternate solution.</td>
 </tr>
 
 <!-- ------ AI ------ -->
@@ -361,14 +361,13 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td>Xbox One</td>
-    <td class="supported"></td>
-    <td>Please see annoucement <a href="https://improbable.io/blog/spatialos-now-supports-xbox-one-and-playstation-4-development">here</a>.</td>
-</tr>
+    <td class="indev"></td>
+    <td>SpatialOS has Xbox One support (<a href="https://improbable.io/blog/spatialos-now-supports-xbox-one-and-playstation-4-development">announcement</a>), but GDK workflows are not yet optimised for development on it.</td>
+  </tr>
   <tr>
     <td>PS4</td>
-    <td class="supported"></td>
-    <td>Please see annoucement <a href="https://improbable.io/blog/spatialos-now-supports-xbox-one-and-playstation-4-development">here</a>.</td>
-</tr>
+    <td class="indev"></td>
+    <td>SpatialOS has PS4 support (<a href="https://improbable.io/blog/spatialos-now-supports-xbox-one-and-playstation-4-development">announcement</a>), but GDK workflows are not yet optimised for development on it.</td></tr>
   <tr>
     <td>Mobile</td>
     <td class="indev"></td>
