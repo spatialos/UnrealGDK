@@ -29,7 +29,7 @@ void ASpatialGameState::SpawnSpatialMetricsDisplay()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 
-	FVector SpawnLocation(0, 0, 0);
+	FVector SpawnLocation = FVector::ZeroVector;
 	FRotator SpawnRotation = FRotator::ZeroRotator;
 
 	SpatialMetricsDisplay = Cast<ASpatialMetricsDisplay>(GetWorld()->SpawnActor(SpatialMetricsDisplayClass, &SpawnLocation, &SpawnRotation, SpawnParams));

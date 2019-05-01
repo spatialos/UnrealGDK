@@ -86,38 +86,40 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 	const FString StatSectionTitle = TEXT("Spatial Metrics Display");
 
 	if (GetWorld()->IsServer())
+	{
 		return;
+	}
 
 	FFontRenderInfo FontRenderInfo = Canvas->CreateFontRenderInfo(false, true);
 
 	UFont* RenderFont = GEngine->GetSmallFont();
 
-	uint32 x = StatDisplayStartX;
-	uint32 y = StatDisplayStartY;
+	uint32 DrawX = StatDisplayStartX;
+	uint32 DrawY = StatDisplayStartY;
 
 	Canvas->SetDrawColor(FColor::Green);
-	Canvas->DrawText(RenderFont, StatSectionTitle, x, y, 1.0f, 1.0f, FontRenderInfo);
-	y += StatRowOffset;
+	Canvas->DrawText(RenderFont, StatSectionTitle, DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+	DrawY += StatRowOffset;
 
 	Canvas->SetDrawColor(FColor::White);
 	for (int i = 0; i < StatColumn_Last; ++i)
 	{
-		x += StatColumnOffsets[i];
-		Canvas->DrawText(RenderFont, StatColumnTitles[i], x, y, 1.0f, 1.0f, FontRenderInfo);
+		DrawX += StatColumnOffsets[i];
+		Canvas->DrawText(RenderFont, StatColumnTitles[i], DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 	}
 
-	y += StatRowOffset;
+	DrawY += StatRowOffset;
 
 	for (const FWorkerStats& OneWorkerStats : WorkerStats)
 	{
-		x = StatDisplayStartX + StatColumnOffsets[StatColumn_Worker];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%s"), *OneWorkerStats.WorkerName), x, y, 1.0f, 1.0f, FontRenderInfo);
+		DrawX = StatDisplayStartX + StatColumnOffsets[StatColumn_Worker];
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%s"), *OneWorkerStats.WorkerName), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
-		x += StatColumnOffsets[StatColumn_AverageFPS];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.AverageFPS), x, y, 1.0f, 1.0f, FontRenderInfo);
+		DrawX += StatColumnOffsets[StatColumn_AverageFPS];
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.AverageFPS), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
-		x += StatColumnOffsets[StatColumn_WorkerLoad];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.WorkerLoad), x, y, 1.0f, 1.0f, FontRenderInfo);
+		DrawX += StatColumnOffsets[StatColumn_WorkerLoad];
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.WorkerLoad), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 	}
 }
 
@@ -139,13 +141,17 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	if (!GetWorld()->IsServer())
+	{
 		return;
+	}
 
 	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
 
-	if (!SpatialNetDriver ||
-		!SpatialNetDriver->SpatialMetrics)
+	if (SpatialNetDriver == nullptr ||
+		SpatialNetDriver->SpatialMetrics == nullptr)
+	{
 		return;
+	}
 
 	// Cleanup stats entries for workers that have not reported stats for awhile
 	if (Role == ROLE_Authority)
