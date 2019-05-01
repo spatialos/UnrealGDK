@@ -15,10 +15,13 @@ namespace improbable
 
 struct RPCPayload
 {
-	//RPCPayload() = default;
 	RPCPayload() = delete;
 
 	RPCPayload(uint32 InOffset, uint32 InIndex) : Offset(InOffset), Index(InIndex)
+	{
+	}
+
+	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8> Data) : Offset(InOffset), Index(InIndex), PayloadData(Data)
 	{
 	}
 
@@ -34,6 +37,17 @@ struct RPCPayload
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
 		improbable::AddBytesToSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, Writer);
+	}
+
+	void WriteToSchemaObject(Schema_Object* RPCObject) const
+	{
+		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
+		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
+
+		uint32 PayloadSize = PayloadData.Num();
+		uint8* PayloadBuffer = Schema_AllocateBuffer(RPCObject, sizeof(char) * PayloadSize);
+		FMemory::Memcpy(PayloadBuffer, PayloadData.GetData(), sizeof(char) * PayloadSize);
+		Schema_AddBytes(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadBuffer, sizeof(char) * PayloadSize);
 	}
 
 	uint32 Offset;
@@ -70,9 +84,10 @@ struct RPCsOnEntityCreation : Component
 
 		for (const auto& elem : RPCs)
 		{
-			FBitWriter DefaultWriter;
-			Schema_Object* Obj = Schema_AddObject(ComponentObject, SpatialConstants::RPC_ON_ENTITY_CREATION_RPCS_ID);
-			elem.WriteToSchemaObject(Obj, DefaultWriter);
+			//FBitWriter DefaultWriter;
+			Schema_Object* Obj = Schema_AddObject(ComponentObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID );
+			//elem.WriteToSchemaObject(Obj, DefaultWriter);
+			elem.WriteToSchemaObject(Obj);
 		}
 
 		return Data;

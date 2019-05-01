@@ -468,13 +468,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		improbable::RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<improbable::RPCsOnEntityCreation>(EntityId);
 
-		//if (QueuedRPCs && QueuedRPCs->RPCs.Num() > 0)
-		if (false)
+		if (QueuedRPCs && QueuedRPCs->RPCs.Num() > 0)
 		{
 			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(EntityActor->GetClass());
 
-			//for (const auto& RPC : QueuedRPCs->RPCs)
-			for (auto RPC : QueuedRPCs->RPCs)
+			for (const auto& RPC : QueuedRPCs->RPCs)
 			{
 				for (const auto& It : Info.RPCInfoMap)
 				{
@@ -482,7 +480,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 					{
 						UE_LOG(LogTemp, Log, TEXT("RPC: %s"), *It.Key->GetName());
 						int64 CountBits = RPC.PayloadData.Num() * 8;
-						ApplyRPC(EntityActor, It.Key, RPC.PayloadData, CountBits, FString("Test"));
+						TArray<uint8> PayloadData = RPC.PayloadData;
+						ApplyRPC(EntityActor, It.Key, PayloadData, CountBits, FString("Test"));
 					}
 				}
 			}

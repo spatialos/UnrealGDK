@@ -184,32 +184,96 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	//TArray<RPCPayload> QueuedRPCs = GetQueuedRPCsForActor(Actor);
 	RPCsOnEntityCreation QueuedRPCs;
-	//RPCPayload MyRPC(0, 0);
 	if (Actor->GetClass()->GetName().Contains(TEXT("TPSCharacter")))
 	{
 		for (auto It : Info.RPCInfoMap)
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("!!!!! %d %s"), It.Value.Index, *It.Key->GetName());
 			if (It.Key->GetName().Contains(TEXT("PrintMessage")))
 			{
-				RPCPayload MyRPC(0, It.Value.Index);
+				int Arg[] = { 42, 22 };
+				//int* Arg = new int{42};
+				//void* InParameters = &Arg;
+				UFunction* Function = It.Key;
+
+				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+				FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
+
+				TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+
+#if !UE_BUILD_SHIPPING
+				int ReliableRPCId = 0;
+
+				if (Function->FunctionFlags & FUNC_Net)
+				{
+					if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+					{
+						ReliableRPCId = NetDriver->GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), Actor);
+					}
+				}
+
+				if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+				{
+					PayloadWriter << ReliableRPCId;
+				}
+#endif // !UE_BUILD_SHIPPING
+
+				RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, &Arg);
+
+
+				//TArray<uint8> Parameters;
+				//Parameters.SetNumZeroed(Func->ParmsSize);
+
+				//for (TFieldIterator<UProperty> PropertyIt(Func); PropertyIt && PropertyIt->HasAnyPropertyFlags(CPF_Parm); ++PropertyIt)
+				//{
+				//	PropertyIt->InitializeValue_InContainer(Parameters.GetData());
+				//	PropertyIt->CopyCompleteValue_InContainer(Parameters.GetData(), InParameters);
+				//}
+
+				//RPCPayload MyRPC(0, It.Value.Index, Parameters);
+				TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
+				RPCPayload MyRPC(0, It.Value.Index, Data);
 				QueuedRPCs.RPCs.Add(MyRPC);
 			}
 
 			if (It.Key->GetName().Contains(TEXT("PrintSecondMessage")))
 			{
-				RPCPayload MyRPC(0, It.Value.Index);
+				UFunction* Function = It.Key;
+
+				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+				FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
+
+				TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+
+#if !UE_BUILD_SHIPPING
+				int ReliableRPCId = 0;
+
+				if (Function->FunctionFlags & FUNC_Net)
+				{
+					if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+					{
+						ReliableRPCId = NetDriver->GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), Actor);
+					}
+				}
+				if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+				{
+					PayloadWriter << ReliableRPCId;
+				}
+#endif // !UE_BUILD_SHIPPING
+
+				RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, nullptr);
+				TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
+
+				//RPCPayload MyRPC(0, It.Value.Index, TArray<uint8>{});
+				RPCPayload MyRPC(0, It.Value.Index, Data);
 				QueuedRPCs.RPCs.Add(MyRPC);
 			}
 		}
+
+		if (QueuedRPCs.RPCs.Num() > 0)
+		{
+			ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
+		}
 	}
-	if (QueuedRPCs.RPCs.Num() > 0)
-	//if(false)
-	{
-		ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
-	}
-	
-	//ComponentDatas.Add(improbable::RPCPayload(Actor).CreateRPCPayloadData());
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
