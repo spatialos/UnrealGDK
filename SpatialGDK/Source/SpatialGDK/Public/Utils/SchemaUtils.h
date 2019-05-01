@@ -13,7 +13,7 @@
 
 using StringToEntityMap = TMap<FString, Worker_EntityId>;
 
-namespace improbable
+namespace SpatialGDK
 {
 
 inline void AddStringToSchema(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
@@ -243,4 +243,4 @@ inline Schema_ComponentData* DeepCopyComponentData(Schema_ComponentData* Source)
 // Does not clear OutPath first.
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);
 
-}
+} // namespace SpatialGDK

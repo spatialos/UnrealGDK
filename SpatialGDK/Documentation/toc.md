@@ -1,11 +1,14 @@
 - <h3>SpatialOS GDK for Unreal</h3>
     - [Welcome]({{urlRoot}}/index)
-    - [Feature list]({{urlRoot}}/features)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
         - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
         - [3: Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
+    - Technical overview
+        - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
+        - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
+        - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
     - Tutorials
         - Multiserver Shooter tutorial
             - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
@@ -14,7 +17,8 @@
             - [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
         - [Port your own project to the GDK]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
-    - [What's new in alpha]({{urlRoot}}/content/whatsnew)
+    - [Unreal features support]({{urlRoot}}/unreal-features-support)
+    - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
     - SpatialOS concepts
         - [Summary]({{urlRoot}}/content/spatialos-concepts/concepts)
@@ -37,9 +41,10 @@
 - <h3>Workflows</h3>
     - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
     - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
+    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - [Directory structure]({{urlRoot}}/content/directory-structure)
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
-    - [Known issues]({{urlRoot}}/known-issues)
-    - [Keep your GDK up to date]({{urlRoot}}/content/upgrading)
+    - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
 - <h3>Get involved</h3>
     - Contributing to the GDK
         - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)

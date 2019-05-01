@@ -27,7 +27,7 @@
 #include <WorkerSDK/improbable/c_worker.h>
 #include <WorkerSDK/improbable/c_schema.h>
 
-using namespace improbable;
+using namespace SpatialGDK;
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
@@ -49,10 +49,10 @@ bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(improbable::Position(improbable::Origin).CreatePositionData());
-	Components.Add(improbable::Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
-	Components.Add(improbable::Persistence().CreatePersistenceData());
-	Components.Add(improbable::EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(Position(Origin).CreatePositionData());
+	Components.Add(Metadata(TEXT("SpatialSpawner")).CreateMetadataData());
+	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(PlayerSpawnerData);
 
 	SpawnerEntity.component_count = Components.Num();
@@ -127,14 +127,14 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	ComponentWriteAcl.Add(SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 	ComponentWriteAcl.Add(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-	Components.Add(improbable::Position(Origin).CreatePositionData());
-	Components.Add(improbable::Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
-	Components.Add(improbable::Persistence().CreatePersistenceData());
+	Components.Add(Position(Origin).CreatePositionData());
+	Components.Add(Metadata(TEXT("GlobalStateManager")).CreateMetadataData());
+	Components.Add(Persistence().CreatePersistenceData());
 	Components.Add(CreateSingletonManagerData());
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
-	Components.Add(improbable::EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();
@@ -155,7 +155,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 	{
 		for (int y = -PlaceholderCountAxis / 2; y < PlaceholderCountAxis / 2; y++)
 		{
-			const improbable::Coordinates PlaceholderPosition{ x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f };
+			const Coordinates PlaceholderPosition{ x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f };
 
 			Worker_Entity Placeholder;
 			Placeholder.entity_id = PlaceholderEntityIdCounter;
@@ -168,10 +168,10 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 			ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 			ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
 
-			Components.Add(improbable::Position(PlaceholderPosition).CreatePositionData());
-			Components.Add(improbable::Metadata(TEXT("Placeholder")).CreateMetadataData());
-			Components.Add(improbable::Persistence().CreatePersistenceData());
-			Components.Add(improbable::EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
+			Components.Add(Position(PlaceholderPosition).CreatePositionData());
+			Components.Add(Metadata(TEXT("Placeholder")).CreateMetadataData());
+			Components.Add(Persistence().CreatePersistenceData());
+			Components.Add(EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 			Placeholder.component_count = Components.Num();
 			Placeholder.components = Components.GetData();
@@ -339,13 +339,13 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 	Channel->SetEntityId(EntityId);
 
 	TArray<Worker_ComponentData> Components;
-	Components.Add(improbable::Position(improbable::Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
-	Components.Add(improbable::Metadata(ActorClass->GetName()).CreateMetadataData());
-	Components.Add(improbable::EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(improbable::Persistence().CreatePersistenceData());
-	Components.Add(improbable::SpawnData(Actor).CreateSpawnDataData());
-	Components.Add(improbable::UnrealMetadata({}, {}, ActorClass->GetPathName(), Actor->bNetLoadOnClient).CreateUnrealMetadataData());
-	Components.Add(improbable::Interest().CreateInterestData());
+	Components.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
+	Components.Add(Metadata(ActorClass->GetName()).CreateMetadataData());
+	Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(Persistence().CreatePersistenceData());
+	Components.Add(SpawnData(Actor).CreateSpawnDataData());
+	Components.Add(UnrealMetadata({}, {}, ActorClass->GetPathName(), Actor->bNetLoadOnClient).CreateUnrealMetadataData());
+	Components.Add(Interest().CreateInterestData());
 
 	Components.Append(CreateStartupActorData(Channel, Actor, ClassInfoManager, Cast<USpatialNetDriver>(NetConnection->Driver)));
 

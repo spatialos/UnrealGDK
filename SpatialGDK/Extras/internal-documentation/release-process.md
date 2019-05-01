@@ -142,6 +142,9 @@ call "%~dp0ProjectPaths.bat"
 ## Validation (UnrealGDKTestSuite)
 1. Follow these steps: https://github.com/spatialos/UnrealGDKTestSuite/blob/release/README.md. All tests must pass.
 
+## Validation (Playtest)
+1. Follow these steps: https://brevi.link/unreal-release-playtests. All tests must pass.
+
 ## Validation (Docs)
 1. Upload docs to docs-testing using Improbadoc.
 1. Validate that Improbadoc reports no linting errors.

@@ -16,7 +16,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialComponentReader);
 
-namespace improbable
+namespace SpatialGDK
 {
 
 ComponentReader::ComponentReader(USpatialNetDriver* InNetDriver, FObjectReferencesMap& InObjectReferencesMap, TSet<FUnrealObjectRef>& InUnresolvedRefs)
@@ -308,7 +308,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 					// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
 					// So we do the same.
 					FString FullPath;
-					improbable::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
+					GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
 					UE_LOG(LogSpatialComponentReader, Verbose, TEXT("Object ref did not map to valid object, will be set to nullptr: %s %s"),
 						*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
 
@@ -497,4 +497,4 @@ uint32 ComponentReader::GetPropertyCount(const Schema_Object* Object, Schema_Fie
 	}
 }
 
-}
+} // namespace SpatialGDK
