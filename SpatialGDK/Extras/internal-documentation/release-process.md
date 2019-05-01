@@ -72,8 +72,8 @@ The workflow for this is:
 1. `git pull`
 1. `git checkout -b bugfix/UNR-xxx`
 1. Fix the defect.
-1. `git commit`, `git push`, target your PR at `x.y.z-rc`.
-1. When the PR is merged, `git checkout x.y.z-rc` and re-test the defect to ensure you fixed it.
+1. `git commit`, `git push -u origin HEAD`, target your PR at `x.y.z-rc`.
+1. When the PR is merged, `git checkout x.y.z-rc`, `git pull` and re-test the defect to ensure you fixed it.
 1. Notify #unreal-gdk-release that the release candidate has been updated.
 1. **Judgment call**: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch. Consult the rest of the team if you are unsure which to choose.
 
