@@ -18,7 +18,7 @@ ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectI
 	bReplicates = true;
 	bAlwaysRelevant = true;
 
-	NetUpdateFrequency = 1;
+	NetUpdateFrequency = 1.f;
 }
 
 void ASpatialMetricsDisplay::BeginPlay()
