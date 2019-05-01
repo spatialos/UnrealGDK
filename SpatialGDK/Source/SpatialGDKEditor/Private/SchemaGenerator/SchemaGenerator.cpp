@@ -334,7 +334,15 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 			continue;
 		}
 
-		const Worker_ComponentId ComponentId = SchemaData ? SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : IdGenerator.Next();
+		Worker_ComponentId ComponentId = 0;
+		if (SchemaData != nullptr && SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] != 0)
+		{
+			ComponentId = SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
+		}
+		else
+		{
+			ComponentId = IdGenerator.Next();
+		}
 
 		Writer.PrintNewLine();
 
@@ -359,7 +367,15 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
-		const Worker_ComponentId ComponentId = SchemaData ? SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : IdGenerator.Next();
+		Worker_ComponentId ComponentId = 0;
+		if (SchemaData != nullptr && SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] != 0)
+		{
+			ComponentId = SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
+		}
+		else
+		{
+			ComponentId = IdGenerator.Next();
+		}
 
 		Writer.PrintNewLine();
 
@@ -405,7 +421,15 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 			continue;
 		}
 
-		const Worker_ComponentId ComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] : IdGenerator.Next();
+		Worker_ComponentId ComponentId = 0;
+		if (SubobjectSchemaData != nullptr && SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] != 0)
+		{
+			ComponentId = SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
+		}
+		else
+		{
+			ComponentId = IdGenerator.Next();
+		}
 
 		Writer.PrintNewLine();
 
@@ -422,7 +446,15 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 	FCmdHandlePropertyMap HandoverData = GetFlatHandoverData(TypeInfo);
 	if (HandoverData.Num() > 0)
 	{
-		const Worker_ComponentId ComponentId = SubobjectSchemaData ? SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] : IdGenerator.Next();
+		Worker_ComponentId ComponentId = 0;
+		if (SubobjectSchemaData != nullptr && SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] != 0)
+		{
+			ComponentId = SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
+		}
+		else
+		{
+			ComponentId = IdGenerator.Next();
+		}
 
 		Writer.PrintNewLine();
 
