@@ -19,7 +19,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 
 * 
 
-## [`0.4.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.0) - 2019-04-24
+## [`0.4.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.0) - 2019-04-30
 
 ### New Known Issues:
 
