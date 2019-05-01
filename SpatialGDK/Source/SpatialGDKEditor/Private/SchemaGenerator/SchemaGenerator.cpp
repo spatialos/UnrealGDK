@@ -335,7 +335,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		}
 
 		Worker_ComponentId ComponentId = 0;
-		if (SchemaData && SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)])
+		if (SchemaData != nullptr && SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] != 0)
 		{
 			ComponentId = SchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
 		}
@@ -368,7 +368,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 	if (HandoverData.Num() > 0)
 	{
 		Worker_ComponentId ComponentId = 0;
-		if (SchemaData && SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover])
+		if (SchemaData != nullptr && SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] != 0)
 		{
 			ComponentId = SchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
 		}
@@ -422,7 +422,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		}
 
 		Worker_ComponentId ComponentId = 0;
-		if (SubobjectSchemaData && SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)])
+		if (SubobjectSchemaData != nullptr && SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)] != 0)
 		{
 			ComponentId = SubobjectSchemaData->SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
 		}
@@ -447,7 +447,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 	if (HandoverData.Num() > 0)
 	{
 		Worker_ComponentId ComponentId = 0;
-		if (SubobjectSchemaData && SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover])
+		if (SubobjectSchemaData != nullptr && SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover] != 0)
 		{
 			ComponentId = SubobjectSchemaData->SchemaComponents[ESchemaComponentType::SCHEMA_Handover];
 		}
