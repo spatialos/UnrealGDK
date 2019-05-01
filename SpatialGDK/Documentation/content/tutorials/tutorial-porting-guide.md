@@ -192,7 +192,7 @@ _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/><br/>
 Selecting **Start** opens a terminal window and runs two SpatialOS command line interface ([CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli) commands: `spatial build build-config` and `spatial local launch`. Your deployment has started when you see `SpatialOS ready` in the terminal window.<br/><br/>
 1. On the main Unreal toolbar, select **Play**. <br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/play-button.png)<br/>
 _Image: On the Unreal Engine toolbar **Play**_<br/><br/>
-1. From the SpatialOS [GDK toolbar]({{urlRoot}}/content/toolbars) select **Inspector**, which will open a local [SpatialOS inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your default web browser. Here you can see the entities and their components present in your deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>
+1. From the SpatialOS [GDK toolbar]({{urlRoot}}/content/toolbars) select **Inspector**, which opens a local [SpatialOS Inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your default web browser. Here you can see the entities and their components present in your deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Inspector**_<br/>
 
 
