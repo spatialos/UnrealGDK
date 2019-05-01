@@ -137,7 +137,8 @@ To launch a cloud deployment, you need to prepare your server-worker and client-
 When you signed up for SpatialOS, your account was automatically associated with an organisation and a project, both of which have the same generated name.
 
 1. Find this name by going to the [Console](https://console.improbable.io). 
-The name should look something like `beta_randomword_anotherword_randomnumber`. In the example below, it’s `beta_yankee_hawaii_621`. <br/>![Toolbar]({{assetRoot}}assets/set-up-template/template-project-page.png)<br/>_Image: The SpatialOS Console with a project name highlighted._
+The name should look something like `beta_randomword_anotherword_randomnumber`. In the example below, it’s `beta_yankee_hawaii_621`. <br/>![Toolbar]({{assetRoot}}assets/set-up-template/template-project-page.png)<br/>
+_Image: The SpatialOS Console with a project name highlighted._
 2. In File Explorer, navigate to the `<YourProject>/spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 3. Replace the `name` field with the project name shown in the Console. This tells SpatialOS which SpatialOS project you intend to upload to.
 <%(#Expandable title="What is the Console?")%> The Console is a web-based tool for managing cloud deployments. You gives you access to information about your games' SpatialOS project names, the SpatialOS assemblies you have uploaded, the internal state of any games you have running (via the Inspector), as well as logs and metrics. <br/>
@@ -218,4 +219,4 @@ If you have an existing Unreal multiplayer project, follow our detailed [porting
 <br/>
 <br/>
 -------------
-2019-04-02 Page updated with limited editorial review
+_2019-04-30 Page updated with limited editorial review_
