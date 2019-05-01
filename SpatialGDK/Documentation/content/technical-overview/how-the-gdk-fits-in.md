@@ -1,4 +1,3 @@
-<%(TOC)%>
 
 > This page assumes that you’re familiar with Unreal Engine, but not with SpatialOS.
 
@@ -33,5 +32,5 @@ The SpatialOS model differs significantly from Unreal Engine when it comes to re
 <br/>
 
 ------------
-2019-04-25 Page added with full editorial review 
+_2019-04-25 Page added with full editorial review_ 
 <br/>
