@@ -200,7 +200,7 @@ _Image: On the GDK toolbar in the Unreal Editor select **Inspector**_<br/>
 
 You have now ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in the inspector.
 
-If you have encountered any problems please check out our [troubleshooting]({{urlRoot}}/content/workflows/troubleshooting) and [known-issues]({{urlRoot}}/known-issues).
+If you have encountered any problems please check out our [troubleshooting]({{urlRoot}}/content/troubleshooting) and [known-issues]({{urlRoot}}/known-issues).
 
 #### Logs
 You can find Spatial log files for your local deployments in `<ProjectRoot>\spatial\logs\`.  

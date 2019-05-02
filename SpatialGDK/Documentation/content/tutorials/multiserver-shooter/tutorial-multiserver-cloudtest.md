@@ -56,19 +56,19 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
     ![]({{assetRoot}}assets/tutorial/launch.png)
 1. Once the client has launched, enter the game and fire a few celebratory shots - you are now playing in your first SpatialOS cloud deployment!
 
-> **TIP:** Check out the [cloud deployment workflow page]({{urlRoot}}/content/workflows/cloud-deployment-workflow) for a reference diagram of this workflow.
-
-
+<br/>
 ### Invite your friends
 
 1. To invite other players to this game, head back to the Deployment Overview page in your [Console](https://console.improbable.io), and select the **Share** button.
-2. Share the generated link with your friends!
+1. Share the generated link with your friends!
 
 When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to stop your deployment.
 
+<br/>
 ### Next steps
 We hope you've enjoyed this tutorial. If you want to build a new game using the SpatialOS GDK, you should build it on top of the [SpatialOS GDK Starter template]({{urlRoot}}/content/get-started/gdk-template). If you want to port your existing game to SpatialOS, follow the [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide).
 
+<br/>
 <br/>
 
 -------------
