@@ -17,7 +17,7 @@ _Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_
 
 **Generating Schema after running a full scan**
 
-To generate schema after you have run a full scan, select  **Schema** in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes with replicated properties that aren't already referenecd in the SchemaDatabase. It then automatically generates the required schema files and updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).
+To generate schema after you have run a full scan, select  **Schema** in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes with replicated properties that aren't already referenced in the SchemaDatabase. It then automatically generates the required schema files and updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).
 
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)
 
