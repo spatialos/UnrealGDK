@@ -1,4 +1,3 @@
-<%(TOC)%>
 # Multiserver Shooter Tutorial
 
 ## Step 2: Replicate health changes
@@ -8,7 +7,7 @@ In this project each `TPSCharacter` contains a variable called `CurrentHealth`, 
 To resolve this you need to mark the `CurrentHealth` property for replication, just as you would in the native [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1) workflow. To do this:
 
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
-1. Navigate to the declaration of the `CurrentHealth` variable, and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`. The UProperty should now look like this:
+2. Navigate to the declaration of the `CurrentHealth` variable, and add the UProperty specifiers `ReplicatedUsing = OnRep_CurrentHealth`. The UProperty should now look like this:
 
 ```
     UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth)

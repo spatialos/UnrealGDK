@@ -94,6 +94,8 @@ Because you have changed code in a function, you now need to rebuild your projec
 
 Now let’s test our new cross-server functionality in another local deployment.
 
+> **TIP:** Check out the [local deployment workflow page]({{urlRoot}}/content/workflows/local-deployment-workflow) for a reference diagram of this workflow.
+
 <br/>
 ### Deploy the project locally (last time)
 
