@@ -7,7 +7,17 @@ Schema is defined in `.schema` files and written in schemalang.  When you use th
 
 #### How to generate schema
 
-To generate schema, select the **Schema** button in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes with replicated properties to generate the required schema files and then updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).
+**Generating Schema for the first time**
+
+In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>You must run a full scan the first time you generate Schema for a project. When you select Full Scan, the GDK automatically iterates through all classes with replicated properties to generate the required schema files and then updates the [SchemaDatabase](http://localhost:8080/reference/1.0/content/glossary#schemadatabase). <br/>
+
+![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)
+
+_Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_
+
+**Generating Schema after running a full scan**
+
+To generate schema after you have run a full scan, select  **Schema** in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes with replicated properties that aren't already referenecd in the SchemaDatabase. It then automatically generates the required schema files and updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).
 
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)
 
@@ -24,7 +34,6 @@ The GDK only generates schema for classes currently loaded into memory. This mea
 #### Schema deletion 
 
 When you generate schema, the GDK verifies that any classes referenced in the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase) still exist. If you delete a class, the GDK removes it from the SchemaDatabase the next time you generate schema. 
-
 
 ## Schema and source control 
 

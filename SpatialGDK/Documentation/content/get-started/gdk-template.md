@@ -82,9 +82,10 @@ You'll find out more about schema, snapshots and workers later on in this tutori
 
 Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema) and a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot). 
 
-1. In the Unreal Editor, on the GDK toolbar, select **Schema** to generate schema.<br/>
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
+1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/> 
+**Note:** You only have to run a full scan the first time you generate schema for a project. Perform any subsequent schema generation by selecting **Schema** on the GDK toolbar. <br/>
+![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+_Image: On the GDK toolbar in the Unreal Editor select **Schema (Full Scan)**_<br/>
 1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
