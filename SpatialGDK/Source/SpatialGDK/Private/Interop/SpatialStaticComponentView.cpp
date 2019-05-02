@@ -61,7 +61,7 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Heartbeat>>(Op.data);
 		break;
 	case SpatialConstants::RPC_ON_ENTITY_CREATION_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::RPCsOnEntityCreation>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::RPCsOnEntityCreation>>(Op.data);
 		break;
 	default:
 		return;

@@ -466,7 +466,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		EntityActor->UpdateOverlaps();
 
-		improbable::RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<improbable::RPCsOnEntityCreation>(EntityId);
+		SpatialGDK::RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<SpatialGDK::RPCsOnEntityCreation>(EntityId);
 
 		if (QueuedRPCs && QueuedRPCs->RPCs.Num() > 0)
 		{

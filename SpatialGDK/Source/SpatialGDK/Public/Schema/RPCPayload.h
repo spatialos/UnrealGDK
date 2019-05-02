@@ -10,7 +10,7 @@
 #include <WorkerSDK/improbable/c_worker.h>
 
 #pragma optimize("", off)
-namespace improbable
+namespace SpatialGDK
 {
 
 struct RPCPayload
@@ -29,14 +29,14 @@ struct RPCPayload
 	{
 		Offset = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 		Index = Schema_GetUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
-		PayloadData = improbable::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
+		PayloadData = SpatialGDK::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
 	}
 
 	void WriteToSchemaObject(Schema_Object* RPCObject, FBitWriter& Writer) const
 	{
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
-		improbable::AddBytesToSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, Writer);
+		SpatialGDK::AddBytesToSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, Writer);
 	}
 
 	void WriteToSchemaObject(Schema_Object* RPCObject) const
