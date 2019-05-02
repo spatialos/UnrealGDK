@@ -66,7 +66,7 @@ In Unreal’s single-server architecture, authority over an Actor stays with the
 
 See the [Multiserver Shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) for a tutorial that demonstrates this functionality.
 
-For more information, see the documentation on [Actor handover]({{urlRoot}}/content/handover-between-server-workers).
+For more information, see the documentation on [Actor handover]({{urlRoot}}/content/actor-handover).
 
 ### Singleton Actors
 You can use a Singleton Actor to define a “single source of truth” for operations or data across a game world that uses zoning. You can only have one instance of a Singleton Actor per game world.

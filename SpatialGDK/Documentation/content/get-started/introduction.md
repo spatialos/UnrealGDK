@@ -3,7 +3,7 @@
 
 Get started with the SpatialOS GDK for Unreal by building the SpatialOS Unreal Engine Fork and setting up the GDK Starter Template which you can use as a base for your own project running on SpatialOS.
 
-<img src="{{assetRoot}}assets\screen-grabs\homepage-template-project.png" style=" float: right; margin: 10px; display: block; width: 60%; padding: 20px 20x"/>
+<img src="{{assetRoot}}assets/screen-grabs/homepage-template-project.png" style=" float: right; margin: 10px; display: block; width: 60%; padding: 20px 20x"/>
 
 After you set up the SpatialOS GDK Starter Template, you can learn more about the GDK’s functionality with:
 

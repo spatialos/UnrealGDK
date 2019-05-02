@@ -20,22 +20,27 @@
     - [Unreal features support]({{urlRoot}}/unreal-features-support)
     - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
-    - [SpatialOS concepts]({{urlRoot}}/content/spatialos-concepts/concepts)
+    - SpatialOS concepts
+        - [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)
+        - [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components)
+        - [Workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)
+        - [Authority and interest]({{urlRoot}}/content/spatialos-concepts/authority-and-interest)
+        - [Schema and snapshots]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots)
     - [Glossary]({{urlRoot}}/content/glossary)
     - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
     - Actors and entities
-        - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
+        - [Schema]({{urlRoot}}/content/how-to-use-schema)
         - [Spatial Type]({{urlRoot}}/content/spatial-type)
         - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
         - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
     - Authority and interest
         - [Authority]({{urlRoot}}/content/authority)
-        - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
+        - [Actor handover]({{urlRoot}}/content/actor-handover)
         - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
     - Workers and load balancing
         - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
-    - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
+    - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Map travel]({{urlRoot}}/content/map-travel)
 - <h3>Workflows</h3>

@@ -104,7 +104,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 | --- | --- |
 | Snapshot path | Use this to specify the filepath of your [snapshot]({{urlRoot}}/content/glossary#snapshot). If you leave this empty, it defaults to `<GameRoot>/../spatial/snapshots`. |
 | Snapshot file name |  Name of your snapshot file. |
-| Generate placeholder entities in snapshot | If checked, the GDK adds [placeholder entities]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot#placeholder-entities) to the snapshot when it is generated |
+| Generate placeholder entities in snapshot | If checked, the GDK adds [placeholder entities]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#placeholder-entities) to the snapshot when it is generated |
 
 ##### Schema Generation
 
