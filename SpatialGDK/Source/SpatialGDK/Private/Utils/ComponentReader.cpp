@@ -90,7 +90,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 {
 	FObjectReplicator& Replicator = Channel->PreReceiveSpatialUpdate(Object);
 
+#if ENGINE_MINOR_VERSION <= 20
+	TSharedPtr<FRepState>& RepState = Replicator.RepState;
+#else
 	TUniquePtr<FRepState>& RepState = Replicator.RepState;
+#endif
 	TArray<FRepLayoutCmd>& Cmds = Replicator.RepLayout->Cmds;
 	TArray<FHandleToCmdIndex>& BaseHandleToCmdIndex = Replicator.RepLayout->BaseHandleToCmdIndex;
 	TArray<FRepParentCmd>& Parents = Replicator.RepLayout->Parents;

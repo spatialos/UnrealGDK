@@ -335,7 +335,7 @@ bool CreateStartupActor(Worker_SnapshotOutputStream* OutputStream, AActor* Actor
 		});
 	}
 
-	USpatialActorChannel* Channel = Cast<USpatialActorChannel>(NetConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
+	//USpatialActorChannel* Channel = Cast<USpatialActorChannel>(NetConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 	Channel->SetEntityId(EntityId);
 
 	TArray<Worker_ComponentData> Components;

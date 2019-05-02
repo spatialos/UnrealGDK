@@ -406,7 +406,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		// Set up actor channel.
+#if ENGINE_MINOR_VERSION <= 20
+		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
+#else
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
+#endif
+
 		if (!Channel)
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
@@ -487,7 +492,11 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("RemoveActor: actor for entity %lld was already deleted (likely on the authoritative worker) but still has an open actor channel."), EntityId);
+#if ENGINE_MINOR_VERSION <= 20
+			ActorChannel->ConditionalCleanUp();
+#else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
+#endif
 			CleanupDeletedEntity(EntityId);
 		}
 		return;
@@ -498,7 +507,11 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
+#if ENGINE_MINOR_VERSION <= 20
+			ActorChannel->ConditionalCleanUp();
+#else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
+#endif
 			CleanupDeletedEntity(EntityId);
 		}
 		return;
@@ -592,7 +605,12 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
+
+#if ENGINE_MINOR_VERSION <= 20
+		ActorChannel->ConditionalCleanUp();
+#else
 		ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
+#endif
 	}
 	else
 	{
@@ -1072,7 +1090,11 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		// Check if bTearOff has been set to true
 		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
+#if ENGINE_MINOR_VERSION <= 20
+			Channel->ConditionalCleanUp();
+#else
 			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
+#endif
 			CleanupDeletedEntity(Channel->GetEntityId());
 		}
 	}
@@ -1430,16 +1452,22 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		FRepLayoutCmd* Cmd = ObjectReferences.CmdIndex >= 0 ? &RepLayout.Cmds[ObjectReferences.CmdIndex] : nullptr;
 		FRepParentCmd* Parent = ObjectReferences.ParentIndex >= 0 ? &RepLayout.Parents[ObjectReferences.ParentIndex] : nullptr;
 
+#if ENGINE_MINOR_VERSION <= 20
+		int32 StoredDataOffset = AbsOffset;
+#else
+		int32 StoredDataOffset = Cmd->ShadowOffset;
+#endif
+
 		if (ObjectReferences.Array)
 		{
 			check(Property->IsA<UArrayProperty>());
 
 			if (!bIsHandover)
 			{
-				Property->CopySingleValue(StoredData + Cmd->ShadowOffset, Data + AbsOffset);
+				Property->CopySingleValue(StoredData + StoredDataOffset, Data + AbsOffset);
 			}
 
-			FScriptArray* StoredArray = bIsHandover ? nullptr : (FScriptArray*)(StoredData + Cmd->ShadowOffset);
+			FScriptArray* StoredArray = bIsHandover ? nullptr : (FScriptArray*)(StoredData + StoredDataOffset);
 			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
 			int32 NewMaxOffset = Array->Num() * Property->ElementSize;
@@ -1492,7 +1520,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				Property->CopySingleValue(StoredData + Cmd->ShadowOffset, Data + AbsOffset);
+				Property->CopySingleValue(StoredData + StoredDataOffset, Data + AbsOffset);
 			}
 
 			if (ObjectReferences.bSingleProp)
@@ -1527,7 +1555,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				if (Parent->RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + Cmd->ShadowOffset, Data + AbsOffset))
+				if (Parent->RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + StoredDataOffset, Data + AbsOffset))
 				{
 					RepNotifies.AddUnique(Parent->Property);
 				}

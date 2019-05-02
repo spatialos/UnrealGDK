@@ -703,7 +703,13 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
+
+#if ENGINE_MINOR_VERSION <= 20
+	Replicator.RepNotifies = RepNotifies;
+#else
 	Replicator.RepState->RepNotifies = RepNotifies;
+#endif
+
 	Replicator.CallRepNotifies(false);
 
 	if (!TargetObject->IsPendingKill())
