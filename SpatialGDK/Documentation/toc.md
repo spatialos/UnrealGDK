@@ -17,8 +17,8 @@
             - [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
         - [Port your own project to the GDK]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
-    - [Unreal features support]({{urlRoot}}/unreal-features-support)
-    - [Known issues]({{urlRoot}}/known-issues)
+    - [Unreal features support]({{urlRoot}}/content/unreal-features-support)
+    - [Known issues]({{urlRoot}}/content/known-issues)
 - <h3>Concepts and terminology</h3>
     - [SpatialOS concepts]({{urlRoot}}/content/spatialos-concepts/concepts)
     - [Glossary]({{urlRoot}}/content/glossary)

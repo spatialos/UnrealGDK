@@ -1,7 +1,7 @@
 <%(TOC)%>
 # Get started: Port your own Unreal project to the GDK
 
-<%(Callout type="warn" message="The GDK's porting guide is currently in alpha as we improve its stability. We do not recommend attempting to port your Unreal game now. If you need to port your game, please contact us via our [forums](https://forums.improbable.io/), or [Discord](https://discord.gg/vAT7RSU) so we can best support you.")%>
+<%(Callout type="warn" message="Before starting to port your game, please be aware of the [GDK's support level of different Unreal features]({{urlRoot}}/content/unreal-features-support). If you need to port your game, please contact us via our [forums](https://forums.improbable.io/), or [Discord](https://discord.gg/vAT7RSU) so we can best support you.")%>
 
 This guide shows you how to port your own Unreal project to SpatialOS using the GDK for Unreal. By the end of this guide, your game will run on a single server-worker and you will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
 
@@ -200,7 +200,7 @@ _Image: On the GDK toolbar in the Unreal Editor select **Inspector**_<br/>
 
 You have now ported your Unreal game to run on SpatialOS. Move around and look at the changes reflected in the inspector.
 
-If you have encountered any problems please check out our [troubleshooting]({{urlRoot}}/content/workflows/troubleshooting) and [known-issues]({{urlRoot}}/known-issues).
+If you have encountered any problems please check out our [troubleshooting]({{urlRoot}}/content/workflows/troubleshooting) and [known-issues]({{urlRoot}}/content/known-issues).
 
 #### Logs
 You can find Spatial log files for your local deployments in `<ProjectRoot>\spatial\logs\`.  
