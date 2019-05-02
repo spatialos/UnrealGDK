@@ -29,7 +29,6 @@ component UnrealMulticastRPCEndpoint {
 
 component RPCsOnEntityCreation {
 	id = 9985;
-	//UnrealRPCPayload rpc = 1;
 	list<UnrealRPCPayload> rpcs = 1;
 }
 

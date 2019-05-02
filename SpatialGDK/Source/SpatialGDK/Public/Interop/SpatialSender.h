@@ -8,6 +8,8 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Utils/RepDataUtils.h"
 
+#include "Schema/RPCPayload.h"
+
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -93,6 +95,8 @@ private:
 	void WriteRpcPayload(Schema_Object* Object, uint32 Offset, Schema_FieldId Index, FSpatialNetBitWriter& PayloadWriter);
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
+
+	SpatialGDK::RPCsOnEntityCreation PackQueuedRPCsForActor(TArray<TSharedRef<FPendingRPCParams>>* RPCList, AActor* Actor);
 
 private:
 	UPROPERTY()

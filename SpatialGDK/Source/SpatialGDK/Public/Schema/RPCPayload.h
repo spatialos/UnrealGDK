@@ -9,17 +9,12 @@
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-#pragma optimize("", off)
 namespace SpatialGDK
 {
 
 struct RPCPayload
 {
 	RPCPayload() = delete;
-
-	RPCPayload(uint32 InOffset, uint32 InIndex) : Offset(InOffset), Index(InIndex)
-	{
-	}
 
 	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8> Data) : Offset(InOffset), Index(InIndex), PayloadData(Data)
 	{
@@ -32,27 +27,19 @@ struct RPCPayload
 		PayloadData = SpatialGDK::GetBytesFromSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
 	}
 
-	void WriteToSchemaObject(Schema_Object* RPCObject, FBitWriter& Writer) const
-	{
-		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
-		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
-		SpatialGDK::AddBytesToSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, Writer);
-	}
-
 	void WriteToSchemaObject(Schema_Object* RPCObject) const
 	{
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
 
 		uint32 PayloadSize = PayloadData.Num();
-		uint8* PayloadBuffer = Schema_AllocateBuffer(RPCObject, sizeof(char) * PayloadSize);
-		FMemory::Memcpy(PayloadBuffer, PayloadData.GetData(), sizeof(char) * PayloadSize);
-		Schema_AddBytes(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadBuffer, sizeof(char) * PayloadSize);
+		uint8* PayloadBuffer = Schema_AllocateBuffer(RPCObject, sizeof(uint8) * PayloadSize);
+		FMemory::Memcpy(PayloadBuffer, PayloadData.GetData(), sizeof(uint8) * PayloadSize);
+		Schema_AddBytes(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadBuffer, sizeof(uint8) * PayloadSize);
 	}
 
 	uint32 Offset;
 	uint32 Index;
-	// TODO: Copy later?
 	TArray<uint8> PayloadData;
 };
 
@@ -61,6 +48,11 @@ struct RPCsOnEntityCreation : Component
 	static const Worker_ComponentId ComponentId = SpatialConstants::RPC_ON_ENTITY_CREATION_ID;
 
 	RPCsOnEntityCreation() = default;
+
+	bool HasRPCPayloadData() const
+	{
+		return RPCs.Num() > 0;
+	}
 
 	RPCsOnEntityCreation(const Worker_ComponentData& Data)
 	{
@@ -75,7 +67,7 @@ struct RPCsOnEntityCreation : Component
 		}
 	}
 
-	Worker_ComponentData CreateRPCPayloadData()
+	Worker_ComponentData CreateRPCPayloadData() const
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
@@ -84,9 +76,7 @@ struct RPCsOnEntityCreation : Component
 
 		for (const auto& elem : RPCs)
 		{
-			//FBitWriter DefaultWriter;
 			Schema_Object* Obj = Schema_AddObject(ComponentObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID );
-			//elem.WriteToSchemaObject(Obj, DefaultWriter);
 			elem.WriteToSchemaObject(Obj);
 		}
 
@@ -97,4 +87,3 @@ struct RPCsOnEntityCreation : Component
 };
 
 }
-#pragma optimize("", on)

@@ -474,16 +474,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 			for (const auto& RPC : QueuedRPCs->RPCs)
 			{
-				for (const auto& It : Info.RPCInfoMap)
-				{
-					if (It.Value.Index == RPC.Index)
-					{
-						UE_LOG(LogTemp, Log, TEXT("RPC: %s"), *It.Key->GetName());
-						int64 CountBits = RPC.PayloadData.Num() * 8;
-						TArray<uint8> PayloadData = RPC.PayloadData;
-						ApplyRPC(EntityActor, It.Key, PayloadData, CountBits, FString("Test"));
-					}
-				}
+				UFunction* Function = Info.RPCs[RPC.Index];
+
+				UE_LOG(LogTemp, Log, TEXT("RPC: %s"), *Function->GetName());
+				int64 CountBits = RPC.PayloadData.Num() * 8;
+				TArray<uint8> PayloadData = RPC.PayloadData;
+				ApplyRPC(EntityActor, Function, PayloadData, CountBits, FString("Test"));
 			}
 		}
 	}

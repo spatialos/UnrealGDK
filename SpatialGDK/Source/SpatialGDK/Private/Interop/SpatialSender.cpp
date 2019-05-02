@@ -182,97 +182,15 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 
-	//TArray<RPCPayload> QueuedRPCs = GetQueuedRPCsForActor(Actor);
-	RPCsOnEntityCreation QueuedRPCs;
-	if (Actor->GetClass()->GetName().Contains(TEXT("TPSCharacter")))
+	TArray<TSharedRef<FPendingRPCParams>>* RPCList = OutgoingRPCs.Find(Actor);
+	if (RPCList)
 	{
-		for (auto It : Info.RPCInfoMap)
-		{
-			if (It.Key->GetName().Contains(TEXT("PrintMessage")))
-			{
-				int Arg[] = { 42, 22 };
-				//int* Arg = new int{42};
-				//void* InParameters = &Arg;
-				UFunction* Function = It.Key;
-
-				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-				FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
-
-				TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
-
-#if !UE_BUILD_SHIPPING
-				int ReliableRPCId = 0;
-
-				if (Function->FunctionFlags & FUNC_Net)
-				{
-					if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-					{
-						ReliableRPCId = NetDriver->GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), Actor);
-					}
-				}
-
-				if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-				{
-					PayloadWriter << ReliableRPCId;
-				}
-#endif // !UE_BUILD_SHIPPING
-
-				RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, &Arg);
-
-
-				//TArray<uint8> Parameters;
-				//Parameters.SetNumZeroed(Func->ParmsSize);
-
-				//for (TFieldIterator<UProperty> PropertyIt(Func); PropertyIt && PropertyIt->HasAnyPropertyFlags(CPF_Parm); ++PropertyIt)
-				//{
-				//	PropertyIt->InitializeValue_InContainer(Parameters.GetData());
-				//	PropertyIt->CopyCompleteValue_InContainer(Parameters.GetData(), InParameters);
-				//}
-
-				//RPCPayload MyRPC(0, It.Value.Index, Parameters);
-				TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
-				RPCPayload MyRPC(0, It.Value.Index, Data);
-				QueuedRPCs.RPCs.Add(MyRPC);
-			}
-
-			if (It.Key->GetName().Contains(TEXT("PrintSecondMessage")))
-			{
-				UFunction* Function = It.Key;
-
-				TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-				FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
-
-				TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
-
-#if !UE_BUILD_SHIPPING
-				int ReliableRPCId = 0;
-
-				if (Function->FunctionFlags & FUNC_Net)
-				{
-					if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-					{
-						ReliableRPCId = NetDriver->GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), Actor);
-					}
-				}
-				if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-				{
-					PayloadWriter << ReliableRPCId;
-				}
-#endif // !UE_BUILD_SHIPPING
-
-				RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, nullptr);
-				TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
-
-				//RPCPayload MyRPC(0, It.Value.Index, TArray<uint8>{});
-				RPCPayload MyRPC(0, It.Value.Index, Data);
-				QueuedRPCs.RPCs.Add(MyRPC);
-			}
-		}
-
-		if (QueuedRPCs.RPCs.Num() > 0)
+		RPCsOnEntityCreation QueuedRPCs = PackQueuedRPCsForActor(RPCList, Actor);
+		if(QueuedRPCs.HasRPCPayloadData())
 		{
 			ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
 		}
+		OutgoingRPCs.Remove(Actor);
 	}
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
@@ -479,6 +397,48 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 	ComponentInterest.Add({ SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, bIsNetOwned });
 
 	return ComponentInterest;
+}
+
+SpatialGDK::RPCsOnEntityCreation USpatialSender::PackQueuedRPCsForActor(TArray<TSharedRef<FPendingRPCParams>>* RPCList, AActor* Actor)
+{
+	ensure(RPCList != nullptr);
+
+	RPCsOnEntityCreation QueuedRPCs;
+	UClass* Class = Actor->GetClass();
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+
+	for (TSharedRef<FPendingRPCParams> RPCParams : *RPCList)
+	{
+		if (!RPCParams->TargetObject.IsValid())
+		{
+			// The target object was destroyed before we could send the RPC.
+			continue;
+		}
+
+		const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(RPCParams->Function);
+		FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(Actor)));
+		if (TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+		{
+			TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+			FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
+
+#if !UE_BUILD_SHIPPING
+			if (RPCParams->Function->HasAnyFunctionFlags(FUNC_NetReliable) && !RPCParams->Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+			{
+				PayloadWriter << RPCParams->ReliableRPCIndex;
+			}
+#endif // !UE_BUILD_SHIPPING
+
+			TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(RPCParams->Function);
+			RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, RPCParams->Parameters.GetData());
+
+			TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
+			RPCPayload MyRPC(TargetObjectRef.Offset, RPCInfo->Index, Data);
+			QueuedRPCs.RPCs.Add(MyRPC);
+		}
+	}
+
+	return QueuedRPCs;
 }
 
 void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId EntityId, bool bNetOwned)
@@ -846,8 +806,9 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 
 void USpatialSender::WriteRpcPayload(Schema_Object* Object, uint32 Offset, Schema_FieldId Index, FSpatialNetBitWriter& PayloadWriter)
 {
-	RPCPayload Data(Offset, Index);
-	Data.WriteToSchemaObject(Object, PayloadWriter);
+	Schema_AddUint32(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
+	Schema_AddUint32(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
+	AddBytesToSchema(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadWriter);
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)
