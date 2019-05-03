@@ -421,27 +421,27 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 //
 //	return bSuccess;
 //}
-//
-//bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
-//{
-//	FString DirectoryPath = FPaths::GetPath(SavePath);
-//	if (!FPaths::CollapseRelativeDirectories(DirectoryPath))
-//	{
-//		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *DirectoryPath);
-//		return false;
-//	}
-//
-//	if (!FPaths::DirectoryExists(DirectoryPath))
-//	{
-//		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *DirectoryPath);
-//		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*DirectoryPath))
-//		{
-//			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *DirectoryPath);
-//			return false;
-//		}
-//	}
-//	return true;
-//}
+
+bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
+{
+	FString DirectoryPath = FPaths::GetPath(SavePath);
+	if (!FPaths::CollapseRelativeDirectories(DirectoryPath))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Invalid path: %s - snapshot not generated"), *DirectoryPath);
+		return false;
+	}
+
+	if (!FPaths::DirectoryExists(DirectoryPath))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Display, TEXT("Snapshot directory does not exist - creating directory: %s"), *DirectoryPath);
+		if (!FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*DirectoryPath))
+		{
+			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Unable to create directory: %s - snapshot not generated"), *DirectoryPath);
+			return false;
+		}
+	}
+	return true;
+}
 
 bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStream)
 {

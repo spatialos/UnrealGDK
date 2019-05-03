@@ -111,7 +111,8 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 	{
 		// FieldId is the same as rep handle
 		check(FieldId > 0 && (int)FieldId - 1 < BaseHandleToCmdIndex.Num());
-		const FRepLayoutCmd& Cmd = Cmds[BaseHandleToCmdIndex[FieldId - 1].CmdIndex];
+		int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
+		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
 
 		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
@@ -137,7 +138,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 					if (NewUnresolvedRefs.Num() > 0)
 					{
-						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, BaseHandleToCmdIndex[FieldId - 1].CmdIndex, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
+						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, CmdIndex, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
 						UnresolvedRefs.Append(NewUnresolvedRefs);
 					}
 					else if (RootObjectReferencesMap.Find(FieldId))
@@ -147,12 +148,12 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 				}
 				else
 				{
-					ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, BaseHandleToCmdIndex[FieldId - 1].CmdIndex, Cmd.ParentIndex);
+					ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, CmdIndex, Cmd.ParentIndex);
 				}
 			}
 			else
 			{
-				ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, BaseHandleToCmdIndex[FieldId - 1].CmdIndex, Cmd.ParentIndex);
+				ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, CmdIndex, Cmd.ParentIndex);
 			}
 
 			if (Cmd.Property->GetFName() == NAME_RemoteRole)
