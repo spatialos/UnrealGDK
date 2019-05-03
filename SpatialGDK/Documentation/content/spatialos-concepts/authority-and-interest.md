@@ -1,6 +1,4 @@
-Cross-server RPCs
 Singleton Actors
-QBI doc
 
 <%(TOC)%>
 
@@ -8,7 +6,7 @@ QBI doc
 
 > **Tip:** Before you read this page, you should read [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos), [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components), and [Workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing). 
 
-One of the central ideas of SpatialOS is the idea that your worker instances have access only to a part of the game world. This access is governed both by what the worker instance has _authority_ over and what it has _interest_ in.
+When you use [zoning]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#zoning) in your SpatialOS game world, one of the central ideas is that your worker instances have access only to a part of the game world. This access is governed both by what the worker instance has _authority_ over and what it has _interest_ in.
 
 ## Authority (known as “write access authority”)
 Every SpatialOS component on every entity in the world needs to be simulated. That is, it has computation associated with it, and something needs to carry out that computation.
@@ -24,6 +22,8 @@ How are those areas of authority defined? You define them when you decide on the
 ![Areas of authority]({{assetRoot}}assets/screen-grabs/authority-areas.png)
 
 _Image: Areas of authority for three server-worker instances: each instance has write access authority over certain components in their area of authority. Which components they have write access authority over depends on their worker type’s write access permissions._
+
+Because different server-worker instances have different areas of authority, we created a type of RPC that enables a server-worker instance which does not have authority over an entity to tell the server-worker instance that does have authority over that entity to make an update to it. We call this a [cross-server RPC]({{urlRoot}}/content/cross-server-rpcs). This is necessary if you’re using [zoning]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#zoning) because areas of authority mean that one server-worker instance can’t make updates to every entity in the world; it can make updates only to the entities in its area of authority.
 
 For information on how to set up authority in the GDK, see [Authority]({{urlRoot}}/content/authority).
 
