@@ -21,7 +21,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
     - Look at the previous release versions in the changelog to see how this should be done.
 1. Commit your changes to `CHANGELOG.md`.
 1. `git push --set-upstream origin x.y.z-rc` to push the branch.
-1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
+1. Announce the branch and the commit hash it uses in the `#unreal-gdk-release` channel.
 
 ### Create the `improbableio/UnrealEngine` release candidate
 1. `git clone` the [improbableio/UnrealEngine](https://github.com/improbableio/UnrealEngine).
@@ -30,7 +30,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. Using `git log`, take note of the latest commit hash.
 1. `git checkout -b 4.xx-SpatialOSUnrealGDK-x.y.z-rc` in order to create release candidate branch.
 1. `git push --set-upstream origin 4.xx-SpatialOSUnrealGDK-x.y.z-rc` to push the branch.
-1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
+1. Announce the branch and the commit hash it uses in the `#unreal-gdk-release` channel.
 
 ### Create the `UnrealGDKThirdPersonShooter` release candidate
 1. `git clone` the [UnrealGDKThirdPersonShooter](https://github.com/spatialos/UnrealGDKThirdPersonShooter).
@@ -155,9 +155,9 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 1. Announce the release in:
 
 * Forums
-* Discord (#unreal, do not @here)
-* Slack (#releases)
-* Email (spatialos-announce@)
+* Discord (`#unreal`, do not `@here`)
+* Slack (`#releases`)
+* Email (`spatialos-announce@`)
 
 Congratulations, you've done the release!
 
