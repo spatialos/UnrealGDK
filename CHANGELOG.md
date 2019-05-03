@@ -12,12 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug fixes:
 - Bugfix: BeginPlay is not called with authority when checking out entities from Spatial.
+- Bugfix: Launching SpatialOS would fail if there was a space in the full directory path.
 
 ### External contributors:
 
 In addition to all of the updates from Improbable, this release includes x improvements submitted by the incredible community of SpatialOS developers on GitHub! Thanks to these contributors:
 
 * 
+
+## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
+
+### Bug fixes:
+- Fixed an issue where schema components were sometimes generated with incorrect component IDs.
 
 ## [`0.4.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.0) - 2019-04-30
 
