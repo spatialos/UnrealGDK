@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 [[ -n "${DEBUG:-}" ]] && set -x
+
 powershell -NoProfile -NonInteractive ci/purge.ps1 -projectRoot "$(pwd)/"
