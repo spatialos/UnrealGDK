@@ -524,7 +524,7 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	RenamedStartupActors.Remove(ThisActor->GetFName());
 }
 
-FString USpatialNetDriver::GetDebugName()
+const FString USpatialNetDriver::GetUniqueIdentifier() const
 {
 	return Connection->GetWorkerId();
 }
