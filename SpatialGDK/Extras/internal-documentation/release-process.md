@@ -114,8 +114,7 @@ call "%~dp0ProjectPaths.bat"
 * You can now turn off your server machine.
 
 ## Validation (GDK Starter Template)
-1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/gdk-template, bearing in mind the following caveats:
-* When you clone `UnrealGDKThirdPersonShooter`, be sure to checkout the release candidate branch, so you're working with the release version.
+1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/gdk-template, bearing in mind the following caveat:
 * When you clone the GDK into the `Plugins` folder, be sure to checkout the release candidate branch, so you're working with the release version.
 
 ## Validation (UnrealGDKTestSuite)
