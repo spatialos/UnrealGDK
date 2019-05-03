@@ -171,10 +171,10 @@ You need to generate [schema]({{urlRoot}}/content/spatialos-concepts/schema) and
 1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
      **Note:** You only have to run a full scan the first time you generate schema for a project. Perform any subsequent schema generation by selecting **Schema** on the GDK toolbar. 
        ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
-     _Image: On the GDK toolbar in the Unreal Editor select **Schema (Full Scan)**_<br/>
+     _Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
 1. Select **Snapshot** to generate a snapshot.<br/>
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
-    _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
+    _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 ### 7. Launch your game
 1. Switch your game project to use the SpatialOS networking. To do this: 
