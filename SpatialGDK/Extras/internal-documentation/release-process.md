@@ -167,7 +167,7 @@ There are potentially changes that were merged into the release candidate branch
 Indirect-merge from `A` into `B` (`premerge-x.y.z-rc` into `master`, except `improbableio/UnrealEngine` repo where this is `premerge-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`) is defined as:
 1. Make sure there is no `merge-A-into-B` branch created already, and delete it if it exists.
 1. Create branch `merge-A-into-B` from `B` (`git checkout B`, `git checkout -b merge-A-into-B`).
-1. Merge the one before last commit of `A` into `merge-A-into-B` (`git merge A~`, `git push origin merge-A-into-B`). The reason why the one before last commit is chosen is because 
+1. Merge `A` into `merge-A-into-B` (`git merge A`, `git push origin merge-A-into-B`).
 1. Merge `merge-A-into-B` into `B` using GitHub PR. Make sure you use `Create a merge commit` option.
 
 Use the above definition to perform the following:
