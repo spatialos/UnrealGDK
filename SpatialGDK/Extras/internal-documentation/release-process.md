@@ -42,7 +42,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
 
 ### Create the `UnrealGDKTestSuite` release candidate
-1. `git clone` the [UnrealGDKThirdPersonShooter](https://github.com/spatialos/UnrealGDKTestSuite).
+1. `git clone` the [UnrealGDKTestSuite](https://github.com/spatialos/UnrealGDKTestSuite).
 1. `git checkout master`
 1. `git pull`
 1. Using `git log`, take note of the latest commit hash.
