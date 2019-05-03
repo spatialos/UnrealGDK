@@ -127,7 +127,7 @@ The workflow for cherry-picking the fix is:
 * On the machine you sent the client to: unzip the client, `cd` to the root of the client in your terminal and launch the client using this command line:
 `<Name of client executable> <IP of the machine running the SpatialOS deployment> -game -log -workerType UnrealClient -stdout -nowrite -unattended -nologtimes -nopause -noin -messaging -NoVerifyGC -windowed -ResX=800 -ResY=600 +useExternalIpForBridge true`
 * Run and shoot eachother with the clients as a smoke test.
-* You can now turn off your server machine.
+* You can now turn off the machine that's running the client, and return to your own machine.
 
 ## Validation (GDK Starter Template)
 1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/gdk-template, bearing in mind the following caveats:
