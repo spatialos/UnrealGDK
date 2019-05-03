@@ -45,4 +45,4 @@ After you set up the SpatialOS GDK Starter Template, you can learn more about th
 #### Next: [Get started]({{urlRoot}}/content/get-started/dependencies.md)
 
 ------
-_2019-04-26 Page updated_
+_2019-05-03 Page updated_
