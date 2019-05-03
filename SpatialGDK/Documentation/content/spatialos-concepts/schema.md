@@ -9,7 +9,7 @@ Schema is defined in `.schema` files and written in schemalang.  When you use th
 
 **Generating Schema for the first time**
 
-In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>You must run a full scan the first time you generate Schema for a project. When you select Full Scan, the GDK automatically iterates through all classes with replicated properties to generate the required schema files and then updates the [SchemaDatabase](http://localhost:8080/reference/1.0/content/glossary#schemadatabase). <br/>
+In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>You must run a full scan the first time you generate Schema for a project. When you select **Schema (Full Scan)**, the GDK automatically iterates through all classes with replicated properties to generate the schema files and then updates the [SchemaDatabase](http://localhost:8080/reference/1.0/content/glossary#schemadatabase). <br/>
 
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)
 
