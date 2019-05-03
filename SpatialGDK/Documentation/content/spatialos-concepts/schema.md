@@ -7,29 +7,40 @@ Schema is defined in `.schema` files and written in schemalang.  When you use th
 
 #### How to generate schema
 
-**Generating Schema for the first time**
+There are two ways to generate schema for your project:
 
-In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>You must run a full scan the first time you generate Schema for a project. When you select **Schema (Full Scan)**, the GDK automatically iterates through all classes with replicated properties to generate the schema files and then updates the [SchemaDatabase](http://localhost:8080/reference/1.0/content/glossary#schemadatabase). <br/>
+* **Generate schema (Full Scan)** 
 
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)
+    To generate schema for all objects with [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) in your project, in the Unreal Editor, on the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
+    <br/> ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+    _Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_
+    <br/><br/>When you select **Schema (Full Scan)**, the GDK automatically iterates through all objects in your project that have replicated properties to generate the schema files, and then updates the [SchemaDatabase](http://localhost:8080/reference/1.0/content/glossary#schemadatabase). <br/>
 
-_Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_
+    Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for objects with replicated properties that are not currently loaded by the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you didn't generate schema after adding a Blueprint to a level, and that level is no longer open in the Editor.
+<br/><br/>
 
-**Generating Schema after running a full scan**
+* **Generate Schema (Iterative)**
 
-To generate schema after you have run a full scan, select  **Schema** in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes with replicated properties that aren't already referenced in the SchemaDatabase. It then automatically generates the schema files and updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).
+    To generate schema for objects with replicated properties that are currently loaded by the Editor, select  **Schema** in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through objects with replicated properties that are currently loaded by the Editor, generates the schema files and updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).<br/>
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
+    _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/><br/>
 
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)
-
-_Image: In the GDK toolbar in the Unreal Editor, select **Schema**_
+    You must run an interative scan when you add or change any replicated properties that you want to deploy to SpatialOS.
 
 As the GDK automatically generates all the schema you need, you do not have to write or edit schema manually when using the GDK.
 
 #### When to generate schema
 
-You must generate schema when you add or change any [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) that you want to deploy to SpatialOS.
+Select **Schema (Full Scan)** if you have: 
 
-The GDK only generates schema for classes currently loaded into memory. This means if your project uses [sublevels](<https://docs.unrealengine.com/en-us/Engine/Levels/LevelsWindow>), you’ll need to load them in addition to your map, before generating schema.
+* Not generated any schema for your project.
+* Added an object with replicated properties to a level that is not currently loaded by the Editor.
+* Edited an object with replicated properties that is not currently loaded by the Editor.
+
+Select **Schema** if you have:
+
+* Added an object with replicated properties to a level that is currently loaded by the Editor.
+* Edited an object with replicated properties that is currently loaded by the Editor.
 
 #### Schema deletion 
 
