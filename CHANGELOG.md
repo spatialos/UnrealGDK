@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### New Known Issues:
 
 ### Features:
+- If using Spatial Networking, the blueprint world selector dropdown now shows the worker ID for each world for easier debugging.
 
 ### Bug fixes:
 - Bugfix: BeginPlay is not called with authority when checking out entities from Spatial.
