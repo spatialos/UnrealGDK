@@ -104,7 +104,7 @@ The workflow for this is:
   * Add `-OverrideSpatialNetworking` after the ip address
   * Add `-NetDriverOverrides=/Script/SpatialGDK.SpatialNetDriver` after that
   * Add `+useExternalIpForBridge true` after that
-  * Your final script shoudl look somethisn like: `@echo off
+  * Your final script should look something like: `@echo off
 call "%~dp0ProjectPaths.bat"
 "%UNREAL_HOME%\Engine\Binaries\Win64\UE4Editor.exe" "%~dp0%PROJECT_PATH%\%GAME_NAME%.uproject" 172.16.120.76 -game -log -OverrideSpatialNetworking -NoLogToSpatial -windowed -ResX=1280 -ResY=720  +workerType UnrealClient -NetDriverOverrides=/Script/SpatialGDK.SpatialNetDriver +useExternalIpForBridge true`
 * Save your changes.
