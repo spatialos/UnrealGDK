@@ -59,10 +59,9 @@ In this step, you're going to build the Unreal GDK's dependencies.
 1. Press F5 on your keyboard or select **Local Windows Debugger** in the Visual Studio toolbar to open your project in the Unreal Editor.<br/>
 ![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
 _Image: The Visual Studio toolbar_<br/><br/>
-1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/> 
-**Note:** You only have to run a full scan the first time you generate schema for a project. Perform any subsequent schema generation by selecting **Schema** on the GDK toolbar. <br/>
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
+1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+  _Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
 1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
