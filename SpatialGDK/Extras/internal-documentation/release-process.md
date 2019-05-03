@@ -124,7 +124,8 @@ The workflow for cherry-picking the fix is:
 * Send the client you just built to the other machine you'll be using to connect. You can find it at: `\spatial\build\assembly\worker\UnrealClient@Windows.zip`
 * Still on your server machine, run `UnrealGDKThirdPersonShooter\LaunchSpatial.bat`
 * Still on your server machine, run `UnrealGDKThirdPersonShooter\LaunchServer.bat`.
-* On the machine you sent the client to TODO.
+* On the machine you sent the client to: unzip the client, `cd` to the root of the client in your terminal and launch the client using this command line:
+`<Name of client executable> <IP of the machine running the SpatialOS deployment> -game -log -workerType UnrealClient -stdout -nowrite -unattended -nologtimes -nopause -noin -messaging -NoVerifyGC -windowed -ResX=800 -ResY=600 +useExternalIpForBridge true`
 * Run and shoot eachother with the clients as a smoke test.
 * You can now turn off your server machine.
 
