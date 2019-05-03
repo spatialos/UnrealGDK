@@ -439,7 +439,7 @@ void USpatialWorkerConnection::QueueLatestOpList()
 	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
 	if (OpList->op_count > 0)
 	{
-		OpListQueue.Enqueue(Worker_Connection_GetOpList(WorkerConnection, 0));
+		OpListQueue.Enqueue(OpList);
 	}
 	else
 	{
