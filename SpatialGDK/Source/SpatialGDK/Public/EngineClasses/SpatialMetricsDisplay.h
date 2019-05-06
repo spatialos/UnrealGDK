@@ -53,7 +53,7 @@ private:
 
 	const uint32 DropStatsIfNoUpdateForTime = 10; // seconds
 
-	UFUNCTION(Server, Unreliable, WithValidation)
+	UFUNCTION(CrossServer, Unreliable, WithValidation)
 	virtual void ServerUpdateWorkerStats(const float Time, const FWorkerStats& OneWorkerStats);
 
 	void DrawDebug(class UCanvas* Canvas, APlayerController* Controller);
