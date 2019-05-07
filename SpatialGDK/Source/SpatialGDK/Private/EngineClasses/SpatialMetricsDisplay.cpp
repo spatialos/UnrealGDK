@@ -120,6 +120,8 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 
 		DrawX += StatColumnOffsets[StatColumn_WorkerLoad];
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.WorkerLoad), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+
+		DrawY += StatRowOffset;
 	}
 }
 
