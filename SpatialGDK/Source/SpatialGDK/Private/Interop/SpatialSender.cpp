@@ -189,7 +189,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		{
 			ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
 		}
-		OutgoingRPCs.Remove(Actor);
+		OutgoingOnCreateEntityRPCs.Remove(Actor);
 	}
 
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
