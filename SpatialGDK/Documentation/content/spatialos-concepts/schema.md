@@ -24,7 +24,7 @@ There are two ways to generate schema for your project:
 
     To generate schema for classes* that are currently loaded by the Editor: <br/>
 
-    Select  **Schema** in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes* that are currently loaded by the Editor, generates the schema files and updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).<br/>
+    Select **Schema** in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes* that are currently loaded by the Editor, generates the schema files and updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).<br/>
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/><br/>
 
