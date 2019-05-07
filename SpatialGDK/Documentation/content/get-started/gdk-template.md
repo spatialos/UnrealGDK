@@ -76,15 +76,14 @@ When you launch a deployment, SpatialOS sets up the world based on a [snapshot](
 TODO: add links from workers to concepts
 -->
 
-You'll find out more about schema, snapshots and workers later on in this tutorial. 
-
 #### Deploy locally with multiple clients
 
 Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema) and a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot). 
 
-1. In the Unreal Editor, on the GDK toolbar, select **Schema** to generate schema.<br/>
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
+1. In the Editor, on the [GDK Toolbar]({{urlRoot}}/content/toolbars), open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+  ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+  _Image: On the GDK toolbar in the Editor, select **Schema (Full Scan)**_
+  </br>
 1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
@@ -97,9 +96,9 @@ You can find out more about schema in the [GDK schema documentation]({{urlRoot}}
 
 <%(/Expandable)%>
 
-<!---
-TODO: add link from server-workers to concepts
--->
+<%(#Expandable title="What is a SpatialOS entity?")%>
+A SpatialOS entity (usually just called an “entity”) is the SpatialOS equivalent of  an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Components.)
+<%(/Expandable)%>
 
 <%(#Expandable title="What is  a snapshot?")%>
 
@@ -199,7 +198,7 @@ Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Wi
 
 **Troubleshooting**
 <%(#Expandable title="BuildProject.bat can’t find the path specified")%>
-If you receive the error `The system cannot find the path specified. Builds failed.`, open ProjectPaths.bat in a text editor and ensure that PROJECT_PATH and GAME_NAME are correct. PROJECT_PATH needs to be the name of your Unreal project folder (usually Game). GAME_NAME needs to be the same name as your Unreal Project `.uproject` file.  
+If you receive the error `The system cannot find the path specified. Builds failed.`, open `ProjectPaths.bat` in a text editor and ensure that `PROJECT_PATH` and `GAME_NAME` are correct. `PROJECT_PATH` needs to be the name of your Unreal project folder (usually Game). `GAME_NAME` needs to be the same name as your Unreal Project `.uproject` file.  
 <%(/Expandable)%>
 
 ##### Step 3: Upload your workers

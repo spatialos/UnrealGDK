@@ -37,6 +37,7 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 ![img]({{assetRoot}}assets/screen-grabs/github-desktop.png)<br/>
 _Image: The Github Desktop Clone a repository window_<br/>
 <%(/Expandable)%>
+
 > **TIP:** Clone the Example project into your root directory to avoid file path length errors. For example: `C:\GitHub\\UnrealGDKExampleProject`.
 
 ## Step 3: Clone the GDK 
