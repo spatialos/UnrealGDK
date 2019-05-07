@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bugfix: BeginPlay is not called with authority when checking out entities from Spatial.
 - Bugfix: Launching SpatialOS would fail if there was a space in the full directory path.
 - Bugfix: Running Schema (Full Scan) now clears generated schema files first.
+- Bugfix: Fixed an issue with schema name collisions.
 
 ### External contributors:
 
