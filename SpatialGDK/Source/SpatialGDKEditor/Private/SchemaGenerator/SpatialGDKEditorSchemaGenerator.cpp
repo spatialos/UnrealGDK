@@ -45,11 +45,22 @@ TMap<FString, uint32> LevelPathToComponentId;
 TSet<uint32> LevelComponentIds;
 
 // Prevent name collisions.
-TMap<UClass*, FString> ClassToSchemaName;
-TMap<FString, UClass*> UsedSchemaNames;
+TMap<FString, FString> ClassToSchemaName;
+TMap<FString, FString> UsedSchemaNames;
+TMap<FString, TSet<FString>> NameCollisions;
 
 namespace
 {
+
+void AddNameCollision(FString SchemaName, FString ClassPath)
+{
+	if (!NameCollisions.Contains(SchemaName))
+	{
+		TSet<FString> Empty;
+		NameCollisions.Add(SchemaName, Empty);
+	}
+	NameCollisions[SchemaName].Add(ClassPath);
+}
 
 void OnStatusOutput(FString Message)
 {
@@ -204,24 +215,38 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 		UClass* Class = Cast<UClass>(TypeInfo->Type);
 		check(Class);
 		const FString& ClassName = Class->GetName();
+		const FString& ClassPath = Class->GetPathName();
 		FString SchemaName = UnrealNameToSchemaName(ClassName);
 
-		if (!CheckSchemaNameValidity(SchemaName, Class->GetPathName(), TEXT("Class")))
+		if (!CheckSchemaNameValidity(SchemaName, ClassPath, TEXT("Class")))
 		{
 			bSuccess = false;
+		}
+
+		AddNameCollision(SchemaName, ClassPath);
+		
+		if (ClassToSchemaName.Contains(ClassPath))
+		{
+			continue;
 		}
 
 		int Suffix = 0;
 		while (UsedSchemaNames.Contains(SchemaName))
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for types '%s' and '%s'. Will add a suffix to resolve the collision."),
-				*SchemaName, *Class->GetPathName(), *UsedSchemaNames[SchemaName]->GetPathName());
-
 			SchemaName = UnrealNameToSchemaName(ClassName) + FString::Printf(TEXT("%d"), ++Suffix);
 		}
 
-		ClassToSchemaName.Add(Class, SchemaName);
-		UsedSchemaNames.Add(SchemaName, Class);
+		ClassToSchemaName.Add(Class->GetPathName(), SchemaName);
+		UsedSchemaNames.Add(SchemaName, Class->GetPathName());
+	}
+
+	for (auto& Collision : NameCollisions)
+	{
+		if (Collision.Value.Num() > 1)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for types [%s]"),
+				*Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));
+		}
 	}
 
 	// Check for invalid/duplicate names in the generated type info.
@@ -475,10 +500,24 @@ void TryLoadExistingSchemaDatabase()
 	}
 }
 
-bool SpatialGDKGenerateSchema()
+void ResetUsedNames()
 {
 	ClassToSchemaName.Empty();
 	UsedSchemaNames.Empty();
+	NameCollisions.Empty();
+
+	for(const TPair<FString, FSchemaData> Entry : ClassPathToSchema)
+	{
+		ClassToSchemaName.Add(Entry.Key, Entry.Value.GeneratedSchemaName);
+		UsedSchemaNames.Add(Entry.Value.GeneratedSchemaName, Entry.Key);
+		FSoftObjectPath ObjPath = FSoftObjectPath(Entry.Key);
+		AddNameCollision(UnrealNameToSchemaName(ObjPath.GetAssetName()), Entry.Key);
+	}
+}
+
+bool SpatialGDKGenerateSchema()
+{
+	ResetUsedNames();
 
 	// Gets the classes currently loaded into memory.
 	SchemaGeneratedClasses = GetAllSupportedClasses();
