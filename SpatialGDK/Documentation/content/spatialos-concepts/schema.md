@@ -44,7 +44,7 @@ Select **Schema (Full Scan)** if you have:
 
 Select **Schema** if you have:
 
-* Added a class with replicated properties to a level that is currently loaded by the Editor.
+* Added a class with replicated properties that is currently loaded by the Editor.
 * Edited a class with replicated properties that is currently loaded by the Editor.
 
 #### Schema deletion 
