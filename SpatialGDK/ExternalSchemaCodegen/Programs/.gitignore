@@ -2,23 +2,7 @@ bin/
 obj/
 tmp/
 logs/
-.improbable
 .vs
 .vscode
-GeneratedCode/gen/
-GeneratedCode/sync/
-_ReSharper.Caches
-*.user
-launchSettings.json
-*.pubxml
-
-Improbable.CoreSdk/lib
-Improbable.CoreSdk/runtimes
-Improbable.CoreSdk.Tools/tools
-
-nugetpackages
-.idea/
-
-tools/
 
 !Codegen.sln

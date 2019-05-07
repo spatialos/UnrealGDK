@@ -55,5 +55,10 @@ namespace Improbable.CodeGen.Base
             var indent = string.Empty.PadLeft(level, '\t');
             return indent + inputString.Replace("\n", $"\n{indent}");
         }
+
+        public static string ReplacesDotsWithDoubleColons(string identifier)
+        {
+            return $"{identifier.Replace(".", "::")}";
+        }
     }
 }

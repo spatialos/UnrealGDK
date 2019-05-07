@@ -152,23 +152,18 @@ namespace Improbable.CodeGen.Unreal
             return string.Join('.', splitQualifiedName.Take(splitQualifiedName.Count() - 1)) + "_" + splitQualifiedName.Last();
         }
 
-        public static string GetQualifiedTypeFromQualifiedName(string qualifiedName)
-        {
-            return ReplacesDotsWithDoubleColons(qualifiedName);
-        }
-
-        public static string GetFieldTypeAsCpp(FieldDefinition field, Bundle lookups)
+        public static string GetFieldTypeAsCpp(FieldDefinition field, Bundle lookups, bool isLocallyDefined = false)
         {
             switch (field.TypeSelector)
             {
                 case FieldType.Option:
-                    return $"{CollectionTypesToQualifiedTypes[Collection.Option]}<{GetQualifiedTypeName(field.OptionType.InnerType, lookups)}>";
+                    return $"{CollectionTypesToQualifiedTypes[Collection.Option]}<{GetTypeDisplayName(field.OptionType.InnerType, lookups, isLocallyDefined)}>";
                 case FieldType.List:
-                    return $"{CollectionTypesToQualifiedTypes[Collection.List]}<{GetQualifiedTypeName(field.ListType.InnerType, lookups)}>";
+                    return $"{CollectionTypesToQualifiedTypes[Collection.List]}<{GetTypeDisplayName(field.ListType.InnerType, lookups, isLocallyDefined)}>";
                 case FieldType.Map:
-                    return $"{CollectionTypesToQualifiedTypes[Collection.Map]}<{GetQualifiedTypeName(field.MapType.KeyType, lookups)}, {GetQualifiedTypeName(field.MapType.ValueType, lookups)}>";
+                    return $"{CollectionTypesToQualifiedTypes[Collection.Map]}<{GetTypeDisplayName(field.MapType.KeyType, lookups, isLocallyDefined)}, {GetTypeDisplayName(field.MapType.ValueType, lookups, isLocallyDefined)}>";
                 case FieldType.Singular:
-                    return GetQualifiedTypeName(field.SingularType.Type, lookups);
+                    return GetTypeDisplayName(field.SingularType.Type, lookups, isLocallyDefined);
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -179,36 +174,26 @@ namespace Improbable.CodeGen.Unreal
             return qualifiedName.Substring(qualifiedName.LastIndexOf('.') + 1);
         }
 
-        public static string GetQualifiedTypeName(TypeDescription type)
+        public static string GetTypeDisplayName(string qualifiedName, bool isLocallyDefined = false)
         {
-            return "::" + ReplacesDotsWithDoubleColons(type.QualifiedName);
+            return isLocallyDefined ? qualifiedName.Substring(qualifiedName.LastIndexOf(".") + 1) : "::" + Text.ReplacesDotsWithDoubleColons(qualifiedName);
         }
 
-        public static string GetQualifiedTypeName(string qualifiedName)
-        {
-            return "::" + ReplacesDotsWithDoubleColons(qualifiedName);
-        }
-
-        public static string GetQualifiedTypeName(ValueTypeReference typeRef, Bundle bundle)
+        public static string GetTypeDisplayName(ValueTypeReference typeRef, Bundle bundle, bool isLocallyDefined = false)
         {
             switch (typeRef.ValueTypeSelector)
             {
                 case ValueType.Enum:
-                    return $"::{GetQualifiedTypeFromQualifiedName(typeRef.Enum.QualifiedName)}";
+                    return GetTypeDisplayName(typeRef.Enum.QualifiedName, isLocallyDefined);
                 case ValueType.Primitive:
                     return SchemaToCppTypes[typeRef.Primitive];
                 case ValueType.Type:
                     var qualifiedName = typeRef.Type.QualifiedName;
-                    return bundle.IsNestedType(qualifiedName) ? GetTypeClassDefinitionQualifiedName(qualifiedName, bundle)
-                        : GetQualifiedTypeFromQualifiedName(qualifiedName); ;
+                    return bundle.IsNestedType(qualifiedName) ? GetTypeClassDefinitionQualifiedName(qualifiedName, bundle, isLocallyDefined)
+                        : GetTypeDisplayName(qualifiedName, isLocallyDefined); ;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-        }
-
-        public static string GetQualifiedTypeName(TypeReference type)
-        {
-            return ReplacesDotsWithDoubleColons(type.QualifiedName);
         }
 
         public static string TypeToHeaderFilename(string qualifiedName)
@@ -224,14 +209,21 @@ namespace Improbable.CodeGen.Unreal
         // For each const get accessor for each member field in a type, if the type is a primitive we return by value, otherwise by const ref
         // e.g. double get_my_double_memeber();
         //      const ::improbable::List<...>& get_my_list_memeber();
-        public static string GetConstAccessorTypeModification(FieldDefinition field, Bundle bundle)
+        public static string GetConstAccessorTypeModification(FieldDefinition field, Bundle bundle, TypeDescription parentType,)
         {
-            var qualifiedFieldType = GetFieldTypeAsCpp(field, bundle);
-            if (field.TypeSelector == FieldType.Singular && field.SingularType.Type.ValueTypeSelector == ValueType.Primitive)
+            var qualifiedFieldType = GetFieldTypeAsCpp(field, bundle, isLocallyDefined);
+            if (field.TypeSelector == FieldType.Singular && field.SingularType.Type.ValueTypeSelector == ValueType.Primitive &&
+                field.SingularType.Type.Primitive != PrimitiveType.Bytes && field.SingularType.Type.Primitive != PrimitiveType.String)
             {
                 return qualifiedFieldType;
             }
             return $"const {qualifiedFieldType}&";
+        }
+
+        // When declaring fields
+        public static bool IsLocallyDefined(string fieldQualifiedName, TypeDescription parentType)
+        {
+            return parentType.NestedTypes.Select(t => t.QualifiedName).Concat(parentType.NestedEnums.Select(e => e.Identifier.QualifiedName)).Contains(fieldQualifiedName);
         }
 
         public static string GetTypeClassDefinitionName(string qualifiedName, Bundle bundle)
@@ -243,10 +235,11 @@ namespace Improbable.CodeGen.Unreal
         // When generating header files for schema types with nested types, we declare the nested types as sibling types.
         // To avoid naming conflicts we prefix the sibling type names with the top-level type.
         // E.g. improbable::ComponentInterest::Query becomes improbable::ComponentInterest_Query
-        public static string GetTypeClassDefinitionQualifiedName(string qualifiedName, Bundle bundle)
+        public static string GetTypeClassDefinitionQualifiedName(string qualifiedName, Bundle bundle, bool isLocallyDefined = false)
         {
             var outermostType = bundle.GetOutermostTypeWrapperForType(qualifiedName);
-            return $"{GetQualifiedTypeName(outermostType.Substring(0, outermostType.LastIndexOf(".")))}::{string.Join("_", qualifiedName.Split(".").Skip(outermostType.Count(c => c == '.')))}";
+            var typeName = string.Join("_", qualifiedName.Split(".").Skip(outermostType.Count(c => c == '.')));
+            return isLocallyDefined ? typeName : $"{Text.ReplacesDotsWithDoubleColons(outermostType.Substring(0, outermostType.LastIndexOf(".")))}::{typeName}";
         }
 
         public static List<TypeDescription> GetRecursivelyNestedTypes(TypeDescription type)
@@ -297,11 +290,6 @@ namespace Improbable.CodeGen.Unreal
         {
             var path = qualifiedName.Split('.');
             return string.Join("/", path.Take(path.Length - 1).Append($"{path.Last()}{extension}").ToArray());
-        }
-
-        private static string ReplacesDotsWithDoubleColons(string identifier)
-        {
-            return $"{identifier.Replace(".", "::")}";
         }
 
         // For a field definition inside a type, get all the necessary includes for the type (from collection inner types, etc)

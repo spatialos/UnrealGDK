@@ -49,7 +49,7 @@ if not exist %CODEGEN_EXE_PATH% (
 )
 
 %CODEGEN_EXE_PATH% --input-bundle %BUNDLE_CACHE_DIR%\%SCHEMA_BUNDLE_FILE_NAME% --output-dir %2
-echo Code generated at %GAME_FOLDER%\%2
+echo Code successfully generated at %GAME_FOLDER%\%2
 call :MarkEndOfBlock "Running code generator"
 
 popd

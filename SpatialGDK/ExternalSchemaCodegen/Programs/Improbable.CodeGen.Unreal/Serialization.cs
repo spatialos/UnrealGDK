@@ -47,7 +47,7 @@ namespace Improbable.CodeGen.Unreal
             var builder = new StringBuilder();
             builder.AppendLine($"for (uint32 i = 0; i < Schema_GetObjectCount({schemaObjectName}, {_event.EventIndex}); ++i)");
             builder.AppendLine("{");
-            builder.AppendLine(Text.Indent(1, $"{targetObjectName}.Add{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}({Types.GetQualifiedTypeName(_event.Type.Type)}::Deserialize(Schema_IndexObject({schemaObjectName}, {_event.EventIndex}, i)));"));
+            builder.AppendLine(Text.Indent(1, $"{targetObjectName}.Add{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}({Types.GetTypeDisplayName(_event.Type.Type.QualifiedName)}::Deserialize(Schema_IndexObject({schemaObjectName}, {_event.EventIndex}, i)));"));
             builder.AppendLine("}");
             return builder.ToString();
         }
@@ -114,7 +114,7 @@ namespace Improbable.CodeGen.Unreal
         private static string GetMapTypeSerialization(FieldDefinition.MapTypeRef mapType, string schemaObjectName, string fieldName, string fieldId, Bundle bundle)
         {
             var builder = new StringBuilder();
-            builder.AppendLine($@"for (const TPair<{Types.GetQualifiedTypeName(mapType.KeyType, bundle)}, {Types.GetQualifiedTypeName(mapType.ValueType, bundle)}>& Pair : {fieldName})");
+            builder.AppendLine($@"for (const TPair<{Types.GetTypeDisplayName(mapType.KeyType, bundle)}, {Types.GetTypeDisplayName(mapType.ValueType, bundle)}>& Pair : {fieldName})");
             builder.AppendLine("{");
             builder.AppendLine(Text.Indent(1, $"Schema_Object* PairObj = Schema_AddObject({schemaObjectName}, {fieldId});"));
             builder.AppendLine(Text.Indent(1, GetValueTypeSerialization(mapType.KeyType, "PairObj", "Pair.Key", "SCHEMA_MAP_KEY_FIELD_ID")));
@@ -126,7 +126,7 @@ namespace Improbable.CodeGen.Unreal
         private static string GetListTypeSerialization(FieldDefinition.ListTypeRef listType, string schemaObjectName, string fieldName, string fieldId, Bundle bundle)
         {
             var builder = new StringBuilder();
-            builder.AppendLine($@"for (const {Types.GetQualifiedTypeName(listType.InnerType, bundle)}& Element : {fieldName})");
+            builder.AppendLine($@"for (const {Types.GetTypeDisplayName(listType.InnerType, bundle)}& Element : {fieldName})");
             builder.AppendLine("{");
             builder.AppendLine(Text.Indent(1, GetValueTypeSerialization(listType.InnerType, schemaObjectName, "Element", fieldId)));
             builder.AppendLine("}");
@@ -182,9 +182,9 @@ namespace Improbable.CodeGen.Unreal
                 case ValueType.Primitive:
                     return GetPrimitiveDeserialization(type.Primitive, schemaObjectName, fieldId);
                 case ValueType.Type:
-                    return $"{Types.GetQualifiedTypeName(type.Type)}::Deserialize(Schema_GetObject({schemaObjectName}, {fieldId}))";
+                    return $"{Types.GetTypeDisplayName(type.Type.QualifiedName)}::Deserialize(Schema_GetObject({schemaObjectName}, {fieldId}))";
                 case ValueType.Enum:
-                    return $"static_cast<{Types.GetQualifiedTypeName(type.Enum.QualifiedName)}>(Schema_GetEnum({ schemaObjectName}, { fieldId}))";
+                    return $"static_cast<{Types.GetTypeDisplayName(type.Enum.QualifiedName)}>(Schema_GetEnum({ schemaObjectName}, { fieldId}))";
                 default:
                     throw new InvalidOperationException("Trying to deserialize invalid ValueTypeReference");
             }
@@ -192,12 +192,12 @@ namespace Improbable.CodeGen.Unreal
 
         private static string GetOptionTypeDeserialization(FieldDefinition.OptionTypeRef optionType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, Bundle bundle, bool targetIsOption = false)
         {
-            return $"{targetObjectName} = {Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetQualifiedTypeName(optionType.InnerType, bundle)}>({GetValueTypeDeserialization(optionType.InnerType, schemaObjectName, fieldId)});";
+            return $"{targetObjectName} = {Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetTypeDisplayName(optionType.InnerType, bundle)}>({GetValueTypeDeserialization(optionType.InnerType, schemaObjectName, fieldId)});";
         }
 
         private static string GetListTypeDeserialization(FieldDefinition.ListTypeRef listType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
-            var listInnerTypeName = Types.GetQualifiedTypeName(listType.InnerType, bundle);
+            var listInnerTypeName = Types.GetTypeDisplayName(listType.InnerType, bundle);
             var listName = $"{Text.SnakeCaseToPascalCase(fieldName)}List";
             var builder = new StringBuilder();
 
@@ -244,8 +244,8 @@ namespace Improbable.CodeGen.Unreal
 
         private static string GetMapTypeDeserialization(FieldDefinition.MapTypeRef mapType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
-            var keyTypeName = Types.GetQualifiedTypeName(mapType.KeyType, bundle);
-            var valueTypeName = Types.GetQualifiedTypeName(mapType.ValueType, bundle);
+            var keyTypeName = Types.GetTypeDisplayName(mapType.KeyType, bundle);
+            var valueTypeName = Types.GetTypeDisplayName(mapType.ValueType, bundle);
             var mapName = $"{ fieldName }_map";
             var kvPairName = "kvpair";
             var builder = new StringBuilder();

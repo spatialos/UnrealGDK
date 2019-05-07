@@ -20,31 +20,25 @@ namespace Improbable.CodeGen.Unreal
 
         private static string GenerateHeader()
         {
-            var builder = new StringBuilder();
+            return $@"#pragma once
 
-            builder.AppendLine("#pragma once");
-            builder.Append(Environment.NewLine);
-            builder.AppendLine("template<typename k, typename v>");
-            builder.AppendLine("bool operator==(TMap<k, v> Map1, TMap<k, v> Map2)");
-            builder.AppendLine("{");
-            builder.AppendLine(Text.Indent(1, "if (Map1.Num() != Map2.Num())"));
-            builder.AppendLine(Text.Indent(1, "{"));
-            builder.AppendLine(Text.Indent(2, "return false;"));
-            builder.AppendLine(Text.Indent(1, "}"));
-            builder.Append(Environment.NewLine);
-            builder.AppendLine(Text.Indent(1, "for (const TPair<k, v>& Elem : Map1)"));
-            builder.AppendLine(Text.Indent(1, "{"));
-            builder.AppendLine(Text.Indent(2, "if (Elem.Value != Map2.FindRef(Elem.Key))"));
-            builder.AppendLine(Text.Indent(2, "{"));
-            builder.AppendLine(Text.Indent(3, "return false;"));
-            builder.AppendLine(Text.Indent(2, "}"));
-            builder.AppendLine(Text.Indent(1, "}"));
-            builder.Append(Environment.NewLine);
-            builder.AppendLine(Text.Indent(1, "return true;"));
-            builder.AppendLine("}");
-            builder.Append(Environment.NewLine);
-
-            return builder.ToString();
+template<typename k, typename v>
+bool operator==(TMap<k, v> Map1, TMap<k, v> Map2)
+{{
+{Text.Indent(1, $@"if (Map1.Num() != Map2.Num())
+{{
+{Text.Indent(1, "return false;")}
+}}
+for (const TPair<k, v>& Elem : Map1)
+{{
+{Text.Indent(1, $@"if (Elem.Value != Map2.FindRef(Elem.Key))
+{{
+{Text.Indent(1, "return false;")}
+}}")}
+}}
+return true;")}
+}}
+";
         }
     }
 }
