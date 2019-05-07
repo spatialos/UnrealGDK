@@ -18,7 +18,7 @@ There are two ways to generate schema for your project:
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
     <br/>When you select **Schema (Full Scan)**, the GDK automatically iterates through all classes* in your project to generate the schema files, and then updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase). <br/>
 
-    Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes* that are not currently loaded by the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you didn't generate schema after adding a Blueprint to a level, and that level is no longer open in the Editor.<br/><br/>
+    Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes* that are not currently loaded by the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you didn't generate schema after adding a new Blueprint to your game, and that Blueprint is no longer open in the Editor.<br/><br/>
 
 * **Generate Schema (Iterative)**
 
