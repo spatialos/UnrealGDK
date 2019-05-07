@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### New Known Issues:
 
 ### Features:
+- Setup.bat can now take a project path as an argument. This allows the UnrealGDK to be installed as an Engine Plugin, pass the project path as the first variable if you are running Setup.bat from UnrealEngine/Engine/Plugins.
 
 ### Bug fixes:
 - Bugfix: BeginPlay is not called with authority when checking out entities from Spatial.
