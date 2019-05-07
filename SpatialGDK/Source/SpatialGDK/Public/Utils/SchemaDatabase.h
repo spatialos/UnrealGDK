@@ -12,13 +12,13 @@ struct FSubobjectSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	FString ClassPath;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	FName Name;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 SchemaComponents[SCHEMA_Count] = {};
 };
 
@@ -27,10 +27,10 @@ struct FSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 SchemaComponents[SCHEMA_Count] = {};
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<uint32, FSubobjectSchemaData> SubobjectData;
 };
 
@@ -53,16 +53,16 @@ public:
 		return SpatialConstants::INVALID_COMPONENT_ID;
 	}
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<FString, FSchemaData> ClassPathToSchema;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<FString, uint32> LevelPathToComponentId;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TSet<uint32> LevelComponentIds;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 NextAvailableComponentId;
 };
 

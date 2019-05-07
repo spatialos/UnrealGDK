@@ -6,6 +6,17 @@ pushd "%~dp0"
 
 call :MarkStartOfBlock "%~0"
 
+set ProjectDirectory=%1
+
+if defined ProjectDirectory (
+    echo "Project directory for installation is: %ProjectDirectory%"
+) else (
+    rem If no argument for the project is provided, assume this script is being run as a plugin within a game project.
+    set ProjectDirectory=%~dp0..\..\..
+)
+
+pause
+
 call :MarkStartOfBlock "Setup the git hooks"
     if not exist .git\hooks goto SkipGitHooks
 
@@ -57,8 +68,10 @@ call :MarkStartOfBlock "Setup variables"
     set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
     set WORKER_SDK_DIR_OLD=%~dp0SpatialGDK\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
-    set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
-    set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
+
+    set SCHEMA_COPY_DIR=%ProjectDirectory%\spatial\schema\unreal\gdk
+    set SCHEMA_STD_COPY_DIR=%ProjectDirectory%\spatial\build\dependencies\schema\standard_library
+
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
