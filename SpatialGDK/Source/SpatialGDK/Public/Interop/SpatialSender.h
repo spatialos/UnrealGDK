@@ -124,6 +124,7 @@ private:
 	FOutgoingRepUpdates HandoverObjectToUnresolved;
 
 	FOutgoingRPCMap OutgoingRPCs;
+	FOutgoingRPCMap OutgoingOnCreateEntityRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 

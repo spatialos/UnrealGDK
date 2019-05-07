@@ -182,8 +182,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 
-	TArray<TSharedRef<FPendingRPCParams>>* RPCList = OutgoingRPCs.Find(Actor);
-	if (RPCList)
+	if(TArray<TSharedRef<FPendingRPCParams>>* RPCList = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{
 		RPCsOnEntityCreation QueuedRPCs = PackQueuedRPCsForActor(RPCList, Actor);
 		if(QueuedRPCs.HasRPCPayloadData())
@@ -469,8 +468,31 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		// Target object was destroyed before the RPC could be (re)sent
 		return;
 	}
-
+	
 	UObject* TargetObject = Params->TargetObject.Get();
+
+	if (AActor* TargetActor = Cast<AActor>(TargetObject))
+	{
+		USpatialNetConnection* SpatialConnection = NetDriver->GetSpatialOSNetConnection();
+		if (!NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor)))
+		{
+			NetDriver->CreateActorChannel(TargetActor, SpatialConnection);
+		}
+
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor)))
+		{
+			if (Channel->bCreatingNewEntity)
+			{
+				OutgoingOnCreateEntityRPCs.FindOrAdd(TargetActor).Add(Params);
+				return;
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetActor->GetName());
+		}
+	}
+
 	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		// This is where we'll serialize this RPC and queue it to be added on entity creation
