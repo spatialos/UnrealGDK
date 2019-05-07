@@ -39,7 +39,7 @@ As the GDK automatically generates all the schema you need, you do not have to w
 Select **Schema (Full Scan)** if you have: 
 
 * Not generated any schema for your project.
-* Added a class with replicated properties to a level that is not currently loaded by the Editor.
+* Added a class with replicated properties that is not currently loaded by the Editor.
 * Edited a class with replicated properties that is not currently loaded by the Editor.
 
 Select **Schema** if you have:
