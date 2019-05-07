@@ -168,11 +168,12 @@ You must modify your `GameInstance` class to work properly with the GDK.
 ### 6. Generate schema and a snapshot
 You need to generate [schema]({{urlRoot}}/content/spatialos-concepts/schema) and generate a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) before you start your deployment. To do this:
 
-1. In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars), select **Schema** to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
-1. On the same toolbar, select **Snapshot**, which will generate a snapshot for the map currently open in the editor.
-
-    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars-basic.png)<br/>
-    _Image: The GDK for Unreal toolbar_<br/>
+1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+       ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+     _Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
+1. Select **Snapshot** to generate a snapshot.<br/>
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
+    _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 ### 7. Launch your game
 1. Switch your game project to use the SpatialOS networking. To do this: 
