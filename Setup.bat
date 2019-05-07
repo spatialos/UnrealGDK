@@ -15,8 +15,6 @@ if defined ProjectDirectory (
     set ProjectDirectory=%~dp0..\..\..
 )
 
-pause
-
 call :MarkStartOfBlock "Setup the git hooks"
     if not exist .git\hooks goto SkipGitHooks
 
@@ -69,6 +67,7 @@ call :MarkStartOfBlock "Setup variables"
     set WORKER_SDK_DIR_OLD=%~dp0SpatialGDK\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
 
+    rem Copy schema to the projects spatial directory.
     set SCHEMA_COPY_DIR=%ProjectDirectory%\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%ProjectDirectory%\spatial\build\dependencies\schema\standard_library
 
