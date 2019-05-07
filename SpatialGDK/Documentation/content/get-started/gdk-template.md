@@ -86,7 +86,7 @@ Before you launch a deployment (local or cloud) you must generate [schema]({{url
   </br>
 1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
+_Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 <%(#Expandable title="What is Schema?")%>
 

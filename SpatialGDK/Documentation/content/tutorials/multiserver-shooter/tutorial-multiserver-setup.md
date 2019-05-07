@@ -59,12 +59,12 @@ In this step, you're going to build the Unreal GDK's dependencies.
 1. Press F5 on your keyboard or select **Local Windows Debugger** in the Visual Studio toolbar to open your project in the Unreal Editor.<br/>
 ![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
 _Image: The Visual Studio toolbar_<br/><br/>
-1. In the GDK toolbar, select **Schema** to generate the SpatialOS schema based on your Unreal project. (Schema is a definition of the components and entities your SpatialOS world can have, see the glossary for more details on [schema](https://docs.improbable.io/reference/latest/shared/glossary).) <br/>
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/><br/>
-1. Select [**Snapshot**]({{urlRoot}}/content/generating-a-snapshot) to generate a snapshot (a representation of the state of the SpatialOS world) which will be used to start the deployment.<br/>
+1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+  _Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
+1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/><br/>
+_Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 <br/>
 ### Deploy the project locally
