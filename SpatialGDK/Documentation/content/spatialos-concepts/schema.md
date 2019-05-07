@@ -28,8 +28,6 @@ There are two ways to generate schema for your project:
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/><br/>
 
-    You must run an iterative scan when you add or change any classes* that you want to deploy to SpatialOS.
-
 As the GDK automatically generates all the schema you need, you do not have to write or edit schema manually when using the GDK.
 
 > \* Whenever you generate schema, the GDK automatically creates schema for classes with [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) or [RPCs (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs). If a class does not have replicated properties or RPCs, then the GDK does not generate schema for it. 
