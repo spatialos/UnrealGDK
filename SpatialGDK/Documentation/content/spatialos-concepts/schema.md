@@ -1,30 +1,53 @@
 <%(TOC)%>
 # Schema
 
-Schema is a set of definitions which represent your game's objects in SpatialOS. SpatialOS uses schema to generate APIs specific to the components in your project. You can then use these APIs in your game's [worker types]({{urlRoot}}//content/glossary#spatialos-component) so their instances can interact with [SpatialOS entity components]({{urlRoot}}/content/glossary#spatialos-component). </br>
+Schema is a set of definitions which represent your game's classes in SpatialOS. SpatialOS uses schema to generate APIs specific to the components in your project. You can then use these APIs in your game's [worker types]({{urlRoot}}//content/glossary#spatialos-component) so their instances can interact with [SpatialOS entity components]({{urlRoot}}/content/glossary#spatialos-component). </br>
 
 Schema is defined in `.schema` files and written in schemalang.  When you use the GDK, the schema files and their contents are generated and deleted automatically so you do not have to write or edit schema files manually. The GDK generates and deletes schema for you, when you start schema generation.
 
 #### How to generate schema
 
-To generate schema, select the **Schema** button in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes with replicated properties to generate the required schema files and then updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).
+There are two ways to generate schema for your project:
 
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)
+* **Generate schema (Full Scan)** 
 
-_Image: In the GDK toolbar in the Unreal Editor, select **Schema**_
+    To generate schema for all classes* in your project:<br/>
+
+    In the Unreal Editor, on the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
+    <br/> ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+    _Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
+    <br/>When you select **Schema (Full Scan)**, the GDK automatically iterates through all classes* in your project to generate the schema files, and then updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase). <br/>
+
+    Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes* that are not currently loaded by the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you didn't generate schema after adding a new Blueprint to your game, and that Blueprint is no longer open in the Editor.<br/><br/>
+
+* **Generate Schema (Iterative)**
+
+    To generate schema for classes* that are currently loaded by the Editor: <br/>
+
+    Select **Schema** in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes* that are currently loaded by the Editor, generates the schema files and updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).<br/>
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
+    _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/><br/>
 
 As the GDK automatically generates all the schema you need, you do not have to write or edit schema manually when using the GDK.
 
+> \* Whenever you generate schema, the GDK automatically creates schema for classes with [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) or [RPCs (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs). If a class does not have replicated properties or RPCs, then the GDK does not generate schema for it. 
+
 #### When to generate schema
 
-You must generate schema when you add or change any [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) that you want to deploy to SpatialOS.
+Select **Schema (Full Scan)** if you have: 
 
-The GDK only generates schema for classes currently loaded into memory. This means if your project uses [sublevels](<https://docs.unrealengine.com/en-us/Engine/Levels/LevelsWindow>), you’ll need to load them in addition to your map, before generating schema.
+* Not generated any schema for your project.
+* Added a class with replicated properties that is not currently loaded by the Editor.
+* Edited a class with replicated properties that is not currently loaded by the Editor.
+
+Select **Schema** if you have:
+
+* Added a class with replicated properties that is currently loaded by the Editor.
+* Edited a class with replicated properties that is currently loaded by the Editor.
 
 #### Schema deletion 
 
 When you generate schema, the GDK verifies that any classes referenced in the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase) still exist. If you delete a class, the GDK removes it from the SchemaDatabase the next time you generate schema. 
-
 
 ## Schema and source control 
 

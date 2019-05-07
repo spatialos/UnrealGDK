@@ -82,12 +82,12 @@ You'll find out more about schema, snapshots and workers later on in this tutori
 
 Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema) and a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot). 
 
-1. In the Unreal Editor, on the GDK toolbar, select **Schema** to generate schema.<br/>
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
+1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+  _Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
 1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
+_Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 <%(#Expandable title="What is schema?")%>Schema is a set of definitions which represent your game's objects in SpatialOS. Schema is defined in `.schema` files and written in schemalang.  When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
 
