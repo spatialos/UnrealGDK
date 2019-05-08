@@ -148,8 +148,6 @@ namespace SpatialConstants
 	static const FString ClientWorkerType = TEXT("UnrealClient");
 	static const FString ServerWorkerType = TEXT("UnrealWorker");
 
-	static const FString SimulatedPlayerArg = TEXT("simulatedplayer");
-
 	static const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 	static const FString SnapshotURLOption = TEXT("snapshot=");
 
