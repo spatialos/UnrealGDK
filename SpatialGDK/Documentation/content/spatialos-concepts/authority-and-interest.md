@@ -17,7 +17,7 @@ Write access authority is a responsibility: the responsibility to carry out the 
 
 ![Areas of authority]({{assetRoot}}assets/screen-grabs/authority-areas.png)
 
-_Image: Areas of authority for three server-worker instances: each instance has write access authority over certain components in their area of authority. Which components they have write access authority over depends on their worker type’s write access permissions._
+_Image: Areas of authority for three server-worker instances: each instance has write access authority over certain components in their area of authority. Which components they have write access authority over depends on their worker type’s write access permissions_
 
 ### Authority in the GDK
 
@@ -39,7 +39,7 @@ Note that interest doesn’t only apply to server-workers: a client-worker insta
 
 ![Areas of interest]({{assetRoot}}assets/screen-grabs/interest-areas.gif)
 
-_Animation: Our three server-worker instances have interest in entity components which are outside each of their areas of authority._
+_Animation: Our three server-worker instances have interest in entity components which are outside each of their areas of authority_
 
 ## Authority and interest - what’s the difference?
 
