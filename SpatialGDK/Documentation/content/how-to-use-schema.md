@@ -6,8 +6,6 @@
 
 You must generate schema when you add or change any [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) that you want to deploy to SpatialOS.
 
-The GDK only generates schema for classes currently loaded into memory. This means if your project uses [sublevels](<https://docs.unrealengine.com/en-us/Engine/Levels/LevelsWindow>), you’ll need to load them in addition to your map, before generating schema.
-
 ## How to generate schema
 
 There are two ways to generate schema for your project:

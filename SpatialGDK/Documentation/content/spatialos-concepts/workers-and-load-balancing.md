@@ -28,7 +28,7 @@ _Image: Multiple server-worker instances spread across different machines_
 
 One of the decisions you need to make as a developer is, “How many server-worker instances does my world need?” To decide this, you need to work out how much computation your world needs, and how many server-worker instances you need to do that work. For a very small world, one instance might be enough; in the GDK, the default out-of-the-box setting is that you have only one instance. 
 
-However, if you’re planning to use zoning (multiple server-worker instances), we recommend trying to scale your game early on in development. You should test early on with at least two server-worker instances running your world using SpatialOS networking. It can be hard to reason about how to architect your game properly to deal with re-assignments of authority from one server-worker instance to another. And some problems won’t be obvious until you have multiple server-worker instances simulating your game world.
+However, if you’re planning to use zoning (multiple server-worker instances), we recommend trying to scale your game early on in development. You should test early on with at least two server-worker instances running your world using SpatialOS networking. It can be hard to design your game to deal with re-assignments of authority from one server-worker instance to another. And some problems won’t be obvious until you have multiple server-worker instances simulating your game world.
 
 > **Tip:** You can switch between Unreal networking and SpatialOS networking from the Unreal toolbar to speed up development iteration.
 

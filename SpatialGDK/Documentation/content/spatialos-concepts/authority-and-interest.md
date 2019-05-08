@@ -1,5 +1,3 @@
-Singleton Actors
-
 <%(TOC)%>
 
 # Concepts: authority and interest
