@@ -238,9 +238,10 @@ exit /b !ERRORLEVEL!
                         workerCoordinatorPath,
                         linuxSimulatedPlayerPath
                     });
-                } else
+                }
+                else
                 {
-                    Common.WriteWarning("Worker coordinator path does not exist. Please run Setup.bat.");
+                    Common.WriteWarning($"Worker coordinator binary not found at {workerCoordinatorPath}. Please run Setup.bat to build the worker coordinator.");
                 }
 
                 var archiveFileName = "UnrealSimulatedPlayer@Linux.zip";
