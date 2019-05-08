@@ -307,7 +307,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	}
 
 #if !UE_BUILD_SHIPPING
-	if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
 		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
@@ -1111,9 +1111,12 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 
 #if !UE_BUILD_SHIPPING
 	int ReliableRPCId = 0;
-	if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 	{
-		PayloadReader << ReliableRPCId;
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		{
+			PayloadReader << ReliableRPCId;
+		}
 	}
 #endif // !UE_BUILD_SHIPPING
 
@@ -1123,15 +1126,18 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 	if (UnresolvedRefs.Num() == 0)
 	{
 #if !UE_BUILD_SHIPPING
-		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 		{
-			AActor* Actor = Cast<AActor>(TargetObject);
-			if (Actor == nullptr)
+			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 			{
-				Actor = Cast<AActor>(TargetObject->GetOuter());
-				check(Actor);
+				AActor* Actor = Cast<AActor>(TargetObject);
+				if (Actor == nullptr)
+				{
+					Actor = Cast<AActor>(TargetObject->GetOuter());
+					check(Actor);
+				}
+				NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
 			}
-			NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
 		}
 #endif // !UE_BUILD_SHIPPING
 		TargetObject->ProcessEvent(Function, Parms);

@@ -681,9 +681,12 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
 
 #if !UE_BUILD_SHIPPING
-	if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 	{
-		PayloadWriter << ReliableRPCId;
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		{
+			PayloadWriter << ReliableRPCId;
+		}
 	}
 #endif // !UE_BUILD_SHIPPING
 
