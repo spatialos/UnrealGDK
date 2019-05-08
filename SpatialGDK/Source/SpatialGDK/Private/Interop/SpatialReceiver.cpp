@@ -26,7 +26,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
-using namespace improbable;
+using namespace SpatialGDK;
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
@@ -156,7 +156,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 			Op.data.component_id, Op.entity_id);
 		return;
 	}
-	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<improbable::DynamicComponent>(Op.data));
+	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data));
 }
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
@@ -326,10 +326,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
 	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
 
-	improbable::SpawnData* SpawnData = StaticComponentView->GetComponentData<improbable::SpawnData>(EntityId);
-	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
+	SpawnData* SpawnDataComp = StaticComponentView->GetComponentData<SpawnData>(EntityId);
+	UnrealMetadata* UnrealMetadataComp = StaticComponentView->GetComponentData<UnrealMetadata>(EntityId);
 
-	if (UnrealMetadata == nullptr)
+	if (UnrealMetadataComp == nullptr)
 	{
 		// Not an Unreal entity
 		return;
@@ -366,7 +366,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			*EntityActor->GetName());
 
 		// Assume SimulatedProxy until we've been delegated Authority
-		bool bAuthority = StaticComponentView->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+		bool bAuthority = StaticComponentView->GetAuthority(EntityId, Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 		EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
 		EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
 		if (bAuthority)
@@ -383,7 +383,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
-		EntityActor = TryGetOrCreateActor(UnrealMetadata, SpawnData);
+		EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
 
 		if (EntityActor == nullptr)
 		{
@@ -624,14 +624,14 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
-AActor* USpatialReceiver::TryGetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData)
+AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
 {
-	if (UnrealMetadata->StablyNamedRef.IsSet())
+	if (UnrealMetadataComp->StablyNamedRef.IsSet())
 	{
-		if (NetDriver->IsServer() || UnrealMetadata->bNetStartup.GetValue())
+		if (NetDriver->IsServer() || UnrealMetadataComp->bNetStartup.GetValue())
 		{
 			// This Actor already exists in the map, get it from the package map.
-			const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef.GetValue();
+			const FUnrealObjectRef& StablyNamedRef = UnrealMetadataComp->StablyNamedRef.GetValue();
 			AActor* StaticActor = Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(StablyNamedRef));
 			// An unintended side effect of GetObjectFromUnrealObjectRef is that this ref
 			// will be registered with this Actor. It can be the case that this Actor is not
@@ -643,17 +643,17 @@ AActor* USpatialReceiver::TryGetOrCreateActor(improbable::UnrealMetadata* Unreal
 		}
 	}
 
-	return CreateActor(UnrealMetadata, SpawnData);
+	return CreateActor(UnrealMetadataComp, SpawnDataComp);
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData)
+AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
 {
-	UClass* ActorClass = UnrealMetadata->GetNativeEntityClass();
+	UClass* ActorClass = UnrealMetadataComp->GetNativeEntityClass();
 
 	if (ActorClass == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("Could not load class %s when spawning entity!"), *UnrealMetadata->ClassPath);
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Could not load class %s when spawning entity!"), *UnrealMetadataComp->ClassPath);
 		return nullptr;
 	}
 
@@ -668,10 +668,10 @@ AActor* USpatialReceiver::CreateActor(improbable::UnrealMetadata* UnrealMetadata
 	// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 	if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
 	{
-		checkf(!UnrealMetadata->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+		checkf(!UnrealMetadataComp->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
 
 		FString URLString = FURL().ToString();
-		URLString += TEXT("?workerAttribute=") + UnrealMetadata->OwnerWorkerAttribute;
+		URLString += TEXT("?workerAttribute=") + UnrealMetadataComp->OwnerWorkerAttribute;
 
 		// TODO: Once we can checkout PlayerController and PlayerState atomically, we can grab the UniqueId and online subsystem type from PlayerState. UNR-933
 		UNetConnection* Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), true);
@@ -684,23 +684,23 @@ AActor* USpatialReceiver::CreateActor(improbable::UnrealMetadata* UnrealMetadata
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
+	SpawnInfo.bRemoteOwned = true;
 	SpawnInfo.bNoFail = true;
 
-	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
+	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnDataComp->Location, NetDriver->GetWorld()->OriginLocation);
 
-	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
+	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnDataComp->Rotation, SpawnLocation), SpawnInfo);
 	check(NewActor);
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
 	const float Epsilon = 0.001f;
-	if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
+	if (!SpawnDataComp->Velocity.Equals(FVector::ZeroVector, Epsilon))
 	{
-		NewActor->PostNetReceiveVelocity(SpawnData->Velocity);
+		NewActor->PostNetReceiveVelocity(SpawnDataComp->Velocity);
 	}
-	if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
+	if (!SpawnDataComp->Scale.Equals(FVector::OneVector, Epsilon))
 	{
-		NewActor->SetActorScale3D(SpawnData->Scale);
+		NewActor->SetActorScale3D(SpawnDataComp->Scale);
 	}
 
 	// Don't have authority over Actor until SpatialOS delegates authority

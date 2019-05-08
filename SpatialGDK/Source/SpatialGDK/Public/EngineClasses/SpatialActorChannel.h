@@ -70,7 +70,7 @@ public:
 	FORCEINLINE bool IsOwnedByWorker() const
 	{
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
-		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<improbable::EntityAcl>(EntityId)->ComponentWriteAcl.Find(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID))
+		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId)->ComponentWriteAcl.Find(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID))
 		{
 			for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
 			{

@@ -262,11 +262,11 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 
 	if (SpatialGDKEditorInstance->GenerateSchema(false))
 	{
-		ShowSuccessNotification("Incremental Schema Generation Completed!");
+		ShowSuccessNotification("Incremental Schema Generation completed!");
 	}
 	else
 	{
-		ShowFailedNotification("Incremental Schema Generation Failed");
+		ShowFailedNotification("Incremental Schema Generation failed");
 	}
 }
 
@@ -276,11 +276,11 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 
 	if (SpatialGDKEditorInstance->GenerateSchema(true))
 	{
-		ShowSuccessNotification("Full Schema Generation Completed!");
+		ShowSuccessNotification("Full Schema Generation completed!");
 	}
 	else
 	{
-		ShowFailedNotification("Full Schema Generation Failed");
+		ShowFailedNotification("Full Schema Generation failed");
 	}
 }
 		
@@ -416,7 +416,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch \"%s\" %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to

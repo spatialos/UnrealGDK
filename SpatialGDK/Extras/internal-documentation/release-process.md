@@ -142,6 +142,9 @@ call "%~dp0ProjectPaths.bat"
 ## Validation (UnrealGDKTestSuite)
 1. Follow these steps: https://github.com/spatialos/UnrealGDKTestSuite/blob/release/README.md. All tests must pass.
 
+## Validation (Playtest)
+1. Follow these steps: https://brevi.link/unreal-release-playtests. All tests must pass.
+
 ## Validation (Docs)
 1. Upload docs to docs-testing using Improbadoc.
 1. Validate that Improbadoc reports no linting errors.
@@ -163,6 +166,7 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 1. In `UnrealGDKTestSuite` merge `x.y.z-rc` into `release`, and tag that commit as `x.y.z`.
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
 1. Publish the docs to live using Improbadoc commands listed [here](https://improbableio.atlassian.net/wiki/spaces/GBU/pages/327485360/Publishing+GDK+Docs).
+1. Update the [roadmap](https://github.com/spatialos/UnrealGDK/pull/900), moving the release from **Planned** to **Released**, and linking to the release.
 1. Announce the release in:
 
 * Forums

@@ -21,7 +21,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
-using namespace improbable;
+using namespace SpatialGDK;
 
 #if WITH_EDITOR
 static EditorWorkerController WorkerController;
@@ -320,7 +320,7 @@ Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_E
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendMetrics(const improbable::Metrics& Metrics)
+void USpatialWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
 {
 	QueueOutgoingMessage<FMetrics>(Metrics);
 }
@@ -436,7 +436,15 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 
 void USpatialWorkerConnection::QueueLatestOpList()
 {
-	OpListQueue.Enqueue(Worker_Connection_GetOpList(WorkerConnection, 0));
+	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
+	if (OpList->op_count > 0)
+	{
+		OpListQueue.Enqueue(OpList);
+	}
+	else
+	{
+		Worker_OpList_Destroy(OpList);
+	}
 }
 
 void USpatialWorkerConnection::ProcessOutgoingMessages()
@@ -481,7 +489,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
 
-			static const Worker_Alpha_UpdateParameters DisableLoopback{ false /* loopback */ };
+			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
 			Worker_Alpha_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
 				&Message->Update,

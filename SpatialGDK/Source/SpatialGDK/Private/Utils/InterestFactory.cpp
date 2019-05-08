@@ -14,7 +14,7 @@
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
 
-namespace improbable
+namespace SpatialGDK
 {
 
 InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialNetDriver* InNetDriver)
@@ -72,7 +72,7 @@ Interest InterestFactory::CreateActorInterest()
 	NewComponentInterest.Queries.Add(NewQuery);
 
 	// Server Interest
-	NewInterest.ComponentInterest.Add(SpatialConstants::POSITION_COMPONENT_ID, NewComponentInterest);
+	NewInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, NewComponentInterest);
 
 	return NewInterest;
 }
@@ -115,12 +115,12 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 	// Server Interest
 	if (DefinedConstraints.IsValid())
 	{
-		NewInterest.ComponentInterest.Add(SpatialConstants::POSITION_COMPONENT_ID, ServerComponentInterest);
+		NewInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, ServerComponentInterest);
 	}
 	// Client Interest
 	if (ClientConstraint.IsValid())
 	{
-		NewInterest.ComponentInterest.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, ClientComponentInterest);
+		NewInterest.ComponentInterestMap.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, ClientComponentInterest);
 	}
 
 	return NewInterest;
@@ -265,4 +265,4 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 	return LevelConstraint;
 }
 
-}  // ::improbable 
+} // namespace SpatialGDK
