@@ -67,6 +67,8 @@ call :MarkStartOfBlock "Check dependencies"
         )
     )
 
+    pushd "%~dp0"
+
     if %UNREAL_ENGINE%=="" (
         echo Error: Could not find the Unreal Engine. Please associate your '.uproject' with an engine version or ensure this game project is nested within an engine build.
         pause
@@ -74,8 +76,6 @@ call :MarkStartOfBlock "Check dependencies"
     )
 
     echo Using Unreal Engine at: %UNREAL_ENGINE%
-
-    pushd "%~dp0"
 
     rem Use Unreal Engine's script to get the path to MSBuild. This turns off echo so turn it back on for TeamCity.
     call "%UNREAL_ENGINE%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
