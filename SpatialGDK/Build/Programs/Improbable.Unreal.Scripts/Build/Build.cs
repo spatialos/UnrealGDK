@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.Win32;
 
 namespace Improbable
 {
@@ -54,12 +56,6 @@ chmod +x $SCRIPT >> ""/improbable/logs/${WORKER_ID}.log"" 2>&1
 echo ""Trying to launch worker ${WORKER_NAME} with id ${WORKER_ID}"" > ""/improbable/logs/${WORKER_ID}.log""
 gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&1";
 
-        private const string RunEditorScript =
-            @"setlocal ENABLEDELAYEDEXPANSION
-%UNREAL_HOME%\Engine\Binaries\Win64\UE4Editor.exe ""{0}"" %*
-exit /b !ERRORLEVEL!
-";
-
         public static void Main(string[] args)
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
@@ -86,9 +82,54 @@ exit /b !ERRORLEVEL!
             var noCompile = args.Count(arg => arg.ToLowerInvariant() == "-nocompile") > 0;
             var additionalUATArgs = string.Join(" ", args.Skip(4).Where(arg => arg.ToLowerInvariant() != "-nocompile"));
 
-            var stagingDir = Path.GetFullPath(Path.Combine("../spatial", "build", "unreal"));
-            var outputDir = Path.GetFullPath(Path.Combine("../spatial", "build", "assembly", "worker"));
+            var stagingDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "unreal"));
+            var outputDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), "../spatial", "build", "assembly", "worker"));
             var baseGameName = Path.GetFileNameWithoutExtension(projectFile);
+
+            // Get UNREAL_HOME without environment variable.
+            Console.WriteLine("Finding Unreal Engine build.");
+            string uproject = File.ReadAllText(projectFile, Encoding.UTF8);
+            string engineAssociationRegex = "..{8}-.{4}-.{4}-.{4}-.{12}.";
+            Match engineAssociationMatch = Regex.Match(uproject, engineAssociationRegex);
+
+            string unrealEngine = "";
+
+            // If we found an engine association within the .uproject, query the registry for the engine directory.
+            if (engineAssociationMatch.Success)
+            {
+                string engineAssociation = engineAssociationMatch.Value;
+                Console.WriteLine("Engine Association: " + engineAssociation);
+
+                string unrealEngineBuildKey = "HKEY_CURRENT_USER\\Software\\Epic Games\\Unreal Engine\\Builds";
+                unrealEngine = Registry.GetValue(unrealEngineBuildKey, engineAssociation, "").ToString();
+            }
+            else // If we couldn't find the Engine Association. Climb the parent directories looking for the "Engine".
+            {
+                DirectoryInfo currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                while (currentDir.Parent != null && unrealEngine == "")
+                {
+                    currentDir = currentDir.Parent;
+
+                    foreach (DirectoryInfo dir in currentDir.GetDirectories())
+                    {
+                        if (dir.Name == "Engine")
+                        {
+                            unrealEngine = currentDir.FullName;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (unrealEngine == "")
+            {
+                Console.Error.WriteLine("Could not find the Unreal Engine. Please associate your '.uproject' with an engine version or ensure this game project is nested within an engine build.");
+                Environment.Exit(1);
+            }
+            else
+            {
+                Console.WriteLine("Engine is at: " + unrealEngine);
+            }
 
             if (gameName == baseGameName + "Editor")
             {
@@ -100,7 +141,7 @@ exit /b !ERRORLEVEL!
                 {
                     Common.WriteHeading(" > Building Editor for use as a managed worker.");
 
-                    Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new[]
+                    Common.RunRedirected(unrealEngine + @"\Engine\Build\BatchFiles\Build.bat", new[]
                     {
                         gameName,
                         platform,
@@ -115,12 +156,16 @@ exit /b !ERRORLEVEL!
                     Directory.CreateDirectory(windowsEditorPath);
                 }
 
-                // Write a simple batch file to launch the Editor as a managed worker.
-                File.WriteAllText(Path.Combine(windowsEditorPath, "StartEditor.bat"),
+                string RunEditorScript = @"setlocal ENABLEDELAYEDEXPANSION" + "\n" + unrealEngine + @"\Engine\Binaries\Win64\UE4Editor.exe ""{0}"" %*
+exit /b !ERRORLEVEL!
+";
+
+        // Write a simple batch file to launch the Editor as a managed worker.
+        File.WriteAllText(Path.Combine(windowsEditorPath, "StartEditor.bat"),
                     string.Format(RunEditorScript, projectFile), new UTF8Encoding(false));
 
                 // The runtime currently requires all workers to be in zip files. Zip the batch file.
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                Common.RunRedirected(unrealEngine + @"\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
                     "-add=" + Quote(windowsEditorPath),
@@ -130,7 +175,7 @@ exit /b !ERRORLEVEL!
             else if (gameName == baseGameName)
             {
                 Common.WriteHeading(" > Building client.");
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                Common.RunRedirected(unrealEngine + @"\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "BuildCookRun",
                     noCompile ? "-nobuild" : "-build",
@@ -176,7 +221,7 @@ exit /b !ERRORLEVEL!
                     Console.WriteLine("Could not find the executable to rename.");
                 }
 
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                Common.RunRedirected(unrealEngine + @"\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
                     "-add=" + Quote(windowsNoEditorPath),
@@ -190,7 +235,7 @@ exit /b !ERRORLEVEL!
             else if (gameName == baseGameName + "SimulatedPlayer") // This is for internal use only. We do not support Linux clients.
             {
                 Common.WriteHeading(" > Building simulated player.");
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                Common.RunRedirected(unrealEngine + @"\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "BuildCookRun",
                     "-build",
@@ -237,7 +282,7 @@ exit /b !ERRORLEVEL!
                 }
 
                 var archiveFileName = "UnrealSimulatedPlayer@Linux.zip";
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                Common.RunRedirected(unrealEngine + @"\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
                     "-add=" + Quote(linuxSimulatedPlayerPath),
@@ -247,7 +292,7 @@ exit /b !ERRORLEVEL!
             else if (gameName == baseGameName + "Server")
             {
                 Common.WriteHeading(" > Building worker.");
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                Common.RunRedirected(unrealEngine + @"\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "BuildCookRun",
                     noCompile ? "-nobuild" : "-build",
@@ -286,7 +331,7 @@ exit /b !ERRORLEVEL!
                     File.WriteAllText(Path.Combine(serverPath, "StartWorker.sh"), string.Format(UnrealWorkerShellScript, baseGameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
                 }
 
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\RunUAT.bat", new[]
+                Common.RunRedirected(unrealEngine + @"\Engine\Build\BatchFiles\RunUAT.bat", new[]
                 {
                     "ZipUtils",
                     "-add=" + Quote(serverPath),
@@ -297,7 +342,7 @@ exit /b !ERRORLEVEL!
             {
                 // Pass-through to Unreal's Build.bat.
                 Common.WriteHeading($" > Building ${gameName}.");
-                Common.RunRedirected(@"%UNREAL_HOME%\Engine\Build\BatchFiles\Build.bat", new[]
+                Common.RunRedirected(unrealEngine + @"\Engine\Build\BatchFiles\Build.bat", new[]
                 {
                     gameName,
                     platform,
