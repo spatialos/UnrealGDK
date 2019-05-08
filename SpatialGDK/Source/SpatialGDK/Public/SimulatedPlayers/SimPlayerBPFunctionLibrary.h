@@ -3,10 +3,10 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "SimulatedPlayer.generated.h"
+#include "SimPlayerBPFunctionLibrary.generated.h"
 
 UCLASS()
-class SPATIALGDK_API USimulatedPlayer : public UBlueprintFunctionLibrary
+class SPATIALGDK_API USimPlayerBPFunctionLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
