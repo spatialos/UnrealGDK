@@ -31,11 +31,7 @@ struct RPCPayload
 	{
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
 		Schema_AddUint32(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
-
-		uint32 PayloadSize = PayloadData.Num();
-		uint8* PayloadBuffer = Schema_AllocateBuffer(RPCObject, sizeof(uint8) * PayloadSize);
-		FMemory::Memcpy(PayloadBuffer, PayloadData.GetData(), sizeof(uint8) * PayloadSize);
-		Schema_AddBytes(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadBuffer, sizeof(uint8) * PayloadSize);
+		AddBytesToSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadData.GetData(), sizeof(uint8) * PayloadData.Num());
 	}
 
 	uint32 Offset;
