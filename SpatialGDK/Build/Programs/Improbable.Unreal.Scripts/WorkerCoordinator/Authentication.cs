@@ -11,12 +11,12 @@ namespace Improbable.WorkerCoordinator
         private const string LOCATOR_HOST_NAME = "locator.improbable.io";
         private const int LOCATOR_PORT = 444;
 
-        public static string GetDevelopmentPlayerIdentityToken(string devAuthTokenId, string clientName)
+        public static string GetDevelopmentPlayerIdentityToken(string devAuthToken, string clientName)
         {
             var pitResponse = DevelopmentAuthentication.CreateDevelopmentPlayerIdentityTokenAsync("locator.improbable.io", 444,
                     new PlayerIdentityTokenRequest
                     {
-                        DevelopmentAuthenticationTokenId = devAuthTokenId,
+                        DevelopmentAuthenticationToken = devAuthToken,
                         PlayerId = clientName,
                         DisplayName = clientName
                     }).Get();

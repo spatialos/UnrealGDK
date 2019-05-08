@@ -31,7 +31,7 @@ namespace Improbable.WorkerCoordinator
     ///
     /// WORKER FLAGS
     /// Additionally, the following worker flags are required for the coordinator:
-    ///     simulated_players_dev_auth_token_id     The development auth token id used to generate login tokens and player identity tokens
+    ///     simulated_players_dev_auth_token     The development auth token used to generate login tokens and player identity tokens
     ///     simulated_players_target_deployment     Name of the target deployment which the simulated players will connect to
     ///     target_num_simulated_players            The total number of simulated players that will connect to the target deployment. This value is used to determine the delay in connecting simulated players.
     /// 
@@ -47,7 +47,7 @@ namespace Improbable.WorkerCoordinator
         private const string PLAYER_IDENTITY_TOKEN_ARG = "<PLAYER_IDENTITY_TOKEN>";
 
         // Worker flags.
-        private const string DEV_AUTH_TOKEN_ID_FLAG = "simulated_players_dev_auth_token_id";
+        private const string DEV_AUTH_TOKEN_FLAG = "simulated_players_dev_auth_token";
         private const string TARGET_DEPLOYMENT_FLAG = "simulated_players_target_deployment";
         private const string NUM_SIM_PLAYERS_FLAG = "target_num_simulated_players";
         private const string TARGET_DEPLOYMENT_READY_FLAG = "target_deployment_ready";
@@ -83,11 +83,11 @@ namespace Improbable.WorkerCoordinator
             Random = new Random(Guid.NewGuid().GetHashCode());
 
             // Read worker flags.
-            string devAuthTokenId, targetDeployment;
+            string devAuthToken, targetDeployment;
             int numSimulatedPlayers;
             try
             {
-                devAuthTokenId = GetRequiredWorkerFlag(DEV_AUTH_TOKEN_ID_FLAG);
+                devAuthToken = GetRequiredWorkerFlag(DEV_AUTH_TOKEN_FLAG);
                 targetDeployment = GetRequiredWorkerFlag(TARGET_DEPLOYMENT_FLAG);
                 numSimulatedPlayers = Convert.ToInt32(GetRequiredWorkerFlag(NUM_SIM_PLAYERS_FLAG));
             }
@@ -117,7 +117,7 @@ namespace Improbable.WorkerCoordinator
             string pit, loginToken;
             try
             {
-                pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthTokenId, clientName);
+                pit = Authentication.GetDevelopmentPlayerIdentityToken(devAuthToken, clientName);
                 var loginTokens = Authentication.GetDevelopmentLoginTokens(SimulatedPlayerWorkerType, pit);
                 loginToken = Authentication.SelectLoginToken(loginTokens, targetDeployment);
             }

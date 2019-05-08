@@ -237,9 +237,9 @@ namespace Improbable
                 });
 
             // Add worker flags to sim deployment JSON.
-            var devAuthTokenIdFlag = new JObject();
-            devAuthTokenIdFlag.Add("name", "simulated_players_dev_auth_token_id");
-            devAuthTokenIdFlag.Add("value", dat.DevelopmentAuthenticationToken.Id);
+            var devAuthTokenFlag = new JObject();
+            devAuthTokenFlag.Add("name", "simulated_players_dev_auth_token");
+            devAuthTokenFlag.Add("value", dat.TokenSecret);
 
             var targetDeploymentFlag = new JObject();
             targetDeploymentFlag.Add("name", "simulated_players_target_deployment");
@@ -256,7 +256,7 @@ namespace Improbable
             {
                 if (simWorkerConfig.workers[i].worker_type == CoordinatorWorkerName)
                 {
-                    simWorkerConfig.workers[i].flags.Add(devAuthTokenIdFlag);
+                    simWorkerConfig.workers[i].flags.Add(devAuthTokenFlag);
                     simWorkerConfig.workers[i].flags.Add(targetDeploymentFlag);
                     simWorkerConfig.workers[i].flags.Add(numSimulatedPlayersFlag);
                 }
