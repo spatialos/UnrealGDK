@@ -36,11 +36,37 @@ call :MarkStartOfBlock "Setup the git hooks"
 call :MarkEndOfBlock "Setup the git hooks"
 
 call :MarkStartOfBlock "Check dependencies"
-    if not defined UNREAL_HOME (
-        echo Error: Please set UNREAL_HOME environment variable to point to the Unreal Engine folder.
-        pause
-        exit /b 1
+    REM if not defined UNREAL_HOME (
+    REM     echo Error: Please set UNREAL_HOME environment variable to point to the Unreal Engine folder.
+    REM     pause
+    REM     exit /b 1
+    REM )
+
+    rem Get the Unreal Engine used by this project by querying the registry for the engine association found in the .uproject.
+    rem set UPROJECT=powershell -Command "Get-Childitem -Path %ProjectDirectory% -Recurse -Include *.uproject -File | %% {$_.FullName}"
+    for /f "delims=" %%a in (' powershell -Command "Get-Childitem -Path %ProjectDirectory% -Recurse -Include *.uproject -File | %% {$_.FullName}" ') do set "UPROJECT=%%a"
+    echo Using uproject: %UPROJECT%
+
+    rem Get the Engine Association from the uproject.
+    rem set ENGINE_ASSOCIATION=powershell -Command "Select-String -Pattern '.{8}-.{4}-.{4}-.{4}-.{12}' %UPROJECT% -AllMatches | %% { $_.Matches } | %% { $_.Value }"
+    for /f "delims=" %%a in (' powershell -Command "Select-String -Pattern '..{8}-.{4}-.{4}-.{4}-.{12}.' %UPROJECT% -AllMatches | %% { $_.Matches } | %% { $_.Value }" ') do set "ENGINE_ASSOCIATION=%%a"
+    echo Engine association is: %ENGINE_ASSOCIATION%
+
+    rem Query the registry for the path to the Unreal Engine using the engine associtation.
+    rem reg query "HKEY_CURRENT_USER\Software\Epic Games\Unreal Engine\Builds\%ENGINE_ASSOCIATION%"
+    rem reg query "HKCU\Software\Epic Games\Unreal Engine\Builds" /v {D75F1C5C-40BC-AD7B-5258-C6AC52E5F789}
+
+    FOR /F "usebackq tokens=3*" %%A in (`reg query "HKCU\Software\Epic Games\Unreal Engine\Builds" /v %ENGINE_ASSOCIATION%`) DO (
+        set UNREAL_HOME=%%A
     )
+
+    rem If there was no engine association then we need to climb the directory path to find the Engine.......
+
+
+
+    echo Using Unreal Engine at: %UNREAL_HOME%
+
+
 
     rem Use Unreal Engine's script to get the path to MSBuild. This turns off echo so turn it back on for TeamCity.
     call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
@@ -58,6 +84,8 @@ call :MarkStartOfBlock "Check dependencies"
         exit /b 1
     )
 call :MarkEndOfBlock "Check dependencies"
+
+pause
 
 call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
