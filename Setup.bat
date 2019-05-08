@@ -94,8 +94,6 @@ call :MarkStartOfBlock "Check dependencies"
     )
 call :MarkEndOfBlock "Check dependencies"
 
-pause
-
 call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
     set BUILD_DIR=%~dp0SpatialGDK\Build
