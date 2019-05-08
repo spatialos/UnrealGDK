@@ -1134,7 +1134,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	{
 		TSharedRef<FPendingRPCParams> RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++);
 
-#if !UE_BUILD_SHIPPING
 		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 		{
 			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
@@ -1142,7 +1141,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 				RPCParams->ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
 			}
 		}
-#endif // !UE_BUILD_SHIPPING
 
 		Sender->SendRPC(RPCParams);
 	}
@@ -1480,7 +1478,6 @@ void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate
 	}
 }
 
-#if !UE_BUILD_SHIPPING
 uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject)
 {
 	if (!ReliableRPCIdMap.Contains(Actor))
@@ -1584,8 +1581,6 @@ void USpatialNetDriver::OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType
 		}
 	}
 }
-
-#endif // !UE_BUILD_SHIPPING
 
 void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay)
 {

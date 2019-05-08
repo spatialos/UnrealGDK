@@ -306,7 +306,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		}
 	}
 
-#if !UE_BUILD_SHIPPING
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
@@ -318,7 +317,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			NetDriver->OnRPCAuthorityGained(Actor, ComponentType);
 		}
 	}
-#endif // !UE_BUILD_SHIPPING
 }
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
@@ -1109,7 +1107,6 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 
 	FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
 
-#if !UE_BUILD_SHIPPING
 	int ReliableRPCId = 0;
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 	{
@@ -1118,14 +1115,12 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 			PayloadReader << ReliableRPCId;
 		}
 	}
-#endif // !UE_BUILD_SHIPPING
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
 	if (UnresolvedRefs.Num() == 0)
 	{
-#if !UE_BUILD_SHIPPING
 		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 		{
 			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
@@ -1139,7 +1134,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 				NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
 			}
 		}
-#endif // !UE_BUILD_SHIPPING
+
 		TargetObject->ProcessEvent(Function, Parms);
 	}
 	else
@@ -1304,9 +1299,7 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits, const FString& SenderWorkerId)
 {
 	TSharedPtr<FPendingIncomingRPC> IncomingRPC = MakeShared<FPendingIncomingRPC>(UnresolvedRefs, TargetObject, Function, PayloadData, CountBits);
-#if !UE_BUILD_SHIPPING
 	IncomingRPC->SenderWorkerId = SenderWorkerId;
-#endif // !UE_BUILD_SHIPPING
 
 	for (const FUnrealObjectRef& UnresolvedRef : UnresolvedRefs)
 	{
@@ -1403,10 +1396,7 @@ void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const FUnrealObjectR
 		IncomingRPC->UnresolvedRefs.Remove(ObjectRef);
 		if (IncomingRPC->UnresolvedRefs.Num() == 0)
 		{
-			FString SenderWorkerId;
-#if !UE_BUILD_SHIPPING
-			SenderWorkerId = IncomingRPC->SenderWorkerId;
-#endif // !UE_BUILD_SHIPPING
+			FString SenderWorkerId = IncomingRPC->SenderWorkerId;
 			ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->PayloadData, IncomingRPC->CountBits, SenderWorkerId);
 		}
 	}

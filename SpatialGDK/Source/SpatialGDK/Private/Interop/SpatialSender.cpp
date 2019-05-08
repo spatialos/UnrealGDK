@@ -38,6 +38,7 @@ FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunct
 	, Function(InFunction)
 	, Attempts(0)
 	, RetryIndex(InRetryIndex)
+	, ReliableRPCIndex(0)
 {
 	Parameters.SetNumZeroed(Function->ParmsSize);
 
@@ -451,14 +452,9 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	case SCHEMA_ServerReliableRPC:
 	case SCHEMA_CrossServerRPC:
 	{
-		int ReliableRPCIndex = 0;
-#if !UE_BUILD_SHIPPING
-		ReliableRPCIndex = Params->ReliableRPCIndex;
-#endif // !UE_BUILD_SHIPPING
-
 		Worker_ComponentId ComponentId = RPCInfo->Type == SCHEMA_ClientReliableRPC ? SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
 
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, ReliableRPCIndex);
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, Params->ReliableRPCIndex);
 
 		if (!UnresolvedObject)
 		{
@@ -680,7 +676,6 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
 
-#if !UE_BUILD_SHIPPING
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 	{
 		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
@@ -688,7 +683,6 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 			PayloadWriter << ReliableRPCId;
 		}
 	}
-#endif // !UE_BUILD_SHIPPING
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
