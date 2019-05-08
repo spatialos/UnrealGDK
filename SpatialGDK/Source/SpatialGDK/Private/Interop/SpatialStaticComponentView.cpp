@@ -66,7 +66,6 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	default:
 		return;
 	}
-						
 	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = std::move(Data);
 }
 

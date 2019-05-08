@@ -468,7 +468,6 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		// Target object was destroyed before the RPC could be (re)sent
 		return;
 	}
-	
 	UObject* TargetObject = Params->TargetObject.Get();
 
 	if (AActor* TargetActor = Cast<AActor>(TargetObject))
