@@ -5,10 +5,6 @@
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
         - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
         - [3: Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
-    - Technical overview
-        - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
-        - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
-        - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
     - Tutorials
         - Multiserver Shooter tutorial
             - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
@@ -17,6 +13,10 @@
             - [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
         - [Port your own project to the GDK]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
+    - Technical overview
+        - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
+        - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
+        - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)  
     - [Unreal features support]({{urlRoot}}/unreal-features-support)
     - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>

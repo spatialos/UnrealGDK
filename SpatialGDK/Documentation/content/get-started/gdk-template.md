@@ -74,12 +74,12 @@ You'll find out more about schema, snapshots and workers later on in this tutori
 
 Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) and a [snapshot]({{urlRoot}}/content/how-to-use-snapshots). 
 
-1. In the Unreal Editor, on the GDK toolbar, select **Schema** to generate schema.<br/>
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
+1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+  _Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
 1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
+_Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 <%(#Expandable title="What is schema?")%>Schema is a set of definitions which represent your game's objects in SpatialOS. Schema is defined in `.schema` files and written in schemalang.  When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
 
@@ -98,7 +98,7 @@ To launch a local deployment:
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 1. Under **Modes**, select **New Editor Window (PIE)**.<br/>
-1. Under **Multiplayer Options**, set the number of players to **2** and ensure that the check box next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)<br/>
+1. Under **Multiplayer Options**, set the number of players to **2** and ensure that the checkbox next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)<br/>
 ![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
 _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
 1. On the Unreal Engine toolbar, select **Play** to run the game, and you should see two clients start.<br/><br/>
@@ -113,7 +113,7 @@ _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 The Inspector we are using here is looking at a local deployment running on your computer and not in the cloud, so we use a local URL for the Inspector as it's also running locally on your computer. When running locally, the Inspector automatically downloads and caches the latest Inspector client from the internet. When you use the Inspector in a cloud deployment, you access the Inspector through the Console via the web at https://console.improbable.io.
 <%(/Expandable)%>
 
-If you want to run multiple server-workers in the Editor, see the [Toolbar documentation]({{urlRoot}}/content/toolbars#auto-generated-launch-config-for-pie-server-worker-types) for details on launching multiple PIE server-workers.
+> **TIP:** Check out the [local deployment workflow page]({{urlRoot}}/content/local-deployment-workflow) for a reference diagram of this workflow.
 
 #### Deploy in the cloud
 
@@ -193,6 +193,8 @@ In the Console, Select **Launch** on the left of the page, and then select the *
 _Image: The SpatialOS console launch window_
 
 **Note:** You install the SpatialOS Launcher during [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies).
+
+> **TIP:** Check out the [cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow) for a reference diagram of this workflow.
 
 ### Congratulations!
 

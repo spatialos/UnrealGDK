@@ -52,7 +52,7 @@ class AMySingleton : public AActor
 You can also tag your Blueprint classes with the `SpatialType` tag and descriptors. To do this,
 
 1. Open the class in the Blueprint Editor and, from the menu, select **Class Settings**. 
-1. Select **Class Options** and under **Advanced**, check the `Spatial Type` checkbox. 
+1. Ensure that the `Spatial Type` checkbox is selected. 
 1. Add any descriptors to the `Spatial Description` textbox, like so:
 
 ![blueprint-singleton]({{assetRoot}}assets/screen-grabs/blueprint-singleton.png)

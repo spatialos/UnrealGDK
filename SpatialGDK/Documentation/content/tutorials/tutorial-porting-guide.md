@@ -1,9 +1,9 @@
 <%(TOC)%>
 # Get started: Port your own Unreal project to the GDK
 
-<%(Callout type="warn" message="The GDK's porting guide is currently in alpha as we improve its stability. We do not recommend attempting to port your Unreal game now. If you need to port your game, please contact us via our [forums](https://forums.improbable.io/), or [Discord](https://discord.gg/vAT7RSU) so we can best support you.")%>
+<%(Callout type="warn" message="Before starting to port your game, please be aware of the [GDK's support level of different Unreal features]({{urlRoot}}/unreal-features-support). If you need to port your game, please contact us via our [forums](https://forums.improbable.io/), or [Discord](https://discord.gg/vAT7RSU) so we can best support you.")%>
 
-This guide shows you how to port your own Unreal project to SpatialOS using the GDK for Unreal. By the end of this guide, your game will run on a single server-worker and you will be ready to start adding multiserver logic to take advantage of the distributed architecture of SpatialOS.
+This guide shows you how to port your own Unreal project to the GDK. By the end of this guide, your game will run on a single server-worker on SpatialOS.
 
 ## Before you start
 
@@ -168,11 +168,12 @@ You must modify your `GameInstance` class to work properly with the GDK.
 ### 6. Generate schema and a snapshot
 You need to generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) and generate a [snapshot]({{urlRoot}}/content/how-to-use-snapshots) before you start your deployment. To do this:
 
-1. In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars), select **Schema** to run the [Schema Generator]({{urlRoot}}/content/glossary#schema-generation).
-1. On the same toolbar, select **Snapshot**, which will generate a snapshot for the map currently open in the editor.
-
-    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars-basic.png)<br/>
-    _Image: The GDK for Unreal toolbar_<br/>
+1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+       ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+     _Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
+1. Select **Snapshot** to generate a snapshot.<br/>
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
+    _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 ### 7. Launch your game
 1. Switch your game project to use the SpatialOS networking. To do this: 
@@ -194,7 +195,6 @@ Selecting **Start** opens a terminal window and runs two SpatialOS command line 
 _Image: On the Unreal Engine toolbar **Play**_<br/><br/>
 1. From the SpatialOS [GDK toolbar]({{urlRoot}}/content/toolbars) select **Inspector**, which opens a local [SpatialOS Inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your default web browser. Here you can see the entities and their components present in your deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Inspector**_<br/>
-
 
 **For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{urlRoot}}/content/glossary#deployment)**
 

@@ -242,7 +242,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/ReplicationFlow">Net Dormancy</a></td>
-    <td class="roadmap"></td>
+    <td class="supported"></td>
     <td></td>
   </tr>
   <tr>

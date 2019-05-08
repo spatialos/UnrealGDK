@@ -56,6 +56,8 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
     ![]({{assetRoot}}assets/tutorial/launch.png)
 1. Once the client has launched, enter the game and fire a few celebratory shots - you are now playing in your first SpatialOS cloud deployment!
 
+> **TIP:** Check out the [cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow) for a reference diagram of this workflow.
+
 <br/>
 ### Invite your friends
 
