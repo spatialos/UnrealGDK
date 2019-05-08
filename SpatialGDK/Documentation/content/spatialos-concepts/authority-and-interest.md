@@ -47,6 +47,7 @@ Authority in SpatialOS means that a worker instance does the computation relevan
 
 Interest in SpatialOS means a worker instance wants to receive updates about components from the SpatialOS entity database. Whether a worker instance does receive updates depends on certain criteria, but when it does, you can think of the worker instance as having read access to the component. This is called “active read access”.
 
-<!---
+<!--
+TODO
 WIP QBI doc: https://improbableio.atlassian.net/browse/UNR-1210
 -->

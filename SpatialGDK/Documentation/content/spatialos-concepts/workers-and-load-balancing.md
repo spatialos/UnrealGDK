@@ -56,7 +56,8 @@ Like server-worker instances, client-worker instances can only see a part of the
 
 _Image: A client-worker instance can "see" nearby entities, regardless of the boundaries between server-worker instances_
 
-<!---
+<!--
+TODO
 We need to create the following how-to docs:
 Creating worker types https://improbableio.atlassian.net/browse/DOC-1064
 Setting up load balancing https://improbableio.atlassian.net/browse/DOC-1065
