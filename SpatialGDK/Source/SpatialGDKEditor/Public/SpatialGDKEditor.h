@@ -18,15 +18,18 @@ public:
 	}
 
 	bool GenerateSchema(bool bFullScan);
+	bool GenerateSchema(TSet<FAssetData> AssetsToLoad);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
+
+	void GetWorldDependencies(UWorld* World, TSet<FAssetData>& OutAssets);
 
 private:
 	bool bSchemaGeneratorRunning;
 	TFuture<bool> SchemaGeneratorResult;
 
-	bool LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets);
+	bool LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssetsLoaded, TSet<FAssetData> AssetsToLoad);
 
 	FDelegateHandle OnAssetLoadedHandle;
 	void OnAssetLoaded(UObject* Asset);

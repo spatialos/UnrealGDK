@@ -10,15 +10,43 @@
 #include "FileHelpers.h"
 
 #include "AssetRegistryModule.h"
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/WorldSettings.h"
 #include "GeneralProjectSettings.h"
+#include "Misc/ConfigCacheIni.h"
 #include "Misc/ScopedSlowTask.h"
 #include "UObject/StrongObjectPtr.h"
+#include "Engine/WorldComposition.h"
+
+
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditor"
 
 bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+	AssetRegistry.SearchAllAssets(true);
+
+	TSet<FAssetData> AssetsToLoad;
+
+	if (bFullScan)
+	{
+		TArray<FAssetData> AllAssetDatas;
+		AssetRegistry.GetAllAssets(AllAssetDatas, true);
+		AssetsToLoad = TSet<FAssetData>(AllAssetDatas);
+
+		DeleteGeneratedSchemaFiles();
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Generating Schema, loading %d potential assets"), AssetsToLoad.Num());
+
+	return GenerateSchema(AssetsToLoad);
+}
+
+bool FSpatialGDKEditor::GenerateSchema(TSet<FAssetData> AssetsToLoad)
 {
 	if (bSchemaGeneratorRunning)
 	{
@@ -44,8 +72,8 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	bSchemaGeneratorRunning = true;
 
-	// 80/10/10 load assets / gen schema / garbage collection.
-	FScopedSlowTask Progress(100.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
+	// Total Progress = Loading Assets (Assets) + Generating Schema (10) + Garbage Collecting (0.5 * Assets)
+	FScopedSlowTask Progress(AssetsToLoad.Num() * 1.5f + 10.f, LOCTEXT("GeneratingSchema", "Generating Schema..."));
 	Progress.MakeDialog(true);
 
 	// Force spatial networking so schema layouts are correct
@@ -56,15 +84,18 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	RemoveEditorAssetLoadedCallback();
 
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
-	if (bFullScan)
+	if (AssetsToLoad.Num() > 0)
 	{
-		Progress.EnterProgressFrame(80.f);
-		if (!LoadPotentialAssets(LoadedAssets))
+		Progress.EnterProgressFrame(static_cast<float>(AssetsToLoad.Num()));
 		{
-			bSchemaGeneratorRunning = false;
-			LoadedAssets.Empty();
-			CollectGarbage(RF_NoFlags, true);
-			return false;
+			bool bSuccess = LoadPotentialAssets(LoadedAssets, AssetsToLoad);
+			if (!bSuccess)
+			{
+				bSchemaGeneratorRunning = false;
+				LoadedAssets.Empty();
+				CollectGarbage(RF_NoFlags, true);
+				return false;
+			}
 		}
 	}
 
@@ -78,17 +109,12 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	TryLoadExistingSchemaDatabase();
 
-	if (bFullScan)
-	{
-		DeleteGeneratedSchemaFiles();
-	}
-
-	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
+	Progress.EnterProgressFrame(10.f);
 	bool bResult = SpatialGDKGenerateSchema();
 
-	if (bFullScan)
+	if (LoadedAssets.Num() > 0)
 	{
-		Progress.EnterProgressFrame(10.f);
+		Progress.EnterProgressFrame(AssetsToLoad.Num() * 0.5f);
 		LoadedAssets.Empty();
 		CollectGarbage(RF_NoFlags, true);
 	}
@@ -118,15 +144,87 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	return bResult;
 }
 
-bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets)
+void FSpatialGDKEditor::GetWorldDependencies(UWorld* World, TSet<FAssetData>& OutAssets)
+{
+	TQueue<FName> DepsToSearch;
+	DepsToSearch.Enqueue(*World->GetOutermost()->GetPathName());
+
+	if (World->GetWorldSettings()->DefaultGameMode != nullptr)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Adding GameModeOverride: %s"), *World->GetWorldSettings()->DefaultGameMode->GetOutermost()->GetPathName())
+			DepsToSearch.Enqueue(*World->GetWorldSettings()->DefaultGameMode->GetOutermost()->GetPathName());
+	}
+	else
+	{
+		// Add default game mode
+		for (FString GameMode : TArray<FString>{ TEXT("GlobalDefaultGameMode"), TEXT("GlobalDefaultServerGameMode") })
+		{
+			FString GameModePath;
+			GConfig->GetString(
+				TEXT("/Script/EngineSettings.GameMapsSettings"),
+				*GameMode,
+				GameModePath,
+				GEngineIni
+			);
+
+			if (!GameModePath.IsEmpty())
+			{
+				UE_LOG(LogTemp, Log, TEXT("Adding %s %s"), *GameMode, *FSoftObjectPath(GameModePath).GetLongPackageName());
+				DepsToSearch.Enqueue(*FSoftObjectPath(GameModePath).GetLongPackageName());
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Loading all deps for %s"), *World->GetOutermost()->GetPathName());
+
+	if (World->WorldComposition != nullptr)
+	{
+		for (auto& Tile : World->WorldComposition->GetTilesList())
+		{
+			UE_LOG(LogTemp, Log, TEXT("Adding World Comp Tile %s to Deps"), *Tile.PackageName.ToString());
+			DepsToSearch.Enqueue(Tile.PackageName);
+		}
+	}
+
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	while(!DepsToSearch.IsEmpty())
+	{
+		FName NextDep;
+		DepsToSearch.Dequeue(NextDep);
+		FAssetData NextDepAsset = AssetRegistry.GetAssetByObjectPath(NextDep);
+
+		if (OutAssets.Contains(NextDepAsset))
+		{
+			UE_LOG(LogTemp, Log, TEXT("Dep %s already contained in outdeps, skipping"), *NextDep.ToString());
+			continue;
+		}
+		else
+		{
+			OutAssets.Add(NextDepAsset);
+		}
+
+		TArray<FName> FoundDeps;
+		AssetRegistry.GetDependencies(NextDep, FoundDeps, EAssetRegistryDependencyType::All);
+		UE_LOG(LogTemp, Log, TEXT("Found %d Deps of %s"), FoundDeps.Num(), *NextDep.ToString());
+
+		for (FName FoundDep : FoundDeps)
+		{
+			DepsToSearch.Enqueue(FoundDep);
+		}
+	}
+}
+
+bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssetsLoaded, TSet<FAssetData> AssetsToLoad)
 {
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
 
 	// Search project for all assets. This is required as the Commandlet will not have any paths cached.
-	AssetRegistryModule.Get().SearchAllAssets(true);
+	AssetRegistry.SearchAllAssets(true);
 
-	TArray<FAssetData> FoundAssets;
-	AssetRegistryModule.Get().GetAllAssets(FoundAssets, true);
+	TArray<FAssetData> FoundAssets = AssetsToLoad.Array();
 
 	// Filter assets to game blueprint classes that are not loaded.
 	FoundAssets = FoundAssets.FilterByPredicate([](FAssetData Data) {
@@ -141,13 +239,13 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 		{
 			return false;
 		}
-		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Loading %s"), *Data.AssetName.ToString())));
 		if (auto GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass"))
 		{
 			const FString ClassObjectPath = FPackageName::ExportTextPathToObjectPath(*GeneratedClassPathPtr);
 			const FString ClassName = FPackageName::ObjectPathToObjectName(ClassObjectPath);
 			FSoftObjectPath SoftPath = FSoftObjectPath(ClassObjectPath);
-			OutAssets.Add(TStrongObjectPtr<UObject>(SoftPath.TryLoad()));
+			Progress.EnterProgressFrame(1.f, FText::FromString(FString::Printf(TEXT("Loading %s"), *Data.AssetName.ToString())));
+			OutAssetsLoaded.Add(TStrongObjectPtr<UObject>(SoftPath.TryLoad()));
 		}
 	}
 
