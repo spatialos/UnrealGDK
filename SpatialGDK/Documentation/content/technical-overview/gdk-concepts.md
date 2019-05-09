@@ -24,7 +24,7 @@ We’ve introduced some new concepts to facilitate the fact that SpatialOS enabl
 ### Zoning
 Because the GDK uses SpatialOS networking, you can have multiple server-worker instances simulating your game world. This allows you to extend the size of the world.
 
-We call this _zoning_ - splitting up the world into zones, known as “areas of authority”, each area simulated by one server-worker instance. This means that only one server-worker instance has authority to make updates to SpatialOS components at a time.
+We call this _zoning_ - splitting up the world into zones, known as “areas of authority”. Each area is simulated by one server-worker instance. This means that only one server-worker instance has authority to make updates to SpatialOS components at a time.
 
 > Support for zoning is currently in pre-alpha. We invite you to try out the [Multiserver Shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
 
@@ -66,7 +66,7 @@ In Unreal’s single-server architecture, authority over an Actor stays with the
 
 See the [Multiserver Shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) for a tutorial that demonstrates this functionality.
 
-For more information, see the documentation on [Actor handover]({{urlRoot}}/content/handover-between-server-workers).
+For more information, see the documentation on [Actor handover]({{urlRoot}}/content/actor-handover).
 
 ### Singleton Actors
 You can use a Singleton Actor to define a “single source of truth” for operations or data across a game world that uses zoning. You can only have one instance of a Singleton Actor per game world.

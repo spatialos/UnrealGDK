@@ -1,11 +1,12 @@
 <%(TOC)%>
-# Schema
 
-Schema is a set of definitions which represent your game's classes in SpatialOS. SpatialOS uses schema to generate APIs specific to the components in your project. You can then use these APIs in your game's [worker types]({{urlRoot}}//content/glossary#spatialos-component) so their instances can interact with [SpatialOS entity components]({{urlRoot}}/content/glossary#spatialos-component). </br>
+# How to use schema
 
-Schema is defined in `.schema` files and written in schemalang.  When you use the GDK, the schema files and their contents are generated and deleted automatically so you do not have to write or edit schema files manually. The GDK generates and deletes schema for you, when you start schema generation.
+## When to generate schema
 
-#### How to generate schema
+You must generate schema when you add or change any [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) that you want to deploy to SpatialOS.
+
+## How to generate schema
 
 There are two ways to generate schema for your project:
 
@@ -30,9 +31,9 @@ There are two ways to generate schema for your project:
 
 As the GDK automatically generates all the schema you need, you do not have to write or edit schema manually when using the GDK.
 
-> \* Whenever you generate schema, the GDK automatically creates schema for classes with [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) or [RPCs (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs). If a class does not have replicated properties or RPCs, then the GDK does not generate schema for it. 
+> \*Whenever you generate schema, the GDK automatically creates schema for classes with [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) or [RPCs (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs). If a class does not have replicated properties or RPCs, then the GDK does not generate schema for it. 
 
-#### When to generate schema
+## When to generate schema
 
 Select **Schema (Full Scan)** if you have: 
 
@@ -45,20 +46,18 @@ Select **Schema** if you have:
 * Added a class with replicated properties that is currently loaded by the Editor.
 * Edited a class with replicated properties that is currently loaded by the Editor.
 
-#### Schema deletion 
+## How to delete schema
 
-When you generate schema, the GDK verifies that any classes referenced in the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase) still exist. If you delete a class, the GDK removes it from the SchemaDatabase the next time you generate schema. 
+When you generate schema, the GDK verifies that any classes referenced in the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase) still exist. If you delete a class, the GDK removes it from the SchemaDatabase the next time you generate schema.
 
-## Schema and source control 
+## Schema and source control
 
-### Checking out the `SchemaDatabase`
+If you are using the built-in [Unreal source control system](https://docs.unrealengine.com/en-US/Engine/UI/SourceControl) Unreal locks this file on checkout, meaning other users are unable to write to it. To prevent this, mark the `SchemaDatabase` file as writable locally on each machine, and only check out the file when you are ready to commit any changes made to it.
 
-**Note:** If you are using the built-in [Unreal source control system](https://docs.unrealengine.com/en-US/Engine/UI/SourceControl) Unreal locks this file on checkout, meaning other users are unable to write to it. To prevent this, mark the `SchemaDatabase` file as writable locally on each machine, and only check out the file when you are ready to commit any changes made to it. 
-
-## Schema for unique local classs
+## Schema for unique local classes
 
 Whenever you generate schema, the GDK checks the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase) and all the in-memory classes in your project and removes any classes referenced in the `SchemaDatabase` that no longer exist.
 
-This means that if you have a class that only exists on one user's machine (for example, a newly created class, or a class used for local testing) then these classes are automatically removed from the SchemaDatabase file whenever another user generates schema. 
+This means that if you have a class that only exists on one user's machine (for example, a newly created class, or a class used for local testing) then these classes are automatically removed from the SchemaDatabase file whenever another user generates schema.
 
-To prevent this, commit newly created or modified classes to source control alongside the SchemaDatabase. 
+To prevent this, commit newly created or modified classes to source control alongside the SchemaDatabase.
