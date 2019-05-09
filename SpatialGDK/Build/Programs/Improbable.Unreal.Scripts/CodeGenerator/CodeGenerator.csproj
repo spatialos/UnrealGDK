@@ -13,15 +13,16 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.4.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Improbable.CodeGen.Base\Improbable.CodeGen.Base.csproj" />
-    <ProjectReference Include="..\Improbable.CodeGen.Unreal\Improbable.CodeGen.Unreal.csproj" />
-  </ItemGroup>
+  <!-- <ItemGroup>
+    <ProjectReference Include=".\Improbable.CodeGen.Base\Improbable.CodeGen.Base.csproj" />
+    <ProjectReference Include=".\Improbable.CodeGen.Unreal\Improbable.CodeGen.Unreal.csproj" />
+  </ItemGroup> -->
 
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(SolutionDir)CodeGenerator\bin\netcoreapp2.2\win10-x64" "$(SolutionDir)..\..\Binaries\ThirdParty\Improbable\Programs\codegen\" /E /Y</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(SolutionDir)CodeGenerator\bin\netcoreapp2.2\win10-x64" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\codegen\" /E /Y</PostBuildEvent>
   </PropertyGroup>
 
 </Project>

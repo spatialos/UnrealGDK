@@ -131,7 +131,6 @@ markEndOfBlock "Copy GDK schema"
 
 markStartOfBlock "Build C# utilities"
     msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln /property:Configuration=Release
-    msbuild /nologo /verbosity:minimal ./SpatialGDK/ExternalSchemaCodegen/Programs/Codegen.sln /restore /property:Configuration=Release
 markEndOfBlock "Build C# utilities"
 
 markEndOfBlock "$0"

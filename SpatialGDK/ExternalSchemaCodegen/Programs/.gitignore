@@ -1,8 +1,0 @@
-bin/
-obj/
-tmp/
-logs/
-.vs
-.vscode
-
-!Codegen.sln

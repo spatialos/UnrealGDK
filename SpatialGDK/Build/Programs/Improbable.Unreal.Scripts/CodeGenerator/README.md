@@ -15,8 +15,8 @@ Build with .NET Core 2.2.102
 ## Building the solution
 
 The executable can be created by either:
-* Running the `./Scripts/Build.sh` script.
-* Building the `./Programs.Codegen.sln` solution in JetBrains Rider, Visual Studio, Visual Studio Code.
+* Running the `Setup.bat` script.
+* Building the `Improbable.Unreal.Scripts.sln` solution in JetBrains Rider, Visual Studio, Visual Studio Code.
 
 ## Running from Visual Studio
 
