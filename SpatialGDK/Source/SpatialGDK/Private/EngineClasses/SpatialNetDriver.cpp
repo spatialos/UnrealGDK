@@ -526,6 +526,9 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 
 const FString USpatialNetDriver::GetUniqueIdentifier() const
 {
+	if (Connection == nullptr)
+		return TEXT("");
+
 	return Connection->GetWorkerId();
 }
 
