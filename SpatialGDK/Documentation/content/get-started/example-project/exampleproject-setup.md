@@ -38,7 +38,7 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 _Image: The Github Desktop Clone a repository window_<br/>
 <%(/Expandable)%>
 
-> **TIP:** Clone the Example project into your root directory to avoid file path length errors. For example: `C:\GitHub\\UnrealGDKExampleProject`.
+> **TIP:** Clone the Example project into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealGDKExampleProject`.
 
 ## Step 3: Clone the GDK 
 
@@ -57,17 +57,15 @@ Next, you need to clone the GDK into your project. To do this:
 To use the Example project, you must build the GDK for Unreal module dependencies. To do this:
 
 1. Open File Explorer, navigate to the root directory of the GDK for Unreal repository (`UnrealGDKExampleProject\Game\Plugins\UnrealGDK\...`), and double-click `Setup.bat`. If you haven’t already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in.
-2. In File Explorer, navigate to your `UnrealGDKExampleProject\Game` directory.
-3. Right-click on **GDKShooter.uproject** and select **Switch Unreal Engine Version** then select the Unreal Engine you cloned earlier. <br/>
-
+1. In File Explorer, navigate to your `UnrealGDKExampleProject\Game` directory.
+1. Right-click on **GDKShooter.uproject** and select **Switch Unreal Engine Version** then select the Unreal Engine you cloned earlier. <br/>
     ![img]({{assetRoot}}assets/screen-grabs/select-unreal-engine.png)<br/>
     *_Image: The Select Unreal Engine Version window_*<br/><br/>
-
-4. Right-click **GDKShooter.uproject** and select **Generate Visual Studio Project files**.
-5. In the same directory, double-click **GDKShooter.sln** to open it with Visual Studio.
-6. In the Solution Explorer window, right-click on **GDKShooter** and select **Build**.
-7. When Visual Studio has finished building your project, right-click on **GDKShooter** and select **Set as StartUp Project**.
-8. Build and open your project in the Unreal Editor. To do this: Either press F5 on your keyboard or, in the Visual Studio toolbar, select *Local Windows Debugger*.
+1. Right-click **GDKShooter.uproject** and select **Generate Visual Studio Project files**.
+1. In the same directory, double-click **GDKShooter.sln** to open it with Visual Studio.
+1. In the Solution Explorer window, right-click on **GDKShooter** and select **Build**.
+1. When Visual Studio has finished building your project, right-click on **GDKShooter** and select **Set as StartUp Project**.
+1. Build and open your project in the Unreal Editor. To do this: Either press F5 on your keyboard or, in the Visual Studio toolbar, select *Local Windows Debugger*.
    ![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
    _Image: *The Visual Studio toolbar_* <br/>
    **Note:** Ensure that your Visual Studio Solution Configuration is set to **Development Editor**. <br/><br/><br/>

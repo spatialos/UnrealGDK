@@ -49,7 +49,7 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 ## Step 2: Build your workers
 
-Note: You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+**Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
 
 There are two ways to build your worker assemblies (known as “building workers”):
 
@@ -89,7 +89,7 @@ You must replace `<assembly_name>` with a name for your assembly (for example: `
 A valid upload command looks like this:
 
 ```
-spatial cloud upload myassembly
+spatial cloud upload exampleprojectassembly
 ```
 
 ## Step 4: Launch your cloud deployment
@@ -125,15 +125,15 @@ spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_w
 ```
    Where:
 
-   * `default.snapshot` is the snapshot file we have provided for this Example project.
+   * `default.snapshot` is the snapshot file provided for this Example project.
    *  `assembly_name` is the name you gave the assembly in the previous step. 
-   * `one_worker_test.json` is the launch configuration file we have provided for this Example project.
+   * `one_worker_test.json` is the launch configuration file provided for this Example project.
    *  `deployment_name` is a name of your choice - you create this name when you run this command. 
 
 A valid launch command looks like this: 
 
 ```
-spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
+spatial cloud launch --snapshot=snapshots\default.snapshot myassembly one_worker_test.json mydeployment
 ```
 
 When your deployment has launched, SpatialOS automatically opens the Console in your browser.

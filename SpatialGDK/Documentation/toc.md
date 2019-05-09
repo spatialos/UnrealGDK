@@ -5,8 +5,8 @@
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
         - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
         - Set up a project
-            - [Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
-            - [Set up the The GDK for Unreal Example project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
+            - [The GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
+            - [The GDK Example project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
                 - [Step 1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
                 - [Step 2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
                 - [Step 3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment)

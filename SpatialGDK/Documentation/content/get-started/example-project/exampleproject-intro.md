@@ -1,4 +1,4 @@
-# The GDK for Unreal Example project 
+# The GDK Example project 
 
 This guide takes you through setting up the [Example project](https://github.com/improbable/UnrealGDKExampleProject); you will launch a single-server local deployment to test the project on your development machine, and you will launch a single-server deployment in the cloud to test and share the project. 
 
