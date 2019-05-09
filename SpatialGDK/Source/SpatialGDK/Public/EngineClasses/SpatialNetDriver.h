@@ -66,6 +66,7 @@ public:
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
+	virtual const FString GetUniqueIdentifier() const override;
 	// End UNetDriver interface.
 
 	virtual void OnOwnerUpdated(AActor* Actor);

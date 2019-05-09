@@ -53,6 +53,11 @@ In addition to all of the updates from Improbable, this release includes x impro
 - Fixed an issue where schema generation was not respecting "Directories to never cook".
 - Fixed an issue causing the editor to crash during schema generation if the database is readonly.
 
+### New Known Issues:
+
+### Features:
+- If using Spatial Networking, the blueprint world selector dropdown now shows the worker ID for each world for easier debugging.
+
 ## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
 
 ### Bug fixes:
