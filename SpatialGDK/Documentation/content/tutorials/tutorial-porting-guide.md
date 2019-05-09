@@ -166,7 +166,7 @@ You must modify your `GameInstance` class to work properly with the GDK.
     ![spatial game instance reparent]({{assetRoot}}assets/screen-grabs/spatial-game-instance-reparent.png)<br/>_Image: The Blueprint class settings screen_<br/>
 
 ### 6. Generate schema and a snapshot
-You need to generate [schema]({{urlRoot}}/content/spatialos-concepts/schema) and generate a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) before you start your deployment. To do this:
+You need to generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) and generate a [snapshot]({{urlRoot}}/content/how-to-use-snapshots) before you start your deployment. To do this:
 
 1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
        ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
@@ -223,7 +223,7 @@ You can change:
 ## Next steps
 
 If you haven't already, check out the Multiserver shooter tutorial tutorial to learn how to implement [cross-server interactions]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro).  
-Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/handover-between-server-workers) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
+Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/actor-handover) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 
 <br/>

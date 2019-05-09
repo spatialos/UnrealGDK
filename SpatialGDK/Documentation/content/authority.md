@@ -1,5 +1,8 @@
 <%(TOC)%>
-# Authority
+# How to set up authority
+
+> **Tip:** Before you read this page, you should read [Authority and interest]({{urlRoot}}/content/spatialos-concepts/authority-and-interest) for an explanation of what we mean by authority in SpatialOS. 
+
 To work with authority in the GDK, it’s useful to refresh on authority in Unreal’s native networking. See:
 
 * [Unreal’s Network Role documentation](https://wiki.unrealengine.com/Replication#A_Guide_To_Network_Roles)
