@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Commandlets/Commandlet.h"
+#include "AssetRegistryModule.h"
 
 #include "GenerateSchemaAndSnapshotsCommandlet.generated.h"
 
@@ -24,6 +25,8 @@ private:
 	const FString AssetPathGameDirName = TEXT("/Game");	// Root asset path directory name that maps will ultimately be found in
 
 	TArray<FString> GeneratedMapPaths;
+
+	TSet<FAssetData> AssetsToLoad;
 
 private:
 	bool GenerateSchemaAndSnapshotForPath(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InPath);

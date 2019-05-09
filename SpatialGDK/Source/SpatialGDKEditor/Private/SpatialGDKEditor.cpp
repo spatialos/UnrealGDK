@@ -151,7 +151,7 @@ void FSpatialGDKEditor::GetWorldDependencies(UWorld* World, TSet<FAssetData>& Ou
 
 	if (World->GetWorldSettings()->DefaultGameMode != nullptr)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Adding GameModeOverride: %s"), *World->GetWorldSettings()->DefaultGameMode->GetOutermost()->GetPathName())
+		UE_LOG(LogTemp, Display, TEXT("Adding GameModeOverride: %s"), *World->GetWorldSettings()->DefaultGameMode->GetOutermost()->GetPathName())
 			DepsToSearch.Enqueue(*World->GetWorldSettings()->DefaultGameMode->GetOutermost()->GetPathName());
 	}
 	else
@@ -169,19 +169,19 @@ void FSpatialGDKEditor::GetWorldDependencies(UWorld* World, TSet<FAssetData>& Ou
 
 			if (!GameModePath.IsEmpty())
 			{
-				UE_LOG(LogTemp, Log, TEXT("Adding %s %s"), *GameMode, *FSoftObjectPath(GameModePath).GetLongPackageName());
+				UE_LOG(LogTemp, Display, TEXT("Adding %s %s"), *GameMode, *FSoftObjectPath(GameModePath).GetLongPackageName());
 				DepsToSearch.Enqueue(*FSoftObjectPath(GameModePath).GetLongPackageName());
 			}
 		}
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Loading all deps for %s"), *World->GetOutermost()->GetPathName());
+	UE_LOG(LogTemp, Display, TEXT("Loading all deps for %s"), *World->GetOutermost()->GetPathName());
 
 	if (World->WorldComposition != nullptr)
 	{
 		for (auto& Tile : World->WorldComposition->GetTilesList())
 		{
-			UE_LOG(LogTemp, Log, TEXT("Adding World Comp Tile %s to Deps"), *Tile.PackageName.ToString());
+			UE_LOG(LogTemp, Display, TEXT("Adding World Comp Tile %s to Deps"), *Tile.PackageName.ToString());
 			DepsToSearch.Enqueue(Tile.PackageName);
 		}
 	}
@@ -189,29 +189,40 @@ void FSpatialGDKEditor::GetWorldDependencies(UWorld* World, TSet<FAssetData>& Ou
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
 
+	TSet<FName> SearchedPackages;
+
 	while(!DepsToSearch.IsEmpty())
 	{
 		FName NextDep;
 		DepsToSearch.Dequeue(NextDep);
-		FAssetData NextDepAsset = AssetRegistry.GetAssetByObjectPath(NextDep);
 
-		if (OutAssets.Contains(NextDepAsset))
+		if (SearchedPackages.Contains(NextDep))
 		{
-			UE_LOG(LogTemp, Log, TEXT("Dep %s already contained in outdeps, skipping"), *NextDep.ToString());
-			continue;
+			UE_LOG(LogTemp, Log, TEXT("Skipping searched package %s"), *NextDep.ToString());
 		}
 		else
 		{
-			OutAssets.Add(NextDepAsset);
+			SearchedPackages.Add(NextDep);
 		}
 
 		TArray<FName> FoundDeps;
 		AssetRegistry.GetDependencies(NextDep, FoundDeps, EAssetRegistryDependencyType::All);
-		UE_LOG(LogTemp, Log, TEXT("Found %d Deps of %s"), FoundDeps.Num(), *NextDep.ToString());
+		UE_LOG(LogTemp, Display, TEXT("Found %d Deps of %s"), FoundDeps.Num(), *NextDep.ToString());
 
 		for (FName FoundDep : FoundDeps)
 		{
-			DepsToSearch.Enqueue(FoundDep);
+			if (!SearchedPackages.Contains(FoundDep))
+			{
+				DepsToSearch.Enqueue(FoundDep);
+			}
+		}
+
+		TArray<FAssetData> NextAssets;
+		AssetRegistry.GetAssetsByPackageName(NextDep, NextAssets);
+		for (FAssetData NextDepAsset : NextAssets)
+		{
+			OutAssets.Add(NextDepAsset);
+			UE_LOG(LogTemp, Display, TEXT("Adding %s(%s) to deps to load"), *NextDepAsset.GetFullName(), *NextDep.ToString());
 		}
 	}
 }
