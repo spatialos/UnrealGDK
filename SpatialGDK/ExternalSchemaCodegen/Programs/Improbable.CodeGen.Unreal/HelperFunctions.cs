@@ -36,141 +36,142 @@ namespace Improbable.CodeGen.Unreal
 
 namespace improbable {{
 
-{Text.Indent(1, $@"class SpatialType
+class SpatialType
 {{
+public:
 {Text.Indent(1, $@"virtual ~SpatialType() = 0 {{}};
 virtual void Serialize(Schema_Object* SchemaObject) const = 0;")}
 }};
 
 class SpatialComponent
 {{
-{Text.Indent(1, $@"public:
+public:
 {Text.Indent(1, $@"virtual ~SpatialComponent() = 0 {{}};
-virtual void Serialize(Schema_ComponentData* ComponentData) const = 0;")}")}
+virtual void Serialize(Schema_ComponentData* ComponentData) const = 0;")}
 }};
 
 class SpatialComponentUpdate
 {{
-{Text.Indent(1, $@"public:
+public:
 {Text.Indent(1, $@"virtual ~SpatialComponentUpdate() = 0 {{}};
-virtual void Serialize(Schema_ComponentUpdate* ComponentUpdate) const = 0;")}")}
+virtual void Serialize(Schema_ComponentUpdate* ComponentUpdate) const = 0;")}
 }};
 
 class ExternalSchemaOp
 {{
 public:
-	ExternalSchemaOp(Worker_EntityId EntityId) : EntityId{{ EntityId }} {{}}
-	Worker_EntityId EntityId;
-	virtual ~ExternalSchemaOp() = 0 {{}};
+{Text.Indent(1, $@"ExternalSchemaOp(Worker_EntityId EntityId) : EntityId{{ EntityId }} {{}}
+Worker_EntityId EntityId;
+virtual ~ExternalSchemaOp() = 0 {{}};")}
 }};
 
 template<typename ComponentData>
 class AddComponentOp : public ::improbable::ExternalSchemaOp
 {{
 public:
-	AddComponentOp(
-		Worker_EntityId EntityId, 
-		Worker_ComponentId ComponentId, 
-		ComponentData Data) 
-	: ExternalSchemaOp( EntityId )
-	, ComponentId(ComponentId )
-	, Data( Data ) {{}}
+{Text.Indent(1, $@"AddComponentOp(
+{Text.Indent(1, $@"Worker_EntityId EntityId, 
+Worker_ComponentId ComponentId, 
+const ComponentData& Data) ")}
+: ExternalSchemaOp( EntityId )
+, ComponentId(ComponentId )
+, Data( Data ) {{}}
 
-	Worker_ComponentId ComponentId; 
-	ComponentData Data;
+Worker_ComponentId ComponentId; 
+ComponentData Data;")}
 }};
 
 template<typename ComponentClass>
 class RemoveComponentOp : public ::improbable::ExternalSchemaOp 
 {{
 public:
-	RemoveComponentOp(
-		Worker_EntityId EntityId, 
-		Worker_ComponentId ComponentId) 
-	: ExternalSchemaOp( EntityId )
-	, ComponentId( ComponentId ) {{}}
+{Text.Indent(1, $@"RemoveComponentOp(
+{Text.Indent(1, $@"Worker_EntityId EntityId, 
+Worker_ComponentId ComponentId)")}
+: ExternalSchemaOp( EntityId )
+, ComponentId( ComponentId ) {{}}
 
-	Worker_ComponentId ComponentId;
+Worker_ComponentId ComponentId;")}
 }};
 
 template<typename ComponentUpdate>
 class ComponentUpdateOp : public ::improbable::ExternalSchemaOp
 {{
 public:
-	ComponentUpdateOp(
-		Worker_EntityId EntityId, 
-		Worker_ComponentId ComponentId, 
-		ComponentUpdate Update) 
-	: ExternalSchemaOp(EntityId)
-	, ComponentId(ComponentId)
-	, Update(Update) {{}}
+{Text.Indent(1, $@"ComponentUpdateOp(
+{Text.Indent(1, $@"Worker_EntityId EntityId, 
+Worker_ComponentId ComponentId, 
+const ComponentUpdate& Update)")}
+: ExternalSchemaOp(EntityId)
+, ComponentId(ComponentId)
+, Update(Update) {{}}
 
-	Worker_ComponentId ComponentId;
-	ComponentUpdate Update;
+Worker_ComponentId ComponentId;
+ComponentUpdate Update;")}
 }};
 
 template<typename T> // just to differentiate type aliases
 class AuthorityChangeOp : public ::improbable::ExternalSchemaOp
 {{
 public:
-	AuthorityChangeOp(
-		Worker_EntityId EntityId, 
-		Worker_ComponentId ComponentId, Worker_Authority Authority) 
-	: ExternalSchemaOp( EntityId )
-	, ComponentId( ComponentId )
-	, Authority( Authority ) {{}}
+{Text.Indent(1, $@"AuthorityChangeOp(
+{Text.Indent(1, $@"Worker_EntityId EntityId, 
+Worker_ComponentId ComponentId, Worker_Authority Authority)")}
+: ExternalSchemaOp( EntityId )
+, ComponentId( ComponentId )
+, Authority( Authority ) {{}}
 
-	Worker_ComponentId ComponentId;
-	Worker_Authority Authority;
+Worker_ComponentId ComponentId;
+Worker_Authority Authority;")}
 }};
 
 template<typename RequestData>
 class CommandRequestOp : public ::improbable::ExternalSchemaOp
 {{
 public:
-	CommandRequestOp(
-		Worker_EntityId EntityId, 
-		Worker_RequestId RequestId,
-		uint32_t TimeoutMillis, 
-		const char* CallerWorkerId, 
-		Worker_WorkerAttributes CallerAttributeSet, 
-		RequestData Data) 
-	: ExternalSchemaOp(EntityId)
-	, RequestId(RequestId)
-	, TimeoutMillis(TimeoutMillis)
-	, CallerWorkerId(CallerWorkerId)
-	, CallerAttributeSet(CallerAttributeSet)
-	, Data(Data) {{}}
+{Text.Indent(1, $@"CommandRequestOp(
+{Text.Indent(1, $@"Worker_EntityId EntityId, 
+Worker_RequestId RequestId,
+uint32_t TimeoutMillis, 
+const char* CallerWorkerId, 
+Worker_WorkerAttributes CallerAttributeSet, 
+const RequestData& Data)")}
+: ExternalSchemaOp(EntityId)
+, RequestId(RequestId)
+, TimeoutMillis(TimeoutMillis)
+, CallerWorkerId(CallerWorkerId)
+, CallerAttributeSet(CallerAttributeSet)
+, Data(Data) {{}}
 
-	Worker_RequestId RequestId;
-	uint32_t TimeoutMillis;
-	const char* CallerWorkerId;
-	Worker_WorkerAttributes CallerAttributeSet;
-	RequestData Data;
+Worker_RequestId RequestId;
+uint32_t TimeoutMillis;
+const char* CallerWorkerId;
+Worker_WorkerAttributes CallerAttributeSet;
+RequestData Data;")}
 }};
 
 template<typename ResponseData>
 class CommandResponseOp : public ::improbable::ExternalSchemaOp
 {{
 public:
-	CommandResponseOp(Worker_EntityId EntityId, 
-		Worker_RequestId RequestId, 
-		uint8_t StatusCode, 
-		const char* Message, 
-		uint32_t CommandId, 
-		ResponseData Data) 
-	: ExternalSchemaOp(EntityId)
-	, RequestId(RequestId)
-	, StatusCode(StatusCode)
-	, Message(Message)
-	, CommandId(CommandId)
-	, Data(Data) {{}}
+{Text.Indent(1, $@"CommandResponseOp(Worker_EntityId EntityId, 
+{Text.Indent(1, $@"Worker_RequestId RequestId, 
+uint8_t StatusCode, 
+const char* Message, 
+uint32_t CommandId, 
+const ResponseData& Data)")} 
+: ExternalSchemaOp(EntityId)
+, RequestId(RequestId)
+, StatusCode(StatusCode)
+, Message(Message)
+, CommandId(CommandId)
+, Data(Data) {{}}
 
-	Worker_RequestId RequestId;
-	uint8_t StatusCode;
-	const char* Message;
-	uint32_t CommandId;
-	ResponseData Data;
+Worker_RequestId RequestId;
+uint8_t StatusCode;
+const char* Message;
+uint32_t CommandId;
+ResponseData Data;")}
 }};
 
 namespace utils {{
@@ -181,10 +182,11 @@ TArray<uint8> GetBytes(const Schema_Object* SchemaObject, Schema_FieldId FieldId
 FString GetString(const Schema_Object* SchemaObject, Schema_FieldId FieldId);
 {Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}<FString> GetStringList(const Schema_Object* SchemaObject, Schema_FieldId FieldId);
 {Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}<TArray<uint8>> GetBytesList(const Schema_Object* SchemaObject, Schema_FieldId FieldId);")}
-}} // namespace utils")}
-// namespace improbable
+}} // namespace utils
+}} // namespace improbable
 
-inline uint32 GetTypeHash(const TArray<uint8>& Value);";
+inline uint32 GetTypeHash(const TArray<uint8>& Value);
+";
         }
 
         private static string GetHelperFunctionSource()

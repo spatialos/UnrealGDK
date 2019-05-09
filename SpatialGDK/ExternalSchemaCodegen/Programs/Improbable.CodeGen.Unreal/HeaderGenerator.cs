@@ -23,12 +23,6 @@ namespace Improbable.CodeGen.Unreal
 
 #pragma once
 
-#include <cstddef>
-#include <cstddef>
-#include <cstdint>
-#include <functional>
-#include <set>
-#include <string>
 #include ""CoreMinimal.h""
 #include ""Utils/SchemaOption.h""
 #include <WorkerSDK/improbable/c_schema.h>
@@ -57,15 +51,16 @@ namespace Improbable.CodeGen.Unreal
                 builder.AppendLine();
             }
 
-            builder.AppendLine($@"{string.Join(Environment.NewLine, allTopLevelTypes.Select(topLevelType => GenerateTypeClass(Types.GetTypeClassDefinitionName(topLevelType.QualifiedName, bundle), types.Find(t => t.QualifiedName == topLevelType.QualifiedName), bundle)))}
-{string.Join(Environment.NewLine, allTopLevelTypes.Select(nestedType => GenerateHashFunction(Types.GetNameFromQualifiedName(nestedType.QualifiedName))))}
+            builder.AppendLine($@"{string.Join(Environment.NewLine, allTopLevelTypes.Select(topLevelType => GenerateTypeClass(Types.GetTypeClassDefinitionName(topLevelType.QualifiedName, bundle), types.Find(t => t.QualifiedName == topLevelType.QualifiedName), types, bundle)))}
+{string.Join(Environment.NewLine, allTopLevelTypes.Select(nestedType => GenerateHashFunction(Types.GetTypeClassDefinitionName(nestedType.QualifiedName, bundle))))}
+
 {string.Join(Environment.NewLine, typeNamespaces.Reverse().Select(t => $"}} // namespace {t}"))}
 ");
 
             return builder.ToString();
         }
 
-        private static string GenerateTypeClass(string name, TypeDescription type, Bundle bundle)
+        private static string GenerateTypeClass(string name, TypeDescription type, List<TypeDescription> types, Bundle bundle)
         {
             var sourceRef = bundle.SchemaBundle.SourceMapV1.SourceReferences[type.QualifiedName];
             var hasFields = type.Fields.Count > 0;
@@ -99,7 +94,7 @@ public:");
             if (type.Fields.Count > 0)
             {
                 builder.AppendLine(Text.Indent(1, $@"// Creates a new instance with specified arguments for each field.
-{name}({string.Join(", ", type.Fields.Select(f => $"{Types.GetFieldTypeAsCpp(f, bundle, Types.IsLocallyDefined(f.Identifier.QualifiedName, type))} {Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))});"));
+{name}({string.Join(", ", type.Fields.Select(f => $"{Types.GetConstAccessorTypeModification(f, bundle, type)} {Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))});"));
             }
 
             builder.AppendLine(Text.Indent(1, $@"// Creates a new instance with default values for each field.
@@ -127,12 +122,12 @@ static {name} Deserialize({serializedArgType}* {serializedArgName});
             if (hasFields)
             {
                 builder.AppendLine($@"{Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $@"// Field {Text.SnakeCaseToPascalCase(field.Identifier.Name)} = {field.FieldId}
-{Types.GetConstAccessorTypeModification(field, bundle, Types.IsLocallyDefined(field.Identifier.QualifiedName, type))} Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}() const;
-{Types.GetFieldTypeAsCpp(field, bundle, Types.IsLocallyDefined(field.Identifier.QualifiedName, type))}& Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}();
-{name}& Set{Text.SnakeCaseToPascalCase(field.Identifier.Name)}({Types.GetConstAccessorTypeModification(field, bundle, Types.IsLocallyDefined(field.Identifier.QualifiedName, type))});
+{Types.GetConstAccessorTypeModification(field, bundle, type)} Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}() const;
+{Types.GetFieldTypeAsCpp(field, bundle, type)}& Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}();
+{name}& Set{Text.SnakeCaseToPascalCase(field.Identifier.Name)}({Types.GetConstAccessorTypeModification(field, bundle, type)});
 ")))}
 private:
-{Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $"{Types.GetFieldTypeAsCpp(field, bundle)} _{Text.SnakeCaseToPascalCase(field.Identifier.Name)};")))}");
+{Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $"{Types.GetFieldTypeAsCpp(field, bundle, type)} _{Text.SnakeCaseToPascalCase(field.Identifier.Name)};")))}");
             }
 
             if (type.IsComponent)
@@ -185,9 +180,9 @@ static Update Deserialize(Schema_ComponentUpdate* ComponentUpdate);
                 if (type.Fields.Count > 0)
                 {
                     builder.AppendLine(Text.Indent(2, string.Join(Environment.NewLine, type.Fields.Select(field => $@"// Field {Text.SnakeCaseToPascalCase(field.Identifier.Name)} = {field.FieldId}
-const {Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetFieldTypeAsCpp(field, bundle)}>& Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}() const;
-{Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetFieldTypeAsCpp(field, bundle)}>& Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}();
-{name}::Update& Set{Text.SnakeCaseToPascalCase(field.Identifier.Name)}({Types.GetFieldTypeAsCpp(field, bundle)});
+const {Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetFieldTypeAsCpp(field, bundle, type)}>& Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}() const;
+{Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetFieldTypeAsCpp(field, bundle, type)}>& Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}();
+{name}::Update& Set{Text.SnakeCaseToPascalCase(field.Identifier.Name)}({Types.GetConstAccessorTypeModification(field, bundle, type)});
 "))));
                 }
 
@@ -205,7 +200,7 @@ const {Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}<{Types.GetT
                     builder.AppendLine(Text.Indent(1, $@"private:"));
                     if (type.Fields.Count > 0)
                     {
-                        builder.AppendLine(Text.Indent(2, string.Join(Environment.NewLine, type.Fields.Select(field => $"{Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetFieldTypeAsCpp(field, bundle)}> _{Text.SnakeCaseToPascalCase(field.Identifier.Name)};"))));
+                        builder.AppendLine(Text.Indent(2, string.Join(Environment.NewLine, type.Fields.Select(field => $"{Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetFieldTypeAsCpp(field, bundle, type)}> _{Text.SnakeCaseToPascalCase(field.Identifier.Name)};"))));
                     }
 
                     if (type.Events.Count > 0)
@@ -229,6 +224,8 @@ public:
 struct Request
 {{
 {Text.Indent(1, $@"using Type = {Types.GetTypeDisplayName(command.RequestType.Type.QualifiedName)};
+Request({string.Join($", ", types.Find(t => t.QualifiedName == command.ResponseType.Type.QualifiedName).Fields.Select(f => $"{Types.GetConstAccessorTypeModification(f, bundle, type)} {Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))})
+: Data({string.Join($", ", types.Find(t => t.QualifiedName == command.ResponseType.Type.QualifiedName).Fields.Select(f => $"{Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))}) {{}}
 Request(Type Data) : Data{{ Data }} {{}}
 Type Data;")}
 }};
@@ -236,11 +233,13 @@ Type Data;")}
 struct Response
 {{
 {Text.Indent(1, $@"using Type = {Types.GetTypeDisplayName(command.ResponseType.Type.QualifiedName)};
+Response({string.Join($", ", types.Find(t => t.QualifiedName == command.ResponseType.Type.QualifiedName).Fields.Select(f => $"{Types.GetConstAccessorTypeModification(f, bundle, type)} {Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))})
+: Data({string.Join($", ", types.Find(t => t.QualifiedName == command.ResponseType.Type.QualifiedName).Fields.Select(f => $"{Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))}) {{}}
 Response(Type Data) : Data{{ Data }} {{}}
 Type Data;")}
-}}
+}};
 using RequestOp = ::improbable::CommandRequestOp<Request>;
-using ResponseOp = ::improbable::CommandResponseOp<Response;")} 
+using ResponseOp = ::improbable::CommandResponseOp<Response>;")} 
 }};")))}
 }};"));
                 }

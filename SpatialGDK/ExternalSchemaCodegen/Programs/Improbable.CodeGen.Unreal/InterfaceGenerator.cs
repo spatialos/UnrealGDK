@@ -72,12 +72,13 @@ USpatialDispatcher::FCallbackId OnCommandResponse(const TFunction<void(const {Ty
                 }
             }
 
-            builder.AppendLine(Text.Indent(1, $@"private:
+            builder.AppendLine($@"private:
 {Text.Indent(1, $@"void SerializeAndSendComponentUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const ::improbable::SpatialComponentUpdate& Update);
 Worker_RequestId SerializeAndSendCommandRequest(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, const ::improbable::SpatialType& Request);
 void SerializeAndSendCommandResponse(Worker_RequestId RequestId, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, const ::improbable::SpatialType& Response);
 USpatialWorkerConnection* SpatialWorkerConnection;
-USpatialDispatcher* SpatialDispatcher;")}"));
+USpatialDispatcher* SpatialDispatcher;")}
+}};");
 
             return builder.ToString();
         }
@@ -130,7 +131,7 @@ void {ClassName}::SendComponentUpdate(const Worker_EntityId EntityId, const {Typ
 
 USpatialDispatcher::FCallbackId {ClassName}::OnAddComponent(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::AddComponentOp&)>& Callback)
 {{
-{Text.Indent(1, $@"return SpatialDispatcher->OnAddComponent({component.ComponentId}, [&](Worker_AddComponentOp Op)
+{Text.Indent(1, $@"return SpatialDispatcher->OnAddComponent({component.ComponentId}, [&](const Worker_AddComponentOp& Op)
 {{
 {Text.Indent(1, $@"{Types.GetTypeDisplayName(component.QualifiedName)} Data = {Types.GetTypeDisplayName(component.QualifiedName)}::Deserialize(Op.data.schema_type);
 Callback({Types.GetTypeDisplayName(component.QualifiedName)}::AddComponentOp(Op.entity_id, Op.data.component_id, Data));")}
@@ -139,7 +140,7 @@ Callback({Types.GetTypeDisplayName(component.QualifiedName)}::AddComponentOp(Op.
 
 USpatialDispatcher::FCallbackId {ClassName}::OnRemoveComponent(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::RemoveComponentOp&)>& Callback)
 {{
-{Text.Indent(1, $@"return SpatialDispatcher->OnRemoveComponent({component.ComponentId}, [&](Worker_RemoveComponentOp Op)
+{Text.Indent(1, $@"return SpatialDispatcher->OnRemoveComponent({component.ComponentId}, [&](const Worker_RemoveComponentOp& Op)
 {{
 {Text.Indent(1, $"Callback({Types.GetTypeDisplayName(component.QualifiedName)}::RemoveComponentOp(Op.entity_id, Op.component_id));")}
 }});")}
@@ -147,7 +148,7 @@ USpatialDispatcher::FCallbackId {ClassName}::OnRemoveComponent(const TFunction<v
 
 USpatialDispatcher::FCallbackId {ClassName}::OnComponentUpdate(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::ComponentUpdateOp&)>& Callback)
 {{
-{Text.Indent(1, $@"return SpatialDispatcher->OnComponentUpdate({component.ComponentId}, [&](Worker_ComponentUpdateOp Op)
+{Text.Indent(1, $@"return SpatialDispatcher->OnComponentUpdate({component.ComponentId}, [&](const Worker_ComponentUpdateOp& Op)
 {{
 {Text.Indent(1, $@"{Types.GetTypeDisplayName(component.QualifiedName)}::Update Update = {Types.GetTypeDisplayName(component.QualifiedName)}::Update::Deserialize(Op.update.schema_type);
 Callback({Types.GetTypeDisplayName(component.QualifiedName)}::ComponentUpdateOp(Op.entity_id, Op.update.component_id, Update));")}
@@ -156,7 +157,7 @@ Callback({Types.GetTypeDisplayName(component.QualifiedName)}::ComponentUpdateOp(
 
 USpatialDispatcher::FCallbackId {ClassName}::OnAuthorityChange(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::AuthorityChangeOp&)>& Callback)
 {{
-{Text.Indent(1, $@"return SpatialDispatcher->OnAuthorityChange({component.ComponentId}, [&](Worker_AuthorityChangeOp Op)
+{Text.Indent(1, $@"return SpatialDispatcher->OnAuthorityChange({component.ComponentId}, [&](const Worker_AuthorityChangeOp& Op)
 {{
 {Text.Indent(1, $"Callback({Types.GetTypeDisplayName(component.QualifiedName)}::AuthorityChangeOp(Op.entity_id, Op.component_id, static_cast<Worker_Authority>(Op.authority)));")}
 }});")}
@@ -174,7 +175,7 @@ void {ClassName}::SendCommandResponse(Worker_RequestId RequestId, const {Types.G
 
 USpatialDispatcher::FCallbackId {ClassName}::OnCommandRequest(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Identifier.Name)}::RequestOp&)>& Callback)
 {{
-{Text.Indent(1, $@"return SpatialDispatcher->OnCommandRequest({component.ComponentId}, [&](Worker_CommandRequestOp Op)
+{Text.Indent(1, $@"return SpatialDispatcher->OnCommandRequest({component.ComponentId}, [&](const Worker_CommandRequestOp& Op)
 {{
 {Text.Indent(1, $@"auto Request = {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Request({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Request::Type::Deserialize(Schema_GetCommandRequestObject(Op.request.schema_type)));
 Callback({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::RequestOp(Op.entity_id, Op.request_id, Op.timeout_millis, Op.caller_worker_id, Op.caller_attribute_set, Request));")}
@@ -183,7 +184,7 @@ Callback({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.Sn
 
 USpatialDispatcher::FCallbackId {ClassName}::OnCommandResponse(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::ResponseOp&)>& Callback)
 {{
-{Text.Indent(1, $@"return SpatialDispatcher->OnCommandResponse({component.ComponentId}, [&](Worker_CommandResponseOp Op)
+{Text.Indent(1, $@"return SpatialDispatcher->OnCommandResponse({component.ComponentId}, [&](const Worker_CommandResponseOp& Op)
 {{
 {Text.Indent(1, $@"auto Response = {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Response({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Response::Type::Deserialize(Schema_GetCommandResponseObject(Op.response.schema_type)));
 Callback({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::ResponseOp(Op.entity_id, Op.request_id, Op.status_code, Op.message, Op.command_id, Response));")}

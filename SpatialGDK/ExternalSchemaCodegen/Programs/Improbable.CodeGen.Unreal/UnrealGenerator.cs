@@ -1,6 +1,5 @@
 using Improbable.Codegen.Base;
 using Improbable.CodeGen.Base;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 

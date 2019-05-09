@@ -152,48 +152,51 @@ namespace Improbable.CodeGen.Unreal
             return string.Join('.', splitQualifiedName.Take(splitQualifiedName.Count() - 1)) + "_" + splitQualifiedName.Last();
         }
 
-        public static string GetFieldTypeAsCpp(FieldDefinition field, Bundle lookups, bool isLocallyDefined = false)
+        public static string GetFieldTypeAsCpp(FieldDefinition field, Bundle lookups, TypeDescription parentType)
         {
             switch (field.TypeSelector)
             {
                 case FieldType.Option:
-                    return $"{CollectionTypesToQualifiedTypes[Collection.Option]}<{GetTypeDisplayName(field.OptionType.InnerType, lookups, isLocallyDefined)}>";
+                    return $"{CollectionTypesToQualifiedTypes[Collection.Option]}<{GetTypeDisplayName(field.OptionType.InnerType, lookups, parentType)}>";
                 case FieldType.List:
-                    return $"{CollectionTypesToQualifiedTypes[Collection.List]}<{GetTypeDisplayName(field.ListType.InnerType, lookups, isLocallyDefined)}>";
+                    return $"{CollectionTypesToQualifiedTypes[Collection.List]}<{GetTypeDisplayName(field.ListType.InnerType, lookups, parentType)}>";
                 case FieldType.Map:
-                    return $"{CollectionTypesToQualifiedTypes[Collection.Map]}<{GetTypeDisplayName(field.MapType.KeyType, lookups, isLocallyDefined)}, {GetTypeDisplayName(field.MapType.ValueType, lookups, isLocallyDefined)}>";
+                    return $"{CollectionTypesToQualifiedTypes[Collection.Map]}<{GetTypeDisplayName(field.MapType.KeyType, lookups, parentType)}, {GetTypeDisplayName(field.MapType.ValueType, lookups, parentType)}>";
                 case FieldType.Singular:
-                    return GetTypeDisplayName(field.SingularType.Type, lookups, isLocallyDefined);
+                    return GetTypeDisplayName(field.SingularType.Type, lookups, parentType);
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        public static string GetNameFromQualifiedName(string qualifiedName)
+        public static string GetTypeDisplayName(ValueTypeReference typeRef, Bundle bundle, TypeDescription parentType)
         {
-            return qualifiedName.Substring(qualifiedName.LastIndexOf('.') + 1);
+            switch (typeRef.ValueTypeSelector)
+            {
+                case ValueType.Enum:
+                    return bundle.IsNestedEnum(typeRef.Enum.QualifiedName) ? GetTypeClassDefinitionQualifiedName(typeRef.Enum.QualifiedName, bundle, IsLocallyDefined(typeRef.Enum.QualifiedName, parentType))
+                        : GetTypeDisplayName(typeRef.Enum.QualifiedName, IsLocallyDefined(typeRef.Enum.QualifiedName, parentType));
+                case ValueType.Primitive:
+                    return SchemaToCppTypes[typeRef.Primitive];
+                case ValueType.Type:
+                    return bundle.IsNestedType(typeRef.Type.QualifiedName) ? GetTypeClassDefinitionQualifiedName(typeRef.Type.QualifiedName, bundle, IsLocallyDefined(typeRef.Type.QualifiedName, parentType))
+                        : GetTypeDisplayName(typeRef.Type.QualifiedName, IsLocallyDefined(typeRef.Type.QualifiedName, parentType)); ;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
+        /** If a type is being used within the same file namespace in which it is defined, the compiler complains.
+         *  Instead, we just use the exact type name, ignoring the namespace.
+         */
         public static string GetTypeDisplayName(string qualifiedName, bool isLocallyDefined = false)
         {
             return isLocallyDefined ? qualifiedName.Substring(qualifiedName.LastIndexOf(".") + 1) : "::" + Text.ReplacesDotsWithDoubleColons(qualifiedName);
         }
 
-        public static string GetTypeDisplayName(ValueTypeReference typeRef, Bundle bundle, bool isLocallyDefined = false)
+        public static string GetNameFromQualifiedName(string qualifiedName)
         {
-            switch (typeRef.ValueTypeSelector)
-            {
-                case ValueType.Enum:
-                    return GetTypeDisplayName(typeRef.Enum.QualifiedName, isLocallyDefined);
-                case ValueType.Primitive:
-                    return SchemaToCppTypes[typeRef.Primitive];
-                case ValueType.Type:
-                    var qualifiedName = typeRef.Type.QualifiedName;
-                    return bundle.IsNestedType(qualifiedName) ? GetTypeClassDefinitionQualifiedName(qualifiedName, bundle, isLocallyDefined)
-                        : GetTypeDisplayName(qualifiedName, isLocallyDefined); ;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            return qualifiedName.Substring(qualifiedName.LastIndexOf('.') + 1);
         }
 
         public static string TypeToHeaderFilename(string qualifiedName)
@@ -209,9 +212,9 @@ namespace Improbable.CodeGen.Unreal
         // For each const get accessor for each member field in a type, if the type is a primitive we return by value, otherwise by const ref
         // e.g. double get_my_double_memeber();
         //      const ::improbable::List<...>& get_my_list_memeber();
-        public static string GetConstAccessorTypeModification(FieldDefinition field, Bundle bundle, TypeDescription parentType,)
+        public static string GetConstAccessorTypeModification(FieldDefinition field, Bundle bundle, TypeDescription parentType)
         {
-            var qualifiedFieldType = GetFieldTypeAsCpp(field, bundle, isLocallyDefined);
+            var qualifiedFieldType = GetFieldTypeAsCpp(field, bundle, parentType);
             if (field.TypeSelector == FieldType.Singular && field.SingularType.Type.ValueTypeSelector == ValueType.Primitive &&
                 field.SingularType.Type.Primitive != PrimitiveType.Bytes && field.SingularType.Type.Primitive != PrimitiveType.String)
             {
@@ -220,10 +223,9 @@ namespace Improbable.CodeGen.Unreal
             return $"const {qualifiedFieldType}&";
         }
 
-        // When declaring fields
-        public static bool IsLocallyDefined(string fieldQualifiedName, TypeDescription parentType)
+        public static bool IsLocallyDefined(string qualifiedType, TypeDescription parentType)
         {
-            return parentType.NestedTypes.Select(t => t.QualifiedName).Concat(parentType.NestedEnums.Select(e => e.Identifier.QualifiedName)).Contains(fieldQualifiedName);
+            return parentType.NestedTypes.Select(t => t.QualifiedName).Concat(parentType.NestedEnums.Select(e => e.Identifier.QualifiedName)).Contains(qualifiedType);
         }
 
         public static string GetTypeClassDefinitionName(string qualifiedName, Bundle bundle)

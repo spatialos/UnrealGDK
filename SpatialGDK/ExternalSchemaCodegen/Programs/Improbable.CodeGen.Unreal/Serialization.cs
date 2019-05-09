@@ -1,13 +1,12 @@
 using Improbable.CodeGen.Base;
 using System;
-using System.Text;
 using ValueType = Improbable.CodeGen.Base.ValueType;
 
 namespace Improbable.CodeGen.Unreal
 {
     public static class Serialization
     {
-        public static string GetFieldSerialization(FieldDefinition field, string schemaObjectName, string targetObjectName,  Bundle bundle)
+        public static string GetFieldSerialization(FieldDefinition field, string schemaObjectName, string targetObjectName, TypeDescription parentType, Bundle bundle)
         {
             switch (field.TypeSelector)
             {
@@ -16,27 +15,27 @@ namespace Improbable.CodeGen.Unreal
                 case FieldType.Option:
                     return GetOptionTypeSerialization(field.OptionType, schemaObjectName, targetObjectName, field.FieldId.ToString(), bundle);
                 case FieldType.List:
-                    return GetListTypeSerialization(field.ListType, schemaObjectName, targetObjectName, field.FieldId.ToString(), bundle);
+                    return GetListTypeSerialization(field.ListType, schemaObjectName, targetObjectName, field.FieldId.ToString(), parentType, bundle);
                 case FieldType.Map:
-                    return GetMapTypeSerialization(field.MapType, schemaObjectName, targetObjectName, field.FieldId.ToString(), bundle);
+                    return GetMapTypeSerialization(field.MapType, schemaObjectName, targetObjectName, field.FieldId.ToString(), parentType, bundle);
                 default:
                     throw new InvalidOperationException("Trying to serialize invalid FieldDefinition");
             }
         }
 
-        public static string GetFieldDeserialization(FieldDefinition field, string schemaObjectName, string targetObjectName, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
+        public static string GetFieldDeserialization(FieldDefinition field, string schemaObjectName, string targetObjectName, TypeDescription parentType, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
             var fieldName = Text.SnakeCaseToPascalCase(field.Identifier.Name);
             switch (field.TypeSelector)
             {
                 case FieldType.Singular:
-                    return $"{targetObjectName} = {GetValueTypeDeserialization(field.SingularType.Type, schemaObjectName, field.FieldId.ToString())};";
+                    return $"{targetObjectName} = {GetValueTypeDeserialization(field.SingularType.Type, schemaObjectName, field.FieldId.ToString(), parentType)};";
                 case FieldType.Option:
-                    return GetOptionTypeDeserialization(field.OptionType, schemaObjectName, targetObjectName, fieldName, field.FieldId.ToString(), bundle, targetIsOption);
+                    return $"{targetObjectName} = {Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetTypeDisplayName(field.OptionType.InnerType, bundle, parentType)}>({GetValueTypeDeserialization(field.OptionType.InnerType, schemaObjectName, field.FieldId.ToString(), parentType)});";
                 case FieldType.List:
-                    return GetListTypeDeserialization(field.ListType, schemaObjectName, targetObjectName, fieldName, field.FieldId.ToString(), bundle, wrapInBlock, targetIsOption);
+                    return GetListTypeDeserialization(field.ListType, schemaObjectName, targetObjectName, fieldName, field.FieldId.ToString(), parentType, bundle, wrapInBlock, targetIsOption);
                 case FieldType.Map:
-                    return GetMapTypeDeserialization(field.MapType, schemaObjectName, targetObjectName, fieldName, field.FieldId.ToString(), bundle, wrapInBlock, targetIsOption);
+                    return GetMapTypeDeserialization(field.MapType, schemaObjectName, targetObjectName, fieldName, field.FieldId.ToString(), parentType, bundle, wrapInBlock, targetIsOption);
                 default:
                     throw new InvalidOperationException("Trying to serialize invalid FieldDefinition");
             }
@@ -44,12 +43,10 @@ namespace Improbable.CodeGen.Unreal
 
         public static string GetEventDeserialization(ComponentDefinition.EventDefinition _event, string schemaObjectName, string targetObjectName)
         {
-            var builder = new StringBuilder();
-            builder.AppendLine($"for (uint32 i = 0; i < Schema_GetObjectCount({schemaObjectName}, {_event.EventIndex}); ++i)");
-            builder.AppendLine("{");
-            builder.AppendLine(Text.Indent(1, $"{targetObjectName}.Add{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}({Types.GetTypeDisplayName(_event.Type.Type.QualifiedName)}::Deserialize(Schema_IndexObject({schemaObjectName}, {_event.EventIndex}, i)));"));
-            builder.AppendLine("}");
-            return builder.ToString();
+            return $@"for (uint32 i = 0; i < Schema_GetObjectCount({schemaObjectName}, {_event.EventIndex}); ++i)
+{{
+{Text.Indent(1, $"{targetObjectName}.Add{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}({Types.GetTypeDisplayName(_event.Type.Type.QualifiedName)}::Deserialize(Schema_IndexObject({schemaObjectName}, {_event.EventIndex}, i)));")}
+}}";
         }
 
         public static string GetFieldClearingCheck(FieldDefinition field)
@@ -103,34 +100,28 @@ namespace Improbable.CodeGen.Unreal
 
         private static string GetOptionTypeSerialization(FieldDefinition.OptionTypeRef optionType, string schemaObjectName, string fieldName, string fieldId, Bundle bundle)
         {
-            var builder = new StringBuilder();
-            builder.AppendLine($"if ({fieldName})");
-            builder.AppendLine("{");
-            builder.AppendLine(Text.Indent(1, GetValueTypeSerialization(optionType.InnerType, schemaObjectName, $"(*{fieldName})", fieldId)));
-            builder.AppendLine("}");
-            return builder.ToString();
+            return $@"if ({fieldName})
+{{
+{Text.Indent(1, GetValueTypeSerialization(optionType.InnerType, schemaObjectName, $"(*{fieldName})", fieldId))}
+}}";
         }
 
-        private static string GetMapTypeSerialization(FieldDefinition.MapTypeRef mapType, string schemaObjectName, string fieldName, string fieldId, Bundle bundle)
+        private static string GetMapTypeSerialization(FieldDefinition.MapTypeRef mapType, string schemaObjectName, string fieldName, string fieldId, TypeDescription parentType, Bundle bundle)
         {
-            var builder = new StringBuilder();
-            builder.AppendLine($@"for (const TPair<{Types.GetTypeDisplayName(mapType.KeyType, bundle)}, {Types.GetTypeDisplayName(mapType.ValueType, bundle)}>& Pair : {fieldName})");
-            builder.AppendLine("{");
-            builder.AppendLine(Text.Indent(1, $"Schema_Object* PairObj = Schema_AddObject({schemaObjectName}, {fieldId});"));
-            builder.AppendLine(Text.Indent(1, GetValueTypeSerialization(mapType.KeyType, "PairObj", "Pair.Key", "SCHEMA_MAP_KEY_FIELD_ID")));
-            builder.AppendLine(Text.Indent(1, GetValueTypeSerialization(mapType.ValueType, "PairObj", "Pair.Value", "SCHEMA_MAP_VALUE_FIELD_ID")));
-            builder.AppendLine("}");
-            return builder.ToString();
+            return $@"for (const TPair<{Types.GetTypeDisplayName(mapType.KeyType, bundle, parentType)}, {Types.GetTypeDisplayName(mapType.ValueType, bundle, parentType)}>& Pair : {fieldName})
+{{
+{Text.Indent(1, $@"Schema_Object* PairObj = Schema_AddObject({schemaObjectName}, {fieldId});
+{GetValueTypeSerialization(mapType.KeyType, "PairObj", "Pair.Key", "SCHEMA_MAP_KEY_FIELD_ID")}
+{GetValueTypeSerialization(mapType.ValueType, "PairObj", "Pair.Value", "SCHEMA_MAP_VALUE_FIELD_ID")}")}
+}}";
         }
 
-        private static string GetListTypeSerialization(FieldDefinition.ListTypeRef listType, string schemaObjectName, string fieldName, string fieldId, Bundle bundle)
+        private static string GetListTypeSerialization(FieldDefinition.ListTypeRef listType, string schemaObjectName, string fieldName, string fieldId, TypeDescription parentType, Bundle bundle)
         {
-            var builder = new StringBuilder();
-            builder.AppendLine($@"for (const {Types.GetTypeDisplayName(listType.InnerType, bundle)}& Element : {fieldName})");
-            builder.AppendLine("{");
-            builder.AppendLine(Text.Indent(1, GetValueTypeSerialization(listType.InnerType, schemaObjectName, "Element", fieldId)));
-            builder.AppendLine("}");
-            return builder.ToString();
+            return $@"for (const {Types.GetTypeDisplayName(listType.InnerType, bundle, parentType)}& Element : {fieldName})
+{{
+{Text.Indent(1, GetValueTypeSerialization(listType.InnerType, schemaObjectName, "Element", fieldId))}
+}}";
         }
 
         private static string GetPrimitiveSerialization(PrimitiveType primitive, string schemaObjectName, string fieldName, string fieldId)
@@ -175,105 +166,87 @@ namespace Improbable.CodeGen.Unreal
             }
         }
 
-        private static string GetValueTypeDeserialization(ValueTypeReference type, string schemaObjectName, string fieldId)
+        private static string GetValueTypeDeserialization(ValueTypeReference type, string schemaObjectName, string fieldId, TypeDescription parentType)
         {
             switch (type.ValueTypeSelector)
             {
                 case ValueType.Primitive:
                     return GetPrimitiveDeserialization(type.Primitive, schemaObjectName, fieldId);
                 case ValueType.Type:
-                    return $"{Types.GetTypeDisplayName(type.Type.QualifiedName)}::Deserialize(Schema_GetObject({schemaObjectName}, {fieldId}))";
+                    return $"{Types.GetTypeDisplayName(type.Type.QualifiedName, Types.IsLocallyDefined(type.Type.QualifiedName, parentType))}::Deserialize(Schema_GetObject({schemaObjectName}, {fieldId}))";
                 case ValueType.Enum:
-                    return $"static_cast<{Types.GetTypeDisplayName(type.Enum.QualifiedName)}>(Schema_GetEnum({ schemaObjectName}, { fieldId}))";
+                    return $"static_cast<{Types.GetTypeDisplayName(type.Enum.QualifiedName, Types.IsLocallyDefined(type.Enum.QualifiedName, parentType))}>(Schema_GetEnum({ schemaObjectName}, { fieldId}))";
                 default:
                     throw new InvalidOperationException("Trying to deserialize invalid ValueTypeReference");
             }
         }
 
-        private static string GetOptionTypeDeserialization(FieldDefinition.OptionTypeRef optionType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, Bundle bundle, bool targetIsOption = false)
+        private static string GetListTypeDeserialization(FieldDefinition.ListTypeRef listType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, TypeDescription parentType, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
-            return $"{targetObjectName} = {Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetTypeDisplayName(optionType.InnerType, bundle)}>({GetValueTypeDeserialization(optionType.InnerType, schemaObjectName, fieldId)});";
-        }
-
-        private static string GetListTypeDeserialization(FieldDefinition.ListTypeRef listType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
-        {
-            var listInnerTypeName = Types.GetTypeDisplayName(listType.InnerType, bundle);
+            var listInnerTypeName = Types.GetTypeDisplayName(listType.InnerType, bundle, parentType);
             var listName = $"{Text.SnakeCaseToPascalCase(fieldName)}List";
-            var builder = new StringBuilder();
 
+            var deserializationText = "";
             switch (listType.InnerType.ValueTypeSelector)
             {
                 case ValueType.Primitive:
-                    builder.AppendLine(GetPrimitiveListDeserialization(listType.InnerType.Primitive, schemaObjectName, targetObjectName, fieldName, fieldId, bundle, targetIsOption));
+                    deserializationText = GetPrimitiveListDeserialization(listType.InnerType.Primitive, schemaObjectName, targetObjectName, fieldName, fieldId, bundle, targetIsOption);
                     break;
                 case ValueType.Type:
-                    builder.AppendLine($@"auto ListLength = Schema_GetObjectCount({schemaObjectName}, {fieldId});");
-                    builder.AppendLine($@"{Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}<{listInnerTypeName}> {listName};");
-                    builder.AppendLine($@"{listName}.SetNum(ListLength);");
-                    builder.AppendLine($@"for (uint32 i = 0; i < ListLength; ++i)");
-                    builder.AppendLine($@"{{");
-                    builder.AppendLine(Text.Indent(1, $"{listName}[i] = {listInnerTypeName}::Deserialize(Schema_IndexObject({schemaObjectName}, {fieldId}, i));"));
-                    builder.AppendLine($@"}}");
-                    builder.AppendLine($@"{targetObjectName} = {listName};");
+                    deserializationText = $@"{{
+{Text.Indent(1, $@"auto ListLength = Schema_GetObjectCount({schemaObjectName}, {fieldId});
+{Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}<{listInnerTypeName}> {listName};
+{listName}.SetNum(ListLength);
+for (uint32 i = 0; i < ListLength; ++i)
+{{
+{Text.Indent(1, $"{listName}[i] = {listInnerTypeName}::Deserialize(Schema_IndexObject({schemaObjectName}, {fieldId}, i));")}
+}}
+{targetObjectName} = {listName};")}
+}}";
                     break;
                 case ValueType.Enum:
-                    builder.AppendLine($@"auto ListLength = Schema_GetEnumCount({schemaObjectName}, {fieldId});");
-                    builder.AppendLine($@"{Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}<{listInnerTypeName}> {listName};");
-                    builder.AppendLine($@"{listName}.SetNum(ListLength);");
-                    builder.AppendLine($@"for (uint32 i = 0; i < ListLength; ++i)");
-                    builder.AppendLine($@"{{");
-                    builder.AppendLine(Text.Indent(1, $"{listName}[i] = static_cast<{listInnerTypeName}>(Schema_IndexEnum({schemaObjectName}, {fieldId}, i));"));
-                    builder.AppendLine($@"}}");
-                    builder.AppendLine($@"{targetObjectName} = {listName};");
+                    deserializationText = $@"auto ListLength = Schema_GetEnumCount({schemaObjectName}, {fieldId});
+{Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}<{listInnerTypeName}> {listName};
+{listName}.SetNum(ListLength);
+for (uint32 i = 0; i < ListLength; ++i)
+{{
+{Text.Indent(1, $"{listName}[i] = static_cast<{listInnerTypeName}>(Schema_IndexEnum({schemaObjectName}, {fieldId}, i));")}
+}}
+{targetObjectName} = {listName};";
                     break;
                 default:
                     throw new InvalidOperationException("Trying to deserialize invalid ValueTypeReference");
             }
 
-            if (wrapInBlock)
-            {
-                var blockWrapping = new StringBuilder();
-                blockWrapping.AppendLine("{");
-                blockWrapping.AppendLine(Text.Indent(1, builder.ToString()));
-                blockWrapping.AppendLine("}");
-                return blockWrapping.ToString();
-            }
-
-            return builder.ToString();
+            return wrapInBlock ? $"{{{Environment.NewLine}{Text.Indent(1, deserializationText)}{Environment.NewLine}}}" : deserializationText;
         }
 
-        private static string GetMapTypeDeserialization(FieldDefinition.MapTypeRef mapType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
+        private static string GetMapTypeDeserialization(FieldDefinition.MapTypeRef mapType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, TypeDescription parentType, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
-            var keyTypeName = Types.GetTypeDisplayName(mapType.KeyType, bundle);
-            var valueTypeName = Types.GetTypeDisplayName(mapType.ValueType, bundle);
-            var mapName = $"{ fieldName }_map";
-            var kvPairName = "kvpair";
-            var builder = new StringBuilder();
+            var keyTypeName = Types.GetTypeDisplayName(mapType.KeyType, bundle, parentType);
+            var valueTypeName = Types.GetTypeDisplayName(mapType.ValueType, bundle, parentType);
+            var mapName = $"{fieldName}Map";
+            var kvPairName = "KvPair";
 
-            builder.AppendLine($"{targetObjectName} = {Types.CollectionTypesToQualifiedTypes[Types.Collection.Map]}<{keyTypeName}, {valueTypeName}>();");
-            builder.AppendLine($"auto MapEntryCount = Schema_GetObjectCount({schemaObjectName}, {fieldId});");
-            builder.AppendLine($"for (uint32 i = 0; i < MapEntryCount; ++i)");
-            builder.AppendLine("{");
-            builder.AppendLine(Text.Indent(1, $@"Schema_Object* {kvPairName} = Schema_IndexObject({schemaObjectName}, {fieldId}, i);"));
-            builder.AppendLine(Text.Indent(1, $@"auto Key = {GetValueTypeDeserialization(mapType.KeyType, kvPairName, "SCHEMA_MAP_KEY_FIELD_ID")};"));
-            builder.AppendLine(Text.Indent(1, $@"auto Value = {GetValueTypeDeserialization(mapType.ValueType, kvPairName, "SCHEMA_MAP_VALUE_FIELD_ID")};"));
-            builder.AppendLine(Text.Indent(1, $@"{(targetIsOption ? $"(*{targetObjectName})" : targetObjectName)}[std::move(Key)] = std::move(Value);"));
-            builder.AppendLine("}");
+            var deserializationText = $@"{{
+{Text.Indent(1, $@"{targetObjectName} = {Types.CollectionTypesToQualifiedTypes[Types.Collection.Map]}<{keyTypeName}, {valueTypeName}>();
+auto MapEntryCount = Schema_GetObjectCount({schemaObjectName}, {fieldId});
+for (uint32 i = 0; i < MapEntryCount; ++i)
+{{
+{Text.Indent(1, $@"Schema_Object* {kvPairName} = Schema_IndexObject({schemaObjectName}, {fieldId}, i);
+auto Key = {GetValueTypeDeserialization(mapType.KeyType, kvPairName, "SCHEMA_MAP_KEY_FIELD_ID", parentType)};
+auto Value = {GetValueTypeDeserialization(mapType.ValueType, kvPairName, "SCHEMA_MAP_VALUE_FIELD_ID", parentType)};
+{(targetIsOption ? $"(*{targetObjectName})" : targetObjectName)}[std::move(Key)] = std::move(Value);")}
+}}")}
+}}";
 
-            if (wrapInBlock)
-            {
-                var blockWrapping = new StringBuilder();
-                blockWrapping.AppendLine("{");
-                blockWrapping.AppendLine(Text.Indent(1, builder.ToString()));
-                blockWrapping.AppendLine("}");
-                return blockWrapping.ToString().TrimEnd();
-            }
-
-            return builder.ToString();
+            return wrapInBlock ? $"{{{Environment.NewLine}{Text.Indent(1, deserializationText)}{Environment.NewLine}}}" : deserializationText;
         }
 
         private static string GetPrimitiveListDeserialization(PrimitiveType primitive, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, Bundle bundle, bool targetIsOption = false)
         {
+            targetObjectName = targetIsOption ? $"(*{targetObjectName})" : targetObjectName;
+
             if (primitive == PrimitiveType.Bytes)
             {
                 return $"{targetObjectName} = ::improbable::utils::GetBytesList({schemaObjectName}, {fieldId});";
@@ -284,61 +257,61 @@ namespace Improbable.CodeGen.Unreal
             }
 
             var listInnerType = Types.SchemaToCppTypes[primitive];
-            var builder = new StringBuilder();
-
-            builder.AppendLine($"uint32 {fieldName}Length = {GetPrimitiveCount(primitive, schemaObjectName, fieldId)};");
-            builder.AppendLine(Types.GetListInitialisation(targetObjectName, listInnerType, $"{fieldName}Length", targetIsOption));
-
-            targetObjectName = targetIsOption ? $"(*{targetObjectName})" : targetObjectName;
+            var listCopyFunction = "";
             switch (primitive)
             {
                 case PrimitiveType.Int32:
-                    builder.AppendLine($"Schema_GetInt32List({ schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetInt32List({ schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Int64:
-                    builder.AppendLine($"Schema_GetInt64List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetInt64List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Uint32:
-                    builder.AppendLine($"Schema_GetUint32List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetUint32List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Uint64:
-                    builder.AppendLine($"Schema_GetUint64List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetUint64List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Sint32:
-                    builder.AppendLine($"Schema_GetSint32List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetSint32List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Sint64:
-                    builder.AppendLine($"Schema_GetSint64List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetSint64List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Fixed32:
-                    builder.AppendLine($"Schema_GetFixed32List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetFixed32List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Fixed64:
-                    builder.AppendLine($"Schema_GetFixed64List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetFixed64List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Sfixed32:
-                    builder.AppendLine($"Schema_GetSfixed32List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetSfixed32List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Sfixed64:
-                    builder.AppendLine($"Schema_GetSfixed64List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetSfixed64List({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Bool:
-                    builder.AppendLine($"Schema_GetBoolList({schemaObjectName}, {fieldId}, (uint8*) {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetBoolList({schemaObjectName}, {fieldId}, (uint8*) {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Float:
-                    builder.AppendLine($"Schema_GetFloatList({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetFloatList({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Double:
-                    builder.AppendLine($"Schema_GetDoubleList({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetDoubleList({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.EntityId:
-                    builder.AppendLine($"Schema_GetEntityIdList({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());");
+                    listCopyFunction = $"Schema_GetEntityIdList({schemaObjectName}, {fieldId}, {targetObjectName}.GetData());";
                     break;
                 case PrimitiveType.Invalid:
                 default:
                     throw new InvalidOperationException("Trying to serialize invalid PrimitiveType");
             }
-            return builder.ToString().TrimEnd();
+
+            return $@"{{
+{Text.Indent(1, $@"uint32 {fieldName}Length = {GetPrimitiveCount(primitive, schemaObjectName, fieldId)};
+{Types.GetListInitialisation(targetObjectName, listInnerType, $"{fieldName}Length", targetIsOption)}
+{listCopyFunction}")}
+}}";
         }
 
         private static string GetPrimitiveDeserialization(PrimitiveType primitive, string schemaObjectName, string fieldId)
