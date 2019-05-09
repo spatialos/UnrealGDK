@@ -35,9 +35,7 @@ struct FPendingRPCParams
 	int Attempts; // For reliable RPCs
 
 	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
-#if !UE_BUILD_SHIPPING
 	int ReliableRPCIndex;
-#endif // !UE_BUILD_SHIPPING
 };
 
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100

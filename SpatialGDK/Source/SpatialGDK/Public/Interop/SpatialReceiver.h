@@ -85,9 +85,7 @@ struct FPendingIncomingRPC
 	UFunction* Function;
 	TArray<uint8> PayloadData;
 	int64 CountBits;
-#if !UE_BUILD_SHIPPING
 	FString SenderWorkerId;
-#endif // !UE_BUILD_SHIPPING
 };
 
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
