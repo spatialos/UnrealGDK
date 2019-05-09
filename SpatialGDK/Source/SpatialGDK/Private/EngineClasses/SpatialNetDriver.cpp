@@ -524,6 +524,16 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	RenamedStartupActors.Remove(ThisActor->GetFName());
 }
 
+const FString USpatialNetDriver::GetUniqueIdentifier() const
+{
+	if (Connection != nullptr)
+	{
+		return Connection->GetWorkerId();
+	}
+
+	return Super::GetUniqueIdentifier();
+}
+
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 {
 	// If PackageMap doesn't exist, we haven't connected yet, which means
