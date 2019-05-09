@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialGDKEditorSettings.h"
 #include "Settings/LevelEditorPlaySettings.h"
+#include "SpatialGDKSettings.h"
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -14,6 +15,20 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotFolderPath();
 	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
 	GeneratedSchemaOutputFolder.Path = GetGeneratedSchemaOutputFolder();
+}
+
+void USpatialGDKEditorSettings::SynchronizeGDKWorkerNames()
+{
+	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
+	SpatialGDKSettings->ServerWorkerTypes = {};
+
+	for(uint8 i = 0; i< LaunchConfigDesc.Workers.Num(); ++i)
+	{
+		SpatialGDKSettings->ServerWorkerTypes.Add(LaunchConfigDesc.Workers[i].WorkerTypeName);
+	}
+		
+	SpatialGDKSettings->PostEditChange();
+	SpatialGDKSettings->SaveConfig();
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -31,6 +46,11 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	{
+		SynchronizeGDKWorkerNames();
+	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -42,4 +62,6 @@ void USpatialGDKEditorSettings::PostInitProperties()
 
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
+
+	SynchronizeGDKWorkerNames();
 }

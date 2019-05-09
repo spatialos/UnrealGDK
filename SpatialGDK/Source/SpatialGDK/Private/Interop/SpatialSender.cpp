@@ -66,6 +66,11 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 }
 
+const WorkerAttributeSet ServerWorkerAttributeSet = { SpatialConstants::ServerWorkerType };
+const WorkerAttributeSet ClientWorkerAttributeSet = { SpatialConstants::ClientWorkerType };
+
+const WorkerRequirementSet ServerWorkerOnlyRequirementSet = { ServerWorkerAttributeSet };
+
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
@@ -73,36 +78,43 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	FString ClientWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
 
-	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
-	WorkerAttributeSet AIWorkerAttribute = { FString(TEXT("AIWorker")) };
-	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
-	WorkerAttributeSet OwningClientAttribute = { ClientWorkerAttribute };
+	TArray<FString> ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
 
-	WorkerRequirementSet ServersOnly = { ServerAttribute };
-	WorkerRequirementSet AllServerTypes = { ServerAttribute, AIWorkerAttribute };
-	WorkerRequirementSet ClientsOnly = { ClientAttribute };
-	WorkerRequirementSet OwningClientOnly = { OwningClientAttribute };
+	WorkerRequirementSet AllServerTypesRequirementSet;
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { ClientWorkerAttributeSet };
 
-	WorkerRequirementSet AnyUnrealServerOrClient = { ServerAttribute, AIWorkerAttribute, ClientAttribute };
-	WorkerRequirementSet AnyUnrealServerOrOwningClient = { ServerAttribute, AIWorkerAttribute, OwningClientAttribute };
+	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
+
+	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { OwningClientAttributeSet };
+	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
+
+	for(auto i=0; i < ServerWorkerTypes.Num(); ++i)
+	{
+		WorkerAttributeSet ServerWorkerAttributeSet = { ServerWorkerTypes[i] };
+
+		AllServerTypesRequirementSet.Add(ServerWorkerAttributeSet);
+		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
+		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
+	}
+
 
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
-		ReadAcl = AllServerTypes;
+		ReadAcl = AllServerTypesRequirementSet;
 	}
 	else if (Actor->IsA<APlayerController>())
 	{
-		ReadAcl = AnyUnrealServerOrOwningClient;
+		ReadAcl = AnyServerOrOwningClientRequirementSet;
 	}
 	else
 	{
-		ReadAcl = AnyUnrealServerOrClient;
+		ReadAcl = AnyServerOrClientRequirementSet;
 	}
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	WorkerRequirementSet AuthoritativeWorkerType = ServersOnly;
+	WorkerRequirementSet AuthoritativeWorkerType = ServerWorkerOnlyRequirementSet;
 	if (!Class->WorkerAssociation.IsEmpty())
 	{
 		const WorkerAttributeSet WorkerAttribute{ Class->WorkerAssociation };
@@ -116,11 +128,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AuthoritativeWorkerType);
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerType);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerType);
-	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
+	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 
 	if (Actor->IsA<APlayerController>())
 	{
-		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
+		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	}
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
