@@ -118,9 +118,9 @@ component OtherTestComponent {
 
 #### Using the code generator example
 
-Using the [Third Person Shooter project](https://github.com/spatialos/UnrealGDKThirdPersonShooter) as an example, and the above schema file placed in the directory `./spatial/schema/improbable/`, the command below will output code to a new `Game/Source/ThirdPersonShooter/ExternalSchemaCode` folder:
+Using the [Third Person Shooter project](https://github.com/spatialos/UnrealGDKThirdPersonShooter) as an example, and the above schema file placed in the directory `./spatial/schema/improbable/`, the command below will output code to a new `./Game/Source/ThirdPersonShooter/ExternalSchemaCodegen` folder:
 
-`./Game/Plugins/UnrealGDK/SpatialGDK/ExternalSchemaCodegen/Scripts/ExternalSchemaCodegen.bat ./spatial/schema/my_external_schema ./Game/Source/ThirdPersonShooter/ExternalSchemaCodegen`
+`./Game/Plugins/UnrealGDK/SpatialGDK/Build/Scripts/ExternalSchemaCodegen.bat ./spatial/schema/my_external_schema ./Game/Source/ThirdPersonShooter/ExternalSchemaCodegen`
 
 This will generate code in the `Game/Source/ThirdPersonShooter/ExternalSchemaCode` folder. To see these changes, the Visual Studio solution needs to be regenerated.
 
