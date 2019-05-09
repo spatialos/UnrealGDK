@@ -82,5 +82,9 @@ public:
 	/** Change 'Load' value in inspector to represent worker Frame Time instead of a fraction of target FPS.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bUseFrameTimeAsLoad;
+
+	/** Include an order index with reliable RPCs and warn if they are executed out of order.*/
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	bool bCheckRPCOrder;
 };
 
