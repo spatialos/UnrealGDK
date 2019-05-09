@@ -20,6 +20,7 @@
 #include "Schema/SpawnData.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/UnrealMetadata.h"
+#include "Schema/ClientRPCEndpoint.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
 #include "Utils/RepLayoutUtils.h"
@@ -300,11 +301,23 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	{
 		// Check to see if we became authoritative over the UnrealClientRPCEndpoint component over this entity
 		// If we did, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-		const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
 		if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
 			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+		}
+
+		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+		{
+			SpatialGDK::RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<SpatialGDK::RPCsOnEntityCreation>(Op.entity_id);
+			if (QueuedRPCs != nullptr && QueuedRPCs->HasRPCPayloadData())
+			{
+				ProcessQueuedActorRPCsOnEntityCreation(Actor, QueuedRPCs);
+			}
+
+			ClientRPCEndpoint Endpoint = {};
+			Endpoint.ClientProcessedRPCsOnEntityCreation = true;
+			Worker_ComponentUpdate Update = Endpoint.CreateClientRPCEndpointUpdate();
+			NetDriver->Connection->SendComponentUpdate(Op.entity_id, &Update);
 		}
 	}
 
@@ -466,22 +479,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		EntityActor->UpdateOverlaps();
 
-		SpatialGDK::RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<SpatialGDK::RPCsOnEntityCreation>(EntityId);
-
-		if (QueuedRPCs && QueuedRPCs->RPCs.Num() > 0)
-		{
-			const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(EntityActor->GetClass());
-
-			for (const auto& RPC : QueuedRPCs->RPCs)
-			{
-				UFunction* Function = Info.RPCs[RPC.Index];
-
-				UE_LOG(LogTemp, Log, TEXT("RPC: %s"), *Function->GetName());
-				int64 CountBits = RPC.PayloadData.Num() * 8;
-				TArray<uint8> PayloadData = RPC.PayloadData;
-				ApplyRPC(EntityActor, Function, PayloadData, CountBits, FString("Test"));
-			}
-		}
 	}
 }
 
@@ -934,6 +931,14 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 		}
 	}
 
+	Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+	bool ClientProcessedRPCsOnEntityCreation = GetBoolFromSchema(FieldsObject, SpatialConstants::CLIENT_PROCESSED_RPCS_ON_ENTITY_CREATION);
+	if (ClientProcessedRPCsOnEntityCreation)
+	{
+		Worker_ComponentUpdate Update = RPCsOnEntityCreation::CreateClearFieldsUpdate();
+		NetDriver->Connection->SendComponentUpdate(Op.entity_id, &Update);
+	}
+
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 
 	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID);
@@ -965,6 +970,7 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 {
 	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
+	ensure(CommandIndex == SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
 	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
 	{
@@ -1277,6 +1283,23 @@ void USpatialReceiver::ProcessQueuedResolvedObjects()
 		ResolvePendingOperations_Internal(It.Key, It.Value);
 	}
 	ResolvedObjectQueue.Empty();
+}
+
+void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, SpatialGDK::RPCsOnEntityCreation* QueuedRPCs)
+{
+	ensure(QueuedRPCs != nullptr);
+
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+
+	for (const auto& RPC : QueuedRPCs->GetRPCs())
+	{
+		UFunction* Function = Info.RPCs[RPC.Index];
+
+		int64 CountBits = RPC.PayloadData.Num() * 8;
+		TArray<uint8> PayloadData = RPC.PayloadData;
+		ApplyRPC(Actor, Function, PayloadData, CountBits, TEXT("Test"));
+		//ApplyRPC(Actor, Function, PayloadData, CountBits, FString());
+	}
 }
 
 void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)

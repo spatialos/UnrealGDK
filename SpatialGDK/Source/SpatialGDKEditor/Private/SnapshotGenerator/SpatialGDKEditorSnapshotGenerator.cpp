@@ -7,6 +7,7 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
+#include "Schema/ClientRPCEndpoint.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -246,7 +247,7 @@ TArray<Worker_ComponentData> CreateStartupActorData(USpatialActorChannel* Channe
 	TArray<Worker_ComponentData> ComponentData = DataFactory.CreateComponentDatas(Actor, Info, InitialRepChanges, InitialHandoverChanges);
 
 	// Add Actor RPCs to entity
-	ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID));
+	ComponentData.Add(ClientRPCEndpoint().CreateClientRPCEndpointData());
 	ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentData.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 

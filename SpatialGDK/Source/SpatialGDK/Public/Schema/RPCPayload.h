@@ -79,6 +79,34 @@ struct RPCsOnEntityCreation : Component
 		return Data;
 	}
 
+	void AddRPCPayload(RPCPayload&& InRPCPayload)
+	{
+		RPCs.Add(MoveTemp(InRPCPayload));
+	}
+
+	void AddRPCPayload(const RPCPayload& InRPCPayload)
+	{
+		RPCs.Add(InRPCPayload);
+	}
+
+	const TArray<RPCPayload>& GetRPCs() const
+	{
+
+		return RPCs;
+	}
+
+	static Worker_ComponentUpdate CreateClearFieldsUpdate()
+	{
+		Worker_ComponentUpdate Update = {};
+		Update.component_id = ComponentId;
+		Update.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
+		Schema_AddComponentUpdateClearedField(Update.schema_type, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
+
+		return Update;
+	}
+
+private:
 	TArray<RPCPayload> RPCs;
 };
 

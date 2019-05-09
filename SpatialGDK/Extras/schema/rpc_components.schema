@@ -14,6 +14,7 @@ component UnrealClientRPCEndpoint {
     id = 9990;
     event UnrealRPCPayload unreliable_client_to_server_rpc;
     command Void reliable_server_to_client_rpc(UnrealRPCPayload);
+    bool client_processed_rpcs_on_entity_creation = 1;
 }
 
 component UnrealServerRPCEndPoint {

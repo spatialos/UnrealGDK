@@ -18,6 +18,7 @@
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
 #include "Schema/RPCPayload.h"
+#include "Schema/ClientRPCEndpoint.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -109,8 +110,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
-	 ComponentWriteAcl.Add(SpatialConstants::RPC_ON_ENTITY_CREATION_ID, OwningClientOnly);
-	// ComponentWriteAcl.Add(SpatialConstants::RPC_ON_ENTITY_CREATION_ID, /* who owns this? who will be responsible for clearing it after client processes the functions? */);
+	ComponentWriteAcl.Add(SpatialConstants::RPC_ON_ENTITY_CREATION_ID, ServersOnly);
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
@@ -228,7 +228,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	InterestFactory InterestDataFactory(Actor, Info, NetDriver);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID));
+	ComponentDatas.Add(ClientRPCEndpoint().CreateClientRPCEndpointData());
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
@@ -432,8 +432,7 @@ SpatialGDK::RPCsOnEntityCreation USpatialSender::PackQueuedRPCsForActor(TArray<T
 			RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, RPCParams->Parameters.GetData());
 
 			TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
-			RPCPayload MyRPC(TargetObjectRef.Offset, RPCInfo->Index, Data);
-			QueuedRPCs.RPCs.Add(MyRPC);
+			QueuedRPCs.AddRPCPayload(RPCPayload(TargetObjectRef.Offset, RPCInfo->Index, Data));
 		}
 	}
 

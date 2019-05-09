@@ -127,6 +127,8 @@ namespace SpatialConstants
 	const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID					= 1;
 	const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
 
+	const Schema_FieldId CLIENT_PROCESSED_RPCS_ON_ENTITY_CREATION			= 1;
+
 	// UnrealRPCPayload Field IDs
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID = 1;
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID = 2;
