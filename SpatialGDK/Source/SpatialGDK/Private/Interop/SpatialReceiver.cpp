@@ -1445,13 +1445,12 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 		// ParentIndex is -1 for handover properties
 		bool bIsHandover = ObjectReferences.ParentIndex == -1;
-		FRepLayoutCmd* Cmd = ObjectReferences.CmdIndex >= 0 ? &RepLayout.Cmds[ObjectReferences.CmdIndex] : nullptr;
 		FRepParentCmd* Parent = ObjectReferences.ParentIndex >= 0 ? &RepLayout.Parents[ObjectReferences.ParentIndex] : nullptr;
 
 #if ENGINE_MINOR_VERSION <= 20
 		int32 StoredDataOffset = AbsOffset;
 #else
-		int32 StoredDataOffset = Cmd->ShadowOffset;
+		int32 StoredDataOffset = ObjectReferences.ShadowOffset;
 #endif
 
 		if (ObjectReferences.Array)

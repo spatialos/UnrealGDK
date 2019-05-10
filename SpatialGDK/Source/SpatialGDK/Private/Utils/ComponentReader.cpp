@@ -138,7 +138,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 					if (NewUnresolvedRefs.Num() > 0)
 					{
-						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, CmdIndex, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
+						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, Cmd.ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
 						UnresolvedRefs.Append(NewUnresolvedRefs);
 					}
 					else if (RootObjectReferencesMap.Find(FieldId))
@@ -148,12 +148,12 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 				}
 				else
 				{
-					ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, CmdIndex, Cmd.ParentIndex);
+					ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, Cmd.ShadowOffset, Cmd.ParentIndex);
 				}
 			}
 			else
 			{
-				ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, CmdIndex, Cmd.ParentIndex);
+				ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, Cmd.ShadowOffset, Cmd.ParentIndex);
 			}
 
 			if (Cmd.Property->GetFName() == NAME_RemoteRole)
@@ -228,7 +228,7 @@ void ComponentReader::ApplyHandoverSchemaObject(Schema_Object* ComponentObject, 
 	Channel->PostReceiveSpatialUpdate(Object, TArray<UProperty*>());
 }
 
-void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex)
+void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ShadowOffset, int32 ParentIndex)
 {
 	if (UStructProperty* StructProperty = Cast<UStructProperty>(Property))
 	{
@@ -243,7 +243,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 
 		if (bHasUnmapped)
 		{
-			InObjectReferencesMap.Add(Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, CmdIndex, ParentIndex, Property));
+			InObjectReferencesMap.Add(Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, ShadowOffset, ParentIndex, Property));
 			UnresolvedRefs.Append(NewUnresolvedRefs);
 		}
 		else if (InObjectReferencesMap.Find(Offset))
@@ -330,7 +330,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 			}
 			else
 			{
-				InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, CmdIndex, ParentIndex, Property));
+				InObjectReferencesMap.Add(Offset, FObjectReferences(ObjectRef, ShadowOffset, ParentIndex, Property));
 				UnresolvedRefs.Add(ObjectRef);
 				bUnresolved = true;
 			}
@@ -361,7 +361,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 		}
 		else
 		{
-			ApplyProperty(Object, FieldId, InObjectReferencesMap, Index, EnumProperty->GetUnderlyingProperty(), Data, Offset, CmdIndex, ParentIndex);
+			ApplyProperty(Object, FieldId, InObjectReferencesMap, Index, EnumProperty->GetUnderlyingProperty(), Data, Offset, ShadowOffset, ParentIndex);
 		}
 	}
 	else
@@ -370,7 +370,7 @@ void ComponentReader::ApplyProperty(Schema_Object* Object, Schema_FieldId FieldI
 	}
 }
 
-void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, UArrayProperty* Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex)
+void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ShadowOffset, int32 ParentIndex)
 {
 	FObjectReferencesMap* ArrayObjectReferences;
 	bool bNewArrayMap = false;
@@ -394,7 +394,7 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, 
 	for (int i = 0; i < Count; i++)
 	{
 		int32 ElementOffset = i * Property->Inner->ElementSize;
-		ApplyProperty(Object, FieldId, *ArrayObjectReferences, i, Property->Inner, ArrayHelper.GetRawPtr(i), ElementOffset, CmdIndex, ParentIndex);
+		ApplyProperty(Object, FieldId, *ArrayObjectReferences, i, Property->Inner, ArrayHelper.GetRawPtr(i), ElementOffset, ElementOffset, ParentIndex);
 	}
 
 	if (ArrayObjectReferences->Num() > 0)
@@ -402,7 +402,7 @@ void ComponentReader::ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, 
 		if (bNewArrayMap)
 		{
 			// FObjectReferences takes ownership over ArrayObjectReferences
-			InObjectReferencesMap.Add(Offset, FObjectReferences(ArrayObjectReferences, CmdIndex, ParentIndex, Property));
+			InObjectReferencesMap.Add(Offset, FObjectReferences(ArrayObjectReferences, ShadowOffset, ParentIndex, Property));
 		}
 	}
 	else

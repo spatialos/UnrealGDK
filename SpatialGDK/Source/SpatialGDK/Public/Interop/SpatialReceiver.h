@@ -45,24 +45,24 @@ struct FObjectReferences
 		, Buffer(MoveTemp(Other.Buffer))
 		, NumBufferBits(Other.NumBufferBits)
 		, Array(MoveTemp(Other.Array))
-		, CmdIndex(Other.CmdIndex)
+		, ShadowOffset(Other.ShadowOffset)
 		, ParentIndex(Other.ParentIndex)
 		, Property(Other.Property) {}
 
 	// Single property constructor
 	FObjectReferences(const FUnrealObjectRef& InUnresolvedRef, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty)
-		: bSingleProp(true), bFastArrayProp(false), CmdIndex(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty)
+		: bSingleProp(true), bFastArrayProp(false), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty)
 	{
 		UnresolvedRefs.Add(InUnresolvedRef);
 	}
 
 	// Struct (memory stream) constructor
 	FObjectReferences(const TArray<uint8>& InBuffer, int32 InNumBufferBits, const TSet<FUnrealObjectRef>& InUnresolvedRefs, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty, bool InFastArrayProp = false)
-		: UnresolvedRefs(InUnresolvedRefs), bSingleProp(false), bFastArrayProp(InFastArrayProp), Buffer(InBuffer), NumBufferBits(InNumBufferBits), CmdIndex(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
+		: UnresolvedRefs(InUnresolvedRefs), bSingleProp(false), bFastArrayProp(InFastArrayProp), Buffer(InBuffer), NumBufferBits(InNumBufferBits), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
 
 	// Array constructor
 	FObjectReferences(FObjectReferencesMap* InArray, int32 InCmdIndex, int32 InParentIndex, UProperty* InProperty)
-		: bSingleProp(false), bFastArrayProp(false), Array(InArray), CmdIndex(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
+		: bSingleProp(false), bFastArrayProp(false), Array(InArray), ShadowOffset(InCmdIndex), ParentIndex(InParentIndex), Property(InProperty) {}
 
 	TSet<FUnrealObjectRef>				UnresolvedRefs;
 
@@ -72,7 +72,7 @@ struct FObjectReferences
 	int32								NumBufferBits;
 
 	TUniquePtr<FObjectReferencesMap>	Array;
-	int32								CmdIndex;
+	int32								ShadowOffset;
 	int32								ParentIndex;
 	UProperty*							Property;
 };
