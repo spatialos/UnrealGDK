@@ -5,6 +5,7 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
+#include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 #include "EngineClasses/SpatialFastArrayNetSerialize.h"
@@ -387,23 +388,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		if (EntityActor == nullptr)
 		{
-			if (GlobalStateManager != nullptr && GlobalStateManager->IsSingletonEntity(EntityId))
-			{
-				// We've attempted to link against a singleton entity we haven't attempted to replicate yet
-				if (USpatialActorChannel* Channel = GlobalStateManager->FindSingletonActorChannel(EntityId))
-				{
-					for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
-					{
-						// Apply component state, regardless of authority. This is to allow server-workers to
-						// resume Singleton Actor simulation correctly.
-						if (PendingAddComponent.EntityId == EntityId)
-						{
-							ApplyComponentData(EntityId, *PendingAddComponent.Data->ComponentData, Channel);
-						}
-					}
-				}
-			}
-
 			// This could be nullptr if:
 			// a stably named actor could not be found
 			// the Actor is a singleton
@@ -477,6 +461,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 		{
 			EntityActor->DispatchBeginPlay();
+		}
+
+		if (EntityActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+		{
+			GlobalStateManager->RegisterSingletonChannel(EntityActor, Channel);
 		}
 
 		EntityActor->UpdateOverlaps();
@@ -677,9 +666,7 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 	// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
 	if (NetDriver->IsServer() && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
-		// If GSM doesn't know of this entity id, queue up data for that entity id, and resolve it when the actor is created - UNR-734
-		// If the GSM does know of this entity id, we could just create the actor instead - UNR-735
-		return nullptr;
+		return FindSingletonActor(ActorClass);
 	}
 
 	// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
@@ -1267,6 +1254,25 @@ TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Wo
 	TWeakObjectPtr<USpatialActorChannel> Channel = *ChannelPtr;
 	PendingActorRequests.Remove(RequestId);
 	return Channel;
+}
+
+AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
+{
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(NetDriver->World, SingletonClass, FoundActors);
+
+	// There should be only one singleton actor per class
+	if (FoundActors.Num() == 1)
+	{
+		return FoundActors[0];
+	}
+	else
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Found incorrect number (%d) of singleton actors (%s)"),
+			FoundActors.Num(), *SingletonClass->GetName());
+	}
+
+	return nullptr;
 }
 
 void USpatialReceiver::ProcessQueuedResolvedObjects()

@@ -354,33 +354,15 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	return Channel;
 }
 
-USpatialActorChannel* UGlobalStateManager::FindSingletonActorChannel(Worker_EntityId EntityId)
+void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel)
 {
-	for (const auto& Pair : SingletonNameToEntityId)
-	{
-		if (Pair.Value == EntityId)
-		{
-			// Search for singleton in world via class path
-			FSoftClassPath SoftClassPath(Pair.Key);
-			UClass* Class = SoftClassPath.ResolveClass();
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActor->GetClass());
 
-			TArray<AActor*> FoundActors;
-			UGameplayStatics::GetAllActorsOfClass(NetDriver->World, Class, FoundActors);
+	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
+	check(ActorChannelPair.Value == nullptr || ActorChannelPair.Value == SingletonChannel);
 
-			// There should be only one singleton actor per class
-			if (FoundActors.Num() == 1)
-			{
-				return AddSingleton(FoundActors[0]);
-			}
-			else
-			{
-				UE_LOG(LogGlobalStateManager, Warning, TEXT("Found incorrect number (%d) of singleton actors (%s)"),
-					FoundActors.Num(), *Class->GetName());
-			}			
-		}
-	}
-
-	return nullptr;
+	ActorChannelPair.Key = SingletonActor;
+	ActorChannelPair.Value = SingletonChannel;
 }
 
 void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
