@@ -41,8 +41,6 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		DeleteGeneratedSchemaFiles();
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Generating Schema, loading %d potential assets"), AssetsToLoad.Num());
-
 	return GenerateSchema(AssetsToLoad);
 }
 
@@ -144,14 +142,14 @@ bool FSpatialGDKEditor::GenerateSchema(TSet<FAssetData> AssetsToLoad)
 	return bResult;
 }
 
-void FSpatialGDKEditor::GetWorldDependencies(UWorld* World, TSet<FAssetData>& OutAssets)
+void FSpatialGDKEditor::GetWorldDependencies(UWorld* World, TSet<FAssetData>& OutAssets, TSet<FAssetData>* AssetsToIgnore)
 {
 	TQueue<FName> DepsToSearch;
 	DepsToSearch.Enqueue(*World->GetOutermost()->GetPathName());
 
 	if (World->GetWorldSettings()->DefaultGameMode != nullptr)
 	{
-		UE_LOG(LogTemp, Display, TEXT("Adding GameModeOverride: %s"), *World->GetWorldSettings()->DefaultGameMode->GetOutermost()->GetPathName())
+		UE_LOG(LogSpatialGDKEditor, Verbose, TEXT("Adding GameModeOverride: %s"), *World->GetWorldSettings()->DefaultGameMode->GetOutermost()->GetPathName())
 			DepsToSearch.Enqueue(*World->GetWorldSettings()->DefaultGameMode->GetOutermost()->GetPathName());
 	}
 	else
@@ -169,19 +167,19 @@ void FSpatialGDKEditor::GetWorldDependencies(UWorld* World, TSet<FAssetData>& Ou
 
 			if (!GameModePath.IsEmpty())
 			{
-				UE_LOG(LogTemp, Display, TEXT("Adding %s %s"), *GameMode, *FSoftObjectPath(GameModePath).GetLongPackageName());
+				UE_LOG(LogSpatialGDKEditor, Verbose, TEXT("Adding %s %s"), *GameMode, *FSoftObjectPath(GameModePath).GetLongPackageName());
 				DepsToSearch.Enqueue(*FSoftObjectPath(GameModePath).GetLongPackageName());
 			}
 		}
 	}
 
-	UE_LOG(LogTemp, Display, TEXT("Loading all deps for %s"), *World->GetOutermost()->GetPathName());
+	UE_LOG(LogSpatialGDKEditor, Verbose, TEXT("Loading all deps for %s"), *World->GetOutermost()->GetPathName());
 
 	if (World->WorldComposition != nullptr)
 	{
 		for (auto& Tile : World->WorldComposition->GetTilesList())
 		{
-			UE_LOG(LogTemp, Display, TEXT("Adding World Comp Tile %s to Deps"), *Tile.PackageName.ToString());
+			UE_LOG(LogSpatialGDKEditor, Verbose, TEXT("Adding World Comp Tile %s to Deps"), *Tile.PackageName.ToString());
 			DepsToSearch.Enqueue(Tile.PackageName);
 		}
 	}
@@ -198,7 +196,7 @@ void FSpatialGDKEditor::GetWorldDependencies(UWorld* World, TSet<FAssetData>& Ou
 
 		if (SearchedPackages.Contains(NextDep))
 		{
-			UE_LOG(LogTemp, Log, TEXT("Skipping searched package %s"), *NextDep.ToString());
+			UE_LOG(LogSpatialGDKEditor, Verbose, TEXT("Skipping searched package %s"), *NextDep.ToString());
 		}
 		else
 		{
@@ -207,7 +205,7 @@ void FSpatialGDKEditor::GetWorldDependencies(UWorld* World, TSet<FAssetData>& Ou
 
 		TArray<FName> FoundDeps;
 		AssetRegistry.GetDependencies(NextDep, FoundDeps, EAssetRegistryDependencyType::All);
-		UE_LOG(LogTemp, Display, TEXT("Found %d Deps of %s"), FoundDeps.Num(), *NextDep.ToString());
+		UE_LOG(LogSpatialGDKEditor, Verbose, TEXT("Found %d Deps of %s"), FoundDeps.Num(), *NextDep.ToString());
 
 		for (FName FoundDep : FoundDeps)
 		{
@@ -221,8 +219,13 @@ void FSpatialGDKEditor::GetWorldDependencies(UWorld* World, TSet<FAssetData>& Ou
 		AssetRegistry.GetAssetsByPackageName(NextDep, NextAssets);
 		for (FAssetData NextDepAsset : NextAssets)
 		{
+			if (AssetsToIgnore != nullptr && AssetsToIgnore->Contains(NextDepAsset))
+			{
+				continue;
+			}
+
 			OutAssets.Add(NextDepAsset);
-			UE_LOG(LogTemp, Display, TEXT("Adding %s(%s) to deps to load"), *NextDepAsset.GetFullName(), *NextDep.ToString());
+			UE_LOG(LogSpatialGDKEditor, Verbose, TEXT("Adding %s(%s) to deps to load"), *NextDepAsset.GetFullName(), *NextDep.ToString());
 		}
 	}
 }

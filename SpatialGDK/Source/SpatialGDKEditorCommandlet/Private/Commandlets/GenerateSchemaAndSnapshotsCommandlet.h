@@ -26,12 +26,12 @@ private:
 
 	TArray<FString> GeneratedMapPaths;
 
-	TSet<FAssetData> AssetsToLoad;
+	TSet<FAssetData> AssetsAlreadyGenerated;
 
 private:
 	bool GenerateSchemaAndSnapshotForPath(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InPath);
 	bool GenerateSchemaAndSnapshotForMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName);
 
-	bool GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor);
+	bool GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor, TSet<FAssetData> AssetsToLoad);
 	bool GenerateSnapshotForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName);
 };

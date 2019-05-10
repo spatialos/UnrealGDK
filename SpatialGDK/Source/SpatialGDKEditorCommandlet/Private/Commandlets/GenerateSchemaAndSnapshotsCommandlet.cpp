@@ -71,9 +71,6 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 		}
 	}
 
-	// Generate Schema, loading all assets found in all maps.
-	SpatialGDKEditor.GenerateSchema(AssetsToLoad);
-
 	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema & Snapshot Generation Commandlet Complete"));
 
 	return 0;
@@ -169,29 +166,17 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 		return false;
 	}
 
-	// Ensure all sub-levels are also loaded
-	//const TArray<ULevelStreaming*> StreamingLevels = GWorld->GetStreamingLevels();
-	//UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Loading %d Streaming SubLevels"), StreamingLevels.Num());
-	//for (ULevelStreaming* StreamingLevel : StreamingLevels)
-	//{
-	//	FLatentActionInfo LatentInfo;
-	//	UGameplayStatics::LoadStreamLevel(GWorld, StreamingLevel->GetWorldAssetPackageFName(), false, true, LatentInfo);
-	//}
+	TSet<FAssetData> AssetsToLoad;
+	InSpatialGDKEditor.GetWorldDependencies(GWorld, AssetsToLoad, &AssetsAlreadyGenerated);
 
-	//// Ensure all world composition tiles are also loaded
-	//if (GWorld->WorldComposition != nullptr)
-	//{
-	//	TArray<ULevelStreaming*> StreamingTiles = GWorld->WorldComposition->TilesStreaming;
-	//	UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Loading %d World Composition Tiles"), StreamingTiles.Num());
-	//	for (ULevelStreaming* StreamingTile : StreamingTiles)
-	//	{
-	//		FLatentActionInfo LatentInfo;
-	//		UGameplayStatics::LoadStreamLevel(GWorld, StreamingTile->GetWorldAssetPackageFName(), false, true, LatentInfo);
-	//	}
-	//}
+	// Generate Schema
+	if (!GenerateSchemaForLoadedMap(InSpatialGDKEditor, AssetsToLoad))
+	{
+		return false;
+	}
 
-	// Add Map Deps to Assets to load for
-	InSpatialGDKEditor.GetWorldDependencies(GWorld, AssetsToLoad);
+	AssetsAlreadyGenerated.Append(AssetsToLoad);
+
 
 	// Generate Snapshot
 	if (!GenerateSnapshotForLoadedMap(InSpatialGDKEditor, FPaths::GetCleanFilename(InMapName)))
@@ -202,10 +187,10 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 	return true;
 }
 
-bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor)
+bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor, TSet<FAssetData> AssetsToLoad)
 {
 	bool bSchemaGenSuccess;
-	if (InSpatialGDKEditor.GenerateSchema(true))
+	if (InSpatialGDKEditor.GenerateSchema(AssetsToLoad))
 	{
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Schema Generation Completed!"));
 		bSchemaGenSuccess = true;

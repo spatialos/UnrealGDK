@@ -23,7 +23,7 @@ public:
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 
-	void GetWorldDependencies(UWorld* World, TSet<FAssetData>& OutAssets);
+	void GetWorldDependencies(UWorld* World, TSet<FAssetData>& OutAssets, TSet<FAssetData>* AssetsToIgnore = nullptr);
 
 private:
 	bool bSchemaGeneratorRunning;
