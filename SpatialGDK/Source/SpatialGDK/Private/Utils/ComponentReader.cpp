@@ -114,7 +114,11 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 		int32 CmdIndex = BaseHandleToCmdIndex[FieldId - 1].CmdIndex;
 		const FRepLayoutCmd& Cmd = Cmds[CmdIndex];
 		const FRepParentCmd& Parent = Parents[Cmd.ParentIndex];
-
+#if ENGINE_MINOR_VERSION <= 20
+		int32 ShadowOffset = 0;
+#else 
+		int32 ShadowOffset = Cmd.ShadowOffset;
+#endif
 		if (NetDriver->IsServer() || ConditionMap.IsRelevant(Parent.Condition))
 		{
 			// This swaps Role/RemoteRole as we write it
@@ -138,7 +142,7 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 
 					if (NewUnresolvedRefs.Num() > 0)
 					{
-						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, Cmd.ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
+						RootObjectReferencesMap.Add(SwappedCmd.Offset, FObjectReferences(ValueData, CountBits, NewUnresolvedRefs, ShadowOffset, Cmd.ParentIndex, ArrayProperty, /* bFastArrayProp */ true));
 						UnresolvedRefs.Append(NewUnresolvedRefs);
 					}
 					else if (RootObjectReferencesMap.Find(FieldId))
@@ -148,12 +152,12 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 				}
 				else
 				{
-					ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, Cmd.ShadowOffset, Cmd.ParentIndex);
+					ApplyArray(ComponentObject, FieldId, RootObjectReferencesMap, ArrayProperty, Data, SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex);
 				}
 			}
 			else
 			{
-				ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, Cmd.ShadowOffset, Cmd.ParentIndex);
+				ApplyProperty(ComponentObject, FieldId, RootObjectReferencesMap, 0, Cmd.Property, Data, SwappedCmd.Offset, ShadowOffset, Cmd.ParentIndex);
 			}
 
 			if (Cmd.Property->GetFName() == NAME_RemoteRole)
