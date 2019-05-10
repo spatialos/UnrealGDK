@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Setup.bat can now take a project path as an argument. This allows the UnrealGDK to be installed as an Engine Plugin, pass the project path as the first variable if you are running Setup.bat from UnrealEngine/Engine/Plugins.
-- Removed the need from UNREAL_HOME. The build and setup scripts will now use your projects engine association to find the Unreal Engine. If an association is not set they will search parent directories looking for the 'Engine' folder.
+- Removed the need for UNREAL_HOME. The build and setup scripts will now use your project's engine association to find the Unreal Engine. If an association is not set they will search parent directories looking for the 'Engine' folder.
 
 ### Bug fixes:
 - Bugfix: BeginPlay is not called with authority when checking out entities from Spatial.
