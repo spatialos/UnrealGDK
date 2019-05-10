@@ -4,7 +4,23 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - yyyy-mm-dd
+## [Unreleased-`0.5.0`] - 2019-xx-xx
+
+### New Known Issues:
+
+### Features:
+
+### Bug fixes:
+- BeginPlay is not called with authority when checking out entities from Spatial.
+- Launching SpatialOS would fail if there was a space in the full directory path.
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- Reliable RPC checking no longer breaks compatibility between development and shipping builds.
+
+### External contributors:
+
+In addition to all of the updates from Improbable, this release includes x improvements submitted by the incredible community of SpatialOS developers on GitHub! Thanks to these contributors:
+
+* 
 
 ## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
 
