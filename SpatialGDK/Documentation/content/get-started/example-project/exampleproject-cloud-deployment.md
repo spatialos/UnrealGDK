@@ -11,7 +11,7 @@ Before launching a cloud deployment, as well as generating schema and a snapshot
 
 Workers are programs that connect to a SpatialOS world. They perform the computation associated with a world: they can read what’s happening, watch for changes, and make changes of their own. You prepare both your server-workers and client-workers for upload to the cloud by building their assemblies from their `.uproject` files. We call this “building your workers”. 
 
-You can find out more about workers in the [GDK workers documentation]()
+You can find out more about workers in the [GDK workers documentation]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)
 
 <%(/Expandable)%>
 

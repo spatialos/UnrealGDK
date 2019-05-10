@@ -70,12 +70,12 @@ When you launch a deployment, SpatialOS sets up the world based on a [snapshot](
 
 #### Deploy locally with multiple clients
 
-Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) and a [snapshot]({{urlRoot}}/content/how-to-use-snapshots). 
+Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) and a [snapshot]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots). 
 
 1. In the Editor, on the [GDK Toolbar]({{urlRoot}}/content/toolbars), open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
-  ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
-  _Image: On the GDK toolbar in the Editor, select **Schema (Full Scan)**_
-  </br>
+    ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+    _Image: On the GDK toolbar in the Editor, select **Schema (Full Scan)**_
+    </br>
 1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
@@ -84,7 +84,7 @@ _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
 
-You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/spatialos-concepts/schema)
+You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
 <%(/Expandable)%>
 
@@ -96,7 +96,7 @@ A SpatialOS entity (usually just called an “entity”) is the SpatialOS equiva
 
 A snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.
 
-You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot).
+You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).
 
 <%(/Expandable)%>
 

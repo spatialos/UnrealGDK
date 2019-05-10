@@ -9,7 +9,7 @@ In the Console, Select **Launch** on the left of the page. Then, select the **La
 
 The Launcher is a distribution tool which downloads and launches game clients for your deployment. You access the Launcher from the Console; use the Console to create a URL to give end-users access to a game client for your game.
 
-Find out more in the [glossary](({{urlRoot}}/content/glossary#launcher).
+Find out more in the [glossary]({{urlRoot}}/content/glossary#launcher).
 <%(/Expandable)%>
 
 ![img]({{assetRoot}}assets/tutorial/launch.png)<br/>

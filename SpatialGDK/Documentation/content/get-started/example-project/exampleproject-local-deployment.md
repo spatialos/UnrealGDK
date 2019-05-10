@@ -20,7 +20,7 @@ Before you launch a local deployment, you have to:
 
 Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
 
-You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/spatialos-concepts/schema)
+You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
 <%(/Expandable)%>
 
@@ -32,7 +32,7 @@ A SpatialOS entity (usually just called an “entity”) is the SpatialOS equiva
 
 A snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.
 
-You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot).
+You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).
 
 <%(/Expandable)%>
 
