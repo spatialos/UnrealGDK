@@ -6,13 +6,13 @@ pushd "%~dp0"
 
 call :MarkStartOfBlock "%~0"
 
-set ProjectDirectory=%1
+set ProjectDirectory="%1"
 
 if defined ProjectDirectory (
-    echo "Project directory for installation is: %ProjectDirectory%"
+    echo Project directory for installation is: %ProjectDirectory%
 ) else (
     rem If no argument for the project is provided, assume this script is being run as a plugin within a game project.
-    set ProjectDirectory=%~dp0..\..\..
+    set ProjectDirectory="%~dp0..\..\.."
 )
 
 call :MarkStartOfBlock "Setup the git hooks"
@@ -41,17 +41,26 @@ call :MarkStartOfBlock "Check dependencies"
     set UNREAL_ENGINE=""
 
     rem Get the Unreal Engine used by this project by querying the registry for the engine association found in the .uproject.
-    for /f "delims=" %%A in (' powershell -Command "Get-Childitem -Path %ProjectDirectory% -Recurse -Include *.uproject -File | %% {$_.FullName}" ') do set "UPROJECT=%%A"
+    for /f "delims=" %%A in (' powershell -Command "Get-Childitem -Path %ProjectDirectory% -Recurse -Include *.uproject -File | %% {$_.FullName}" ') do set UPROJECT="%%A"
+    
+    rem If the regex failed then it will return a string containing only a space.
+    if %UPROJECT%==" " (
+        echo Error: Could not find uproject. Please make sure you have passed in the project directory correctly.
+        pause
+        exit /b 1
+    )
+
     echo Using uproject: %UPROJECT%
 
     rem Get the Engine Association from the uproject.
-    for /f "delims=" %%A in (' powershell -Command "Select-String -Pattern '..{8}-.{4}-.{4}-.{4}-.{12}.' %UPROJECT% -AllMatches | %% { $_.Matches } | %% { $_.Value }" ') do set "ENGINE_ASSOCIATION=%%A"
-    echo Engine association is: %ENGINE_ASSOCIATION%
+    for /f "delims=" %%A in (' powershell -Command "Select-String -Pattern '..{8}-.{4}-.{4}-.{4}-.{12}.' %UPROJECT% -AllMatches | %% { $_.Matches } | %% { $_.Value }" ') do set ENGINE_ASSOCIATION="%%A"
+    
+    echo Engine association for uproject is: %ENGINE_ASSOCIATION%
 
-    if not "%ENGINE_ASSOCIATION%"=="" (
+    if not %ENGINE_ASSOCIATION%==" " (
         rem Query the registry for the path to the Unreal Engine using the engine associtation.
-        for /F "usebackq tokens=3*" %%A in (`reg query "HKCU\Software\Epic Games\Unreal Engine\Builds" /v %ENGINE_ASSOCIATION%`) do (
-            set UNREAL_ENGINE=%%A
+        for /f "usebackq tokens=3*" %%A in (`reg query "HKCU\Software\Epic Games\Unreal Engine\Builds" /v %ENGINE_ASSOCIATION%`) do (
+            set UNREAL_ENGINE="%%A"
         )
     )
 
@@ -60,8 +69,8 @@ call :MarkStartOfBlock "Check dependencies"
         :climb_parent_directory
         cd ..
         if exist Engine (
-            echo Found Engine at: %cd%
-            set UNREAL_ENGINE=%cd%
+            echo Found Engine at: "%cd%"
+            set UNREAL_ENGINE="%cd%"
         ) else (
             goto :climb_parent_directory
         )
