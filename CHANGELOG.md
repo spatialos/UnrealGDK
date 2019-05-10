@@ -11,9 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 
 ### Bug fixes:
-- Bugfix: BeginPlay is not called with authority when checking out entities from Spatial.
-- Bugfix: Launching SpatialOS would fail if there was a space in the full directory path.
-- Bugfix: GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- BeginPlay is not called with authority when checking out entities from Spatial.
+- Launching SpatialOS would fail if there was a space in the full directory path.
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- Reliable RPC checking no longer breaks compatibility between development and shipping builds.
 
 ### External contributors:
 
