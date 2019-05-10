@@ -22,6 +22,12 @@ In addition to all of the updates from Improbable, this release includes x impro
 
 * 
 
+## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.2) - 2019-xx-xx
+
+### Bug fixes:
+- Adjusted dispatcher tickrate to reduce latency
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+
 ## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
 
 ### Bug fixes:
