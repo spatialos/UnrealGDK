@@ -779,7 +779,9 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		}
 	}
 
-	WriteRpcPayload(RequestObject, TargetObjectRef.Offset, CommandIndex, PayloadWriter);
+	TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
+	RPCPayload Payload(TargetObjectRef.Offset, CommandIndex, Data);
+	Payload.WriteToSchemaObject(RequestObject);
 	return CommandRequest;
 }
 
@@ -819,16 +821,11 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 		}
 	}
 
-	WriteRpcPayload(EventData, TargetObjectRef.Offset, EventIndex, PayloadWriter);
+	TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
+	RPCPayload Payload(TargetObjectRef.Offset, EventIndex, Data);
+	Payload.WriteToSchemaObject(EventData);
 
 	return ComponentUpdate;
-}
-
-void USpatialSender::WriteRpcPayload(Schema_Object* Object, uint32 Offset, Schema_FieldId Index, FSpatialNetBitWriter& PayloadWriter)
-{
-	Schema_AddUint32(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, Offset);
-	Schema_AddUint32(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, Index);
-	AddBytesToSchema(Object, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadWriter);
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)

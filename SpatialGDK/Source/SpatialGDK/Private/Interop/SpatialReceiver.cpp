@@ -947,23 +947,22 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 	{
 		Schema_Object* EventData = Schema_IndexObject(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID, i);
 
-		RPCPayload Data(EventData);
-		int64 CountBits = Data.PayloadData.Num() * 8;
+		RPCPayload Payload(EventData);
 
-		FUnrealObjectRef ObjectRef(EntityId, Data.Offset);
+		FUnrealObjectRef ObjectRef(EntityId, Payload.GetOffset());
 
 		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 
 		if (!TargetObject)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Data.Index);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.GetIndex());
 			continue;
 		}
 
 		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-		UFunction* Function = ClassInfo.RPCs[Data.Index];
-		ApplyRPC(TargetObject, Function, Data.PayloadData, CountBits, FString());
+		UFunction* Function = ClassInfo.RPCs[Payload.GetIndex()];
+		ApplyRPC(TargetObject, Function, Payload, FString());
 	}
 }
 
@@ -997,10 +996,9 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
 
-	uint32 Offset = 0;
-	Offset = Schema_GetUint32(RequestObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
+	RPCPayload Payload(RequestObject);
 
-	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get();
+	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Payload.GetOffset())).Get();
 	if (TargetObject == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object found for EntityId %d"), Op.entity_id);
@@ -1010,13 +1008,12 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-	uint32 Index = Schema_GetUint32(RequestObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
-
-	UFunction* Function = Info.RPCs[Index];
+	UFunction* Function = Info.RPCs[Payload.GetIndex()];
 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
-	ReceiveRPCCommandRequest(Op.request, TargetObject, Function, UTF8_TO_TCHAR(Op.caller_worker_id));
+
+	ApplyRPC(TargetObject, Function, Payload, UTF8_TO_TCHAR(Op.caller_worker_id));
 
 	Sender->SendCommandResponse(Op.request_id, Response);
 }
@@ -1104,34 +1101,14 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-void USpatialReceiver::ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, const TArray<UFunction*>& RPCArray)
-{
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
-
-	for (Schema_FieldId EventIndex = 1; (int)EventIndex <= RPCArray.Num(); EventIndex++)
-	{
-		UFunction* Function = RPCArray[EventIndex - 1];
-		for (uint32 i = 0; i < Schema_GetObjectCount(EventsObject, EventIndex); i++)
-		{
-			Schema_Object* EventData = Schema_IndexObject(EventsObject, EventIndex, i);
-
-			TArray<uint8> PayloadData = GetBytesFromSchema(EventData, 1);
-			// A bit hacky, we should probably include the number of bits with the data instead.
-			int64 CountBits = PayloadData.Num() * 8;
-
-			ApplyRPC(TargetObject, Function, PayloadData, CountBits, FString());
-		}
-	}
-}
-
-void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArray<uint8>& PayloadData, int64 CountBits, const FString& SenderWorkerId)
+void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId)
 {
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
 
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 
-	FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
+	FSpatialNetBitReader PayloadReader(PackageMap, Payload.GetData().GetData(), Payload.CountDataBits(), UnresolvedRefs);
 
 #if !UE_BUILD_SHIPPING
 	int ReliableRPCId = 0;
@@ -1162,7 +1139,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 	}
 	else
 	{
-		QueueIncomingRPC(UnresolvedRefs, TargetObject, Function, PayloadData, CountBits, SenderWorkerId);
+		QueueIncomingRPC(UnresolvedRefs, TargetObject, Function, Payload, SenderWorkerId);
 	}
 
 	// Destroy the parameters.
@@ -1291,14 +1268,11 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, Spa
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-	for (const auto& RPC : QueuedRPCs->GetRPCs())
+	for (auto& RPC : QueuedRPCs->GetRPCs())
 	{
-		UFunction* Function = Info.RPCs[RPC.Index];
+		UFunction* Function = Info.RPCs[RPC.GetIndex()];
 
-		int64 CountBits = RPC.PayloadData.Num() * 8;
-		TArray<uint8> PayloadData = RPC.PayloadData;
-		ApplyRPC(Actor, Function, PayloadData, CountBits, TEXT("Test"));
-		//ApplyRPC(Actor, Function, PayloadData, CountBits, FString());
+		ApplyRPC(Actor, Function, RPC, TEXT("Test"));
 	}
 }
 
@@ -1336,9 +1310,9 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
-void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits, const FString& SenderWorkerId)
+void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId)
 {
-	TSharedPtr<FPendingIncomingRPC> IncomingRPC = MakeShared<FPendingIncomingRPC>(UnresolvedRefs, TargetObject, Function, PayloadData, CountBits);
+	TSharedPtr<FPendingIncomingRPC> IncomingRPC = MakeShared<FPendingIncomingRPC>(UnresolvedRefs, TargetObject, Function, Payload);
 #if !UE_BUILD_SHIPPING
 	IncomingRPC->SenderWorkerId = SenderWorkerId;
 #endif // !UE_BUILD_SHIPPING
@@ -1442,7 +1416,8 @@ void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const FUnrealObjectR
 #if !UE_BUILD_SHIPPING
 			SenderWorkerId = IncomingRPC->SenderWorkerId;
 #endif // !UE_BUILD_SHIPPING
-			ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->PayloadData, IncomingRPC->CountBits, SenderWorkerId);
+			//ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->PayloadData, IncomingRPC->CountBits, SenderWorkerId);
+			ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->Payload, SenderWorkerId);
 		}
 	}
 
@@ -1577,15 +1552,4 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			It.RemoveCurrent();
 		}
 	}
-}
-
-void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, UObject* TargetObject, UFunction* Function, const FString& SenderWorkerId)
-{
-	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-
-	TArray<uint8> PayloadData = GetBytesFromSchema(RequestObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
-	// A bit hacky, we should probably include the number of bits with the data instead.
-	int64 CountBits = PayloadData.Num() * 8;
-
-	ApplyRPC(TargetObject, Function, PayloadData, CountBits, SenderWorkerId);
 }

@@ -34,6 +34,32 @@ struct RPCPayload
 		AddBytesToSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadData.GetData(), sizeof(uint8) * PayloadData.Num());
 	}
 
+	uint32 GetOffset() const
+	{
+		return Offset;
+	}
+
+	uint32 GetIndex() const
+	{
+		return Index;
+	}
+
+	int64 CountDataBits() const
+	{
+		return PayloadData.Num() * 8;
+	}
+
+	const TArray<uint8>& GetData() const
+	{
+		return PayloadData;
+	}
+
+	TArray<uint8>& GetData()
+	{
+		return PayloadData;
+	}
+
+private:
 	uint32 Offset;
 	uint32 Index;
 	TArray<uint8> PayloadData;
@@ -91,7 +117,11 @@ struct RPCsOnEntityCreation : Component
 
 	const TArray<RPCPayload>& GetRPCs() const
 	{
+		return RPCs;
+	}
 
+	TArray<RPCPayload>& GetRPCs()
+	{
 		return RPCs;
 	}
 
