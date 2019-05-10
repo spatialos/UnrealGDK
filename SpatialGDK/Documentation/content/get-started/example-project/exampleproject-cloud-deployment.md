@@ -133,7 +133,7 @@ spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_w
 A valid launch command looks like this: 
 
 ```
-spatial cloud launch --snapshot=snapshots\default.snapshot myassembly one_worker_test.json mydeployment
+spatial cloud launch --snapshot=snapshots\default.snapshot exampleprojectassembly one_worker_test.json mydeployment
 ```
 
 When your deployment has launched, SpatialOS automatically opens the Console in your browser.
