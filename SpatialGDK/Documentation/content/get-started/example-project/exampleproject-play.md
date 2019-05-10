@@ -48,8 +48,6 @@ If you have an existing Unreal multiplayer project, follow our detailed [porting
 
 If you want to start a project from scratch, follow our [Template guide]({{urlRoot}}/content/get-started/gdk-template) to set up a blank project using the GDK. 
 
-\--------
-
-
+--------<br/>
 
 _2019-05-03 Page added with full review_

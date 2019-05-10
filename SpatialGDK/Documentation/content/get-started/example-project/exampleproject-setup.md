@@ -76,5 +76,6 @@ To use the Example project, you must build the GDK for Unreal module dependencie
 
 </br>
 
-\--------
+--------<br/>
+
 _2019-05-03 Page added with full review_
