@@ -229,7 +229,7 @@ bool CreateWorkerAuthorityAssignmentEntities(Worker_SnapshotOutputStream* Output
 	for (const FWorkerTypeLaunchSection& Worker : SpatialGDKSettings->LaunchConfigDesc.Workers)
 	{
 		const WorkerAttributeSet WorkerTypeAttributeSet = TArray<FString>{ Worker.WorkerTypeName };
-		const WorkerRequirementSet WorkerTypePermission{ {WorkerTypeAttributeSet} };
+		const WorkerRequirementSet WorkerTypePermission{ { WorkerTypeAttributeSet } };
 
 		for (int32 x = -EntityCountAxis / 2; x < EntityCountAxis / 2; x++)
 		{
