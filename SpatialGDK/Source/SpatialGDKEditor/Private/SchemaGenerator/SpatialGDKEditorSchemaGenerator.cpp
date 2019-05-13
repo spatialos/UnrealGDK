@@ -37,7 +37,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
 
 TArray<UClass*> SchemaGeneratedClasses;
-TMap<FString, FSchemaData> ClassPathToSchema;
+TMap<FString, FSchemaData> ClassPathToSchemaData;
 uint32 NextAvailableComponentId;
 
 // LevelStreaming
@@ -45,21 +45,21 @@ TMap<FString, uint32> LevelPathToComponentId;
 TSet<uint32> LevelComponentIds;
 
 // Prevent name collisions.
-TMap<FString, FString> ClassToSchemaName;
-TMap<FString, FString> UsedSchemaNames;
-TMap<FString, TSet<FString>> NameCollisions;
+TMap<FString, FString> ClassPathToSchemaName;
+TMap<FString, FString> SchemaNameToClassPath;
+TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
 namespace
 {
 
-void AddNameCollision(FString SchemaName, FString ClassPath)
+void AddPotentialNameCollision(FString DesiredSchemaName, FString ClassPath, FString GeneratedSchemaName)
 {
-	if (!NameCollisions.Contains(SchemaName))
+	if (!PotentialSchemaNameCollisions.Contains(DesiredSchemaName))
 	{
 		TSet<FString> Empty;
-		NameCollisions.Add(SchemaName, Empty);
+		PotentialSchemaNameCollisions.Add(DesiredSchemaName, Empty);
 	}
-	NameCollisions[SchemaName].Add(ClassPath);
+	PotentialSchemaNameCollisions[DesiredSchemaName].Add(FString::Printf(TEXT("%s(%s)"), *ClassPath, *GeneratedSchemaName));
 }
 
 void OnStatusOutput(FString Message)
@@ -223,24 +223,32 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 			bSuccess = false;
 		}
 
-		AddNameCollision(SchemaName, ClassPath);
-		
-		if (ClassToSchemaName.Contains(ClassPath))
+		FString DesiredSchemaName = SchemaName;
+
+		if (ClassPathToSchemaName.Contains(ClassPath))
 		{
+			// Class already has generated schema name.
+			AddPotentialNameCollision(DesiredSchemaName, ClassPath, ClassPathToSchemaName[ClassPath]);
 			continue;
 		}
 
 		int Suffix = 0;
-		while (UsedSchemaNames.Contains(SchemaName))
+		while (SchemaNameToClassPath.Contains(SchemaName))
 		{
 			SchemaName = UnrealNameToSchemaName(ClassName) + FString::Printf(TEXT("%d"), ++Suffix);
 		}
 
-		ClassToSchemaName.Add(Class->GetPathName(), SchemaName);
-		UsedSchemaNames.Add(SchemaName, Class->GetPathName());
+		ClassPathToSchemaName.Add(ClassPath, SchemaName);
+		SchemaNameToClassPath.Add(SchemaName, ClassPath);
+
+		if (DesiredSchemaName != SchemaName)
+		{
+			AddPotentialNameCollision(DesiredSchemaName, ClassPath, SchemaName);
+		}
+		AddPotentialNameCollision(SchemaName, ClassPath, SchemaName);
 	}
 
-	for (auto& Collision : NameCollisions)
+	for (const auto& Collision : PotentialSchemaNameCollisions)
 	{
 		if (Collision.Value.Num() > 1)
 		{
@@ -365,7 +373,7 @@ void SaveSchemaDatabase()
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
-	SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
+	SchemaDatabase->ClassPathToSchema = ClassPathToSchemaData;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->LevelComponentIds = LevelComponentIds;
 
@@ -465,7 +473,7 @@ void DeleteGeneratedSchemaFiles()
 
 void ClearGeneratedSchema()
 {
-	ClassPathToSchema.Empty();
+	ClassPathToSchemaData.Empty();
 	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
@@ -480,16 +488,16 @@ void TryLoadExistingSchemaDatabase()
 
 	if (SchemaDatabase != nullptr)
 	{
-		ClassPathToSchema = SchemaDatabase->ClassPathToSchema;
+		ClassPathToSchemaData = SchemaDatabase->ClassPathToSchema;
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
-		if (ClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+		if (ClassPathToSchemaData.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
-			ClassPathToSchema.Empty();
+			ClassPathToSchemaData.Empty();
 			DeleteGeneratedSchemaFiles();
 		}
 	}
@@ -502,16 +510,27 @@ void TryLoadExistingSchemaDatabase()
 
 void ResetUsedNames()
 {
-	ClassToSchemaName.Empty();
-	UsedSchemaNames.Empty();
-	NameCollisions.Empty();
+	ClassPathToSchemaName.Empty();
+	SchemaNameToClassPath.Empty();
+	PotentialSchemaNameCollisions.Empty();
 
-	for(const TPair<FString, FSchemaData> Entry : ClassPathToSchema)
+	for (const TPair<FString, FSchemaData>& Entry : ClassPathToSchemaData)
 	{
-		ClassToSchemaName.Add(Entry.Key, Entry.Value.GeneratedSchemaName);
-		UsedSchemaNames.Add(Entry.Value.GeneratedSchemaName, Entry.Key);
+		if (Entry.Value.GeneratedSchemaName.IsEmpty())
+		{
+			// Ignore Subobject entries with empty names.
+			continue;
+		}
+		ClassPathToSchemaName.Add(Entry.Key, Entry.Value.GeneratedSchemaName);
+		SchemaNameToClassPath.Add(Entry.Value.GeneratedSchemaName, Entry.Key);
 		FSoftObjectPath ObjPath = FSoftObjectPath(Entry.Key);
-		AddNameCollision(UnrealNameToSchemaName(ObjPath.GetAssetName()), Entry.Key);
+		FString DesiredSchemaName = UnrealNameToSchemaName(ObjPath.GetAssetName());
+
+		if (DesiredSchemaName != Entry.Value.GeneratedSchemaName)
+		{
+			AddPotentialNameCollision(DesiredSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
+		}
+		AddPotentialNameCollision(Entry.Value.GeneratedSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
 	}
 }
 
