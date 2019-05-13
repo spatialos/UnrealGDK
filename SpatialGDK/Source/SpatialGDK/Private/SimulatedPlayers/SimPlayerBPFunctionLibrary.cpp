@@ -10,7 +10,8 @@ DEFINE_LOG_CATEGORY_STATIC(LogSimulatedPlayer, Log, All);
 bool USimPlayerBPFunctionLibrary::IsSimulatedPlayer(UObject* WorldContextObject)
 {
 	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject);
-	if (GameInstance == nullptr) {
+	if (GameInstance == nullptr)
+	{
 		UE_LOG(LogSimulatedPlayer, Warning, TEXT("Cannot check if player is simulated: cannot get GameInstance. Defaulting to false."));
 		return false;
 	}
