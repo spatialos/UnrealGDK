@@ -26,9 +26,9 @@ private:
 	TArray<FString> GeneratedMapPaths;
 
 private:
-	bool GenerateSchemaAndSnapshotForPath(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InPath);
-	bool GenerateSchemaAndSnapshotForMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName);
+	bool GenerateSnapshotForPath(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InPath);
+	bool GenerateSnapshotForMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName);
 
-	bool GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor);
+	bool GenerateSchema(FSpatialGDKEditor& InSpatialGDKEditor);
 	bool GenerateSnapshotForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName);
 };
