@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Misc/Paths.h"
 #include "Logging/LogMacros.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKCloudLauncher, Log, All);
