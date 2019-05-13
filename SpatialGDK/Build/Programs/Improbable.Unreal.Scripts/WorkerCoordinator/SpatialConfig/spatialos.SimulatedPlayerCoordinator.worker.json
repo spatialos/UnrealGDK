@@ -55,8 +55,6 @@
         "<IMPROBABLE_SIM_PLAYER_WORKER_ID>",
         "+useExternalIpForBridge",
         "true",
-        "+linkProtocol",
-        "RakNet",
         "-abslog=${IMPROBABLE_LOG_FILE}",
         "-NoVerifyGC",
         "-nullRHI",
