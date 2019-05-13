@@ -87,7 +87,7 @@ namespace SpatialConstants
 		PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
 	};
 
-	const uint32 WORKER_AUTHORITY_ASSIGNMENT_ENTITY_COUNT = 36;
+	const int32 WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE = 6;
 
 	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
 

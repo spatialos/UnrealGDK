@@ -220,7 +220,6 @@ bool CreateWorkerAuthorityAssignmentEntities(Worker_SnapshotOutputStream* Output
 	// on an actor created during gameplay.
 
 	// Long-term we may be able to replace this with system entities.
-	const int32 EntityCountAxis = static_cast<uint32>(sqrt(SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_ENTITY_COUNT));
 	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
 
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -231,9 +230,9 @@ bool CreateWorkerAuthorityAssignmentEntities(Worker_SnapshotOutputStream* Output
 		const WorkerAttributeSet WorkerTypeAttributeSet = TArray<FString>{ Worker.WorkerTypeName };
 		const WorkerRequirementSet WorkerTypePermission{ { WorkerTypeAttributeSet } };
 
-		for (int32 x = -EntityCountAxis / 2; x < EntityCountAxis / 2; x++)
+		for (int32 x = -SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE / 2; x < SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE / 2; x++)
 		{
-			for (int32 y = -EntityCountAxis / 2; y < EntityCountAxis / 2; y++)
+			for (int32 y = -SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE / 2; y < SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE / 2; y++)
 			{
 				const improbable::Coordinates EntityPosition{ x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f };
 
@@ -528,7 +527,7 @@ bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStrea
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	const int64 StartingEntityId = SpatialGDKSettings->bGeneratePlaceholderEntitiesInSnapshot ? SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1 : SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
-	Worker_EntityId NextEntityId = StartingEntityId + (SpatialGDKSettings->LaunchConfigDesc.Workers.Num() * SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_ENTITY_COUNT);
+	Worker_EntityId NextEntityId = StartingEntityId + (SpatialGDKSettings->LaunchConfigDesc.Workers.Num() * (FMath::Pow(SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE, 2)));
 	for (TObjectIterator<UClass> SnapshotGenerationClass; SnapshotGenerationClass; ++SnapshotGenerationClass)
 	{
 		if (SnapshotGenerationClass->IsChildOf(USnapshotGenerationTemplate::StaticClass()) && *SnapshotGenerationClass != USnapshotGenerationTemplate::StaticClass())
