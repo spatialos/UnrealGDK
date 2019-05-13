@@ -7,8 +7,8 @@
 #include "GameFramework/PlayerController.h"
 #include "TimerManager.h"
 
-#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -16,15 +16,15 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
-#include "Schema/DynamicComponent.h"
-#include "Schema/SpawnData.h"
-#include "Schema/RPCPayload.h"
-#include "Schema/UnrealMetadata.h"
 #include "Schema/ClientRPCEndpoint.h"
+#include "Schema/DynamicComponent.h"
+#include "Schema/RPCPayload.h"
+#include "Schema/SpawnData.h"
+#include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
-#include "Utils/RepLayoutUtils.h"
 #include "Utils/ErrorCodeRemapping.h"
+#include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
