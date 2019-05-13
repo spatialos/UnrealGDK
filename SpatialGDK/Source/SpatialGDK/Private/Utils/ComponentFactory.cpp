@@ -303,9 +303,9 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, UnresolvedObjects, ClearedIds);
 		}
 	}
-	else if (Property->IsA<UDelegateProperty>() || Property->IsA<UMulticastDelegateProperty>())
+	else if (Property->IsA<UDelegateProperty>() || Property->IsA<UMulticastDelegateProperty>() || Property->IsA<UInterfaceProperty>())
 	{
-		// Delegates can be set to replicate, but won't serialize across the network.
+		// These properties can be set to replicate, but won't serialize across the network.
 	}
 	else
 	{
