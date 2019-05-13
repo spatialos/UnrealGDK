@@ -215,7 +215,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 
 bool CreateWorkerAuthorityAssignmentEntities(Worker_SnapshotOutputStream* OutputStream)
 {
-	// For each worker type we need to ensure that they are authoritative over something to ensure
+	// For each worker type we need to ensure that they are authoritative over some entity component to ensure
 	// that they receive updated for the GSM in the scenario where the worker has yet to receive authority over a component
 	// on an actor created during gameplay.
 
