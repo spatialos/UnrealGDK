@@ -17,5 +17,5 @@ public:
 	 * or simulated clients launched from the Editor.
 	 */
 	UFUNCTION(BlueprintPure, Category="SpatialOS|SimulatedPlayer", meta = (WorldContext = WorldContextObject))
-	static bool IsSimulatedPlayer(UObject* WorldContextObject);
+	static bool IsSimulatedPlayer(const UObject* WorldContextObject);
 };
