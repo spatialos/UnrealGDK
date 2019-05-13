@@ -20,7 +20,7 @@ Before you launch a local deployment, you have to:
 
 Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
 
-You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/spatialos-concepts/schema)
+You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
 <%(/Expandable)%>
 
@@ -32,7 +32,7 @@ A SpatialOS entity (usually just called an “entity”) is the SpatialOS equiva
 
 A snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity’s component data. You start each deployment with a snapshot; if it’s a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.
 
-You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot).
+You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).
 
 <%(/Expandable)%>
 
@@ -49,13 +49,11 @@ To launch a local deployment:
    ![Start]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Start**_</br>
 4. On the Editor toolbar, open the **Play** drop-down menu.
-5. Under **Modes**, select **New Editor Window (PIE)**.
 6. Under **Multiplayer Options**, set the number of players to **2** and ensure that the checkbox next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)<br/>
    ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>
    _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_</br>
-
-7. On the Editor toolbar, select **Play** to run the game.
-
+6. Under **Modes**, select **New Editor Window (PIE)** to run the game. 
+7. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to run the game.
 8. When you’re done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>
    ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Stop**_
@@ -64,8 +62,6 @@ To launch a local deployment:
 
 </br>
 
-\--------
-
-
+--------<br/>
 
 _2019-05-03 Page added with full review_

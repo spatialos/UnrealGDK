@@ -17,5 +17,6 @@ _Image: Gameplay screenshot of the Example project_<br/>
 
 </br>
 
-\--------
+--------<br/>
+
 _2019-05-03 Page added with full review_

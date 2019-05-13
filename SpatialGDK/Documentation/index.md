@@ -23,7 +23,8 @@ It takes you through setting up the GDK and getting the Starter Template project
 
 After you set up the SpatialOS GDK Starter Template, you can learn more about the GDK’s functionality with:
 
-<!-- * **The Example Project tutorial**:  Upload a session-based FPS example game to the cloud. -->
+* **The Example Project guide**: Set up and test a representative FPS game and upload it to the cloud. 
+<!-- * **Multi-session cloud deployments tutorial**: Upload a session-based FPS example game to the cloud. -->
 * **The Multiserver Shooter tutorial**: implement shooting across the boundaries of different servers simulating one game world.
 * **The Porting guide**: porting your existing UE project to SpatialOS.
 

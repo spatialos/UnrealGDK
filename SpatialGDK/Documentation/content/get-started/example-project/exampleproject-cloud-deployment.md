@@ -11,7 +11,7 @@ Before launching a cloud deployment, as well as generating schema and a snapshot
 
 Workers are programs that connect to a SpatialOS world. They perform the computation associated with a world: they can read what’s happening, watch for changes, and make changes of their own. You prepare both your server-workers and client-workers for upload to the cloud by building their assemblies from their `.uproject` files. We call this “building your workers”. 
 
-You can find out more about workers in the [GDK workers documentation]()
+You can find out more about workers in the [GDK workers documentation]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)
 
 <%(/Expandable)%>
 
@@ -133,15 +133,13 @@ spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_w
 A valid launch command looks like this: 
 
 ```
-spatial cloud launch --snapshot=snapshots\default.snapshot myassembly one_worker_test.json mydeployment
+spatial cloud launch --snapshot=snapshots\default.snapshot exampleprojectassembly one_worker_test.json mydeployment
 ```
 
 When your deployment has launched, SpatialOS automatically opens the Console in your browser.
 
 #### Next: [Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
 <br/>
-\--------
-
-
+--------<br/>
 
 _2019-05-03 Page added with full review_
