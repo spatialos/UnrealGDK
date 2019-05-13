@@ -1302,7 +1302,7 @@ USpatialActorChannel* USpatialNetDriver::CreateActorChannel(AActor* Actor, UNetC
 	{
 		// Create a new channel for this actor.
 		Channel = (USpatialActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
-		if (Channel)
+		if (Channel != nullptr)
 		{
 			Channel->SetChannelActor(Actor);
 		}

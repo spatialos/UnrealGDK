@@ -478,7 +478,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		EntityActor->UpdateOverlaps();
-
 	}
 }
 
