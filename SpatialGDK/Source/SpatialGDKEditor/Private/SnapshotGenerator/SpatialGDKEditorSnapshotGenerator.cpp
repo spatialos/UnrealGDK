@@ -219,7 +219,7 @@ bool CreateWorkerAuthorityAssignmentEntities(Worker_SnapshotOutputStream* Output
 	// that they receive updated for the GSM in the scenario where the worker has yet to receive authority over a component
 	// on an actor created during gameplay.
 
-	// Long-term we may be bale to replace this with system entities.
+	// Long-term we may be able to replace this with system entities.
 	const int32 EntityCountAxis = static_cast<uint32>(sqrt(SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_ENTITY_COUNT));
 	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
 
