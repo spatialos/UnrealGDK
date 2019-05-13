@@ -220,7 +220,7 @@ bool CreateWorkerAuthorityAssignmentEntities(Worker_SnapshotOutputStream* Output
 	// on an actor created during gameplay.
 
 	// Long-term we may be bale to replace this with system entities.
-	const int32 EntityCountAxis = static_cast<uint32>(sqrt(SpatialConstants::WorkerAuthorityAssignmentEntityCount));
+	const int32 EntityCountAxis = static_cast<uint32>(sqrt(SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_ENTITY_COUNT));
 	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
 
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -528,7 +528,7 @@ bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStrea
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	const int64 StartingEntityId = SpatialGDKSettings->bGeneratePlaceholderEntitiesInSnapshot ? SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1 : SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
-	Worker_EntityId NextEntityId = StartingEntityId + (SpatialGDKSettings->LaunchConfigDesc.Workers.Num() * SpatialConstants::WorkerAuthorityAssignmentEntityCount);
+	Worker_EntityId NextEntityId = StartingEntityId + (SpatialGDKSettings->LaunchConfigDesc.Workers.Num() * SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_ENTITY_COUNT);
 	for (TObjectIterator<UClass> SnapshotGenerationClass; SnapshotGenerationClass; ++SnapshotGenerationClass)
 	{
 		if (SnapshotGenerationClass->IsChildOf(USnapshotGenerationTemplate::StaticClass()) && *SnapshotGenerationClass != USnapshotGenerationTemplate::StaticClass())
