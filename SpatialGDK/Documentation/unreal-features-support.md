@@ -161,17 +161,17 @@ Support of Unreal features with the GDK in a single server-worker configuration:
    <tr>
     <td rowspan="7"><b><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors">Actor Replication</a><b></td>
     <td>Client and server RPCs (C++)</td>
-    <td class="supported"></td>
-    <td>Ordering of reliable RPCs is not respected.</td>
+    <td class="caveats"></td>
+    <td>Ordering is not respected, and RPCs can be unreliable under heavy load. This is planned to be addressed in Q3 2019.</td>
   </tr>
   <tr>
     <td>Client and Server RPCs (Blueprint)</td>
-    <td class="supported"></td>
-    <td>Ordering of reliable RPCs is not respected.</td>
+    <td class="caveats"></td>
+    <td>Ordering is not respected, and RPCs can be unreliable under heavy load. This is planned to be addressed in Q3 2019.</td>
   </tr>
   <tr>
     <td>Multicast RPCs</td>
-    <td class="supported"></td>
+    <td class="caveats"></td>
     <td>RPCs cannot be reliable. (This is due to the distributed systems nature of SpatialOS.)</td>
   </tr>
   <tr>
