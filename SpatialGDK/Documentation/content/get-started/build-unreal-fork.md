@@ -47,7 +47,7 @@ This process can take a long time to complete.
 
 1. In the same directory, double-click **`GenerateProjectFiles.bat`**. This file automatically sets up the project files you require to build Unreal Engine 4.
 	
-	> If you encounter an `error MSB4036: The "GetReferenceNearestTargetFrameworkTask" task was not found` when building with Visual Studio 2017, check that you have NuGet Package Manager installed via the Visual Studio installer.
+	> If you encounter an `error MSB4036: The "GetReferenceNearestTargetFrameworkTask" task was not found` when building with Visual Studio 2017, check that you have the NuGet Package Manager installed via the Visual Studio installer.
 
 1. In the same directory, open **UE4.sln** in Visual Studio.
 
