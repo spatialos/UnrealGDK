@@ -454,7 +454,7 @@ TArray<UClass*> GetAllSupportedClasses()
 		if (DirectoriesToNeverCook.FindByPredicate([&ClassPath](const FDirectoryPath& Directory)
 		{
 			return ClassPath.StartsWith(Directory.Path);
-		}))
+		}) != nullptr)
 		{
 			continue;
 		}
