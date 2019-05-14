@@ -28,6 +28,9 @@ struct FSchemaData
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(VisibleAnywhere)
+	FString GeneratedSchemaName;
+
+	UPROPERTY(VisibleAnywhere)
 	uint32 SchemaComponents[SCHEMA_Count] = {};
 
 	UPROPERTY(VisibleAnywhere)
