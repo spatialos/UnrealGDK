@@ -7,7 +7,7 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogSimulatedPlayer, Log, All);
 
-bool USimPlayerBPFunctionLibrary::IsSimulatedPlayer(UObject* WorldContextObject)
+bool USimPlayerBPFunctionLibrary::IsSimulatedPlayer(const UObject* WorldContextObject)
 {
 	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject);
 	if (GameInstance == nullptr)
