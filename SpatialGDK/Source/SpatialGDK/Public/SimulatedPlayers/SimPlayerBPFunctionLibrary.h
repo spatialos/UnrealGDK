@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
+
 #include "SimPlayerBPFunctionLibrary.generated.h"
 
 UCLASS()

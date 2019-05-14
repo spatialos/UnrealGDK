@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SimPlayerBPFunctionLibrary.h"
+#include "SimulatedPlayers/SimPlayerBPFunctionLibrary.h"
 
 #include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
