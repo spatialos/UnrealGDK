@@ -162,7 +162,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
 	int PlaceholderEntityIdCounter = SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
 
-	TArray<FString> ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
+	const TArray<FString>& ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
 	const WorkerRequirementSet ServerWorkerRequirementSet{ {ServerWorkerTypes} };
 
 	for (int x = -PlaceholderCountAxis / 2; x < PlaceholderCountAxis / 2; x++)
