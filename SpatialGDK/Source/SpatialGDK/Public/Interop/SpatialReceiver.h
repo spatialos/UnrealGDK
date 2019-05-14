@@ -9,10 +9,10 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/DynamicComponent.h"
+#include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
-#include "Schema/RPCPayload.h"
 #include "SpatialCommonTypes.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
