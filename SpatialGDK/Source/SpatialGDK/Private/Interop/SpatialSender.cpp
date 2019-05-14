@@ -73,9 +73,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	FString ClientWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
 
-	TArray<FString> ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
-
-	WorkerRequirementSet AnyServerRequirementSet;
+		WorkerRequirementSet AnyServerRequirementSet;
 	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
@@ -83,7 +81,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { OwningClientAttributeSet };
 	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
 
-	for (WorkerAttributeSet ServerWorkerType : ServerWorkerTypes)
+	TArray<FString> ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
+	for (FString ServerWorkerType : ServerWorkerTypes)
 	{
 		WorkerAttributeSet ServerWorkerAttributeSet = { ServerWorkerType };
 
