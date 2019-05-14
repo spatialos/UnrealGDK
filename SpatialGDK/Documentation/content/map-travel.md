@@ -31,7 +31,7 @@ The Locator is a SpatialOS service which allows you to connect to cloud deployme
 
 Using the locator flow is very similar to using the receptionist, except with different URL options. You must add the `locator`, or `legacylocator` option, and specify the appropriate options.  The `locator` workflow makes use of the new [Authentication flow](https://docs.improbable.io/reference/latest/shared/auth/integrate-authentication-platform-sdk), and the `legacylocator` makes use of the [Deprecated Authentication flow](https://docs.improbable.io/reference/latest/shared/auth/integrate-authentication)
 
-**Locator**: Add the options `locator`, `playeridentity` and `login`.
+**Locator**: Add the options `locator`, `playeridentity` and `login`. For more information about the options, see [URL options]({{urlRoot}}/content/command-line-arguments#url-options).
 ```
 FURL TravelURL;
 TravelURL.Host = TEXT("locator.improbable.io");
