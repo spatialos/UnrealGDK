@@ -54,12 +54,7 @@ namespace
 
 void AddPotentialNameCollision(FString DesiredSchemaName, FString ClassPath, FString GeneratedSchemaName)
 {
-	if (!PotentialSchemaNameCollisions.Contains(DesiredSchemaName))
-	{
-		TSet<FString> Empty;
-		PotentialSchemaNameCollisions.Add(DesiredSchemaName, Empty);
-	}
-	PotentialSchemaNameCollisions[DesiredSchemaName].Add(FString::Printf(TEXT("%s(%s)"), *ClassPath, *GeneratedSchemaName));
+	PotentialSchemaNameCollisions.FindOrAdd(DesiredSchemaName).Add(FString::Printf(TEXT("%s(%s)"), *ClassPath, *GeneratedSchemaName));
 }
 
 void OnStatusOutput(FString Message)
