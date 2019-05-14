@@ -73,7 +73,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	FString ClientWorkerAttribute = improbable::GetOwnerWorkerAttribute(Actor);
 
-		WorkerRequirementSet AnyServerRequirementSet;
+	WorkerRequirementSet AnyServerRequirementSet;
 	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
