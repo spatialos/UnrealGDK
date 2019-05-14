@@ -21,7 +21,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
     - Look at the previous release versions in the changelog to see how this should be done.
 1. Commit your changes to `CHANGELOG.md`.
 1. `git push --set-upstream origin x.y.z-rc` to push the branch.
-1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
+1. Announce the branch and the commit hash it uses in the `#unreal-gdk-release` channel.
 
 ### Create the `improbableio/UnrealEngine` release candidate
 1. `git clone` the [improbableio/UnrealEngine](https://github.com/improbableio/UnrealEngine).
@@ -30,7 +30,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. Using `git log`, take note of the latest commit hash.
 1. `git checkout -b 4.xx-SpatialOSUnrealGDK-x.y.z-rc` in order to create release candidate branch.
 1. `git push --set-upstream origin 4.xx-SpatialOSUnrealGDK-x.y.z-rc` to push the branch.
-1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
+1. Announce the branch and the commit hash it uses in the `#unreal-gdk-release` channel.
 
 ### Create the `UnrealGDKThirdPersonShooter` release candidate
 1. `git clone` the [UnrealGDKThirdPersonShooter](https://github.com/spatialos/UnrealGDKThirdPersonShooter).
@@ -42,7 +42,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
 
 ### Create the `UnrealGDKTestSuite` release candidate
-1. `git clone` the [UnrealGDKThirdPersonShooter](https://github.com/spatialos/UnrealGDKTestSuite).
+1. `git clone` the [UnrealGDKTestSuite](https://github.com/spatialos/UnrealGDKTestSuite).
 1. `git checkout master`
 1. `git pull`
 1. Using `git log`, take note of the latest commit hash.
@@ -65,38 +65,17 @@ It is vital that you test using the docs for the release version that you are ab
 
 If at any point in the below validation steps you encounter a blocker, you must fix that defect prior to releasing.
 
-There are two ways to do this, you must decide on the most appropriate one.
-* Delete the existing release branches and branch new ones from the HEAD of `master` (in the case of the GDK and tutorials) and from the HEAD of `4.xx-SpatialOSUnrealGDK` (in `improbableio/UnrealEngine`).
-* `git cherry-[commit-hash]` the change into your release candidate branch. Be sure to cherry-pick any changes that your cherry-pick depends on. GDK changes often depend on engine changes, for example.
+The workflow for this is:
 
-The workflow for creating new release branches is:
-
-1. Raise a bug ticket detailing the blocker.
-1. `git checkout master`
+1. Raise a bug ticket in JIRA detailing the blocker.
+1. `git checkout x.y.z-rc`
 1. `git pull`
 1. `git checkout -b bugfix/UNR-xxx`
 1. Fix the defect.
-1. Make a commit, push, open a PR into `master`.
-1. When the PR is merged, `git checkout master` and `git pull`.
-1. Branch off of master using `git checkout -b x.y.z-rc-[n+1]` in order to create a new release candidate branch, and re-test the defect to ensure you fixed it.
+1. `git commit`, `git push -u origin HEAD`, target your PR at `x.y.z-rc`.
+1. When the PR is merged, `git checkout x.y.z-rc`, `git pull` and re-test the defect to ensure you fixed it.
 1. Notify #unreal-gdk-release that the release candidate has been updated.
-1. Judgment call: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch.
-
-The workflow for cherry-picking the fix is:
-
-1. Raise a bug ticket detailing the blocker.
-1. `git checkout master`
-1. `git pull`
-1. `git checkout -b bugfix/UNR-xxx`
-1. Fix the defect.
-1. Make a commit, push, open a PR into `master`.
-1. When the PR is merged, `git checkout x.y.z-rc`.
-1. `git cherry-[commit-hash]` where `[commit-hash]` is the hash of `bugfix/UNR-xxx` merging into `master`.
-1. `git push`
-1. Notify #unreal-gdk-release that the release candidate has been updated.
-1. Judgment call: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch.
-
-* Raise a bug ticket detailing the blocker.
+1. **Judgment call**: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch. Consult the rest of the team if you are unsure which to choose.
 
 ## Validation (Multiserver Shooter tutorial)
 1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/tutorial, bearing in mind the following caveats:
@@ -125,7 +104,7 @@ The workflow for cherry-picking the fix is:
   * Add `-OverrideSpatialNetworking` after the ip address
   * Add `-NetDriverOverrides=/Script/SpatialGDK.SpatialNetDriver` after that
   * Add `+useExternalIpForBridge true` after that
-  * Your final script shoudl look somethisn like: `@echo off
+  * Your final script should look something like: `@echo off
 call "%~dp0ProjectPaths.bat"
 "%UNREAL_HOME%\Engine\Binaries\Win64\UE4Editor.exe" "%~dp0%PROJECT_PATH%\%GAME_NAME%.uproject" 172.16.120.76 -game -log -OverrideSpatialNetworking -NoLogToSpatial -windowed -ResX=1280 -ResY=720  +workerType UnrealClient -NetDriverOverrides=/Script/SpatialGDK.SpatialNetDriver +useExternalIpForBridge true`
 * Save your changes.
@@ -135,8 +114,7 @@ call "%~dp0ProjectPaths.bat"
 * You can now turn off your server machine.
 
 ## Validation (GDK Starter Template)
-1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/gdk-template, bearing in mind the following caveats:
-* When you clone `UnrealGDKThirdPersonShooter`, be sure to checkout the release candidate branch, so you're working with the release version.
+1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/gdk-template, bearing in mind the following caveat:
 * When you clone the GDK into the `Plugins` folder, be sure to checkout the release candidate branch, so you're working with the release version.
 
 ## Validation (UnrealGDKTestSuite)
@@ -152,27 +130,52 @@ call "%~dp0ProjectPaths.bat"
 
 ## Release
 
-All of the above tests must have passed and there must be no outstanding blocking issues before you start this, the release phase.
+All of the above tests **must** have passed and there must be no outstanding blocking issues before you start this, the release phase.
 
-1. In `UnrealGDK` merge `x.y.z-rc` into `release`.
+When merging the following PRs, you need to enable `Allow merge commits` option on the repos and choose `Create a merge commit` from the dropdown in the pull request UI to merge the branch, then disable `Allow merge commits` option on the repos once the release process is complete. You need to be an admin to perform this.
+
+1. In `UnrealGDK`, create `premerge-x.y.z-rc` from `x.y.z-rc` (select `x.y.z-rc` in the branch dropdown, then type the name of the new branch to create. If there's already a branch with that name, delete it first).
+1. In `UnrealGDK`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
-1. In `improbableio/UnrealEngine` merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-release`.
+1. In `improbableio/UnrealEngine`, create `premerge-4.xx-SpatialOSUnrealGDK-x.y.z-rc` from `4.xx-SpatialOSUnrealGDK-x.y.z-rc`.
+1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-release` using GitHub PR (use `Update branch` button to merge `4.xx-SpatialOSUnrealGDK-release` into `4.xx-SpatialOSUnrealGDK-x.y.z-rc`).
 1. Use the GitHub Release UI to tag the commit you just made as `4.xx-SpatialOSUnrealGDK-x.y.z`.<br/>
-1. In `UnrealGDKThirdPersonShooter` merge `x.y.z-rc` into `release`, and tag that commit as `x.y.z`.
+1. In `UnrealGDKThirdPersonShooter`, create `premerge-x.y.z-rc` from `x.y.z-rc`.
+1. In `UnrealGDKThirdPersonShooter`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
 1. In `UnrealGDKThirdPersonShooter`, `git rebase` `release` into `tutorial`.
 1. In `UnrealGDKThirdPersonShooter`, `git rebase` `release` into `tutorial-complete`.
-1. In `UnrealGDKTestSuite` merge `x.y.z-rc` into `release`, and tag that commit as `x.y.z`.
+1. In `UnrealGDKTestSuite`, create `premerge-x.y.z-rc` from `x.y.z-rc`.
+1. In `UnrealGDKTestSuite`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
 1. Publish the docs to live using Improbadoc commands listed [here](https://improbableio.atlassian.net/wiki/spaces/GBU/pages/327485360/Publishing+GDK+Docs).
 1. Update the [roadmap](https://github.com/spatialos/UnrealGDK/pull/900), moving the release from **Planned** to **Released**, and linking to the release.
 1. Announce the release in:
 
 * Forums
-* Discord (#unreal, do not @here)
-* Slack (#releases)
-* Email (spatialos-announce@)
+* Discord (`#unreal`, do not `@here`)
+* Slack (`#releases`)
+* Email (`spatialos-announce@`)
+
+Congratulations, you've done the release!
+
+## Clean up
+
+There are potentially changes that were merged into the release candidate branches that aren't merged into the corresponding development (master) branches yet. Because there are some race conditions involved, a GDK engineer should be in charge of doing this.
+
+Indirect-merge from `A` into `B` (`premerge-x.y.z-rc` into `master`, except `improbableio/UnrealEngine` repo where this is `premerge-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`) is defined as:
+1. Make sure there is no `merge-A-into-B` branch created already, and delete it if it exists.
+1. Create branch `merge-A-into-B` from `B` (`git checkout B`, `git checkout -b merge-A-into-B`).
+1. Merge `A` into `merge-A-into-B` (`git merge A`, `git push origin merge-A-into-B`).
+1. Merge `merge-A-into-B` into `B` using GitHub PR. Make sure you use `Create a merge commit` option.
+
+Use the above definition to perform the following:
+1. `UnrealGDK` repo: indirect-merge `premerge-x.y.z-rc` into `master`.
+1. `improbableio/UnrealEngine` repo: indirect-merge `premerge-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`.
+1. `UnrealGDKThirdPersonShooter` repo: (skip this step if `premerge-x.y.z-rc` has no new commits compared to `master`) indirect-merge `premerge-x.y.z-rc` into `master`.
+1. `UnrealGDKTestSuite` repo: (skip this step if `premerge-x.y.z-rc` has no new commits compared to `master`) indirect-merge `premerge-x.y.z-rc` into `master`.
+1. Delete the `premerge-` branches.
 
 ## Appendix
 
