@@ -32,6 +32,7 @@
 #include "Engine/WorldComposition.h"
 #include "Misc/ScopedSlowTask.h"
 #include "UObject/StrongObjectPtr.h"
+#include "Settings/ProjectPackagingSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
@@ -393,6 +394,7 @@ void SaveSchemaDatabase()
 TArray<UClass*> GetAllSupportedClasses()
 {
 	TSet<UClass*> Classes;
+	TArray<FDirectoryPath> DirectoriesToNeverCook = GetMutableDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
 
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
@@ -432,7 +434,10 @@ TArray<UClass*> GetAllSupportedClasses()
 		}
 
 		// No replicated/handover properties found
-		if (SupportedClass == nullptr) continue;
+		if (SupportedClass == nullptr)
+		{
+			continue;
+		}
 
 		// Ensure we don't process skeleton, reinitialized or classes that have since been hot reloaded
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
@@ -444,6 +449,15 @@ TArray<UClass*> GetAllSupportedClasses()
 			continue;
 		}
 
+		// Avoid processing classes contained in Directories to Never Cook
+		bool bNeverCook = false;
+		if (FDirectoryPath* ContainingDirectory = DirectoriesToNeverCook.FindByPredicate([SupportedClass](FDirectoryPath Directory) {
+			return SupportedClass->GetPathName().StartsWith(Directory.Path);
+		}))
+		{
+				continue;
+		}
+		
 		Classes.Add(SupportedClass);
 	}
 
