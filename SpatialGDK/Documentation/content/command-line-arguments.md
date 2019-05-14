@@ -1,7 +1,7 @@
 <%(TOC)%>
 # Command line arguments
 
-In the SpatialOS GDK for Unreal, you can use [command line arguments](https://docs.unrealengine.com/en-us/Programming/Basics/CommandLineArguments) to customize how your Unreal engine runs. For example, you can specify how a worker instance connects to a SpatialOS deployment or decide whether to enable [query-based interest](https://docs.improbable.io/reference/13.7/shared/worker-configuration/query-based-interest#query-based-interest-beta).
+In the SpatialOS GDK for Unreal, you can use [command line arguments](https://docs.unrealengine.com/en-us/Programming/Basics/CommandLineArguments) to customize how the GDK runs. For example, you can specify how a worker instance connects to a SpatialOS deployment or choose which [network stack](https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#choosing-a-network-stack) that a worker instance uses to communicate with the SpatialOS [Runtime](https://docs.improbable.io/reference/13.7/shared/glossary#the-runtime).
 
 ## Connection arguments
 
@@ -34,7 +34,7 @@ To learn more about the connection arguments that you can apply to both Receptio
                     <li><code>UnrealWorker</code> for server-workers</li>
                     <li><code>UnrealClient</code> for client-workers</li>
                 </ul>
-                <p>For example, to connect a server-worker instance to a local deployment, you add the following command line arguments:</p>
+                <p>For example, to connect a server-worker instance to a local deployment, you can run the following line:</p>
                 <p><code>MyProject.exe MyMap -server -workerType UnrealWorker</code></p>
             </td>
         </tr>
@@ -75,7 +75,7 @@ When you connect a client-worker or server-worker instance to a SpatialOS depoly
     </tbody>
 </table>
 
-For example, to connect a server-worker instance to a deployment on a different machine using Receptionist, you add the following command line arguments:
+For example, to connect a server-worker instance to a deployment on a different machine using Receptionist, you can run the following line:
 
 `MyProject.exe MyMap -server -workerType UnrealWorker -receptionistHost <IP of a different machine> -useExternalIpForBridge true`
 
@@ -147,7 +147,7 @@ Use the following arguments to configure settings other than worker connection:
         <tr>
             <td style="width: 27%;"><code>-linkProtocol</code><br></td>
             <td style="width: 10%;">string</td>
-            <td style="width: 63%;">The <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#choosing-a-network-stack">network stack</a> that the worker instance uses to communicate with the SpatialOS <a href="https://docs.improbable.io/reference/13.7/shared/glossary#the-runtime">Runtime</a>.
+            <td style="width: 63%;">The network stack that the worker instance uses to communicate with the Runtime.
                 The available options are <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#kcp">KCP</a> and <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#tcp">TCP</a>. The default value is <code>KCP</code>.<br><br><strong>Note</strong>:
                 The <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#raknet">RakNet</a> network stack is not supported.<br></td>
         </tr>
@@ -166,25 +166,25 @@ In the GDK, so that a client-worker instance executes a [map travel]({{urlRoot}}
             <td style="width: 63%;"><strong>Description</strong></td>
         </tr>
         <tr>
-            <td style="width: 27%;"><code>-locator</code></td>
+            <td style="width: 27%;"><code>locator</code></td>
             <td style="width: 10%;">flag</td>
             <td style="width: 63%;">To connect the client-worker instance to the deployment using Locator, &nbsp;add this flag to the <code>ClientTravel</code> URL.<br><br><strong>Note</strong>: If you add this flag, ensure that the <code>playeridentity</code> option and the
                 <code>login</code> option are also in the URL.</td>
         </tr>
         <tr>
-            <td style="width: 27%;"><code>-playeridentity</code></td>
+            <td style="width: 27%;"><code>playeridentity</code></td>
             <td style="width: 10%;">string</td>
             <td style="width: 63%;">The <code><a href="https://docs.improbable.io/reference/13.7/shared/auth/integrate-authentication-platform-sdk#2-generating-a-playeridentitytoken">PlayerIdentifyToken</a></code> (PIT) that the client-worker instance passes to the Locator service
                 to prove its player identity within SpatialOS.</td>
         </tr>
         <tr>
-            <td style="width: 27%;"><code>-login</code></td>
+            <td style="width: 27%;"><code>login</code></td>
             <td style="width: 10%;">string</td>
             <td style="width: 63%;">The <code><a href="https://docs.improbable.io/reference/13.7/shared/auth/integrate-authentication-platform-sdk#3-generating-a-logintoken">LoginToken</a></code> that the client-worker instance passes to the Locator service to be permitted to
                 join the deployment.</td>
         </tr>
         <tr>
-            <td style="width: 27%;"><code>-useExternalIpForBridge</code></td>
+            <td style="width: 27%;"><code>useExternalIpForBridge</code></td>
             <td style="width: 10%;">bool</td>
             <td style="width: 63%;">Set <code>true</code> to connect a client-worker instance to a deployment in either of the following ways. By default, it's set to <code>false</code>.</code>
                 <ul>
