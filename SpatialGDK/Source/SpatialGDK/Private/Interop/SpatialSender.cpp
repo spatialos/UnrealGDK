@@ -66,11 +66,6 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 	ClassInfoManager = InNetDriver->ClassInfoManager;
 }
 
-const WorkerAttributeSet ServerWorkerAttributeSet = { SpatialConstants::ServerWorkerType };
-const WorkerAttributeSet ClientWorkerAttributeSet = { SpatialConstants::ClientWorkerType };
-
-const WorkerRequirementSet ServerWorkerOnlyRequirementSet = { ServerWorkerAttributeSet };
-
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 {
 	AActor* Actor = Channel->Actor;
@@ -81,7 +76,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	TArray<FString> ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
 
 	WorkerRequirementSet AllServerTypesRequirementSet;
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { ClientWorkerAttributeSet };
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
 
@@ -114,7 +109,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	WorkerRequirementSet AuthoritativeWorkerType = ServerWorkerOnlyRequirementSet;
+	WorkerRequirementSet AuthoritativeWorkerType = SpatialConstants::UnrealServerPermission;
 	if (!Class->WorkerAssociation.IsEmpty())
 	{
 		const WorkerAttributeSet WorkerAttribute{ Class->WorkerAssociation };
