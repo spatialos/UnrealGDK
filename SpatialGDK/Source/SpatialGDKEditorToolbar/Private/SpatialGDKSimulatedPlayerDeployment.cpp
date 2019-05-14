@@ -6,7 +6,7 @@
 #include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
-#include "SharedPointer.h"
+#include "Templates/SharedPointer.h"
 #include "SpatialGDKEditorCloudLauncherSettings.h"
 #include "SpatialGDKEditorSettings.h"
 #include "Textures/SlateIcon.h"
