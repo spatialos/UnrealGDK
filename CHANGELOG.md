@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
 - Launching SpatialOS would fail if there was a space in the full directory path.
 - Fixed an issue with schema name collisions.
+- Fixed an issues where schema generation was not respecting "Directories to never cook"
 
 ## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
 
