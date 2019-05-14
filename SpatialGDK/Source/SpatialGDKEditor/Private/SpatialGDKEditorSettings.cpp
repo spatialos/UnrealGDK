@@ -20,7 +20,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 void USpatialGDKEditorSettings::SynchronizeGDKWorkerNames()
 {
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->ServerWorkerTypes = {};
+	SpatialGDKSettings->ServerWorkerTypes.Empty();
 
 	for (uint8 i = 0; i < LaunchConfigDesc.Workers.Num(); ++i)
 	{
