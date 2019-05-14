@@ -22,9 +22,9 @@ void USpatialGDKEditorSettings::SynchronizeGDKWorkerNames()
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->ServerWorkerTypes.Empty();
 
-	for (uint8 i = 0; i < LaunchConfigDesc.Workers.Num(); ++i)
+	for (const FWorkerTypeLaunchSection& WorkerLaunchDescription : LaunchConfigDesc.Workers)
 	{
-		SpatialGDKSettings->ServerWorkerTypes.Add(LaunchConfigDesc.Workers[i].WorkerTypeName);
+		SpatialGDKSettings->ServerWorkerTypes.Add(WorkerLaunchDescription.WorkerTypeName);
 	}
 
 	SpatialGDKSettings->PostEditChange();

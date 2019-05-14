@@ -197,7 +197,6 @@ class SPATIALGDKEDITOR_API USpatialGDKEditorSettings : public UObject
 
 public:
 	USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer);
-	void SynchronizeGDKWorkerNames();
 
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostInitProperties() override;
@@ -299,4 +298,7 @@ public:
 
 		return CommandLineLaunchFlags;
 	}
+
+private:
+	void SynchronizeGDKWorkerNames();
 };
