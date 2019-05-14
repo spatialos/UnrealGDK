@@ -52,7 +52,7 @@ TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 namespace
 {
 
-void AddPotentialNameCollision(FString DesiredSchemaName, FString ClassPath, FString GeneratedSchemaName)
+void AddPotentialNameCollision(const FString& DesiredSchemaName, const FString& ClassPath, const FString& GeneratedSchemaName)
 {
 	PotentialSchemaNameCollisions.FindOrAdd(DesiredSchemaName).Add(FString::Printf(TEXT("%s(%s)"), *ClassPath, *GeneratedSchemaName));
 }
