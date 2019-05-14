@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialMetricsDisplay.h"
+#include "Utils/SpatialMetricsDisplay.h"
 
 #include "Debug/DebugDrawService.h"
 #include "Engine/Canvas.h"
