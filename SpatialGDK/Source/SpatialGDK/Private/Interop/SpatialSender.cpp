@@ -75,7 +75,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	TArray<FString> ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
 
-	WorkerRequirementSet AllServerTypesRequirementSet;
+	WorkerRequirementSet AnyServerRequirementSet;
 	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
@@ -83,11 +83,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { OwningClientAttributeSet };
 	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
 
-	for(auto i=0; i < ServerWorkerTypes.Num(); ++i)
+	for (WorkerAttributeSet ServerWorkerType : ServerWorkerTypes)
 	{
-		WorkerAttributeSet ServerWorkerAttributeSet = { ServerWorkerTypes[i] };
+		WorkerAttributeSet ServerWorkerAttributeSet = { ServerWorkerType };
 
-		AllServerTypesRequirementSet.Add(ServerWorkerAttributeSet);
+		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
 		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
 		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
 	}
@@ -96,7 +96,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
-		ReadAcl = AllServerTypesRequirementSet;
+		ReadAcl = AnyServerRequirementSet;
 	}
 	else if (Actor->IsA<APlayerController>())
 	{
@@ -109,20 +109,20 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	WorkerRequirementSet AuthoritativeWorkerType = SpatialConstants::UnrealServerPermission;
+	WorkerRequirementSet AuthoritativeWorkerRequirementSet = SpatialConstants::UnrealServerPermission;
 	if (!Class->WorkerAssociation.IsEmpty())
 	{
 		const WorkerAttributeSet WorkerAttribute{ Class->WorkerAssociation };
-		AuthoritativeWorkerType = { WorkerAttribute };
+		AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 	}
 
 	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerType);
-	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerType);
-	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerType);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AuthoritativeWorkerType);
-	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerType);
-	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerType);
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::SPAWN_DATA_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 
 	if (Actor->IsA<APlayerController>())
@@ -138,7 +138,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			return;
 		}
 
-		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerType);
+		ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
 	});
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
@@ -160,7 +160,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 				return;
 			}
 
-			ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerType);
+			ComponentWriteAcl.Add(ComponentId, AuthoritativeWorkerRequirementSet);
 		});
 	}
 
