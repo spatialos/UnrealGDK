@@ -222,8 +222,6 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 
 		if (ClassPathToSchemaName.Contains(ClassPath))
 		{
-			// Class already has generated schema name.
-			AddPotentialNameCollision(DesiredSchemaName, ClassPath, ClassPathToSchemaName[ClassPath]);
 			continue;
 		}
 
@@ -247,7 +245,7 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 	{
 		if (Collision.Value.Num() > 1)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for types [%s]"),
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
 				*Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));
 		}
 	}
