@@ -110,7 +110,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
-	ComponentWriteAcl.Add(SpatialConstants::RPC_ON_ENTITY_CREATION_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, ServersOnly);
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
@@ -398,11 +398,15 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 	return ComponentInterest;
 }
 
-SpatialGDK::RPCsOnEntityCreation USpatialSender::PackQueuedRPCsForActor(TArray<TSharedRef<FPendingRPCParams>>* RPCList, AActor* Actor)
+RPCsOnEntityCreation USpatialSender::PackQueuedRPCsForActor(TArray<TSharedRef<FPendingRPCParams>>* RPCList, AActor* Actor)
 {
-	ensure(RPCList != nullptr);
-
 	RPCsOnEntityCreation QueuedRPCs;
+	check((RPCList != nullptr) && (Actor != nullptr));
+	if ((RPCList == nullptr) || (Actor == nullptr))
+	{
+		return QueuedRPCs;
+	}
+
 	UClass* Class = Actor->GetClass();
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 

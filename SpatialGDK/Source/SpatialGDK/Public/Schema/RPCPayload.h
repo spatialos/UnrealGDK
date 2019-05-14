@@ -67,7 +67,7 @@ private:
 
 struct RPCsOnEntityCreation : Component
 {
-	static const Worker_ComponentId ComponentId = SpatialConstants::RPC_ON_ENTITY_CREATION_ID;
+	static const Worker_ComponentId ComponentId = SpatialConstants::RPCS_ON_ENTITY_CREATION_ID;
 
 	RPCsOnEntityCreation() = default;
 
@@ -136,6 +136,14 @@ struct RPCsOnEntityCreation : Component
 		return Update;
 	}
 
+	static Worker_CommandRequest  CreateClearFieldsCommandRequest()
+	{
+		Worker_CommandRequest CommandRequest = {};
+		CommandRequest.component_id = ComponentId;
+		CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, 1);
+		Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+		return CommandRequest;
+	}
 private:
 	TArray<RPCPayload> RPCs;
 };

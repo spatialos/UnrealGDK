@@ -14,9 +14,6 @@ component UnrealClientRPCEndpoint {
     id = 9990;
     event UnrealRPCPayload unreliable_client_to_server_rpc;
     command Void reliable_server_to_client_rpc(UnrealRPCPayload);
-    // Flag that shows whether client has processed RPCs that were sent
-    // as part of entity creation request
-    bool client_processed_rpcs_on_entity_creation = 1;
 }
 
 component UnrealServerRPCEndPoint {
@@ -35,5 +32,6 @@ component UnrealMulticastRPCEndpoint {
 component RPCsOnEntityCreation {
 	id = 9985;
 	list<UnrealRPCPayload> rpcs = 1;
+    command Void clear_rpcs(Void);
 }
 

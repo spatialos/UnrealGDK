@@ -115,7 +115,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
-	case SpatialConstants::RPC_ON_ENTITY_CREATION_ID:
+	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -308,16 +308,16 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 		{
-			SpatialGDK::RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<SpatialGDK::RPCsOnEntityCreation>(Op.entity_id);
-			if (QueuedRPCs != nullptr && QueuedRPCs->HasRPCPayloadData())
+			if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
 			{
-				ProcessQueuedActorRPCsOnEntityCreation(Actor, QueuedRPCs);
-			}
+				if (QueuedRPCs->HasRPCPayloadData())
+				{
+					ProcessQueuedActorRPCsOnEntityCreation(Actor, QueuedRPCs);
+				}
 
-			ClientRPCEndpoint Endpoint = {};
-			Endpoint.ClientProcessedRPCsOnEntityCreation = true;
-			Worker_ComponentUpdate Update = Endpoint.CreateClientRPCEndpointUpdate();
-			NetDriver->Connection->SendComponentUpdate(Op.entity_id, &Update);
+				Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
+				NetDriver->Connection->SendCommandRequest(Op.entity_id, &CommandRequest, 1);
+			}
 		}
 	}
 
@@ -639,6 +639,12 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
+void USpatialReceiver::ClearRPCsOnEntityCreation(const Worker_EntityId& EntityId)
+{
+	Worker_ComponentUpdate Update = RPCsOnEntityCreation::CreateClearFieldsUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+}
+
 AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
 {
 	if (UnrealMetadataComp->StablyNamedRef.IsSet())
@@ -820,7 +826,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
-	case SpatialConstants::RPC_ON_ENTITY_CREATION_ID:
+	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -930,14 +936,6 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 		}
 	}
 
-	Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-	bool ClientProcessedRPCsOnEntityCreation = GetBoolFromSchema(FieldsObject, SpatialConstants::CLIENT_PROCESSED_RPCS_ON_ENTITY_CREATION);
-	if (ClientProcessedRPCsOnEntityCreation)
-	{
-		Worker_ComponentUpdate Update = RPCsOnEntityCreation::CreateClearFieldsUpdate();
-		NetDriver->Connection->SendComponentUpdate(Op.entity_id, &Update);
-	}
-
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 
 	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID);
@@ -979,6 +977,11 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		// 2. The attribute of the specific worker that sent the request
 		// We want to give authority to the specific worker, so we grab the second element from the attribute set.
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Payload, Op.caller_attribute_set.attributes[1], Op.request_id);
+		return;
+	}
+	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
+	{
+		ClearRPCsOnEntityCreation(Op.entity_id);
 		return;
 	}
 #if WITH_EDITOR

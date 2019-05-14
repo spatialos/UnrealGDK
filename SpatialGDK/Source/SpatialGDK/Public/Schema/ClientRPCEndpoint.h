@@ -16,14 +16,7 @@ struct ClientRPCEndpoint : Component
 {
 	static const Worker_ComponentId ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
 
-	ClientRPCEndpoint(bool InClientProcessedRPCsOnEntityCreation = false) : ClientProcessedRPCsOnEntityCreation(InClientProcessedRPCsOnEntityCreation)
-	{}
-
-	ClientRPCEndpoint(const Worker_ComponentData& Data)
-	{
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-		ClientProcessedRPCsOnEntityCreation = GetBoolFromSchema(ComponentObject, SpatialConstants::CLIENT_PROCESSED_RPCS_ON_ENTITY_CREATION);
-	}
+	ClientRPCEndpoint() = default;
 
 	Worker_ComponentData CreateClientRPCEndpointData()
 	{
@@ -31,23 +24,9 @@ struct ClientRPCEndpoint : Component
 		Data.component_id = ComponentId;
 		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-		Schema_AddBool(ComponentObject, SpatialConstants::CLIENT_PROCESSED_RPCS_ON_ENTITY_CREATION, ClientProcessedRPCsOnEntityCreation);
 
 		return Data;
 	}
-
-	Worker_ComponentUpdate CreateClientRPCEndpointUpdate()
-	{
-		Worker_ComponentUpdate Update = {};
-		Update.component_id = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
-		Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID);
-		Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-		Schema_AddBool(UpdateObject, SpatialConstants::CLIENT_PROCESSED_RPCS_ON_ENTITY_CREATION, ClientProcessedRPCsOnEntityCreation);
-
-		return Update;
-	}
-
-	bool ClientProcessedRPCsOnEntityCreation;
 };
 
 } // namespace SpatialGDK

@@ -108,7 +108,7 @@ namespace SpatialConstants
 	const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID				= 9989;
 	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9987;
 	const Worker_ComponentId NOT_STREAMED_COMPONENT_ID						= 9986;
-	const Worker_ComponentId RPC_ON_ENTITY_CREATION_ID						= 9985;
+	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -127,7 +127,7 @@ namespace SpatialConstants
 	const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID					= 1;
 	const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
 
-	const Schema_FieldId CLIENT_PROCESSED_RPCS_ON_ENTITY_CREATION			= 1;
+	const Schema_FieldId CLEAR_RPCS_ON_ENTITY_CREATION						= 1;
 
 	// UnrealRPCPayload Field IDs
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID = 1;
