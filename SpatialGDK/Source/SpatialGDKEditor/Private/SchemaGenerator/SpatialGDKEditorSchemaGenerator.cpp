@@ -451,10 +451,10 @@ TArray<UClass*> GetAllSupportedClasses()
 
 		// Avoid processing classes contained in Directories to Never Cook
 		const FString& ClassPath = SupportedClass->GetPathName();
-		if (DirectoriesToNeverCook.FindByPredicate([&ClassPath](const FDirectoryPath& Directory)
+		if (DirectoriesToNeverCook.ContainsByPredicate([&ClassPath](const FDirectoryPath& Directory)
 		{
 			return ClassPath.StartsWith(Directory.Path);
-		}) != nullptr)
+		}))
 		{
 			continue;
 		}
