@@ -394,7 +394,7 @@ void SaveSchemaDatabase()
 TArray<UClass*> GetAllSupportedClasses()
 {
 	TSet<UClass*> Classes;
-	TArray<FDirectoryPath> DirectoriesToNeverCook = GetMutableDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
+	const TArray<FDirectoryPath>& DirectoriesToNeverCook = GetDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
 
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
@@ -450,12 +450,13 @@ TArray<UClass*> GetAllSupportedClasses()
 		}
 
 		// Avoid processing classes contained in Directories to Never Cook
-		bool bNeverCook = false;
-		if (FDirectoryPath* ContainingDirectory = DirectoriesToNeverCook.FindByPredicate([SupportedClass](FDirectoryPath Directory) {
-			return SupportedClass->GetPathName().StartsWith(Directory.Path);
+		const FString& ClassPath = SupportedClass->GetPathName();
+		if (DirectoriesToNeverCook.FindByPredicate([&ClassPath](const FDirectoryPath& Directory)
+		{
+			return ClassPath.StartsWith(Directory.Path);
 		}))
 		{
-				continue;
+			continue;
 		}
 		
 		Classes.Add(SupportedClass);

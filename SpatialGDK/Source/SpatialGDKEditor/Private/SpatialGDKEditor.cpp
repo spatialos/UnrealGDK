@@ -201,10 +201,11 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 	TArray<FAssetData> FoundAssets;
 	AssetRegistryModule.Get().GetAllAssets(FoundAssets, true);
 
-	TArray<FDirectoryPath> DirectoriesToNeverCook = GetMutableDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
+	const TArray<FDirectoryPath>& DirectoriesToNeverCook = GetDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
 
 	// Filter assets to game blueprint classes that are not loaded and not inside DirectoriesToNeverCook.
-	FoundAssets = FoundAssets.FilterByPredicate([DirectoriesToNeverCook](FAssetData Data) {
+	FoundAssets = FoundAssets.FilterByPredicate([&DirectoriesToNeverCook](const FAssetData& Data)
+	{
 		if (Data.IsAssetLoaded())
 		{
 			return false;
