@@ -1,3 +1,5 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialGDKEditorCloudLauncher.h"
 
 #include "Interfaces/IPluginManager.h"
