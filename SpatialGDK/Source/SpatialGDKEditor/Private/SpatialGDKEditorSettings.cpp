@@ -21,14 +21,15 @@ void USpatialGDKEditorSettings::SynchronizeGDKWorkerNames()
 {
 	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
 	SpatialGDKSettings->ServerWorkerTypes = {};
+	
 
-	for(uint8 i = 0; i< LaunchConfigDesc.Workers.Num(); ++i)
+	for (uint8 i = 0; i < LaunchConfigDesc.Workers.Num(); ++i)
 	{
 		SpatialGDKSettings->ServerWorkerTypes.Add(LaunchConfigDesc.Workers[i].WorkerTypeName);
 	}
-		
+
 	SpatialGDKSettings->PostEditChange();
-	SpatialGDKSettings->SaveConfig();
+	SpatialGDKSettings->UpdateDefaultConfigFile();
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
