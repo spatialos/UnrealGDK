@@ -12,7 +12,7 @@ call :MarkStartOfBlock "Setup variables"
     set GAME_FOLDER=%~dp0..\..\..\..\..\..
     set GDK_FOLDER=%GAME_FOLDER%\Game\Plugins\UnrealGDK
     set SCHEMA_COMPILER_PATH=%GDK_FOLDER%\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\schema_compiler.exe
-    set CODEGEN_EXE_PATH=%GDK_FOLDER%\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\codegen\CodeGenerator.exe
+    set CODEGEN_EXE_PATH=%GDK_FOLDER%\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\CodeGenerator.exe
     set SCHEMA_STD_COPY_DIR=%GAME_FOLDER%\spatial\build\dependencies\schema\standard_library
 		set BUNDLE_CACHE_DIR=%GDK_FOLDER%\SpatialGDK\Intermediate\ExternalSchemaCodegen
 		set SCHEMA_BUNDLE_FILE_NAME=external_schema_bundle.json

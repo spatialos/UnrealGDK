@@ -1,15 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{914F8489-3031-4A27-B403-8AC318AFD71B}</ProjectGuid>
+    <ProjectGuid>{B0165BED-C4AF-406C-A652-3DBB3D2E0C52}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Build</RootNamespace>
-    <AssemblyName>Build</AssemblyName>
+    <RootNamespace>CodeGenerator</RootNamespace>
+    <AssemblyName>CodeGenerator</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -20,38 +19,47 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\Debug</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>7.2</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>bin\Release</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <LangVersion>7.2</LangVersion>
   </PropertyGroup>
-
   <ItemGroup>
+    <Compile Include="Bundle.cs" />
+    <Compile Include="EnumGenerator.cs" />
+    <Compile Include="HeaderGenerator.cs" />
+    <Compile Include="HelperFunctions.cs" />
+    <Compile Include="ICodeGenerator.cs" />
+    <Compile Include="InterfaceGenerator.cs" />
+    <Compile Include="MapEquals.cs" />
+    <Compile Include="Model.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="SchemaBundleLoader.cs" />
+    <Compile Include="Serialization.cs" />
+    <Compile Include="SourceGenerator.cs" />
+    <Compile Include="Text.cs" />
+    <Compile Include="TypeDescription.cs" />
+    <Compile Include="Types.cs" />
+    <Compile Include="UnrealGenerator.cs" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.4.3" />
+    <PackageReference Include="CommandLineParser" Version="2.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include=".\Improbable.CodeGen.Base\Improbable.CodeGen.Base.csproj" />
-    <ProjectReference Include=".\Improbable.CodeGen.Unreal\Improbable.CodeGen.Unreal.csproj" />
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(SolutionDir)CodeGenerator\bin\netcoreapp2.2\win10-x64" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\codegen\" /E /Y</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir.TrimEnd('\'))" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\" /Y</PostBuildEvent>
+    <!-- <PostBuildEvent>xcopy "$(SolutionDir)CodeGenerator\bin\netcoreapp2.2\win10-x64" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\codegen\" /E /Y</PostBuildEvent> -->
   </PropertyGroup>
-
 </Project>

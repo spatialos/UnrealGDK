@@ -61,7 +61,6 @@ namespace CodeGenerator
             }
             catch (Exception exception)
             {
-                Debug.WriteLine(exception);
                 Console.Error.WriteLine(exception);
                 Environment.ExitCode = 1;
             }
