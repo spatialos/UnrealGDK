@@ -6,9 +6,11 @@ The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine [plugin 
   - **Global hosting**: Scalable dedicated hosting for your game in every major gaming region.
   - **Easy playtesting**: Deploy and test your game from the start of development, and distribute it to your team and players quickly and easily.
   - **Profiling and debugging tools**: Logs and metrics out of the box to help you quickly understand any bugs and performance issues.
-  - Multiserver networking: Multiple dedicated servers across one seamless game world, enabling greater numbers of Actors, players and gameplay systems. 
+  - **Multiserver networking**: Multiple dedicated servers across one seamless game world, enabling greater numbers of Actors, players and gameplay systems. 
 
 > The SpatialOS GDK for Unreal is in alpha. It is ready to use for development of single-server games, but not recommended for public releases. We are committed to rapid development of the GDK to provide a performant release - for information on this, see our [development roadmap](<https://github.com/spatialos/UnrealGDK/projects/1>) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages for the status and updates, and contact us via our [forums](https://forums.improbable.io/), or on [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368).
+
+If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started guide](https://docs.improbable.io/unreal/alpha/content/get-started/introduction). 
 
 ----
 * [Get started](https://docs.improbable.io/unreal/latest/content/get-started/introduction)
@@ -16,6 +18,17 @@ The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine [plugin 
 * [Development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) 
 * Community: [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368) - [Forums](https://forums.improbable.io/) -  [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
 ----
+
+## Where to get the GDK and related projects
+The GDK and its related projects are available on GitHub.
+* [GDK: github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
+* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine)
+>**NOTE:** This link may give you a 404.
+In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
+
+<!--- * [The Example Project](LinkWhenAvailable) --->
+* [Third-Person Shooter game](https://github.com/spatialos/UnrealGDKThirdPersonShooter) (Not actively developed)
+* [The Test Suite](https://github.com/spatialos/UnrealGDKTestSuite)
 
 ## Recommended use
 We are releasing the GDK in [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) so we can react to feedback and iterate on development quickly. To facilitate this, during our alpha stage we don't have a formal deprecation cycle for APIs and workflows. This means that everything and anything can change. In addition, documentation is limited and some aspects of the GDK are not optimized.
@@ -41,22 +54,10 @@ In order to transform Unreal from a single server engine to a distributed model,
 ## Give us feedback
 We have released the GDK for Unreal this early in development because we want your feedback. Please come and talk to us about the software and the documentation via: [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368) - [Forums](https://forums.improbable.io/) - [GitHub issues in this repository](https://github.com/spatialos/UnrealGDK/issues).
 
-## Where to get the GDK and related projects
-The GDK and its related projects are available on GitHub.
-* [GDK: github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
-* [The SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine)
->**NOTE:** This link may give you a 404.
-In order to get access to this fork, you need to link your GitHub account to a verified Epic Games account, and to have agreed to Epic's license. You will not be able to use the GDK for Unreal without doing this first. To do this, see the [Unreal documentation](https://www.unrealengine.com/en-US/ue4-on-github).
-
-<!--- * [The Example Project](LinkWhenAvailable) --->
-* [Third-Person Shooter game](https://github.com/spatialos/UnrealGDKThirdPersonShooter) (Not actively developed)
-* [The Test Suite](https://github.com/spatialos/UnrealGDKTestSuite)
-
 ------
 
 * Your access to and use of the Unreal Engine is governed by the [Unreal Engine End User License Agreement](https://www.unrealengine.com/en-US/previous-versions/udk-licensing-resources?sessionInvalidated=true). Please ensure that you have agreed to those terms before you access or use the Unreal Engine.
 * Version: alpha (stability and performance improvements pending)
-* GDK repository: [github.com/spatialos/UnrealGDK](https://github.com/spatialos/UnrealGDK)
 
 (c) 2019 Improbable
 
