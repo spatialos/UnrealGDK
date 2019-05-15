@@ -56,6 +56,12 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	RemoveEditorAssetLoadedCallback();
 
+	if (!TryLoadExistingSchemaDatabase())
+	{
+		bSchemaGeneratorRunning = false;
+		return false;
+	}
+
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
 	if (bFullScan)
 	{
@@ -76,8 +82,6 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		const bool bPromptForCompilation = false;
 		UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
 	}
-
-	TryLoadExistingSchemaDatabase();
 
 	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
 	bool bResult = SpatialGDKGenerateSchema();
