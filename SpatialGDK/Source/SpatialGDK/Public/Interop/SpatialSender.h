@@ -6,14 +6,15 @@
 
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Utils/RepDataUtils.h"
-
 #include "Schema/RPCPayload.h"
+#include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialSender.generated.h"
+
+using namespace SpatialGDK;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
 
@@ -95,7 +96,7 @@ private:
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
 
-	SpatialGDK::RPCsOnEntityCreation PackQueuedRPCsForActor(TArray<TSharedRef<FPendingRPCParams>>* RPCList, AActor* Actor);
+	RPCsOnEntityCreation PackQueuedRPCsForActor(TArray<TSharedRef<FPendingRPCParams>>* RPCList, AActor* Actor);
 
 private:
 	UPROPERTY()
