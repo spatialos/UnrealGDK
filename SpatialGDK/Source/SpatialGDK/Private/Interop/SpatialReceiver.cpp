@@ -306,19 +306,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
 
-		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
-		{
-			if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
-			{
-				if (QueuedRPCs->HasRPCPayloadData())
-				{
-					ProcessQueuedActorRPCsOnEntityCreation(Actor, QueuedRPCs);
-				}
-
-				Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
-				NetDriver->Connection->SendCommandRequest(Op.entity_id, &CommandRequest, 1);
-			}
-		}
 	}
 
 #if !UE_BUILD_SHIPPING
@@ -375,7 +362,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 	}
 
-	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
+	AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId));
+	if (EntityActor != nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Log, TEXT("Entity for actor %s has been checked out on the worker which spawned it or is a singleton linked on this worker"), \
 			*EntityActor->GetName());
@@ -478,6 +466,18 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		EntityActor->UpdateOverlaps();
+
+	}
+
+	if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(EntityId))
+	{
+		if (QueuedRPCs->HasRPCPayloadData())
+		{
+			ProcessQueuedActorRPCsOnEntityCreation(EntityActor, QueuedRPCs);
+		}
+
+		Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
+		NetDriver->Connection->SendCommandRequest(EntityId, &CommandRequest, 1);
 	}
 }
 
@@ -1134,7 +1134,10 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, Spat
 				Actor = Cast<AActor>(TargetObject->GetOuter());
 				check(Actor);
 			}
-			NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
+			if (!SenderWorkerId.IsEmpty())
+			{
+				NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
+			}
 		}
 #endif // !UE_BUILD_SHIPPING
 		TargetObject->ProcessEvent(Function, Parms);
@@ -1273,8 +1276,7 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, Spa
 	for (auto& RPC : QueuedRPCs->RPCs)
 	{
 		UFunction* Function = Info.RPCs[RPC.Index];
-
-		ApplyRPC(Actor, Function, RPC, TEXT("Test"));
+		ApplyRPC(Actor, Function, RPC, FString());
 	}
 }
 
