@@ -498,7 +498,7 @@ bool TryLoadExistingSchemaDatabase()
 
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-		FFileStatData StatData = PlatformFile.GetStatData(*SchemaDatabaseFileName);
+	FFileStatData StatData = PlatformFile.GetStatData(*SchemaDatabaseFileName);
 
 	if (StatData.bIsValid)
 	{
