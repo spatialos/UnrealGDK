@@ -82,9 +82,5 @@ public:
 	/** Change 'Load' value in inspector to represent worker Frame Time instead of a fraction of target FPS.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bUseFrameTimeAsLoad;
-
-	/** Server Worker Type Names. Edit the launch configuration description to affect this property. */
-	UPROPERTY(config, meta = (ConfigRestartRequired = false))
-	TArray<FString> ServerWorkerTypes;
 };
 

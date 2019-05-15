@@ -161,10 +161,6 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 	checkf(PlaceholderCountAxis % 2 == 0, TEXT("The number of placeholders on each axis must be even."));
 	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
 	int PlaceholderEntityIdCounter = SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
-
-	const TArray<FString>& ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
-	const WorkerRequirementSet ServerWorkerRequirementSet{ {ServerWorkerTypes} };
-
 	for (int x = -PlaceholderCountAxis / 2; x < PlaceholderCountAxis / 2; x++)
 	{
 		for (int y = -PlaceholderCountAxis / 2; y < PlaceholderCountAxis / 2; y++)
@@ -185,7 +181,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 			Components.Add(improbable::Position(PlaceholderPosition).CreatePositionData());
 			Components.Add(improbable::Metadata(TEXT("Placeholder")).CreateMetadataData());
 			Components.Add(improbable::Persistence().CreatePersistenceData());
-			Components.Add(improbable::EntityAcl(ServerWorkerRequirementSet, ComponentWriteAcl).CreateEntityAclData());
+			Components.Add(improbable::EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
 
 			Placeholder.component_count = Components.Num();
 			Placeholder.components = Components.GetData();
