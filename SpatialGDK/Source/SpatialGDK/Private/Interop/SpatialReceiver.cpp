@@ -946,19 +946,19 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 
 		RPCPayload Payload(EventData);
 
-		FUnrealObjectRef ObjectRef(EntityId, Payload.GetOffset());
+		FUnrealObjectRef ObjectRef(EntityId, Payload.Offset);
 
 		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 
 		if (!TargetObject)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.GetIndex());
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
 			continue;
 		}
 
 		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-		UFunction* Function = ClassInfo.RPCs[Payload.GetIndex()];
+		UFunction* Function = ClassInfo.RPCs[Payload.Index];
 		ApplyRPC(TargetObject, Function, Payload, FString());
 	}
 }
@@ -1000,7 +1000,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	RPCPayload Payload(RequestObject);
 
-	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Payload.GetOffset())).Get();
+	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Payload.Offset)).Get();
 	if (TargetObject == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object found for EntityId %d"), Op.entity_id);
@@ -1010,7 +1010,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-	UFunction* Function = Info.RPCs[Payload.GetIndex()];
+	UFunction* Function = Info.RPCs[Payload.Index];
 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
@@ -1110,7 +1110,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, Spat
 
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 
-	FSpatialNetBitReader PayloadReader(PackageMap, Payload.GetData().GetData(), Payload.CountDataBits(), UnresolvedRefs);
+	FSpatialNetBitReader PayloadReader(PackageMap, Payload.PayloadData.GetData(), Payload.CountDataBits(), UnresolvedRefs);
 
 #if !UE_BUILD_SHIPPING
 	int ReliableRPCId = 0;
@@ -1270,9 +1270,9 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, Spa
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-	for (auto& RPC : QueuedRPCs->GetRPCs())
+	for (auto& RPC : QueuedRPCs->RPCs)
 	{
-		UFunction* Function = Info.RPCs[RPC.GetIndex()];
+		UFunction* Function = Info.RPCs[RPC.Index];
 
 		ApplyRPC(Actor, Function, RPC, TEXT("Test"));
 	}

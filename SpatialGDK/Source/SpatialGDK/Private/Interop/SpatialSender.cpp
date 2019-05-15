@@ -435,8 +435,7 @@ RPCsOnEntityCreation USpatialSender::PackQueuedRPCsForActor(TArray<TSharedRef<FP
 			TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(RPCParams->Function);
 			RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, RPCParams->Parameters.GetData());
 
-			TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
-			QueuedRPCs.AddRPCPayload(RPCPayload(TargetObjectRef.Offset, RPCInfo->Index, Data));
+			QueuedRPCs.RPCs.Add(RPCPayload(TargetObjectRef.Offset, RPCInfo->Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes())));
 		}
 	}
 
@@ -822,8 +821,7 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 		}
 	}
 
-	TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
-	RPCPayload Payload(TargetObjectRef.Offset, EventIndex, Data);
+	RPCPayload Payload(TargetObjectRef.Offset, EventIndex, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 	Payload.WriteToSchemaObject(EventData);
 
 	return ComponentUpdate;

@@ -16,9 +16,11 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8> Data) : Offset(InOffset), Index(InIndex), PayloadData(Data)
-	{
-	}
+	RPCPayload(uint32 InOffset, uint32 InIndex, const TArray<uint8>& Data) : Offset(InOffset), Index(InIndex), PayloadData(Data)
+	{}
+
+	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data) : Offset(InOffset), Index(InIndex), PayloadData(MoveTemp(Data))
+	{}
 
 	RPCPayload(const Schema_Object* RPCObject)
 	{
@@ -34,32 +36,11 @@ struct RPCPayload
 		AddBytesToSchema(RPCObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, PayloadData.GetData(), sizeof(uint8) * PayloadData.Num());
 	}
 
-	uint32 GetOffset() const
-	{
-		return Offset;
-	}
-
-	uint32 GetIndex() const
-	{
-		return Index;
-	}
-
 	int64 CountDataBits() const
 	{
 		return PayloadData.Num() * 8;
 	}
 
-	const TArray<uint8>& GetData() const
-	{
-		return PayloadData;
-	}
-
-	TArray<uint8>& GetData()
-	{
-		return PayloadData;
-	}
-
-private:
 	uint32 Offset;
 	uint32 Index;
 	TArray<uint8> PayloadData;
@@ -105,26 +86,6 @@ struct RPCsOnEntityCreation : Component
 		return Data;
 	}
 
-	void AddRPCPayload(RPCPayload&& InRPCPayload)
-	{
-		RPCs.Add(MoveTemp(InRPCPayload));
-	}
-
-	void AddRPCPayload(const RPCPayload& InRPCPayload)
-	{
-		RPCs.Add(InRPCPayload);
-	}
-
-	const TArray<RPCPayload>& GetRPCs() const
-	{
-		return RPCs;
-	}
-
-	TArray<RPCPayload>& GetRPCs()
-	{
-		return RPCs;
-	}
-
 	static Worker_ComponentUpdate CreateClearFieldsUpdate()
 	{
 		Worker_ComponentUpdate Update = {};
@@ -144,7 +105,7 @@ struct RPCsOnEntityCreation : Component
 		Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
 		return CommandRequest;
 	}
-private:
+
 	TArray<RPCPayload> RPCs;
 };
 
