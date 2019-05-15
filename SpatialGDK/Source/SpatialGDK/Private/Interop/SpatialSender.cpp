@@ -426,12 +426,13 @@ RPCsOnEntityCreation USpatialSender::PackQueuedRPCsForActor(TArray<TSharedRef<FP
 			TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 			FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
 
-#if !UE_BUILD_SHIPPING
-			if (RPCParams->Function->HasAnyFunctionFlags(FUNC_NetReliable) && !RPCParams->Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+			if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 			{
-				PayloadWriter << RPCParams->ReliableRPCIndex;
+				if (RPCParams->Function->HasAnyFunctionFlags(FUNC_NetReliable) && !RPCParams->Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+				{
+					PayloadWriter << RPCParams->ReliableRPCIndex;
+				}
 			}
-#endif // !UE_BUILD_SHIPPING
 
 			TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(RPCParams->Function);
 			RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, RPCParams->Parameters.GetData());
