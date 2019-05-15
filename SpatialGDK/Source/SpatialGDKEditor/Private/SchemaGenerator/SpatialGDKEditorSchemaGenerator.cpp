@@ -490,12 +490,32 @@ void ClearGeneratedSchema()
 	DeleteGeneratedSchemaFiles();
 }
 
-void TryLoadExistingSchemaDatabase()
+bool TryLoadExistingSchemaDatabase()
 {
-	const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")).TryLoad());
+	const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+	const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
+	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 
-	if (SchemaDatabase != nullptr)
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+		FFileStatData StatData = PlatformFile.GetStatData(*SchemaDatabaseFileName);
+
+	if (StatData.bIsValid)
 	{
+		if (StatData.bIsReadOnly)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Database at %s%s is not writable."), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+			return false;
+		}
+
+		const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(SchemaDatabaseAssetPath).TryLoad());
+
+		if (SchemaDatabase == nullptr)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to load existing schema database."));
+			return false;
+		}
+
 		ClassPathToSchemaData = SchemaDatabase->ClassPathToSchema;
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
@@ -511,9 +531,11 @@ void TryLoadExistingSchemaDatabase()
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("SchemaDatabase not found on Engine startup so the generated schema directory will be cleared out if it exists."));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("SchemaDatabase not found so the generated schema directory will be cleared out if it exists."));
 		ClearGeneratedSchema();
 	}
+
+	return true;
 }
 
 void ResetUsedNames()
