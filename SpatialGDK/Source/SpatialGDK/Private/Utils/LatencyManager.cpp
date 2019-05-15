@@ -12,58 +12,52 @@
 #include "Interop/SpatialReceiver.h"
 #include "SpatialConstants.h"
 
-ULatencyManager::ULatencyManager(USpatialNetConnection* InConnection)
+LatencyManager::LatencyManager(const USpatialNetConnection& InConnection, const USpatialNetDriver& InDriver)
 	: NetConnection(InConnection)
+	, NetDriver(InDriver)
 	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
 {
 }
 
-void ULatencyManager::Enable(Worker_EntityId InPlayerControllerEntity)
+void LatencyManager::Enable(Worker_EntityId InPlayerControllerEntity)
 {
 	checkf(PlayerControllerEntity == SpatialConstants::INVALID_ENTITY_ID, TEXT("LatencyManager::Enable : PlayerControllerEntity already set: %lld. New entity: %lld"), PlayerControllerEntity, InPlayerControllerEntity);
 	PlayerControllerEntity = InPlayerControllerEntity;
 
-	TWeakObjectPtr<USpatialNetConnection> ConnectionPtr = NetConnection;
-	NetDriver = Cast<USpatialNetDriver>(NetConnection->GetDriver());
-	LastPingSent = NetConnection->GetWorld()->RealTimeSeconds;
+	LastPingSent = NetConnection.GetWorld()->RealTimeSeconds;
 
-	auto Delegate = TBaseDelegate<void, Worker_ComponentUpdateOp &>::CreateLambda([ConnectionPtr, this](const Worker_ComponentUpdateOp& Op)
+	auto Delegate = TBaseDelegate<void, Worker_ComponentUpdateOp &>::CreateLambda([this](const Worker_ComponentUpdateOp& Op)
 	{
-		if (!ConnectionPtr.IsValid())
-		{
-			return;
-		}
-
-		float ReceivedTimestamp = ConnectionPtr->GetWorld()->RealTimeSeconds;
+		float ReceivedTimestamp = NetConnection.GetWorld()->RealTimeSeconds;
 
 		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 		uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::PING_PONG_EVENT_ID);
 
 		if (EventCount > 0)
 		{
-			ConnectionPtr->PlayerController->PlayerState->UpdatePing(ReceivedTimestamp - LastPingSent);
-			SendPingOrPong(NetDriver->IsServer() ? SpatialConstants::SERVER_PING_COMPONENT_ID : SpatialConstants::CLIENT_PONG_COMPONENT_ID);
+			NetConnection.PlayerController->PlayerState->UpdatePing(ReceivedTimestamp - LastPingSent);
+			SendPingOrPong(NetDriver.IsServer() ? SpatialConstants::SERVER_PING_COMPONENT_ID : SpatialConstants::CLIENT_PONG_COMPONENT_ID);
 		}
 	});
 
 
-	if (NetDriver->IsServer())
+	if (NetDriver.IsServer())
 	{
-		NetDriver->Receiver->AddClientPongDelegate(PlayerControllerEntity, Delegate);
+		NetDriver.Receiver->AddClientPongDelegate(PlayerControllerEntity, Delegate);
 		SendPingOrPong(SpatialConstants::SERVER_PING_COMPONENT_ID);
 	}
 	else
 	{
-		NetDriver->Receiver->AddServerPingDelegate(PlayerControllerEntity, Delegate);
+		NetDriver.Receiver->AddServerPingDelegate(PlayerControllerEntity, Delegate);
 	}
 }
 
-void ULatencyManager::Disable()
+void LatencyManager::Disable()
 {
 	PlayerControllerEntity = SpatialConstants::INVALID_ENTITY_ID;
 }
 
-void ULatencyManager::SendPingOrPong(Worker_ComponentId ComponentId)
+void LatencyManager::SendPingOrPong(Worker_ComponentId ComponentId)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -72,10 +66,10 @@ void ULatencyManager::SendPingOrPong(Worker_ComponentId ComponentId)
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
 	Schema_AddObject(EventsObject, SpatialConstants::PING_PONG_EVENT_ID);
 
-	USpatialWorkerConnection* WorkerConnection = NetDriver->Connection;
+	USpatialWorkerConnection* WorkerConnection = NetDriver.Connection;
 	if (WorkerConnection->IsConnected())
 	{
 		WorkerConnection->SendComponentUpdate(PlayerControllerEntity, &ComponentUpdate);
-		LastPingSent = NetConnection->GetWorld()->RealTimeSeconds;
+		LastPingSent = NetConnection.GetWorld()->RealTimeSeconds;
 	}
 }

@@ -2,18 +2,15 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-
 #include <WorkerSDK/improbable/c_worker.h>
-
 
 class USpatialNetConnection;
 class USpatialNetDriver;
 
-class ULatencyManager
+class LatencyManager
 {
 public:
-	ULatencyManager(USpatialNetConnection* InConnection);
+	LatencyManager(const USpatialNetConnection& InConnection, const USpatialNetDriver& InDriver);
 
 	void Enable(Worker_EntityId InPlayerControllerEntity);
 	void Disable();
@@ -24,6 +21,6 @@ private:
 	Worker_EntityId PlayerControllerEntity;
 	float LastPingSent;
 
-	USpatialNetConnection* NetConnection;
-	USpatialNetDriver* NetDriver;
+	const USpatialNetConnection& NetConnection;
+	const USpatialNetDriver& NetDriver;
 };

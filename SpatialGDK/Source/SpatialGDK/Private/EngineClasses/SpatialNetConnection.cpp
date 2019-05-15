@@ -198,15 +198,15 @@ void USpatialNetConnection::OnHeartbeat()
 
 void USpatialNetConnection::SetupLatencyManager(Worker_EntityId InPlayerControllerEntity)
 {
-	if (LatencyManager == nullptr)
+	if (&ConnectionLatencyManager == nullptr)
 	{
-		LatencyManager = new ULatencyManager(this);
+		ConnectionLatencyManager = LatencyManager(*this, *Cast<USpatialNetDriver>(Driver));
 	}
 
-	LatencyManager->Enable(InPlayerControllerEntity);
+	ConnectionLatencyManager.Enable(InPlayerControllerEntity);
 }
 
 void USpatialNetConnection::DisableLatencyManager()
 {
-	LatencyManager->Disable();
+	ConnectionLatencyManager.Disable();
 }

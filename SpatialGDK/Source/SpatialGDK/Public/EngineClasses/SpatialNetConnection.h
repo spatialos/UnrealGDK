@@ -7,14 +7,13 @@
 #include "Runtime/Launch/Resources/Version.h"
 
 #include "Schema/Interest.h"
+#include "Utils/LatencyManager.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
 #include "SpatialNetConnection.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetConnection, Log, All);
-
-class ULatencyManager;
 
 UCLASS(transient)
 class SPATIALGDK_API USpatialNetConnection : public UIpConnection
@@ -65,7 +64,7 @@ public:
 	Worker_EntityId PlayerControllerEntity;
 	FTimerHandle HeartbeatTimer;
 
-	ULatencyManager* LatencyManager;
+	LatencyManager ConnectionLatencyManager;
 
 	void SetupLatencyManager(Worker_EntityId InPlayerControllerEntity);
 	void DisableLatencyManager();
