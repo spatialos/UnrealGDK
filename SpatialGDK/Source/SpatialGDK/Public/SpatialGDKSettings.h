@@ -98,5 +98,9 @@ public:
 	/** Batch entity position updates to be processed on a single frame.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bBatchSpatialPositionUpdates;
+
+	/** Server Worker Type Names. Edit the launch configuration description to affect this property. */
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	TArray<FString> ServerWorkerTypes;
 };
 
