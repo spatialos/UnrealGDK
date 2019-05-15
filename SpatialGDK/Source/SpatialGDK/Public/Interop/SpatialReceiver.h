@@ -25,7 +25,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 class USpatialSender;
 class UGlobalStateManager;
 
-
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
