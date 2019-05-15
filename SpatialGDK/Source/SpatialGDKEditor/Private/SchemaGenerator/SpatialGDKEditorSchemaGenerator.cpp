@@ -496,15 +496,13 @@ bool TryLoadExistingSchemaDatabase()
 	const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
 	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 
-	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-
-	FFileStatData StatData = PlatformFile.GetStatData(*SchemaDatabaseFileName);
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*SchemaDatabaseFileName);
 
 	if (StatData.bIsValid)
 	{
 		if (StatData.bIsReadOnly)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Database at %s%s is not writable."), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s%s is read only. Make writable before generating schema"), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
 			return false;
 		}
 
@@ -512,7 +510,7 @@ bool TryLoadExistingSchemaDatabase()
 
 		if (SchemaDatabase == nullptr)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Failed to load existing schema database."));
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Failed to load existing schema database."));
 			return false;
 		}
 
@@ -531,7 +529,7 @@ bool TryLoadExistingSchemaDatabase()
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("SchemaDatabase not found so the generated schema directory will be cleared out if it exists."));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("SchemaDatabase not found so the generated schema directory will be cleared out if it exists."));
 		ClearGeneratedSchema();
 	}
 
