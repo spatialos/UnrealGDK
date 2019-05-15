@@ -470,17 +470,19 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		EntityActor->UpdateOverlaps();
 
-	}
-
-	if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(EntityId))
-	{
-		if (QueuedRPCs->HasRPCPayloadData())
+		if (!NetDriver->IsServer())
 		{
-			ProcessQueuedActorRPCsOnEntityCreation(EntityActor, QueuedRPCs);
-		}
+			if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(EntityId))
+			{
+				if (QueuedRPCs->HasRPCPayloadData())
+				{
+					ProcessQueuedActorRPCsOnEntityCreation(EntityActor, QueuedRPCs);
+				}
 
-		Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
-		NetDriver->Connection->SendCommandRequest(EntityId, &CommandRequest, 1);
+				Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
+				NetDriver->Connection->SendCommandRequest(EntityId, &CommandRequest, 1);
+			}
+		}
 	}
 }
 

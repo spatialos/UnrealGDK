@@ -858,28 +858,11 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						continue;
 					}
 
-					Channel = CreateActorChannel(Actor, InConnection);
+					Channel = CreateActorChannel(Actor, InConnection); 
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
-						Channel = GlobalStateManager->AddSingleton(Actor);
-					}
-					else
-					{
-						// Create a new channel for this actor.
-#if ENGINE_MINOR_VERSION <= 20
-						Channel = (USpatialActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
-#else
-						Channel = (USpatialActorChannel*)InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
-#endif
-						if (Channel)
-						{
-							Channel->SetChannelActor(Actor);
-						}
-						else if (Actor->NetUpdateFrequency < 1.0f)
-						{
-							UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
-							PriorityActors[j]->ActorInfo->NextUpdateTime = Actor->GetWorld()->TimeSeconds + 0.2f * FMath::FRand();
-						}
+						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
+						PriorityActors[j]->ActorInfo->NextUpdateTime = Actor->GetWorld()->TimeSeconds + 0.2f * FMath::FRand();
 					}
 				}
 
@@ -1341,8 +1324,11 @@ USpatialActorChannel* USpatialNetDriver::CreateActorChannel(AActor* Actor, UNetC
 	}
 	else
 	{
-		// Create a new channel for this actor.
+#if ENGINE_MINOR_VERSION <= 20
 		Channel = (USpatialActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
+#else
+		Channel = (USpatialActorChannel*)InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
+#endif
 		if (Channel != nullptr)
 		{
 			Channel->SetChannelActor(Actor);
