@@ -84,7 +84,7 @@ public:
 	bool bUseFrameTimeAsLoad;
 
 	/** Server Worker Type Names. Edit the launch configuration description to affect this property. */
-	UPROPERTY(VisibleAnywhere, config, Category = "Access Control", meta = (ConfigRestartRequired = false))
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	TArray<FString> ServerWorkerTypes;
 };
 
