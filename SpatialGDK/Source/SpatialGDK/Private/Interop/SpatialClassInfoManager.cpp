@@ -38,7 +38,11 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 {
 	FSoftClassPath SoftClassPath(ClassPath);
 	UClass* Class = SoftClassPath.ResolveClass();
-	checkf(Class, TEXT("Failed to load class at path %s"), *ClassPath);
+	if (Class == nullptr)
+	{
+		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Failed to find class at path %s! Attempting to load it."), *ClassPath);
+		Class = SoftClassPath.TryLoadClass<UClass>();
+	}
 	return Class;
 }
 
@@ -173,6 +177,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
 
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
+		if (SubobjectClass == nullptr)
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to resolve the class for subobject %s (class path: %s) on actor class %s! This subobject will not be able to replicate in Spatial!"), *SubobjectSchemaData.Name.ToString(), *SubobjectSchemaData.ClassPath, *Class->GetPathName());
+			continue;
+		}
 
 		const FClassInfo& SubobjectInfo = GetOrCreateClassInfoByClass(SubobjectClass);
 
