@@ -502,7 +502,7 @@ bool TryLoadExistingSchemaDatabase()
 	{
 		if (StatData.bIsReadOnly)
 		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s%s is read only. Make writable before generating schema"), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s%s is read only. Make it writable before generating schema"), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
 			return false;
 		}
 
