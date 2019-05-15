@@ -9,16 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### New Known Issues:
 
 ### Features:
+- Added SpatialMetricsDisplay class, which allows you to view UnrealWorker stats as an overlay on the client.
 
 ### Bug fixes:
-- Bugfix: BeginPlay is not called with authority when checking out entities from Spatial.
-- Bugfix: Launching SpatialOS would fail if there was a space in the full directory path.
+- BeginPlay is not called with authority when checking out entities from Spatial.
+- Launching SpatialOS would fail if there was a space in the full directory path.
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- Reliable RPC checking no longer breaks compatibility between development and shipping builds.
+- Fixed an issue with schema name collisions.
 
 ### External contributors:
 
 In addition to all of the updates from Improbable, this release includes x improvements submitted by the incredible community of SpatialOS developers on GitHub! Thanks to these contributors:
 
 * 
+
+## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
+
+### Bug fixes:
+- Fixed an issue where schema components were sometimes generated with incorrect component IDs.
 
 ## [`0.4.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.0) - 2019-04-30
 
