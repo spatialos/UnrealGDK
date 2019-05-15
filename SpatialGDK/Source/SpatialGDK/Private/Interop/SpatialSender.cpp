@@ -475,10 +475,9 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 	if (AActor* TargetActor = Cast<AActor>(TargetObject))
 	{
-		USpatialNetConnection* SpatialConnection = NetDriver->GetSpatialOSNetConnection();
 		if (!NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor)))
 		{
-			NetDriver->CreateActorChannel(TargetActor, SpatialConnection);
+			NetDriver->CreateActorChannel(TargetActor, NetDriver->GetSpatialOSNetConnection());
 		}
 
 		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor)))
@@ -588,8 +587,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
 			{
-				// TODO: Fix log
-				UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send MulticastRPC component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
+				UE_LOG(LogSpatialSender, Warning, TEXT("Trying to send RPC component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
 				return;
 			}
 
@@ -783,8 +781,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		}
 	}
 
-	TArray<uint8> Data(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
-	RPCPayload Payload(TargetObjectRef.Offset, CommandIndex, Data);
+	RPCPayload Payload(TargetObjectRef.Offset, CommandIndex, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 	Payload.WriteToSchemaObject(RequestObject);
 	return CommandRequest;
 }
