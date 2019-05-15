@@ -18,7 +18,7 @@ public:
 	virtual int32 Main(const FString& Params) override;
 
 private:
-	void GenerateSnapshots();
-	void GenerateSnapshotForMap(FString WorldPath);
+	bool GenerateSnapshots();
+	bool GenerateSnapshotForMap(FString WorldPath);
 	TArray<FString> GetAllMapPaths(FString InMapsPath);
 };

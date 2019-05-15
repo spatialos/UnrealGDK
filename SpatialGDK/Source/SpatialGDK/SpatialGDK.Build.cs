@@ -33,6 +33,7 @@ public class SpatialGDK : ModuleRules
 		if (Target.bBuildEditor)
 		{
 			PublicDependencyModuleNames.Add("UnrealEd");
+			PublicDependencyModuleNames.Add("SpatialGDKEditorToolbar");
 		}
 
         var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
