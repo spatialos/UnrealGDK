@@ -476,12 +476,12 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 	if (AActor* TargetActor = Cast<AActor>(TargetObject))
 	{
-		if (!NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor)))
+		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor));
+		if (Channel == nullptr)
 		{
-			NetDriver->CreateActorChannel(TargetActor, NetDriver->GetSpatialOSNetConnection());
+			Channel = NetDriver->CreateActorChannel(TargetActor, NetDriver->GetSpatialOSNetConnection());
 		}
-
-		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor)))
+		if (Channel != nullptr)
 		{
 			if (Channel->bCreatingNewEntity)
 			{
