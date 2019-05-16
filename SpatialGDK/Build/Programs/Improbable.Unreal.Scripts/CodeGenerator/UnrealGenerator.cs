@@ -8,7 +8,6 @@ namespace Improbable.CodeGen.Unreal
     public class UnrealGenerator : ICodeGenerator
     {
         public static string GeneratorTitle = "Unreal External Schema Codegen";
-        public static string RelativeIncludePrefix = "ExternalSchemaCodegen";
 
         public List<GeneratedFile> GenerateFiles(Bundle bundle)
         {

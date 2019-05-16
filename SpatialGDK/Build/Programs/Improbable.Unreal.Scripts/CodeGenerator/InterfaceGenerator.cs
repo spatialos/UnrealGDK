@@ -33,9 +33,9 @@ namespace Improbable.CodeGen.Unreal
 #include ""SpatialConstants.h""
 #include ""SpatialDispatcher.h""
 #include ""SpatialNetDriver.h""
-#include ""{UnrealGenerator.RelativeIncludePrefix}/HelperFunctions.h""
+#include ""HelperFunctions.h""
 
-{string.Join(Environment.NewLine, componentTypes.Select(component => $"#include \"{UnrealGenerator.RelativeIncludePrefix}/{Types.TypeToHeaderFilename(component.QualifiedName)}\""))}
+{string.Join(Environment.NewLine, componentTypes.Select(component => $"#include \"{Types.TypeToHeaderFilename(component.QualifiedName)}\""))}
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -85,7 +85,7 @@ USpatialDispatcher* SpatialDispatcher;")}
 
         public static string GenerateInterfaceSource(List<TypeDescription> componentTypes, Bundle bundle)
         {
-            return $@"#include ""{UnrealGenerator.RelativeIncludePrefix}/{HeaderPath}""
+            return $@"#include ""{HeaderPath}""
 
 DEFINE_LOG_CATEGORY(LogExternalSchemaInterface);
 
