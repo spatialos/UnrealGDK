@@ -21,7 +21,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, EntityCreationRateLimit(0)
 	, OpsUpdateRate(30.0f)
 	, bUsingQBI(true)
-	, bUsingOffloading(true)
+	, bUsingOffloading(false)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 	, bEnableMetrics(true)
