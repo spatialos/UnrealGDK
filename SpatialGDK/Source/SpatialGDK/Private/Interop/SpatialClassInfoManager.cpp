@@ -41,7 +41,7 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 	if (Class == nullptr)
 	{
 		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Failed to find class at path %s! Attempting to load it."), *ClassPath);
-		Class = SoftClassPath.TryLoadClass<UClass>();
+		Class = SoftClassPath.TryLoadClass<UObject>();
 	}
 	return Class;
 }
