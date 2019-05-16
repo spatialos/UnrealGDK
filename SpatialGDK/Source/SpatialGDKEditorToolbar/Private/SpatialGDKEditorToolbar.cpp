@@ -337,7 +337,6 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>();
 	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
-
 	const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
 	// Ensure that there is an Unreal Server worker in the launch config worker list.
