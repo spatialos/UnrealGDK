@@ -37,7 +37,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
 
 TArray<UClass*> SchemaGeneratedClasses;
-TMap<FString, FSchemaData> ClassPathToSchema;
+TMap<FString, FSchemaData> ClassPathToSchemaData;
 uint32 NextAvailableComponentId;
 
 // LevelStreaming
@@ -45,11 +45,17 @@ TMap<FString, uint32> LevelPathToComponentId;
 TSet<uint32> LevelComponentIds;
 
 // Prevent name collisions.
-TMap<UClass*, FString> ClassToSchemaName;
-TMap<FString, UClass*> UsedSchemaNames;
+TMap<FString, FString> ClassPathToSchemaName;
+TMap<FString, FString> SchemaNameToClassPath;
+TMap<FString, TSet<FString>> PotentialSchemaNameCollisions;
 
 namespace
 {
+
+void AddPotentialNameCollision(const FString& DesiredSchemaName, const FString& ClassPath, const FString& GeneratedSchemaName)
+{
+	PotentialSchemaNameCollisions.FindOrAdd(DesiredSchemaName).Add(FString::Printf(TEXT("%s(%s)"), *ClassPath, *GeneratedSchemaName));
+}
 
 void OnStatusOutput(FString Message)
 {
@@ -204,24 +210,44 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 		UClass* Class = Cast<UClass>(TypeInfo->Type);
 		check(Class);
 		const FString& ClassName = Class->GetName();
+		const FString& ClassPath = Class->GetPathName();
 		FString SchemaName = UnrealNameToSchemaName(ClassName);
 
-		if (!CheckSchemaNameValidity(SchemaName, Class->GetPathName(), TEXT("Class")))
+		if (!CheckSchemaNameValidity(SchemaName, ClassPath, TEXT("Class")))
 		{
 			bSuccess = false;
 		}
 
-		int Suffix = 0;
-		while (UsedSchemaNames.Contains(SchemaName))
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for types '%s' and '%s'. Will add a suffix to resolve the collision."),
-				*SchemaName, *Class->GetPathName(), *UsedSchemaNames[SchemaName]->GetPathName());
+		FString DesiredSchemaName = SchemaName;
 
+		if (ClassPathToSchemaName.Contains(ClassPath))
+		{
+			continue;
+		}
+
+		int Suffix = 0;
+		while (SchemaNameToClassPath.Contains(SchemaName))
+		{
 			SchemaName = UnrealNameToSchemaName(ClassName) + FString::Printf(TEXT("%d"), ++Suffix);
 		}
 
-		ClassToSchemaName.Add(Class, SchemaName);
-		UsedSchemaNames.Add(SchemaName, Class);
+		ClassPathToSchemaName.Add(ClassPath, SchemaName);
+		SchemaNameToClassPath.Add(SchemaName, ClassPath);
+
+		if (DesiredSchemaName != SchemaName)
+		{
+			AddPotentialNameCollision(DesiredSchemaName, ClassPath, SchemaName);
+		}
+		AddPotentialNameCollision(SchemaName, ClassPath, SchemaName);
+	}
+
+	for (const auto& Collision : PotentialSchemaNameCollisions)
+	{
+		if (Collision.Value.Num() > 1)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Class name collision after removing non-alphanumeric characters. Name '%s' collides for classes [%s]"),
+				*Collision.Key, *FString::Join(Collision.Value, TEXT(", ")));
+		}
 	}
 
 	// Check for invalid/duplicate names in the generated type info.
@@ -340,7 +366,7 @@ void SaveSchemaDatabase()
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
-	SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
+	SchemaDatabase->ClassPathToSchema = ClassPathToSchemaData;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->LevelComponentIds = LevelComponentIds;
 
@@ -440,7 +466,7 @@ void DeleteGeneratedSchemaFiles()
 
 void ClearGeneratedSchema()
 {
-	ClassPathToSchema.Empty();
+	ClassPathToSchemaData.Empty();
 	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
@@ -455,16 +481,16 @@ void TryLoadExistingSchemaDatabase()
 
 	if (SchemaDatabase != nullptr)
 	{
-		ClassPathToSchema = SchemaDatabase->ClassPathToSchema;
+		ClassPathToSchemaData = SchemaDatabase->ClassPathToSchema;
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
-		if (ClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+		if (ClassPathToSchemaData.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
-			ClassPathToSchema.Empty();
+			ClassPathToSchemaData.Empty();
 			DeleteGeneratedSchemaFiles();
 		}
 	}
@@ -475,10 +501,35 @@ void TryLoadExistingSchemaDatabase()
 	}
 }
 
+void ResetUsedNames()
+{
+	ClassPathToSchemaName.Empty();
+	SchemaNameToClassPath.Empty();
+	PotentialSchemaNameCollisions.Empty();
+
+	for (const TPair<FString, FSchemaData>& Entry : ClassPathToSchemaData)
+	{
+		if (Entry.Value.GeneratedSchemaName.IsEmpty())
+		{
+			// Ignore Subobject entries with empty names.
+			continue;
+		}
+		ClassPathToSchemaName.Add(Entry.Key, Entry.Value.GeneratedSchemaName);
+		SchemaNameToClassPath.Add(Entry.Value.GeneratedSchemaName, Entry.Key);
+		FSoftObjectPath ObjPath = FSoftObjectPath(Entry.Key);
+		FString DesiredSchemaName = UnrealNameToSchemaName(ObjPath.GetAssetName());
+
+		if (DesiredSchemaName != Entry.Value.GeneratedSchemaName)
+		{
+			AddPotentialNameCollision(DesiredSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
+		}
+		AddPotentialNameCollision(Entry.Value.GeneratedSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
+	}
+}
+
 bool SpatialGDKGenerateSchema()
 {
-	ClassToSchemaName.Empty();
-	UsedSchemaNames.Empty();
+	ResetUsedNames();
 
 	// Gets the classes currently loaded into memory.
 	SchemaGeneratedClasses = GetAllSupportedClasses();

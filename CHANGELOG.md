@@ -9,11 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### New Known Issues:
 
 ### Features:
+- Added SpatialMetricsDisplay class, which allows you to view UnrealWorker stats as an overlay on the client.
 
 ### Bug fixes:
-- Bugfix: BeginPlay is not called with authority when checking out entities from Spatial.
-- Bugfix: Launching SpatialOS would fail if there was a space in the full directory path.
-- Bugfix: Running Schema (Full Scan) now clears generated schema files first.
+- BeginPlay is not called with authority when checking out entities from Spatial.
+- Launching SpatialOS would fail if there was a space in the full directory path.
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- Reliable RPC checking no longer breaks compatibility between development and shipping builds.
+- Fixed an issue with schema name collisions.
+- Running Schema (Full Scan) now clears generated schema files first.
 
 ### External contributors:
 

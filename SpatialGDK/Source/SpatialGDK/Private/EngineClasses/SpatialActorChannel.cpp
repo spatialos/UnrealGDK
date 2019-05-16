@@ -36,7 +36,11 @@ namespace
 // This is a bookkeeping function that is similar to the one in RepLayout.cpp, modified for our needs (e.g. no NaKs)
 // We can't use the one in RepLayout.cpp because it's private and it cannot account for our approach.
 // In this function, we poll for any changes in Unreal properties compared to the last time we replicated this actor.
+#if ENGINE_MINOR_VERSION <= 20
 void UpdateChangelistHistory(TSharedPtr<FRepState>& RepState)
+#else
+void UpdateChangelistHistory(TUniquePtr<FRepState>& RepState)
+#endif
 {
 	check(RepState->HistoryEnd >= RepState->HistoryStart);
 
@@ -81,6 +85,7 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 {
 }
 
+#if ENGINE_MINOR_VERSION <= 20
 void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex, bool bOpenedLocally)
 {
 	Super::Init(InConnection, ChannelIndex, bOpenedLocally);
@@ -90,6 +95,17 @@ void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex
 	Sender = NetDriver->Sender;
 	Receiver = NetDriver->Receiver;
 }
+#else
+void USpatialActorChannel::Init(UNetConnection* InConnection, int32 ChannelIndex, EChannelCreateFlags CreateFlag)
+{
+	Super::Init(InConnection, ChannelIndex, CreateFlag);
+
+	NetDriver = Cast<USpatialNetDriver>(Connection->Driver);
+	check(NetDriver);
+	Sender = NetDriver->Sender;
+	Receiver = NetDriver->Receiver;
+}
+#endif
 
 void USpatialActorChannel::DeleteEntityIfAuthoritative()
 {
@@ -124,19 +140,19 @@ bool USpatialActorChannel::IsSingletonEntity()
 	return NetDriver->GlobalStateManager->IsSingletonEntity(EntityId);
 }
 
+#if ENGINE_MINOR_VERSION <= 20
 bool USpatialActorChannel::CleanUp(const bool bForDestroy)
+#else
+bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason)
+#endif
 {
 #if WITH_EDITOR
 	if (NetDriver != nullptr)
 	{
 		const bool bDeleteDynamicEntities = GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities();
 
-		UWorld* World = NetDriver->GetWorld();
-		const bool bPIEShutdown = World != nullptr && World->WorldType == EWorldType::PIE && World->bIsTearingDown;
-
 		if (bDeleteDynamicEntities &&
 			NetDriver->IsServer() &&
-			(bPIEShutdown || GIsRequestingExit) &&
 			NetDriver->GetActorChannelByEntityId(EntityId) != nullptr)
 		{
 			// If we're a server worker, and the entity hasn't already been cleaned up, delete it on shutdown.
@@ -145,14 +161,26 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy)
 	}
 #endif
 
+#if ENGINE_MINOR_VERSION <= 20
 	return UActorChannel::CleanUp(bForDestroy);
+#else
+	return UActorChannel::CleanUp(bForDestroy, CloseReason);
+#endif
 }
 
+#if ENGINE_MINOR_VERSION <= 20
 int64 USpatialActorChannel::Close()
 {
 	DeleteEntityIfAuthoritative();
 	return Super::Close();
 }
+#else
+int64 USpatialActorChannel::Close(EChannelCloseReason Reason)
+{
+	DeleteEntityIfAuthoritative();
+	return Super::Close(Reason);
+}
+#endif
 
 bool USpatialActorChannel::IsDynamicArrayHandle(UObject* Object, uint16 Handle)
 {
@@ -192,7 +220,11 @@ FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr
 	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
 	checkf(!Object->IsPendingKill(), TEXT("Attempted to create initial rep change state on an object which is pending kill. This will fail to create a RepLayout: "), *Object->GetName());
 
+#if ENGINE_MINOR_VERSION <= 20
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
+#else
+	FObjectReplicator& Replicator = FindOrCreateReplicator(Object.Get()).Get();
+#endif
 
 	TArray<uint16> InitialRepChanged;
 
@@ -317,7 +349,11 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Update the replicated property change list.
 	FRepChangelistState* ChangelistState = ActorReplicator->ChangelistMgr->GetRepChangelistState();
 	bool bWroteSomethingImportant = false;
+#if ENGINE_MINOR_VERSION <= 20
 	ActorReplicator->ChangelistMgr->Update(Actor, Connection->Driver->ReplicationFrame, ActorReplicator->RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
+#else
+	ActorReplicator->ChangelistMgr->Update(ActorReplicator->RepState.Get(), Actor, Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
+#endif
 
 	const int32 PossibleNewHistoryIndex = ActorReplicator->RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
 	FRepChangedHistory& PossibleNewHistoryItem = ActorReplicator->RepState->ChangeHistory[PossibleNewHistoryIndex];
@@ -436,7 +472,11 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FClassInfo&
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
+#if ENGINE_MINOR_VERSION <= 20
 	Replicator.ChangelistMgr->Update(Object, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);
+#else
+	Replicator.ChangelistMgr->Update(Replicator.RepState.Get(), Object, Replicator.Connection->Driver->ReplicationFrame, RepFlags, bForceCompareProperties);
+#endif
 
 	const int32 PossibleNewHistoryIndex = Replicator.RepState->HistoryEnd % FRepState::MAX_CHANGE_HISTORY;
 	FRepChangedHistory& PossibleNewHistoryItem = Replicator.RepState->ChangeHistory[PossibleNewHistoryIndex];
@@ -663,7 +703,13 @@ void USpatialActorChannel::PostReceiveSpatialUpdate(UObject* TargetObject, const
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(TargetObject).Get();
 	TargetObject->PostNetReceive();
+
+#if ENGINE_MINOR_VERSION <= 20
 	Replicator.RepNotifies = RepNotifies;
+#else
+	Replicator.RepState->RepNotifies = RepNotifies;
+#endif
+
 	Replicator.CallRepNotifies(false);
 
 	if (!TargetObject->IsPendingKill())

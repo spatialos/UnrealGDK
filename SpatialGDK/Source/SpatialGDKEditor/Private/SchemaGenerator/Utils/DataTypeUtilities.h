@@ -6,7 +6,7 @@
 
 #include "SchemaGenerator/TypeStructure.h"
 
-extern TMap<UClass*, FString> ClassToSchemaName;
+extern TMap<FString, FString> ClassPathToSchemaName;
 
 // Return the string representation of the underlying data type of an enum property
 FString GetEnumDataType(const UEnumProperty* EnumProperty);
