@@ -1,11 +1,11 @@
 <%(TOC)%>
 # Command line arguments
 
-In the SpatialOS GDK for Unreal, you can use [command line arguments](https://docs.unrealengine.com/en-us/Programming/Basics/CommandLineArguments) to customize how the GDK runs. For example, you can specify how a worker instance connects to a SpatialOS deployment or choose which [network stack](https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#choosing-a-network-stack) that a worker instance uses to communicate with the SpatialOS [Runtime](https://docs.improbable.io/reference/13.7/shared/glossary#the-runtime).
+In the SpatialOS GDK for Unreal, you can use [command line arguments](https://docs.unrealengine.com/en-us/Programming/Basics/CommandLineArguments) to customize how the GDK runs. For example, you can specify how a worker instance connects to a [deployment]({{urlRoot}}/content/glossary#deployment) or choose which [network stack](https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#choosing-a-network-stack) that a worker instance uses to communicate with the SpatialOS [Runtime](https://docs.improbable.io/reference/13.7/shared/glossary#the-runtime).
 
 ## Connection arguments
 
-You can select one of the following ways to connect a worker instance to a SpatialOS deployment:
+You can select one of the following ways to connect a worker instance to a deployment:
 
  * Using [Receptionist]({{urlRoot}}/content/map-travel#using-receptionist) to connect a client-worker or server-worker instance to a local or cloud deployment.
  * Using [Locator]({{urlRoot}}/content/map-travel#using-locator) to connect a client-worker instance to cloud deployment.
@@ -43,7 +43,7 @@ To learn more about the connection arguments that you can apply to both Receptio
             <td style="width: 10%;">bool</td>
             <td style="width: 63%;">Set <code>true</code> to connect a worker instance to a deployment in either of the following ways. By default, it‘s set to <code>false</code>.
                 <ul>
-                    <li>To connect to a deployment on a different machine (not hosted in the cloud by Improbable) from the worker instance’s machine.</li>
+                    <li>To connect to a deployment on a different machine (not hosted in the cloud) from the worker instance’s machine.</li>
                     <li>To connect to a cloud deployment using <code>spatial cloud connect external</code>.</li>
                 </ul>
             </td>
@@ -53,7 +53,7 @@ To learn more about the connection arguments that you can apply to both Receptio
 
 ### Receptionist arguments
 
-When you connect a client-worker or server-worker instance to a SpatialOS depolyment without the [authentication flow](https://docs.improbable.io/reference/13.7/shared/auth/integrate-authentication-platform-sdk#authentication-flow), add the following Receptionist arguments before you launch the deployment:
+When you connect a client-worker or server-worker instance to a depolyment without the [authentication flow](https://docs.improbable.io/reference/13.7/shared/auth/integrate-authentication-platform-sdk#authentication-flow), add the following Receptionist arguments before you launch the deployment:
 
 <table style="width: 100%;">
     <tbody>
@@ -81,7 +81,7 @@ For example, to connect a server-worker instance to a deployment on a different 
 
 ### Locator arguments
 
-When you use the [SpatialOS Launcher](https://docs.improbable.io/reference/13.7/shared/operate/launcher#the-launcher) or [player authentication](https://docs.improbable.io/reference/13.7/platform-sdk/scenarios/player-auth#player-authentication) to connect a client-worker instance to a SpatialOS depolyment, add the following Locator arguments before you launch the deployment:
+When you use the [SpatialOS Launcher](https://docs.improbable.io/reference/13.7/shared/operate/launcher#the-launcher) or [player authentication](https://docs.improbable.io/reference/13.7/platform-sdk/scenarios/player-auth#player-authentication) to connect a client-worker instance to a depolyment, add the following Locator arguments before you launch the deployment:
 
 <table style="width: 100%;">
     <tbody>
@@ -156,7 +156,7 @@ Use the following arguments to configure settings other than worker connection:
 
 ## URL options
 
-In the GDK, so that a client-worker instance executes a [map travel]({{urlRoot}}/content/map-travel), use `ClientTravel` and the Locator flow to change which cloud deployment that the client-worker instance connects to. Add the following [URL options](https://docs.unrealengine.com/en-us/Programming/Basics/CommandLineArguments) to the `ClientTravel` URL:
+In the GDK, so that a client-worker instance executes a [map travel]({{urlRoot}}/content/map-travel), add the following [URL options](https://docs.unrealengine.com/en-us/Programming/Basics/CommandLineArguments) to the `ClientTravel` URL:
 
 <table style="width: 100%;">
     <tbody>
@@ -168,8 +168,8 @@ In the GDK, so that a client-worker instance executes a [map travel]({{urlRoot}}
         <tr>
             <td style="width: 27%;"><code>locator</code></td>
             <td style="width: 10%;">flag</td>
-            <td style="width: 63%;">To connect the client-worker instance to the deployment using Locator, &nbsp;add this flag to the <code>ClientTravel</code> URL.<br><br><strong>Note</strong>: If you add this flag, ensure that the <code>playeridentity</code> option and the
-                <code>login</code> option are also in the URL.</td>
+            <td style="width: 63%;">To connect the client-worker instance to the deployment using Locator, &nbsp;add this flag to the <code>ClientTravel</code> URL.<br><br><strong>Note</strong>: If you add this flag, ensure that you also add the <code>playeridentity</code> option and the
+                <code>login</code> option in the URL.</td>
         </tr>
         <tr>
             <td style="width: 27%;"><code>playeridentity</code></td>
@@ -188,7 +188,7 @@ In the GDK, so that a client-worker instance executes a [map travel]({{urlRoot}}
             <td style="width: 10%;">bool</td>
             <td style="width: 63%;">Set <code>true</code> to connect a client-worker instance to a deployment in either of the following ways. By default, it's set to <code>false</code>.</code>
                 <ul>
-                    <li>To connect to a deployment on a different machine (not hosted in the cloud by Improbable) from the worker instance&#39;s machine.</li>
+                    <li>To connect to a deployment on a different machine (not hosted in the cloud) from the worker instance&#39;s machine.</li>
                     <li>To connect to a cloud deployment using <code>spatial cloud connect external</code>.</li>
                 </ul>
             </td>
