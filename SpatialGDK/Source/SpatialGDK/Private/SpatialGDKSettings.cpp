@@ -7,7 +7,6 @@
 #if WITH_EDITOR
 #include "ISettingsModule.h"
 #include "Modules/ModuleManager.h"
-#include "Settings/LevelEditorPlaySettings.h"
 #endif
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
@@ -59,7 +58,6 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
 		}
 	}
-
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
