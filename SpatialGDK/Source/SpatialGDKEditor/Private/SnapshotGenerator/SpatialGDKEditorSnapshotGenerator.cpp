@@ -161,7 +161,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM) != 0;
 }
 
-bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvaialableEntityID)
+bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID)
 {
 	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
 	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
@@ -176,7 +176,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream, Worker_Entity
 			const improbable::Coordinates PlaceholderPosition{ x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f };
 
 			Worker_Entity Placeholder;
-			Placeholder.entity_id = NextAvaialableEntityID;
+			Placeholder.entity_id = NextAvailableEntityID;
 
 			TArray<Worker_ComponentData> Components;
 
@@ -199,60 +199,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream, Worker_Entity
 				return false;
 			}
 
-			NextAvaialableEntityID++;
-		}
-	}
-
-	return true;
-}
-
-bool CreateWorkerAuthorityAssignmentEntities(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvaialableEntityID)
-{
-	// For each worker type we need to ensure that they are authoritative over some entity component to ensure
-	// that they receive updates for the GSM if the worker is yet to receive authority over a component
-	// on an actor created during gameplay.
-
-	// Long-term we may be able to replace this with system entities.
-	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
-
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	for (const FWorkerTypeLaunchSection& Worker : SpatialGDKSettings->LaunchConfigDesc.Workers)
-	{
-		const WorkerAttributeSet WorkerTypeAttributeSet = TArray<FString>{ Worker.WorkerTypeName };
-		const WorkerRequirementSet WorkerTypePermission{ { WorkerTypeAttributeSet } };
-
-		for (int32 x = -SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE / 2; x < SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE / 2; x++)
-		{
-			for (int32 y = -SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE / 2; y < SpatialConstants::WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE / 2; y++)
-			{
-				const improbable::Coordinates EntityPosition{ x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f };
-
-				Worker_Entity WorkerAuthorityAssignmentEntity;
-				WorkerAuthorityAssignmentEntity.entity_id = NextAvaialableEntityID;
-
-				TArray<Worker_ComponentData> Components;
-
-				WriteAclMap ComponentWriteAcl;
-				ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerTypePermission);
-				ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerTypePermission);
-				ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, WorkerTypePermission);
-				ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerTypePermission);
-
-				Components.Add(improbable::Position(EntityPosition).CreatePositionData());
-				Components.Add(improbable::Metadata(Worker.WorkerTypeName + TEXT("AuthorityAssignment")).CreateMetadataData());
-				Components.Add(improbable::Persistence().CreatePersistenceData());
-				Components.Add(improbable::EntityAcl(WorkerTypePermission, ComponentWriteAcl).CreateEntityAclData());
-
-				WorkerAuthorityAssignmentEntity.component_count = Components.Num();
-				WorkerAuthorityAssignmentEntity.components = Components.GetData();
-
-				if (Worker_SnapshotOutputStream_WriteEntity(OutputStream, &WorkerAuthorityAssignmentEntity) == 0)
-				{
-					return false;
-				}
-
-				NextAvaialableEntityID++;
-			}
+			NextAvailableEntityID++;
 		}
 	}
 
@@ -513,7 +460,7 @@ bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 }
 
 
-bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvaialableEntityID)
+bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID)
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -523,7 +470,7 @@ bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStrea
 		{
 			UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Found user snapshot generation class: %s"), *SnapshotGenerationClass->GetName());
 			USnapshotGenerationTemplate *SnapshotGenerationObj = NewObject<USnapshotGenerationTemplate>(GetTransientPackage(), *SnapshotGenerationClass);
-			if (!SnapshotGenerationObj->WriteToSnapshotOutput(OutputStream, NextAvaialableEntityID))
+			if (!SnapshotGenerationObj->WriteToSnapshotOutput(OutputStream, NextAvailableEntityID))
 			{
 				UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Failure returned in user snapshot generation override method from class: %s"), *SnapshotGenerationClass->GetName());
 				return false;
@@ -547,24 +494,18 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 		return false;
 	}
 
-	Worker_EntityId NextAvaialableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
+	Worker_EntityId NextAvailableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	if (SpatialGDKSettings->bGeneratePlaceholderEntitiesInSnapshot)
 	{
-		if (!CreatePlaceholders(OutputStream, NextAvaialableEntityID))
+		if (!CreatePlaceholders(OutputStream, NextAvailableEntityID))
 		{
 			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 			return false;
 		}
 	}
 
-	if (!CreateWorkerAuthorityAssignmentEntities(OutputStream, NextAvaialableEntityID))
-	{
-		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-		return false;
-	}
-
-	if (!RunUserSnapshotGenerationOverrides(OutputStream, NextAvaialableEntityID))
+	if (!RunUserSnapshotGenerationOverrides(OutputStream, NextAvailableEntityID))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 		return false;

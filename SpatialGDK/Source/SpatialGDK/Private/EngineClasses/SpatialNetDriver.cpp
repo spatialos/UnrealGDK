@@ -234,6 +234,26 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	if (IsServer())
 	{
 		EntityPool->Init(this, &TimerManager);
+
+		// Create a entity representing the server worker.
+		// This ensures that even if a server-worker isn't authoritative over anything, it will be able to
+		// receive updates for the GSM.
+		TArray<Worker_ComponentData> Components;
+
+		const FString WorkerId = FString(TEXT("workerId:")) + Connection->GetWorkerId();
+		const WorkerAttributeSet WorkerIdAttributeSet = TArray<FString>{ WorkerId };
+		const WorkerRequirementSet WorkerIdPermission{ {WorkerIdAttributeSet} };
+
+		WriteAclMap ComponentWriteAcl;
+		ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerIdPermission);
+		ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerIdPermission);
+		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
+
+		Components.Add(improbable::Position().CreatePositionData());
+		Components.Add(improbable::Metadata(WorkerId).CreateMetadataData());
+		Components.Add(improbable::EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
+
+		Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 	}
 }
 

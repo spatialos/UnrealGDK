@@ -87,7 +87,6 @@ namespace SpatialConstants
 	};
 
 	const int32 PLACEHOLDER_ENTITY_GRID_SIZE = 6;
-	const int32 WORKER_AUTHORITY_ASSIGNMENT_GRID_SIZE = 6;
 
 	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
 
