@@ -168,7 +168,7 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream, Worker_Entity
 
 	const TArray<FString>& ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
 	const WorkerRequirementSet ServerWorkerRequirementSet{ {ServerWorkerTypes} };
-	
+
 	for (int x = -SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; x < SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; x++)
 	{
 		for (int y = -SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; y < SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; y++)
