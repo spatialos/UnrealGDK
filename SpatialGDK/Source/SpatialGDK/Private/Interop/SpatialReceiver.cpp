@@ -232,6 +232,24 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
+	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
+		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		if (!NetDriver->IsServer())
+		{
+			if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
+			{
+				if (QueuedRPCs->HasRPCPayloadData())
+				{
+					ProcessQueuedActorRPCsOnEntityCreation(Actor, *QueuedRPCs);
+				}
+
+				Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
+				NetDriver->Connection->SendCommandRequest(Op.entity_id, &CommandRequest, 2);
+			}
+		}
+	}
+
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
 		HandlePlayerLifecycleAuthority(Op, PlayerController);
@@ -467,20 +485,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		EntityActor->UpdateOverlaps();
-
-		if (!NetDriver->IsServer())
-		{
-			if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(EntityId))
-			{
-				if (QueuedRPCs->HasRPCPayloadData())
-				{
-					ProcessQueuedActorRPCsOnEntityCreation(EntityActor, *QueuedRPCs);
-				}
-
-				Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
-				NetDriver->Connection->SendCommandRequest(EntityId, &CommandRequest, 1);
-			}
-		}
 	}
 }
 
@@ -982,9 +986,8 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 {
 	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
-	ensure(CommandIndex == SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
-	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
+	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == SpatialConstants::PLAYER_SPAWNER_COMMMAND_ID)
 	{
 		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
 
