@@ -305,7 +305,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		{
 			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
-
 	}
 
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -1291,7 +1290,7 @@ void USpatialReceiver::ProcessQueuedResolvedObjects()
 
 void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, SpatialGDK::RPCsOnEntityCreation* QueuedRPCs)
 {
-	ensure(QueuedRPCs != nullptr);
+	check(QueuedRPCs != nullptr);
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
@@ -1437,7 +1436,7 @@ void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const FUnrealObjectR
 		if (IncomingRPC->UnresolvedRefs.Num() == 0)
 		{
 			FString SenderWorkerId = IncomingRPC->SenderWorkerId;
-      ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->Payload, SenderWorkerId);
+			ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->Payload, SenderWorkerId);
 		}
 	}
 

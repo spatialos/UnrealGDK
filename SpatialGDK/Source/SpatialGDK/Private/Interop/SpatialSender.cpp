@@ -183,10 +183,10 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 
-	if(TArray<TSharedRef<FPendingRPCParams>>* RPCList = OutgoingOnCreateEntityRPCs.Find(Actor))
+	if (TArray<TSharedRef<FPendingRPCParams>>* RPCList = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{
 		RPCsOnEntityCreation QueuedRPCs = PackQueuedRPCsForActor(RPCList, Actor);
-		if(QueuedRPCs.HasRPCPayloadData())
+		if (QueuedRPCs.HasRPCPayloadData())
 		{
 			ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
 		}
@@ -409,7 +409,7 @@ RPCsOnEntityCreation USpatialSender::PackQueuedRPCsForActor(TArray<TSharedRef<FP
 	}
 
 	UClass* Class = Actor->GetClass();
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
 	for (TSharedRef<FPendingRPCParams> RPCParams : *RPCList)
 	{
