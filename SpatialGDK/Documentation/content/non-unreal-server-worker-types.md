@@ -1,6 +1,8 @@
 # Non-Unreal server-worker types
 <%(TOC)%>
 
+> The integration between GDK server workers and other server worker types is currently very low level, and is being improved. Please follow [this roadmap item](https://github.com/spatialos/UnrealGDK/projects/1#card-20435268) for more information. 
+
 By default, the GDK for Unreal uses a single Unreal server-worker type to handle all server-side computation. However, you can set up additional server-worker types that do not use Unreal or the GDK.
 
 You can use these non-Unreal server-worker types to modularize your game’s functionality so you can re-use the functionality across different games. For example, you could use a non-Unreal server-worker type written in Python that interacts with a database or other third-party service, such as [Firebase](https://firebase.google.com/) or [PlayFab](https://playfab.com/).
