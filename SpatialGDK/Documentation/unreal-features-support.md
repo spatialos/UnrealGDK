@@ -231,6 +231,13 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td><a href="https://docs.unrealengine.com/en-us/Programming/Online">Online Subsystem Abstraction</a></td>
     <td class="indev"></td>
     <td></td>
+   </tr>
+    <tr>
+    <td>Listen Server</td>
+    <td class="roadmap"></td>
+    <td></td>
+   </tr>
+    
 
 <!-- ------ Optimization ------ -->
 
