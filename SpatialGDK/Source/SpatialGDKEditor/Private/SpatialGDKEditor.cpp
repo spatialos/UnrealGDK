@@ -68,12 +68,20 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		}
 	}
 
-	// Compile all dirty blueprints
+	// If running from an open editor then compile all dirty blueprints
 	TArray<UBlueprint*> ErroredBlueprints;
-	bool bPromptForCompilation = false;
-	UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
+	if (!IsRunningCommandlet())
+	{
+		const bool bPromptForCompilation = false;
+		UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
+	}
 
 	TryLoadExistingSchemaDatabase();
+
+	if (bFullScan)
+	{
+		DeleteGeneratedSchemaFiles();
+	}
 
 	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
 	bool bResult = SpatialGDKGenerateSchema();

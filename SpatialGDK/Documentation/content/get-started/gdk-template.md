@@ -157,7 +157,7 @@ TODO: add link from server-workers to concepts
 1. In a terminal window, navigate to your `<ProjectRoot>` directory.
 2. Build a server-worker assembly by running the following command: 
 ```
-Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Linux Development YourProject.uproject
+Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProjectServer Linux Development YourProject.uproject
 ```
 3. Build a client-worker assembly by running the following command: 
 ```

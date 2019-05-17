@@ -34,6 +34,12 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 
 	FSpatialGDKEditor SpatialGDKEditor;
 
+	// Do full schema generation
+	if (!GenerateSchema(SpatialGDKEditor))
+	{
+		return 1;
+	}
+
 	if (Params.Contains(MapPathsParamName))
 	{
 		FString MapNameParam = *Params.Find(MapPathsParamName);
@@ -49,7 +55,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 		FString RemainingMapPaths = MapNameParam;
 		while (RemainingMapPaths.Split(TEXT(";"), &ThisMapName, &RemainingMapPaths))
 		{
-			if (!GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, ThisMapName))
+			if (!GenerateSnapshotForPath(SpatialGDKEditor, ThisMapName))
 			{
 				return 1;	// Error
 			}
@@ -57,7 +63,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 		// When we get to this point, one of two things is true:
 		// 1) RemainingMapPaths was NEVER split, and should be interpreted as a single map name
 		// 2) RemainingMapPaths was split n times, and the last map that needs to be run after the loop is still in it
-		if (!GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, RemainingMapPaths))
+		if (!GenerateSnapshotForPath(SpatialGDKEditor, RemainingMapPaths))
 		{
 			return 1;	// Error
 		}
@@ -65,7 +71,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 	else
 	{
 		// Default to everything in the project
-		if (!GenerateSchemaAndSnapshotForPath(SpatialGDKEditor, TEXT("")))
+		if (!GenerateSnapshotForPath(SpatialGDKEditor, TEXT("")))
 		{
 			return 1;	// Error
 		}
@@ -76,7 +82,7 @@ int32 UGenerateSchemaAndSnapshotsCommandlet::Main(const FString& Args)
 	return 0;
 }
 
-bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InPath)
+bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshotForPath(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InPath)
 {
 	// Massage input to allow some flexibility in command line path argument:
 	// 	/Game/Path/MapName = Single map
@@ -111,7 +117,7 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 			MapPathToLoad = LongPackageName;
 		}
 		UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Selecting direct map %s"), *MapPathToLoad);
-		return GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, MapPathToLoad);
+		return GenerateSnapshotForMap(InSpatialGDKEditor, MapPathToLoad);
 	}
 	else if (CorrectedPath.EndsWith(TEXT("/")))
 	{
@@ -131,7 +137,7 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 		{
 			FString MapPath = AssetData.PackageName.ToString();
 			UE_LOG(LogSpatialGDKEditorCommandlet, Display, TEXT("Selecting map %s"), *MapPath);
-			if (!GenerateSchemaAndSnapshotForMap(InSpatialGDKEditor, MapPath))
+			if (!GenerateSnapshotForMap(InSpatialGDKEditor, MapPath))
 			{
 				return false;
 			}
@@ -149,7 +155,7 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForPath(FSp
 	return true;
 }
 
-bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName)
+bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSnapshotForMap(FSpatialGDKEditor& InSpatialGDKEditor, const FString& InMapName)
 {
 	// Check if this map path has already been generated and early exit if so
 	if (GeneratedMapPaths.Contains(InMapName))
@@ -187,12 +193,6 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 		}
 	}
 
-	// Generate Schema Iteration
-	if (!GenerateSchemaForLoadedMap(InSpatialGDKEditor))
-	{
-		return false;
-	}
-
 	// Generate Snapshot
 	if (!GenerateSnapshotForLoadedMap(InSpatialGDKEditor, FPaths::GetCleanFilename(InMapName)))
 	{
@@ -202,7 +202,7 @@ bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaAndSnapshotForMap(FSpa
 	return true;
 }
 
-bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchemaForLoadedMap(FSpatialGDKEditor& InSpatialGDKEditor)
+bool UGenerateSchemaAndSnapshotsCommandlet::GenerateSchema(FSpatialGDKEditor& InSpatialGDKEditor)
 {
 	bool bSchemaGenSuccess;
 	if (InSpatialGDKEditor.GenerateSchema(true))
