@@ -467,26 +467,29 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 	UObject* TargetObject = Params->TargetObject.Get();
 
-	if (AActor* TargetActor = Cast<AActor>(TargetObject))
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
+	if (Channel == nullptr)
 	{
-		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetActor));
-		if (Channel == nullptr)
+		AActor* TargetActor = Cast<AActor>(TargetObject);
+		if (TargetActor == nullptr)
 		{
-			Channel = NetDriver->CreateSpatialActorChannel(TargetActor, NetDriver->GetSpatialOSNetConnection());
+			TargetActor = Cast<AActor>(TargetObject->GetOuter());
 		}
-		if (Channel != nullptr)
+		check(TargetActor);
+		Channel = NetDriver->CreateSpatialActorChannel(TargetActor, NetDriver->GetSpatialOSNetConnection());
+	}
+	if (Channel != nullptr)
+	{
+		if (Channel->bCreatingNewEntity)
 		{
-			if (Channel->bCreatingNewEntity)
-			{
-				// This is where we'll serialize this RPC and queue it to be added on entity creation
-				OutgoingOnCreateEntityRPCs.FindOrAdd(TargetActor).Add(Params);
-				return;
-			}
+			// This is where we'll serialize this RPC and queue it to be added on entity creation
+			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).Add(Params);
+			return;
 		}
-		else
-		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetActor->GetName());
-		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
 	}
 
 	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
@@ -538,7 +541,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
 				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: %d)"),
-					EntityId, CommandRequest.component_id, *Params->Function->GetName(), Params->Attempts+1);
+					EntityId, CommandRequest.component_id, *Params->Function->GetName(), Params->Attempts + 1);
 				// The number of attempts is used to determine the delay in case the command times out and we need to resend it.
 				Params->Attempts++;
 				Receiver->AddPendingReliableRPC(RequestId, Params);
