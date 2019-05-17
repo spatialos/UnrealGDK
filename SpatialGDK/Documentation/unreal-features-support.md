@@ -241,7 +241,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 <!-- ------ Optimization ------ -->
 
  <tr>
-    <td rowspan="3"><b>Optimization<b></td>
+    <td rowspan="4"><b>Optimization<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Networking/ReplicationGraph">Replication Graph</a></td>
     <td class="indev"></td>
     <td>We will present a different system for the same purpose instead.</td>
@@ -256,6 +256,11 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td class="supported"></td>
     <td></td>
   </tr>
+  <tr>
+    <td><a href="https://www.unrealengine.com/en-US/blog/finding-network-based-exploits">Network lag commands</td>
+    <td class="roadmap"></td>
+    <td></td>
+   </tr> 
 
 <!-- ------ Debugging ------ -->
 
