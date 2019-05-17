@@ -858,7 +858,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						continue;
 					}
 
-					Channel = CreateActorChannel(Actor, InConnection); 
+					Channel = CreateSpatialActorChannel(Actor, Cast<USpatialNetConnection>(InConnection)); 
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
 						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
@@ -1314,7 +1314,7 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, FUn
 	return bOk ? SpatialConnection : nullptr;
 }
 
-USpatialActorChannel* USpatialNetDriver::CreateActorChannel(AActor* Actor, UNetConnection* InConnection)
+USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection)
 {
 	USpatialActorChannel* Channel = nullptr;
 
