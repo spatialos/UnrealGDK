@@ -197,7 +197,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 <!-- ------ Multiplayer Gameplay Features ------ -->
 
  <tr>
-    <td rowspan="7"><b>Multiplayer Gameplay Features<b></td>
+    <td rowspan="8"><b>Multiplayer Gameplay Features<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Rendering/ParticleSystems/Optimization/SplitScreen">Split Screen</a></td>
     <td class="roadmap"></td>
     <td></td>
@@ -231,13 +231,12 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td><a href="https://docs.unrealengine.com/en-us/Programming/Online">Online Subsystem Abstraction</a></td>
     <td class="indev"></td>
     <td></td>
-   </tr>
-    <tr>
-    <td>Listen Server</td>
+   </tr> 
+  <tr>
+    <td><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Server">Listen Server</a></td>
     <td class="roadmap"></td>
-    <td></td>
-   </tr>
-    
+    <td>The GDK currently only supports Dedicated Server mode.</td>
+  </tr>    
 
 <!-- ------ Optimization ------ -->
 
