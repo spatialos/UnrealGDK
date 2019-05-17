@@ -78,6 +78,11 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	TryLoadExistingSchemaDatabase();
 
+	if (bFullScan)
+	{
+		DeleteGeneratedSchemaFiles();
+	}
+
 	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
 	bool bResult = SpatialGDKGenerateSchema();
 
