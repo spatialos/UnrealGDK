@@ -62,8 +62,8 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
 <table style="width:100%">
   <tr style="background-color:#f0f0f0;">
-    <th>Feature Area (Links are to Unreal documentation)</th>
-    <th style="width:25%">Feature (Links are to Unreal documentation)</th>
+    <th>Feature Area</th>
+    <th style="width:25%">Feature</th>
     <th style="width:2%;">Support Level</th>
     <th>Notes & Caveats</th>
   </tr>
