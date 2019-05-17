@@ -1,6 +1,5 @@
 - <h3>SpatialOS GDK for Unreal</h3>
     - [Welcome]({{urlRoot}}/index)
-    - [Feature list]({{urlRoot}}/features)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
@@ -14,32 +13,47 @@
             - [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
         - [Port your own project to the GDK]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
-    - [What's new in alpha]({{urlRoot}}/content/whatsnew)
+    - Technical overview
+        - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
+        - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
+        - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)  
+    - [Unreal features support]({{urlRoot}}/unreal-features-support)
+    - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
     - SpatialOS concepts
-        - [Summary]({{urlRoot}}/content/spatialos-concepts/concepts)
-        - [Schema]({{urlRoot}}/content/spatialos-concepts/schema)
-        - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
+        - [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)
+        - [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components)
+        - [Workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)
+        - [Authority and interest]({{urlRoot}}/content/spatialos-concepts/authority-and-interest)
+        - [Schema and snapshots]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots)
     - [Glossary]({{urlRoot}}/content/glossary)
     - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
-    - [Spatial Type]({{urlRoot}}/content/spatial-type)
-    - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
-    - [Unreal networking authority]({{urlRoot}}/content/authority)
-    - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
-    - [Actor handover between server-workers]({{urlRoot}}/content/handover-between-server-workers)
+    - Actors and entities
+        - [Schema]({{urlRoot}}/content/how-to-use-schema)
+        - [Spatial Type]({{urlRoot}}/content/spatial-type)
+        - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
+        - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
+    - Authority and interest
+        - [Authority]({{urlRoot}}/content/authority)
+        - [Actor handover]({{urlRoot}}/content/actor-handover)
+        - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
+    - Workers and load balancing
+        - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+    - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
+    - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Map travel]({{urlRoot}}/content/map-travel)
-    - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
+- <h3>Workflows</h3>
+    - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
+    - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
+    - Deployment workflows
+        - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
+        - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
-    - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
-    - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
-- <h3>Workflows</h3>
-    - [Local development workflow]({{urlRoot}}/content/local-dev-workflow)
-    - [Cloud development workflow]({{urlRoot}}/content/cloud-dev-workflow)
-    - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
-    - [Known issues]({{urlRoot}}/known-issues)
-    - [Keep your GDK up to date]({{urlRoot}}/content/upgrading)
+- <h3>Pricing and support</h3>
+    - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)
+    - [Support]({{urlRoot}}/content/pricing-and-support/support)
 - <h3>Get involved</h3>
     - Contributing to the GDK
         - [Coding standards]({{urlRoot}}/contributions/unreal-gdk-coding-standards)

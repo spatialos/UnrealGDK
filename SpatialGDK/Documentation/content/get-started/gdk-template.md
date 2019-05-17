@@ -64,43 +64,31 @@ Note: Ensure that your Visual Studio Solution Configuration is set to **Developm
 
 ### Deploy your project 
 
-To test your game, you need to launch a deployment. This means launching your game with its own instance of the [SpatialOS Runtime](https://docs.improbable.io/reference/latest/shared/glossary#spatialos-runtime), either locally using a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment), or in the cloud using a [cloud deployment](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment).
+To test your game, you need to launch a [deployment]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#deployments). This means launching your game with its own instance of the [SpatialOS Runtime]({{urlRoot}}/content/glossary#spatialos-runtime), either locally using a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment), or in the cloud using a [cloud deployment](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment).
 
-<!---
-TODO: add links from deployments to concepts and SpatialOS Runtime
--->
-
-When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot), and then starts up the worker instances needed to run the game world.
-
-<!---
-TODO: add links from workers to concepts
--->
+When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots), and then starts up the [worker instances]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#worker-instances-and-worker-types) needed to run the game world.
 
 You'll find out more about schema, snapshots and workers later on in this tutorial. 
 
 #### Deploy locally with multiple clients
 
-Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema) and a [snapshot]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot). 
+Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) and a [snapshot]({{urlRoot}}/content/how-to-use-snapshots). 
 
-1. In the Unreal Editor, on the GDK toolbar, select **Schema** to generate schema.<br/>
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Schema**_<br/>
+1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+  _Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
 1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
-_Image: On the GDK toolbar in the Unreal Editor select **Snapshot**_<br/>
+_Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 <%(#Expandable title="What is schema?")%>Schema is a set of definitions which represent your game's objects in SpatialOS. Schema is defined in `.schema` files and written in schemalang.  When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
 
-You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/spatialos-concepts/schema).
+You can find out more about schema in the [schema documentation]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema).
 <%(/Expandable)%>
-
-<!---
-TODO: add link from server-workers to concepts
--->
 
 <%(#Expandable title="What is a snapshot?")%>A snapshot is a representation of the state of a SpatialOS world at a given point in time. A snapshot stores the current state of each entity's component data. You start each deployment with a snapshot; if it's a re-deployment of an existing game, you can use the snapshot you originally started your deployment with, or use a snapshot that contains the exact state of a deployment before you stopped it.
 
-You can find out more about snapshots in the [GDK snapshot documentation]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot).
+You can find out more about snapshots in the [snapshot documentation]({{urlRoot}}/content/how-to-use-snapshots).
 <%(/Expandable)%>
 
 To launch a local deployment: 
@@ -110,7 +98,7 @@ To launch a local deployment:
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 1. Under **Modes**, select **New Editor Window (PIE)**.<br/>
-1. Under **Multiplayer Options**, set the number of players to **2** and ensure that the check box next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)<br/>
+1. Under **Multiplayer Options**, set the number of players to **2** and ensure that the checkbox next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)<br/>
 ![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
 _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
 1. On the Unreal Engine toolbar, select **Play** to run the game, and you should see two clients start.<br/><br/>
@@ -125,7 +113,7 @@ _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 The Inspector we are using here is looking at a local deployment running on your computer and not in the cloud, so we use a local URL for the Inspector as it's also running locally on your computer. When running locally, the Inspector automatically downloads and caches the latest Inspector client from the internet. When you use the Inspector in a cloud deployment, you access the Inspector through the Console via the web at https://console.improbable.io.
 <%(/Expandable)%>
 
-If you want to run multiple server-workers in the Editor, see the [Toolbar documentation]({{urlRoot}}/content/toolbars#auto-generated-launch-config-for-pie-server-worker-types) for details on launching multiple PIE server-workers.
+> **TIP:** Check out the [local deployment workflow page]({{urlRoot}}/content/local-deployment-workflow) for a reference diagram of this workflow.
 
 #### Deploy in the cloud
 
@@ -137,18 +125,15 @@ To launch a cloud deployment, you need to prepare your server-worker and client-
 When you signed up for SpatialOS, your account was automatically associated with an organisation and a project, both of which have the same generated name.
 
 1. Find this name by going to the [Console](https://console.improbable.io). 
-The name should look something like `beta_randomword_anotherword_randomnumber`. In the example below, it’s `beta_yankee_hawaii_621`. <br/>![Toolbar]({{assetRoot}}assets/set-up-template/template-project-page.png)<br/>_Image: The SpatialOS Console with a project name highlighted._
+The name should look something like `beta_randomword_anotherword_randomnumber`. In the example below, it’s `beta_yankee_hawaii_621`. <br/>![Toolbar]({{assetRoot}}assets/set-up-template/template-project-page.png)<br/>
+_Image: The SpatialOS Console with a project name highlighted._
 2. In File Explorer, navigate to the `<YourProject>/spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 3. Replace the `name` field with the project name shown in the Console. This tells SpatialOS which SpatialOS project you intend to upload to.
 <%(#Expandable title="What is the Console?")%> The Console is a web-based tool for managing cloud deployments. You gives you access to information about your games' SpatialOS project names, the SpatialOS assemblies you have uploaded, the internal state of any games you have running (via the Inspector), as well as logs and metrics. <br/>
 You can find out more about the [Console]({{urlRoot}}/content/glossary#console) in the _Glossary_. <%(/Expandable)%>
 ##### Step 2: Build your worker assemblies
 
-Workers are the programs that compute a SpatialOS world. In general, server-worker instances simulate the world, while game players connect to the world through client-worker instances. Worker assemblies are `.zip` files that contain built-out workers; that is all the files with compiled code that your game uses for running in the cloud.
-
-<!---
-TODO: add link from server-workers to concepts
--->
+[Workers]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing) are the programs that compute a SpatialOS world. In general, server-worker instances simulate the world, while game players connect to the world through client-worker instances. Worker assemblies are `.zip` files that contain built-out workers; that is all the files with compiled code that your game uses for running in the cloud.
 
 <!--<%(#Expandable title="More information about worker assemblies")%>More info<%(/Expandable)%>-->
 
@@ -157,7 +142,7 @@ TODO: add link from server-workers to concepts
 1. In a terminal window, navigate to your `<ProjectRoot>` directory.
 2. Build a server-worker assembly by running the following command: 
 ```
-Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Linux Development YourProject.uproject
+Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProjectServer Linux Development YourProject.uproject
 ```
 3. Build a client-worker assembly by running the following command: 
 ```
@@ -209,6 +194,8 @@ _Image: The SpatialOS console launch window_
 
 **Note:** You install the SpatialOS Launcher during [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies).
 
+> **TIP:** Check out the [cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow) for a reference diagram of this workflow.
+
 ### Congratulations!
 
 You've successfully set up and launched the Starter Template and the GDK! You are now ready to start developing a game with SpatialOS.
@@ -218,4 +205,4 @@ If you have an existing Unreal multiplayer project, follow our detailed [porting
 <br/>
 <br/>
 -------------
-2019-04-02 Page updated with limited editorial review
+_2019-04-30 Page updated with limited editorial review_

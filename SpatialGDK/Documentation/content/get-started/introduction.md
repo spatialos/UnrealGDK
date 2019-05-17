@@ -1,12 +1,17 @@
-<%(TOC)%>
 # Get started: Introduction
 
 Get started with the SpatialOS GDK for Unreal by building the SpatialOS Unreal Engine Fork and setting up the GDK Starter Template which you can use as a base for your own project running on SpatialOS.
 
-After this you can either:
+<img src="{{assetRoot}}assets/screen-grabs/homepage-template-project.png" style=" float: right; margin: 10px; display: block; width: 60%; padding: 20px 20x"/>
 
-* Follow the Multiserver Shooter Tutorial, which shows you how to deploy a project to the cloud and demonstrates a simple shooter game running across two servers.
-* Or, if you have an existing Unreal multiplayer project, you can follow the porting guide to get your game running on  the SpatialOS GDK.
+After you set up the SpatialOS GDK Starter Template, you can learn more about the GDK’s functionality with:
+
+* **The Example Project tutorial**:  Upload a session-based FPS example game to the cloud.
+* **The Multiserver Shooter tutorial**: Implement shooting across the boundaries of different servers simulating one game world.
+* **The Porting guide**: Porting your existing UE project to SpatialOS.
+
+<br/>
+
 
 ## Your feedback and ideas
 
@@ -24,9 +29,7 @@ Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issu
 
 #### Next: [Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)
 
-<%(Callout type="warn" message="This is an [alpha](https://docs.improbable.io/reference/latest/shared/release-policy#maturity-stages) version of the SpatialOS GDK for Unreal, pending stability, performance and documentation improvements. The API may change as we learn from feedback.")%>
-
 <br/>
 
 ------
-_2019-03-25 Page updated with editorial review_
+_2019-04-30 Page updated_

@@ -69,4 +69,11 @@ Because you have changed code in a function, you now need to rebuild your projec
 
 Now let’s test our health replication in another local deployment.
 
-[Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+</br>
+</br>
+**Next:** [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+<br/>
+<br/>
+
+-------------
+_2019-04-30 Page updated with limited editorial review_
