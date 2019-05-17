@@ -24,7 +24,7 @@ In Unreal, game clients communicate with the game server using Unreal’s networ
 
 When we forked Unreal Engine, we extended Unreal’s `UIpNetDriver` (which orchestrates replication) to create a `USpatialNetDriver`. This handles the connection between the GDK and SpatialOS, and translates Unreal’s native replication updates and RPCs into instructions that SpatialOS can follow. We do this by using the `UnrealHeaderTool` to generate reflection data that we then turn into the SpatialOS data format called schema.
 
-![Networking switch]({{assetRoot}}assets/screen-grabs/networking-switch.png)
+![Networking switch]({{assetRoot}}assets/screen-grabs/networking-switch.jpg)
 _Use the Unreal Editor toolbar networking switch to swap out native Unreal networking and swap in SpatialOS networking._
 
 The SpatialOS model differs significantly from Unreal Engine when it comes to replicating an Actor. We don't replicate Actors to each player individually, as Unreal would. Instead, we update the game instance running in the cloud, and it’s SpatialOS which handles distributing this data to connected clients, so data is not sent multiple times to each interested client.
