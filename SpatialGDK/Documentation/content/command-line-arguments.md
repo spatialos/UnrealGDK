@@ -5,14 +5,14 @@ In the SpatialOS GDK for Unreal, you can use [command line arguments](https://do
 
 ## Connection arguments
 
-You can select one of the following ways to connect a worker instance to a deployment:
+To connect a worker instance to a SpatialOS deployment, you can use one of the following ways:
 
  * Using [Receptionist]({{urlRoot}}/content/map-travel#using-receptionist) to connect a client-worker or server-worker instance to a local or cloud deployment.
  * Using [Locator]({{urlRoot}}/content/map-travel#using-locator) to connect a client-worker instance to cloud deployment.
 
 > **Note**: Use only one way for connection at a time; otherwise, errors might occur.
 
-To learn more about the connection arguments that you can apply to both Receptionist and Locator, see the following table:
+When you use either way to connect a worker instance to a deployment, you can add the following general connection arguments:
 
 <table style="width: 100%;">
     <tbody>
@@ -24,7 +24,7 @@ To learn more about the connection arguments that you can apply to both Receptio
         <tr>
             <td style="width: 27%;"><code>-workerId</code></td>
             <td style="width: 10%;">string</td>
-            <td style="width: 63%;">The <a href="https://docs.improbable.io/reference/13.7/shared/glossary#worker-id">worker ID</a> that the worker instance uses to connect to a SpatialOS deployment. If no value is specified, a random <code>workerId</code> is created.</td>
+            <td style="width: 63%;">The <a href="https://docs.improbable.io/reference/13.7/shared/glossary#worker-id">worker ID</a> that the worker instance uses to connect to a SpatialOS deployment. If you don’t specify a value, the worker instance generates a random worker ID and uses it to connect to a deployment. </td>
         </tr>
         <tr>
             <td style="width: 27%;"><code>-workerType</code></td>
@@ -114,7 +114,7 @@ When you use the [SpatialOS Launcher](https://docs.improbable.io/reference/13.7/
 
 ## Other arguments
 
-Use the following arguments to configure settings other than worker connection:
+In addition to arguments for worker connection, you can also use the following arguments for other settings:
 
 <table style="width: 100%;">
     <tbody>
