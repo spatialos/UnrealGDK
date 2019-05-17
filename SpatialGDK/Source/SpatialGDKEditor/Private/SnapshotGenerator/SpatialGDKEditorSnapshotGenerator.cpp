@@ -7,7 +7,6 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/SpatialClassInfoManager.h"
-#include "Schema/ClientRPCEndpoint.h"
 #include "Schema/Interest.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"

@@ -18,7 +18,6 @@
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
 #include "Schema/RPCPayload.h"
-#include "Schema/ClientRPCEndpoint.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -229,7 +228,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	InterestFactory InterestDataFactory(Actor, Info, NetDriver);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
-	ComponentDatas.Add(ClientRPCEndpoint().CreateClientRPCEndpointData());
+	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
