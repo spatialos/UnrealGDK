@@ -27,7 +27,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>None</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -36,22 +36,22 @@
     <LangVersion>7.2</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Bundle.cs" />
-    <Compile Include="EnumGenerator.cs" />
-    <Compile Include="HeaderGenerator.cs" />
-    <Compile Include="HelperFunctions.cs" />
-    <Compile Include="ICodeGenerator.cs" />
-    <Compile Include="InterfaceGenerator.cs" />
-    <Compile Include="MapEquals.cs" />
-    <Compile Include="Model.cs" />
+    <Compile Include="Base\Bundle.cs" />
+    <Compile Include="Base\ICodeGenerator.cs" />
+    <Compile Include="Base\Model.cs" />
+    <Compile Include="Base\SchemaBundleLoader.cs" />
+    <Compile Include="Base\Text.cs" />
+    <Compile Include="Base\TypeDescription.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="SchemaBundleLoader.cs" />
-    <Compile Include="Serialization.cs" />
-    <Compile Include="SourceGenerator.cs" />
-    <Compile Include="Text.cs" />
-    <Compile Include="TypeDescription.cs" />
-    <Compile Include="Types.cs" />
-    <Compile Include="UnrealGenerator.cs" />
+    <Compile Include="Unreal\EnumGenerator.cs" />
+    <Compile Include="Unreal\HeaderGenerator.cs" />
+    <Compile Include="Unreal\HelperFunctions.cs" />
+    <Compile Include="Unreal\InterfaceGenerator.cs" />
+    <Compile Include="Unreal\MapEquals.cs" />
+    <Compile Include="Unreal\Serialization.cs" />
+    <Compile Include="Unreal\SourceGenerator.cs" />
+    <Compile Include="Unreal\Types.cs" />
+    <Compile Include="Unreal\UnrealGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.5.0" />
@@ -59,7 +59,10 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir.TrimEnd('\'))" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\" /Y</PostBuildEvent>
+    <PostBuildEvent>
+      xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir)*.exe" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\" /Y;
+      xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir)*.dll" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\" /Y
+    </PostBuildEvent>
     <!-- <PostBuildEvent>xcopy "$(SolutionDir)CodeGenerator\bin\netcoreapp2.2\win10-x64" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\codegen\" /E /Y</PostBuildEvent> -->
   </PropertyGroup>
 </Project>

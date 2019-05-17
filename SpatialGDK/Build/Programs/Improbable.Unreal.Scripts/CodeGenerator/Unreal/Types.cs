@@ -144,12 +144,12 @@ namespace Improbable.CodeGen.Unreal
         // e.g. if type Bar is nested in type Foo, it will be generated as Foo_Bar
         public static string GetNestedTypeQualifiedName(TypeDescription type)
         {
-            var splitQualifiedName = type.QualifiedName.Split(".");
+            var splitQualifiedName = type.QualifiedName.Split('.');
             if (splitQualifiedName.Count() == 1)
             {
                 throw new InvalidOperationException("Tried to find nested type name for a top-level type");
             }
-            return string.Join('.', splitQualifiedName.Take(splitQualifiedName.Count() - 1)) + "_" + splitQualifiedName.Last();
+            return string.Join(".", splitQualifiedName.Take(splitQualifiedName.Count() - 1)) + "_" + splitQualifiedName.Last();
         }
 
         public static string GetFieldTypeAsCpp(FieldDefinition field, Bundle lookups, TypeDescription parentType)
@@ -240,7 +240,7 @@ namespace Improbable.CodeGen.Unreal
         public static string GetTypeClassDefinitionQualifiedName(string qualifiedName, Bundle bundle, bool isLocallyDefined = false)
         {
             var outermostType = bundle.GetOutermostTypeWrapperForType(qualifiedName);
-            var typeName = string.Join("_", qualifiedName.Split(".").Skip(outermostType.Count(c => c == '.')));
+            var typeName = string.Join("_", qualifiedName.Split('.').Skip(outermostType.Count(c => c == '.')));
             return isLocallyDefined ? typeName : $"{Text.ReplacesDotsWithDoubleColons(outermostType.Substring(0, outermostType.LastIndexOf(".")))}::{typeName}";
         }
 
@@ -276,7 +276,7 @@ namespace Improbable.CodeGen.Unreal
                 Visit(allTopLevelTypesToVisitedMap.First().Key, topLevelTypes, ref allTopLevelTypesToVisitedMap, ref graphIsCyclic, ref sortedTypes, types, bundle);
                 if (graphIsCyclic)
                 {
-                    throw new InvalidDataException($"Found cyclic dependency in nested types of {type.QualifiedName}");
+                    throw new Exception($"Found cyclic dependency in nested types of {type.QualifiedName}");
                 }
             }
             return sortedTypes;
@@ -291,7 +291,7 @@ namespace Improbable.CodeGen.Unreal
         private static string TypeToFilename(string qualifiedName, string extension)
         {
             var path = qualifiedName.Split('.');
-            return string.Join("/", path.Take(path.Length - 1).Append($"{path.Last()}{extension}").ToArray());
+            return $"{string.Join("/", path)}{extension}";
         }
 
         // For a field definition inside a type, get all the necessary includes for the type (from collection inner types, etc)

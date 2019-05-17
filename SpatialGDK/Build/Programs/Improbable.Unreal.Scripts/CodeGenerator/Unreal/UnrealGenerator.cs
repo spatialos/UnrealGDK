@@ -8,7 +8,6 @@ namespace Improbable.CodeGen.Unreal
     public class UnrealGenerator : ICodeGenerator
     {
         public static string GeneratorTitle = "Unreal External Schema Codegen";
-        public static string RelativeIncludePrefix = "ExternalSchemaCodegen";
 
         public List<GeneratedFile> GenerateFiles(Bundle bundle)
         {
@@ -35,9 +34,9 @@ namespace Improbable.CodeGen.Unreal
             }
 
             // Add enum files to generated files, ignoring nested enum which are defined in parent files
-            foreach (var (enumQualifiedName, enumDefinition) in topLevelEnums)
+            foreach (KeyValuePair<string, EnumDefinition> topLevelEnum in topLevelEnums)
             {
-                generatedFiles.Add(new GeneratedFile(Types.TypeToHeaderFilename(enumQualifiedName), EnumGenerator.GenerateTopLevelEnum(enumDefinition, bundle)));
+                generatedFiles.Add(new GeneratedFile(Types.TypeToHeaderFilename(topLevelEnum.Key), EnumGenerator.GenerateTopLevelEnum(topLevelEnum.Value, bundle)));
             }
 
             return generatedFiles;

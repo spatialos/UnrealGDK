@@ -13,7 +13,7 @@ namespace Improbable.CodeGen.Unreal
             var sourceRef = bundle.SchemaBundle.SourceMapV1.SourceReferences[type.QualifiedName];
             var allTopLevelTypes = Types.SortTopLevelTypesTopologically(type, types, bundle);
             var typeNamespaces = Text.GetNamespaceFromTypeName(type.QualifiedName);
-            var requiredIncludes = Types.GetRequiredTypeIncludes(type, bundle).Select(inc => $"#include \"{UnrealGenerator.RelativeIncludePrefix}/{inc}\"");
+            var requiredIncludes = Types.GetRequiredTypeIncludes(type, bundle).Select(inc => $"#include \"{string.Concat(Enumerable.Repeat("../", type.QualifiedName.Count(c => c == '.')))}{inc}\"");
             var allNestedEnums = Types.GetRecursivelyNestedEnums(type);
             var enumDefs = allNestedEnums.Select(enumDef => EnumGenerator.GenerateEnum(Types.GetTypeClassDefinitionName(enumDef.Identifier.QualifiedName, bundle), enumDef, bundle).Replace($"enum {enumDef.Identifier.Name}", $"class {enumDef.Identifier.Name}_{enumDef.Identifier.Name}"));
 
@@ -28,7 +28,7 @@ namespace Improbable.CodeGen.Unreal
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
-#include ""{UnrealGenerator.RelativeIncludePrefix}/{HelperFunctions.HeaderPath}""
+#include ""{string.Concat(Enumerable.Repeat("../", type.QualifiedName.Count(c => c == '.')))}{HelperFunctions.HeaderPath}""
 ");
             if (requiredIncludes.Count() > 0)
             {
