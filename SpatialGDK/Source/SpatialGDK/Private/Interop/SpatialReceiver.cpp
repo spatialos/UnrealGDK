@@ -655,7 +655,7 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
-void USpatialReceiver::ClearRPCsOnEntityCreation(const Worker_EntityId& EntityId)
+void USpatialReceiver::ClearRPCsOnEntityCreation(Worker_EntityId EntityId)
 {
 	Worker_ComponentUpdate Update = RPCsOnEntityCreation::CreateClearFieldsUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);

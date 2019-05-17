@@ -20,6 +20,8 @@
 
 #include "SpatialReceiver.generated.h"
 
+using namespace SpatialGDK;
+
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 
 class USpatialSender;
@@ -86,7 +88,7 @@ struct FPendingIncomingRPC
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
-	SpatialGDK::RPCPayload Payload;
+	RPCPayload Payload;
 	FString SenderWorkerId;
 };
 
@@ -130,7 +132,7 @@ public:
 	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
-	void ClearRPCsOnEntityCreation(const Worker_EntityId& EntityId);
+	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();
