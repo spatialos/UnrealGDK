@@ -94,7 +94,7 @@ private:
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
 
-	RPCsOnEntityCreation PackQueuedRPCsForActor(TArray<TSharedRef<FPendingRPCParams>>* RPCList, AActor* Actor);
+	RPCsOnEntityCreation PackQueuedRPCsForActor(const TArray<TSharedRef<FPendingRPCParams>>& RPCList, AActor* Actor);
 
 private:
 	UPROPERTY()

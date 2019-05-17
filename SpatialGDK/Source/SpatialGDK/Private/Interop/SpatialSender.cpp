@@ -11,13 +11,13 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialDispatcher.h"
+#include "Interop/SpatialReceiver.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
+#include "Schema/RPCPayload.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
-#include "Schema/RPCPayload.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -109,8 +109,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID, ServersOnly);
 	ComponentWriteAcl.Add(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID, ServersOnly);
-	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
 	ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, ServersOnly);
+	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
@@ -184,7 +184,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	if (TArray<TSharedRef<FPendingRPCParams>>* RPCList = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{
-		RPCsOnEntityCreation QueuedRPCs = PackQueuedRPCsForActor(RPCList, Actor);
+		RPCsOnEntityCreation QueuedRPCs = PackQueuedRPCsForActor(*RPCList, Actor);
 		if (QueuedRPCs.HasRPCPayloadData())
 		{
 			ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
@@ -398,19 +398,13 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 	return ComponentInterest;
 }
 
-RPCsOnEntityCreation USpatialSender::PackQueuedRPCsForActor(TArray<TSharedRef<FPendingRPCParams>>* RPCList, AActor* Actor)
+RPCsOnEntityCreation USpatialSender::PackQueuedRPCsForActor(const TArray<TSharedRef<FPendingRPCParams>>& RPCList, AActor* Actor)
 {
 	RPCsOnEntityCreation QueuedRPCs;
-	check((RPCList != nullptr) && (Actor != nullptr));
-	if ((RPCList == nullptr) || (Actor == nullptr))
-	{
-		return QueuedRPCs;
-	}
-
 	UClass* Class = Actor->GetClass();
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-	for (TSharedRef<FPendingRPCParams> RPCParams : *RPCList)
+	for (TSharedRef<FPendingRPCParams> RPCParams : RPCList)
 	{
 		if (!RPCParams->TargetObject.IsValid())
 		{
@@ -484,6 +478,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		{
 			if (Channel->bCreatingNewEntity)
 			{
+				// This is where we'll serialize this RPC and queue it to be added on entity creation
 				OutgoingOnCreateEntityRPCs.FindOrAdd(TargetActor).Add(Params);
 				return;
 			}
@@ -496,7 +491,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
-		// This is where we'll serialize this RPC and queue it to be added on entity creation
+		// This could potentially occur for singletons in multi-worker scenario
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s on unresolved Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
 		QueueOutgoingRPC(TargetObject, Params);
 		return;
