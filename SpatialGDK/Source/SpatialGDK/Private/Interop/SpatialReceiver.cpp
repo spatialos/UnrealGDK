@@ -474,7 +474,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			{
 				if (QueuedRPCs->HasRPCPayloadData())
 				{
-					ProcessQueuedActorRPCsOnEntityCreation(EntityActor, QueuedRPCs);
+					ProcessQueuedActorRPCsOnEntityCreation(EntityActor, *QueuedRPCs);
 				}
 
 				Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
@@ -1123,7 +1123,7 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId)
+void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCPayload& Payload, const FString& SenderWorkerId)
 {
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
@@ -1287,13 +1287,11 @@ void USpatialReceiver::ProcessQueuedResolvedObjects()
 	ResolvedObjectQueue.Empty();
 }
 
-void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, SpatialGDK::RPCsOnEntityCreation* QueuedRPCs)
+void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPCsOnEntityCreation& QueuedRPCs)
 {
-	check(QueuedRPCs != nullptr);
-
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-	for (auto& RPC : QueuedRPCs->RPCs)
+	for (auto& RPC : QueuedRPCs.RPCs)
 	{
 		UFunction* Function = Info.RPCs[RPC.Index];
 		ApplyRPC(Actor, Function, RPC, FString());
@@ -1334,7 +1332,7 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
-void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId)
+void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, RPCPayload& Payload, const FString& SenderWorkerId)
 {
 	TSharedPtr<FPendingIncomingRPC> IncomingRPC = MakeShared<FPendingIncomingRPC>(UnresolvedRefs, TargetObject, Function, Payload);
 	IncomingRPC->SenderWorkerId = SenderWorkerId;
