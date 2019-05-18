@@ -1,6 +1,7 @@
 using Improbable.CodeGen.Base;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -69,7 +70,7 @@ namespace Improbable.CodeGen.Unreal
 
             var builder = new StringBuilder();
 
-            builder.AppendLine($@"// Generated from {sourceRef.FilePath}({sourceRef.Line},{sourceRef.Column})
+            builder.AppendLine($@"// Generated from {Path.GetFullPath(sourceRef.FilePath)}({sourceRef.Line},{sourceRef.Column})
 class {name} : public {(type.IsComponent ? "SpatialComponent" : "SpatialType")}
 {{
 public:");

@@ -29,6 +29,7 @@ namespace Improbable.CodeGen.Unreal
             builder.AppendLine($@"#pragma once
 
 #include ""CoreMinimal.h""
+#include ""Connection/SpatialWorkerConnection.h""
 #include ""Engine/NetDriver.h""
 #include ""SpatialConstants.h""
 #include ""SpatialDispatcher.h""

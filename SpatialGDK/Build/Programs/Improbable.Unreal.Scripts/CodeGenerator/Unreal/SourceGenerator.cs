@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Improbable.CodeGen.Base;
@@ -23,7 +24,7 @@ namespace Improbable.CodeGen.Unreal
 #include <set>
 #include ""{string.Concat(Enumerable.Repeat("../", type.QualifiedName.Count(c => c == '.')))}{MapEquals.HeaderName}""
 
-// Generated from {sourceRef.FilePath}({sourceRef.Line},{sourceRef.Column})
+// Generated from {Path.GetFullPath(sourceRef.FilePath)}({sourceRef.Line},{sourceRef.Column})
 {string.Join(Environment.NewLine, typeNamespaces.Select(t => $"namespace {t} {{"))}
 
 {GenerateTypeFunctions(type.Name, type, bundle)}");

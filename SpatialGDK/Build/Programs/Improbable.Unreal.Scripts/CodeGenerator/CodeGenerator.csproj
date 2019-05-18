@@ -60,7 +60,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>
-      xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir)*.exe" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\" /Y;
+      xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir)*.exe" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\" /Y
       xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir)*.dll" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\" /Y
     </PostBuildEvent>
     <!-- <PostBuildEvent>xcopy "$(SolutionDir)CodeGenerator\bin\netcoreapp2.2\win10-x64" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\codegen\" /E /Y</PostBuildEvent> -->
