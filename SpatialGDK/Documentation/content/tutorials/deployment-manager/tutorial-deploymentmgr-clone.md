@@ -25,7 +25,7 @@ If you do not clone the Deployment Manager into the parent directory of your Exa
 1. In the Repository URL field, enter this url: `https://github.com/improbable/deployment-manager.git`<br/>
 1. In the Local path field, type the file path to the parent directory of your Example Project repository, or select **Choose…** to navigate to the parent directory of your Example Project repository. <br/>
 1. Select **Clone**. <br/>
-![img](assets/screen-grabs/github-desktop.png)<br/>
+![img]({{assetRoot}}assets/screen-grabs/github-desktop.png)<br/>
 _Image: The Github Desktop Clone a repository window_<br/>
 
 <%(/Expandable)%>

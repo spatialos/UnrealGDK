@@ -14,7 +14,7 @@ To do this:
 Where:
 
 * `<launch config path>` is the file path to the` one_worker_test.json` file in the Example project
-* `<snapshot path>` is the path to the snapshot file you generated in the [Example Project set up guide](linkto)
+* `<snapshot path>` is the path to the snapshot file you generated in the [Example Project set up guide]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
 *  `<assembly name>` is the name you gave to your assembly in [Step 5: Upload your workers]
 *  `<deployment name>` is a name that you choose for your deployment. 
 	

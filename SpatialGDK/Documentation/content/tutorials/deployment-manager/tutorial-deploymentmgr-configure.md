@@ -8,7 +8,7 @@ There are two parts to configuring the Deployment Manager:
 ### Edit the spatialos.json file
 
 Make sure you are editing the `spatialos.json` in the Deployment Manager repository, and not the one in the Example Project repository. <br/>
-These are the same steps you took as part of [Get started 3: Set up the Example Project ]({{urlRoot}}/content/get-started/exampleproject#Launchaclouddeployment), but for the Deployment Manager, rather than the Example Project. 
+These are the same steps you took as part of [Get started 3: Set up the Example Project ]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment), but for the Deployment Manager, rather than the Example Project. 
 
 Every SpatialOS project has a spatialos.json file, so there may be several `spatialos.json` files on your machine. 
 
@@ -60,7 +60,7 @@ In this example, you must tell the Deployment Manager:
 * the number of deployments you want it to allow to run concurrently - 2 for this example
 * which worker assembly to use for the deployments - the name for which you created in step 4, above.
 
-Leave the other configuration file settings to the default, for this example.  For more information about the other Deployment Manager configuration options, see the Deployment Manager [documentation on GitHub](link to readme). 
+Leave the other configuration file settings to the default, for this example.  For more information about the other Deployment Manager configuration options, see the Deployment Manager [documentation on GitHub](https://github.com/improbable/deployment-manager). 
 
 To configure the Deployment Manager, you edit its configuration file. 
 To do this, 
@@ -72,7 +72,7 @@ In the `config.json`, you need to change the following lines:
 
 - `"ClientType": "YourClient"`, to `"ClientType": "UnrealClient"`,
 - `"NumberOfDeployments": 1`, to `"NumberOfDeployments": 2`,
-- `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly in [Step 4](#Step5ConfiguretheDeploymentManager) 
+- `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly in [Step 4]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-4-upload-your-worker-assemblies) 
 
 Your `config.json` file should look like this: 
 
