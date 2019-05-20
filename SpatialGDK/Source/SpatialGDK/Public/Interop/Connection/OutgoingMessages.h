@@ -13,7 +13,7 @@
 
 #include <WorkerSDK/improbable/c_worker.h>
 
-namespace improbable
+namespace SpatialGDK
 {
 
 enum class EOutgoingMessageType : int32
@@ -199,7 +199,7 @@ struct HistogramMetric
 };
 
 /** Parameters for sending metrics to SpatialOS. */
-struct Metrics
+struct SpatialMetrics
 {
 	/** The load value of this worker. If NULL, do not report load. */
 	TOptional<double> Load;
@@ -211,12 +211,12 @@ struct Metrics
 
 struct FMetrics : FOutgoingMessage
 {
-	FMetrics(const Metrics& InMetrics)
+	FMetrics(const SpatialMetrics& InMetrics)
 		: FOutgoingMessage(EOutgoingMessageType::Metrics)
 		, Metrics(InMetrics)
 	{}
 
-	Metrics Metrics;
+	SpatialMetrics Metrics;
 };
 
 }
