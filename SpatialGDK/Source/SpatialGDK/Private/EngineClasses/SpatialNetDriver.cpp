@@ -241,8 +241,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		TArray<Worker_ComponentData> Components;
 
 		const FString WorkerId = FString(TEXT("workerId:")) + Connection->GetWorkerId();
-		const WorkerAttributeSet WorkerIdAttributeSet = TArray<FString>{ WorkerId };
-		const WorkerRequirementSet WorkerIdPermission{ {WorkerIdAttributeSet} };
+		const WorkerRequirementSet WorkerIdPermission{ { WorkerId } };
 
 		WriteAclMap ComponentWriteAcl;
 		ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerIdPermission);
