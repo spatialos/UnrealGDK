@@ -96,12 +96,10 @@ namespace Improbable.CodeGen.Unreal
             }
         }
 
-        public static string GetListInitialisation(string targetObjectName, string listInnerType, string length, bool targetIsOptional = false)
+        public static string GetListInitialisation(string targetObjectName, string listInnerType, string length)
         {
-            var builder = new StringBuilder();
-            builder.AppendLine($"{targetObjectName} = {CollectionTypesToQualifiedTypes[Collection.List]}<{listInnerType}>();");
-            builder.AppendLine($"{(targetIsOptional ? $"(*{targetObjectName})" : targetObjectName)}.SetNum({length});");
-            return builder.ToString().TrimEnd();
+            return $@"{targetObjectName} = {CollectionTypesToQualifiedTypes[Collection.List]}<{listInnerType}>();
+{targetObjectName}.SetNum({length});";
         }
 
         // For a type, get all required includes based on fields, events and nested types

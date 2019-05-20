@@ -181,7 +181,8 @@ namespace Improbable.CodeGen.Unreal
             }
         }
 
-        private static string GetListTypeDeserialization(FieldDefinition.ListTypeRef listType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, TypeDescription parentType, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
+        private static string GetListTypeDeserialization(FieldDefinition.ListTypeRef listType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, TypeDescription parentType,
+            Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
             var listInnerTypeName = Types.GetTypeDisplayName(listType.InnerType, bundle, parentType);
             var listName = $"{Text.SnakeCaseToPascalCase(fieldName)}List";
@@ -193,16 +194,14 @@ namespace Improbable.CodeGen.Unreal
                     deserializationText = GetPrimitiveListDeserialization(listType.InnerType.Primitive, schemaObjectName, targetObjectName, fieldName, fieldId, bundle, targetIsOption);
                     break;
                 case ValueType.Type:
-                    deserializationText = $@"{{
-{Text.Indent(1, $@"auto ListLength = Schema_GetObjectCount({schemaObjectName}, {fieldId});
+                    deserializationText = $@"auto ListLength = Schema_GetObjectCount({schemaObjectName}, {fieldId});
 {Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}<{listInnerTypeName}> {listName};
 {listName}.SetNum(ListLength);
 for (uint32 i = 0; i < ListLength; ++i)
 {{
 {Text.Indent(1, $"{listName}[i] = {listInnerTypeName}::Deserialize(Schema_IndexObject({schemaObjectName}, {fieldId}, i));")}
 }}
-{targetObjectName} = {listName};")}
-}}";
+{targetObjectName} = {listName};";
                     break;
                 case ValueType.Enum:
                     deserializationText = $@"auto ListLength = Schema_GetEnumCount({schemaObjectName}, {fieldId});
@@ -221,7 +220,8 @@ for (uint32 i = 0; i < ListLength; ++i)
             return wrapInBlock ? $"{{{Environment.NewLine}{Text.Indent(1, deserializationText)}{Environment.NewLine}}}" : deserializationText;
         }
 
-        private static string GetMapTypeDeserialization(FieldDefinition.MapTypeRef mapType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId, TypeDescription parentType, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
+        private static string GetMapTypeDeserialization(FieldDefinition.MapTypeRef mapType, string schemaObjectName, string targetObjectName, string fieldName, string fieldId,
+            TypeDescription parentType, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
             var keyTypeName = Types.GetTypeDisplayName(mapType.KeyType, bundle, parentType);
             var valueTypeName = Types.GetTypeDisplayName(mapType.ValueType, bundle, parentType);
@@ -307,11 +307,9 @@ auto Value = {GetValueTypeDeserialization(mapType.ValueType, kvPairName, "SCHEMA
                     throw new InvalidOperationException("Trying to serialize invalid PrimitiveType");
             }
 
-            return $@"{{
-{Text.Indent(1, $@"uint32 {fieldName}Length = {GetPrimitiveCount(primitive, schemaObjectName, fieldId)};
-{Types.GetListInitialisation(targetObjectName, listInnerType, $"{fieldName}Length", targetIsOption)}
-{listCopyFunction}")}
-}}";
+            return $@"uint32 {fieldName}Length = {GetPrimitiveCount(primitive, schemaObjectName, fieldId)};
+{Types.GetListInitialisation(targetObjectName, listInnerType, $"{fieldName}Length")}
+{listCopyFunction}";
         }
 
         private static string GetPrimitiveDeserialization(PrimitiveType primitive, string schemaObjectName, string fieldId)

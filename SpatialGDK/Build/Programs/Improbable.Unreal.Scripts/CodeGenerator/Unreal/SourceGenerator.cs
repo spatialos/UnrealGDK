@@ -140,7 +140,7 @@ return *this;")}
                 builder.AppendLine($@"{Text.Indent(1, $@"{name} Data;
 
 {string.Join(Environment.NewLine, type.Fields.Select(field => $@"// deserializing field {Text.SnakeCaseToPascalCase(field.Identifier.Name)} = {field.FieldId}
-{Serialization.GetFieldDeserialization(field, targetSchemaObject, $"Data._{Text.SnakeCaseToPascalCase(field.Identifier.Name)}", type, bundle)}
+{Serialization.GetFieldDeserialization(field, targetSchemaObject, $"Data._{Text.SnakeCaseToPascalCase(field.Identifier.Name)}", type, bundle, true)}
 "))}
 return Data;")}
 }}");
@@ -324,12 +324,7 @@ if ({Serialization.GetFieldTypeCount(field, updatesObjectName)} > 0)
 "))));
             }
 
-            builder.AppendLine($@"{Text.Indent(1, $@"for (uint32 i = 0; i < Schema_GetComponentUpdateClearedFieldCount({componentUpdateObjectName}); ++i)
-{{
-{Text.Indent(1, $"auto clearedFieldId = Schema_IndexComponentUpdateClearedField({componentUpdateObjectName}, i);")}
-}}
-
-return {deserializingTargetObjectName};")}
+            builder.AppendLine($@"{Text.Indent(1, $@"return {deserializingTargetObjectName};")}
 }}");
 
             return builder.ToString();

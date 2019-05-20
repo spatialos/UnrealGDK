@@ -38,7 +38,6 @@ if not exist %SCHEMA_STD_COPY_DIR% (
 )
 
 call :MarkStartOfBlock "Running schema compiler"
-REM %SCHEMA_COMPILER_PATH% --schema_path=%SCHEMA_STD_COPY_DIR%  --schema_path=%1 --bundle_json_out=%BUNDLE_CACHE_DIR%\%SCHEMA_BUNDLE_FILE_NAME% --load_all_schema_on_schema_path || exit /b 1
 %SCHEMA_COMPILER_PATH% --schema_path=%1 --bundle_json_out=%BUNDLE_CACHE_DIR%\%SCHEMA_BUNDLE_FILE_NAME% --load_all_schema_on_schema_path || exit /b 1
 call :MarkEndOfBlock "Running schema compiler"
 
