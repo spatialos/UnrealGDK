@@ -257,7 +257,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td></td>
   </tr>
   <tr>
-    <td><a href="https://www.unrealengine.com/en-US/blog/finding-network-based-exploits">Network lag commands</td>
+    <td><a href="https://www.unrealengine.com/en-US/blog/finding-network-based-exploits">Network latency simulation commands</td>
     <td class="roadmap"></td>
     <td></td>
    </tr> 
