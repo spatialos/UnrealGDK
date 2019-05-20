@@ -244,8 +244,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 					ProcessQueuedActorRPCsOnEntityCreation(Actor, *QueuedRPCs);
 				}
 
-				Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
-				NetDriver->Connection->SendCommandRequest(Op.entity_id, &CommandRequest, 2);
+				Sender->SendClearRPCsOnEntityCreationRequest(Op.entity_id);
 			}
 		}
 	}

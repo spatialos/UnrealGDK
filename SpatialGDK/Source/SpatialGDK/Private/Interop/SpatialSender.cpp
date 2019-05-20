@@ -621,6 +621,12 @@ void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
 	Connection->SendDeleteEntityRequest(EntityId);
 }
 
+void USpatialSender::SendClearRPCsOnEntityCreationRequest(Worker_EntityId EntityId)
+{
+	Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
+	NetDriver->Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION);
+}
+
 void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderResetOutgoingUpdate);

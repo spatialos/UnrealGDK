@@ -70,6 +70,8 @@ public:
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
 
+	void SendClearRPCsOnEntityCreationRequest(Worker_EntityId EntityId);
+
 	void EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params);
 	void FlushRetryRPCs();
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
