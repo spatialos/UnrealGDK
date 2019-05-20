@@ -153,7 +153,8 @@ All of the above tests must have passed and there must be no outstanding blockin
 
 1. In `UnrealGDK` merge `x.y.z-rc` into `release`.
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.<br/>
-Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
+1. Copy the latest release notes from `CHANGELOG.md` into a GDoc and ask for a quick review of them from Tech Writers. 
+1. Once approved, enter them in the release description 
 1. In `improbableio/UnrealEngine` merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-release`.
 1. Use the GitHub Release UI to tag the commit you just made as `4.xx-SpatialOSUnrealGDK-x.y.z`.<br/>
 1. In `UnrealGDKThirdPersonShooter` merge `x.y.z-rc` into `release`, and tag that commit as `x.y.z`.
