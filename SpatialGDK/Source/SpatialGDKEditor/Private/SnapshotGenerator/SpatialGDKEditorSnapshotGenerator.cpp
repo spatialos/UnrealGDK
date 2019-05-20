@@ -161,27 +161,22 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM) != 0;
 }
 
-bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
+bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID)
 {
 	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
-	int PlaceholderCount = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST - SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST + 1;
-	int PlaceholderCountAxis = static_cast<int>(sqrt(PlaceholderCount));
-	checkf(PlaceholderCountAxis * PlaceholderCountAxis == PlaceholderCount, TEXT("The number of placeholders must be a square number."));
-	checkf(PlaceholderCountAxis % 2 == 0, TEXT("The number of placeholders on each axis must be even."));
 	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
-	int PlaceholderEntityIdCounter = SpatialConstants::PLACEHOLDER_ENTITY_ID_FIRST;
 
 	const TArray<FString>& ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
 	const WorkerRequirementSet ServerWorkerRequirementSet{ {ServerWorkerTypes} };
 
-	for (int x = -PlaceholderCountAxis / 2; x < PlaceholderCountAxis / 2; x++)
+	for (int x = -SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; x < SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; x++)
 	{
-		for (int y = -PlaceholderCountAxis / 2; y < PlaceholderCountAxis / 2; y++)
+		for (int y = -SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; y < SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; y++)
 		{
 			const Coordinates PlaceholderPosition{ x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f };
 
 			Worker_Entity Placeholder;
-			Placeholder.entity_id = PlaceholderEntityIdCounter;
+			Placeholder.entity_id = NextAvailableEntityID;
 
 			TArray<Worker_ComponentData> Components;
 
@@ -204,11 +199,9 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream)
 				return false;
 			}
 
-			PlaceholderEntityIdCounter++;
+			NextAvailableEntityID++;
 		}
 	}
-	// Sanity check.
-	check(PlaceholderEntityIdCounter == SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1);
 
 	return true;
 }
@@ -234,16 +227,15 @@ bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 	return true;
 }
 
-bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStream)
+bool RunUserSnapshotGenerationOverrides(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID)
 {
-	Worker_EntityId NextEntityId = SpatialConstants::PLACEHOLDER_ENTITY_ID_LAST + 1;
 	for (TObjectIterator<UClass> SnapshotGenerationClass; SnapshotGenerationClass; ++SnapshotGenerationClass)
 	{
 		if (SnapshotGenerationClass->IsChildOf(USnapshotGenerationTemplate::StaticClass()) && *SnapshotGenerationClass != USnapshotGenerationTemplate::StaticClass())
 		{
 			UE_LOG(LogSpatialGDKSnapshot, Log, TEXT("Found user snapshot generation class: %s"), *SnapshotGenerationClass->GetName());
 			USnapshotGenerationTemplate *SnapshotGenerationObj = NewObject<USnapshotGenerationTemplate>(GetTransientPackage(), *SnapshotGenerationClass);
-			if (!SnapshotGenerationObj->WriteToSnapshotOutput(OutputStream, NextEntityId))
+			if (!SnapshotGenerationObj->WriteToSnapshotOutput(OutputStream, NextAvailableEntityID))
 			{
 				UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Failure returned in user snapshot generation override method from class: %s"), *SnapshotGenerationClass->GetName());
 				return false;
@@ -267,17 +259,18 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 		return false;
 	}
 
+	Worker_EntityId NextAvailableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	if (SpatialGDKSettings->bGeneratePlaceholderEntitiesInSnapshot)
 	{
-		if (!CreatePlaceholders(OutputStream))
+		if (!CreatePlaceholders(OutputStream, NextAvailableEntityID))
 		{
 			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 			return false;
 		}
 	}
 
-	if (!RunUserSnapshotGenerationOverrides(OutputStream))
+	if (!RunUserSnapshotGenerationOverrides(OutputStream, NextAvailableEntityID))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 		return false;
