@@ -454,12 +454,15 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	{
 		Worker_ComponentId ComponentId = RPCInfo->Type == SCHEMA_ClientReliableRPC ? SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
 
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, Params->ReliableRPCIndex);
+		int RPCPayloadSize = 0;
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, RPCPayloadSize, Params->ReliableRPCIndex);
 
 		if (!UnresolvedObject)
 		{
 			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 			Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, RPCInfo->Index + 1);
+
+			NetDriver->TrackSentRPC(Params->Function, RPCInfo->Type, RPCPayloadSize);
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
@@ -495,7 +498,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			ComponentId = SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
 		}
 
-		Worker_ComponentUpdate ComponentUpdate = CreateUnreliableRPCUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject);
+		int RPCPayloadSize = 0;
+		Worker_ComponentUpdate ComponentUpdate = CreateUnreliableRPCUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, RPCPayloadSize);
 
 		if (!UnresolvedObject)
 		{
@@ -508,6 +512,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			}
 
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+
+			NetDriver->TrackSentRPC(Params->Function, RPCInfo->Type, RPCPayloadSize);
 		}
 		break;
 	}
@@ -656,7 +662,7 @@ void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, TSharedRe
 	OutgoingRPCs.FindOrAdd(UnresolvedObject).Add(Params);
 }
 
-Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int ReliableRPCId)
+Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int& OutRPCPayloadSize, int ReliableRPCId)
 {
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = ComponentId;
@@ -699,10 +705,11 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 	}
 
 	WriteRpcPayload(RequestObject, TargetObjectRef.Offset, CommandIndex, PayloadWriter);
+	OutRPCPayloadSize = PayloadWriter.GetNumBytes();
 	return CommandRequest;
 }
 
-Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject)
+Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int& OutRPCPayloadSize)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -739,6 +746,7 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 	}
 
 	WriteRpcPayload(EventData, TargetObjectRef.Offset, EventIndex, PayloadWriter);
+	OutRPCPayloadSize = PayloadWriter.GetNumBytes();
 
 	return ComponentUpdate;
 }

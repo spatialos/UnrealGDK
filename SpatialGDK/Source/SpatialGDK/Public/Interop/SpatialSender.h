@@ -86,8 +86,8 @@ private:
 	void QueueOutgoingRPC(const UObject* UnresolvedObject, TSharedRef<FPendingRPCParams> Params);
 
 	// RPC Construction
-	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int ReliableRPCIndex);
-	Worker_ComponentUpdate CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
+	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int& OutRPCPayloadSize, int ReliableRPCIndex);
+	Worker_ComponentUpdate CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int& OutRPCPayloadSize);
 	void WriteRpcPayload(Schema_Object* Object, uint32 Offset, Schema_FieldId Index, FSpatialNetBitWriter& PayloadWriter);
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);

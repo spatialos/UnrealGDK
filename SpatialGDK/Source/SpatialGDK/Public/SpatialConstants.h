@@ -63,9 +63,13 @@ FORCEINLINE FString RPCSchemaTypeToString(ESchemaComponentType RPCType)
 	switch (RPCType)
 	{
 	case SCHEMA_ClientReliableRPC:
-		return TEXT("Client");
+		return TEXT("Client, Reliable");
+	case SCHEMA_ClientUnreliableRPC:
+		return TEXT("Client, Unreliable");
 	case SCHEMA_ServerReliableRPC:
-		return TEXT("Server");
+		return TEXT("Server, Reliable");
+	case SCHEMA_ServerUnreliableRPC:
+		return TEXT("Server, Unreliable");
 	case SCHEMA_NetMulticastRPC:
 		return TEXT("Multicast");
 	case SCHEMA_CrossServerRPC:

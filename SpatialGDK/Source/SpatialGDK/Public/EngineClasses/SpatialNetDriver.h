@@ -146,6 +146,14 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
+	UFUNCTION(Exec)
+	void SpatialStartRPCMetrics();
+
+	UFUNCTION(Exec)
+	void SpatialStopRPCMetrics();
+
+	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -194,4 +202,16 @@ private:
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs
 	// in the correct order, if needed.
 	int NextRPCIndex;
+
+	// FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+	struct RPCStat
+	{
+		ESchemaComponentType Type;
+		FString Name;
+		int Calls;
+		int TotalPayload;
+	};
+	TMap<FString, RPCStat> RecentRPCs;
+	bool RPCTrackingEnabled;
+	float RPCTrackingStartTime;
 };

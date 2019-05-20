@@ -114,6 +114,19 @@ void USpatialGameInstance::StartGameInstance()
 	Super::StartGameInstance();
 }
 
+bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& Ar, UObject* Executor)
+{
+	if (!Super::ProcessConsoleExec(Cmd, Ar, Executor))
+	{
+		if (GetWorld() != nullptr && GetWorld()->GetNetDriver() != nullptr)
+		{
+			return GetWorld()->GetNetDriver()->ProcessConsoleExec(Cmd, Ar, Executor);
+		}
+		return false;
+	}
+	return true;
+}
+
 void USpatialGameInstance::HandleOnConnected()
 {
 	UE_LOG(LogSpatialGameInstance, Log, TEXT("Succesfully connected to SpatialOS"));

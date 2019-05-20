@@ -1617,3 +1617,104 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
 }
+
+void USpatialNetDriver::SpatialStartRPCMetrics()
+{
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Recording RPC metrics"));
+
+	RPCTrackingEnabled = true;
+	RPCTrackingStartTime = FPlatformTime::Seconds();
+}
+
+void USpatialNetDriver::SpatialStopRPCMetrics()
+{
+	if (!RPCTrackingEnabled)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Haven't been recording RPC metrics"));
+		return;
+	}
+
+	// Track sent RPCs
+	const double TrackRPCInterval = FPlatformTime::Seconds() - RPCTrackingStartTime;
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Recorded %d unique RPCs over the last %.3f seconds:"), RecentRPCs.Num(), TrackRPCInterval);
+
+	if (RecentRPCs.Num() > 0)
+	{
+		// NICELY log sent RPCs
+		TArray<RPCStat> RecentRPCArray;
+		RecentRPCs.GenerateValueArray(RecentRPCArray);
+
+		RecentRPCArray.Sort([](const RPCStat& A, const RPCStat& B)
+		{
+			if (A.Type != B.Type)
+			{
+				return static_cast<int>(A.Type) < static_cast<int>(B.Type);
+			}
+			return A.Calls > B.Calls;
+		});
+
+		int MaxRPCNameLen = 0;
+		for (RPCStat& Stat : RecentRPCArray)
+		{
+			if (Stat.Name.Len() > MaxRPCNameLen)
+			{
+				MaxRPCNameLen = Stat.Name.Len();
+			}
+		}
+
+		int TotalCalls = 0;
+		int TotalPayload = 0;
+
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("---------------------------"));
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Recently sent RPCs - %s:"), IsServer() ? TEXT("Server") : TEXT("Client"));
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("RPC Type           | %s | # of calls |  Calls/sec | Total payload | Avg. payload | Payload/sec"), *FString(TEXT("RPC Name")).RightPad(MaxRPCNameLen));
+
+		FString SeparatorLine = FString::Printf(TEXT("-------------------|-%s-|------------|------------|---------------|--------------|------------"), *FString::ChrN(MaxRPCNameLen, '-'));
+
+		ESchemaComponentType PrevType = SCHEMA_Invalid;
+		for (RPCStat& Stat : RecentRPCArray)
+		{
+			FString RPCTypeField;
+			if (Stat.Type != PrevType)
+			{
+				RPCTypeField = RPCSchemaTypeToString(Stat.Type);
+				PrevType = Stat.Type;
+				UE_LOG(LogSpatialOSNetDriver, Log, TEXT("%s"), *SeparatorLine);
+			}
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("%s | %s | %10d | %10.4f | %13d | %12.4f | %11.4f"), *RPCTypeField.RightPad(18), *Stat.Name.RightPad(MaxRPCNameLen), Stat.Calls, Stat.Calls / TrackRPCInterval, Stat.TotalPayload, (float)Stat.TotalPayload / Stat.Calls, Stat.TotalPayload / TrackRPCInterval);
+			TotalCalls += Stat.Calls;
+			TotalPayload += Stat.TotalPayload;
+		}
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("%s"), *SeparatorLine);
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Total              | %s | %10d | %10.4f | %13d | %12.4f | %11.4f"), *FString::ChrN(MaxRPCNameLen, ' '), TotalCalls, TotalCalls / TrackRPCInterval, TotalPayload, (float)TotalPayload / TotalCalls, TotalPayload / TrackRPCInterval);
+
+		RecentRPCs.Empty();
+	}
+
+	RPCTrackingEnabled = false;
+}
+
+void USpatialNetDriver::TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize)
+{
+	if (!RPCTrackingEnabled)
+	{
+		return;
+	}
+
+	FString FunctionName = FString::Printf(TEXT("%s::%s"), *Function->GetOuter()->GetName(), *Function->GetName());
+
+	if (RecentRPCs.Find(FunctionName) == nullptr)
+	{
+		RPCStat Stat;
+		Stat.Name = FunctionName;
+		Stat.Type = RPCType;
+		Stat.Calls = 0;
+		Stat.TotalPayload = 0;
+
+		RecentRPCs.Add(FunctionName, Stat);
+	}
+
+	RPCStat& Stat = RecentRPCs[FunctionName];
+	Stat.Calls++;
+	Stat.TotalPayload += PayloadSize;
+}
