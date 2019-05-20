@@ -144,7 +144,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	{
 		for (auto& Worker : SpatialGDKEditorSettings->LaunchConfigDesc.Workers)
 		{
-			const WorkerAttributeSet WorkerTypeAttributeSet{ TArray<FString>{Worker.WorkerTypeName} };
+			const WorkerAttributeSet WorkerTypeAttributeSet{ { Worker.WorkerTypeName } };
 			ReadACL.Add(WorkerTypeAttributeSet);
 		}
 	}
