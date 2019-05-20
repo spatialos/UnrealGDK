@@ -45,6 +45,7 @@ struct FPendingRPCParams
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 using FOutgoingRPCMap = TMap<TWeakObjectPtr<const UObject>, TArray<TSharedRef<FPendingRPCParams>>>;
+using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
 using FUnresolvedEntry = TSharedPtr<TSet<TWeakObjectPtr<const UObject>>>;
 using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
 using FChannelToHandleToUnresolved = TMap<FChannelObjectPair, FHandleToUnresolved>;
@@ -94,7 +95,7 @@ private:
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
 
-	RPCsOnEntityCreation PackQueuedRPCsForActor(const TArray<TSharedRef<FPendingRPCParams>>& RPCList, AActor* Actor);
+	RPCPayload CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams);
 
 private:
 	UPROPERTY()
@@ -122,7 +123,7 @@ private:
 	FOutgoingRepUpdates HandoverObjectToUnresolved;
 
 	FOutgoingRPCMap OutgoingRPCs;
-	FOutgoingRPCMap OutgoingOnCreateEntityRPCs;
+	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 

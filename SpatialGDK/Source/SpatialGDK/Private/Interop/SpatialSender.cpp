@@ -182,12 +182,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
 
-	if (TArray<TSharedRef<FPendingRPCParams>>* RPCList = OutgoingOnCreateEntityRPCs.Find(Actor))
+	if (RPCsOnEntityCreation* QueuedRPCs = OutgoingOnCreateEntityRPCs.Find(Actor))
 	{
-		RPCsOnEntityCreation QueuedRPCs = PackQueuedRPCsForActor(*RPCList, Actor);
-		if (QueuedRPCs.HasRPCPayloadData())
+		if (QueuedRPCs->HasRPCPayloadData())
 		{
-			ComponentDatas.Add(QueuedRPCs.CreateRPCPayloadData());
+			ComponentDatas.Add(QueuedRPCs->CreateRPCPayloadData());
 		}
 		OutgoingOnCreateEntityRPCs.Remove(Actor);
 	}
@@ -398,43 +397,30 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 	return ComponentInterest;
 }
 
-RPCsOnEntityCreation USpatialSender::PackQueuedRPCsForActor(const TArray<TSharedRef<FPendingRPCParams>>& RPCList, AActor* Actor)
+RPCPayload USpatialSender::CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams)
 {
-	RPCsOnEntityCreation QueuedRPCs;
-	UClass* Class = Actor->GetClass();
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	check(RPCParams.TargetObject.IsValid());
+	const UObject* Object = RPCParams.TargetObject.Get();
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
+	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(RPCParams.Function);
+	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(Object)));
+	check(TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-	for (TSharedRef<FPendingRPCParams> RPCParams : RPCList)
+	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
+
+	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 	{
-		if (!RPCParams->TargetObject.IsValid())
+		if (RPCParams.Function->HasAnyFunctionFlags(FUNC_NetReliable) && !RPCParams.Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 		{
-			// The target object was destroyed before we could send the RPC.
-			continue;
-		}
-
-		const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(RPCParams->Function);
-		FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(Actor)));
-		if (TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-		{
-			TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-			FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
-
-			if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
-			{
-				if (RPCParams->Function->HasAnyFunctionFlags(FUNC_NetReliable) && !RPCParams->Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-				{
-					PayloadWriter << RPCParams->ReliableRPCIndex;
-				}
-			}
-
-			TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(RPCParams->Function);
-			RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, RPCParams->Parameters.GetData());
-
-			QueuedRPCs.RPCs.Add(RPCPayload(TargetObjectRef.Offset, RPCInfo->Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes())));
+			PayloadWriter << RPCParams.ReliableRPCIndex;
 		}
 	}
 
-	return QueuedRPCs;
+	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(RPCParams.Function);
+	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, RPCParams.Parameters.GetData());
+
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo->Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 }
 
 void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId EntityId, bool bNetOwned)
@@ -467,37 +453,42 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 	UObject* TargetObject = Params->TargetObject.Get();
 
-	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
-	if (Channel == nullptr)
-	{
-		AActor* TargetActor = Cast<AActor>(TargetObject);
-		if (TargetActor == nullptr)
-		{
-			TargetActor = Cast<AActor>(TargetObject->GetOuter());
-		}
-		check(TargetActor);
-		Channel = NetDriver->CreateSpatialActorChannel(TargetActor, NetDriver->GetSpatialOSNetConnection());
-	}
-	if (Channel != nullptr)
-	{
-		if (Channel->bCreatingNewEntity)
-		{
-			// This is where we'll serialize this RPC and queue it to be added on entity creation
-			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).Add(Params);
-			return;
-		}
-	}
-	else
-	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
-	}
-
 	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		// This could potentially occur for singletons in multi-worker scenario
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s on unresolved Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
 		QueueOutgoingRPC(TargetObject, Params);
 		return;
+	}
+	else
+	{
+		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
+		if (Channel == nullptr)
+		{
+			AActor* TargetActor = Cast<AActor>(TargetObject);
+			if (TargetActor == nullptr)
+			{
+				TargetActor = Cast<AActor>(TargetObject->GetOuter());
+			}
+			check(TargetActor);
+			Channel = NetDriver->CreateSpatialActorChannel(TargetActor, NetDriver->GetSpatialOSNetConnection());
+		}
+		if (Channel != nullptr)
+		{
+			if (Channel->bCreatingNewEntity)
+			{
+				if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+				{
+					// This is where we'll serialize this RPC and queue it to be added on entity creation
+					OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(CreateRPCPayloadFromParams(*Params));
+					return;
+				}
+			}
+		}
+		else
+		{
+			UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
+		}
 	}
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
