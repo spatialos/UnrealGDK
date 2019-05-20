@@ -62,12 +62,14 @@ struct FClassInfo
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 	TArray<FInterestPropertyInfo> InterestProperties;
 
-	// Only for Actors and subobjects belonging to specific Actors
+	// For Actors and default Subobjects belonging to Actors
 	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
-	FName SubobjectName;
 
 	// Only for Actors
 	TMap<uint32, TSharedRef<FClassInfo>> SubobjectInfo;
+
+	// Only for default Subobjects belonging to Actors
+	FName SubobjectName;
 
 	// Only for Subobject classes
 	TArray<uint32[ESchemaComponentType::SCHEMA_Count]> DynamicSubobjectComponents;
@@ -105,6 +107,9 @@ public:
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
+
+	void FinishConstructingActorClassInfo(const FString& ClassPath, FClassInfo& Info);
+	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, FClassInfo& Info);
 
 private:
 	UPROPERTY()

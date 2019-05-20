@@ -240,7 +240,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
-		if (RepData[Group].Num() == 0)
+		if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
 		{
 			continue;
 		}
@@ -299,7 +299,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 		{
-			if (RepData[Group].Num() == 0)
+			if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
 			{
 				continue;
 			}
@@ -452,7 +452,7 @@ FActorSpecificSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& W
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
-		if (RepData[Group].Num() == 0)
+		if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
 		{
 			continue;
 		}
@@ -527,7 +527,6 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 	for (auto& It : Subobjects)
 	{
-		uint32 Offset = It.Key;
 		TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Value;
 		UClass* SubobjectClass = Cast<UClass>(SubobjectTypeInfo->Type);
 
@@ -536,7 +535,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 		if (SchemaGeneratedClasses.Contains(SubobjectClass))
 		{
 			bHasComponents = true;
-			SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, Offset);
+			SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, SubobjectOffset);
 		}
 		else
 		{
@@ -544,7 +543,10 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 		}
 
 		SubobjectData.Name = SubobjectTypeInfo->Name;
-		ActorSchemaData.SubobjectData.Add(Offset, SubobjectData);
+
+		uint32 SubobjectOffset = SubobjectData.SchemaComponents[SCHEMA_Data];
+		check(SubobjectOffset != 0);
+		ActorSchemaData.SubobjectData.Add(SubobjectOffset, SubobjectData);
 	}
 
 	if (bHasComponents)

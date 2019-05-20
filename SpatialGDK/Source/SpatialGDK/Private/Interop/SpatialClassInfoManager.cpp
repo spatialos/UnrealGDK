@@ -155,9 +155,21 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	}
 
+	if (Class->IsA<AActor>())
+	{
+		FinishConstructingActorClassInfo(ClassPath, Info);
+	}
+	else
+	{
+		FinishConstructingSubobjectClassInfo(ClassPath, Info);
+	}
+}
+
+void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, FClassInfo& Info)
+{
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[ClassPath].SchemaComponents[Type];
+		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
 		if (ComponentId != 0)
 		{
 			Info->SchemaComponents[Type] = ComponentId;
@@ -196,9 +208,17 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	}
 }
 
+void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FString& ClassPath, FClassInfo& Info)
+{
+	for (const auto& DynamicSubobjectComponents : SchemaDatabase->SubobjectClassPathToSchema[ClassPath].DynamicSubobjectComponents)
+	{
+		Info.DynamicSubobjectComponents.Add(DynamicSubobjectComponents);
+	}
+}
+
 bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const
 {
-	return SchemaDatabase->ClassPathToSchema.Contains(PathName);
+	return SchemaDatabase->ActorClassPathToSchema.Contains(PathName) || SchemaDatabase->SubobjectClassPathToSchema.Contains(PathName);
 }
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* Class)
