@@ -32,6 +32,7 @@
 #include "Engine/WorldComposition.h"
 #include "Misc/ScopedSlowTask.h"
 #include "UObject/StrongObjectPtr.h"
+#include "Settings/ProjectPackagingSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
@@ -393,6 +394,7 @@ void SaveSchemaDatabase()
 TArray<UClass*> GetAllSupportedClasses()
 {
 	TSet<UClass*> Classes;
+	const TArray<FDirectoryPath>& DirectoriesToNeverCook = GetDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
 
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
@@ -432,7 +434,10 @@ TArray<UClass*> GetAllSupportedClasses()
 		}
 
 		// No replicated/handover properties found
-		if (SupportedClass == nullptr) continue;
+		if (SupportedClass == nullptr)
+		{
+			continue;
+		}
 
 		// Ensure we don't process skeleton, reinitialized or classes that have since been hot reloaded
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
@@ -440,6 +445,16 @@ TArray<UClass*> GetAllSupportedClasses()
 			|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("HOTRELOADED_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("PROTO_BP_"), ESearchCase::CaseSensitive))
+		{
+			continue;
+		}
+
+		// Avoid processing classes contained in Directories to Never Cook
+		const FString& ClassPath = SupportedClass->GetPathName();
+		if (DirectoriesToNeverCook.ContainsByPredicate([&ClassPath](const FDirectoryPath& Directory)
+		{
+			return ClassPath.StartsWith(Directory.Path);
+		}))
 		{
 			continue;
 		}
@@ -475,12 +490,30 @@ void ClearGeneratedSchema()
 	DeleteGeneratedSchemaFiles();
 }
 
-void TryLoadExistingSchemaDatabase()
+bool TryLoadExistingSchemaDatabase()
 {
-	const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase")).TryLoad());
+	const FString SchemaDatabasePackagePath = TEXT("/Game/Spatial/SchemaDatabase");
+	const FString SchemaDatabaseAssetPath = FString::Printf(TEXT("%s.SchemaDatabase"), *SchemaDatabasePackagePath);
+	const FString SchemaDatabaseFileName = FPackageName::LongPackageNameToFilename(SchemaDatabasePackagePath, FPackageName::GetAssetPackageExtension());
 
-	if (SchemaDatabase != nullptr)
+	FFileStatData StatData = FPlatformFileManager::Get().GetPlatformFile().GetStatData(*SchemaDatabaseFileName);
+
+	if (StatData.bIsValid)
 	{
+		if (StatData.bIsReadOnly)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Schema Database at %s%s is read only. Make it writable before generating schema"), *SchemaDatabasePackagePath, *FPackageName::GetAssetPackageExtension());
+			return false;
+		}
+
+		const USchemaDatabase* const SchemaDatabase = Cast<USchemaDatabase>(FSoftObjectPath(SchemaDatabaseAssetPath).TryLoad());
+
+		if (SchemaDatabase == nullptr)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema Generation failed: Failed to load existing schema database."));
+			return false;
+		}
+
 		ClassPathToSchemaData = SchemaDatabase->ClassPathToSchema;
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
@@ -496,9 +529,11 @@ void TryLoadExistingSchemaDatabase()
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("SchemaDatabase not found on Engine startup so the generated schema directory will be cleared out if it exists."));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Display, TEXT("SchemaDatabase not found so the generated schema directory will be cleared out if it exists."));
 		ClearGeneratedSchema();
 	}
+
+	return true;
 }
 
 void ResetUsedNames()
