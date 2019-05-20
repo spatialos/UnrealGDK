@@ -10,7 +10,7 @@ In addition, you can integrate systems from outside the game instance, such as i
 
 The diagram below shows how SpatialOS and the GDK fit into a typical multiplayer game stack:
 
-![Game architecture]({{assetRoot}}assets/screen-grabs/game-architecture.png)
+![Game architecture]({{assetRoot}}assets/diagrams/architecture-of-spatialos-gdk-for-unreal-game.jpg)
 _The GDK provides a networking integration with SpatialOS, which enables Unreal Engine 4 clients and servers to communicate with the SpatialOS Runtime to synchronize state._
 
 The GDK provides a networking integration with SpatialOS, which enables Unreal Engine 4 clients and servers to communicate with the SpatialOS Runtime to synchronize state.
