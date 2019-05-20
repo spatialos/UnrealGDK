@@ -109,10 +109,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 	WorkerRequirementSet AuthoritativeWorkerRequirementSet = SpatialConstants::UnrealServerPermission;
-	if (!Class->WorkerAssociation.IsEmpty())
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialGDKSettings->bUsingOffloading && !Class->WorkerAssociation.IsEmpty())
 	{
-		const WorkerAttributeSet WorkerAttribute{ Class->WorkerAssociation };
-		AuthoritativeWorkerRequirementSet = { WorkerAttribute };
+		AuthoritativeWorkerRequirementSet = { { Class->WorkerAssociation } };
 	}
 
 	WriteAclMap ComponentWriteAcl;
