@@ -113,7 +113,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bUsingOffloading && !Class->WorkerAssociation.IsEmpty())
 	{
-		//const WorkerAttributeSet WorkerAttribute{ Class->WorkerAssociation };
 		AuthoritativeWorkerRequirementSet = { { Class->WorkerAssociation } };
 	}
 
