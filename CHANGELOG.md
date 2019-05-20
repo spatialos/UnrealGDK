@@ -57,6 +57,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 
 ### Features:
 - If using Spatial Networking, the blueprint world selector dropdown now shows the worker ID for each world for easier debugging.
+- Added toggle for enabling/disabling offloading.
 
 ## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
 

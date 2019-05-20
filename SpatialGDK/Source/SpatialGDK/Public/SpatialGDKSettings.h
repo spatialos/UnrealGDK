@@ -67,6 +67,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Query Based Interest", meta = (ConfigRestartRequired = false, DisplayName = "Query Based Interest Enabled"))
 	bool bUsingQBI;
 
+	/** Experimental switch for enabling/disabling offloading.*/
+	UPROPERTY(EditAnywhere, config, Category = "Offloading", meta = (ConfigRestartRequired = false, DisplayName = "Offloading Enabled"))
+	bool bUsingOffloading;
+
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false))
 	float PositionUpdateFrequency;

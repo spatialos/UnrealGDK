@@ -339,6 +339,19 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	const USpatialGDKSettings* SpatialGDKRuntimeSettings = GetDefault<USpatialGDKSettings>();
 	const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
+	// Ensure that there is an Unreal Server worker in the launch config worker list.
+	if (!LaunchConfigDescription.Workers.ContainsByPredicate([](const FWorkerTypeLaunchSection& Worker) { return Worker.WorkerTypeName == SpatialConstants::ServerWorkerType; }))
+	{
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("The launch config description does not have a description for the UnrealWorker type. This is required to launch a deployment. \n\nDo you want to configure your launch config settings now?"))));
+
+		if (Result == EAppReturnType::Yes)
+		{
+			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+		}
+
+		return false;
+	}
+
 	if (const FString* EnableChunkInterest = LaunchConfigDescription.World.LegacyFlags.Find(TEXT("enable_chunk_interest")))
 	{
 		if (SpatialGDKRuntimeSettings->bUsingQBI && (*EnableChunkInterest == TEXT("true")))

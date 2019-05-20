@@ -45,9 +45,9 @@ struct EditorWorkerController
 		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 		SpatialShutdownHandle = Toolbar.OnSpatialShutdown.AddRaw(this, &EditorWorkerController::OnSpatialShutdown);
 
-		const TMap<FString, int32>& WorkersToLaunch = GetDefault<ULevelEditorPlaySettings>()->WorkersToLaunch;
+		const TMap<FString, int32>& WorkerTypesToLaunch = GetDefault<ULevelEditorPlaySettings>()->WorkerTypesToLaunch;
 		int32 WorkerCount = 0;
-		for (const TPair<FString, int32>& WorkerType : WorkersToLaunch)
+		for (const TPair<FString, int32>& WorkerType : WorkerTypesToLaunch)
 		{
 			WorkerCount += WorkerType.Value;
 		}
@@ -55,7 +55,7 @@ struct EditorWorkerController
 		WorkerIds.SetNum(WorkerCount);
 
 		int32 WorkerIdIndex = 0;
-		for (const TPair<FString, int32>& WorkerType : WorkersToLaunch)
+		for (const TPair<FString, int32>& WorkerType : WorkerTypesToLaunch)
 		{	
 			for (int i = 0; i < WorkerType.Value; ++i)
 			{

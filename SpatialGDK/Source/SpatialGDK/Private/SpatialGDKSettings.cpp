@@ -5,8 +5,9 @@
 #include "Misc/CommandLine.h"
 
 #if WITH_EDITOR
-#include "Modules/ModuleManager.h"
 #include "ISettingsModule.h"
+#include "Modules/ModuleManager.h"
+#include "Settings/LevelEditorPlaySettings.h"
 #endif
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
@@ -21,6 +22,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, OpsUpdateRate(1000.0f)
 	, bEnableHandover(true)
 	, bUsingQBI(true)
+	, bUsingOffloading(false)
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 	, bEnableMetrics(true)
@@ -62,6 +64,12 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
 		}
 	}
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUsingOffloading))
+	{
+		GetMutableDefault<ULevelEditorPlaySettings>()->SetOffloadingEnabled(bUsingOffloading);
+	}
+
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
