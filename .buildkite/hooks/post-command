@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+[[ -n "${DEBUG:-}" ]] && set -x
+
+# Only run purge script on Windows agents.
+if [[ ${BUILDKITE_AGENT_META_DATA_PLATFORM} == "windows" ]]; then
+    powershell -NoProfile -NonInteractive ci/purge.ps1 -projectRoot "$(pwd)/"
+fi

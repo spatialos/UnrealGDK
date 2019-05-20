@@ -24,6 +24,9 @@ public:
 
 	double CalculateLoad() const;
 
+	double GetAverageFPS() const { return AverageFPS; }
+	double GetWorkerLoad() const { return WorkerLoad; }
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;

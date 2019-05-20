@@ -28,6 +28,9 @@ struct FSchemaData
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	FString GeneratedSchemaName;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 SchemaComponents[SCHEMA_Count] = {};
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)

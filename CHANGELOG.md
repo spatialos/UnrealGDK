@@ -11,10 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Features:
 - Setup.bat can now take a project path as an argument. This allows the UnrealGDK to be installed as an Engine Plugin, pass the project path as the first variable if you are running Setup.bat from UnrealEngine/Engine/Plugins.
 - Removed the need for setting the `UNREAL_HOME` environment variable. The build and setup scripts will now use your project's engine association to find the Unreal Engine directory. If an association is not set they will search parent directories looking for the 'Engine' folder.
+- Added SpatialMetricsDisplay class, which allows you to view UnrealWorker stats as an overlay on the client.
 
 ### Bug fixes:
-- Bugfix: BeginPlay is not called with authority when checking out entities from Spatial.
-- Bugfix: Launching SpatialOS would fail if there was a space in the full directory path.
+- BeginPlay is not called with authority when checking out entities from Spatial.
+- Launching SpatialOS would fail if there was a space in the full directory path.
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- Reliable RPC checking no longer breaks compatibility between development and shipping builds.
+- Fixed an issue with schema name collisions.
+- Running Schema (Full Scan) now clears generated schema files first.
 
 ### External contributors:
 
