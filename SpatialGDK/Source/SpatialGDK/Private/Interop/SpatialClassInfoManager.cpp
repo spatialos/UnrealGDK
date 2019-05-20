@@ -170,7 +170,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[ClassPath].SubobjectData)
 	{
 		int32 Offset = SubobjectClassDataPair.Key;
-		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
+		FActorSpecificSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
 
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
 

@@ -37,7 +37,8 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
 
 TArray<UClass*> SchemaGeneratedClasses;
-TMap<FString, FSchemaData> ClassPathToSchema;
+TMap<FString, FActorSchemaData> ActorClassPathToSchema;
+TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 uint32 NextAvailableComponentId;
 
 // LevelStreaming
@@ -67,7 +68,7 @@ void GenerateCompleteSchemaFromClass(FString SchemaPath, FComponentIdGenerator& 
 	}
 	else
 	{
-		GenerateSubobjectSchema(Class, TypeInfo, SchemaPath + TEXT("Subobjects/"));
+		GenerateSubobjectSchema(IdGenerator, Class, TypeInfo, SchemaPath + TEXT("Subobjects/"));
 	}
 }
 
@@ -235,7 +236,6 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 
 }// ::
 
-
 void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath, FComponentIdGenerator& IdGenerator)
 {
 	// Generate the actual schema.
@@ -340,7 +340,8 @@ void SaveSchemaDatabase()
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
-	SchemaDatabase->ClassPathToSchema = ClassPathToSchema;
+	SchemaDatabase->ActorClassPathToSchema = ActorClassPathToSchema;
+	SchemaDatabase->SubobjectClassPathToSchema = SubobjectClassPathToSchema;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->LevelComponentIds = LevelComponentIds;
 
@@ -376,39 +377,9 @@ TArray<UClass*> GetAllSupportedClasses()
 			continue;
 		}
 
-		UClass* SupportedClass = nullptr;
-		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt && SupportedClass == nullptr; ++PropertyIt)
-		{
-			if (PropertyIt->HasAnyPropertyFlags(CPF_Net | CPF_Handover))
-			{
-				SupportedClass = *ClassIt;
-			}
-		}
+		UClass* SupportedClass = *ClassIt;
 
-		for (TFieldIterator<UFunction> FunctionIt(*ClassIt); FunctionIt && SupportedClass == nullptr; ++FunctionIt)
-		{
-			if (FunctionIt->HasAnyFunctionFlags(FUNC_NetFuncFlags))
-			{
-				SupportedClass = *ClassIt;
-			}
-		}
-
-		// Check for replicated GameplayAbilities and print a warning if we find one. The UnrealGDK does not currently support this.
-		if (ClassIt->IsChildOf(UGameplayAbility::StaticClass()))
-		{
-			UClass* AbilityClass = *ClassIt;
-			UGameplayAbility* GameplayAbility = Cast<UGameplayAbility>(AbilityClass->GetDefaultObject());
-
-			if (GameplayAbility->GetReplicationPolicy() == EGameplayAbilityReplicationPolicy::ReplicateYes)
-			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated GameplayAbility found when generating schema. This is not currently supported and will cause undefined behaviour. Please set the 'ReplicationPolicy' to 'NotReplicated'. Ability: %s"), *GameplayAbility->GetName());
-			}
-		}
-
-		// No replicated/handover properties found
-		if (SupportedClass == nullptr) continue;
-
-		// Ensure we don't process skeleton, reinitialized or classes that have since been hot reloaded
+		// Ensure we don't process generated classes for BP
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
@@ -440,7 +411,7 @@ void DeleteGeneratedSchemaFiles()
 
 void ClearGeneratedSchema()
 {
-	ClassPathToSchema.Empty();
+	ActorClassPathToSchema.Empty();
 	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
@@ -455,16 +426,16 @@ void TryLoadExistingSchemaDatabase()
 
 	if (SchemaDatabase != nullptr)
 	{
-		ClassPathToSchema = SchemaDatabase->ClassPathToSchema;
+		ActorClassPathToSchema = SchemaDatabase->ClassPathToSchema;
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
 
 		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
-		if (ClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
-			ClassPathToSchema.Empty();
+			ActorClassPathToSchema.Empty();
 			DeleteGeneratedSchemaFiles();
 		}
 	}

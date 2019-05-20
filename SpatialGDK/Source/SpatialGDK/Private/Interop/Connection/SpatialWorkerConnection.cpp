@@ -144,6 +144,8 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	ConnectionParams.network.connection_type = ReceptionistConfig.LinkProtocol;
 	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
 	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
+
+	ConnectionParams.enable_dynamic_components = true;
 	// end TODO
 
 #if WITH_EDITOR
@@ -199,6 +201,8 @@ void USpatialWorkerConnection::ConnectToLocator()
 
 	FString ProtocolLogDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectLogDir()) + TEXT("protocol-log-");
 	ConnectionParams.protocol_logging.log_prefix = TCHAR_TO_UTF8(*ProtocolLogDir);
+
+	ConnectionParams.enable_dynamic_components = true;
 	// end TODO
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_Alpha_Locator_ConnectAsync(WorkerLocator, &ConnectionParams);

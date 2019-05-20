@@ -56,17 +56,21 @@ struct FClassInfo
 
 	TWeakObjectPtr<UClass> Class;
 
+	// Exists for all classes
 	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
-
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 	TArray<FInterestPropertyInfo> InterestProperties;
 
+	// Only for Actors and subobjects belonging to specific Actors
 	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
-
 	FName SubobjectName;
 
+	// Only for Actors
 	TMap<uint32, TSharedRef<FClassInfo>> SubobjectInfo;
+
+	// Only for Subobject classes
+	TArray<uint32[ESchemaComponentType::SCHEMA_Count]> DynamicSubobjectComponents;
 };
 
 class USpatialNetDriver;

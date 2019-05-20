@@ -7,8 +7,9 @@
 
 #include "SchemaDatabase.generated.h"
 
+// Schema data related to a default Subobject owned by a specific Actor class.
 USTRUCT()
-struct FSubobjectSchemaData
+struct FActorSpecificSubobjectSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -22,8 +23,9 @@ struct FSubobjectSchemaData
 	uint32 SchemaComponents[SCHEMA_Count] = {};
 };
 
+// Schema data related to an Actor class
 USTRUCT()
-struct FSchemaData
+struct FActorSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -31,7 +33,17 @@ struct FSchemaData
 	uint32 SchemaComponents[SCHEMA_Count] = {};
 
 	UPROPERTY(VisibleAnywhere)
-	TMap<uint32, FSubobjectSchemaData> SubobjectData;
+	TMap<uint32, FActorSpecificSubobjectSchemaData> SubobjectData;
+};
+
+// Schema data related to a Subobject class
+USTRUCT()
+struct FSubobjectSchemaData
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<uint32[SCHEMA_Count]> DynamicSubobjectComponents;
 };
 
 UCLASS()
@@ -54,7 +66,10 @@ public:
 	}
 
 	UPROPERTY(VisibleAnywhere)
-	TMap<FString, FSchemaData> ClassPathToSchema;
+	TMap<FString, FActorSchemaData> ActorClassPathToSchema;
+
+	UPROPERTY(VisibleAnywhere)
+	TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 
 	UPROPERTY(VisibleAnywhere)
 	TMap<FString, uint32> LevelPathToComponentId;
