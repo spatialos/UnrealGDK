@@ -34,6 +34,8 @@ spatial cloud upload <myassembly>
 
 Replacing `<myassembly>` with the name you choose to give your assembly.
 
+> This command must be run from the `spatial` directory of your project.
+
 ### Launch cloud deployment
 
 ```

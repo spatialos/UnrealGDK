@@ -37,6 +37,7 @@ To update your Unreal Engine fork and GDK to the latest version, complete the fo
 1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and then double-click **`Setup.bat`**. You might be prompted to sign into your SpatialOS account if you have not signed in yet.
 1. In **File Explorer**, navigate to the `<GameRoot>` directory that contains your project's `.uproject` file.<br>
 Right-click on your `.uproject` file and select **Generate Visual Studio project files**.
+1. In **File Explorer**, navigate to `<GameRoot>\Content\Spatial`and delete `SchemaDatabase.uasset`. This is necessary because some GDK upgrades change how we handle schema, and this sometimes invalidates previously generated schema.
 
 You are now on the latest GDK and the latest SpatialOS Unreal Engine fork.
 

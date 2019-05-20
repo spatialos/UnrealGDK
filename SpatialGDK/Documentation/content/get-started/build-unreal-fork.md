@@ -29,7 +29,7 @@ You need to add two [environment variables](https://docs.microsoft.com/en-us/win
 1. Go to **Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**.
 2. Create a system variable named **UNREAL_HOME**.
 3. Set the variable value to the path to the directory you cloned the Unreal Engine fork into.
-4. Restart your terminal and run `echo %UNREAL_HOME%` (Command Prompt) or `echo$Env:UNREAL_HOME` (PowerShell). If you have registered the environment variable correctly, this returns the path to the directory you cloned the Unreal Engine fork into. If it doesn’t, check that you’ve set the environment variable correctly.
+4. Restart your terminal and run `echo %UNREAL_HOME%` (Command Prompt) or `echo $Env:UNREAL_HOME` (PowerShell). If you have registered the environment variable correctly, this returns the path to the directory you cloned the Unreal Engine fork into. If it doesn’t, check that you’ve set the environment variable correctly.
 5. Create a system variable named **LINUX_MULTIARCH_ROOT**.
 6. Set the variable value to the path to the directory of your unzipped Linux cross compilation toolchain.
 7. Restart your terminal and run `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell). If you have registered the environment variable correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7.zip` into. If it doesn’t, check that you’ve set the environment variable correctly.
