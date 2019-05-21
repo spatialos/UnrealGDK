@@ -17,7 +17,7 @@ SpatialOS provides:<br/>
 
 If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started]({{urlRoot}}/content/get-started/introduction) guide.
 
-It takes you through setting up the GDK and getting the Starter Template project uploaded to and running in the cloud, as well as running locally on your computer, as if it’s a server. This gives an overview of the GDK and using SpatialOS, and you can use the Starter Template as a basis for your own projects.
+It takes you through setting up the GDK and getting the Starter Template project or the Example project running in the cloud, as well as running locally on your computer. This gives an overview of the GDK and using SpatialOS, and you can use the Starter Template as a basis for your own projects.
 
 <!-- <img src="{{assetRoot}}assets/screen-grabs/exampleproject/example-project-gameplay.png" style=" float: right; margin: 0; display: block; width: 50%; padding: 15px 15x"/> -->
 
@@ -31,7 +31,7 @@ After you set up the SpatialOS GDK Starter Template, you can learn more about th
 ## Find out more
 
 * Learn more about how the GDK works and how it fits into your game stack. 
-<br/>**Read the [Technical overview]({{urlRoot}}/content/technical-overview/gdk-concepts)** (3-minute read).
+<br/>**Read the [Technical overview]({{urlRoot}}/content/technical-overview/gdk-principles)** (5-minute read).
 <br/>
 <br/>
 * If you aren’t already familiar with SpatialOS, you can find out about the concepts which enable it to support game worlds with more persistence, scale, and complexity than previously possible.

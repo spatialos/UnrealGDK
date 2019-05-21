@@ -69,7 +69,7 @@ See the [Multiserver Shooter tutorial]({{urlRoot}}/content/tutorials/multiserver
 For more information, see the documentation on [Actor handover]({{urlRoot}}/content/actor-handover).
 
 ### Singleton Actors
-You can use a Singleton Actor to define a “single source of truth” for operations or data across a game world that uses zoning. You can only have one instance of a Singleton Actor per game world.
+You can use a Singleton Actor to define a “single source of truth” for operations or data across a game world that uses zoning. You can only have one instance of each Singleton Actor per game world.
 
 You create a Singleton Actor by tagging an Actor with the `SpatialType=Singleton` class attribute. For example, if you are implementing a scoreboard, you probably want only one scoreboard in your world, so you can tag the scoreboard Actor as a Singleton Actor.
 

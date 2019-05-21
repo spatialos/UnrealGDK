@@ -1,4 +1,3 @@
-<%(TOC)%>
 # Get started: Introduction
 
 Get started with the SpatialOS GDK for Unreal by building the SpatialOS Unreal Engine Fork and setting up the GDK Starter Template which you can use as a base for your own project running on SpatialOS.

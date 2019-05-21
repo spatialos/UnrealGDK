@@ -10,7 +10,6 @@ To get access to our fork, you need to link your GitHub account to a verified Ep
 ### Step 2: Get the Unreal Engine fork source code and Unreal Linux cross-platform support
 
 1.  Open a terminal and run either of these commands to clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) repository.
-<br/> (You may get a 404 from this link. See the instructions above, under _Unreal Engine EULA_, on how to get access to this repository.) 
 
     > **TIP:** Clone the Unreal Engine fork into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealEngine`. 
 
@@ -30,7 +29,7 @@ You need to add two [environment variables](https://docs.microsoft.com/en-us/win
 1. Go to **Control Panel > System and Security > System > Advanced system settings > Advanced > Environment variables**.
 2. Create a system variable named **UNREAL_HOME**.
 3. Set the variable value to the path to the directory you cloned the Unreal Engine fork into.
-4. Restart your terminal and run `echo %UNREAL_HOME%` (Command Prompt) or `echo$Env:UNREAL_HOME` (PowerShell). If you have registered the environment variable correctly, this returns the path to the directory you cloned the Unreal Engine fork into. If it doesn’t, check that you’ve set the environment variable correctly.
+4. Restart your terminal and run `echo %UNREAL_HOME%` (Command Prompt) or `echo $Env:UNREAL_HOME` (PowerShell). If you have registered the environment variable correctly, this returns the path to the directory you cloned the Unreal Engine fork into. If it doesn’t, check that you’ve set the environment variable correctly.
 5. Create a system variable named **LINUX_MULTIARCH_ROOT**.
 6. Set the variable value to the path to the directory of your unzipped Linux cross compilation toolchain.
 7. Restart your terminal and run `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell). If you have registered the environment variable correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7.zip` into. If it doesn’t, check that you’ve set the environment variable correctly.
@@ -46,8 +45,8 @@ This process can take a long time to complete.
 	> While running the Setup file, you should see `Checking dependencies (excluding Mac, Android)...`. If it also says `excluding Linux`, make sure that you set the environment variable `LINUX_MULTIARCH_ROOT` correctly, and run the Setup file again.
 
 1. In the same directory, double-click **`GenerateProjectFiles.bat`**. This file automatically sets up the project files you require to build Unreal Engine 4.
-
-	> If you encounter an `error MSB4036: The "GetReferenceNearestTargetFrameworkTask" task was not found` when building with Visual Studio 2017, check that you have NuGet Package Manager installed via the Visual Studio installer.
+	
+	> If you encounter an `error MSB4036: The "GetReferenceNearestTargetFrameworkTask" task was not found` when building with Visual Studio 2017, check that you have the NuGet Package Manager installed via the Visual Studio installer.
 
 1. In the same directory, open **UE4.sln** in Visual Studio.
 

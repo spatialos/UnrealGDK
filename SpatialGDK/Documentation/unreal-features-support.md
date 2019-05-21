@@ -62,8 +62,8 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
 <table style="width:100%">
   <tr style="background-color:#f0f0f0;">
-    <th>Feature Area (Links are to Unreal documentation)</th>
-    <th style="width:25%">Feature (Links are to Unreal documentation)</th>
+    <th>Feature Area</th>
+    <th style="width:25%">Feature</th>
     <th style="width:2%;">Support Level</th>
     <th>Notes & Caveats</th>
   </tr>
@@ -161,17 +161,17 @@ Support of Unreal features with the GDK in a single server-worker configuration:
    <tr>
     <td rowspan="7"><b><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors">Actor Replication</a><b></td>
     <td>Client and server RPCs (C++)</td>
-    <td class="supported"></td>
-    <td>Ordering of reliable RPCs is not respected.</td>
+    <td class="caveats"></td>
+    <td>Ordering is not respected, and RPCs can be unreliable under heavy load. This is planned to be addressed in Q3 2019.</td>
   </tr>
   <tr>
     <td>Client and Server RPCs (Blueprint)</td>
-    <td class="supported"></td>
-    <td>Ordering of reliable RPCs is not respected.</td>
+    <td class="caveats"></td>
+    <td>Ordering is not respected, and RPCs can be unreliable under heavy load. This is planned to be addressed in Q3 2019.</td>
   </tr>
   <tr>
     <td>Multicast RPCs</td>
-    <td class="supported"></td>
+    <td class="caveats"></td>
     <td>RPCs cannot be reliable. (This is due to the distributed systems nature of SpatialOS.)</td>
   </tr>
   <tr>
@@ -197,7 +197,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 <!-- ------ Multiplayer Gameplay Features ------ -->
 
  <tr>
-    <td rowspan="7"><b>Multiplayer Gameplay Features<b></td>
+    <td rowspan="8"><b>Multiplayer Gameplay Features<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Rendering/ParticleSystems/Optimization/SplitScreen">Split Screen</a></td>
     <td class="roadmap"></td>
     <td></td>
@@ -231,11 +231,17 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td><a href="https://docs.unrealengine.com/en-us/Programming/Online">Online Subsystem Abstraction</a></td>
     <td class="indev"></td>
     <td></td>
+   </tr> 
+  <tr>
+    <td><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Server">Listen Server</a></td>
+    <td class="roadmap"></td>
+    <td>The GDK currently only supports Dedicated Server mode.</td>
+  </tr>    
 
 <!-- ------ Optimization ------ -->
 
  <tr>
-    <td rowspan="3"><b>Optimization<b></td>
+    <td rowspan="4"><b>Optimization<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Networking/ReplicationGraph">Replication Graph</a></td>
     <td class="indev"></td>
     <td>We will present a different system for the same purpose instead.</td>
@@ -250,6 +256,11 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td class="supported"></td>
     <td></td>
   </tr>
+  <tr>
+    <td><a href="https://www.unrealengine.com/en-US/blog/finding-network-based-exploits">Network latency simulation commands</td>
+    <td class="roadmap"></td>
+    <td></td>
+   </tr> 
 
 <!-- ------ Debugging ------ -->
 

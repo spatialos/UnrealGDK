@@ -18,6 +18,8 @@ The SpatialOS Game Development Kit (GDK) for Unreal is a plugin which allows you
 
     You don’t have to make these technical tradeoffs with the GDK. SpatialOS can spread computation across multiple servers, allowing for far more complex games and much higher player counts.</br></br>
 
+    > This will be enabled by [Zoning]({{urlRoot}}/content/technical-overview/gdk-concepts#zoning), which is currently in pre-alpha. We invite you to try out the [Multiserver Shooter tutorial]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) and learn about how it works, but we don’t recommend you start developing features that use zoning yet.
+
 * **Open development**
     
     The GDK is a community-driven project. We do all our development in the open and under an [MIT license](https://github.com/spatialos/UnrealGDK/blob/release/LICENSE.md).
