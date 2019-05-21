@@ -8,7 +8,6 @@ The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine [plugin]
   - **Profiling and debugging tools**: Logs and metrics out of the box to help you quickly understand any bugs and performance issues.
   - **Multiserver networking**: Multiple dedicated servers across one seamless game world, enabling greater numbers of Actors, players and gameplay systems. **Note:** this feature is currently in preview as we work to improve its stability - we recommend you try it out using the [Multiserver Shooter Tutorial](https://docs.improbable.io/unreal/alpha/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) but avoid developing your game with it.
   
-
 If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started guide](https://docs.improbable.io/unreal/alpha/content/get-started/introduction). 
 
 > The SpatialOS GDK for Unreal is in alpha. It is ready to use for development of single-server games, but not recommended for public releases. We are committed to rapid development of the GDK to provide a performant release - for information on this, see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support](https://docs.improbable.io/unreal/alpha/unreal-features-support) pages for the status and updates, and contact us via our forums, or on Discord.
@@ -56,7 +55,3 @@ We have released the GDK for Unreal this early in development because we want yo
 * Version: alpha (stability and performance improvements pending)
 
 (c) 2019 Improbable
-
-
-
-
