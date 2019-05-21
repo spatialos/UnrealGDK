@@ -73,7 +73,7 @@ For all the following classes, which are automatically tagged as Singleton Actor
 
 For all classes that you manually tag as Singleton Actors, make sure that Singleton Actors are spawned on all server-worker instances at runtime. You need to write code to do this when you create each server-worker type. 
 
-> *Note*: Never write code to spawn Singleton Actors when you create client-worker types.
+> **Note**: Never write code to spawn Singleton Actors when you create client-worker types.
 
 ## Managing Singleton Actors
 
