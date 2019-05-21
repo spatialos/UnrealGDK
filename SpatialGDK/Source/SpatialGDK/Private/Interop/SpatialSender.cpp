@@ -603,6 +603,12 @@ void USpatialSender::SendClearRPCsOnEntityCreationRequest(Worker_EntityId Entity
 	NetDriver->Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION);
 }
 
+void USpatialSender::SendRPCsOnEntityCreationComponentUpdate(Worker_EntityId EntityId)
+{
+	Worker_ComponentUpdate Update = RPCsOnEntityCreation::CreateClearFieldsUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+}
+
 void USpatialSender::ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialSenderResetOutgoingUpdate);

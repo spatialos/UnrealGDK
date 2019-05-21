@@ -132,7 +132,6 @@ public:
 	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
-	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 
 	void ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void FlushRetryRPCs();

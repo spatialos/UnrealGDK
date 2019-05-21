@@ -235,17 +235,15 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
 		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		if (!NetDriver->IsServer())
+		ensure(!NetDriver->IsServer());
+		if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
 		{
-			if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
+			if (QueuedRPCs->HasRPCPayloadData())
 			{
-				if (QueuedRPCs->HasRPCPayloadData())
-				{
-					ProcessQueuedActorRPCsOnEntityCreation(Actor, *QueuedRPCs);
-				}
-
-				Sender->SendClearRPCsOnEntityCreationRequest(Op.entity_id);
+				ProcessQueuedActorRPCsOnEntityCreation(Actor, *QueuedRPCs);
 			}
+
+			Sender->SendClearRPCsOnEntityCreationRequest(Op.entity_id);
 		}
 	}
 
@@ -657,12 +655,6 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
-void USpatialReceiver::ClearRPCsOnEntityCreation(Worker_EntityId EntityId)
-{
-	Worker_ComponentUpdate Update = RPCsOnEntityCreation::CreateClearFieldsUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
-}
-
 AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
 {
 	if (UnrealMetadataComp->StablyNamedRef.IsSet())
@@ -998,7 +990,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	}
 	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
-		ClearRPCsOnEntityCreation(Op.entity_id);
+		Sender->SendRPCsOnEntityCreationComponentUpdate(Op.entity_id);
 		return;
 	}
 #if WITH_EDITOR

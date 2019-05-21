@@ -85,13 +85,13 @@ public:
 	// Used by USpatialSpawner (when new players join the game) and USpatialInteropPipelineBlock (when player controllers are migrated).
 	USpatialNetConnection* AcceptNewPlayer(const FURL& InUrl, FUniqueNetIdRepl UniqueId, FName OnlinePlatformName, bool bExistingPlayer);
 
-	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject, USpatialNetConnection* InConnection);
-	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection);
 	void AddActorChannel(Worker_EntityId EntityId, USpatialActorChannel* Channel);
 	void RemoveActorChannel(Worker_EntityId EntityId);
 	TMap<Worker_EntityId_Key, USpatialActorChannel*>& GetEntityToActorChannelMap();
 
+	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject, USpatialNetConnection* InConnection);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
+	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection);
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 

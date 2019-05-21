@@ -1314,47 +1314,6 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, FUn
 	return bOk ? SpatialConnection : nullptr;
 }
 
-USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject* TargetObject, USpatialNetConnection* InConnection)
-{
-	check(TargetObject && InConnection);
-	USpatialActorChannel* Channel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
-	if (Channel == nullptr)
-	{
-		AActor* TargetActor = Cast<AActor>(TargetObject);
-		if (TargetActor == nullptr)
-		{
-			TargetActor = Cast<AActor>(TargetObject->GetOuter());
-		}
-		check(TargetActor);
-		Channel = CreateSpatialActorChannel(TargetActor, GetSpatialOSNetConnection());
-	}
-	return Channel;
-}
-
-USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection)
-{
-	USpatialActorChannel* Channel = nullptr;
-
-	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
-	{
-		Channel = GlobalStateManager->AddSingleton(Actor);
-	}
-	else
-	{
-#if ENGINE_MINOR_VERSION <= 20
-		Channel = (USpatialActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
-#else
-		Channel = (USpatialActorChannel*)InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
-#endif
-		if (Channel != nullptr)
-		{
-			Channel->SetChannelActor(Actor);
-		}
-	}
-
-	return Channel;
-}
-
 bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
 {
 #if !UE_BUILD_SHIPPING
@@ -1516,9 +1475,50 @@ TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityTo
 	return EntityToActorChannel;
 }
 
+USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject* TargetObject, USpatialNetConnection* InConnection)
+{
+	check(TargetObject && InConnection);
+	USpatialActorChannel* Channel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
+	if (Channel == nullptr)
+	{
+		AActor* TargetActor = Cast<AActor>(TargetObject);
+		if (TargetActor == nullptr)
+		{
+			TargetActor = Cast<AActor>(TargetObject->GetOuter());
+		}
+		check(TargetActor);
+		Channel = CreateSpatialActorChannel(TargetActor, GetSpatialOSNetConnection());
+	}
+	return Channel;
+}
+
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
+}
+
+USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection)
+{
+	USpatialActorChannel* Channel = nullptr;
+
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		Channel = GlobalStateManager->AddSingleton(Actor);
+	}
+	else
+	{
+#if ENGINE_MINOR_VERSION <= 20
+		Channel = (USpatialActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
+#else
+		Channel = (USpatialActorChannel*)InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
+#endif
+		if (Channel != nullptr)
+		{
+			Channel->SetChannelActor(Actor);
+		}
+	}
+
+	return Channel;
 }
 
 void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe)
