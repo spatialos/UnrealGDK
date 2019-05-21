@@ -25,6 +25,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableMetrics(true)
 	, MetricsReportRate(2.0f)
 	, bCheckRPCOrder(false)
+	, MaxDynamicallyAttachedSubobjectsPerClass(5)
 {
 }
 

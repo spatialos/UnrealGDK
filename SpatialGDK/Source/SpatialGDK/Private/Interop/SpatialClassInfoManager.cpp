@@ -165,7 +165,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	}
 }
 
-void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, FClassInfo& Info)
+void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
 {
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
@@ -208,7 +208,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 	}
 }
 
-void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FString& ClassPath, FClassInfo& Info)
+void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
 {
 	for (const auto& DynamicSubobjectComponents : SchemaDatabase->SubobjectClassPathToSchema[ClassPath].DynamicSubobjectComponents)
 	{

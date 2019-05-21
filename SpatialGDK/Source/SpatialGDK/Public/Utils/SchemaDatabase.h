@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Containers/StaticArray.h"
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "Engine/World.h"
@@ -42,8 +43,14 @@ struct FSubobjectSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(VisibleAnywhere)
-	TArray<uint32[SCHEMA_Count]> DynamicSubobjectComponents;
+	FSubobjectSchemaData() {}
+
+	virtual bool Serialize(FArchive& Ar)
+	{
+		Ar << DynamicSubobjectComponents;
+	}
+
+	TArray<TStaticArray<uint32, SCHEMA_Count>> DynamicSubobjectComponents;
 };
 
 UCLASS()

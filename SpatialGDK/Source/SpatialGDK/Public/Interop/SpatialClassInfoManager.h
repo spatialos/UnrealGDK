@@ -108,8 +108,8 @@ public:
 private:
 	void CreateClassInfoForClass(UClass* Class);
 
-	void FinishConstructingActorClassInfo(const FString& ClassPath, FClassInfo& Info);
-	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, FClassInfo& Info);
+	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
+	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 
 private:
 	UPROPERTY()
