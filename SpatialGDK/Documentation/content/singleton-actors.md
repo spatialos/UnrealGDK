@@ -63,6 +63,18 @@ Before you begin, ensure that you have an Actor, which can be either an [Unreal 
 
 ![Singleton Blueprint]({{assetRoot}}assets/screen-grabs/blueprint-singleton.png)
 
+## Spawning Singleton Actors
+
+For all the following classes, which are automatically tagged as Singleton Actors, Singleton Actors are spawned automatically on all server-worker instances as part of the [Unreal Engine game flow](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameFlow):
+- `AGameMode`
+- `AGameState`
+- `ALevelScriptActor`
+- any classes that derive from the preceding classes
+
+For all classes that you manually tag as Singleton Actors, make sure that Singleton Actors are spawned on all server-worker instances at runtime. You need to write code to do this when you create each server-worker type. 
+
+> *Note*: Never write code to spawn Singleton Actors when you create client-worker types.
+
 ## Managing Singleton Actors
 
 Because each server-worker instance spawns each Singleton Actor locally, we have introduced the [Global State Manager]({{urlRoot}}/content/glossary#global-state-manager) (GSM) to ensure that there is only ever one instance of an [entity]({{urlRoot}}/content/glossary#entity) that represents a Singleton Actor, and to ensure data is replicated properly. 
