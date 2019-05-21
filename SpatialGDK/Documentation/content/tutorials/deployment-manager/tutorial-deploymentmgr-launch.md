@@ -1,6 +1,6 @@
-## Step 6: Launch a session-based cloud deployment
+## Step 6: Launch multiple session-based cloud deployments
 
-Now you launch a cloud deployment using the Deployment Manager.
+Now you use the Deployment Manager to launch multiple session-based cloud deployments. 
 
 To do this: 
 
@@ -14,7 +14,7 @@ Where:
 
 * `<launch config path>` is the file path to the` one_worker_test.json` file in the Example project
 * `<snapshot path>` is the path to the snapshot file you generated in the [Example Project set up guide]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
-*  `<assembly name>` is a name that you choose for your Deployment Manager assembly. This must be a different name to the assembly you created in [Step 4]({{urlRoot}}content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-4-upload-your-worker-assemblies).
+*  `<assembly name>` is a name that you choose for your Deployment Manager assembly. This must be a different name to the assembly you created in [Step 4]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-4-upload-your-worker-assemblies).
 * `<deployment name>` is a name that you choose for your deployment. 
 
 For example: 
