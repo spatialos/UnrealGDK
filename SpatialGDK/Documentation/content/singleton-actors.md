@@ -19,6 +19,7 @@ You can define any class as a Singleton Actor. However, the following Unreal Eng
 > **Note**: Because the [`SpatialType`]({{urlRoot}}/content/spatial-type) class attribute is inheritable, all the classes that derive from `AGameModeBase`, `AGameStateBase`, or `ALevelScriptActor` are also Singleton Actors, which means that you don’t need to explicitly tag them in your code. You can opt out of this by tagging these classes with the [`NotSpatialType`]({{urlRoot}}/content/spatial-type#spatial-type) tag.
 
 Before you begin to use Singleton Actors across your game world, review the following high-level procedure. See each section for more details:
+
 1. [Define Singleton Actors](#defining-singleton-actors): Manually tag an Unreal C++ class or an Unreal Blueprint class with the relevant attributes to be a Public Singleton Actor or Private Singleton Actor.
 2. [Spawn Singleton Actors](#spawning-singleton-actors): Write code to spawn Singleton Actors on server-worker instances at runtime. 
 
@@ -59,17 +60,18 @@ Before you begin, ensure that you have an Actor, which can be either an [Unreal 
 4. In the **Spatial Description** text box, tag the Blueprint Class with the relevant attribute(s), depending on what type of Singleton Actor you want it to be:
    * **Public Singleton Actor**: enter `Singleton`.
    * **Private Singleton Actor**: enter `Singleton ServerOnly`.
-  Here's a screenshot of what your Blueprint Class looks like if you tag it as a Private Singleton Actor:
-
-![Singleton Blueprint]({{assetRoot}}assets/screen-grabs/blueprint-singleton.png)
+    
+    Here's a screenshot of what your Blueprint Class looks like if you tag it as a Private Singleton Actor:
+    ![Singleton Blueprint]({{assetRoot}}assets/screen-grabs/blueprint-singleton.png)
 
 ## Spawning Singleton Actors
 
 For all the following classes, which are automatically tagged as Singleton Actors, Singleton Actors are spawned automatically on all server-worker instances as part of the [Unreal Engine game flow](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameFlow):
-- `AGameMode`
-- `AGameState`
-- `ALevelScriptActor`
-- any classes that derive from the preceding classes
+
+  - `AGameMode`
+  - `AGameState`
+  - `ALevelScriptActor`
+  - any classes that derive from the preceding classes
 
 For all classes that you manually tag as Singleton Actors, make sure that Singleton Actors are spawned on all server-worker instances at runtime. You need to write code to do this when you create each server-worker type. 
 
