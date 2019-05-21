@@ -60,7 +60,7 @@ To use the Example project, you must build the GDK for Unreal module dependencie
 1. In File Explorer, navigate to your `UnrealGDKExampleProject\Game` directory.
 1. Right-click on **GDKShooter.uproject** and select **Switch Unreal Engine Version** then select the Unreal Engine you cloned earlier. <br/>
     ![img]({{assetRoot}}assets/screen-grabs/select-unreal-engine.png)<br/>
-    *_Image: The Select Unreal Engine Version window_*<br/><br/>
+    _Image: The Select Unreal Engine Version window_<br/><br/>
 1. Right-click **GDKShooter.uproject** and select **Generate Visual Studio Project files**.
 1. In the same directory, double-click **GDKShooter.sln** to open it with Visual Studio.
 1. In the Solution Explorer window, right-click on **GDKShooter** and select **Build**.

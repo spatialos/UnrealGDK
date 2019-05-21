@@ -44,7 +44,7 @@ When you have done this, re-launch your game client and you should be able to jo
 
 <%(/Expandable)%>
 
-![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-startscreen.png)_Image: *The Example Project* *start* *screen._*
+![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-startscreen.png)_Image: The Example Project start screen._
 
 ### Share your deployment
 

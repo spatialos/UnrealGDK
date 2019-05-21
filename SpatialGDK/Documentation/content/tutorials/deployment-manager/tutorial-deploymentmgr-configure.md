@@ -2,8 +2,8 @@
 
 There are two parts to configuring the Deployment Manager:
 
-* Edit the `spatialos.json` file.
-* Build the Deployment Manager.
+* Edit the `spatialos.json` file
+* Build the Deployment Manager
 
 ### Edit the spatialos.json file
 
@@ -77,7 +77,7 @@ In the `config.json`, you need to change the following lines:
 Your `config.json` file should look like this: 
 
 ```
-{}
+{
   "TokenLifetimeDays": 7,
   "ClientType": "UnrealClient",
   "MaxNumberOfClients": 100,
