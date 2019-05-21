@@ -21,7 +21,7 @@ You can define any class as a Singleton Actor. However, the following Unreal Eng
 Before you begin to use Singleton Actors across your game world, review the following high-level procedure. See each section for more details:
 
 1. [Define Singleton Actors](#defining-singleton-actors): Manually tag an Unreal C++ class or an Unreal Blueprint class with the relevant attributes to be a Public Singleton Actor or Private Singleton Actor.
-2. [Spawn Singleton Actors](#spawning-singleton-actors): Write code to spawn Singleton Actors on server-worker instances at runtime. 
+1. [Spawn Singleton Actors](#spawning-singleton-actors): Understand how Singleton Actors are spawned on server-worker instances at runtime.
 
 In addition, learn about how SpatialOS can [manage Singleton Actors](#managing-singleton-actors) to ensure that there is only ever one instance of an entity that represents a Singleton Actor, and to ensure data is replicated properly. 
 
@@ -73,9 +73,9 @@ For all the following classes, which are automatically tagged as Singleton Actor
   - `ALevelScriptActor`
   - any classes that derive from the preceding classes
 
-For all classes that you manually tag as Singleton Actors, make sure that Singleton Actors are spawned on all server-worker instances at runtime. You need to write code to do this when you create each server-worker type. 
+For all classes that you manually tag as Singleton Actors, make sure that Singleton Actors are spawned on all server-worker instances at runtime.
 
-> **Note**: Never write code to spawn Singleton Actors when you create client-worker types.
+> **Note**: Never spawn Singleton Actors on client-worker instances.
 
 ## Managing Singleton Actors
 
