@@ -9,7 +9,7 @@ Multiple deployments of your game are useful for time-limited match-based games 
 
 The tutorial guides you through cloning the SpatialOS Deployment Manager repository and configuring the Example Project to work with the Deployment Manager, before launching your deployments via the Deployment Manager.
 
-Before starting this guide you need to have completed the [Example Project set up guide.](/content/get-started/example-project/exampleproject-intro) 
+Before starting this guide you need to have completed the [Example Project set up guide.]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) 
 
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-deployments.png)<br/>
 _Image: The Example Project deployment list screen_<br/>

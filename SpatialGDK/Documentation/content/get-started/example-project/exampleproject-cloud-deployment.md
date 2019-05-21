@@ -33,7 +33,7 @@ When you signed up for SpatialOS, your account was automatically given a Spatial
 
 1. Find this name by going to the Console at [https://console.improbable.io](https://console.improbable.io). The name should look something like `beta_randomword_anotherword_randomnumber`. In the example below, it’s `beta_yankee_hawaii_621`. <br/>
    ![Toolbar]({{assetRoot}}assets/set-up-template/template-project-page.png)
-   _Image: *The SpatialOS Console with a project name highlighted._**</br>*
+   _Image: The SpatialOS Console with a project name highlighted._</br>
 
 <%(#Expandable title="What is the Console?")%>
 

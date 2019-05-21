@@ -21,8 +21,8 @@ Where:
 
 For example: 
 
-* `./publish-linux-workers.ps1 ..\UnrealGDKExampleProject\spatial\one_worker_test.json ..\UnrealGDKExampleProject\spatial\snapshots\default.snapshot`
-* `./cloud-launch.ps1 sessionassembly deploymentmanager`
+* `.\publish-linux-workers.ps1 ..\UnrealGDKExampleProject\spatial\one_worker_test.json ..\UnrealGDKExampleProject\spatial\snapshots\default.snapshot`
+* `.\cloud-launch.ps1 sessionassembly deploymentmanager`
 
 After running these commands, the SpatialOS CLI automatically deploys your project. The Deployment Overview Console page opens automatically after your project has successfully deployed.
 

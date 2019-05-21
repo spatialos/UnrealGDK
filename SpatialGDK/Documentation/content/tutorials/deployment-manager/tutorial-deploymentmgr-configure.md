@@ -45,8 +45,8 @@ Where `beta_nuts_double_379` is your SpatialOS cloud project name.
 1. Select **File.**
 1. Select **Open Windows Powershell**, then select **Open Windows Powershell as administrator.**
 1. In Powershell, run the following SpatialOS CLI commands: 
-	- `./build-nuget-packages.ps1`
-	- `./generate-servicce-account-token.ps1 <project name> <token life time in days>`
+	- `.\build-nuget-packages.ps1`
+	- `.\generate-service-account-token.ps1 <project name> <token life time in days>`
 
 Where `<project name>` is your SpatialOS project name and `<token life time in days>` is the the number of days you want your token to remain valid for. 
 
