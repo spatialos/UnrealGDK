@@ -5,7 +5,7 @@ When you want to try out your game, you need to run a deployment.
 There are two types of deployment: local and cloud.
 
 - A [local deployment]({{urlRoot}}/content/glossary#deployment) launches your game with its own instance of SpatialOS, running on your development machine. 
-- [Cloud deployments]({{urlRoot}}/content/glossary#deployment) run in the cloud on [nodes]({{urlRoot}}/content/glossary#node). A node refers to a single machine used by a cloud deployment. One you have deployed your game, you can share it with other people and run your game at a scale not possible on a single machine. Once a cloud deployment is running, you can connect clients to it using the [Launcher]({{urlRoot}}/content/glossary#launcher).
+- [Cloud deployments]({{urlRoot}}/content/glossary#deployment) run in the cloud on [nodes]({{urlRoot}}/content/glossary#node). A node refers to a single machine used by a cloud deployment. When you have deployed your game, you can share it with other people and run your game at a scale not possible on a single machine. Once a cloud deployment is running, you can connect clients to it using the [Launcher]({{urlRoot}}/content/glossary#launcher).
 
 Use local deployments for small-scale tests, to quickly test and iterate on changes to your project. For large-scale tests with several players, use a cloud deployment. 
 
@@ -25,7 +25,7 @@ You can find out more about schema in the [GDK schema documentation]({{urlRoot}}
 <%(/Expandable)%>
 
 <%(#Expandable title="What is a SpatialOS entity?")%>
-A SpatialOS entity (usually just called an “entity”) is the SpatialOS equivalent of  an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Components.)
+A SpatialOS entity (usually just called an “entity”) is the SpatialOS equivalent of an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Components.)
 <%(/Expandable)%>
 
 <%(#Expandable title="What is  a snapshot?")%>
@@ -54,7 +54,7 @@ To launch a local deployment:
    _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_</br>
 6. Under **Modes**, select **New Editor Window (PIE)** to run the game. This starts one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor.
    The server-worker instance is acting as an Unreal server and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
-   You can switch between the two Editor windows to see and interact with each game client. (edited)  
+   You can switch between the two Editor windows to see and interact with each game client. 
 7. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to run the game.
 8. When you’re done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>
    ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>

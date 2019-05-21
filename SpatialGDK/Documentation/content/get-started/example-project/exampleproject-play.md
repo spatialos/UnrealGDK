@@ -13,7 +13,7 @@ Find out more in the [glossary]({{urlRoot}}/content/glossary#launcher).
 <%(/Expandable)%>
 
 ![img]({{assetRoot}}assets/tutorial/launch.png)<br/>
-*_Image: The SpatialOS console launch window_*
+_Image: The SpatialOS console launch window_
 
 > **TIP:** Check out the [cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow) for a reference diagram of this workflow.
 
