@@ -69,7 +69,7 @@ Before you begin, ensure that you have an Actor, which can be either an [Unreal 
 For all the following classes, which are automatically tagged as Singleton Actors, Singleton Actors are spawned automatically on all server-worker instances as part of the [Unreal Engine game flow](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameFlow):
 
   - `AGameModeBase`
-  - `AGameState`
+  - `AGameStateBase`
   - `ALevelScriptActor`
   - any classes that derive from the preceding classes
 
