@@ -26,21 +26,6 @@ The default game controls are listed below:
 | Right click       | Weapon zoom/ iron sights |
 | Number keys 1 - 0 | Select weapon            |
 
-![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-startscreen.png)_Image: *The Example Project* *start* *screen._*
-
-### Share your deployment
-
-To share your deployment: 
-
-1. Open the console and select your **session_0** deployment. 
-1. Select **Share** on the right-hand side of the screen to see the Share Application screen
-1. In the Share Application screen, accept the terms of service to activate the **Get Share URL** button<br/>
-![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-share.png)<br/>
-_Image: The SpatialOS Console Share Application pop-up window, showing terms of service_<br/>
-1. After you have accepted the terms of service, you can send your Share Token URL to other people so they can try out your game. <br/>
-![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-share2.png)<br/>
-_Image: The SpatialOS Console Share Application screen with terms of service accepted_<br/>
-
 ## Troubleshooting
 
 <%(#Expandable title="I can see my deployments in my game client, but I can’t join any of them")%>
@@ -58,6 +43,21 @@ To do this:
 When you have done this, re-launch your game client and you should be able to join any of the deployments, provided the number of players has not exceeded the maximum.
 
 <%(/Expandable)%>
+
+![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-startscreen.png)_Image: *The Example Project* *start* *screen._*
+
+### Share your deployment
+
+To share your deployment: 
+
+1. Open the console and select your **session_0** deployment. 
+1. Select **Share** on the right-hand side of the screen to see the Share Application screen
+1. In the Share Application screen, accept the terms of service to activate the **Get Share URL** button<br/>
+![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-share.png)<br/>
+_Image: The SpatialOS Console Share Application pop-up window, showing terms of service_<br/>
+1. After you have accepted the terms of service, you can send your Share Token URL to other people so they can try out your game. <br/>
+![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-share2.png)<br/>
+_Image: The SpatialOS Console Share Application screen with terms of service accepted_<br/>
 
 Congratulations! You have successfully launched and shared a SpatialOS deployment using the Deployment Manager! 
 

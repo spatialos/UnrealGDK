@@ -22,7 +22,7 @@
             - [Step 2: Generate a development authentication token]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication)
             - [Steps 3 & 4: Build your worker assemblies]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
             - [Step 5: Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
-            - [Step 6: Launch a session-based cloud deployment]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
+            - [Step 6: Launch multiple session-based cloud deployments]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
             - [Step 7: Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
         - Multiserver Shooter tutorial
             - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
