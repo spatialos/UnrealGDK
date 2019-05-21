@@ -5,9 +5,9 @@ You can use a Singleton Actor to define a single source of truth for operations 
 
 You define a Singleton Actor by tagging an Actor with the `SpatialType=Singleton` class attribute. For example, if you are implementing a scoreboard, you probably want only one scoreboard in your world, so you can tag the scoreboard Actor as a Singleton Actor.
 
-There are two types of Singleton Actors:
+There are two Singleton Actor types:
 
-* **Public Singleton Actors** - Singleton Actors that are replicated to [server-worker and client-worker instances]({{urlRoot}}/content/glossary#workers). [`AGameState`](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) and `ALevelScriptActor` are Public Singleton Actors.
+* **Public Singleton Actors** - Singleton Actors that are replicated to [server-worker and client-worker instances]({{urlRoot}}/content/glossary#workers). [`AGameState`](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) and [`ALevelScriptActor`](https://api.unrealengine.com/INT/API/Runtime/Engine/Engine/ALevelScriptActor/index.html) are Public Singleton Actors.
 * **Private Singleton Actors** - Singleton Actors that are replicated to [server-worker instances]({{urlRoot}}/content/glossary#workers), but not accessible to [client-worker instances]({{urlRoot}}/content/glossary#workers). [`AGameMode`](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) is a Private Singleton Actor.
 
 You can define any class as a Singleton Actor. However, the following Unreal Engine classes are automatically tagged in source code as Singleton Actors, so you don’t need to define them:
