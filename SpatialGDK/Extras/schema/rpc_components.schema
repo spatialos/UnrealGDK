@@ -32,6 +32,6 @@ component UnrealMulticastRPCEndpoint {
 component RPCsOnEntityCreation {
     id = 9985;
 	list<UnrealRPCPayload> rpcs = 1;
-    command Void clear_rpcs(Void);
+	command Void clear_rpcs(Void);
 }
 
