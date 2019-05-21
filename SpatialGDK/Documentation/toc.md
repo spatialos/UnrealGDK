@@ -16,6 +16,14 @@
         - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
         - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
     - Tutorials
+        - Multiple deployments for session-based games
+            - [Introduction]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro)
+            - [Step 1: Clone the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
+            - [Step 2: Generate a development authentication token]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication)
+            - [Steps 3 & 4: Build your worker assemblies]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
+            - [Step 5: Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
+            - [Step 6: Launch a session-based cloud deployment]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
+            - [Step 7: Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
         - Multiserver Shooter tutorial
             - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
             - [Step 1: Set up]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
