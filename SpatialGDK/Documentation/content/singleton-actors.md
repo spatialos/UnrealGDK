@@ -16,7 +16,7 @@ You can define any class as a Singleton Actor. However, the following Unreal Eng
 * `AGameStateBase`
 * `ALevelScriptActor`
 
-> **Note**: Because the `SpatialType` class attribute is inheritable, all the classes that derive from `AGameModeBase`,  `AGameStateBase`, or `ALevelScriptActor` class are also Singleton Actors, which means that you don’t need to explicitly tag them in your code. You can opt out of this by tagging these classes with the [`NotSpatialType`]({{urlRoot}}/content/spatial-type#spatial-type) tag.
+> **Note**: Because the [`SpatialType`]({{urlRoot}}/content/spatial-type) class attribute is inheritable, all the classes that derive from `AGameModeBase`, `AGameStateBase`, or `ALevelScriptActor` are also Singleton Actors, which means that you don’t need to explicitly tag them in your code. You can opt out of this by tagging these classes with the [`NotSpatialType`]({{urlRoot}}/content/spatial-type#spatial-type) tag.
 
 Before you begin to use Singleton Actors across your game world, review the following high-level procedure. See each section for more details:
 1. [Define Singleton Actors](#defining-singleton-actors): Manually tag an Unreal C++ class or an Unreal Blueprint class with the relevant attributes to be a Public Singleton Actor or Private Singleton Actor.
