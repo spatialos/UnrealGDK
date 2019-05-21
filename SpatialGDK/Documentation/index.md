@@ -17,14 +17,15 @@ SpatialOS provides:<br/>
 
 If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started]({{urlRoot}}/content/get-started/introduction) guide.
 
-It takes you through setting up the GDK and getting the Starter Template project or the Example project running in the cloud, as well as running locally on your computer. This gives an overview of the GDK and using SpatialOS, and you can use the Starter Template as a basis for your own projects.
+It takes you through setting up the GDK and getting the Starter Template project or the Example 
+Project running in the cloud, as well as running locally on your computer. This gives an overview of the GDK and using SpatialOS, and you can use the Starter Template as a basis for your own projects.
 
-<!-- <img src="{{assetRoot}}assets/screen-grabs/exampleproject/example-project-gameplay.png" style=" float: right; margin: 0; display: block; width: 50%; padding: 15px 15x"/> -->
+After you set up the SpatialOS GDK Starter Template or the Example 
+Project, you can learn more about the GDK’s functionality with:
+<img src="{{assetRoot}}assets/example-project/example-project-headline.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
 
-After you set up the SpatialOS GDK Starter Template, you can learn more about the GDK’s functionality with:
 
-* **The Example Project guide**: Set up and test a representative FPS game and upload it to the cloud. 
-<!-- * **Multi-session cloud deployments tutorial**: Upload a session-based FPS example game to the cloud. -->
+* **The Multiple deployments for session-based games tutorial**: upload a session-based FPS example game to the cloud.
 * **The Multiserver Shooter tutorial**: implement shooting across the boundaries of different servers simulating one game world.
 * **The Porting guide**: porting your existing UE project to SpatialOS.
 
@@ -46,4 +47,4 @@ After you set up the SpatialOS GDK Starter Template, you can learn more about th
 #### Next: [Get started]({{urlRoot}}/content/get-started/dependencies.md)
 
 ------
-_2019-05-03 Page updated_
+_2019-05-21 Page updated_
