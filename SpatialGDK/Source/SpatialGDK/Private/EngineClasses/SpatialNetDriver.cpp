@@ -1314,6 +1314,23 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, FUn
 	return bOk ? SpatialConnection : nullptr;
 }
 
+USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject* TargetObject, USpatialNetConnection* InConnection)
+{
+	check(TargetObject && InConnection);
+	USpatialActorChannel* Channel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
+	if (Channel == nullptr)
+	{
+		AActor* TargetActor = Cast<AActor>(TargetObject);
+		if (TargetActor == nullptr)
+		{
+			TargetActor = Cast<AActor>(TargetObject->GetOuter());
+		}
+		check(TargetActor);
+		Channel = CreateSpatialActorChannel(TargetActor, GetSpatialOSNetConnection());
+	}
+	return Channel;
+}
+
 USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection)
 {
 	USpatialActorChannel* Channel = nullptr;

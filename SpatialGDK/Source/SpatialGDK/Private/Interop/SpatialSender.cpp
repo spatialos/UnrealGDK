@@ -453,42 +453,29 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 	UObject* TargetObject = Params->TargetObject.Get();
 
+	if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject, NetDriver->GetSpatialOSNetConnection()))
+	{
+		if (Channel->bCreatingNewEntity)
+		{
+			if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+			{
+				// This is where we'll serialize this RPC and queue it to be added on entity creation
+				OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(CreateRPCPayloadFromParams(*Params));
+				return;
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
+	}
+
 	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		// This could potentially occur for singletons in multi-worker scenario
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s on unresolved Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
 		QueueOutgoingRPC(TargetObject, Params);
 		return;
-	}
-	else
-	{
-		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
-		if (Channel == nullptr)
-		{
-			AActor* TargetActor = Cast<AActor>(TargetObject);
-			if (TargetActor == nullptr)
-			{
-				TargetActor = Cast<AActor>(TargetObject->GetOuter());
-			}
-			check(TargetActor);
-			Channel = NetDriver->CreateSpatialActorChannel(TargetActor, NetDriver->GetSpatialOSNetConnection());
-		}
-		if (Channel != nullptr)
-		{
-			if (Channel->bCreatingNewEntity)
-			{
-				if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-				{
-					// This is where we'll serialize this RPC and queue it to be added on entity creation
-					OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(CreateRPCPayloadFromParams(*Params));
-					return;
-				}
-			}
-		}
-		else
-		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
-		}
 	}
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
