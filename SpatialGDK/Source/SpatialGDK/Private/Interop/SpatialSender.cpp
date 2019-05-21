@@ -442,7 +442,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	}
 	UObject* TargetObject = Params->TargetObject.Get();
 
-	if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject, NetDriver->GetSpatialOSNetConnection()))
+	if (USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject))
 	{
 		if (Channel->bCreatingNewEntity)
 		{

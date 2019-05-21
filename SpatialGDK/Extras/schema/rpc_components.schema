@@ -30,7 +30,7 @@ component UnrealMulticastRPCEndpoint {
 // Component that contains a list of RPCs to be executed
 // as a part of entity creation request
 component RPCsOnEntityCreation {
-    id = 9985;
+	id = 9985;
 	list<UnrealRPCPayload> rpcs = 1;
 	command Void clear_rpcs(Void);
 }

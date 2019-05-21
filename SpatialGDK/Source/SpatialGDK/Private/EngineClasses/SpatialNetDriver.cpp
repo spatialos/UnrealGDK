@@ -1475,9 +1475,9 @@ TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityTo
 	return EntityToActorChannel;
 }
 
-USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject* TargetObject, USpatialNetConnection* InConnection)
+USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject* TargetObject)
 {
-	check(TargetObject && InConnection);
+	check(TargetObject);
 	USpatialActorChannel* Channel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
 	if (Channel == nullptr)
 	{
@@ -1508,9 +1508,9 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 	else
 	{
 #if ENGINE_MINOR_VERSION <= 20
-		Channel = (USpatialActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
+		Channel = static_cast<USpatialActorChannel*>(InConnection->CreateChannel(CHTYPE_Actor, 1));
 #else
-		Channel = (USpatialActorChannel*)InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
+		Channel = static_cast<USpatialActorChannel*>(InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 #endif
 		if (Channel != nullptr)
 		{

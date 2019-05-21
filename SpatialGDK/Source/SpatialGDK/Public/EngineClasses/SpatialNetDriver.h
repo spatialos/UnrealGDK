@@ -89,7 +89,7 @@ public:
 	void RemoveActorChannel(Worker_EntityId EntityId);
 	TMap<Worker_EntityId_Key, USpatialActorChannel*>& GetEntityToActorChannelMap();
 
-	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject, USpatialNetConnection* InConnection);
+	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
 	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection);
 
