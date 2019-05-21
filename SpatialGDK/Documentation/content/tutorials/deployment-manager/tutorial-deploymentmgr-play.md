@@ -65,3 +65,6 @@ If you have an existing Unreal multiplayer project, follow our detailed [porting
 
 If you want to start a project from scratch, follow our [Template guide](https://docs-staging.improbable.io/unreal/1.0/content/get-started/gdk-template) to set up a blank project using the GDK.
 
+--------<br/>
+
+_2019-05-21 Page added with full review_

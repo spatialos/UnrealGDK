@@ -16,3 +16,6 @@ _Image: The Example Project deployment list screen_<br/>
 
 **Next:** [Clone the Deployment Manager repository]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
 
+--------<br/>
+
+_2019-05-21 Page added with full review_

@@ -65,3 +65,7 @@ Before launching a cloud deployment, you must upload your server-worker and clie
 Make a note of the `<assembly_name>` you create, as you will need it later. 
 
 **Next**: [Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
+
+--------<br/>
+
+_2019-05-21 Page added with full review_

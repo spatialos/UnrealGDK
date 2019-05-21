@@ -46,3 +46,7 @@ Make sure your Deployment Manager repository is in the same parent directory as 
 <%(/Expandable)%>
 
 **Next**: [Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
+
+--------<br/>
+
+_2019-05-21 Page added with full review_

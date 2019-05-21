@@ -93,3 +93,7 @@ Your `config.json` file should look like this:
 When you are done, save and close your `config.json` file. 
 
 **Next**: [Launch a session-based cloud deployment]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
+
+--------<br/>
+
+_2019-05-21 Page added with full review_

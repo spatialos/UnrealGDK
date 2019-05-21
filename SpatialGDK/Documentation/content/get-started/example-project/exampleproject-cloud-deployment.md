@@ -139,7 +139,6 @@ spatial cloud launch --snapshot=snapshots\default.snapshot exampleprojectassembl
 When your deployment has launched, SpatialOS automatically opens the Console in your browser.
 
 #### Next: [Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
-<br/>
---------<br/>
+<br/>--------<br/>
 
-_2019-05-03 Page added with full review_
+_2019-05-21 Page added with full review_
