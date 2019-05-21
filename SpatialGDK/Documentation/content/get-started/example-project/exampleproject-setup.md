@@ -22,8 +22,8 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 
 |  |  |
 | ----- | ------------------------------------------------------------ |
-| HTTPS | `git clone https://github.com/improbable/UnrealGDKExampleProject.git` |
-| SSH   | `git clone git@github.com:improbable/UnrealGDKExampleProject.git` |
+| HTTPS | `git clone https://github.com/spatialos/UnrealGDKExampleProject.git` |
+| SSH   | `git clone git@github.com:spatialos/UnrealGDKExampleProject.git` |
 
 <%(/Expandable)%>
 
@@ -31,7 +31,7 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 
 1. In GitHub Desktop, select **File** >  **Clone  Repository**.<br/>
 1. In the Clone a repository window, select **URL.**<br/>
-1. In the Repository URL field, enter this URL: `https://github.com/improbable/UnrealGDKExampleProject.git`<br/>
+1. In the Repository URL field, enter this URL: `https://github.com/spatialos/UnrealGDKExampleProject.git`<br/>
 1. In the **Local Path** field, enter a suitable directory path for this repository, or select **Choose…** to select a directory using File Explorer. <br/>
 1. Select **Clone**. <br/>
 ![img]({{assetRoot}}assets/screen-grabs/github-desktop.png)<br/>

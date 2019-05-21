@@ -1,6 +1,6 @@
 # The GDK Example project 
 
-This guide takes you through setting up the [Example project](https://github.com/improbable/UnrealGDKExampleProject); you will launch a single-server local deployment to test the project on your development machine, and you will launch a single-server deployment in the cloud to test and share the project. 
+This guide takes you through setting up the [Example project](https://github.com/spatialos/UnrealGDKExampleProject); you will launch a single-server local deployment to test the project on your development machine, and you will launch a single-server deployment in the cloud to test and share the project. 
 
 The project contains gameplay and assets that are representative of a basic first-person shooter running on SpatialOS. If you want to make your own project from scratch, use the [Starter Template]({{urlRoot}}/content/get-started/gdk-template).
 
