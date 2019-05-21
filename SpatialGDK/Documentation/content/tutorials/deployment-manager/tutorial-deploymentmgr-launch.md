@@ -8,21 +8,19 @@ To do this:
 1. Select **File.**
 1. Select **Open Windows Powershell**, then select **Open Windows Powershell as administrator.**
 1. In Powershell, run the following SpatialOS CLI commands: 
-	* `./publish-linux-workers.ps1 <launch config path> <snapshot path>`
-	* `./cloud-launch.ps1 <assembly name> <deployment name>`
-
+	* `.\publish-linux-workers.ps1 <launch config path> <snapshot path>`
+	* `.\cloud-launch.ps1 <assembly name> <deployment name>`
 Where:
 
 * `<launch config path>` is the file path to the` one_worker_test.json` file in the Example project
 * `<snapshot path>` is the path to the snapshot file you generated in the [Example Project set up guide]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
-*  `<assembly name>` is the name you gave to your assembly in [Step 5: Upload your workers]
-*  `<deployment name>` is a name that you choose for your deployment. 
-	
+*  `<assembly name>` is a name that you choose for your Deployment Manager assembly. This must be a different name to the assembly you created in [Step 4]({{urlRoot}}content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-4-upload-your-worker-assemblies).
+* `<deployment name>` is a name that you choose for your deployment. 
 
 For example: 
 
 * `.\publish-linux-workers.ps1 ..\UnrealGDKExampleProject\spatial\one_worker_test.json ..\UnrealGDKExampleProject\spatial\snapshots\default.snapshot`
-* `.\cloud-launch.ps1 sessionassembly deploymentmanager`
+* `.\cloud-launch.ps1 deploymentassembly deploymentmanager`
 
 After running these commands, the SpatialOS CLI automatically deploys your project. The Deployment Overview Console page opens automatically after your project has successfully deployed.
 
