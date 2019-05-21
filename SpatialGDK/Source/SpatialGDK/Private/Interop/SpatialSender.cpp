@@ -715,7 +715,7 @@ void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, TSharedRe
 	OutgoingRPCs.FindOrAdd(UnresolvedObject).Add(Params);
 }
 
-FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects) const
+FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const
 {
 	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
 
