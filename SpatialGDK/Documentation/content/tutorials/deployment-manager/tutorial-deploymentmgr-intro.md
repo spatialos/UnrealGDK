@@ -5,7 +5,7 @@ In this tutorial, you will use the [Deployment Manager](https://github.com/spati
 
 Multiple deployments of your game are useful for time-limited match-based games where you have multiple game sessions with a defined number of players, such as battle royales.</br>
 
-***NOTE:\*** You can only use the Deployment Manager in the cloud; it isn't available for local deployments."
+**NOTE:** You can only use the Deployment Manager in the cloud; it isn't available for local deployments.
 
 The tutorial guides you through cloning the SpatialOS Deployment Manager repository and configuring the Example Project to work with the Deployment Manager, before launching your deployments via the Deployment Manager.
 
