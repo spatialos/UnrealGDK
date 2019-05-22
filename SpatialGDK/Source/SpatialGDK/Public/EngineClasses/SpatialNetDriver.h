@@ -67,6 +67,7 @@ public:
 	virtual void OnOwnerUpdated(AActor* Actor);
 
 	void OnConnectedToSpatialOS();
+	void OnEntityPoolReady();
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);

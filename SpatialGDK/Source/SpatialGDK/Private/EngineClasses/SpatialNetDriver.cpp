@@ -203,6 +203,12 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	}
 }
 
+void USpatialNetDriver::OnEntityPoolReady()
+{
+	check(GlobalStateManager != nullptr);
+	GlobalStateManager->OnEntityPoolReady();
+}
+
 void USpatialNetDriver::InitializeSpatialOutputDevice()
 {
 	int32 PIEIndex = -1; // -1 is Unreal's default index when not using PIE

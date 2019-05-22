@@ -51,6 +51,9 @@ public:
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void SetCanBeginPlay(bool bInCanBeginPlay);
 
+	void OnGSMReady();
+	void OnEntityPoolReady();
+
 	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
 
 	void BeginDestroy() override;

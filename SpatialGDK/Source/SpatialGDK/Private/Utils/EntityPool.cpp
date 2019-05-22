@@ -78,6 +78,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 
 		bIsReady = true;
 		bIsAwaitingResponse = false;
+		NetDriver->OnEntityPoolReady();
 	});
 
 	// Reserve the Entity IDs
