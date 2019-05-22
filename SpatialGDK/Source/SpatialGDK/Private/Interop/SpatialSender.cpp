@@ -450,6 +450,13 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	{
 		if (Channel->bCreatingNewEntity)
 		{
+			if (Params->Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+			{
+				// TODO: UNR-1437 - Add Support for Multicast RPCs on Entity Creation
+				UE_LOG(LogSpatialSender, Warning, TEXT("Multicast RPC on Entity Creation is not supported"));
+			}
+			check(NetDriver->IsServer());
+			check(Params->Function->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetMulticast));
 			check(PackageMap->GetUnrealObjectRefFromObject(TargetObject) != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
 			// This is where we'll serialize this RPC and queue it to be added on entity creation
