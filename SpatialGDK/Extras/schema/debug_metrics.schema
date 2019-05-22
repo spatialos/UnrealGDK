@@ -1,0 +1,10 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+package unreal;
+
+import "unreal/gdk/core_types.schema";
+
+component DebugMetrics {
+    id = 9985;
+    command Void start_rpc_metrics(Void);
+    command Void stop_rpc_metrics(Void);
+}

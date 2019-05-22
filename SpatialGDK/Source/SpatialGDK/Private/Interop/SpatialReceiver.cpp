@@ -982,6 +982,19 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 #endif // WITH_EDITOR
+	else if (Op.request.component_id == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
+	{
+		switch (CommandIndex)
+		{
+		case SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID:
+			NetDriver->OnStartRPCMetricsCommand(Op);
+			break;
+		case SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID:
+			NetDriver->OnStopRPCMetricsCommand(Op);
+			break;
+		}
+		return;
+	}
 
 	Worker_CommandResponse Response = {};
 	Response.component_id = Op.request.component_id;

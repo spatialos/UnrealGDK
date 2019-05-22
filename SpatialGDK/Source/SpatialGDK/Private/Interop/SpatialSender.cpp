@@ -111,6 +111,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentWriteAcl.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, OwningClientOnly);
 	if (Actor->IsA<APlayerController>())
 	{
+		ComponentWriteAcl.Add(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, ServersOnly);
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
 	}
 
@@ -190,6 +191,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	if (Actor->IsA<APlayerController>())
 	{
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
 		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
 	}
 

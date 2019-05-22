@@ -148,9 +148,11 @@ public:
 
 	UFUNCTION(Exec)
 	void SpatialStartRPCMetrics();
+	void OnStartRPCMetricsCommand(Worker_CommandRequestOp& Op);
 
 	UFUNCTION(Exec)
 	void SpatialStopRPCMetrics();
+	void OnStopRPCMetricsCommand(Worker_CommandRequestOp& Op);
 
 	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
 

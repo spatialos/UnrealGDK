@@ -1624,6 +1624,30 @@ void USpatialNetDriver::SpatialStartRPCMetrics()
 
 	RPCTrackingEnabled = true;
 	RPCTrackingStartTime = FPlatformTime::Seconds();
+
+	if (!IsServer() && Sender != nullptr && GetWorld() != nullptr && GetWorld()->GetGameInstance() != nullptr)
+	{
+		FUnrealObjectRef PCObjectRef = PackageMap->GetUnrealObjectRefFromObject(GetWorld()->GetGameInstance()->GetFirstLocalPlayerController());
+		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+
+		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Worker_CommandRequest Request = {};
+			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
+			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
+			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
+		}
+	}
+}
+
+void USpatialNetDriver::OnStartRPCMetricsCommand(Worker_CommandRequestOp& Op)
+{
+	SpatialStartRPCMetrics();
+
+	Worker_CommandResponse Response = {};
+	Response.component_id = Op.request.component_id;
+	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
+	Sender->SendCommandResponse(Op.request_id, Response);
 }
 
 void USpatialNetDriver::SpatialStopRPCMetrics()
@@ -1692,6 +1716,30 @@ void USpatialNetDriver::SpatialStopRPCMetrics()
 	}
 
 	RPCTrackingEnabled = false;
+
+	if (!IsServer() && Sender != nullptr && GetWorld() != nullptr && GetWorld()->GetGameInstance() != nullptr)
+	{
+		FUnrealObjectRef PCObjectRef = PackageMap->GetUnrealObjectRefFromObject(GetWorld()->GetGameInstance()->GetFirstLocalPlayerController());
+		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+
+		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Worker_CommandRequest Request = {};
+			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
+			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
+			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
+		}
+	}
+}
+
+void USpatialNetDriver::OnStopRPCMetricsCommand(Worker_CommandRequestOp& Op)
+{
+	SpatialStopRPCMetrics();
+
+	Worker_CommandResponse Response = {};
+	Response.component_id = Op.request.component_id;
+	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
+	Sender->SendCommandResponse(Op.request_id, Response);
 }
 
 void USpatialNetDriver::TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize)
