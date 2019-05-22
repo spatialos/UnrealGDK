@@ -13,8 +13,6 @@ The diagram below shows how SpatialOS and the GDK fit into a typical multiplayer
 ![Game architecture]({{assetRoot}}assets/diagrams/architecture-of-spatialos-gdk-for-unreal-game.jpg)
 _The GDK provides a networking integration with SpatialOS, which enables Unreal Engine 4 clients and servers to communicate with the SpatialOS Runtime to synchronize state._
 
-The GDK provides a networking integration with SpatialOS, which enables Unreal Engine 4 clients and servers to communicate with the SpatialOS Runtime to synchronize state.
-
 You upload your built-out UE4 server binaries to SpatialOS, which runs them as part of a deployment. You can also upload clients to SpatialOS and distribute them to players using the [SpatialOS Launcher]({{urlRoot}}/content/glossary#launcher) for early playtesting.
 
 You can integrate systems sitting outside the game instance, such as inventory, authentication and matchmaking, using SpatialOS’s [identity and platform services](https://docs.improbable.io/reference/latest/platform-sdk/introduction).
