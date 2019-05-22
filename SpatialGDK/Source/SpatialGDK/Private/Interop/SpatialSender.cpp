@@ -764,8 +764,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 		}
 	}
 
-	RPCPayload Payload(TargetObjectRef.Offset, CommandIndex, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
-	Payload.WriteToSchemaObject(RequestObject);
+	RPCPayload::WriteToSchemaObject(RequestObject, TargetObjectRef.Offset, CommandIndex, PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
 	return CommandRequest;
 }
 
@@ -806,7 +805,7 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 	}
 
 	RPCPayload Payload(TargetObjectRef.Offset, EventIndex, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
-	Payload.WriteToSchemaObject(EventData);
+	RPCPayload::WriteToSchemaObject(EventData, TargetObjectRef.Offset, EventIndex, PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
 
 	return ComponentUpdate;
 }
