@@ -37,6 +37,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
+	UFUNCTION(BlueprintCallable)
 	void ToggleStatDisplay();
 
 private:
