@@ -79,7 +79,7 @@ struct RPCsOnEntityCreation : Component
 
 		for (const auto& Payload : RPCs)
 		{
-			Schema_Object* Obj = Schema_AddObject(ComponentObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID );
+			Schema_Object* Obj = Schema_AddObject(ComponentObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
 			RPCPayload::WriteToSchemaObject(Obj, Payload.Offset, Payload.Index, Payload.PayloadData.GetData(), Payload.PayloadData.Num());
 		}
 
@@ -97,16 +97,15 @@ struct RPCsOnEntityCreation : Component
 		return Update;
 	}
 
-	static Worker_CommandRequest  CreateClearFieldsCommandRequest()
+	static Worker_CommandRequest CreateClearFieldsCommandRequest()
 	{
 		Worker_CommandRequest CommandRequest = {};
 		CommandRequest.component_id = ComponentId;
-		CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, 1);
-		Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
+		CommandRequest.schema_type = Schema_CreateCommandRequest(ComponentId, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION);
 		return CommandRequest;
 	}
 
 	TArray<RPCPayload> RPCs;
 };
 
-}
+} // namespace SpatialGDK
