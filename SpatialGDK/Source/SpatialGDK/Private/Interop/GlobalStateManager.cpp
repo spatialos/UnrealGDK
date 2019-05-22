@@ -454,21 +454,17 @@ void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
 
 void UGlobalStateManager::OnGSMReady()
 {
-	if (NetDriver->EntityPool != nullptr && NetDriver->EntityPool->IsReady())
-	{
-		TriggerBeginPlay();
-
-		// Start accepting players only AFTER we've triggered BeginPlay
-		if (NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
-		{
-			SetAcceptingPlayers(true);
-		}
-	}
+	TryTriggerBeginPlay();
 }
 
 void UGlobalStateManager::OnEntityPoolReady()
 {
-	if (bCanBeginPlay)
+	TryTriggerBeginPlay();
+}
+
+void UGlobalStateManager::TryTriggerBeginPlay()
+{
+	if (bCanBeginPlay && NetDriver->EntityPool != nullptr && NetDriver->EntityPool->IsReady())
 	{
 		TriggerBeginPlay();
 
@@ -494,6 +490,10 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 			SetCanBeginPlay(true);
 			BecomeAuthoritativeOverAllActors();
 			OnGSMReady();
+		}
+		else
+		{
+			SetAcceptingPlayers(true);
 		}
 	}
 }

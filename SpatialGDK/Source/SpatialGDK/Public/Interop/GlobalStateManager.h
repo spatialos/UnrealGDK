@@ -54,6 +54,8 @@ public:
 	void OnGSMReady();
 	void OnEntityPoolReady();
 
+	void TryTriggerBeginPlay();
+
 	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
 
 	void BeginDestroy() override;
