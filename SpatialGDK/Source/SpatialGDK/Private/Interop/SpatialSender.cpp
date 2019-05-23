@@ -564,7 +564,7 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 	FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Actor got unresolved (?) before RPC %s could be retried. This RPC will not be sent."), *RetryRPC->Function->GetName(), *TargetObject->GetName());
+		UE_LOG(LogSpatialSender, Warning, TEXT("Actor %s got unresolved (?) before RPC %s could be retried. This RPC will not be sent."), *TargetObject->GetName(), *RetryRPC->Function->GetName());
 		return;
 	}
 
