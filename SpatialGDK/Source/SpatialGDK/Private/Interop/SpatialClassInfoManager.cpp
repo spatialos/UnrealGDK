@@ -163,7 +163,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		if (bEnableHandover == false && Type == SCHEMA_Handover)
+		if (!bEnableHandover && Type == SCHEMA_Handover)
 		{
 			return;
 		}
@@ -198,7 +198,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
-			if (bEnableHandover == false && Type == SCHEMA_Handover)
+			if (!bEnableHandover && Type == SCHEMA_Handover)
 			{
 				return;
 			}
