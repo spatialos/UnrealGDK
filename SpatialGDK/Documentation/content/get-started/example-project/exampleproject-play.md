@@ -47,12 +47,12 @@ You've sucessfully set up and launched the Example Project using the Deployment 
 </br>
 **Next steps:**
 
-* Do more with the Example Project: follow the guide to setting up [multiple deployments for session-based games]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro) using the Example Project. 
+* Do more with the Example Project: follow the tutorial on setting up [multiple deployments for session-based games]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro) using the Example Project. 
 
-* If you have an existing Unreal multiplayer project, follow the detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
+* If you have an existing Unreal multiplayer project, you can follow the detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
 
 * If you want to start a project from scratch, follow the set up guide for the [Starter Template]({{urlRoot}}/content/get-started/gdk-template) to set up a blank project using the GDK. 
 
 --------<br/>
 
-_2019-05-23 Page added with full review_
+_2019-05-23 Page added with editorial review_

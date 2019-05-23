@@ -1,4 +1,5 @@
-## Step 6: Launch multiple session-based cloud deployments
+# Multiple deployments for session-based games
+## 5: Launch multiple session-based deployments
 
 Now you use the Deployment Manager to launch multiple session-based cloud deployments. 
 
@@ -14,7 +15,7 @@ Where:
 
 * `<launch config path>` is the file path to the` one_worker_test.json` file in the Example project
 * `<snapshot path>` is the path to the snapshot file you generated in the [Example Project set up guide]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
-*  `<assembly name>` is a name that you choose for your Deployment Manager assembly. This must be a different name to the assembly you created in [Step 4]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-4-upload-your-worker-assemblies).
+*  `<assembly name>` is a name that you choose for your Deployment Manager assembly. This must be a different name to the assembly you created when you uploaded your worker assembly in [section 3. Build and upload your workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#tutorial-deploymentmgr-workers#step-2-upload-your-worker-assemblies).
 * `<deployment name>` is a name that you choose for your deployment. 
 
 For example: 
@@ -43,8 +44,10 @@ Make sure your Deployment Manager repository is in the same parent directory as 
 
 <%(/Expandable)%>
 
-**Next**: [Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
+</br>
+</br>
+**> Next**: [6. Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
 
 --------<br/>
 
-_2019-05-21 Page added with full review_
+_2019-05-21 Page added with editorial review_

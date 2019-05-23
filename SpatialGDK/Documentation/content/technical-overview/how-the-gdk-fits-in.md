@@ -27,8 +27,5 @@ _Use the Unreal Editor toolbar networking switch to swap out native Unreal netwo
 
 The SpatialOS model differs significantly from Unreal Engine when it comes to replicating an Actor. We don't replicate Actors to each player individually, as Unreal would. Instead, we update the game instance running in the cloud, and it’s SpatialOS which handles distributing this data to connected clients, so data is not sent multiple times to each interested client.
 
-<br/>
-
-------------
-_2019-04-25 Page added with full editorial review_ 
-<br/>
+<br/>------------<br/>
+_2019-04-25 Page added with editorial review_

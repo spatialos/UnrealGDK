@@ -5,3 +5,6 @@ We provide free technical support to all users via our [forums](https://forums.i
 For more details, see [Support](https://docs.improbable.io/reference/latest/shared/pricing-and-support/support).
 
 We also offer additional paid tiers of support. For more details, [get in touch](https://improbable.io/contact-us).
+
+<br/>--------<br/>
+2019-05-20: Page added with editorial review

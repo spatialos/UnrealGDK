@@ -1,7 +1,7 @@
 <%(TOC)%>
 # Multiserver Shooter Tutorial
 
-## Step 3: Test your changes locally
+## 3: Test changes locally
 
 1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
 1. From the Unreal Editor toolbar, click **Play** to run the game.
@@ -111,10 +111,10 @@ Now that you're free of the single-server paradigm, have a think about the huge,
 Speaking of hosting, let’s upload your game.
 </br>
 </br>
-**Next:** 
-[Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+**> Next:** 
+[4: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
 <br/>
 <br/>
 
--------------
+-------------</br>
 _2019-04-30 Page updated with limited editorial review_

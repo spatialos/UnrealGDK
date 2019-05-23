@@ -1,7 +1,7 @@
 <%(TOC)%>
 # Multiserver Shooter tutorial
 
-## Step 4: Test your changes in the cloud
+## Step 4: Test changes in the cloud
 
 ### Build your assemblies
 
@@ -67,11 +67,13 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 When you’re done shooting your friends, you can click the **Stop** button in the [Console](https://console.improbable.io) to stop your deployment.
 
 <br/>
-### Next steps
-We hope you've enjoyed this tutorial. If you want to build a new game using the SpatialOS GDK, you should build it on top of the [SpatialOS GDK Starter template]({{urlRoot}}/content/get-started/gdk-template). If you want to port your existing game to SpatialOS, follow the [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide).
+** Next steps:**
+
+* If you want to create a new game using the SpatialOS GDK, you should get the [Starter Template]({{urlRoot}}/content/get-started/gdk-template). 
+* If you want to port your existing game to SpatialOS, follow the [Porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide).
 
 <br/>
 <br/>
 
--------------
+-------------</br>
 _2019-03-20 Page updated with limited editorial review_

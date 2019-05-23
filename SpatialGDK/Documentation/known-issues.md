@@ -7,7 +7,8 @@ For all other known issues, please visit [this board](https://github.com/spatial
 
 <br/>
 
-------------
-*2019-04-25 Page updated with full editorial review </br>
-2019-04-25 Removed out-dated known issues from this page and added links to current known issues.*
+<br/>--------<br/>
+
+*2019-04-25 Page updated with editorial review* </br>
+*2019-04-25 Removed out-dated known issues from this page and added links to current known issues.*
 <br/>

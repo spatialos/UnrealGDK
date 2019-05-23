@@ -13,14 +13,14 @@ Get started with the SpatialOS GDK for Unreal by building the GDK's Unreal Engin
 
 After you set up with the Example Project or Starter Template, you can check out the following tutorials and guides:
 
-* **Guide to multiple deployments for session-based games**: </br>
+* **Tutorial on multiple deployments for session-based games**: </br>
 Use the Deployment Manager to launch multiple deployments of the Example Project in the cloud - useful for time-limited match-based games, such as battle royales.
 </br>
 </br>
-
 * **The Multiserver Shooter tutorial**: </br>
 Learn more about the the GDK's functionality by implement shooting across the boundaries of different servers simulating one game world. In this tutorial, you will set up a new game; the Mutliserver Shooter Game.
-</br></br>
+</br>
+</br>
 * **The Porting guide**: <br/>
 Port your existing UE project to SpatialOS.
 
@@ -47,5 +47,5 @@ Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issu
 
 <br/>
 
-------
-_2019-05-23 Page updated_
+------</br>
+_2019-05-23 Page updated with editorial review_

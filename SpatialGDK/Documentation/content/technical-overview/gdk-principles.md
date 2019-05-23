@@ -26,8 +26,5 @@ The SpatialOS Game Development Kit (GDK) for Unreal is a plugin which allows you
 
     We value your contributions (see the [contribution guidelines](https://github.com/spatialos/UnrealGDK/blob/master/CONTRIBUTING.md)) and feature requests. Get in touch on the [forums](https://forums.improbable.io/tags/unreal-gdk) or on [Discord](https://discordapp.com/invite/RFB8S8C).
 
-<br/>
-
-------------
-_2019-04-25 Page added with full editorial review_
-<br/>
+<br/>------------<br/>
+_2019-04-25 Page added with editorial review_
