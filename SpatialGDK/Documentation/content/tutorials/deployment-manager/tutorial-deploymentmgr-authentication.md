@@ -3,7 +3,7 @@
 
 >**Note:** This section describes generating and using development authentication tokens. These are for in-development testing only. They are for early-stage development so you don’t have to create your own game authentication service before testing your game clients. Do not include development authentication tokens in production projects. 
 
-### Step 1: Generate a toke
+### Step 1: Generate a token
 To ensure that game clients are able to see all available deployments and can connect to them, you must generate a development authentication token and update your project’s code with the generated token. 
 
 <%(#Expandable title="What is development authentication?")%>
