@@ -363,6 +363,17 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	return Channel;
 }
 
+void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel)
+{
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActor->GetClass());
+
+	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
+	check(ActorChannelPair.Value == nullptr || ActorChannelPair.Value == SingletonChannel);
+
+	ActorChannelPair.Key = SingletonActor;
+	ActorChannelPair.Value = SingletonChannel;
+}
+
 void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 {
 	for (auto& ClassToActorChannel : NetDriver->SingletonActorChannels)
