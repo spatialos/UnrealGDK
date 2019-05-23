@@ -60,6 +60,7 @@ public:
 	bool HasAuthority();
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
+	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
