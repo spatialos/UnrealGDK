@@ -72,7 +72,7 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 	enum StatColumns
 	{
 		StatColumn_Worker,
-		StatColumn_AverageFPS,
+		StatColumn_AverageFrameTime,
 		StatColumn_WorkerLoad,
 		StatColumn_Last
 	};
@@ -80,7 +80,7 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 	const uint32 StatDisplayStartX = 25;
 	const uint32 StatDisplayStartY = 80;
 
-	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("FPS"), TEXT("Load") };
+	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Load") };
 	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80 };
 	const uint32 StatRowOffset = 20;
 
@@ -116,8 +116,8 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 		DrawX = StatDisplayStartX + StatColumnOffsets[StatColumn_Worker];
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%s"), *OneWorkerStats.WorkerName), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
-		DrawX += StatColumnOffsets[StatColumn_AverageFPS];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.AverageFPS), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+		DrawX += StatColumnOffsets[StatColumn_AverageFrameTime];
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f ms"), 1000.f / OneWorkerStats.AverageFPS), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
 		DrawX += StatColumnOffsets[StatColumn_WorkerLoad];
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.WorkerLoad), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
