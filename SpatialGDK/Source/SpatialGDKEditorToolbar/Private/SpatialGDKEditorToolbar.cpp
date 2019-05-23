@@ -1,5 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
+#include "SpatialGDKEditorToolbar.h"
 #include "AssetRegistryModule.h"
 #include "Async/Async.h"
 #include "Editor.h"
@@ -25,7 +26,6 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKEditorSettings.h"
-#include "SpatialGDKEditorToolbar.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
 #include "SpatialGDKSettings.h"
