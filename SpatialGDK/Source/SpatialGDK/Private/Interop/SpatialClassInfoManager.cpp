@@ -128,13 +128,13 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
-	const bool bHandoverEnabled = GetDefault<USpatialGDKSettings>()->bHandoverEnabled;
+	const bool bEnableHandover = GetDefault<USpatialGDKSettings>()->bEnableHandover;
 
 	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
 		UProperty* Property = *PropertyIt;
 
-		if (bHandoverEnabled && (Property->PropertyFlags & CPF_Handover))
+		if (bEnableHandover && (Property->PropertyFlags & CPF_Handover))
 		{
 			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
 			{
@@ -163,7 +163,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		if (bHandoverEnabled == false && Type == SCHEMA_Handover)
+		if (bEnableHandover == false && Type == SCHEMA_Handover)
 		{
 			return;
 		}
@@ -198,7 +198,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
-			if (bHandoverEnabled == false && Type == SCHEMA_Handover)
+			if (bEnableHandover == false && Type == SCHEMA_Handover)
 			{
 				return;
 			}
