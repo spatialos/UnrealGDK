@@ -9,7 +9,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialEntityPool);
 
-using namespace improbable;
+using namespace SpatialGDK;
 
 void UEntityPool::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {

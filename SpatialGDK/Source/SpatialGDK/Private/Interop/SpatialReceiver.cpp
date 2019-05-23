@@ -27,7 +27,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
-using namespace improbable;
+using namespace SpatialGDK;
 
 void USpatialReceiver::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
@@ -159,7 +159,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 			Op.data.component_id, Op.entity_id);
 		return;
 	}
-	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<improbable::DynamicComponent>(Op.data));
+	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data));
 }
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
@@ -331,8 +331,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		}
 	}
 
-#if !UE_BUILD_SHIPPING
-	if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		ESchemaComponentType ComponentType = ClassInfoManager->GetCategoryByComponentId(Op.component_id);
 		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
@@ -343,7 +342,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			NetDriver->OnRPCAuthorityGained(Actor, ComponentType);
 		}
 	}
-#endif // !UE_BUILD_SHIPPING
 }
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
@@ -351,10 +349,10 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
 	checkf(NetDriver->GetWorld(), TEXT("We should have a World whilst processing ops."));
 
-	improbable::SpawnData* SpawnData = StaticComponentView->GetComponentData<improbable::SpawnData>(EntityId);
-	improbable::UnrealMetadata* UnrealMetadata = StaticComponentView->GetComponentData<improbable::UnrealMetadata>(EntityId);
+	SpawnData* SpawnDataComp = StaticComponentView->GetComponentData<SpawnData>(EntityId);
+	UnrealMetadata* UnrealMetadataComp = StaticComponentView->GetComponentData<UnrealMetadata>(EntityId);
 
-	if (UnrealMetadata == nullptr)
+	if (UnrealMetadataComp == nullptr)
 	{
 		// Not an Unreal entity
 		return;
@@ -391,7 +389,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			*EntityActor->GetName());
 
 		// Assume SimulatedProxy until we've been delegated Authority
-		bool bAuthority = StaticComponentView->GetAuthority(EntityId, improbable::Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
+		bool bAuthority = StaticComponentView->GetAuthority(EntityId, Position::ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 		EntityActor->Role = bAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
 		EntityActor->RemoteRole = bAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
 		if (bAuthority)
@@ -408,7 +406,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
-		EntityActor = TryGetOrCreateActor(UnrealMetadata, SpawnData);
+		EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
 
 		if (EntityActor == nullptr)
 		{
@@ -431,7 +429,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		}
 
 		// Set up actor channel.
+#if ENGINE_MINOR_VERSION <= 20
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
+#else
+		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, NetDriver->IsServer() ? EChannelCreateFlags::OpenedLocally : EChannelCreateFlags::None));
+#endif
+
 		if (!Channel)
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("Failed to create an actor channel when receiving entity %lld. The actor will not be spawned."), EntityId);
@@ -512,7 +515,11 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("RemoveActor: actor for entity %lld was already deleted (likely on the authoritative worker) but still has an open actor channel."), EntityId);
+#if ENGINE_MINOR_VERSION <= 20
 			ActorChannel->ConditionalCleanUp();
+#else
+			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
+#endif
 			CleanupDeletedEntity(EntityId);
 		}
 		return;
@@ -523,7 +530,11 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	{
 		if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 		{
+#if ENGINE_MINOR_VERSION <= 20
 			ActorChannel->ConditionalCleanUp();
+#else
+			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
+#endif
 			CleanupDeletedEntity(EntityId);
 		}
 		return;
@@ -617,7 +628,12 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	// Clean up the actor channel. For clients, this will also call destroy on the actor.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
 	{
+
+#if ENGINE_MINOR_VERSION <= 20
 		ActorChannel->ConditionalCleanUp();
+#else
+		ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
+#endif
 	}
 	else
 	{
@@ -649,14 +665,14 @@ void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
 	NetDriver->RemoveActorChannel(EntityId);
 }
 
-AActor* USpatialReceiver::TryGetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData)
+AActor* USpatialReceiver::TryGetOrCreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
 {
-	if (UnrealMetadata->StablyNamedRef.IsSet())
+	if (UnrealMetadataComp->StablyNamedRef.IsSet())
 	{
-		if (NetDriver->IsServer() || UnrealMetadata->bNetStartup.GetValue())
+		if (NetDriver->IsServer() || UnrealMetadataComp->bNetStartup.GetValue())
 		{
 			// This Actor already exists in the map, get it from the package map.
-			const FUnrealObjectRef& StablyNamedRef = UnrealMetadata->StablyNamedRef.GetValue();
+			const FUnrealObjectRef& StablyNamedRef = UnrealMetadataComp->StablyNamedRef.GetValue();
 			AActor* StaticActor = Cast<AActor>(PackageMap->GetObjectFromUnrealObjectRef(StablyNamedRef));
 			// An unintended side effect of GetObjectFromUnrealObjectRef is that this ref
 			// will be registered with this Actor. It can be the case that this Actor is not
@@ -668,17 +684,17 @@ AActor* USpatialReceiver::TryGetOrCreateActor(improbable::UnrealMetadata* Unreal
 		}
 	}
 
-	return CreateActor(UnrealMetadata, SpawnData);
+	return CreateActor(UnrealMetadataComp, SpawnDataComp);
 }
 
 // This function is only called for client and server workers who did not spawn the Actor
-AActor* USpatialReceiver::CreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData)
+AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnData* SpawnDataComp)
 {
-	UClass* ActorClass = UnrealMetadata->GetNativeEntityClass();
+	UClass* ActorClass = UnrealMetadataComp->GetNativeEntityClass();
 
 	if (ActorClass == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("Could not load class %s when spawning entity!"), *UnrealMetadata->ClassPath);
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Could not load class %s when spawning entity!"), *UnrealMetadataComp->ClassPath);
 		return nullptr;
 	}
 
@@ -693,10 +709,10 @@ AActor* USpatialReceiver::CreateActor(improbable::UnrealMetadata* UnrealMetadata
 	// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
 	if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
 	{
-		checkf(!UnrealMetadata->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+		checkf(!UnrealMetadataComp->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
 
 		FString URLString = FURL().ToString();
-		URLString += TEXT("?workerAttribute=") + UnrealMetadata->OwnerWorkerAttribute;
+		URLString += TEXT("?workerAttribute=") + UnrealMetadataComp->OwnerWorkerAttribute;
 
 		// TODO: Once we can checkout PlayerController and PlayerState atomically, we can grab the UniqueId and online subsystem type from PlayerState. UNR-933
 		UNetConnection* Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), true);
@@ -709,23 +725,23 @@ AActor* USpatialReceiver::CreateActor(improbable::UnrealMetadata* UnrealMetadata
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnInfo.bRemoteOwned = !NetDriver->IsServer();
+	SpawnInfo.bRemoteOwned = true;
 	SpawnInfo.bNoFail = true;
 
-	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnData->Location, NetDriver->GetWorld()->OriginLocation);
+	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnDataComp->Location, NetDriver->GetWorld()->OriginLocation);
 
-	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnData->Rotation, SpawnLocation), SpawnInfo);
+	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnDataComp->Rotation, SpawnLocation), SpawnInfo);
 	check(NewActor);
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
 	const float Epsilon = 0.001f;
-	if (!SpawnData->Velocity.Equals(FVector::ZeroVector, Epsilon))
+	if (!SpawnDataComp->Velocity.Equals(FVector::ZeroVector, Epsilon))
 	{
-		NewActor->PostNetReceiveVelocity(SpawnData->Velocity);
+		NewActor->PostNetReceiveVelocity(SpawnDataComp->Velocity);
 	}
-	if (!SpawnData->Scale.Equals(FVector::OneVector, Epsilon))
+	if (!SpawnDataComp->Scale.Equals(FVector::OneVector, Epsilon))
 	{
-		NewActor->SetActorScale3D(SpawnData->Scale);
+		NewActor->SetActorScale3D(SpawnDataComp->Scale);
 	}
 
 	// Don't have authority over Actor until SpatialOS delegates authority
@@ -1109,7 +1125,11 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 		// Check if bTearOff has been set to true
 		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
 		{
+#if ENGINE_MINOR_VERSION <= 20
 			Channel->ConditionalCleanUp();
+#else
+			Channel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
+#endif
 			CleanupDeletedEntity(Channel->GetEntityId());
 		}
 	}
@@ -1146,31 +1166,34 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 
 	FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
 
-#if !UE_BUILD_SHIPPING
 	int ReliableRPCId = 0;
-	if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 	{
-		PayloadReader << ReliableRPCId;
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		{
+			PayloadReader << ReliableRPCId;
+		}
 	}
-#endif // !UE_BUILD_SHIPPING
 
 	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
 	RepLayout_ReceivePropertiesForRPC(*RepLayout, PayloadReader, Parms);
 
 	if (UnresolvedRefs.Num() == 0)
 	{
-#if !UE_BUILD_SHIPPING
-		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 		{
-			AActor* Actor = Cast<AActor>(TargetObject);
-			if (Actor == nullptr)
+			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 			{
-				Actor = Cast<AActor>(TargetObject->GetOuter());
-				check(Actor);
+				AActor* Actor = Cast<AActor>(TargetObject);
+				if (Actor == nullptr)
+				{
+					Actor = Cast<AActor>(TargetObject->GetOuter());
+					check(Actor);
+				}
+				NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
 			}
-			NetDriver->OnReceivedReliableRPC(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), SenderWorkerId, ReliableRPCId, TargetObject, Function);
 		}
-#endif // !UE_BUILD_SHIPPING
+
 		TargetObject->ProcessEvent(Function, Parms);
 	}
 	else
@@ -1345,9 +1368,7 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits, const FString& SenderWorkerId)
 {
 	TSharedPtr<FPendingIncomingRPC> IncomingRPC = MakeShared<FPendingIncomingRPC>(UnresolvedRefs, TargetObject, Function, PayloadData, CountBits);
-#if !UE_BUILD_SHIPPING
 	IncomingRPC->SenderWorkerId = SenderWorkerId;
-#endif // !UE_BUILD_SHIPPING
 
 	for (const FUnrealObjectRef& UnresolvedRef : UnresolvedRefs)
 	{
@@ -1404,7 +1425,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		FRepLayout& RepLayout = DependentChannel->GetObjectRepLayout(ReplicatingObject);
 		FRepStateStaticBuffer& ShadowData = DependentChannel->GetObjectStaticBuffer(ReplicatingObject);
 
-		ResolveObjectReferences(RepLayout, ReplicatingObject, *UnresolvedRefs, ShadowData.GetData(), (uint8*)ReplicatingObject, ShadowData.Num(), RepNotifies, bSomeObjectsWereMapped, bStillHasUnresolved);
+		ResolveObjectReferences(RepLayout, ReplicatingObject, *UnresolvedRefs, ShadowData.GetData(), (uint8*)ReplicatingObject, ReplicatingObject->GetClass()->GetPropertiesSize(), RepNotifies, bSomeObjectsWereMapped, bStillHasUnresolved);
 
 		if (bSomeObjectsWereMapped)
 		{
@@ -1444,10 +1465,7 @@ void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const FUnrealObjectR
 		IncomingRPC->UnresolvedRefs.Remove(ObjectRef);
 		if (IncomingRPC->UnresolvedRefs.Num() == 0)
 		{
-			FString SenderWorkerId;
-#if !UE_BUILD_SHIPPING
-			SenderWorkerId = IncomingRPC->SenderWorkerId;
-#endif // !UE_BUILD_SHIPPING
+			FString SenderWorkerId = IncomingRPC->SenderWorkerId;
 			ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->PayloadData, IncomingRPC->CountBits, SenderWorkerId);
 		}
 	}
@@ -1469,23 +1487,35 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		}
 
 		FObjectReferences& ObjectReferences = It.Value();
+
 		UProperty* Property = ObjectReferences.Property;
+
 		// ParentIndex is -1 for handover properties
+		bool bIsHandover = ObjectReferences.ParentIndex == -1;
 		FRepParentCmd* Parent = ObjectReferences.ParentIndex >= 0 ? &RepLayout.Parents[ObjectReferences.ParentIndex] : nullptr;
+
+#if ENGINE_MINOR_VERSION <= 20
+		int32 StoredDataOffset = AbsOffset;
+#else
+		int32 StoredDataOffset = ObjectReferences.ShadowOffset;
+#endif
 
 		if (ObjectReferences.Array)
 		{
 			check(Property->IsA<UArrayProperty>());
 
-			Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
+			if (!bIsHandover)
+			{
+				Property->CopySingleValue(StoredData + StoredDataOffset, Data + AbsOffset);
+			}
 
-			FScriptArray* StoredArray = (FScriptArray*)(StoredData + AbsOffset);
+			FScriptArray* StoredArray = bIsHandover ? nullptr : (FScriptArray*)(StoredData + StoredDataOffset);
 			FScriptArray* Array = (FScriptArray*)(Data + AbsOffset);
 
 			int32 NewMaxOffset = Array->Num() * Property->ElementSize;
 
 			bool bArrayHasUnresolved = false;
-			ResolveObjectReferences(RepLayout, ReplicatedObject, *ObjectReferences.Array, (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped, bArrayHasUnresolved);
+			ResolveObjectReferences(RepLayout, ReplicatedObject, *ObjectReferences.Array, bIsHandover ? nullptr : (uint8*)StoredArray->GetData(), (uint8*)Array->GetData(), NewMaxOffset, RepNotifies, bOutSomeObjectsWereMapped, bArrayHasUnresolved);
 			if (!bArrayHasUnresolved)
 			{
 				It.RemoveCurrent();
@@ -1532,7 +1562,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				Property->CopySingleValue(StoredData + AbsOffset, Data + AbsOffset);
+				Property->CopySingleValue(StoredData + StoredDataOffset, Data + AbsOffset);
 			}
 
 			if (ObjectReferences.bSingleProp)
@@ -1567,7 +1597,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 
 			if (Parent && Parent->Property->HasAnyPropertyFlags(CPF_RepNotify))
 			{
-				if (Parent->RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + AbsOffset, Data + AbsOffset))
+				if (Parent->RepNotifyCondition == REPNOTIFY_Always || !Property->Identical(StoredData + StoredDataOffset, Data + AbsOffset))
 				{
 					RepNotifies.AddUnique(Parent->Property);
 				}

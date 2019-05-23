@@ -1,9 +1,11 @@
 <%(TOC)%>
 # Schema
 
-SpatialOS uses [schema](https://docs.improbable.io/reference/latest/shared/concepts/schema#schema) to generate APIs specific to the components in your project. These APIs define how you can operate on entity components within SpatialOS.
+Schema is a set of definitions which represent your game's objects in SpatialOS. SpatialOS uses schema to generate APIs specific to the components in your project. You can then use these APIs in your game's [worker types]({{urlRoot}}//content/glossary#spatialos-component) so their instances can interact with [SpatialOS entity components]({{urlRoot}}/content/glossary#spatialos-component). </br>
 
-## Generating schema
+Schema is defined in `.schema` files and written in schemalang.  When you use the GDK, the schema files and their contents are generated and deleted automatically so you do not have to write or edit schema files manually. The GDK generates and deletes schema for you, when you start schema generation.
+
+#### How to generate schema
 
 To generate schema, select the **Schema** button in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes with replicated properties to generate the required schema files and then updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).
 
@@ -13,16 +15,18 @@ _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_
 
 As the GDK automatically generates all the schema you need, you do not have to write or edit schema manually when using the GDK.
 
-### When to generate schema
+#### When to generate schema
 
 You must generate schema when you add or change any [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) that you want to deploy to SpatialOS.
 
 The GDK only generates schema for classes currently loaded into memory. This means if your project uses [sublevels](<https://docs.unrealengine.com/en-us/Engine/Levels/LevelsWindow>), you’ll need to load them in addition to your map, before generating schema.
 
-## Deleting schema
+#### Schema deletion 
 
 When you generate schema, the GDK verifies that any classes referenced in the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase) still exist. If you delete a class, the GDK removes it from the SchemaDatabase the next time you generate schema. 
-# Schema and source control 
+
+
+## Schema and source control 
 
 ### Checking out the `SchemaDatabase`
 

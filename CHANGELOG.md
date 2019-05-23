@@ -4,9 +4,50 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2019-xx-xx
+## [Unreleased-`0.5.0`] - 2019-xx-xx
 
 ### New Known Issues:
+
+### Features:
+- Added SpatialMetricsDisplay class, which allows you to view UnrealWorker stats as an overlay on the client.
+
+### Bug fixes:
+- BeginPlay is not called with authority when checking out entities from Spatial.
+- Launching SpatialOS would fail if there was a space in the full directory path.
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- Reliable RPC checking no longer breaks compatibility between development and shipping builds.
+- Fixed an issue with schema name collisions.
+- Running Schema (Full Scan) now clears generated schema files first.
+
+### External contributors:
+
+In addition to all of the updates from Improbable, this release includes x improvements submitted by the incredible community of SpatialOS developers on GitHub! Thanks to these contributors:
+
+* 
+
+## [`0.4.2`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.2) - 2019-05-20
+
+### New Known Issues:
+- `BeginPlay()` is not called on all `WorldSettings` actors [#937](https://github.com/spatialos/UnrealGDK/issues/937)
+- Replicated properties within `DEBUG` or `WITH_EDITORONLY_DATA` macros are not supported [#939](https://github.com/spatialos/UnrealGDK/issues/939)
+- Client connections will be closed by the `ServerWorker` when using Blueprint or C++ breakpoints during play-in-editor sessions [#940](https://github.com/spatialos/UnrealGDK/issues/940)
+- Clients that connect after a Startup Actor (with `bNetLoadOnClient = true`) will not delete the Actor [#941](https://github.com/spatialos/UnrealGDK/issues/941)
+- Generating schema while asset manager is asynchronously loading causes editor to crash [#944](https://github.com/spatialos/UnrealGDK/issues/944)
+
+### Bug fixes:
+- Adjusted dispatcher tickrate to reduce latency
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- Launching SpatialOS would fail if there was a space in the full directory path.
+- Fixed an issue with schema name collisions.
+- Fixed an issue where schema generation was not respecting "Directories to never cook".
+- Fixed an issue causing the editor to crash during schema generation if the database is readonly.
+
+## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
+
+### Bug fixes:
+- Fixed an issue where schema components were sometimes generated with incorrect component IDs.
+
+## [`0.4.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.0) - 2019-04-30
 
 ### Features:
 - The GDK now uses SpatialOS `13.6.2`.
@@ -27,12 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed being unable to launch SpatialOS if project path had spaces in it.
 - Editor no longer crashes when setting LogSpatialSender to Verbose.
 - Server-workers quickly restarted in the editor will connect to runtime correctly.
-
-### External contributors:
-
-In addition to all of the updates from Improbable, this release includes x improvements submitted by the incredible community of SpatialOS developers on GitHub! Thanks to these contributors:
-
-* 
+- Game no longer crashes when connecting to Spatial with async loading thread suspended.
 
 ## [`0.3.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.3.0) - 2019-04-04
 

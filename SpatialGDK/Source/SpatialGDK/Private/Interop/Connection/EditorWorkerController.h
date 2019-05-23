@@ -8,7 +8,7 @@
 #include "Settings/LevelEditorPlaySettings.h"
 #include "SpatialGDKEditorToolbar.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 struct EditorWorkerController
@@ -96,6 +96,6 @@ struct EditorWorkerController
 	FDelegateHandle SpatialShutdownHandle;
 };
 
-} // namespace improbable
+} // namespace SpatialGDK
 
 #endif

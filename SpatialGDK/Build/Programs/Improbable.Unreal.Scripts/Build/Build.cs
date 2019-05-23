@@ -141,7 +141,6 @@ exit /b !ERRORLEVEL!
                     "-serverconfig=" + configuration,
                     "-utf8output",
                     "-cook",
-                    "-iterate",
                     "-stage",
                     "-package",
                     "-unversioned",
@@ -164,6 +163,10 @@ exit /b !ERRORLEVEL!
                 // TO-DO: Remove this once LAUNCH-341 has been completed, and the _ is no longer necessary.
                 var oldExe = Path.Combine(windowsNoEditorPath, $"{gameName}.exe");
                 var renamedExe = Path.Combine(windowsNoEditorPath, $"_{gameName}.exe");
+                if (File.Exists(renamedExe))
+                {
+                    File.Delete(renamedExe);
+                }
                 if (File.Exists(oldExe))
                 {
                     File.Move(oldExe, renamedExe);
@@ -198,7 +201,6 @@ exit /b !ERRORLEVEL!
                     "-utf8output",
                     "-compile",
                     "-cook",
-                    "-iterate",
                     "-stage",
                     "-package",
                     "-unversioned",
@@ -256,7 +258,6 @@ exit /b !ERRORLEVEL!
                     "-serverconfig=" + configuration,
                     "-utf8output",
                     "-cook",
-                    "-iterate",
                     "-stage",
                     "-package",
                     "-unversioned",

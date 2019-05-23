@@ -66,6 +66,8 @@ public:
 
 	virtual void OnOwnerUpdated(AActor* Actor);
 
+	void OnConnectedToSpatialOS();
+
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
 #endif
@@ -124,7 +126,6 @@ public:
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
-#if !UE_BUILD_SHIPPING
 	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
 	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
 	void OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType);
@@ -142,7 +143,6 @@ public:
 	using FRPCTypeToReliableRPCIdMap = TMap<ESchemaComponentType, FReliableRPCId>;
 	// Per actor, maps from RPC type to the reliable RPC index used to detect if reliable RPCs go out of order.
 	TMap<TWeakObjectPtr<AActor>, FRPCTypeToReliableRPCIdMap> ReliableRPCIdMap;
-#endif // !UE_BUILD_SHIPPING
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
@@ -161,8 +161,6 @@ private:
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
-	UFUNCTION()
-	void OnConnectedToSpatialOS();
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
