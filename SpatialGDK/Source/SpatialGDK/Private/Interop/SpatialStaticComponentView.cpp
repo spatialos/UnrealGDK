@@ -5,6 +5,7 @@
 #include "Schema/Component.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
+#include "Schema/RPCPayload.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
 
@@ -59,10 +60,12 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Heartbeat>>(Op.data);
 		break;
+	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::RPCsOnEntityCreation>>(Op.data);
+		break;
 	default:
 		return;
 	}
-
 	EntityComponentMap.FindOrAdd(Op.entity_id).FindOrAdd(Op.data.component_id) = std::move(Data);
 }
 

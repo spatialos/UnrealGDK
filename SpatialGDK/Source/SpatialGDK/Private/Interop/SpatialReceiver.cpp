@@ -8,8 +8,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
-#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialActorChannel.h"
+#include "EngineClasses/SpatialFastArrayNetSerialize.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -18,12 +18,13 @@
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
 #include "Schema/DynamicComponent.h"
+#include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "Utils/ComponentReader.h"
-#include "Utils/RepLayoutUtils.h"
 #include "Utils/ErrorCodeRemapping.h"
+#include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
@@ -114,6 +115,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
+	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -231,6 +233,21 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		return;
 	}
 
+	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
+		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		check(!NetDriver->IsServer());
+		if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
+		{
+			if (QueuedRPCs->HasRPCPayloadData())
+			{
+				ProcessQueuedActorRPCsOnEntityCreation(Actor, *QueuedRPCs);
+			}
+
+			Sender->SendRequestToClearRPCsOnEntityCreation(Op.entity_id);
+		}
+	}
+
 	if (APlayerController* PlayerController = Cast<APlayerController>(Actor))
 	{
 		HandlePlayerLifecycleAuthority(Op, PlayerController);
@@ -299,8 +316,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	{
 		// Check to see if we became authoritative over the UnrealClientRPCEndpoint component over this entity
 		// If we did, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-		const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
-
 		if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
 			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
@@ -825,6 +840,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::SINGLETON_COMPONENT_ID:
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
+	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -942,25 +958,22 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 	{
 		Schema_Object* EventData = Schema_IndexObject(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID, i);
 
-		uint32 Offset = Schema_GetUint32(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
-		uint32 Index = Schema_GetUint32(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
-		TArray<uint8> PayloadData = GetBytesFromSchema(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
-		int64 CountBits = PayloadData.Num() * 8;
+		RPCPayload Payload(EventData);
 
-		FUnrealObjectRef ObjectRef(EntityId, Offset);
+		FUnrealObjectRef ObjectRef(EntityId, Payload.Offset);
 
 		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 
 		if (!TargetObject)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Index);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
 			continue;
 		}
 
 		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-		UFunction* Function = ClassInfo.RPCs[Index];
-		ApplyRPC(TargetObject, Function, PayloadData, CountBits, FString());
+		UFunction* Function = ClassInfo.RPCs[Payload.Index];
+		ApplyRPC(TargetObject, Function, Payload, FString());
 	}
 }
 
@@ -968,7 +981,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 {
 	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
 
-	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == 1)
+	if (Op.request.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID && CommandIndex == SpatialConstants::PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID)
 	{
 		Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
 
@@ -977,6 +990,11 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		// 2. The attribute of the specific worker that sent the request
 		// We want to give authority to the specific worker, so we grab the second element from the attribute set.
 		NetDriver->PlayerSpawner->ReceivePlayerSpawnRequest(Payload, Op.caller_attribute_set.attributes[1], Op.request_id);
+		return;
+	}
+	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
+	{
+		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
 		return;
 	}
 #if WITH_EDITOR
@@ -993,10 +1011,9 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
 
-	uint32 Offset = 0;
-	Offset = Schema_GetUint32(RequestObject, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID);
+	RPCPayload Payload(RequestObject);
 
-	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get();
+	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Payload.Offset)).Get();
 	if (TargetObject == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object found for EntityId %d"), Op.entity_id);
@@ -1006,13 +1023,12 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
-	uint32 Index = Schema_GetUint32(RequestObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID);
-
-	UFunction* Function = Info.RPCs[Index];
+	UFunction* Function = Info.RPCs[Payload.Index];
 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
-	ReceiveRPCCommandRequest(Op.request, TargetObject, Function, UTF8_TO_TCHAR(Op.caller_worker_id));
+
+	ApplyRPC(TargetObject, Function, Payload, UTF8_TO_TCHAR(Op.caller_worker_id));
 
 	Sender->SendCommandResponse(Op.request_id, Response);
 }
@@ -1104,34 +1120,14 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 }
 
-void USpatialReceiver::ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, const TArray<UFunction*>& RPCArray)
-{
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
-
-	for (Schema_FieldId EventIndex = 1; (int)EventIndex <= RPCArray.Num(); EventIndex++)
-	{
-		UFunction* Function = RPCArray[EventIndex - 1];
-		for (uint32 i = 0; i < Schema_GetObjectCount(EventsObject, EventIndex); i++)
-		{
-			Schema_Object* EventData = Schema_IndexObject(EventsObject, EventIndex, i);
-
-			TArray<uint8> PayloadData = GetBytesFromSchema(EventData, 1);
-			// A bit hacky, we should probably include the number of bits with the data instead.
-			int64 CountBits = PayloadData.Num() * 8;
-
-			ApplyRPC(TargetObject, Function, PayloadData, CountBits, FString());
-		}
-	}
-}
-
-void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArray<uint8>& PayloadData, int64 CountBits, const FString& SenderWorkerId)
+void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCPayload& Payload, const FString& SenderWorkerId)
 {
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
 
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 
-	FSpatialNetBitReader PayloadReader(PackageMap, PayloadData.GetData(), CountBits, UnresolvedRefs);
+	FSpatialNetBitReader PayloadReader(PackageMap, Payload.PayloadData.GetData(), Payload.CountDataBits(), UnresolvedRefs);
 
 	int ReliableRPCId = 0;
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
@@ -1165,7 +1161,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, TArr
 	}
 	else
 	{
-		QueueIncomingRPC(UnresolvedRefs, TargetObject, Function, PayloadData, CountBits, SenderWorkerId);
+		QueueIncomingRPC(UnresolvedRefs, TargetObject, Function, Payload, SenderWorkerId);
 	}
 
 	// Destroy the parameters.
@@ -1307,6 +1303,17 @@ void USpatialReceiver::ProcessQueuedResolvedObjects()
 	ResolvedObjectQueue.Empty();
 }
 
+void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPCsOnEntityCreation& QueuedRPCs)
+{
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+
+	for (auto& RPC : QueuedRPCs.RPCs)
+	{
+		UFunction* Function = Info.RPCs[RPC.Index];
+		ApplyRPC(Actor, Function, RPC, FString());
+	}
+}
+
 void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
 {
 	if (bInCriticalSection)
@@ -1341,9 +1348,9 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
-void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits, const FString& SenderWorkerId)
+void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, RPCPayload& Payload, const FString& SenderWorkerId)
 {
-	TSharedPtr<FPendingIncomingRPC> IncomingRPC = MakeShared<FPendingIncomingRPC>(UnresolvedRefs, TargetObject, Function, PayloadData, CountBits);
+	TSharedPtr<FPendingIncomingRPC> IncomingRPC = MakeShared<FPendingIncomingRPC>(UnresolvedRefs, TargetObject, Function, Payload);
 	IncomingRPC->SenderWorkerId = SenderWorkerId;
 
 	for (const FUnrealObjectRef& UnresolvedRef : UnresolvedRefs)
@@ -1442,7 +1449,7 @@ void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const FUnrealObjectR
 		if (IncomingRPC->UnresolvedRefs.Num() == 0)
 		{
 			FString SenderWorkerId = IncomingRPC->SenderWorkerId;
-			ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->PayloadData, IncomingRPC->CountBits, SenderWorkerId);
+			ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->Payload, SenderWorkerId);
 		}
 	}
 
@@ -1589,15 +1596,4 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 			It.RemoveCurrent();
 		}
 	}
-}
-
-void USpatialReceiver::ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, UObject* TargetObject, UFunction* Function, const FString& SenderWorkerId)
-{
-	Schema_Object* RequestObject = Schema_GetCommandRequestObject(CommandRequest.schema_type);
-
-	TArray<uint8> PayloadData = GetBytesFromSchema(RequestObject, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID);
-	// A bit hacky, we should probably include the number of bits with the data instead.
-	int64 CountBits = PayloadData.Num() * 8;
-
-	ApplyRPC(TargetObject, Function, PayloadData, CountBits, SenderWorkerId);
 }

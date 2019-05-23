@@ -23,6 +23,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
+#include "Utils/EntityPool.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
@@ -216,7 +217,7 @@ void UGlobalStateManager::ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate)
 	// For now, this will only be called on non-authoritative workers.
 	if (bCanBeginPlay)
 	{
-		TriggerBeginPlay();
+		TryTriggerBeginPlay();
 	}
 }
 
@@ -462,6 +463,20 @@ void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
+void UGlobalStateManager::TryTriggerBeginPlay()
+{
+	if (bCanBeginPlay && NetDriver->EntityPool != nullptr && NetDriver->EntityPool->IsReady())
+	{
+		TriggerBeginPlay();
+
+		// Start accepting players only AFTER we've triggered BeginPlay
+		if (NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
+		{
+			SetAcceptingPlayers(true);
+		}
+	}
+}
+
 void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM has changed. This worker %s authority."),  bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
@@ -475,11 +490,15 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 		{
 			SetCanBeginPlay(true);
 			BecomeAuthoritativeOverAllActors();
-			TriggerBeginPlay();
+			TryTriggerBeginPlay();
 		}
-
-		// Start accepting players only AFTER we've triggered BeginPlay
-		SetAcceptingPlayers(true);
+		else
+		{
+			// This handles the case when a server shuts down without deleting entities,
+			// and a new server connects, so we don't want to call BeginPlay with authority
+			// again, but need to let the clients know they can connect.
+			SetAcceptingPlayers(true);
+		}
 	}
 }
 
