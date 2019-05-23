@@ -39,7 +39,7 @@ FString USpatialGDKEditorCloudLauncherSettings::GetProjectNameFromSpatial() cons
 		return JsonObject->GetStringField("name");
 	}
 
-	return TEXT("");
+	return FString();
 }
 
 bool USpatialGDKEditorCloudLauncherSettings::IsAssemblyNameValid(const FString& Name)
