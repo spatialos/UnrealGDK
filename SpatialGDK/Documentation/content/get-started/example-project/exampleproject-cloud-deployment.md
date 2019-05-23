@@ -1,5 +1,6 @@
 <%(TOC)%>
-# Step 3: Launch a cloud deployment
+# The GDK Example Project 
+# 3: Launch a cloud deployment
 
 Before launching a cloud deployment, as well as generating schema and a snapshot, you also need to:
 
@@ -136,8 +137,9 @@ spatial cloud launch --snapshot=snapshots\default.snapshot exampleprojectassembl
 ```
 
 When your deployment has launched, SpatialOS automatically opens the Console in your browser.
-
-#### Next: [Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
+</br>
+</br>
+**> Next:** [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
 <br/>--------<br/>
 
 _2019-05-21 Page added with full review_

@@ -58,9 +58,19 @@ You have now built Unreal Engine 4 with cross-compilation for Linux.
 
 > Once you've built Unreal Engine, *don't move it into another directory*. That will break the integration.
 
-#### Next: [**Set up the Example Project**]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)  Or  [**Set up the SpatialOS GDK Starter Template**]({{urlRoot}}/content/get-started/gdk-template)  
+</br>
+</br>
+**> Next:** 3. Set up a project...</br>
 
+Choose either:
+
+* [Set up the Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) </br>
+The Example Project is a session-based FPS game. It gives an overview of the GDK and using SpatialOS, including deploying your game to SpatialOS in the cloud and on your development machine -  useful for testing during development.
+* [Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template) </br>
+Use as a base for creating your own project running on SpatialOS.
+
+<br/>
 <br/>
 
 ------
-_2019-03-27 Page updated with limited editorial review_
+_2019-05-23 Page updated with limited editorial review_

@@ -25,7 +25,7 @@ Project, you can learn more about the GDK’s functionality with:
 <img src="{{assetRoot}}assets/example-project/example-project-headline.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
 
 
-* **The Multiple deployments for session-based games tutorial**: upload a session-based FPS example game to the cloud.
+* **The guide to multiple deployments for session-based games**: upload a session-based FPS example game to the cloud.
 * **The Multiserver Shooter tutorial**: implement shooting across the boundaries of different servers simulating one game world.
 * **The Porting guide**: porting your existing UE project to SpatialOS.
 

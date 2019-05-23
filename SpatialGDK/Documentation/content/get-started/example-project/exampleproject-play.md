@@ -1,4 +1,5 @@
-# Step 4 : Play the game
+# The GDK Example Project 
+# 4: Play the game
 
 ![img]({{assetRoot}}assets/tutorial/console.png)<br/>
 _Image: The SpatialOS Console_
@@ -42,12 +43,16 @@ _Image: The SpatialOS Console Share Application screen_
 
 You've sucessfully set up and launched the Example Project using the Deployment Manager. You are now ready to start developing your own games with SpatialOS. 
 
-### Next steps: 
+</br>
+</br>
+**Next steps:**
 
-If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
+* Do more with the Example Project: follow the guide to setting up [multiple deployments for session-based games]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro) using the Example Project. 
 
-If you want to start a project from scratch, follow our [Template guide]({{urlRoot}}/content/get-started/gdk-template) to set up a blank project using the GDK. 
+* If you have an existing Unreal multiplayer project, follow the detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
+
+* If you want to start a project from scratch, follow the set up guide for the [Starter Template]({{urlRoot}}/content/get-started/gdk-template) to set up a blank project using the GDK. 
 
 --------<br/>
 
-_2019-05-21 Page added with full review_
+_2019-05-23 Page added with full review_
