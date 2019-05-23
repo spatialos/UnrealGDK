@@ -483,6 +483,9 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 		}
 		else
 		{
+			// This handles the case when a server shuts down without deleting entities,
+			// and a new server connects, so we don't want to call BeginPlay with authority
+			// again, but need to let the clients know they can connect.
 			SetAcceptingPlayers(true);
 		}
 	}
