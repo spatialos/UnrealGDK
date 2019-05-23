@@ -2,21 +2,23 @@
     - [Welcome]({{urlRoot}}/index)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
-        - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
-        - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-        - Set up a project
-            - [The GDK Example project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
-                - [Step 1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
-                - [Step 2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
-                - [Step 3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment)
-                - [Step 4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
-            - [The GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
+        - [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
+        - [2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+        - 3 - Set up a project
+            - The Example Project
+                - [Introduction]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
+                - [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
+                - [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
+                - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment)
+                - [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
+            - The Starter Template
+                - [Create a project]({{urlRoot}}/content/get-started/gdk-template)
     - Technical overview
         - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
         - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
         - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
-    - Tutorials
-        - Multiple deployments for session-based games
+    - Tutorials and guides
+        - Guide to multiple deployments for session-based games
             - [Introduction]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro)
             - [Step 1: Clone the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
             - [Step 2: Generate a development authentication token]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication)

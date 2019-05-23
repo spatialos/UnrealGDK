@@ -1,5 +1,6 @@
 <%(TOC)%>
-# Step 1: Set up
+# The GDK Example Project 
+# 1: Set up
 
 To run the GDK and the Example Project, you need to:
 
@@ -72,7 +73,7 @@ To use the Example project, you must build the GDK for Unreal module dependencie
    ![img]({{assetRoot}}assets/example-project/example-project-editor.png)<br/>
    _Image: The Example Project in the Unreal Editor_<br/><br/>
 
-#### **Next:** [Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 
+**> Next:** [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 
 
 </br>
 

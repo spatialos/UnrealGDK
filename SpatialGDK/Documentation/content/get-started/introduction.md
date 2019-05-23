@@ -1,14 +1,28 @@
+
 # Get started: Introduction
 
-Get started with the SpatialOS GDK for Unreal by building the SpatialOS Unreal Engine Fork and setting up the GDK Starter Template which you can use as a base for your own project running on SpatialOS.
+Get started with the SpatialOS GDK for Unreal by building the GDK's Unreal Engine Fork and setting up a project. You can set up either or both of the following projects: </br>
+
+* **The Example Project** is a session-based FPS game. It gives an overview of the GDK and using SpatialOS, including deploying your game to SpatialOS in the cloud and on your development machine -  useful for testing during development.
+
+* **The Starter Template** is a template project you can use as a base to create your own new project running on SpatialOS.
+<br/>
+<br/>
 
 <img src="{{assetRoot}}assets/screen-grabs/homepage-template-project.png" style=" float: right; margin: 10px; display: block; width: 60%; padding: 20px 20x"/>
 
-After you set up the SpatialOS GDK Starter Template, you can learn more about the GDK’s functionality with:
+After you set up with the Example Project or Starter Template, you can check out the following tutorials and guides:
 
-* **The Example Project tutorial**:  Upload a session-based FPS example game to the cloud.
-* **The Multiserver Shooter tutorial**: Implement shooting across the boundaries of different servers simulating one game world.
-* **The Porting guide**: Porting your existing UE project to SpatialOS.
+* **Guide to multiple deployments for session-based games**: </br>
+Use the Deployment Manager to launch multiple deployments of the Example Project in the cloud - useful for time-limited match-based games, such as battle royales.
+</br>
+</br>
+
+* **The Multiserver Shooter tutorial**: </br>
+Learn more about the the GDK's functionality by implement shooting across the boundaries of different servers simulating one game world. In this tutorial, you will set up a new game; the Mutliserver Shooter Game.
+</br></br>
+* **The Porting guide**: <br/>
+Port your existing UE project to SpatialOS.
 
 <br/>
 
@@ -27,9 +41,11 @@ Visit the **feedback** section in our [forums](https://forums.improbable.io/) an
 **GitHub issues**</br>
 Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issues).
 
-#### Next: [Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)
+<br/>
+<br/>
+**> Next: [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)**
 
 <br/>
 
 ------
-_2019-04-30 Page updated_
+_2019-05-23 Page updated_

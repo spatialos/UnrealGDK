@@ -1,4 +1,5 @@
-# The GDK Example project 
+# Get started: 3 - Set up a project 
+# The GDK Example Project 
 
 This guide takes you through setting up the [Example project](https://github.com/spatialos/UnrealGDKExampleProject); you will launch a single-server local deployment to test the project on your development machine, and you will launch a single-server deployment in the cloud to test and share the project. 
 
@@ -9,14 +10,18 @@ Before starting this tutorial you need to have completed the following guides:
 - [Get started: 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
 - [Get started: 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 
-#### Next: [Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
-
+</br>
+**> Next:** [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
+</br>
+</br>
 ![img]({{assetRoot}}assets/example-project/example-project-headline.png)
 
 _Image: Gameplay screenshot of the Example project_<br/>
 
+
 </br>
 
---------<br/>
+--------
+<br/>
 
 _2019-05-21 Page added with full review_

@@ -3,12 +3,14 @@
 
 To start using the GDK for Unreal, you need to ensure you have the correct software installed and that your machine is capable of running Unreal Engine. 
 
+</br>
 ## Sign up for a SpatialOS account, or make sure you are logged in
 
 If you have already signed up, make sure you are logged into [Improbable.io](https://improbable.io). If you are logged in, you should see your picture in the top right of this page. If you are not logged in, select __Sign in__ at the top of this page and follow the instructions.
 
 If you have not signed up before, you can sign up [here](<https://improbable.io/get-spatialos>).
 
+</br>
 ## Set up your machine
 
 ### Step 1: Hardware
@@ -48,9 +50,11 @@ To build the GDK for Unreal you need the following software installed on your ma
     - **Desktop development with C++**<br>
     - **Game development with C++**, including the optional **Unreal Engine installer** component.
 
-#### Next: [Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork.md)
+</br>
+</br>
+**> Next:** [2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork.md)
 
 <br/>
 
 ------	
-_2019-04-16 Page updated with limited editorial review_
+_2019-05-23 Page updated with limited editorial review_
