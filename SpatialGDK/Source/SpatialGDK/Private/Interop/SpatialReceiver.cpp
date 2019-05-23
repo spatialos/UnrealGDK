@@ -1015,14 +1015,14 @@ void USpatialReceiver::FlushRetryRPCs()
 
 void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 {
-	TSharedRef<FPendingRPCParams>* ReliableRPCPtr = PendingReliableRPCs.Find(Op.request_id);
+	TSharedRef<FReliableRPCForRetry>* ReliableRPCPtr = PendingReliableRPCs.Find(Op.request_id);
 	if (ReliableRPCPtr == nullptr)
 	{
-		// We received a response for an unreliable RPC, ignore.
+		// We received a response for some other command, ignore.
 		return;
 	}
 
-	TSharedRef<FPendingRPCParams> ReliableRPC = *ReliableRPCPtr;
+	TSharedRef<FReliableRPCForRetry> ReliableRPC = *ReliableRPCPtr;
 	PendingReliableRPCs.Remove(Op.request_id);
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
@@ -1220,9 +1220,9 @@ void USpatialReceiver::AddPendingActorRequest(Worker_RequestId RequestId, USpati
 	PendingActorRequests.Add(RequestId, Channel);
 }
 
-void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<FPendingRPCParams> Params)
+void USpatialReceiver::AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<FReliableRPCForRetry> ReliableRPC)
 {
-	PendingReliableRPCs.Add(RequestId, Params);
+	PendingReliableRPCs.Add(RequestId, ReliableRPC);
 }
 
 void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate)
