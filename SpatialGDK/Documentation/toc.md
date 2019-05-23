@@ -5,13 +5,13 @@
         - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
         - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
         - 3: Set up a project
-            - The GDK Example Project
+            - The Example Project
                 - [Introduction]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
                 - [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
                 - [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
                 - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment)
                 - [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
-            - The GDK Starter Template
+            - The Starter Template
                 - [Create a project]({{urlRoot}}/content/get-started/gdk-template)
     - Technical overview
         - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)

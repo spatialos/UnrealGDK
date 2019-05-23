@@ -66,7 +66,7 @@ Choose either:
 
 * [Set up the Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) </br>
 The Example Project is a session-based FPS game. It gives an overview of the GDK and using SpatialOS, including deploying your game to SpatialOS in the cloud and on your development machine -  useful for testing during development.
-* [Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template) </br>
+* [Set up the Starter Template]({{urlRoot}}/content/get-started/gdk-template) </br>
 Use as a base for creating your own project running on SpatialOS.
 
 <br/>
