@@ -70,8 +70,8 @@ public:
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
 
-	void SendClearRPCsOnEntityCreationRequest(Worker_EntityId EntityId);
-	void SendRPCsOnEntityCreationComponentUpdate(Worker_EntityId EntityId);
+	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
+	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 
 	void EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params);
 	void FlushRetryRPCs();

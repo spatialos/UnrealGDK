@@ -453,7 +453,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 			{
 				// TODO: UNR-1437 - Add Support for Multicast RPCs on Entity Creation
-				UE_LOG(LogSpatialSender, Warning, TEXT("Multicast RPC on Entity Creation is not supported"));
+				UE_LOG(LogSpatialSender, Warning, TEXT("NetMulticast RPC %s triggered on Object %s too close to initial creation."), *Params->Function->GetName(), *TargetObject->GetName());
 			}
 			check(NetDriver->IsServer());
 			check(Params->Function->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetMulticast));
@@ -557,7 +557,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
 			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC component update but don't have authority! Update will not be sent. Entity: %lld"), EntityId);
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
 				return;
 			}
 
@@ -607,14 +607,15 @@ void USpatialSender::SendDeleteEntityRequest(Worker_EntityId EntityId)
 	Connection->SendDeleteEntityRequest(EntityId);
 }
 
-void USpatialSender::SendClearRPCsOnEntityCreationRequest(Worker_EntityId EntityId)
+void USpatialSender::SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId)
 {
 	Worker_CommandRequest CommandRequest = RPCsOnEntityCreation::CreateClearFieldsCommandRequest();
 	NetDriver->Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION);
 }
 
-void USpatialSender::SendRPCsOnEntityCreationComponentUpdate(Worker_EntityId EntityId)
+void USpatialSender::ClearRPCsOnEntityCreation(Worker_EntityId EntityId)
 {
+	check(NetDriver->IsServer());
 	Worker_ComponentUpdate Update = RPCsOnEntityCreation::CreateClearFieldsUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }

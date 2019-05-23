@@ -16,9 +16,6 @@ struct RPCPayload
 {
 	RPCPayload() = delete;
 
-	RPCPayload(uint32 InOffset, uint32 InIndex, const TArray<uint8>& Data) : Offset(InOffset), Index(InIndex), PayloadData(Data)
-	{}
-
 	RPCPayload(uint32 InOffset, uint32 InIndex, TArray<uint8>&& Data) : Offset(InOffset), Index(InIndex), PayloadData(MoveTemp(Data))
 	{}
 

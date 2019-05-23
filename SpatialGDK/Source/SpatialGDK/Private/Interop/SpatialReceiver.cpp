@@ -235,7 +235,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
 		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		ensure(!NetDriver->IsServer());
+		check(!NetDriver->IsServer());
 		if (RPCsOnEntityCreation* QueuedRPCs = StaticComponentView->GetComponentData<RPCsOnEntityCreation>(Op.entity_id))
 		{
 			if (QueuedRPCs->HasRPCPayloadData())
@@ -243,7 +243,7 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				ProcessQueuedActorRPCsOnEntityCreation(Actor, *QueuedRPCs);
 			}
 
-			Sender->SendClearRPCsOnEntityCreationRequest(Op.entity_id);
+			Sender->SendRequestToClearRPCsOnEntityCreation(Op.entity_id);
 		}
 	}
 
@@ -990,7 +990,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	}
 	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
-		Sender->SendRPCsOnEntityCreationComponentUpdate(Op.entity_id);
+		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
 		return;
 	}
 #if WITH_EDITOR
