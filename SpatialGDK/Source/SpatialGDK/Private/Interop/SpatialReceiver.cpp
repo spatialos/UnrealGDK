@@ -1291,7 +1291,7 @@ AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Found incorrect number (%d) of singleton actors (%s)"),
+		UE_LOG(LogSpatialReceiver, Error, TEXT("Found incorrect number (%d) of singleton actors (%s)"),
 			FoundActors.Num(), *SingletonClass->GetName());
 	}
 
