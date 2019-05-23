@@ -37,20 +37,23 @@ struct FActorSchemaData
 	TMap<uint32, FActorSpecificSubobjectSchemaData> SubobjectData;
 };
 
+USTRUCT()
+struct FDynamicSubobjectSchemaData
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(VisibleAnywhere)
+	uint32 SchemaComponents[SCHEMA_Count] = {};
+};
+
 // Schema data related to a Subobject class
 USTRUCT()
 struct FSubobjectSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
-	FSubobjectSchemaData() {}
-
-	virtual bool Serialize(FArchive& Ar)
-	{
-		Ar << DynamicSubobjectComponents;
-	}
-
-	TArray<TStaticArray<uint32, SCHEMA_Count>> DynamicSubobjectComponents;
+	UPROPERTY(VisibleAnywhere)
+	TArray<FDynamicSubobjectSchemaData> DynamicSubobjectComponents;
 };
 
 UCLASS()

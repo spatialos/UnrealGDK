@@ -321,7 +321,7 @@ void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator
 		}
 	}
 
-	Writer.WriteToFile(FString::Printf(TEXT("%slevel_streaming.schema"), *SchemaPath));
+	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels/sublevels.schema"), *SchemaPath));
 }
 
 FString GenerateIntermediateDirectory()
@@ -426,7 +426,7 @@ void TryLoadExistingSchemaDatabase()
 
 	if (SchemaDatabase != nullptr)
 	{
-		ActorClassPathToSchema = SchemaDatabase->ClassPathToSchema;
+		ActorClassPathToSchema = SchemaDatabase->ActorClassPathToSchema;
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;

@@ -89,6 +89,6 @@ public:
 
 	/** Maximum number of ActorComponents/Subobjects of the same class that can be attached to an Actor.*/
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (ConfigRestartRequired = false), DisplayName = "Maximum Dynamically Attached Subobjects Per Class")
-	bool MaxDynamicallyAttachedSubobjectsPerClass;
+	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
 };
 

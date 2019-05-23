@@ -8,6 +8,7 @@
 #include "UObject/TextProperty.h"
 
 #include "Interop/SpatialClassInfoManager.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
@@ -295,7 +296,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 	for (uint32 i = 1; i <= DynamicComponentsPerClass; i++)
 	{
-		int32 DynamicSubobjectComponents[SCHEMA_Count] = {};
+		FDynamicSubobjectSchemaData DynamicSubobjectComponents;
 
 		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 		{
@@ -334,12 +335,12 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			DynamicSubobjectComponents.SchemaComponents[SCHEMA_Handover] = ComponentId;
 		}
 
-		SubobjectSchemaData.DynamicSubobjectComponents.Add(DynamicSubobjectComponents);
+		SubobjectSchemaData.DynamicSubobjectComponents.Add(MoveTemp(DynamicSubobjectComponents));
 	}
 
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassToSchemaName[Class]));
 
-	SubobjectClassPathToSchema.Add(SubobjectClass->GetPathName(), SubobjectSchemaData);
+	SubobjectClassPathToSchema.Add(Class->GetPathName(), SubobjectSchemaData);
 }
 
 void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
@@ -443,7 +444,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 FActorSpecificSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex)
 {
 	const FActorSchemaData* const SchemaData = ActorClassPathToSchema.Find(*ActorClass->GetPathName());
-	const FActorSpecificSubobjectSchemaData* const SubobjectSchemaData = SchemaData ? SchemaData->SubobjectData.Find(MapIndex) : nullptr;
+	const FActorSpecificSubobjectSchemaData* const SubobjectSchemaData = nullptr; // SchemaData ? SchemaData->SubobjectData.Find(MapIndex) : nullptr;
 	
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
@@ -519,7 +520,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 	Writer.PrintNewLine();
 
-	GenerateActorIncludes(Writer, TypeInfo);
+	GenerateSubobjectSchemaForActorIncludes(Writer, TypeInfo);
 
 	FSubobjectMap Subobjects = GetAllSubobjects(TypeInfo);
 
@@ -535,7 +536,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 		if (SchemaGeneratedClasses.Contains(SubobjectClass))
 		{
 			bHasComponents = true;
-			SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, SubobjectOffset);
+			SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, 0);
 		}
 		else
 		{
@@ -555,7 +556,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 	}
 }
 
-void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInfo)
+void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInfo)
 {
 	TSet<UStruct*> AlreadyImported;
 
@@ -572,11 +573,8 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 		{
 			UObject* Value = PropertyTypeInfo->Object;
 
-			if (Value != nullptr && !Value->IsEditorOnly() && IsReplicatedSubobject(PropertyTypeInfo))
+			if (Value != nullptr && !Value->IsEditorOnly())
 			{
-				// Only include core types if a subobject has any RPCs
-				bImportCoreTypes |= PropertyTypeInfo->RPCs.Num() > 0;
-
 				UClass* Class = Value->GetClass();
 				if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))
 				{
@@ -585,10 +583,5 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 				}
 			}
 		}
-	}
-
-	if (bImportCoreTypes)
-	{
-		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
 	}
 }

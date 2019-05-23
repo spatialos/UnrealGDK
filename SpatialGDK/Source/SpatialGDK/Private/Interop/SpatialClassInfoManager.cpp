@@ -10,6 +10,7 @@
 #include "Runtime/Launch/Resources/Version.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
+
 #if WITH_EDITOR
 #include "Kismet/KismetSystemLibrary.h"
 #endif
@@ -155,7 +156,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	}
 
-	if (Class->IsA<AActor>())
+	if (Class->IsChildOf<AActor>())
 	{
 		FinishConstructingActorClassInfo(ClassPath, Info);
 	}
@@ -179,7 +180,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		}
 	});
 
-	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[ClassPath].SubobjectData)
+	for (auto& SubobjectClassDataPair : SchemaDatabase->ActorClassPathToSchema[ClassPath].SubobjectData)
 	{
 		int32 Offset = SubobjectClassDataPair.Key;
 		FActorSpecificSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
@@ -210,9 +211,14 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 
 void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
 {
-	for (const auto& DynamicSubobjectComponents : SchemaDatabase->SubobjectClassPathToSchema[ClassPath].DynamicSubobjectComponents)
+	for (const auto& DynamicSubobjectData : SchemaDatabase->SubobjectClassPathToSchema[ClassPath].DynamicSubobjectComponents)
 	{
-		Info.DynamicSubobjectComponents.Add(DynamicSubobjectComponents);
+		TStaticArray<uint32, SCHEMA_Count> DynamicComponentIds;
+		for (uint32 i = 0; i < SCHEMA_Count; i++)
+		{
+			DynamicComponentIds[i] = DynamicSubobjectData.SchemaComponents[i];
+			Info->DynamicSubobjectComponents.Add(MoveTemp(DynamicComponentIds));
+		}
 	}
 }
 
