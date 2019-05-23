@@ -206,7 +206,7 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 void USpatialNetDriver::OnEntityPoolReady()
 {
 	check(GlobalStateManager != nullptr);
-	GlobalStateManager->OnEntityPoolReady();
+	GlobalStateManager->TryTriggerBeginPlay();
 }
 
 void USpatialNetDriver::InitializeSpatialOutputDevice()

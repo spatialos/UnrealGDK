@@ -811,7 +811,6 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 		}
 	}
 
-	RPCPayload Payload(TargetObjectRef.Offset, EventIndex, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 	RPCPayload::WriteToSchemaObject(EventData, TargetObjectRef.Offset, EventIndex, PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
 
 	return ComponentUpdate;

@@ -51,9 +51,6 @@ public:
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void SetCanBeginPlay(bool bInCanBeginPlay);
 
-	void OnGSMReady();
-	void OnEntityPoolReady();
-
 	void TryTriggerBeginPlay();
 
 	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
