@@ -2,9 +2,9 @@
     - [Welcome]({{urlRoot}}/index)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
-        - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
-        - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-        - 3: Set up a project
+        - [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
+        - [2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+        - 3 - Set up a project
             - The Example Project
                 - [Introduction]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
                 - [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)

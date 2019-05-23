@@ -60,7 +60,7 @@ You have now built Unreal Engine 4 with cross-compilation for Linux.
 
 </br>
 </br>
-**> Next:** 3. Set up a project...</br>
+**> Next:** 3 - Set up a project...</br>
 
 Choose either:
 

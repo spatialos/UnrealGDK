@@ -43,7 +43,7 @@ Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issu
 
 <br/>
 <br/>
-**> Next: [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)**
+**> Next: [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)**
 
 <br/>
 
