@@ -33,7 +33,6 @@ struct FPendingRPCParams
 	UFunction* Function;
 	TArray<uint8> Parameters;
 	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
-
 #if !UE_BUILD_SHIPPING
 	int ReliableRPCIndex;
 #endif // !UE_BUILD_SHIPPING

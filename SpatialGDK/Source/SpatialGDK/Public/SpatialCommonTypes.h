@@ -18,5 +18,4 @@ using WriteAclMap = TMap<Worker_ComponentId, WorkerRequirementSet>;
 using FChannelObjectPair = TPair<TWeakObjectPtr<class USpatialActorChannel>, TWeakObjectPtr<UObject>>;
 struct FObjectReferences;
 using FObjectReferencesMap = TMap<int32, FObjectReferences>;
-
 using FReliableRPCMap = TMap<Worker_RequestId, TSharedRef<struct FReliableRPCForRetry>>;
