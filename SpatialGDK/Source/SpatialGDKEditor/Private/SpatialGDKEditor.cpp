@@ -12,8 +12,8 @@
 
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
-#include "SpatialGDKEditorSettings.h"
 #include "Misc/ScopedSlowTask.h"
+#include "SpatialGDKEditorSettings.h"
 #include "UObject/StrongObjectPtr.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
