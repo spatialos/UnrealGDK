@@ -35,10 +35,22 @@ struct FPendingRPCParams
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
 	TArray<uint8> Parameters;
+	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
+	int ReliableRPCIndex;
+};
+
+struct FReliableRPCForRetry
+{
+	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, TArray<uint8>&& InPayload, int InRetryIndex);
+
+	TWeakObjectPtr<UObject> TargetObject;
+	UFunction* Function;
+	Worker_ComponentId ComponentId;
+	Schema_FieldId RPCIndex;
+	TArray<uint8> Payload;
 	int Attempts; // For reliable RPCs
 
 	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
-	int ReliableRPCIndex;
 };
 
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
@@ -73,8 +85,10 @@ public:
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 
-	void EnqueueRetryRPC(TSharedRef<FPendingRPCParams> Params);
+	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
 	void FlushRetryRPCs();
+	void RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
+
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
 	void ResolveOutgoingRPCs(UObject* Object);
 
@@ -94,7 +108,9 @@ private:
 
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const;
-	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int ReliableRPCIndex);
+
+	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, TArray<uint8>& OutPayload, int ReliableRPCIndex);
+	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
 	Worker_ComponentUpdate CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
@@ -131,7 +147,7 @@ private:
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
 
-	TArray<TSharedRef<FPendingRPCParams>> RetryRPCs;
+	TArray<TSharedRef<FReliableRPCForRetry>> RetryRPCs;
 
 	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;
 };
