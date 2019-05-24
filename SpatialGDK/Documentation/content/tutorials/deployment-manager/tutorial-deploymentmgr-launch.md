@@ -15,7 +15,7 @@ Where:
 
 * `<launch config path>` is the file path to the` one_worker_test.json` file in the Example project
 * `<snapshot path>` is the path to the snapshot file you generated in the [Example Project set up guide]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
-*  `<assembly name>` is a name that you choose for your Deployment Manager assembly. This must be a different name to the assembly you created when you uploaded your worker assembly in [section 3. Build and upload your workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#tutorial-deploymentmgr-workers#step-2-upload-your-worker-assemblies).
+*  `<assembly name>` is a name that you choose for your Deployment Manager assembly. This must be a different name to the assembly you created when you uploaded your worker assembly in [Step 3: Build and upload your workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#tutorial-deploymentmgr-workers#step-2-upload-your-worker-assemblies).
 * `<deployment name>` is a name that you choose for your deployment. 
 
 For example: 
