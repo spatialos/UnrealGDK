@@ -528,8 +528,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: %d)"),
-					EntityId, CommandRequest.component_id, *Params->Function->GetName(), 1);
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
+					EntityId, CommandRequest.component_id, *Params->Function->GetName());
 				Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Params->Function, ComponentId, RPCInfo->Index, MoveTemp(Payload), Params->RetryIndex));
 			}
 			else
