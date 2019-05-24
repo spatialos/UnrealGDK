@@ -2,7 +2,7 @@
 ## Step 6: Play your game
 
 1.  Select **session_0** from the deployment list. This opens the deployment overview screen.
-2. select **LAUNCH** on the left of the page.<br/></br>
+1. Select **LAUNCH** on the left of the page.<br/></br>
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-consoleoverview.png)
 _Image: The SpatialOS Console with the game client **LAUNCH** button highlighted._<br/></br>
 3. select the **Launch** button that appears in the center of the page to open the [SpatialOS Launcher](https://docs.improbable.io/reference/13.7/shared/operate/launcher). The Launcher automatically downloads a game client for this deployment and runs it on your local machine. </br></br>
