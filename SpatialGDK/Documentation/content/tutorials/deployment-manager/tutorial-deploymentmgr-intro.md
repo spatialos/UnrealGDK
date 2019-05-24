@@ -9,7 +9,7 @@ Multiple deployments of your game are useful for time-limited match-based games 
 **Notes:** 
 
 * You can only use the Deployment Manager in the cloud; it isn't available for local deployments.
-* Before starting this tutorial you need to have completed the [Example Project set up guide.]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) 
+* Before starting this tutorial you need to complete the [Example Project set up guide.]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) 
 </br>
 
 **> Next:** [1: Clone the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
