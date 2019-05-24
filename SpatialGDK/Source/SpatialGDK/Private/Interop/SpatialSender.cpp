@@ -194,8 +194,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	if (Actor->IsA<APlayerController>())
 	{
 		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
-		ComponentDatas.Add(improbable::ServerPing().CreateServerPingData());
-		ComponentDatas.Add(improbable::ClientPong().CreateClientPongData());
+		ComponentDatas.Add(ServerPing().CreateServerPingData());
+		ComponentDatas.Add(ClientPong().CreateClientPongData());
 	}
 
 	FUnresolvedObjectsMap UnresolvedObjectsMap;

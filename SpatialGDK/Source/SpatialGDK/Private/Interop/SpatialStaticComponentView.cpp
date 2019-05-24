@@ -61,10 +61,10 @@ void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op
 		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::Heartbeat>>(Op.data);
 		break;
 	case SpatialConstants::SERVER_PING_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::ServerPing>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ServerPing>>(Op.data);
 		break;
 	case SpatialConstants::CLIENT_PONG_COMPONENT_ID:
-		Data = MakeUnique<improbable::ComponentStorage<improbable::ClientPong>>(Op.data);
+		Data = MakeUnique<SpatialGDK::ComponentStorage<SpatialGDK::ClientPong>>(Op.data);
 		break;
 	default:
 		return;
