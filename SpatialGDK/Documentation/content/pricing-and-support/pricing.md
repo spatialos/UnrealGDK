@@ -7,4 +7,4 @@ SpatialOS has a free tier and a paid tier, and you can use the GDK on either of 
 For more details, including information about what the free tier includes, an in-depth explanation of how we calculate prices, and examples of how much different types of games would cost, see [Pricing details](https://docs.improbable.io/reference/latest/shared/pricing-and-support/pricing-details).
 
 <br/>--------<br/>
-2019-05-20: Page added with editorial review
+_2019-05-20: Page added with editorial review_
