@@ -82,8 +82,7 @@ You can use these non-Unreal server-worker types to modularize your game’s fun
 
 For more information, see the documentation on [non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types).
 
-<br/>
 
-------------
-_2019-04-25 Page added with full editorial review_
-<br/>
+
+<br/>------------<br/>
+_2019-04-25 Page added with editorial review_

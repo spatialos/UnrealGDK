@@ -1,7 +1,9 @@
-## Step 2: Generate a development authentication token
+# Multiple deployments for session-based games
+## 2: Generate an authentication token
 
-**Note:** Development authentication tokens are for in-development testing only. They are for early-stage development so you don’t have to create your own game authentication service before testing your game clients. Do not include development authentication tokens in production projects. 
+>**Note:** This section describes generating and using development authentication tokens. These are for in-development testing only. They are for early-stage development so you don’t have to create your own game authentication service before testing your game clients. Do not include development authentication tokens in production projects. 
 
+### Step 1: Generate a token
 To ensure that game clients are able to see all available deployments and can connect to them, you must generate a development authentication token and update your project’s code with the generated token. 
 
 <%(#Expandable title="What is development authentication?")%>
@@ -22,7 +24,7 @@ This creates a temporary authentication token that lasts for 30 days. For inform
 
 In the terminal window, copy the string displayed after `tokenSecret` and make a note of it, you will use this token ID in the next step. This token is always 100 characters long and ends in an equals (=) sign.
 
-# Add your development authentication token to your project
+### Step 2: Add your development authentication token to your project
 
 Next, you must add your development authentication token to the Example Project code.
 
@@ -34,8 +36,8 @@ _Image: The development authentication token id code as shown in Visual Studio_ 
 
 If your project opens without errors you have successfully added the developer authentication token to your project. 
 
-**Next**: [Build your worker assemblies]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
+**> Next**: [3: Build and upload workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
 
 --------<br/>
 
-_2019-05-21 Page added with full review_
+_2019-05-21 Page added with editorial review_

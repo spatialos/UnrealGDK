@@ -9,14 +9,16 @@ This guide shows you how to port your own Unreal project to the GDK. By the end 
 
 Before porting your project: 
 
-* If you haven't done this already, follow our Get Started guide before porting your game:
+* If you haven't done this already, follow our _Get started_ guide before porting your game:
     * [Get started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     * [Get started: 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-    * [Get started: 3 - Set up the SpatialOS GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
-
+    * Get started: 3 - Set up a project</br> 
+    We recommend the [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
+</br>
+</br>
 * Open a terminal window and run the command `spatial update` to ensure your [spatial CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli) installation is up to date. 
 
-### Terms used in this guide
+**Terms used in this guide**</br>
 * `<GameRoot>` - The directory containing your project's `.uproject` file and `Source` directory.  
 * `<ProjectRoot>` - The directory containing your `<GameRoot>`.  
 * `<YourProject>` - The name of your project's `.uproject` file (for example, `\<GameRoot>\TP_SpatialGDK.uproject`).
@@ -220,13 +222,16 @@ You can change:
 * the snapshot file's filename and location
 * the launch configuration
 
-## Next steps
+**Next steps:** </nr>
+If you haven't already, check out:
 
-If you haven't already, check out the Multiserver shooter tutorial tutorial to learn how to implement [cross-server interactions]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro).  
+* The tutorial on [multiple deployments for session-based games]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro).
+*  The Multiserver Shooter tutorial to learn how to implement [cross-server interactions]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro).  
+
 Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/actor-handover) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 
-<br/>
 
-------
-_2019-04-11 Added ShooterGame as a reference project with limited editorial review._
+
+<br/>------</br>
+_2019-04-11 Added Shooter Game as a reference project with limited editorial review._

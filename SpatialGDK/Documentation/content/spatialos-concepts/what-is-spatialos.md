@@ -37,3 +37,6 @@ SpatialOS with Unreal is seamless. The GDK:
 * makes sure worker instances can send and receive updates about entity [components]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components) to and from each other. Worker instances’ authority over entities is handled by the GDK and SpatialOS. 
 
 For more information on how SpatialOS works with the GDK and Unreal Engine, see [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in.md).
+
+</br>------</br>
+_2019-05-21 Page added with editorial review_

@@ -1,7 +1,7 @@
 <%(TOC)%>
 # Multiserver Shooter Tutorial
 
-## Step 2: Replicate health changes
+## 2: Replicate health changes
 
 In this project each `TPSCharacter` contains a variable called `CurrentHealth`, which keeps track of that character's health. On your servers, `CurrentHealth` is reduced whenever a character is shot, but this reduction is not replicated on the clients connected to the game. This is because the `CurrentHealth` variable is not setup for replication.
 
@@ -71,9 +71,9 @@ Now let’s test our health replication in another local deployment.
 
 </br>
 </br>
-**Next:** [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+**> Next:** [3: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
 <br/>
 <br/>
 
--------------
+-------------</br>
 _2019-04-30 Page updated with limited editorial review_

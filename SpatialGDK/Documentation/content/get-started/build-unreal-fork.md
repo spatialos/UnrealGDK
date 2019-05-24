@@ -72,5 +72,5 @@ Use as a base for creating your own project running on SpatialOS.
 <br/>
 <br/>
 
-------
+------</br>
 _2019-05-23 Page updated with limited editorial review_

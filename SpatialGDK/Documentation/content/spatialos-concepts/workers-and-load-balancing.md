@@ -62,3 +62,6 @@ We need to create the following how-to docs:
 Creating worker types https://improbableio.atlassian.net/browse/DOC-1064
 Setting up load balancing https://improbableio.atlassian.net/browse/DOC-1065
 -->
+
+</br>------</br>
+_2019-05-21 Page added with editorial review_

@@ -9,7 +9,7 @@ Before setting up the SpatialOS GDK Starter Template, you need to have followed:
 
 If you are ready to start developing your own game with the GDK, follow the steps below. 
 
-### Terms used on this page
+**Terms used on this page**</br>
 
 * `<GameRoot>` - The directory that contains your project’s .uproject file and Source folder.
 * `<ProjectRoot>` - The directory that contains your `<GameRoot>` directory.
@@ -283,5 +283,5 @@ If you have an existing Unreal multiplayer project, follow our detailed [porting
 
 <br/>
 <br/>
--------------
+------</br>
 _2019-04-30 Page updated with limited editorial review_
