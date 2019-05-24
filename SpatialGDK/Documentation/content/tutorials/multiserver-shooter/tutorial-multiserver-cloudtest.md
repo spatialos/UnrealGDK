@@ -1,8 +1,6 @@
 <%(TOC)%>
 # Multiserver Shooter tutorial
 ## 4: Test changes in the cloud
-
-<br/>
 ### Step 1: Build your workers
 
 When you build your workers, using `BuildWorker.bat`, the GDK creates an assembly. The assembly is a collection of `.zip` files that contain all the files that your game uses when running in the cloud.

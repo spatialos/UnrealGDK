@@ -1,8 +1,6 @@
 <%(TOC)%>
 # Multiserver Shooter Tutorial
-
 ## 3: Test changes locally
-
 ### Step 1: Start SpatialOS and start the game
 1. Start SpatialOS: in Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
 1. Now, start the game: from the Unreal Editor toolbar, click **Play** to run the game.
