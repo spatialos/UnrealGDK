@@ -143,7 +143,7 @@ To launch a cloud deployment, you need to prepare your server-worker and client-
 
 > **TIP:** Building the assemblies can take a while - we recommend installing <a href="https://www.incredibuild.com/" data-track-link="Incredibuild|product=Docs|platform=Win|label=Win" target="_blank">IncrediBuild</a> to speed up build times.
 
-#### Step 1: Set up your SpatialOS project name. 
+#### Step 1: Set up your SpatialOS project name 
 When you signed up for SpatialOS, your account was automatically associated with an organisation and a project, both of which have the same generated name.
 
 1. Find this name by going to the [Console](https://console.improbable.io). 
