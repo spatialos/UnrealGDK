@@ -26,7 +26,7 @@ We recommend following steps 1 to 3 of the [Get started]({{urlRoot}}/content/get
 
 Before porting your project: 
 
-* Set up the GDK and Starter Template</br>
+* Set up the GDK and Starter Template.</br>
 If you haven't done this already, follow the three steps in _Get started_ guide in order to port your game:
     1. [Get started 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     1. [Get started 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
@@ -34,7 +34,7 @@ If you haven't done this already, follow the three steps in _Get started_ guide 
     (Note that you must follow the Starter Template instructions and not the Example Project instructions.)
 </br>
 </br>
-* Update your local version of the spatial CLI </br>
+* Update your local version of the spatial CLI. s</br>
 Open a terminal window and run the command `spatial update` to ensure your [spatial CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli) installation is up to date. 
 </br>
 </br>
