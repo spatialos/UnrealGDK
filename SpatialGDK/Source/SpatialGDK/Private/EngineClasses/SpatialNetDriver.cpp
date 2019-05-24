@@ -1652,7 +1652,7 @@ void USpatialNetDriver::SpatialStartRPCMetrics()
 {
 	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Recording RPC metrics"));
 
-	RPCTrackingEnabled = true;
+	bRPCTrackingEnabled = true;
 	RPCTrackingStartTime = FPlatformTime::Seconds();
 
 	if (!IsServer() && Sender != nullptr && GetWorld() != nullptr && GetWorld()->GetGameInstance() != nullptr)
@@ -1667,6 +1667,7 @@ void USpatialNetDriver::SpatialStartRPCMetrics()
 			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
 			Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
 		}
+		// TODO: Maybe warn if no player controller / couldn't send for any reason
 	}
 }
 
@@ -1682,7 +1683,7 @@ void USpatialNetDriver::OnStartRPCMetricsCommand(Worker_CommandRequestOp& Op)
 
 void USpatialNetDriver::SpatialStopRPCMetrics()
 {
-	if (!RPCTrackingEnabled)
+	if (!bRPCTrackingEnabled)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Haven't been recording RPC metrics"));
 		return;
@@ -1745,7 +1746,7 @@ void USpatialNetDriver::SpatialStopRPCMetrics()
 		RecentRPCs.Empty();
 	}
 
-	RPCTrackingEnabled = false;
+	bRPCTrackingEnabled = false;
 
 	if (!IsServer() && Sender != nullptr && GetWorld() != nullptr && GetWorld()->GetGameInstance() != nullptr)
 	{
@@ -1774,7 +1775,7 @@ void USpatialNetDriver::OnStopRPCMetricsCommand(Worker_CommandRequestOp& Op)
 
 void USpatialNetDriver::TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize)
 {
-	if (!RPCTrackingEnabled)
+	if (!bRPCTrackingEnabled)
 	{
 		return;
 	}

@@ -208,7 +208,7 @@ private:
 	// in the correct order, if needed.
 	int NextRPCIndex;
 
-	// FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+	// TODO: Comment on how this is used.
 	struct RPCStat
 	{
 		ESchemaComponentType Type;
@@ -217,6 +217,6 @@ private:
 		int TotalPayload;
 	};
 	TMap<FString, RPCStat> RecentRPCs;
-	bool RPCTrackingEnabled;
+	bool bRPCTrackingEnabled;
 	float RPCTrackingStartTime;
 };
