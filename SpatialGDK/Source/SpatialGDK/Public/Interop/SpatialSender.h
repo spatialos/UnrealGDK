@@ -27,6 +27,9 @@ class USpatialStaticComponentView;
 class USpatialClassInfoManager;
 class USpatialWorkerConnection;
 
+// This is currently only really used for queuing outgoing RPCs in case they have unresolved target object
+// or arguments. This is only possible for singletons in a multi-worker scenario.
+// TODO: remove this logic when singletons can be referenced without entity IDs (UNR-1456).
 struct FPendingRPCParams
 {
 	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex);
