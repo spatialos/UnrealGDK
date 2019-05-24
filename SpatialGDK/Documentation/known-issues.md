@@ -10,5 +10,5 @@ For all other known issues, please visit [this board](https://github.com/spatial
 <br/>--------<br/>
 
 *2019-04-25 Page updated with editorial review* </br>
-*2019-04-25 Removed out-dated known issues from this page and added links to current known issues.*
+*2019-04-25 Removed outdated known issues from this page and added links to current known issues.*
 <br/>
