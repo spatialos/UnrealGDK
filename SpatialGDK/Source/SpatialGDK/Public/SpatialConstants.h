@@ -108,8 +108,9 @@ namespace SpatialConstants
 	const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID				= 9989;
 	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9987;
 	const Worker_ComponentId NOT_STREAMED_COMPONENT_ID						= 9986;
-	const Worker_ComponentId SERVER_PING_COMPONENT_ID						= 9985;
-	const Worker_ComponentId CLIENT_PONG_COMPONENT_ID						= 9984;
+	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
+	const Worker_ComponentId SERVER_PING_COMPONENT_ID						= 9984;
+	const Worker_ComponentId CLIENT_PONG_COMPONENT_ID						= 9983;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -128,6 +129,8 @@ namespace SpatialConstants
 	const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID					= 1;
 	const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
 
+	const Schema_FieldId CLEAR_RPCS_ON_ENTITY_CREATION						= 1;
+
 	const Schema_FieldId PING_PONG_EVENT_ID									= 1;
 
 	// UnrealRPCPayload Field IDs
@@ -138,6 +141,8 @@ namespace SpatialConstants
 	// Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID = 1;
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID = 1;
+
+	const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
