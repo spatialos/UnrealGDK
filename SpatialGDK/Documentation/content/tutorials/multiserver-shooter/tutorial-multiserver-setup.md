@@ -6,7 +6,7 @@
 Before following the Multiserver Shooter tutorial, you need to have followed:
 
 * [Get started 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
-* [Get started 2 - Get and build the GDK's Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork).
+* [Get started 2 - Get and build the GDK's Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 
 Once you have done this, you are ready to get going with the Multiserver Shooter tutorial by following the steps below.
 <br/>
