@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Added SpatialMetricsDisplay class, which allows you to view UnrealWorker stats as an overlay on the client.
+- Added runtime option to disable property handover when running in non-zoned deployments.
 
 ### Bug fixes:
 - BeginPlay is not called with authority when checking out entities from Spatial.
@@ -18,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reliable RPC checking no longer breaks compatibility between development and shipping builds.
 - Fixed an issue with schema name collisions.
 - Running Schema (Full Scan) now clears generated schema files first.
+- Singletons authority and state resumes correct when reconnecting servers to snapshot.
+- Fixed a crash when retrying reliable RPCs with UObject arguments that got destroyed before the RPC was retried.
 
 ### External contributors:
 

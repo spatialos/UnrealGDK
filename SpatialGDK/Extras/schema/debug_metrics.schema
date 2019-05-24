@@ -4,7 +4,7 @@ package unreal;
 import "unreal/gdk/core_types.schema";
 
 component DebugMetrics {
-    id = 9985;
+    id = 9984;
     command Void start_rpc_metrics(Void);
     command Void stop_rpc_metrics(Void);
 }

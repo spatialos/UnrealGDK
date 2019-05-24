@@ -203,6 +203,12 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 	}
 }
 
+void USpatialNetDriver::OnEntityPoolReady()
+{
+	check(GlobalStateManager != nullptr);
+	GlobalStateManager->TryTriggerBeginPlay();
+}
+
 void USpatialNetDriver::InitializeSpatialOutputDevice()
 {
 	int32 PIEIndex = -1; // -1 is Unreal's default index when not using PIE
@@ -858,28 +864,11 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						continue;
 					}
 
-					// If we're a singleton, and don't have a channel, defer to GSM
-					if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+					Channel = CreateSpatialActorChannel(Actor, Cast<USpatialNetConnection>(InConnection)); 
+					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
-						Channel = GlobalStateManager->AddSingleton(Actor);
-					}
-					else
-					{
-						// Create a new channel for this actor.
-#if ENGINE_MINOR_VERSION <= 20
-						Channel = (USpatialActorChannel*)InConnection->CreateChannel(CHTYPE_Actor, 1);
-#else
-						Channel = (USpatialActorChannel*)InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally);
-#endif
-						if (Channel)
-						{
-							Channel->SetChannelActor(Actor);
-						}
-						else if (Actor->NetUpdateFrequency < 1.0f)
-						{
-							UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
-							PriorityActors[j]->ActorInfo->NextUpdateTime = Actor->GetWorld()->TimeSeconds + 0.2f * FMath::FRand();
-						}
+						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
+						PriorityActors[j]->ActorInfo->NextUpdateTime = Actor->GetWorld()->TimeSeconds + 0.2f * FMath::FRand();
 					}
 				}
 
@@ -1492,9 +1481,50 @@ TMap<Worker_EntityId_Key, USpatialActorChannel*>& USpatialNetDriver::GetEntityTo
 	return EntityToActorChannel;
 }
 
+USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject* TargetObject)
+{
+	check(TargetObject);
+	USpatialActorChannel* Channel = GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(TargetObject));
+	if (Channel == nullptr)
+	{
+		AActor* TargetActor = Cast<AActor>(TargetObject);
+		if (TargetActor == nullptr)
+		{
+			TargetActor = Cast<AActor>(TargetObject->GetOuter());
+		}
+		check(TargetActor);
+		Channel = CreateSpatialActorChannel(TargetActor, GetSpatialOSNetConnection());
+	}
+	return Channel;
+}
+
 USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_EntityId EntityId) const
 {
 	return EntityToActorChannel.FindRef(EntityId);
+}
+
+USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection)
+{
+	USpatialActorChannel* Channel = nullptr;
+
+	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	{
+		Channel = GlobalStateManager->AddSingleton(Actor);
+	}
+	else
+	{
+#if ENGINE_MINOR_VERSION <= 20
+		Channel = static_cast<USpatialActorChannel*>(InConnection->CreateChannel(CHTYPE_Actor, 1));
+#else
+		Channel = static_cast<USpatialActorChannel*>(InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
+#endif
+		if (Channel != nullptr)
+		{
+			Channel->SetChannelActor(Actor);
+		}
+	}
+
+	return Channel;
 }
 
 void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate& LoadSnapshotAfterWorldWipe)
