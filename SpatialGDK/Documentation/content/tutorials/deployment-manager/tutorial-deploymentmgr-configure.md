@@ -60,7 +60,7 @@ In this example, you must tell the Deployment Manager:
 
 *  the type of client-worker it can deploy - `UnrealClient` for this example, but this can be any client type you have set up for your project
 * the number of deployments you want it to allow to run concurrently - 2 for this example
-* which worker assembly to use for the deployments - the name for this you created in step 2, above.
+* which worker assembly to use for the deployments - you created the name for this in step 2, above.
 
 Leave the other configuration file settings to the default, for this example.  For more information about the other Deployment Manager configuration options, see the Deployment Manager [documentation on GitHub](https://github.com/spatialos/deployment-manager). 
 
