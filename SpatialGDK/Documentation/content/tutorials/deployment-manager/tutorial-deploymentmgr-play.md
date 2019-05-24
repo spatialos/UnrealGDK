@@ -1,6 +1,8 @@
+<%(TOC)%>
 # Multiple deployments for session-based games
-## Step 6: Play your game
+## 6: Play your game
 
+### Step 1: Launch clients with the Launcher
 1.  Select **session_0** from the deployment list. This opens the deployment overview screen.
 1. Select **LAUNCH** on the left of the page.<br/></br>
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-consoleoverview.png)</br>
@@ -13,19 +15,7 @@ Select **QUICK JOIN** to join one of your sessions or select **BROWSE...** to ch
 </br>
 </br>
 
-### Default game controls
-| **Key Binding**   | **Function**             |
-| ----------------- | ------------------------ |
-| W,A,S,D           | Standard movement        |
-| Space             | Jump                     |
-| Shift             | Sprint                   |
-| Left ctrl         | Crouch                   |
-| Left click        | Fire                     |
-| Right click       | Weapon zoom/ iron sights |
-| Number keys 1 - 0 | Select weapon            |
-
-
-### Troubleshooting
+**Troubleshooting**</br>
 
 <%(#Expandable title="I can see my deployments in my game client, but I can’t join any of them")%>
 
@@ -46,7 +36,18 @@ When you have done this, re-launch your game client and you should be able to jo
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-startscreen.png)</br>
 _Image: The Example Project start screen._
 
-### Share your deployment
+### Step 2: Try out the default game controls
+| **Key Binding**   | **Function**             |
+| ----------------- | ------------------------ |
+| W,A,S,D           | Standard movement        |
+| Space             | Jump                     |
+| Shift             | Sprint                   |
+| Left ctrl         | Crouch                   |
+| Left click        | Fire                     |
+| Right click       | Weapon zoom/ iron sights |
+| Number keys 1 - 0 | Select weapon            |
+
+### Step 3: Share your deployment
 
 To share your deployment: 
 
@@ -59,6 +60,8 @@ _Image: The SpatialOS Console Share Application pop-up window, showing terms of 
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-share2.png)</br>
 _Image: The SpatialOS Console Share Application screen with terms of service accepted_<br/></br>
 
+
+</br>
 **Congratulations!** You have successfully launched and shared a SpatialOS deployment using the Deployment Manager! 
 
 </br>

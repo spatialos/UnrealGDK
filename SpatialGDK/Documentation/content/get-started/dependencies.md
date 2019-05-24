@@ -1,17 +1,16 @@
 <%(TOC)%>
-# Get started: 1 - Get the dependencies
+# Get started
+## 1 - Get the dependencies
 
 To start using the GDK for Unreal, you need to ensure you have the correct software installed and that your machine is capable of running Unreal Engine. 
 
-</br>
-## Sign up for a SpatialOS account, or make sure you are logged in
+**Login to your SpatialOS account**</br>
 
-If you have already signed up, make sure you are logged into [Improbable.io](https://improbable.io). If you are logged in, you should see your picture in the top right of this page. If you are not logged in, select __Sign in__ at the top of this page and follow the instructions.
+Before you start, make sure you are logged in.
 
-If you have not signed up before, you can sign up [here](<https://improbable.io/get-spatialos>).
+* If you have already signed up to SpatialOS, make sure you are logged into [Improbable.io](https://improbable.io). If you are logged in, you should see your picture in the top right of this page. If you are not logged in, select __Sign in__ at the top of this page and follow the instructions.
 
-</br>
-## Set up your machine
+* If you have not signed up before, you can sign up [here](<https://improbable.io/get-spatialos>).
 
 ### Step 1: Hardware
 

@@ -1,6 +1,6 @@
 <%(TOC)%>
-# The GDK Example Project 
-# 3: Launch a cloud deployment
+# The Example Project 
+## 3: Launch a cloud deployment
 
 Before launching a cloud deployment, as well as generating schema and a snapshot, you also need to:
 
@@ -28,7 +28,7 @@ All the hosting options are available as game templates. For information about w
 
 <%(/Expandable)%>
 
-## Step 1: Associate your game with a cloud project name
+### Step 1: Associate your game with a cloud project name
 
 When you signed up for SpatialOS, your account was automatically given a SpatialOS cloud organization name and a SpatialOS cloud project name, both of which are the same generated name.
 
@@ -47,7 +47,7 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 1. In File Explorer, navigate to the `UnrealGDKExampleProject\Game\spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 1. In the file, replace the `name` field with the project name shown in the Console. This associates your SpatialOS cloud project with your Unreal game, telling SpatialOS which cloud project you are uploading your prepared workers to..
 
-## Step 2: Build your workers
+### Step 2: Build your workers
 
 **Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
 
@@ -77,7 +77,7 @@ If you receive the error `The system cannot find the path specified. Builds fail
 <%(/Expandable)%>
 
 
-## Step 3: Upload your workers
+### Step 3: Upload your workers
 
 Before launching a cloud deployment, you must upload your sever-worker and client-worker assemblies to the cloud. To do this: 
 
@@ -92,7 +92,7 @@ A valid upload command looks like this:
 spatial cloud upload exampleprojectassembly
 ```
 
-## Step 4: Launch your cloud deployment
+### Step 4: Launch your cloud deployment
 
 The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. You can only do this through the SpatialOS command-line interface (also known as the “CLI”).
 

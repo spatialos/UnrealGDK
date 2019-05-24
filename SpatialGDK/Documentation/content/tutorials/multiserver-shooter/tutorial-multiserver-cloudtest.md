@@ -1,18 +1,16 @@
 <%(TOC)%>
 # Multiserver Shooter tutorial
+## 4: Test changes in the cloud
+### Step 1: Build your workers
 
-## Step 4: Test changes in the cloud
-
-### Build your assemblies
-
-An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip files that contain all the files that your game uses when running in the cloud.
+When you build your workers, using `BuildWorker.bat`, the GDK creates an assembly. The assembly is a collection of `.zip` files that contain all the files that your game uses when running in the cloud.
 
 1. In a terminal window, change directory to the root directory of the Third-Person Shooter repository.
 1. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`
 1. Build a client-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooter Win64 Development ThirdPersonShooter.uproject`
 
 <br/>
-### Upload your game
+### Step 2: Upload your game
 
 1. In File Explorer, navigate to `UnrealGDKThirdPersonShooter\spatial` and open `spatialos.json` in a text editor.
 1. Change the `name` field to the name of your project. You can find this in the [Console](https://console.improbable.io). It’ll be something like `beta_someword_anotherword_000`.
@@ -26,7 +24,7 @@ spatial cloud upload myassembly
 > **Note:** Depending on your network speed it may take a little while (1-10 minutes) to upload your assembly.
 
 <br/>
-### Launch a cloud deployment
+### Step 3: Launch a cloud deployment
 
 The next step is to launch a cloud deployment using the assembly that you just uploaded. This can only be done through the SpatialOS command-line interface (also known as the [SpatialOS CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
 
@@ -46,7 +44,7 @@ spatial cloud launch --snapshot=snapshots/default.snapshot myassembly two_worker
 > **Note:** This command defaults to deploying to clusters located in the US. If you’re in Europe, add the `--cluster_region=eu` flag for lower latency.
 
 <br/>
-### Play your game
+### Step 4: Play your game
 
 ![]({{assetRoot}}assets/tutorial/console.png)
 
@@ -59,7 +57,7 @@ When your deployment has launched, SpatialOS automatically opens the [Console](h
 > **TIP:** Check out the [cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow) for a reference diagram of this workflow.
 
 <br/>
-### Invite your friends
+### Step 5: Invite your friends
 
 1. To invite other players to this game, head back to the Deployment Overview page in your [Console](https://console.improbable.io), and select the **Share** button.
 1. Share the generated link with your friends!

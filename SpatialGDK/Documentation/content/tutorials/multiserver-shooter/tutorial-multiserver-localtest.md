@@ -1,15 +1,13 @@
 <%(TOC)%>
 # Multiserver Shooter Tutorial
-
 ## 3: Test changes locally
+### Step 1: Start SpatialOS and start the game
+1. Start SpatialOS: in Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
+1. Now, start the game: from the Unreal Editor toolbar, click **Play** to run the game.
 
-1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
-1. From the Unreal Editor toolbar, click **Play** to run the game.
+As you play the game, notice that health now decrements when you are shot.
 
-Notice that health now decrements when you are shot.
-
-<br/>
-### View your SpatialOS world in the Inspector
+### Step 2: View your SpatialOS world in the Inspector
 
 ![]({{assetRoot}}assets/tutorial/inspector-two-workers.png)<br/>
 _Image: A local Inspector showing two server-worker instances (two Unreal servers) managing your game_<br/>
@@ -24,7 +22,7 @@ _Image: A local Inspector showing two server-worker instances (two Unreal server
 1. Using the Inspector to track the location of your two players, notice that if you position them in the same area of authority then their shots damage each other, but if they are on different servers, they can’t damage each other. Let’s fix that.
 
 <br/>
-### Enable cross server RPCs
+### Step 3: Enable cross server RPCs
 
 To damage a player on a different server, the actor shooting the bullet must send a cross-server RPC to the actor getting hit by the bullet. You will implement this by overriding the [TakeDamage (Unreal documentation)](https://api.unrealengine.com/INT/API/Runtime/Engine/GameFramework/APawn/TakeDamage/index.html) function in the TPSCharcter class.
 
@@ -97,7 +95,7 @@ Now let’s test our new cross-server functionality in another local deployment.
 > **TIP:** Check out the [local deployment workflow page]({{urlRoot}}/content/local-deployment-workflow) for a reference diagram of this workflow.
 
 <br/>
-### Deploy the project locally (last time)
+### Step 4: Deploy the project locally
 
 1. In Unreal Editor, in the SpatialOS GDK toolbar, select **Start**. It's ready when you see `SpatialOS ready. Access the inspector at [http://localhost:21000/inspector]()`.
 1. From the Unreal Editor toolbar, click **Play** to run the game.

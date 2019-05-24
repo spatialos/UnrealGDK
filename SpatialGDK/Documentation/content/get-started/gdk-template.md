@@ -1,13 +1,17 @@
 <%(TOC)%>
-# Get started: 3 - Set up a project
-# The GDK Starter Template
+# Get started
+## 3 - Set up a project: The Starter Template
 
-Before setting up the SpatialOS GDK Starter Template, you need to have followed:
+If you are ready to start developing your own game with the GDK, follow the steps below to create a new project.
 
-* [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
-* [Getting started: 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork).
+**Note:**</br>
 
-If you are ready to start developing your own game with the GDK, follow the steps below. 
+* Before setting up the SpatialOS GDK Starter Template, you _**must**_ follow:
+
+    *  [Get started 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
+    *  [Get started 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+
+* We recommend setting up the [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) before creating a new project. This gives you an overview of the GDK and using SpatialOS.
 
 **Terms used on this page**</br>
 
@@ -15,7 +19,8 @@ If you are ready to start developing your own game with the GDK, follow the step
 * `<ProjectRoot>` - The directory that contains your `<GameRoot>` directory.
 * `<YourProject>` - The name of your project and .uproject file (for example, `\<GameRoot>\YourProject.uproject`).
 
-### Create a new project using the Starter Template
+</br>
+### 1: Create a new project using the Starter Template
 
 After [building the Unreal Engine fork]({{urlRoot}}/content/get-started/build-unreal-fork), in **File Explorer**, navigate to `UnrealEngine\Engine\Binaries\Win64`and double-click `UE4Editor.exe` to open the Unreal Editor.
 
@@ -35,7 +40,7 @@ After you have selected **Create Project**, the Unreal Engine generates the nece
 
 After Visual Studio has opened, save your solution then close Visual Studio before proceeding to the Clone the GDK step.
 
-### Clone the GDK
+### 2: Clone the GDK
 
 Now you need to clone the SpatialOS GDK for Unreal into your project. To do this: 
 
@@ -48,7 +53,7 @@ The GDK's [default branch (GitHub documentation)](https://help.github.com/en/art
 
 **Note:** You need to ensure that the root directory of the GDK for Unreal repository is called `UnrealGDK` so the file path is: `<GameRoot>\Plugins\UnrealGDK\...`
 
-### Build the dependencies 
+### 3: Build the dependencies 
 
 To use the Starter Template, you must build the GDK for Unreal module dependencies and then add the GDK to your project. To do this: 
 
@@ -63,13 +68,13 @@ _Image: The Visual Studio toolbar_
 
 Note: Ensure that your Visual Studio Solution Configuration is set to **Development Editor**.
 
-### Deploy your project 
+### 4: Deploy your project 
 
 To test your game, you need to launch a [deployment]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#deployments). This means launching your game with its own instance of the [SpatialOS Runtime]({{urlRoot}}/content/glossary#spatialos-runtime), either locally using a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment), or in the cloud using a [cloud deployment](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment).
 
 When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots), and then starts up the [worker instances]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#worker-instances-and-worker-types) needed to run the game world.
 
-#### Deploy locally with multiple clients
+### 5: Deploy locally with multiple clients
 
 Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) and a [snapshot]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots). 
 
@@ -132,13 +137,13 @@ To launch a local deployment:
 
 > **TIP:** Check out the [local deployment workflow page]({{urlRoot}}/content/local-deployment-workflow) for a reference diagram of this workflow.
 
-#### Launch a cloud deployment
+### 6: Launch a cloud deployment
 
 To launch a cloud deployment, you need to prepare your server-worker and client-worker [assemblies](https://docs.improbable.io/reference/latest/shared/glossary), and upload them to the cloud.        
 
 > **TIP:** Building the assemblies can take a while - we recommend installing <a href="https://www.incredibuild.com/" data-track-link="Incredibuild|product=Docs|platform=Win|label=Win" target="_blank">IncrediBuild</a> to speed up build times.
 
-##### Step 1: Set up your SpatialOS project name. 
+#### Step 1: Set up your SpatialOS project name 
 When you signed up for SpatialOS, your account was automatically associated with an organisation and a project, both of which have the same generated name.
 
 1. Find this name by going to the [Console](https://console.improbable.io). 
@@ -155,7 +160,7 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 <%(/Expandable)%>
 
-##### Step 2: Build your workers
+#### Step 2: Build your workers
 
 Note: You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
 
@@ -194,7 +199,7 @@ Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Wi
 If you receive the error `The system cannot find the path specified. Builds failed.`, open `ProjectPaths.bat` in a text editor and ensure that `PROJECT_PATH` and `GAME_NAME` are correct. `PROJECT_PATH` needs to be the name of your Unreal project folder (usually Game). `GAME_NAME` needs to be the same name as your Unreal Project `.uproject` file.  
 <%(/Expandable)%>
 
-##### Step 3: Upload your workers
+#### Step 3: Upload your workers
 
 Before launching a cloud deployment, you must upload your sever-worker and client-worker assemblies to the cloud. To do this: 
 
@@ -209,7 +214,7 @@ A valid upload command looks like this:
 spatial cloud upload myassembly
 ```
 
-##### Step 4: Launch your cloud deployment
+#### Step 4: Launch your cloud deployment
 The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. You can only do this through the SpatialOS command-line interface (also known as the “CLI”).
 
 <%(#Expandable title="What is the CLI?")%>
@@ -252,7 +257,7 @@ A valid launch command looks like this:
 spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
 ```
 
-### Play your game
+### 7. Play your game
 
 ![]({{assetRoot}}assets/tutorial/console.png)
 _Image: The SpatialOS Console_
@@ -275,7 +280,8 @@ _Image: The SpatialOS console launch window_
 
 > **TIP:** Check out the [cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow) for a reference diagram of this workflow.
 
-### Congratulations!
+</br>
+**Congratulations!**
 
 You've successfully set up and launched the Starter Template and the GDK! You are now ready to start developing a game with SpatialOS.
 

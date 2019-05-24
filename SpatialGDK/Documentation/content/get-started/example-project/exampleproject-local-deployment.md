@@ -1,5 +1,6 @@
-# The GDK Example Project 
-# 2: Launch a local deployment
+<%(TOC)%>
+# The Example Project 
+## 2: Launch a local deployment
 
 When you want to try out your game, you need to run a deployment. 
 

@@ -1,3 +1,6 @@
+
+<%(TOC)%>
+
 # Multiple deployments for session-based games
 ## 2: Generate an authentication token
 
@@ -24,7 +27,8 @@ This creates a temporary authentication token that lasts for 30 days. For inform
 
 In the terminal window, copy the string displayed after `tokenSecret` and make a note of it, you will use this token ID in the next step. This token is always 100 characters long and ends in an equals (=) sign.
 
-### Step 2: Add your development authentication token to your project
+
+### Step 2: Add the token to your project
 
 Next, you must add your development authentication token to the Example Project code.
 
