@@ -7,4 +7,4 @@ For more details, see [Support](https://docs.improbable.io/reference/latest/shar
 We also offer additional paid tiers of support. For more details, [get in touch](https://improbable.io/contact-us).
 
 <br/>--------<br/>
-2019-05-20: Page added with editorial review
+_2019-05-20: Page added with editorial review_
