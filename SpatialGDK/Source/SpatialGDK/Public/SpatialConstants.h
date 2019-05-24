@@ -135,6 +135,7 @@ namespace SpatialConstants
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID = 3;
 
 	// Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
+	const Schema_FieldId UNREAL_RPC_ENDPOINT_READY_ID = 1;
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID = 1;
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID = 1;
 

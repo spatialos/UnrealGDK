@@ -17,8 +17,10 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
+#include "Schema/ClientRPCEndpoint.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
+#include "Schema/ServerRPCEndpoint.h"
 #include "Schema/SpawnData.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
@@ -320,6 +322,24 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		{
 			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
 		}
+	}
+
+	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CLIENT_RPC_ENDPOINT_COMPONENT_ID ready for %ld"), Op.entity_id);
+		ClientRPCEndpoint Endpoint;
+		Endpoint.ready = true;
+		Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
+		NetDriver->Connection->SendComponentUpdate(Op.entity_id, &Update);
+	}
+
+	if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SERVER_RPC_ENDPOINT_COMPONENT_ID ready for %ld"), Op.entity_id);
+		ServerRPCEndpoint Endpoint;
+		Endpoint.ready = true;
+		Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
+		NetDriver->Connection->SendComponentUpdate(Op.entity_id, &Update);
 	}
 
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -822,6 +842,42 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 {
+	if (NetDriver->IsServer() && Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+	{
+		Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+		if (Schema_GetBoolCount(FieldsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
+		{
+			bool ready = GetBoolFromSchema(FieldsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
+			if (ready)
+			{
+				ListeningEntities.Add(Op.entity_id);
+				UE_LOG(LogTemp, Warning, TEXT("Client Endpoint Ready for %ld"), Op.entity_id);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Client Endpoint Not Ready for %ld"), Op.entity_id);
+			}
+		}
+	}
+	if (!NetDriver->IsServer() && Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
+	{
+		Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+		if (Schema_GetBoolCount(FieldsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
+		{
+			bool ready = GetBoolFromSchema(FieldsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
+			if (ready)
+			{
+				ListeningEntities.Add(Op.entity_id);
+				UE_LOG(LogTemp, Warning, TEXT("Server Endpoint Ready for %ld"), Op.entity_id);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Server Endpoint Not Ready for %ld"), Op.entity_id);
+			}
+
+		}
+	}
+
 	if (StaticComponentView->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping update because this was short circuited"), Op.entity_id, Op.update.component_id);

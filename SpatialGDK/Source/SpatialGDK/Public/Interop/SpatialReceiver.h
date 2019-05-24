@@ -178,6 +178,7 @@ private:
 
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
+	TSet<Worker_EntityId> ListeningEntities;
 
 private:
 	template <typename T>

@@ -13,9 +13,11 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
+#include "Schema/ClientRPCEndpoint.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
 #include "Schema/RPCPayload.h"
+#include "Schema/ServerRPCEndpoint.h"
 #include "Schema/Singleton.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
@@ -227,8 +229,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	InterestFactory InterestDataFactory(Actor, Info, NetDriver);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID));
-	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
+	ComponentDatas.Add(ClientRPCEndpoint().CreateClientRPCEndpointData());
+	ComponentDatas.Add(ServerRPCEndpoint().CreateServerRPCEndpointData());
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
@@ -535,6 +537,13 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	case SCHEMA_ClientUnreliableRPC:
 	case SCHEMA_ServerUnreliableRPC:
 	{
+		FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
+		if (TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+		{
+			Worker_EntityId OutEntityId = TargetObjectRef.Entity;
+			UE_LOG(LogTemp, Warning, TEXT("Contains id %d: %d"), OutEntityId, Receiver->ListeningEntities.Contains(OutEntityId));
+		}
+
 		Worker_ComponentId ComponentId;
 		if (RPCInfo->Type == SCHEMA_ClientUnreliableRPC)
 		{
