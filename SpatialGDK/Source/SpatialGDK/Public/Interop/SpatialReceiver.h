@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "Containers/Set.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -17,6 +18,7 @@
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
+
 
 #include "SpatialReceiver.generated.h"
 
