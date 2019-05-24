@@ -5,7 +5,7 @@ This guide takes you through setting up the [Example project](https://github.com
 
 The project contains gameplay and assets that are representative of a basic first-person shooter running on SpatialOS. If you want to make your own project from scratch, use the [Starter Template]({{urlRoot}}/content/get-started/gdk-template).
 
-Before starting this tutorial you _*must*_ follow:
+Before starting this tutorial you _**must**_ follow:
 
 - [Get started 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
 - [Get started 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
