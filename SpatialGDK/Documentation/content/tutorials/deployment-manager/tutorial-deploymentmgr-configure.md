@@ -74,7 +74,7 @@ In the `config.json`, you need to change the following lines:
 
 - `"ClientType": "YourClient"`, to `"ClientType": "UnrealClient"`,
 - `"NumberOfDeployments": 1`, to `"NumberOfDeployments": 2`,
-- `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly when you [uploaded your worker assemblies]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-2-upload-your-worker-assemblies) 
+- `"AssemblyName": "YourAssembly"`, to `"AssemblyName": "<assembly_name>)"`, where `<assembly_name>` is the name you gave to your assembly when you [uploaded your worker assemblies]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers#step-2-upload-your-worker-assemblies).
 
 Your `config.json` file should look like this: 
 
