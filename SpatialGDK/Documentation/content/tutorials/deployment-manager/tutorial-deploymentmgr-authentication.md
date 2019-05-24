@@ -1,4 +1,6 @@
+
 <%(TOC)%>
+
 # Multiple deployments for session-based games
 ## 2: Generate an authentication token
 
@@ -24,6 +26,7 @@ To generate a development authentication token:
 This creates a temporary authentication token that lasts for 30 days. For information about updating and refreshing development authentication tokens, refer to the [development authentication token](https://docs.improbable.io/reference/Latest/shared/auth/development-authentication) documentation. 
 
 In the terminal window, copy the string displayed after `tokenSecret` and make a note of it, you will use this token ID in the next step. This token is always 100 characters long and ends in an equals (=) sign.
+
 
 ### Step 2: Add the token to your project
 

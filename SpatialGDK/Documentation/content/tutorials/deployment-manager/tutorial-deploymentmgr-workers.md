@@ -53,9 +53,11 @@ In a terminal window, navigate to the `UnrealGDKExampleProject` directory.
 
 <%(/Expandable)%>
 
+
 </br>
 
 **Troubleshooting**</br>
+
 
 <%(#Expandable title="BuildProject.bat can’t find the path specified")%>
 
