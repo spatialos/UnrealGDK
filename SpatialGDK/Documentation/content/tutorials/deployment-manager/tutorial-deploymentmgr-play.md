@@ -1,7 +1,7 @@
 # Multiple deployments for session-based games
 ## Step 6: Play your game
 
-1.  select **session_0** from the deployment list. This opens the deployment overview screen.
+1.  Select **session_0** from the deployment list. This opens the deployment overview screen.
 2. select **LAUNCH** on the left of the page.<br/></br>
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-consoleoverview.png)
 _Image: The SpatialOS Console with the game client **LAUNCH** button highlighted._<br/></br>
