@@ -1,5 +1,6 @@
 
-# Get started: Introduction
+# Get started
+## Introduction
 
 Get started with the SpatialOS GDK for Unreal by building the GDK's Unreal Engine Fork and setting up a project. You can set up either or both of the following projects: </br>
 

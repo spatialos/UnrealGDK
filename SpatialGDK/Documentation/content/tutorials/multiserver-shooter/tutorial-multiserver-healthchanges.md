@@ -3,6 +3,8 @@
 
 ## 2: Replicate health changes
 
+### Step 1: Make the change
+
 In this project each `TPSCharacter` contains a variable called `CurrentHealth`, which keeps track of that character's health. On your servers, `CurrentHealth` is reduced whenever a character is shot, but this reduction is not replicated on the clients connected to the game. This is because the `CurrentHealth` variable is not setup for replication.
 
 To resolve this you need to mark the `CurrentHealth` property for replication, just as you would in the native [Unreal Actor replication](https://docs.unrealengine.com/en-us/Resources/ContentExamples/Networking/1_1) workflow. To do this:
@@ -34,10 +36,10 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.h`.
 1. In the public scope of the class, insert the following snippet:
 
-```	
-    UFUNCTION()
-    void OnRep_CurrentHealth();
-```
+    ```	
+        UFUNCTION()
+        void OnRep_CurrentHealth();
+    ```
 
 1. In your IDE, open `UnrealGDKThirdPersonShooter\Game\Source\ThirdPersonShooter\Characters\TPSCharacter.cpp` and insert the following snippet:
 
@@ -59,8 +61,10 @@ To resolve this you need to mark the `CurrentHealth` property for replication, j
     }
 ```
 
+</br>
 Notice that the workflow you just used mirrors that of native Unreal.
 
+### Step 2: Rebuild your project
 Because you have changed code in a function, you now need to rebuild your project. Additionally, because you've modified code related to replication, you need to generate schema. To do this:
 
 1. Open **ThirdPersonShooter.sln** with Visual Studio.

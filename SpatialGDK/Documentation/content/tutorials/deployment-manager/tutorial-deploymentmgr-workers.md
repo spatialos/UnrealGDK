@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Multiple deployments for session-based games
 ## 3: Build and upload workers 
 
@@ -52,7 +53,9 @@ In a terminal window, navigate to the `UnrealGDKExampleProject` directory.
 
 <%(/Expandable)%>
 
-#### Troubleshooting
+</br>
+
+**Troubleshooting**</br>
 
 <%(#Expandable title="BuildProject.bat can’t find the path specified")%>
 

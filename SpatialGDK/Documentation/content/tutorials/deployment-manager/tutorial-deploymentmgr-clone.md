@@ -1,3 +1,4 @@
+<%(TOC)%>
 # Multiple deployments for session-based games
 ## 1: Clone the Deployment Manager
 
