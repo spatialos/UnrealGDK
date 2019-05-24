@@ -69,7 +69,7 @@ When you’re done shooting your friends, you can click the **Stop** button in t
 <br/>
 ** Next steps:**
 
-* If you want to create a new game using the SpatialOS GDK, you should get the [Starter Template]({{urlRoot}}/content/get-started/gdk-template). 
+* If you want to create a new game using the GDK, you should get the [Starter Template]({{urlRoot}}/content/get-started/gdk-template). 
 * If you want to port your existing game to SpatialOS, follow the [Porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide).
 
 <br/>
