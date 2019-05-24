@@ -35,8 +35,6 @@ When you have done this, re-launch your game client and you should be able to jo
 
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-startscreen.png)</br>
 _Image: The Example Project start screen._
-</br>
-</br>
 
 ### Step 2: Try out the default game controls
 | **Key Binding**   | **Function**             |
@@ -48,8 +46,6 @@ _Image: The Example Project start screen._
 | Left click        | Fire                     |
 | Right click       | Weapon zoom/ iron sights |
 | Number keys 1 - 0 | Select weapon            |
-
-
 
 ### Step 3: Share your deployment
 
@@ -64,9 +60,11 @@ _Image: The SpatialOS Console Share Application pop-up window, showing terms of 
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-share2.png)</br>
 _Image: The SpatialOS Console Share Application screen with terms of service accepted_<br/></br>
 
+
 </br>
 **Congratulations!** You have successfully launched and shared a SpatialOS deployment using the Deployment Manager! 
 
+</br>
 </br>
 **Next steps:**
 

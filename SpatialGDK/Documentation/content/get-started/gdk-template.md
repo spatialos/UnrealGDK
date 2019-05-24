@@ -4,8 +4,6 @@
 
 If you are ready to start developing your own game with the GDK, follow the steps below to create a new project.
 
-
-
 **Note:**</br>
 
 * Before setting up the SpatialOS GDK Starter Template, you _**must**_ follow:
@@ -15,7 +13,7 @@ If you are ready to start developing your own game with the GDK, follow the step
 
 * We recommend setting up the [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) before creating a new project. This gives you an overview of the GDK and using SpatialOS.
 
-**Terms used on this page:**
+**Terms used on this page**</br>
 
 * `<GameRoot>` - The directory that contains your project’s .uproject file and Source folder.
 * `<ProjectRoot>` - The directory that contains your `<GameRoot>` directory.

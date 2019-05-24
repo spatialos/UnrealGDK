@@ -6,7 +6,6 @@
 
 This guide shows you how to port your own Unreal project to the GDK. By the end of this guide, your game will run on a single [server-worker]({{urlRoot}}/content/glossary#workers) on SpatialOS.
 
-
 **Get to know the GDK before porting your game**</br>
 We recommend following steps 1 to 3 of the [Get started]({{urlRoot}}/content/get-started/introduction) guide and setting up the [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) before porting your project. This gives you an overview of the GDK and using SpatialOS.
 <br/>
@@ -21,7 +20,7 @@ We recommend following steps 1 to 3 of the [Get started]({{urlRoot}}/content/get
 * `<ProjectRoot>` - The directory containing your `<GameRoot>`.  
 * `<YourProject>` - The name of your project's `.uproject` file (for example, `\<GameRoot>\TP_SpatialGDK.uproject`).
 
-
+</br>
 ## 1. Before you start
 
 Before porting your project: 
@@ -229,8 +228,10 @@ You can change:
 * the snapshot file's filename and location
 * the launch configuration
 
+
 </br>
 **Next steps:** </br>
+
 If you haven't already, check out:
 
 * The tutorial on [multiple deployments for session-based games]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro).
