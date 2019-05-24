@@ -51,6 +51,8 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 **Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
 
+**Note:** Ensure that you have enabled Spatial networking for your game before building worker assemblies. DefaultGame.ini configuration file located in `<ProjectRoot>\Game\Config` directory must contain a line `bSpatialNetworking=True` under `[/Script/EngineSettings.GeneralProjectSettings]` section.
+
 There are two ways to build your worker assemblies (known as “building workers”):
 
 * Build your workers automatically using the `BuildProject.bat` script. </br>

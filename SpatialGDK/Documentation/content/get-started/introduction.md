@@ -3,9 +3,9 @@
 
 Get started with the SpatialOS GDK for Unreal by building the GDK's Unreal Engine Fork and setting up a project. You can set up either or both of the following projects: </br>
 
-* **The Example Project** is a session-based FPS game. It gives an overview of the GDK and using SpatialOS, including deploying your game to SpatialOS in the cloud and on your development machine -  useful for testing during development.
+* [**The Example Project**](https://github.com/spatialos/UnrealGDKExampleProject) is a session-based FPS game. It gives an overview of the GDK and using SpatialOS, including deploying your game to SpatialOS in the cloud and on your development machine -  useful for testing during development.
 
-* **The Starter Template** is a template project you can use as a base to create your own new project running on SpatialOS.
+* [**The Starter Template**]({{urlRoot}}/content/get-started/gdk-template) is a template project you can use as a base to create your own new project running on SpatialOS.
 <br/>
 <br/>
 
@@ -13,15 +13,15 @@ Get started with the SpatialOS GDK for Unreal by building the GDK's Unreal Engin
 
 After you set up with the Example Project or Starter Template, you can check out the following tutorials and guides:
 
-* **Guide to multiple deployments for session-based games**: </br>
+* [**Guide to multiple deployments for session-based games**:]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro) </br>
 Use the Deployment Manager to launch multiple deployments of the Example Project in the cloud - useful for time-limited match-based games, such as battle royales.
 </br>
 </br>
 
-* **The Multiserver Shooter tutorial**: </br>
+* [**The Multiserver Shooter tutorial**:]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) </br>
 Learn more about the the GDK's functionality by implement shooting across the boundaries of different servers simulating one game world. In this tutorial, you will set up a new game; the Mutliserver Shooter Game.
 </br></br>
-* **The Porting guide**: <br/>
+* [**The Porting guide**:]({{urlRoot}}/content/tutorials/tutorial-porting-guide) <br/>
 Port your existing UE project to SpatialOS.
 
 <br/>

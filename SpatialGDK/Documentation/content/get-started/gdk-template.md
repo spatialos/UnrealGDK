@@ -83,7 +83,7 @@ _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 <%(#Expandable title="What is Schema?")%>
 
-Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
+Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically by pressing the **Schema** button in the GDK toolbar so you do not have to write or edit schema files manually.
 
 You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
@@ -157,7 +157,9 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 ##### Step 2: Build your workers
 
-Note: You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+**Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+
+**Note:** Before building worker assemblies ensure that you have enabled Spatial networking for your game. DefaultGame.ini configuration file located in `<ProjectRoot>\Game\Config` directory must contain a line `bSpatialNetworking=True` under `[/Script/EngineSettings.GeneralProjectSettings]` section.
 
 There are two ways to build your worker assemblies (known as “building workers”):
 
@@ -165,7 +167,7 @@ There are two ways to build your worker assemblies (known as “building workers
 This script automatically builds both the server-workers and client-workers required to run your game in the cloud. It then compresses your workers and saves them as .zip files to the `<ProjectRoot>\spatial\build\assembly\worker` directory. Use this script if you want to build server-workers and client-workers at the same time. <br/><br/>
 
 * Build your workers manually using the command line. </br>
-Use the command line when you want to build your server-workers and client-workers separately, or, if you want to build different worker configurations, for example? Editor, Test, Shipping or Linux. 
+Use the command line when you want to build your server-workers and client-workers separately, or, if you want to build different worker configurations, for example Editor, Test, Shipping or Linux. 
 
 <%(#Expandable title="Build your workers using `BuildProject.bat`")%>
 To build your workers using the BuildProject.bat script: 

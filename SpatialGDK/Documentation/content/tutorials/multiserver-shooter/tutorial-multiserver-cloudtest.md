@@ -7,6 +7,10 @@
 
 An assembly is what’s created when you run `BuildWorker.bat`. They’re .zip files that contain all the files that your game uses when running in the cloud.
 
+**Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+
+**Note:** Ensure that you have enabled Spatial networking for your game before building worker assemblies. DefaultGame.ini configuration file located in `<ProjectRoot>\Game\Config` directory must contain a line `bSpatialNetworking=True` under `[/Script/EngineSettings.GeneralProjectSettings]` section.
+
 1. In a terminal window, change directory to the root directory of the Third-Person Shooter repository.
 1. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`
 1. Build a client-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooter Win64 Development ThirdPersonShooter.uproject`
