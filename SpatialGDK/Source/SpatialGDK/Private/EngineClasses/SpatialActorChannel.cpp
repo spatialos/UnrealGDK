@@ -270,6 +270,16 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 	return HandoverChanged;
 }
 
+//FRepChangelistState* USpatialActorChannel::CreateChangelistState()
+//{
+//
+//}
+//
+//FReplicationFlags USpatialActorChannel::GetReplicationFlags()
+//{
+//
+//}
+
 int64 USpatialActorChannel::ReplicateActor()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
@@ -392,6 +402,7 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		if (bCreatingNewEntity)
 		{
+			Actor->ReplicateSubobjects();
 			Sender->SendCreateEntityRequest(this);
 
 			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
@@ -452,8 +463,6 @@ int64 USpatialActorChannel::ReplicateActor()
 		}
 	}
 
-	// TODO: Handle deleted subobjects - see DataChannel.cpp:2542 - UNR:581
-
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
 	LastUpdateTime = Connection->Driver->Time;
 
@@ -471,6 +480,11 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FClassInfo&
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateSubobject);
 
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
+	if (bCreatingNewEntity)
+	{
+		return;
+	}
+
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
 #if ENGINE_MINOR_VERSION <= 20
 	Replicator.ChangelistMgr->Update(Object, Replicator.Connection->Driver->ReplicationFrame, Replicator.RepState->LastCompareIndex, RepFlags, bForceCompareProperties);

@@ -220,6 +220,14 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
+	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
+	{
+		UObject* Subobject = RepSubobject.Value()->GetWeakObjectPtr().Get();
+		{
+			PackageMap->GetUnrealObjectRefFrom
+		}
+	}
+
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
 		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
