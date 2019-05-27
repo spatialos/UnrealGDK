@@ -3,6 +3,7 @@
 #include "SpatialGDKSettings.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
+#include "SpatialConstants.h"
 
 #if WITH_EDITOR
 #include "Modules/ModuleManager.h"
@@ -25,6 +26,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableMetrics(true)
 	, MetricsReportRate(2.0f)
 {
+	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
 
 void USpatialGDKSettings::PostInitProperties()

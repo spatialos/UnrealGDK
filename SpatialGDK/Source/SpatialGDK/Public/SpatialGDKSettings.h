@@ -82,5 +82,8 @@ public:
 	/** Change 'Load' value in inspector to represent worker Frame Time instead of a fraction of target FPS.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bUseFrameTimeAsLoad;
+
+	UPROPERTY(EditAnywhere, config, Category = "Testing", meta = (ConfigRestartRequired = false))
+	FString DefaultReceptionistHost;
 };
 
