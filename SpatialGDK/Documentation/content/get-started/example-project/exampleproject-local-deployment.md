@@ -63,7 +63,7 @@ To launch a local deployment:
    _Image: On the GDK toolbar in the Editor select **Stop**_
 </br>
 </br>
-**Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment) 
+**> Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment) 
 
 </br>
 
