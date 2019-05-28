@@ -32,8 +32,8 @@ struct ServerRPCEndpoint : Component
 	Worker_ComponentUpdate CreateRPCEndpointUpdate()
 	{
 		Worker_ComponentUpdate Update = {};
-		Update.component_id = SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
-		Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID);
+		Update.component_id = ComponentId;
+		Update.schema_type = Schema_CreateComponentUpdate(ComponentId);
 		Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 		Schema_AddBool(UpdateObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID, ready);
 

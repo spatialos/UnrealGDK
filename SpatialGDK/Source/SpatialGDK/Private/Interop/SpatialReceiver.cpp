@@ -840,7 +840,8 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 
 void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 {
-	if (NetDriver->IsServer() && Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+	if (Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
+		Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 	{
 		Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
 		if (Schema_GetBoolCount(FieldsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
@@ -850,19 +851,6 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			{
 				ListeningEntities.Add(Op.entity_id);
 			}
-		}
-	}
-	if (!NetDriver->IsServer() && Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
-	{
-		Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-		if (Schema_GetBoolCount(FieldsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
-		{
-			bool ready = GetBoolFromSchema(FieldsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
-			if (ready)
-			{
-				ListeningEntities.Add(Op.entity_id);
-			}
-
 		}
 	}
 
