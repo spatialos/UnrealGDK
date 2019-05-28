@@ -133,7 +133,7 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.WorkerLoad), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
 		DrawX += StatColumnOffsets[StatColumn_MovementCorrections];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%d"), OneWorkerStats.ServerMovementCorrections), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.4f"), OneWorkerStats.ServerMovementCorrections), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
 		DrawY += StatRowOffset;
 	}
@@ -200,8 +200,27 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	Stats.WorkerLoad = Metrics.GetWorkerLoad();
 
 #if USE_SERVER_PERF_COUNTERS
+	float MovementCorrectionsPerSecond = 0.f;
 	int32 NumServerMoveCorrections = 0;
-	Stats.ServerMovementCorrections = PerfCountersGet(TEXT("NumServerMoveCorrections"), NumServerMoveCorrections);
+	float WorldTime = GetWorld()->GetTimeSeconds();
+	NumServerMoveCorrections = PerfCountersGet(TEXT("NumServerMoveCorrections"), NumServerMoveCorrections);
+	MovementCorrectionRecords.Enqueue({ NumServerMoveCorrections, WorldTime });
+	MovementCorrectionRecord OldestRecord;
+	if (MovementCorrectionRecords.Peek(OldestRecord))
+	{
+		float WorldTimeDelta = OldestRecord.Time - WorldTime;
+		int32 CorrectionsDelta = OldestRecord.MovementCorrections - NumServerMoveCorrections;
+		if (WorldTimeDelta > 0.f && CorrectionsDelta > 0)
+		{
+			MovementCorrectionsPerSecond = CorrectionsDelta / WorldTimeDelta;
+		}
+
+		if (WorldTimeDelta > 30.f)
+		{
+			MovementCorrectionRecords.Dequeue(OldestRecord);
+		}
+	}
+	Stats.ServerMovementCorrections = MovementCorrectionsPerSecond;
 #endif
 
 	ServerUpdateWorkerStats(SpatialNetDriver->Time, Stats);
