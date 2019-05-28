@@ -57,5 +57,6 @@ private:
 	UFUNCTION(CrossServer, Unreliable, WithValidation)
 	virtual void ServerUpdateWorkerStats(const float Time, const FWorkerStats& OneWorkerStats);
 
+	bool ShouldRemoveStats(const float CurrentTime, const FWorkerStats& OneWorkerStats) const;
 	void DrawDebug(class UCanvas* Canvas, APlayerController* Controller);
 };

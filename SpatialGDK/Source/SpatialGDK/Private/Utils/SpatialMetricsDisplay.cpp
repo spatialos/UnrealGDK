@@ -165,9 +165,7 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 
 		for (const FWorkerStats& OneWorkerStats : WorkerStats)
 		{
-			const float TimeSinceUpdate = CurrentTime - WorkerStatsLastUpdateTime[OneWorkerStats.WorkerName];
-
-			if (TimeSinceUpdate > DropStatsIfNoUpdateForTime)
+			if (ShouldRemoveStats(SpatialNetDriver->Time, OneWorkerStats))
 			{
 				WorkerStatsToRemove.Add(OneWorkerStats);
 			}
@@ -175,6 +173,7 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 
 		for (const FWorkerStats& OneWorkerStats : WorkerStatsToRemove)
 		{
+			WorkerStatsLastUpdateTime.Remove(OneWorkerStats.WorkerName);
 			WorkerStats.Remove(OneWorkerStats);
 		}
 	}
@@ -187,4 +186,17 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	Stats.WorkerLoad = Metrics.GetWorkerLoad();
 
 	ServerUpdateWorkerStats(SpatialNetDriver->Time, Stats);
+}
+
+bool ASpatialMetricsDisplay::ShouldRemoveStats(const float CurrentTime, const FWorkerStats& OneWorkerStats) const
+{
+	const float* LastUpdateTime = WorkerStatsLastUpdateTime.Find(OneWorkerStats.WorkerName);
+
+	if (LastUpdateTime == nullptr)
+	{
+		return true;
+	}
+
+	const float TimeSinceUpdate = CurrentTime - *LastUpdateTime;
+	return TimeSinceUpdate > DropStatsIfNoUpdateForTime;
 }
