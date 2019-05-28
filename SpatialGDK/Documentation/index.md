@@ -32,11 +32,11 @@ Project, you can learn more about the GDK’s functionality with:
 ## Find out more
 
 * Learn more about how the GDK works and how it fits into your game stack. 
-<br/>**Read the [Technical overview]({{urlRoot}}/content/technical-overview/gdk-principles)** (5-minute read).
+<br/>**Read the [Technical overview]({{urlRoot}}/content/technical-overview/gdk-principles)** (10-minute read).
 <br/>
 <br/>
 * If you aren’t already familiar with SpatialOS, you can find out about the concepts which enable it to support game worlds with more persistence, scale, and complexity than previously possible.
-<br/> **Read the [SpatialOS concept docs](https://docs.improbable.io/reference/latest/shared/concepts/spatialos)** on the SpatialOS documentation website (5 minute read).
+<br/> **Read the [SpatialOS concept docs]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)** (10-minute read).
 <br/>
 <br/>
 * We’d love to hear your game ideas and answer any questions you have about making games on SpatialOS. <br/>

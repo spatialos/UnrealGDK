@@ -4,15 +4,15 @@
 
 To start using the GDK for Unreal, you need to ensure you have the correct software installed and that your machine is capable of running Unreal Engine. 
 
-**Login to your SpatialOS account**</br>
+### Step 1: Login
 
-Before you start, make sure you are logged in.
+Before you start, make sure you are logged in to your SpatialOS account.
 
 * If you have already signed up to SpatialOS, make sure you are logged into [Improbable.io](https://improbable.io). If you are logged in, you should see your picture in the top right of this page. If you are not logged in, select __Sign in__ at the top of this page and follow the instructions.
 
 * If you have not signed up before, you can sign up [here](<https://improbable.io/get-spatialos>).
 
-### Step 1: Hardware
+### Step 2: Hardware
 
 - Ensure your machine meets the minimum hardware requirements for Unreal Engine. 
 
@@ -20,11 +20,11 @@ Refer to the <a href="https://docs.unrealengine.com/en-US/GettingStarted/Recomme
 
 - Recommended storage: 60GB+ available space
 
-### Step 2: Network settings
+### Step 3: Network settings
 
 To configure your network to work with SpatialOS, refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/setup/requirements#network-settings). 
 
-### Step 3: Software
+### Step 4: Software
 
 To build the GDK for Unreal you need the following software installed on your machine:
 
