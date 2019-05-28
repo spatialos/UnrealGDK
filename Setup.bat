@@ -55,27 +55,39 @@ call :MarkStartOfBlock "Check dependencies"
     rem Get the Engine Association from the uproject.
     for /f "delims=" %%A in (' powershell -Command "Select-String -Pattern '..{8}-.{4}-.{4}-.{4}-.{12}.' %UPROJECT% -AllMatches | %% { $_.Matches } | %% { $_.Value }" ') do set ENGINE_ASSOCIATION="%%A"
     
-    echo Engine association for uproject is: %ENGINE_ASSOCIATION%
+    echo Engine association for uproject is: "%ENGINE_ASSOCIATION%"
 
-    if not %ENGINE_ASSOCIATION%==" " (
+    if not "%ENGINE_ASSOCIATION%"=="" (
         rem Query the registry for the path to the Unreal Engine using the engine associtation.
         for /f "usebackq tokens=3*" %%A in (`reg query "HKCU\Software\Epic Games\Unreal Engine\Builds" /v %ENGINE_ASSOCIATION%`) do (
             set UNREAL_ENGINE="%%A"
         )
     )
 
-    rem If there was no engine association then we need to climb the directory path to find the Engine.
+    rem If there was no engine association then we need to climb the directory path of the project to find the Engine.
+    pushd "%~dp0"
+    cd /d  %ProjectDirectory%
     if %UNREAL_ENGINE%=="" (
         :climb_parent_directory
         cd ..
         if exist Engine (
-            echo Found Engine at: "%cd%"
-            set UNREAL_ENGINE="%cd%"
+            rem Check for the Build.version file to be sure we have found a correct Engine folder.
+            if exist "Engine\Build\Build.version" (
+                echo Found Engine at: "%cd%"
+                set UNREAL_ENGINE="%cd%"
+            )
         ) else (
+            rem This checks if we are in a root directory. If so we cannot check any higher and so should error out.
+            if "%cd:~3,1%"=="" (
+                echo Error: Could not find Unreal Engine folder. Please set a project association or ensure your game project is within an Unreal Engine folder.
+                pause
+                exit /b 1
+            )
             goto :climb_parent_directory
         )
     )
 
+    popd
     pushd "%~dp0"
 
     if %UNREAL_ENGINE%=="" (
