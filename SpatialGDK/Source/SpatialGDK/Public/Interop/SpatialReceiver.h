@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 
-#include "Containers/Set.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -180,7 +179,7 @@ private:
 
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
-	TSet<Worker_EntityId> ListeningEntities;
+	TSet<int64> ListeningEntities;
 
 private:
 	template <typename T>
