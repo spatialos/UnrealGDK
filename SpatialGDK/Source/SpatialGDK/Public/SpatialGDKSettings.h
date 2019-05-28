@@ -83,7 +83,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bUseFrameTimeAsLoad;
 
-	UPROPERTY(EditAnywhere, config, Category = "Testing", meta = (ConfigRestartRequired = false))
+	UPROPERTY(EditAnywhere, config, Category = "Local Test", meta = (ConfigRestartRequired = false))
 	FString DefaultReceptionistHost;
 };
 
