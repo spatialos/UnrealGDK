@@ -38,7 +38,11 @@ FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 {
 	FSoftClassPath SoftClassPath(ClassPath);
 	UClass* Class = SoftClassPath.ResolveClass();
-	checkf(Class, TEXT("Failed to load class at path %s"), *ClassPath);
+	if (Class == nullptr)
+	{
+		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Failed to find class at path %s! Attempting to load it."), *ClassPath);
+		Class = SoftClassPath.TryLoadClass<UObject>();
+	}
 	return Class;
 }
 
@@ -124,11 +128,13 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
+	const bool bEnableHandover = GetDefault<USpatialGDKSettings>()->bEnableHandover;
+
 	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
 		UProperty* Property = *PropertyIt;
 
-		if (Property->PropertyFlags & CPF_Handover)
+		if (bEnableHandover && (Property->PropertyFlags & CPF_Handover))
 		{
 			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
 			{
@@ -157,6 +163,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
+		if (!bEnableHandover && Type == SCHEMA_Handover)
+		{
+			return;
+		}
+
 		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[ClassPath].SchemaComponents[Type];
 		if (ComponentId != 0)
 		{
@@ -173,6 +184,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
 
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
+		if (SubobjectClass == nullptr)
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to resolve the class for subobject %s (class path: %s) on actor class %s! This subobject will not be able to replicate in Spatial!"), *SubobjectSchemaData.Name.ToString(), *SubobjectSchemaData.ClassPath, *Class->GetPathName());
+			continue;
+		}
 
 		const FClassInfo& SubobjectInfo = GetOrCreateClassInfoByClass(SubobjectClass);
 
@@ -182,6 +198,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
+			if (!bEnableHandover && Type == SCHEMA_Handover)
+			{
+				return;
+			}
+
 			Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
 			if (ComponentId != 0)
 			{
