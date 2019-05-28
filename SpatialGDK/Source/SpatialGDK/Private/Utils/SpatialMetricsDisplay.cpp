@@ -204,7 +204,6 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	int32 NumServerMoveCorrections = 0;
 	float WorldTime = GetWorld()->GetTimeSeconds();
 	NumServerMoveCorrections = PerfCountersGet(TEXT("NumServerMoveCorrections"), NumServerMoveCorrections);
-	MovementCorrectionRecords.Enqueue({ NumServerMoveCorrections, WorldTime });
 	MovementCorrectionRecord OldestRecord;
 	if (MovementCorrectionRecords.Peek(OldestRecord))
 	{
@@ -215,12 +214,19 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 			MovementCorrectionsPerSecond = CorrectionsDelta / WorldTimeDelta;
 		}
 
+		// Store the most recent 30 seconds of game time worth of measurements
 		if (WorldTimeDelta > 30.f)
 		{
-			MovementCorrectionRecords.Dequeue(OldestRecord);
+			MovementCorrectionRecords.Pop();
 		}
 	}
 	Stats.ServerMovementCorrections = MovementCorrectionsPerSecond;
+
+	// Don't store a measurement if time hasn't progressed
+	if (DeltaSeconds > 0.f)
+	{
+		MovementCorrectionRecords.Enqueue({ NumServerMoveCorrections, WorldTime });
+	}
 #endif
 
 	ServerUpdateWorkerStats(SpatialNetDriver->Time, Stats);
