@@ -3,7 +3,7 @@
 # EXPERIMENTAL!
 # This file is experimental and is not maintained directly by Improbable. Please use at your own risk.
 
-set -e -u -o -x pipefail
+set -e -u -o pipefail
 
 if [ "$(uname -s)" != "Darwin" ]; then
     echo "This script should only be used on OS X. If you are using Windows, please run Setup.bat."
