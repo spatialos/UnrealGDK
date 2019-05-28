@@ -537,17 +537,10 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	case SCHEMA_ClientUnreliableRPC:
 	case SCHEMA_ServerUnreliableRPC:
 	{
-		if ((RPCInfo->Type == SCHEMA_ServerReliableRPC) ||
-			(RPCInfo->Type == SCHEMA_ClientReliableRPC))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Reliable"));
-		}
-
 		FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 		if (TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
 			Worker_EntityId OutEntityId = TargetObjectRef.Entity;
-			UE_LOG(LogTemp, Warning, TEXT("Contains id %d: %d"), OutEntityId, Receiver->ListeningEntities.Contains(OutEntityId));
 			if (Receiver->ListeningEntities.Contains(OutEntityId))
 			{
 

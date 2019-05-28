@@ -326,7 +326,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 
 	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CLIENT_RPC_ENDPOINT_COMPONENT_ID ready for %ld"), Op.entity_id);
 		ClientRPCEndpoint Endpoint;
 		Endpoint.ready = true;
 		Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
@@ -335,7 +334,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 
 	if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SERVER_RPC_ENDPOINT_COMPONENT_ID ready for %ld"), Op.entity_id);
 		ServerRPCEndpoint Endpoint;
 		Endpoint.ready = true;
 		Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
@@ -851,11 +849,6 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			if (ready)
 			{
 				ListeningEntities.Add(Op.entity_id);
-				UE_LOG(LogTemp, Warning, TEXT("Client Endpoint Ready for %ld"), Op.entity_id);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Client Endpoint Not Ready for %ld"), Op.entity_id);
 			}
 		}
 	}
@@ -868,11 +861,6 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			if (ready)
 			{
 				ListeningEntities.Add(Op.entity_id);
-				UE_LOG(LogTemp, Warning, TEXT("Server Endpoint Ready for %ld"), Op.entity_id);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Server Endpoint Not Ready for %ld"), Op.entity_id);
 			}
 
 		}
