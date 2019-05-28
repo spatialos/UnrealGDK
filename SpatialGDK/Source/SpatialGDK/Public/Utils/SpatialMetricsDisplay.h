@@ -17,6 +17,8 @@ struct FWorkerStats
 	float AverageFPS;
 	UPROPERTY()
 	float WorkerLoad;
+	UPROPERTY()
+	int32 ServerMovementCorrections;
 
 	bool operator==(const FWorkerStats& other) const
 	{

@@ -8,6 +8,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Net/UnrealNetwork.h"
+#include "Net/PerfCountersHelpers.h"
 #include "Utils/SpatialMetrics.h"
 
 ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectInitializer)
@@ -20,6 +21,14 @@ ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectI
 	bAlwaysRelevant = true;
 
 	NetUpdateFrequency = 1.f;
+
+#if USE_SERVER_PERF_COUNTERS
+	IPerfCountersModule& PerformanceModule = IPerfCountersModule::Get();
+	if (PerformanceModule.GetPerformanceCounters() == nullptr)
+	{
+		PerformanceModule.CreatePerformanceCounters();
+	}
+#endif
 }
 
 void ASpatialMetricsDisplay::BeginPlay()
@@ -74,14 +83,15 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 		StatColumn_Worker,
 		StatColumn_AverageFrameTime,
 		StatColumn_WorkerLoad,
+		StatColumn_MovementCorrections,
 		StatColumn_Last
 	};
 
 	const uint32 StatDisplayStartX = 25;
 	const uint32 StatDisplayStartY = 80;
 
-	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Load") };
-	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80 };
+	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Load"), TEXT("Movement Corrections") };
+	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80, 50 };
 	const uint32 StatRowOffset = 20;
 
 	const FString StatSectionTitle = TEXT("Spatial Metrics Display");
@@ -121,6 +131,9 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 
 		DrawX += StatColumnOffsets[StatColumn_WorkerLoad];
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.WorkerLoad), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+
+		DrawX += StatColumnOffsets[StatColumn_MovementCorrections];
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%d"), OneWorkerStats.ServerMovementCorrections), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
 		DrawY += StatRowOffset;
 	}
@@ -181,10 +194,15 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 
 	const USpatialMetrics& Metrics = *SpatialNetDriver->SpatialMetrics;
 
-	FWorkerStats Stats;
+	FWorkerStats Stats{};
 	Stats.WorkerName = SpatialNetDriver->Connection->GetWorkerId().Left(WorkerNameMaxLength).ToLower();
 	Stats.AverageFPS = Metrics.GetAverageFPS();
 	Stats.WorkerLoad = Metrics.GetWorkerLoad();
+
+#if USE_SERVER_PERF_COUNTERS
+	int32 NumServerMoveCorrections = 0;
+	Stats.ServerMovementCorrections = PerfCountersGet(TEXT("NumServerMoveCorrections"), NumServerMoveCorrections);
+#endif
 
 	ServerUpdateWorkerStats(SpatialNetDriver->Time, Stats);
 }
