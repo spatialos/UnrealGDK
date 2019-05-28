@@ -849,7 +849,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 			bool ready = GetBoolFromSchema(FieldsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
 			if (ready)
 			{
-				ListeningEntities.Add(Op.entity_id);
+				NetDriver->RegisterListeningEntity(Op.entity_id);
 			}
 		}
 	}

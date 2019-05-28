@@ -18,7 +18,7 @@ struct ClientRPCEndpoint : Component
 
 	ClientRPCEndpoint() = default;
 
-	Worker_ComponentData CreateClientRPCEndpointData()
+	Worker_ComponentData CreateRPCEndpointData()
 	{
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;

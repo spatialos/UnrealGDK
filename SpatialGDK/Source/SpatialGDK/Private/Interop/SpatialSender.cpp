@@ -239,8 +239,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	InterestFactory InterestDataFactory(Actor, Info, NetDriver);
 	ComponentDatas.Add(InterestDataFactory.CreateInterestData());
 
-	ComponentDatas.Add(ClientRPCEndpoint().CreateClientRPCEndpointData());
-	ComponentDatas.Add(ServerRPCEndpoint().CreateServerRPCEndpointData());
+	ComponentDatas.Add(ClientRPCEndpoint().CreateRPCEndpointData());
+	ComponentDatas.Add(ServerRPCEndpoint().CreateRPCEndpointData());
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
@@ -550,7 +550,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		if (TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
 			Worker_EntityId OutEntityId = TargetObjectRef.Entity;
-			if (Receiver->ListeningEntities.Contains(OutEntityId))
+			if (NetDriver->IsEntityListening(OutEntityId))
 			{
 
 				Worker_ComponentId ComponentId;

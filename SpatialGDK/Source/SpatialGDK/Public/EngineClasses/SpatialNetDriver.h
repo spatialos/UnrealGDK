@@ -149,10 +149,16 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
+	bool IsEntityListening(Worker_EntityId EntityId) const;
+	void RegisterListeningEntity(Worker_EntityId EntityId);
+	void UnregisterListeningEntity(Worker_EntityId EntityId);
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
+
+	TSet<int64> ListeningEntities;
 
 	FTimerManager TimerManager;
 
