@@ -50,6 +50,11 @@ markStartOfBlock "Setup the git hooks"
 markEndOfBlock "Setup the git hooks"
 
 markStartOfBlock "Check dependencies"
+    if [ -z "${UNREAL_HOME:-}" ]; then
+        echo "Error: Please set UNREAL_HOME environment variable in ~/.bashrc or ~/.zshrc to point to the Unreal Engine folder."
+        exit 1
+    fi
+    
     which msbuild > /dev/null
     if [ $? -eq 1 ]; then
         echo "Error: Could not find the MSBuild executable. Please make sure you have Microsoft Visual Studio or Microsoft Build Tools installed."
