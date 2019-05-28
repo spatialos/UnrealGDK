@@ -143,7 +143,7 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (!GetWorld()->IsServer())
+	if (!GetWorld()->IsServer() || !HasActorBegunPlay())
 	{
 		return;
 	}
