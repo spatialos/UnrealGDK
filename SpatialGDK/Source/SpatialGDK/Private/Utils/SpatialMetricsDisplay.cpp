@@ -85,7 +85,6 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 	{
 		StatColumn_Worker,
 		StatColumn_AverageFrameTime,
-		StatColumn_WorkerLoad,
 		StatColumn_MovementCorrections,
 		StatColumn_Last
 	};
@@ -93,8 +92,8 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 	const uint32 StatDisplayStartX = 25;
 	const uint32 StatDisplayStartY = 80;
 
-	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Load"), TEXT("Movement Corrections") };
-	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80, 50 };
+	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Movement Corrections") };
+	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80 };
 	const uint32 StatRowOffset = 20;
 
 	const FString StatSectionTitle = TEXT("Spatial Metrics Display");
@@ -131,9 +130,6 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 
 		DrawX += StatColumnOffsets[StatColumn_AverageFrameTime];
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f ms"), 1000.f / OneWorkerStats.AverageFPS), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
-
-		DrawX += StatColumnOffsets[StatColumn_WorkerLoad];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.WorkerLoad), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
 		DrawX += StatColumnOffsets[StatColumn_MovementCorrections];
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.4f"), OneWorkerStats.ServerMovementCorrections), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
@@ -200,7 +196,6 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	FWorkerStats Stats{};
 	Stats.WorkerName = SpatialNetDriver->Connection->GetWorkerId().Left(WorkerNameMaxLength).ToLower();
 	Stats.AverageFPS = Metrics.GetAverageFPS();
-	Stats.WorkerLoad = Metrics.GetWorkerLoad();
 
 #if USE_SERVER_PERF_COUNTERS
 	float MovementCorrectionsPerSecond = 0.f;
@@ -210,8 +205,8 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	MovementCorrectionRecord OldestRecord;
 	if (MovementCorrectionRecords.Peek(OldestRecord))
 	{
-		float WorldTimeDelta = WorldTime - OldestRecord.Time;
-		int32 CorrectionsDelta = NumServerMoveCorrections - OldestRecord.MovementCorrections;
+		const float WorldTimeDelta = WorldTime - OldestRecord.Time;
+		const int32 CorrectionsDelta = NumServerMoveCorrections - OldestRecord.MovementCorrections;
 		if (WorldTimeDelta > 0.f && CorrectionsDelta > 0)
 		{
 			MovementCorrectionsPerSecond = CorrectionsDelta / WorldTimeDelta;
