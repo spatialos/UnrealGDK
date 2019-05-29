@@ -324,20 +324,20 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		}
 	}
 
-	if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		ClientRPCEndpoint Endpoint;
-		Endpoint.ready = true;
-		Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
-		NetDriver->Connection->SendComponentUpdate(Op.entity_id, &Update);
+		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+		{
+			Sender->SendEndpointReadyUpdate<ClientRPCEndpoint>(Op.entity_id);
+		}
+		if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
+		{
+			Sender->SendEndpointReadyUpdate<ServerRPCEndpoint>(Op.entity_id);
+		}
 	}
-
-	if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	else
 	{
-		ServerRPCEndpoint Endpoint;
-		Endpoint.ready = true;
-		Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
-		NetDriver->Connection->SendComponentUpdate(Op.entity_id, &Update);
+		UE_LOG(LogTemp, Warning, TEXT("===Losing authority"));
 	}
 
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
