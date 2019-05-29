@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Containers/Queue.h"
 #include "GameFramework/Info.h"
+
 #include "SpatialMetricsDisplay.generated.h"
 
 USTRUCT()
