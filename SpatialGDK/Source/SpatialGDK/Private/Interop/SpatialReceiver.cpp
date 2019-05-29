@@ -1032,6 +1032,33 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 #endif // WITH_EDITOR
+
+	Worker_CommandResponse Response = {};
+	Response.component_id = Op.request.component_id;	
+	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);	
+
+ 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);	
+
+ 	RPCPayload Payload(RequestObject);	
+
+ 	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Payload.Offset)).Get();	
+	if (TargetObject == nullptr)	
+	{	
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object found for EntityId %d"), Op.entity_id);	
+		Sender->SendCommandResponse(Op.request_id, Response);	
+		return;	
+	}	
+
+ 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);	
+
+ 	UFunction* Function = Info.RPCs[Payload.Index];	
+
+ 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),	
+		Op.entity_id, Op.request.component_id, *Function->GetName());	
+
+ 	ApplyRPC(TargetObject, Function, Payload, UTF8_TO_TCHAR(Op.caller_worker_id));	
+
+ 	Sender->SendCommandResponse(Op.request_id, Response);
 }
 
 void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
