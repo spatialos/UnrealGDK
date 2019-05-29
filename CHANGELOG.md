@@ -21,13 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Running Schema (Full Scan) now clears generated schema files first.
 - Singletons authority and state resumes correct when reconnecting servers to snapshot.
 - Fixed a crash when retrying reliable RPCs with UObject arguments that got destroyed before the RPC was retried.
+- Fixed path naming issues in setup.sh
 - Made Reliable Client/Server RPCs use Events instead of Commands.
 
 ### External contributors:
 
 In addition to all of the updates from Improbable, this release includes x improvements submitted by the incredible community of SpatialOS developers on GitHub! Thanks to these contributors:
 
-* 
+* @cyberbibby
 
 ## [`0.4.2`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.2) - 2019-05-20
 
