@@ -13,6 +13,8 @@
 
 USpatialGDKEditorCloudLauncherSettings::USpatialGDKEditorCloudLauncherSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, PrimaryDeploymentRegionCode(ERegionCode::US)
+	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerDeploymentName(FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir() /
 		TEXT("Plugins/UnrealGDK/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json"))))
 {
