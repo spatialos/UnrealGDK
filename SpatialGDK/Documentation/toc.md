@@ -35,6 +35,7 @@
     - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
     - SpatialOS concepts
+        - [Introduction]({{urlRoot}}/content/spatialos-concepts/introduction)
         - [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)
         - [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components)
         - [Workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)
