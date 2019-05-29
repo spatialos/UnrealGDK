@@ -335,10 +335,6 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 			Sender->SendEndpointReadyUpdate<ServerRPCEndpoint>(Op.entity_id);
 		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("===Losing authority"));
-	}
 
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder && Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
