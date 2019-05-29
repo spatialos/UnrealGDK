@@ -540,19 +540,42 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		}
 		break;
 	}
+	case SCHEMA_NetMulticastRPC:
+	{
+		FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
+		if (TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+		{
+			EntityId = TargetObjectRef.Entity;
+			Worker_ComponentId ComponentId = SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
+
+			Worker_ComponentUpdate ComponentUpdate = CreateUnreliableRPCUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
+
+			if (!UnresolvedObject)
+			{
+				check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+				if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
+				{
+					UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
+					return;
+				}
+
+				Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+			}
+		}
+		break;
+	}
 	case SCHEMA_ClientReliableRPC:
 	case SCHEMA_ServerReliableRPC:
-	case SCHEMA_NetMulticastRPC:
 	case SCHEMA_ClientUnreliableRPC:
 	case SCHEMA_ServerUnreliableRPC:
 	{
 		FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 		if (TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
-			Worker_EntityId OutEntityId = TargetObjectRef.Entity;
-			if (NetDriver->IsEntityListening(OutEntityId))
+			EntityId = TargetObjectRef.Entity;
+			if (NetDriver->IsEntityListening(EntityId))
 			{
-
 				Worker_ComponentId ComponentId;
 				if ((RPCInfo->Type == SCHEMA_ClientUnreliableRPC) ||
 					(RPCInfo->Type == SCHEMA_ClientReliableRPC))
@@ -564,12 +587,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 				{
 					ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
 				}
-				else
-				{
-					ComponentId = SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
-				}
 
-				Worker_ComponentUpdate ComponentUpdate = CreateUnreliableRPCUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject);
+				Worker_ComponentUpdate ComponentUpdate = CreateUnreliableRPCUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
 
 				if (!UnresolvedObject)
 				{
@@ -584,8 +603,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 					Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 				}
 			}
-			break;
 		}
+		break;
 	}
 	default:
 		checkNoEntry();
@@ -839,7 +858,7 @@ Worker_CommandRequest USpatialSender::CreateRetryRPCCommandRequest(const FReliab
 	return CommandRequest;
 }
 
-Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject)
+Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, const UObject*& OutUnresolvedObject)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -855,8 +874,6 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 		return ComponentUpdate;
 	}
-
-	OutEntityId = TargetObjectRef.Entity;
 
 	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
