@@ -8,8 +8,11 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Net/UnrealNetwork.h"
-#include "Net/PerfCountersHelpers.h"
 #include "Utils/SpatialMetrics.h"
+
+#if USE_SERVER_PERF_COUNTERS
+#include "Net/PerfCountersHelpers.h"
+#endif
 
 ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -207,8 +210,8 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	MovementCorrectionRecord OldestRecord;
 	if (MovementCorrectionRecords.Peek(OldestRecord))
 	{
-		float WorldTimeDelta = OldestRecord.Time - WorldTime;
-		int32 CorrectionsDelta = OldestRecord.MovementCorrections - NumServerMoveCorrections;
+		float WorldTimeDelta = WorldTime - OldestRecord.Time;
+		int32 CorrectionsDelta = NumServerMoveCorrections - OldestRecord.MovementCorrections;
 		if (WorldTimeDelta > 0.f && CorrectionsDelta > 0)
 		{
 			MovementCorrectionsPerSecond = CorrectionsDelta / WorldTimeDelta;
