@@ -33,7 +33,7 @@ If you haven't done this already, follow the three steps in _Get started_ guide 
     (Note that you must follow the Starter Template instructions and not the Example Project instructions.)
 </br>
 </br>
-* Update your local version of the spatial CLI. s</br>
+* Update your local version of the SpatialOS CLI.</br>
 Open a terminal window and run the command `spatial update` to ensure your [SpatialOS CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli) installation is up to date. 
 </br>
 </br>
