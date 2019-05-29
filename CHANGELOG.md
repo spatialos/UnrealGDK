@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Running Schema (Full Scan) now clears generated schema files first.
 - Singletons authority and state resumes correct when reconnecting servers to snapshot.
 - Fixed a crash when retrying reliable RPCs with UObject arguments that got destroyed before the RPC was retried.
+- Made Reliable Client/Server RPCs use Events instead of Commands.
 
 ### External contributors:
 
