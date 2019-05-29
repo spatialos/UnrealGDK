@@ -52,7 +52,7 @@ call :MarkStartOfBlock "Check dependencies"
 
     echo Using uproject: %UPROJECT%
 
-    rem Get the Engine Association from the uproject.
+    rem Get the Engine association from the uproject.
     for /f "delims=" %%A in (' powershell -Command "Select-String -Pattern '..{8}-.{4}-.{4}-.{4}-.{12}.' %UPROJECT% -AllMatches | %% { $_.Matches } | %% { $_.Value }" ') do set ENGINE_ASSOCIATION="%%A"
     
     echo Engine association for uproject is: "%ENGINE_ASSOCIATION%"
