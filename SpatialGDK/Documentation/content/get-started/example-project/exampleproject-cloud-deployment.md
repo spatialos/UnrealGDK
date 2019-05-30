@@ -142,6 +142,8 @@ When your deployment has launched, SpatialOS automatically opens the Console in 
 </br>
 </br>
 **> Next:** [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
-<br/>--------<br/>
+<br/>
 
-_2019-05-21 Page added with full review_
+ <br/>------------<br/>
+_2019-05-30 Page updated with limited editorial review_
+<br/>
