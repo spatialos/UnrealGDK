@@ -12,7 +12,7 @@ To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/e
 ### Step 2: Get the Unreal Engine Fork source code and Unreal Linux cross-platform support
 
 1. **Unreal Engine Fork**</br> 
-Open a terminal and run either of these commands to clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) repository.
+Open a terminal and run either of these commands to clone the [Unreal Engine Fork](https://github.com/improbableio/UnrealEngine) repository.
 
     > **TIP:** Clone the Unreal Engine fork into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealEngine`. 
 
