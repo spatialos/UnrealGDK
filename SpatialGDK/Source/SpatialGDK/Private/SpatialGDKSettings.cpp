@@ -27,6 +27,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MetricsReportRate(2.0f)
 	, bUseFrameTimeAsLoad(false)
 	, bCheckRPCOrder(false)
+	, bBatchSpatialPositionUpdates(true)
 {
 }
 

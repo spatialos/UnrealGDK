@@ -1212,12 +1212,14 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		TimerManager.Tick(DeltaTime);
 	}
 
-	// Check for batch spatial update
-	if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+	if (GetDefault<USpatialGDKSettings>()->bBatchSpatialPositionUpdates)
 	{
-		TimeWhenPositionLastUpdated = Time;
+		if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+		{
+			TimeWhenPositionLastUpdated = Time;
 
-		Sender->SendQueuedPositionUpdates();
+			Sender->ProcessPositionUpdates();
+		}
 	}
 
 	Super::TickFlush(DeltaTime);

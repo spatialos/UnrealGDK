@@ -444,10 +444,7 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 #endif
 
 	Worker_ComponentUpdate Update = Position::CreatePositionUpdate(Coordinates::FromFVector(Location));
-
-	QueuedPositionUpdates.FindOrAdd(EntityId) = Update;
-
-	//Connection->SendComponentUpdate(EntityId, &Update);
+	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
 void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
@@ -630,14 +627,31 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 	Receiver->AddPendingReliableRPC(RequestId, RetryRPC);
 }
 
-void USpatialSender::SendQueuedPositionUpdates()
+void USpatialSender::RegisterChannelForPositionUpdate(USpatialActorChannel* Channel)
 {
+	ChannelsToUpdatePosition.Add(Channel);
+}
+
+void USpatialSender::ProcessPositionUpdates()
+{
+	for (auto& Channel : ChannelsToUpdatePosition)
+	{
+		if (Channel.IsValid())
+		{
+			Channel->UpdateSpatialPosition( /*bCheckLastUpdateTime*/ false );
+		}
+	}
+
+	ChannelsToUpdatePosition.Empty();
+
+	/*
 	for (auto& PositionUpdatePair : QueuedPositionUpdates)
 	{
 		Connection->SendComponentUpdate(PositionUpdatePair.Key, &PositionUpdatePair.Value);
 	}
 
 	QueuedPositionUpdates.Empty();
+	*/
 }
 
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)

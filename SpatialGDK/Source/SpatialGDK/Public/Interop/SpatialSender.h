@@ -67,6 +67,7 @@ using FChannelToHandleToUnresolved = TMap<FChannelObjectPair, FHandleToUnresolve
 using FOutgoingRepUpdates = TMap<TWeakObjectPtr<const UObject>, FChannelToHandleToUnresolved>;
 using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<Worker_ComponentUpdate>>;
 using FPositionUpdates = TMap<Worker_EntityId_Key, Worker_ComponentUpdate>;
+using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>>;
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject
@@ -92,7 +93,9 @@ public:
 	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
 	void FlushRetryRPCs();
 	void RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
-	void SendQueuedPositionUpdates();
+
+	void RegisterChannelForPositionUpdate(USpatialActorChannel* Channel);
+	void ProcessPositionUpdates();
 
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
 	void ResolveOutgoingRPCs(UObject* Object);
@@ -157,4 +160,5 @@ private:
 	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;
 
 	FPositionUpdates QueuedPositionUpdates;
+	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 };

@@ -343,7 +343,14 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Update SpatialOS position.
 	if (!bCreatingNewEntity)
 	{
-		UpdateSpatialPosition();
+		if (GetDefault<USpatialGDKSettings>()->bBatchSpatialPositionUpdates)
+		{
+			Sender->RegisterChannelForPositionUpdate(this);
+		}
+		else
+		{
+			UpdateSpatialPosition( /*bCheckLastUpdateTime*/ true);
+		}
 	}
 	
 	// Update the replicated property change list.
@@ -748,9 +755,11 @@ void USpatialActorChannel::OnCreateEntityResponse(const Worker_CreateEntityRespo
 	UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Created entity (%lld) for: %s."), Op.entity_id, *Actor->GetName());
 }
 
-void USpatialActorChannel::UpdateSpatialPosition()
+void USpatialActorChannel::UpdateSpatialPosition(bool bCheckLastUpdateTime)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	// When we update an Actor's position, we want to update the position of all the children of this Actor.
 	// If this Actor is a PlayerController, we want to update all of its children and its possessed Pawn.
@@ -762,13 +771,13 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	}
 
 	// Check that there has been a sufficient amount of time since the last update.
-	if ((NetDriver->Time - TimeWhenPositionLastUpdated) < (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+	if (bCheckLastUpdateTime && (NetDriver->Time - TimeWhenPositionLastUpdated) < (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
 	{
 		return;
 	}
 
 	// Check that the Actor has moved sufficiently far to be updated
-	const float SpatialPositionThresholdSquared = FMath::Square(GetDefault<USpatialGDKSettings>()->PositionDistanceThreshold);
+	const float SpatialPositionThresholdSquared = FMath::Square(SpatialGDKSettings->PositionDistanceThreshold);
 	FVector ActorSpatialPosition = GetActorSpatialPosition(Actor);
 	if (FVector::DistSquared(ActorSpatialPosition, LastPositionSinceUpdate) < SpatialPositionThresholdSquared)
 	{
