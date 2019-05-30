@@ -643,15 +643,6 @@ void USpatialSender::ProcessPositionUpdates()
 	}
 
 	ChannelsToUpdatePosition.Empty();
-
-	/*
-	for (auto& PositionUpdatePair : QueuedPositionUpdates)
-	{
-		Connection->SendComponentUpdate(PositionUpdatePair.Key, &PositionUpdatePair.Value);
-	}
-
-	QueuedPositionUpdates.Empty();
-	*/
 }
 
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)

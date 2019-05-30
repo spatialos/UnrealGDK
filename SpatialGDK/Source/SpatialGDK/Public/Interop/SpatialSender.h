@@ -66,7 +66,6 @@ using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
 using FChannelToHandleToUnresolved = TMap<FChannelObjectPair, FHandleToUnresolved>;
 using FOutgoingRepUpdates = TMap<TWeakObjectPtr<const UObject>, FChannelToHandleToUnresolved>;
 using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<Worker_ComponentUpdate>>;
-using FPositionUpdates = TMap<Worker_EntityId_Key, Worker_ComponentUpdate>;
 using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>>;
 
 UCLASS()
@@ -159,6 +158,5 @@ private:
 
 	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;
 
-	FPositionUpdates QueuedPositionUpdates;
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 };
