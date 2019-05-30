@@ -2,16 +2,17 @@
 # Get started 
 ## 2 - Get and build the SpatialOS Unreal Engine Fork
 
-To use the SpatialOS GDK for Unreal, you first need to build the SpatialOS fork of Unreal Engine.
+To use the SpatialOS GDK for Unreal, you need to get the SpatialOS version of Unreal Engine - this is the SpatialOS Unreal Engine Fork. You get it as source code from GitHub and then build it.
 
 ### Step 1: Unreal Engine EULA
 
-To get access to our fork, you need to link your GitHub account to a verified Epic Games account, agree to the Unreal Engine End User License Agreement (EULA) and accept the invite to join the [EpicGames organisation on Github](https://github.com/EpicGames). You cannot use the GDK without doing this first. To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/en-US/ue4-on-github).
+To get access to the SpatialOS fork, you need to link your GitHub account to a verified Epic Games account, agree to the Unreal Engine End User License Agreement (EULA) and accept the invite to join the [EpicGames organisation on GitHub](https://github.com/EpicGames). You cannot use the GDK without doing this first. </br>
+To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/en-US/ue4-on-github).
 
-### Step 2: Get the Unreal Engine fork source code and Unreal Linux cross-platform support
+### Step 2: Get the Unreal Engine Fork source code and Unreal Linux cross-platform support
 
-1. **Unreal Engine fork**</br> 
-   Open a terminal and run either of these commands to clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) repository.
+1. **Unreal Engine Fork**</br> 
+Open a terminal and run either of these commands to clone the [Unreal Engine fork](https://github.com/improbableio/UnrealEngine) repository.
 
     > **TIP:** Clone the Unreal Engine fork into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealEngine`. 
 
@@ -20,23 +21,23 @@ To get access to our fork, you need to link your GitHub account to a verified Ep
     | HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |
     | SSH |`git clone git@github.com:improbableio/UnrealEngine.git`
 
-2. **Unreal Linux cross-platform support**</br>  
-    To build the server software for SpatialOS deployments, you need to build the Unreal Engine fork targeting Linux. This requires Linux cross-compilation of your SpatialOS project and the Unreal Engine fork. To do this, you need to download and unzip the Linux cross-compilation toolchain.</br></br>
-    For guidance on this, see the _Getting the toolchain_ section of Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation. As you follow the guidance there, select **v11 clang 5.0.0-based** to download the `v11_clang-5.0.0-centos7.zip` archive, then unzip this file into a suitable directory.
+2. **Unreal Linux cross-platform support**</br>
+To build the server software for SpatialOS deployments, you need to build the Unreal Engine fork targeting Linux. This requires Linux cross-compilation of your SpatialOS project and the Unreal Engine fork. To do this, you need to download and unzip the Linux cross-compilation toolchain.</br></br>
+For guidance on this, see the _Getting the toolchain_ section of Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation. As you follow the guidance there, select **v11 clang 5.0.0-based** to download the `v11_clang-5.0.0-centos7.zip` archive, then unzip this file into a suitable directory.
 
 ### Step 3: Add environment variables
 
-You need to add two [envionment variables](https://en.wikipedia.org/wiki/Environment_variable). Both are system variables; one to set the path to the Unreal Engine fork directory (`UNREAL_HOME`), and the other to set the path to the Linux cross-compilation toolchain for Linux cross-platform support (`LINUX_MULTIARCH_ROOT`).
+To build the SpatialOS version of Unreal Engine, you need to add two [envionment variables](https://en.wikipedia.org/wiki/Environment_variable). Both are system variables; one to set the path to the Unreal Engine Fork directory (`UNREAL_HOME`), and the other to set the path to the Linux cross-compilation toolchain so you have Unreal Linux cross-platform support (`LINUX_MULTIARCH_ROOT`).
 
-1. Open File Explorer and navigate to **Control Panel** > **System and Security** > **System** > **Advanced system settings** > **Advanced** > **Environment variables** to display the Windows Environment Variables dialog box.
+1. Open File Explorer and navigate to **Control Panel** > **System and Security** > **System** > **Advanced system settings** > **Advanced** > **Environment variables** to display the Environment Variables dialog box.
 1. In the dialog box, select **New...** to create a new system variable named `UNREAL_HOME`.<br/>
-Set the variable value as the path to the directory you cloned the Unreal Engine fork into.
+Set the variable value as the path to the directory you cloned the Unreal Engine Fork into.
 1. Test the variable is set correctly: close and restart your terminal window and run `echo %UNREAL_HOME%` (Command Prompt) or `echo $Env:UNREAL_HOME` (PowerShell). </br> 
-If you have registered the system variable correctly, this returns the path to the directory you cloned the Unreal Engine fork into. If it doesn’t, go back to the Environment Variable dialog box in File Explorer and check that you’ve set the environment variable correctly.
+If you have registered the system variable correctly, this returns the path to the directory you cloned the Unreal Engine fork into. If it doesn’t, go back to the Environment Variables dialog box via File Explorer and check that you’ve set the environment variable correctly.
 1. Back in the Environment Variables dialog box, create another system variable named `LINUX_MULTIARCH_ROOT`. </br>
-Set the variable value as the path to the directory of the unzipped Linux cross-compilation toolchain you downloaded and unzipped earlier.
+Set the variable value as the path to the directory of the Linux cross-compilation toolchain you downloaded and unzipped earlier.
 1. Test the variable is set correctly: close and restart your terminal window and run `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell). </br>
-If you have registered the environment variable correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7.zip` into. If it doesn’t, go back to the Environment Variable dialog box in File Explorer and check that you’ve set the environment variable correctly.
+If you have registered the environment variable correctly, this returns the path you unzipped `v11_clang-5.0.0-centos7.zip` into. If it doesn’t, go back to the Environment Variables dialog box via File Explorer and check that you’ve set the environment variable correctly.
 
 ### Step 4: Build Unreal Engine
 
