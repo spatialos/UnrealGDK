@@ -1655,8 +1655,10 @@ bool USpatialNetDriver::IsEntityListening(Worker_EntityId EntityId) const
 
 void USpatialNetDriver::RegisterListeningEntity(Worker_EntityId EntityId)
 {
-	check(!ListeningEntities.Contains(EntityId));
-	ListeningEntities.Add(EntityId);
+	if (!ListeningEntities.Contains(EntityId))
+	{
+		ListeningEntities.Add(EntityId);
+	}
 }
 
 void USpatialNetDriver::UnregisterListeningEntity(Worker_EntityId EntityId)

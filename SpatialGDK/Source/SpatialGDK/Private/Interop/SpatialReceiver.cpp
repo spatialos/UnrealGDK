@@ -166,6 +166,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 {
+	NetDriver->UnregisterListeningEntity(Op.entity_id);
 	RemoveActor(Op.entity_id);
 }
 
