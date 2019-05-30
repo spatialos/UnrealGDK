@@ -114,8 +114,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
@@ -129,6 +127,11 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
+		return;
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
+		Schema_Object* FieldsObject = Schema_GetComponentDataFields(Op.data.schema_type);
+		RegisterListeningEntityIfReady(Op.entity_id, FieldsObject);
 		return;
 	}
 
@@ -841,14 +844,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 		Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 	{
 		Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-		if (Schema_GetBoolCount(FieldsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
-		{
-			bool ready = GetBoolFromSchema(FieldsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
-			if (ready)
-			{
-				NetDriver->RegisterListeningEntity(Op.entity_id);
-			}
-		}
+		RegisterListeningEntityIfReady(Op.entity_id, FieldsObject);
 	}
 
 	if (StaticComponentView->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
@@ -1147,6 +1143,18 @@ void USpatialReceiver::ApplyComponentUpdate(const Worker_ComponentUpdate& Compon
 	}
 
 	QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
+}
+
+void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object)
+{
+	if (Schema_GetBoolCount(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
+	{
+		bool ready = GetBoolFromSchema(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
+		if (ready)
+		{
+			NetDriver->RegisterListeningEntity(EntityId);
+		}
+	}
 }
 
 void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCPayload& Payload, const FString& SenderWorkerId)
