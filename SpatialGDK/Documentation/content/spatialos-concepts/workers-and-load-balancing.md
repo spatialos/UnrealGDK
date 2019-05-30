@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Concepts: workers and load balancing
+# SpatialOS concepts: workers and load balancing
 
 > **Tip:** Before you read this page, you should read [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos) and [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components).
 

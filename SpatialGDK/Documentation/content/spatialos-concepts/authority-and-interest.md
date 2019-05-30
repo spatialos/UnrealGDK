@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Concepts: authority and interest
+# SpatialOS concepts: authority and interest
 
 > **Tip:** Before you read this page, you should read [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos), [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components), and [Workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing). 
 

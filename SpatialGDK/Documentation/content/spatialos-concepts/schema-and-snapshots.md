@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Concepts: schema and snapshots
+# SpatialOS concepts: schema and snapshots
 
 ## Schema
 
