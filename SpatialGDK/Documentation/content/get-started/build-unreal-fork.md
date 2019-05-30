@@ -27,7 +27,7 @@ For guidance on this, see the _Getting the toolchain_ section of Unreal's [Compi
 
 ### Step 3: Add environment variables
 
-To build the SpatialOS-compatible version of Unreal Engine, you need to add two [envionment variables](https://en.wikipedia.org/wiki/Environment_variable). Both are system variables; one to set the path to the Unreal Engine Fork directory (`UNREAL_HOME`), and the other to set the path to the Linux cross-compilation toolchain so you have Unreal Linux cross-platform support (`LINUX_MULTIARCH_ROOT`).
+To build the SpatialOS-compatible version of Unreal Engine, you need to add two [environment variables](https://en.wikipedia.org/wiki/Environment_variable). Both are system variables; one to set the path to the Unreal Engine Fork directory (`UNREAL_HOME`), and the other to set the path to the Linux cross-compilation toolchain so you have Unreal Linux cross-platform support (`LINUX_MULTIARCH_ROOT`).
 
 1. Open File Explorer and navigate to **Control Panel** > **System and Security** > **System** > **Advanced system settings** > **Advanced** > **Environment variables** to display the Environment Variables dialog box.
 1. In the dialog box, select **New...** to create a new system variable named `UNREAL_HOME`.<br/>
