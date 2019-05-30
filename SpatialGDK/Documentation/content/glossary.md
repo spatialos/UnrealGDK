@@ -278,7 +278,7 @@ SpatialOS uses the schema to generate code. You can use this generated code in y
 
 > Related:
 >
-> * [Concepts: schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema)
+> * [SpatialOS concepts: schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema)
 > * [Reference: schema]({{urlRoot}}/content/how-to-use-schema)
 
 ### SpatialOS command-line tool (CLI)
@@ -309,7 +309,7 @@ SpatialOS components are defined as files in your [schema](#schema).
 >
 > * [Designing components](https://docs.improbable.io/reference/latest/shared/design/design-components)
 > * [Component best practices](https://docs.improbable.io/reference/latest/shared/design/component-best-practices)
-> * [Concepts: schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema)
+> * [SpatialOS concepts: schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema)
 
 ### SpatialOS entity
 All of the objects inside a [SpatialOS world](#spatialos-world) are SpatialOS entities: they’re the basic building blocks of the world. Examples include players, NPCs, and objects in the world like trees. A SpatialOS entity approximates to an Unreal Actor.  
@@ -320,7 +320,7 @@ SpatialOS entities are made up of [SpatialOS components](#spatialos-component), 
 
 > Related:
 >
-> * [Concepts: entities]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components)
+> * [SpatialOS concepts: entities]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components)
 > * [Designing SpatialOS entities](https://docs.improbable.io/reference/latest/shared/design/design-entities)
 
 ### SpatialOS Runtime
@@ -360,7 +360,7 @@ You use a snapshot as the starting point (using an an “initial snapshot”) fo
 
 > Related:
 > 
-> * [Concepts: snapshots]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots)
+> * [SpatialOS concepts: snapshots]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots)
 > * [Reference: snapshots]({{urlRoot}}/content/how-to-use-snapshots)
 
 ### Streaming queries
@@ -407,7 +407,7 @@ it can update [properties](https://docs.improbable.io/reference/latest/shared/gl
 
 > Related:
 >
-> * [Concepts: workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)
+> * [SpatialOS concepts: workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)
 
 ### Worker configuration
 The worker configuration is how you set up your workers. It is represented in the worker configuration file.
