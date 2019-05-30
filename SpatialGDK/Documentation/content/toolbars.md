@@ -111,3 +111,9 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 | Setting | Description |
 | --- | --- |
 | Output path for the generated schemas | Use this to specify the path of the generated [schema]({{urlRoot}}/content/glossary#schema) files.  If you leave this empty, it defaults to `<GameRoot>/../spatial/schema/improbable/unreal/generated/`. |
+
+<br/>
+
+<br/>------------<br/>
+_2019-05-30 Page updated with limited editorial review_
+<br/>	<br/>
