@@ -140,7 +140,8 @@ public:
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
 	void UpdateShadowData();
-	void UpdateSpatialPosition(bool bCheckLastUpdateTime);
+	void UpdateSpatialPositionWithFrequencyCheck();
+	void UpdateSpatialPosition();
 
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }

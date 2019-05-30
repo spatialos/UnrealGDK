@@ -638,7 +638,7 @@ void USpatialSender::ProcessPositionUpdates()
 	{
 		if (Channel.IsValid())
 		{
-			Channel->UpdateSpatialPosition( /*bCheckLastUpdateTime*/ false );
+			Channel->UpdateSpatialPosition();
 		}
 	}
 

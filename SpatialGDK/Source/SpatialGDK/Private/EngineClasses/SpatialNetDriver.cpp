@@ -41,7 +41,7 @@ DEFINE_STAT(STAT_SpatialConsiderList);
 
 USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, bAuthoritativeDestruction(false)
+	, bAuthoritativeDestruction(true)
 	, bConnectAsClient(false)
 	, bPersistSpatialConnection(true)
 	, bWaitingForAcceptingPlayersToSpawn(false)
