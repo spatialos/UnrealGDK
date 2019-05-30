@@ -33,7 +33,7 @@ To build the SpatialOS-compatible version of Unreal Engine, you need to add two 
 1. In the dialog box, select **New...** to create a new system variable named `UNREAL_HOME`.<br/>
 Set the variable value as the path to the directory you cloned the Unreal Engine Fork into.
 1. Test the variable is set correctly: close and restart your terminal window and run `echo %UNREAL_HOME%` (Command Prompt) or `echo $Env:UNREAL_HOME` (PowerShell). </br> 
-If you have registered the system variable correctly, this returns the path to the directory you cloned the Unreal Engine fork into. If it doesn’t, go back to the Environment Variables dialog box via File Explorer and check that you’ve set the environment variable correctly.
+If you have registered the system variable correctly, this returns the path to the directory you cloned the Unreal Engine Fork into. If it doesn’t, go back to the Environment Variables dialog box via File Explorer and check that you’ve set the environment variable correctly.
 1. Back in the Environment Variables dialog box, create another system variable named `LINUX_MULTIARCH_ROOT`. </br>
 Set the variable value as the path to the directory of the Linux cross-compilation toolchain you downloaded and unzipped earlier.
 1. Test the variable is set correctly: close and restart your terminal window and run `echo %LINUX_MULTIARCH_ROOT%` (Command Prompt) or `echo $Env:LINUX_MULTIARCH_ROOT` (PowerShell). </br>
