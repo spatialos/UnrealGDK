@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Containers/Queue.h"
 #include "GameFramework/Info.h"
+
 #include "SpatialMetricsDisplay.generated.h"
 
 USTRUCT()
@@ -16,7 +18,7 @@ struct FWorkerStats
 	UPROPERTY()
 	float AverageFPS;
 	UPROPERTY()
-	float WorkerLoad;
+	float ServerMovementCorrections; // per second
 
 	bool operator==(const FWorkerStats& other) const
 	{
@@ -58,4 +60,11 @@ private:
 	virtual void ServerUpdateWorkerStats(const float Time, const FWorkerStats& OneWorkerStats);
 
 	void DrawDebug(class UCanvas* Canvas, APlayerController* Controller);
+
+	struct MovementCorrectionRecord
+	{
+		int32 MovementCorrections;
+		float Time;
+	};
+	TQueue<MovementCorrectionRecord> MovementCorrectionRecords;
 };
