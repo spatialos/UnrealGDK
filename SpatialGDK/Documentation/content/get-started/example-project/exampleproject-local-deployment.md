@@ -64,8 +64,8 @@ To launch a local deployment:
 </br>
 **Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment) 
 
-</br>
+<br/>
 
---------<br/>
-
-_2019-05-21 Page added with full review_
+ <br/>------------<br/>
+_2019-05-30 Page updated with full editorial review_
+<br/>
