@@ -690,7 +690,7 @@ void USpatialSender::ClearRPCsOnEntityCreation(Worker_EntityId EntityId)
 void USpatialSender::SendClientEndpointReadyUpdate(Worker_EntityId EntityId)
 {
 	ClientRPCEndpoint Endpoint;
-	Endpoint.ready = true;
+	Endpoint.bReady = true;
 	Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
@@ -698,7 +698,7 @@ void USpatialSender::SendClientEndpointReadyUpdate(Worker_EntityId EntityId)
 void USpatialSender::SendServerEndpointReadyUpdate(Worker_EntityId EntityId)
 {
 	ServerRPCEndpoint Endpoint;
-	Endpoint.ready = true;
+	Endpoint.bReady = true;
 	Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }

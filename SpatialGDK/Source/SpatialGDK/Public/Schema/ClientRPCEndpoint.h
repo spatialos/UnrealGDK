@@ -20,27 +20,27 @@ struct ClientRPCEndpoint : Component
 
 	Worker_ComponentData CreateRPCEndpointData()
 	{
-		Worker_ComponentData Data = {};
+		Worker_ComponentData Data{};
 		Data.component_id = ComponentId;
 		Data.schema_type = Schema_CreateComponentData(ComponentId);
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-		Schema_AddBool(ComponentObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID, ready);
+		Schema_AddBool(ComponentObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID, bReady);
 
 		return Data;
 	}
 
 	Worker_ComponentUpdate CreateRPCEndpointUpdate()
 	{
-		Worker_ComponentUpdate Update = {};
+		Worker_ComponentUpdate Update{};
 		Update.component_id = ComponentId;
 		Update.schema_type = Schema_CreateComponentUpdate(ComponentId);
 		Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
-		Schema_AddBool(UpdateObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID, ready);
+		Schema_AddBool(UpdateObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID, bReady);
 
 		return Update;
 	}
 
-	bool ready = false;
+	bool bReady = false;
 };
 
 } // namespace SpatialGDK
