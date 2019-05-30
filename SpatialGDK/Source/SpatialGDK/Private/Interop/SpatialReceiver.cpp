@@ -328,11 +328,11 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	{
 		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
-			Sender->SendEndpointReadyUpdate<ClientRPCEndpoint>(Op.entity_id);
+			Sender->SendClientEndpointReadyUpdate(Op.entity_id);
 		}
 		if (Op.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
 		{
-			Sender->SendEndpointReadyUpdate<ServerRPCEndpoint>(Op.entity_id);
+			Sender->SendServerEndpointReadyUpdate(Op.entity_id);
 		}
 	}
 

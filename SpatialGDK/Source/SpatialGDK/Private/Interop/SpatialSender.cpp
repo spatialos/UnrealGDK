@@ -582,9 +582,9 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 				{
 					ComponentId = SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
 				}
-				else if ((RPCInfo->Type == SCHEMA_ServerUnreliableRPC) ||
-					(RPCInfo->Type == SCHEMA_ServerReliableRPC))
+				else
 				{
+					check((RPCInfo->Type == SCHEMA_ServerUnreliableRPC) || (RPCInfo->Type == SCHEMA_ServerReliableRPC));
 					ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
 				}
 
@@ -684,6 +684,22 @@ void USpatialSender::ClearRPCsOnEntityCreation(Worker_EntityId EntityId)
 {
 	check(NetDriver->IsServer());
 	Worker_ComponentUpdate Update = RPCsOnEntityCreation::CreateClearFieldsUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+}
+
+void USpatialSender::SendClientEndpointReadyUpdate(Worker_EntityId EntityId)
+{
+	ClientRPCEndpoint Endpoint;
+	Endpoint.ready = true;
+	Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
+	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
+}
+
+void USpatialSender::SendServerEndpointReadyUpdate(Worker_EntityId EntityId)
+{
+	ServerRPCEndpoint Endpoint;
+	Endpoint.ready = true;
+	Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
 	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
 }
 

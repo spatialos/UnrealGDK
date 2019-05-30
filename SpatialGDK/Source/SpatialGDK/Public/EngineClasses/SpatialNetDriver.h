@@ -158,7 +158,7 @@ private:
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 
-	TSet<int64> ListeningEntities;
+	TSet<Worker_EntityId_Key> ListeningEntities;
 
 	FTimerManager TimerManager;
 

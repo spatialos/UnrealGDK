@@ -88,8 +88,8 @@ public:
 	void SendRequestToClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 	void ClearRPCsOnEntityCreation(Worker_EntityId EntityId);
 
-	template<typename RPCEndpoint>
-	void SendEndpointReadyUpdate(Worker_EntityId EntityId);
+	void SendClientEndpointReadyUpdate(Worker_EntityId EntityId);
+	void SendServerEndpointReadyUpdate(Worker_EntityId EntityId);
 
 	void EnqueueRetryRPC(TSharedRef<FReliableRPCForRetry> RetryRPC);
 	void FlushRetryRPCs();
@@ -157,12 +157,3 @@ private:
 
 	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;
 };
-
-template<typename RPCEndpoint>
-void USpatialSender::SendEndpointReadyUpdate(Worker_EntityId EntityId)
-{
-	RPCEndpoint Endpoint;
-	Endpoint.ready = true;
-	Worker_ComponentUpdate Update = Endpoint.CreateRPCEndpointUpdate();
-	NetDriver->Connection->SendComponentUpdate(EntityId, &Update);
-}
