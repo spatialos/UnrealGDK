@@ -1153,6 +1153,14 @@ void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, 
 		if (ready)
 		{
 			NetDriver->RegisterListeningEntity(EntityId);
+
+			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
+			{
+				if(UObject* TargetObject = Channel->GetActor())
+				{
+					Sender->ResolveOutgoingRPCs(TargetObject);
+				}
+			}
 		}
 	}
 }
