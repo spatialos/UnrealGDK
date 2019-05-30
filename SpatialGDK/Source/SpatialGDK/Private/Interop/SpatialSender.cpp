@@ -563,6 +563,10 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 				Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 			}
 		}
+		else
+		{
+			UnresolvedObject = TargetObject;
+		}
 		break;
 	}
 	case SCHEMA_ClientReliableRPC:
@@ -603,6 +607,16 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 					Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 				}
 			}
+			else
+			{
+				// If the Entity endpoint is not yet ready to receive RPCs -
+				// treat the corresponding object as unresolved and queue RPC
+				UnresolvedObject = TargetObject;
+			}
+		}
+		else
+		{
+			UnresolvedObject = TargetObject;
 		}
 		break;
 	}
