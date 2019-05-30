@@ -27,12 +27,12 @@ class UGlobalStateManager;
 struct PendingAddComponentWrapper
 {
 	PendingAddComponentWrapper() = default;
-	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, TUniquePtr<improbable::DynamicComponent>&& InData)
+	PendingAddComponentWrapper(Worker_EntityId InEntityId, Worker_ComponentId InComponentId, TUniquePtr<SpatialGDK::DynamicComponent>&& InData)
 		: EntityId(InEntityId), ComponentId(InComponentId), Data(MoveTemp(InData)) {}
 
 	Worker_EntityId EntityId;
 	Worker_ComponentId ComponentId;
-	TUniquePtr<improbable::DynamicComponent> Data;
+	TUniquePtr<SpatialGDK::DynamicComponent> Data;
 };
 
 struct FObjectReferences
@@ -144,8 +144,8 @@ private:
 	void RemoveActor(Worker_EntityId EntityId);
 	void DestroyActor(AActor* Actor, Worker_EntityId EntityId);
 
-	AActor* TryGetOrCreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData);
-	AActor* CreateActor(improbable::UnrealMetadata* UnrealMetadata, improbable::SpawnData* SpawnData);
+	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
+	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 

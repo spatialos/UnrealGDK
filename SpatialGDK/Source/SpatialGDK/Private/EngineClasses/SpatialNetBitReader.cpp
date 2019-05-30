@@ -63,7 +63,7 @@ FArchive& FSpatialNetBitReader::operator<<(UObject*& Value)
 				// it's part of a streaming level that hasn't been streamed in. Native Unreal networking sets reference to nullptr and continues.
 				// So we do the same.
 				FString FullPath;
-				improbable::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
+				SpatialGDK::GetFullPathFromUnrealObjectReference(ObjectRef, FullPath);
 				UE_LOG(LogSpatialNetBitReader, Verbose, TEXT("Object ref did not map to valid object. Streaming level not loaded or actor deleted. Will be set to nullptr: %s %s"),
 					*ObjectRef.ToString(), FullPath.IsEmpty() ? TEXT("[NO PATH]") : *FullPath);
 			}
