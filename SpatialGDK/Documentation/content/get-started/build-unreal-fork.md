@@ -14,7 +14,7 @@ To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/e
 1. **Unreal Engine Fork**</br> 
 Open a terminal and run either of these commands to clone the [Unreal Engine Fork](https://github.com/improbableio/UnrealEngine) repository.
 
-    > **TIP:** Clone the Unreal Engine fork into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealEngine`. 
+    > **TIP:** Clone the Unreal Engine Fork into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealEngine`. 
 
     |     |     |
     | --- | --- |
