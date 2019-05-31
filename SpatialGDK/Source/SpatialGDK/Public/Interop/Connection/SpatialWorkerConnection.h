@@ -8,6 +8,7 @@
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/Connection/OutgoingMessages.h"
 #include "UObject/WeakObjectPtr.h"
+#include "SpatialGDKSettings.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -58,6 +59,8 @@ public:
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
+	void FinishDevelopmentAuth();
+
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 
@@ -85,6 +88,10 @@ private:
 	void InitializeOpsProcessingThread();
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
+
+	void StartDevelopmentAuth(FString DevAuthToken);
+	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
+	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);

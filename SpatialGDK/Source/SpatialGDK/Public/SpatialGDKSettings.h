@@ -82,5 +82,21 @@ public:
 	/** Change 'Load' value in inspector to represent worker Frame Time instead of a fraction of target FPS.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bUseFrameTimeAsLoad;
+
+	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Test", meta = (ConfigRestartRequired = false))
+	bool bUseDevelopmentAuthenticationFlow;
+
+	/** The token created using 'spatial project auth dev-auth-token' */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Test", meta = (ConfigRestartRequired = false))
+	FString DevelopmentAuthenticationToken;
+
+	/** The deployment to connect when using Development Authentication Flow. If left empty, use the first available one. The deployment need to be tagged with 'dev_login'. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Test", meta = (ConfigRestartRequired = false))
+	FString DevelopmentDeploymentToConnect;
+
+	/** If true, connect the local server worker(s) to the cloud deployment using the same Development Authentication Flow (if enabled) as the client. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Test", meta = (ConfigRestartRequired = false))
+	bool bConnectLocalServerWorker;
 };
 
