@@ -50,6 +50,9 @@ To launch a local deployment:
 3. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Your game is ready to play when you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
    ![Start]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Start**_</br>
+
+    > Due to a [known issue](https://github.com/spatialos/UnrealGDK/issues/940) with the GDK, you need to follow [these steps]({{urlRoot}}/content/troubleshooting#q-my-worker-instances-are-being-disconnected-from-the-spatialos-runtime-unexpectedly-while-debugging-locally) before debugging your game using C++ or Blueprint breakpoints.
+
 4. On the Editor toolbar, open the **Play** drop-down menu.
 6. Under **Multiplayer Options**, set the number of players to **2** and ensure that the checkbox next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)<br/>
    ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>

@@ -106,11 +106,13 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
 
 <%(/Expandable)%>
 
-To launch a local deployment: 
+To launch a local deployment:
 
 1. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
     _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
+
+    > Due to a [known issue](https://github.com/spatialos/UnrealGDK/issues/940) with the GDK, you need to follow [these steps]({{urlRoot}}/content/troubleshooting#q-my-worker-instances-are-being-disconnected-from-the-spatialos-runtime-unexpectedly-while-debugging-locally) before debugging your game using C++ or Blueprint breakpoints.
 
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 
