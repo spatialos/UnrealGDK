@@ -79,6 +79,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bEnableMetrics;
 
+	/** Display server metrics on clients.*/
+	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
+	bool bEnableMetricsDisplay;
+
 	/** Frequency that metrics are reported to SpatialOS.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false), DisplayName = "Metrics Report Rate (seconds)")
 	float MetricsReportRate;

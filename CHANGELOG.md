@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Added SpatialMetricsDisplay class, which allows you to view UnrealWorker stats as an overlay on the client.
-- Added runtime option to disable property handover when running in non-zoned deployments.
+- Added runtime option to disable property handover when running in non-zoned deployments - bEnableHandover.
+- Added runtime option to auto spawn the ASpatialMetricsDisplay for remote debugging of server metrics - bEnableMetricsDisplay.
 - Added runtime option to batch spatial position updates to runtime.
 
 ### Bug fixes:
