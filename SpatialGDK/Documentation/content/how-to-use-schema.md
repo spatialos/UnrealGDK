@@ -6,45 +6,57 @@
 
 You must generate schema when you add or change any [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) that you want to deploy to SpatialOS.
 
+> Whenever you generate schema, the GDK automatically creates schema for classes with [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) or [RPCs (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs). If a class does not have replicated properties or RPCs, then the GDK does not generate schema for it.
+
 ## How to generate schema
 
-There are two ways to generate schema for your project:
+There are two ways to generate schema for your project from [within the Unreal Editor](#generating-schema-within-the-unreal-editor), and you can also generate schema [via the command line](#generating-schema-via-the-command-line).
 
-* **Generate schema (Full Scan)** 
+### Generating schema within the Unreal Editor
+Within the Unreal Editor, you can generate schema using a Full Scan, or generate schema iteratively. For information on when to use each method, see [Which method to use](#which-method-to-use).
 
-    To generate schema for all classes* in your project:<br/>
+* **Full Scan** 
 
-    In the Unreal Editor, on the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
+    To generate schema for all classes in your project:<br/>
+
+    In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
     <br/> ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
-    <br/>When you select **Schema (Full Scan)**, the GDK automatically iterates through all classes* in your project to generate the schema files, and then updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase). <br/>
+    <br/>When you select **Schema (Full Scan)**, the GDK automatically iterates through all classes in your project to generate the schema files, and then updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase). <br/>
 
-    Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes* that are not currently loaded by the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you didn't generate schema after adding a new Blueprint to your game, and that Blueprint is no longer open in the Editor.<br/><br/>
+    Run a full scan the first time you generate schema for your project, and whenever you need to generate schema for classes that are not currently loaded by the Editor.<br/>For example: You need to select **Schema (Full Scan)** if you didn't generate schema after adding a new Blueprint to your game, and that Blueprint is no longer open in the Editor.<br/><br/>
 
-* **Generate Schema (Iterative)**
+* **Iterative**
 
-    To generate schema for classes* that are currently loaded by the Editor: <br/>
+    To generate schema for classes that are currently loaded by the Editor: <br/>
 
-    Select **Schema** in the [GDK Toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes* that are currently loaded by the Editor, generates the schema files and updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).<br/>
+    Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK automatically iterates through classes that are currently loaded by the Editor, generates the schema files and updates the [SchemaDatabase]({{urlRoot}}/content/glossary#schemadatabase).<br/>
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
-    _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/><br/>
+    _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/>
+
+### Generating schema via the command line
+You can generate schema via the command line using an Unreal commandlet. This method uses a Full Scan (see [Which method to use](#which-method-to-use)). It's useful as part of an automated build system.
+
+To generate schema via the command line, run the following command:
+
+```
+<Path to UE4Editor.exe> <Path to your game's .uproject file> -run=GenerateSchemaAndSnapshots -MapPaths=<MapName1;MapName2;MapName3>
+```
+
+This command generates schema using a Full Scan for all assets, and generates individual snapshots (`<MapName>.snapshot`) for each map. Any specified map paths that end in `/` are interpreted as a directory, and snapshots are generated for each .umap found under these paths.
 
 As the GDK automatically generates all the schema you need, you do not have to write or edit schema manually when using the GDK.
 
-> \*Whenever you generate schema, the GDK automatically creates schema for classes with [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) or [RPCs (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs). If a class does not have replicated properties or RPCs, then the GDK does not generate schema for it. 
+## Which method to use
 
-## When to generate schema
+Select **Schema (Full Scan)** or generate schema via the command line if you have: 
 
-Select **Schema (Full Scan)** if you have: 
+* not generated any schema for your project.
+* added or edited a class with replicated properties that is not currently loaded by the Editor.
 
-* Not generated any schema for your project.
-* Added a class with replicated properties that is not currently loaded by the Editor.
-* Edited a class with replicated properties that is not currently loaded by the Editor.
+Select **Schema** (this is the iterative method) if you have:
 
-Select **Schema** if you have:
-
-* Added a class with replicated properties that is currently loaded by the Editor.
-* Edited a class with replicated properties that is currently loaded by the Editor.
+* added or edited a class with replicated properties that is currently loaded by the Editor.
 
 ## How to delete schema
 
@@ -61,3 +73,6 @@ Whenever you generate schema, the GDK checks the [SchemaDatabase]({{urlRoot}}/co
 This means that if you have a class that only exists on one user's machine (for example, a newly created class, or a class used for local testing) then these classes are automatically removed from the SchemaDatabase file whenever another user generates schema.
 
 To prevent this, commit newly created or modified classes to source control alongside the SchemaDatabase.
+
+<br/>------------<br/>
+_2019-05-31 Page updated with editorial review_
