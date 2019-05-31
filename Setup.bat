@@ -15,6 +15,12 @@ if defined ProjectDirectory (
     set ProjectDirectory="%~dp0..\..\.."
 )
 
+if not exist %ProjectDirectory% (
+    echo Error: Project directory does not exist. Please make sure you have passed in the project directory correctly.
+    pause
+    exit /b 1
+)
+
 call :MarkStartOfBlock "Setup the git hooks"
     if not exist .git\hooks goto SkipGitHooks
 
@@ -36,7 +42,6 @@ call :MarkStartOfBlock "Setup the git hooks"
 call :MarkEndOfBlock "Setup the git hooks"
 
 call :MarkStartOfBlock "Check dependencies"
-
     rem Find the Unreal Engine used to build this project.
     set UNREAL_ENGINE=""
 
@@ -65,9 +70,10 @@ call :MarkStartOfBlock "Check dependencies"
     )
 
     rem If there was no engine association then we need to climb the directory path of the project to find the Engine.
-    pushd "%~dp0"
-    cd /d  %ProjectDirectory%
     if %UNREAL_ENGINE%=="" (
+        pushd "%~dp0"
+        cd /d  %ProjectDirectory%
+
         :climb_parent_directory
         cd ..
         if exist Engine (
@@ -85,10 +91,10 @@ call :MarkStartOfBlock "Check dependencies"
             )
             goto :climb_parent_directory
         )
-    )
 
-    popd
-    pushd "%~dp0"
+        popd
+        pushd "%~dp0"
+    )
 
     if %UNREAL_ENGINE%=="" (
         echo Error: Could not find the Unreal Engine. Please associate your '.uproject' with an engine version or ensure this game project is nested within an engine build.
@@ -99,6 +105,7 @@ call :MarkStartOfBlock "Check dependencies"
     echo Using Unreal Engine at: %UNREAL_ENGINE%
 
     rem Use Unreal Engine's script to get the path to MSBuild. This turns off echo so turn it back on for TeamCity.
+    echo "%UNREAL_ENGINE%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
     call "%UNREAL_ENGINE%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
 
     if not defined MSBUILD_EXE (
