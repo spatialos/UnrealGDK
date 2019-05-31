@@ -543,29 +543,28 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	case SCHEMA_NetMulticastRPC:
 	{
 		FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-		if (TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-		{
-			EntityId = TargetObjectRef.Entity;
-			Worker_ComponentId ComponentId = SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
-
-			Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
-
-			if (!UnresolvedObject)
-			{
-				check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-
-				if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
-				{
-					UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
-					return;
-				}
-
-				Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
-			}
-		}
-		else
+		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
 			UnresolvedObject = TargetObject;
+			break;
+		}
+
+		EntityId = TargetObjectRef.Entity;
+		Worker_ComponentId ComponentId = SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
+
+		Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
+
+		if (!UnresolvedObject)
+		{
+			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
+			{
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
+				return;
+			}
+
+			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 		}
 		break;
 	}
@@ -575,48 +574,46 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	case SCHEMA_ServerUnreliableRPC:
 	{
 		FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-		if (TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
-			EntityId = TargetObjectRef.Entity;
-			if (NetDriver->IsEntityListening(EntityId))
-			{
-				Worker_ComponentId ComponentId;
-				if ((RPCInfo->Type == SCHEMA_ClientUnreliableRPC) ||
-					(RPCInfo->Type == SCHEMA_ClientReliableRPC))
-				{
-					ComponentId = SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
-				}
-				else
-				{
-					check((RPCInfo->Type == SCHEMA_ServerUnreliableRPC) || (RPCInfo->Type == SCHEMA_ServerReliableRPC));
-					ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
-				}
+			UnresolvedObject = TargetObject;
+			break;
+		}
 
-				Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
+		EntityId = TargetObjectRef.Entity;
+		if (!NetDriver->IsEntityListening(EntityId))
+		{
+			// If the Entity endpoint is not yet ready to receive RPCs -
+			// treat the corresponding object as unresolved and queue RPC
+			UnresolvedObject = TargetObject;
+			break;
+		}
 
-				if (!UnresolvedObject)
-				{
-					check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-
-					if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
-					{
-						UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
-						return;
-					}
-
-					Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
-				}
-			}
-			else
-			{
-				// If the Entity endpoint is not yet ready to receive RPCs -
-				// treat the corresponding object as unresolved and queue RPC
-				UnresolvedObject = TargetObject;
-			}
+		Worker_ComponentId ComponentId;
+		if ((RPCInfo->Type == SCHEMA_ClientUnreliableRPC) ||
+			(RPCInfo->Type == SCHEMA_ClientReliableRPC))
+		{
+			ComponentId = SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
 		}
 		else
 		{
-			UnresolvedObject = TargetObject;
+			check((RPCInfo->Type == SCHEMA_ServerUnreliableRPC) || (RPCInfo->Type == SCHEMA_ServerReliableRPC));
+			ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+		}
+
+		Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
+
+		if (!UnresolvedObject)
+		{
+			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
+			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
+			{
+				UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
+				return;
+			}
+
+			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 		}
 		break;
 	}
