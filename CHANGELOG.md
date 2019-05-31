@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Singletons authority and state resumes correct when reconnecting servers to snapshot.
 - Fixed a crash when retrying reliable RPCs with UObject arguments that got destroyed before the RPC was retried.
 - Fixed path naming issues in setup.sh
-- Made Reliable Client/Server RPCs use Events instead of Commands.
+- Ordering and reliability for single worker reliable RPCs are now guaranteed.
 
 ### External contributors:
 
