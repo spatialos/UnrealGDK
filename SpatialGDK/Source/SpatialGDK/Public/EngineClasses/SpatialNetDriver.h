@@ -46,6 +46,9 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	GENERATED_BODY()
 
 public:
+
+	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
+
 	// Begin UObject Interface
 	virtual void PostInitProperties() override;
 	// End UObject Interface
@@ -197,4 +200,6 @@ private:
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs
 	// in the correct order, if needed.
 	int NextRPCIndex;
+
+	float TimeWhenPositionLastUpdated;
 };

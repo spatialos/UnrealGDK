@@ -39,6 +39,17 @@ DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
 DEFINE_STAT(STAT_SpatialConsiderList);
 
+USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+	, bAuthoritativeDestruction(true)
+	, bConnectAsClient(false)
+	, bPersistSpatialConnection(true)
+	, bWaitingForAcceptingPlayersToSpawn(false)
+	, NextRPCIndex(0)
+	, TimeWhenPositionLastUpdated(0.f)
+{
+}
+
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
 	if (!Super::InitBase(bInitAsClient, InNotify, URL, bReuseAddressAndPort, Error))
@@ -1199,6 +1210,16 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	// Tick the timer manager
 	{
 		TimerManager.Tick(DeltaTime);
+	}
+
+	if (GetDefault<USpatialGDKSettings>()->bBatchSpatialPositionUpdates)
+	{
+		if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+		{
+			TimeWhenPositionLastUpdated = Time;
+
+			Sender->ProcessPositionUpdates();
+		}
 	}
 
 	Super::TickFlush(DeltaTime);
