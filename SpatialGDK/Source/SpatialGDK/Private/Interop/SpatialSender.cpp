@@ -550,20 +550,20 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		}
 
 		EntityId = TargetObjectRef.Entity;
+		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
 		Worker_ComponentId ComponentId = SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
+
+		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
+		{
+			UE_LOG(LogSpatialSender, Error, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
+			return;
+		}
 
 		Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
-			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-
-			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
-			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
-				return;
-			}
-
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 		}
 		break;
@@ -581,6 +581,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		}
 
 		EntityId = TargetObjectRef.Entity;
+		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+
 		if (!NetDriver->IsEntityListening(EntityId))
 		{
 			// If the Entity endpoint is not yet ready to receive RPCs -
@@ -601,20 +603,19 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
 		}
 
+		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
+		{
+			UE_LOG(LogSpatialSender, Error, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
+			return;
+		}
+
 		Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
 
 		if (!UnresolvedObject)
 		{
-			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-
-			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
-			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
-				return;
-			}
-
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 		}
+
 		break;
 	}
 	default:
