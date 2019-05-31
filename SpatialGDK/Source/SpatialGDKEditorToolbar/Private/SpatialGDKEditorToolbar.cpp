@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
 
 #include "SpatialGDKEditorToolbar.h"
 #include "Async/Async.h"
@@ -418,23 +417,17 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
-	// Get the schema_compiler path
+	// Get the schema_compiler path and arguments
 	FString SchemaCompilerExe = FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));
-
-	// Potential to use GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
 	FString SchemaDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("schema"));
 	FString ImprobableSchemaDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
 	FString SchemaDescriptorOutput = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("build/descriptor/output/schema.descriptor"));
 	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=%s --schema_path=%s --descriptor_set_out=%s --load_all_schema_on_schema_path"), *SchemaDir, *ImprobableSchemaDir, *SchemaDescriptorOutput);
 
-	FString SnapshotPath = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("snapshots/default.snapshot"));
+	FString SnapshotPath = FPaths::Combine(FPaths::Combine(SpatialGDKSettings->GetSpatialOSSnapshotFolderPath(), SpatialGDKSettings->GetSpatialOSSnapshotFile()));
 
-	// TODO: Replace the launch config and log folders with correct values.
 	const FString SpatialCmdArgument = FString::Printf(
 		TEXT("/c cmd.exe /c %s %s ^& spatial.exe alpha local launch --launch_config=%s --log_directory=logs --snapshot=%s ^& pause"), *SchemaCompilerExe, *SchemaCompilerArgs, *LaunchConfig, *SnapshotPath);
-
-	//const FString SpatialCmdArgument = FString::Printf(
-	//	TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch \"%s\" %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
@@ -573,8 +566,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 			Writer->WriteObjectStart(TEXT("dimensionsInWorldUnits")); // World section begin
 				Writer->WriteValue(TEXT("x"), LaunchConfigDescription.World.Dimensions.X);
 				Writer->WriteValue(TEXT("z"), LaunchConfigDescription.World.Dimensions.Y);
-			Writer->WriteObjectEnd();
-
+			Writer->WriteObjectEnd(); // World section end
 			Writer->WriteObjectStart(TEXT("loadBalancing")); // Load balancing section begin
 				Writer->WriteArrayStart("layerConfigurations");
 				for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.Workers)
@@ -583,40 +575,16 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 				}
 				Writer->WriteArrayEnd();
 			Writer->WriteObjectEnd(); // Load balancing section end
-
 			Writer->WriteObjectStart(TEXT("snapshot")); // Snapshot section begin
 			Writer->WriteValue(TEXT("takeSnapshotIntervalSeconds"), LaunchConfigDescription.World.SnapshotWritePeriodSeconds);
 			Writer->WriteObjectEnd(); // Snapshot section end
-
 			Writer->WriteValue(TEXT("streamingQueryInterval"), LaunchConfigDescription.World.StreamingQueryIntervalSeconds);
-
 			Writer->WriteArrayStart(TEXT("runtimeFlags"));
 			for (auto& Flag : LaunchConfigDescription.World.LegacyFlags)
 			{
 				WriteFlagSection(Writer, Flag.Key, Flag.Value);
 			}
 			Writer->WriteArrayEnd();
-
-
-			//Writer->WriteArrayStart(TEXT("legacy_javaparams"));
-			//for (auto& Parameter : LaunchConfigDescription.World.LegacyJavaParams)
-			//{
-			//	WriteFlagSection(Writer, Parameter.Key, Parameter.Value);
-			//}
-			//Writer->WriteArrayEnd();
-		//	Writer->WriteObjectStart(TEXT("snapshots"));
-		//		Writer->WriteValue(TEXT("snapshot_write_period_seconds"), LaunchConfigDescription.World.SnapshotWritePeriodSeconds);
-		//	Writer->WriteObjectEnd();
-		//Writer->WriteObjectEnd(); // World section end
-		//Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
-		//	Writer->WriteArrayStart("layer_configurations");
-		//	for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.Workers)
-		//	{
-		//		WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.bManualWorkerConnectionOnly);
-		//	}
-		//	Writer->WriteArrayEnd();
-		//	Writer->WriteObjectEnd(); // Load balancing section end
-
 			Writer->WriteArrayStart(TEXT("workerFlags")); // Workers section begin
 				for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.Workers)
 				{
@@ -629,7 +597,6 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 				ClientWorker.bLoginRateLimitEnabled = false;
 				WriteWorkerSection(Writer, ClientWorker);
 			Writer->WriteArrayEnd(); // Worker section end
-
 		Writer->WriteObjectEnd(); // End of json
 
 		Writer->Close();
@@ -666,48 +633,6 @@ bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<
 			WriteFlagSection(Writer, Flag.Key, Flag.Value);
 		}
 		Writer->WriteArrayEnd();
-
-		//Writer->WriteArrayStart(TEXT("permissions"));
-		//	Writer->WriteObjectStart();
-		//	if (Worker.WorkerPermissions.bAllPermissions)
-		//	{
-		//		Writer->WriteObjectStart(TEXT("all"));
-		//		Writer->WriteObjectEnd();
-		//	}
-		//	else
-		//	{
-		//		Writer->WriteObjectStart(TEXT("entity_creation"));
-		//			Writer->WriteValue(TEXT("allow"), Worker.WorkerPermissions.bAllowEntityCreation);
-		//		Writer->WriteObjectEnd();
-		//		Writer->WriteObjectStart(TEXT("entity_deletion"));
-		//			Writer->WriteValue(TEXT("allow"), Worker.WorkerPermissions.bAllowEntityDeletion);
-		//		Writer->WriteObjectEnd();
-		//		Writer->WriteObjectStart(TEXT("entity_query"));
-		//			Writer->WriteValue(TEXT("allow"), Worker.WorkerPermissions.bAllowEntityQuery);
-		//			Writer->WriteArrayStart("components");
-		//			for (const FString& Component : Worker.WorkerPermissions.Components)
-		//			{
-		//				Writer->WriteValue(Component);
-		//			}
-		//			Writer->WriteArrayEnd();
-		//		Writer->WriteObjectEnd();
-		//	}
-		//	Writer->WriteObjectEnd();
-		//Writer->WriteArrayEnd();
-		//if (Worker.MaxConnectionCapacityLimit > 0)
-		//{
-		//	Writer->WriteObjectStart(TEXT("connection_capacity_limit"));
-		//		Writer->WriteValue(TEXT("max_capacity"), Worker.MaxConnectionCapacityLimit);
-		//	Writer->WriteObjectEnd();
-		//}
-		//if (Worker.bLoginRateLimitEnabled)
-		//{
-		//	Writer->WriteObjectStart(TEXT("login_rate_limit"));
-		//		Writer->WriteValue(TEXT("duration"), Worker.LoginRateLimit.Duration);
-		//		Writer->WriteValue(TEXT("requests_per_duration"), Worker.LoginRateLimit.RequestsPerDuration);
-		//	Writer->WriteObjectEnd();
-		//}
-
 	Writer->WriteObjectEnd();
 
 	return true;
