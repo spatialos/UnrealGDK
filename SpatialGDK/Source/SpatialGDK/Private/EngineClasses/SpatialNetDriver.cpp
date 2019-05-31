@@ -33,11 +33,23 @@
 #include "Utils/EngineVersionCheck.h"
 #include "Utils/EntityPool.h"
 #include "Utils/SpatialMetrics.h"
+#include "Utils/SpatialMetricsDisplay.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
 DECLARE_CYCLE_STAT(TEXT("ServerReplicateActors"), STAT_SpatialServerReplicateActors, STATGROUP_SpatialNet);
 DEFINE_STAT(STAT_SpatialConsiderList);
+
+USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+	, bAuthoritativeDestruction(true)
+	, bConnectAsClient(false)
+	, bPersistSpatialConnection(true)
+	, bWaitingForAcceptingPlayersToSpawn(false)
+	, NextRPCIndex(0)
+	, TimeWhenPositionLastUpdated(0.f)
+{
+}
 
 bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, const FURL& URL, bool bReuseAddressAndPort, FString& Error)
 {
@@ -237,6 +249,14 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	StaticComponentView = NewObject<USpatialStaticComponentView>();
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
+
+#if !UE_BUILD_SHIPPING
+	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
+	if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+	{
+		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
+	}
+#endif
 
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->Init(this);
@@ -1199,6 +1219,16 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	// Tick the timer manager
 	{
 		TimerManager.Tick(DeltaTime);
+	}
+
+	if (GetDefault<USpatialGDKSettings>()->bBatchSpatialPositionUpdates)
+	{
+		if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+		{
+			TimeWhenPositionLastUpdated = Time;
+
+			Sender->ProcessPositionUpdates();
+		}
 	}
 
 	Super::TickFlush(DeltaTime);

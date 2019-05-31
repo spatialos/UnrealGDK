@@ -10,6 +10,10 @@
 #include "Net/UnrealNetwork.h"
 #include "Utils/SpatialMetrics.h"
 
+#if USE_SERVER_PERF_COUNTERS
+#include "Net/PerfCountersHelpers.h"
+#endif
+
 ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -20,6 +24,14 @@ ASpatialMetricsDisplay::ASpatialMetricsDisplay(const FObjectInitializer& ObjectI
 	bAlwaysRelevant = true;
 
 	NetUpdateFrequency = 1.f;
+
+#if USE_SERVER_PERF_COUNTERS
+	IPerfCountersModule& PerformanceModule = IPerfCountersModule::Get();
+	if (PerformanceModule.GetPerformanceCounters() == nullptr)
+	{
+		PerformanceModule.CreatePerformanceCounters();
+	}
+#endif
 }
 
 void ASpatialMetricsDisplay::BeginPlay()
@@ -28,6 +40,11 @@ void ASpatialMetricsDisplay::BeginPlay()
 
 	WorkerStats.Reserve(PreallocatedWorkerCount);
 	WorkerStatsLastUpdateTime.Reserve(PreallocatedWorkerCount);
+
+	if (!GetWorld()->IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+	{
+		ToggleStatDisplay();
+	}
 }
 
 void ASpatialMetricsDisplay::Destroyed()
@@ -72,15 +89,15 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 	enum StatColumns
 	{
 		StatColumn_Worker,
-		StatColumn_AverageFPS,
-		StatColumn_WorkerLoad,
+		StatColumn_AverageFrameTime,
+		StatColumn_MovementCorrections,
 		StatColumn_Last
 	};
 
 	const uint32 StatDisplayStartX = 25;
 	const uint32 StatDisplayStartY = 80;
 
-	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("FPS"), TEXT("Load") };
+	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Movement Corrections") };
 	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80 };
 	const uint32 StatRowOffset = 20;
 
@@ -116,11 +133,11 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 		DrawX = StatDisplayStartX + StatColumnOffsets[StatColumn_Worker];
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%s"), *OneWorkerStats.WorkerName), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
-		DrawX += StatColumnOffsets[StatColumn_AverageFPS];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.AverageFPS), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+		DrawX += StatColumnOffsets[StatColumn_AverageFrameTime];
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f ms"), 1000.f / OneWorkerStats.AverageFPS), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
-		DrawX += StatColumnOffsets[StatColumn_WorkerLoad];
-		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.2f"), OneWorkerStats.WorkerLoad), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+		DrawX += StatColumnOffsets[StatColumn_MovementCorrections];
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.4f"), OneWorkerStats.ServerMovementCorrections), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
 		DrawY += StatRowOffset;
 	}
@@ -143,7 +160,7 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (!GetWorld()->IsServer())
+	if (!GetWorld()->IsServer() || !HasActorBegunPlay())
 	{
 		return;
 	}
@@ -181,10 +198,39 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 
 	const USpatialMetrics& Metrics = *SpatialNetDriver->SpatialMetrics;
 
-	FWorkerStats Stats;
+	FWorkerStats Stats{};
 	Stats.WorkerName = SpatialNetDriver->Connection->GetWorkerId().Left(WorkerNameMaxLength).ToLower();
 	Stats.AverageFPS = Metrics.GetAverageFPS();
-	Stats.WorkerLoad = Metrics.GetWorkerLoad();
+
+#if USE_SERVER_PERF_COUNTERS
+	float MovementCorrectionsPerSecond = 0.f;
+	int32 NumServerMoveCorrections = 0;
+	float WorldTime = GetWorld()->GetTimeSeconds();
+	NumServerMoveCorrections = PerfCountersGet(TEXT("NumServerMoveCorrections"), NumServerMoveCorrections);
+	MovementCorrectionRecord OldestRecord;
+	if (MovementCorrectionRecords.Peek(OldestRecord))
+	{
+		const float WorldTimeDelta = WorldTime - OldestRecord.Time;
+		const int32 CorrectionsDelta = NumServerMoveCorrections - OldestRecord.MovementCorrections;
+		if (WorldTimeDelta > 0.f && CorrectionsDelta > 0)
+		{
+			MovementCorrectionsPerSecond = CorrectionsDelta / WorldTimeDelta;
+		}
+
+		// Store the most recent 30 seconds of game time worth of measurements
+		if (WorldTimeDelta > 30.f)
+		{
+			MovementCorrectionRecords.Pop();
+		}
+	}
+	Stats.ServerMovementCorrections = MovementCorrectionsPerSecond;
+
+	// Don't store a measurement if time hasn't progressed
+	if (DeltaSeconds > 0.f)
+	{
+		MovementCorrectionRecords.Enqueue({ NumServerMoveCorrections, WorldTime });
+	}
+#endif
 
 	ServerUpdateWorkerStats(SpatialNetDriver->Time, Stats);
 }

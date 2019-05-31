@@ -215,6 +215,15 @@ void USpatialActorChannel::UpdateShadowData()
 	}
 }
 
+void USpatialActorChannel::UpdateSpatialPositionWithFrequencyCheck()
+{
+	// Check that there has been a sufficient amount of time since the last update.
+	if ((NetDriver->Time - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+	{
+		UpdateSpatialPosition();
+	}
+}
+
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
 	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
@@ -343,7 +352,14 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Update SpatialOS position.
 	if (!bCreatingNewEntity)
 	{
-		UpdateSpatialPosition();
+		if (GetDefault<USpatialGDKSettings>()->bBatchSpatialPositionUpdates)
+		{
+			Sender->RegisterChannelForPositionUpdate(this);
+		}
+		else
+		{
+			UpdateSpatialPositionWithFrequencyCheck();
+		}
 	}
 	
 	// Update the replicated property change list.
@@ -757,12 +773,6 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	// That means if this Actor has an Owner or has a NetConnection and is NOT a PlayerController
 	// we want to defer updating position until we reach the highest parent.
 	if ((Actor->GetOwner() != nullptr || Actor->GetNetConnection() != nullptr) && !Actor->IsA<APlayerController>())
-	{
-		return;
-	}
-
-	// Check that there has been a sufficient amount of time since the last update.
-	if ((NetDriver->Time - TimeWhenPositionLastUpdated) < (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
 	{
 		return;
 	}
