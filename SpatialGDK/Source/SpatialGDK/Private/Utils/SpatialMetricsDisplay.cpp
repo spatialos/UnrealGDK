@@ -40,6 +40,11 @@ void ASpatialMetricsDisplay::BeginPlay()
 
 	WorkerStats.Reserve(PreallocatedWorkerCount);
 	WorkerStatsLastUpdateTime.Reserve(PreallocatedWorkerCount);
+
+	if (!GetWorld()->IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+	{
+		ToggleStatDisplay();
+	}
 }
 
 void ASpatialMetricsDisplay::Destroyed()
