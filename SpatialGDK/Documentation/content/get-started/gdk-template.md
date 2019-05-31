@@ -167,7 +167,12 @@ There are two ways to build your worker assemblies (known as “building workers
 This script automatically builds both the server-workers and client-workers required to run your game in the cloud. It then compresses your workers and saves them as .zip files to the `<ProjectRoot>\spatial\build\assembly\worker` directory. Use this script if you want to build server-workers and client-workers at the same time. <br/><br/>
 
 * Build your workers manually using the command line. </br>
-Use the command line when you want to build your server-workers and client-workers separately, or, if you want to build different worker configurations, for example Editor, Test, Shipping or Linux. 
+Use the [SpatialOS CLI]({{urlroot}}/content/glossary#spatialos-command-line-tool-cli) command line to build server-workers and client-workers separately, or to use command-line arguments to build different worker configurations for different purposes.</br>
+For example:
+ 
+ * `Editor` to build server-workers to run on local machine for testing.
+ *  `Linux` to build server-workers to run on SpatialOS cloud servers.
+ <!--TODO: Add link to doc on this when it's done  here: https://improbableio.atlassian.net/browse/DOC-361 --!>
 
 <%(#Expandable title="Build your workers using `BuildProject.bat`")%>
 To build your workers using the BuildProject.bat script: 
