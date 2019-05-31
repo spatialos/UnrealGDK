@@ -150,6 +150,7 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 {
 	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraint();
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint();
+	QueryConstraint SingletonConstraint = CreateSingletonConstraint();
 
 	QueryConstraint SystemDefinedConstraints;
 
@@ -161,6 +162,11 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 	if (AlwaysInterestedConstraint.IsValid())
 	{
 		SystemDefinedConstraints.OrConstraint.Add(AlwaysInterestedConstraint);
+	}
+
+	if (SingletonConstraint.IsValid())
+	{
+		SystemDefinedConstraints.OrConstraint.Add(SingletonConstraint);
 	}
 
 	return SystemDefinedConstraints;
@@ -207,6 +213,16 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint()
 	}
 
 	return AlwaysInterestedConstraint;
+}
+
+
+QueryConstraint InterestFactory::CreateSingletonConstraint()
+{
+	QueryConstraint SingletonConstraint;
+
+	SingletonConstraint.ComponentConstraint = SpatialConstants::SINGLETON_COMPONENT_ID;
+
+	return SingletonConstraint;
 }
 
 void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint)
