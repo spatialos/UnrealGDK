@@ -1214,7 +1214,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 		}
 		LastUpdateCount = Updated;
 
-		USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
 		{
