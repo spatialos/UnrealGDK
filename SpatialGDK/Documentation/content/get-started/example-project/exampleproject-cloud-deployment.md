@@ -51,7 +51,7 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 **Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
 
-**Note:** By default, Spatial networking is enabled for Unreal GDK projects. However, if the `bSpatialNetworking` option is visible in your `DefaultGame.ini` configuration file (located in `<ProjectRoot>\Game\Config` directory), ensure that it is set to `True` to enable Spatial networking for your cloud deployment.
+**Note:** Unreal GDK projects default to using Spatial for networking. However, if the `bSpatialNetworking` option is present in your `DefaultGame.ini` configuration file (located in `<ProjectRoot>\Game\Config` directory), ensure that it is set to `True` (as in, `bSpatialNetworking=True`) to enable networking with Spatial for your cloud deployment.
 
 There are two ways to build your worker assemblies (known as “building workers”):
 
