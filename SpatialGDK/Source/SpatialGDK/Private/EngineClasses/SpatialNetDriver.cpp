@@ -250,6 +250,12 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	SnapshotManager = NewObject<USnapshotManager>();
 	SpatialMetrics = NewObject<USpatialMetrics>();
 
+	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
+	if (IsServer() && GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
+	{
+		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
+	}
+
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->Init(this);
 	Dispatcher->Init(this);
@@ -272,12 +278,6 @@ void USpatialNetDriver::CreateServerSpatialOSNetConnection()
 	check(!bConnectAsClient);
 
 	EntityPool = NewObject<UEntityPool>();
-
-	// If metrics display is enabled, spawn a singleton actor to replicate the information to each client
-	if (GetDefault<USpatialGDKSettings>()->bEnableMetricsDisplay)
-	{
-		SpatialMetricsDisplay = GetWorld()->SpawnActor<ASpatialMetricsDisplay>();
-	}
 
 	USpatialNetConnection* NetConnection = NewObject<USpatialNetConnection>(GetTransientPackage(), NetConnectionClass);
 	check(NetConnection);
