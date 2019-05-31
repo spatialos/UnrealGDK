@@ -36,6 +36,11 @@ public class SpatialGDK : ModuleRules
 			PublicDependencyModuleNames.Add("SpatialGDKEditorToolbar");
 		}
 
+        if (Target.bWithPerfCounters)
+        {
+            PublicDependencyModuleNames.Add("PerfCounters");
+        }
+
         var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
 
         string LibPrefix = "";

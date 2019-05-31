@@ -28,7 +28,7 @@ function Kill-Dangling-Processes {
 	}
 }
 
-$ProcessesToKill = @("AutomationToolLauncher")
+$ProcessesToKill = @("AutomationToolLauncher", "UnrealHeaderTool")
 
 ForEach ($Process in $ProcessesToKill)
 {
