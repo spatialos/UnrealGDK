@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`0.5.0`] - 2019-xx-xx
+- Changing configurations to prevent `Spatial GDK Content` from appearing under Content Browser in the editor.
 
 ### New Known Issues:
 
