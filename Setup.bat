@@ -6,7 +6,7 @@ pushd "%~dp0"
 
 call :MarkStartOfBlock "%~0"
 
-set ProjectDirectory="%1"
+set ProjectDirectory=%1
 
 if defined ProjectDirectory (
     echo Project directory for installation is: %ProjectDirectory%
@@ -46,7 +46,7 @@ call :MarkStartOfBlock "Check dependencies"
     set UNREAL_ENGINE=""
 
     rem Get the Unreal Engine used by this project by querying the registry for the engine association found in the .uproject.
-    for /f "delims=" %%A in (' powershell -Command "Get-Childitem -Path %ProjectDirectory% -Recurse -Include *.uproject -File | %% {$_.FullName}" ') do set UPROJECT="%%A"
+    for /f "delims=" %%A in (' powershell -Command "Get-Childitem -Path %ProjectDirectory% -Recurse -Depth 1 -Include *.uproject -File | %% {$_.FullName}" ') do set UPROJECT="%%A"
     
     rem If the regex failed then it will return a string containing only a space.
     if %UPROJECT%==" " (
@@ -105,7 +105,6 @@ call :MarkStartOfBlock "Check dependencies"
     echo Using Unreal Engine at: %UNREAL_ENGINE%
 
     rem Use Unreal Engine's script to get the path to MSBuild. This turns off echo so turn it back on for TeamCity.
-    echo "%UNREAL_ENGINE%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
     call "%UNREAL_ENGINE%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
 
     if not defined MSBUILD_EXE (
