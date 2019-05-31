@@ -3,9 +3,8 @@
 
 ## Schema
 
-Schema is a set of definitions which represent your game's Actors and subobjects in SpatialOS. Schema is defined in `.schema` files and written in schemalang.
-
-When you use the GDK, the schema files and their contents are generated automatically by pressing the **Schema** button in the GDK toolbar so you do not have to write or edit schema files manually.
+Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang by the GDK.</br>
+Select **Schema** from the GDK toolbar and the GDK generates schema files and their contents for you, so you do not have to write or edit schema files manually.
 
 SpatialOS uses schema to generate APIs specific to the SpatialOS entity components in your project. You can then use these APIs in your game's [worker types]({{urlRoot}}/content/glossary#worker-types) so their instances can interact with [SpatialOS entity components]({{urlRoot}}/content/glossary#spatialos-component).
 

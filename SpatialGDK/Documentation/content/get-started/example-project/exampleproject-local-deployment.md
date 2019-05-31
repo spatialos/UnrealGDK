@@ -19,7 +19,8 @@ Before you launch a local deployment, you have to:
 
 <%(#Expandable title="What is Schema?")%>
 
-Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically by pressing the **Schema** button in the GDK toolbar so you do not have to write or edit schema files manually.
+Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang by the GDK.</br>
+Select **Schema** from the GDK toolbar and the GDK generates schema files and their contents for you, so you do not have to write or edit schema files manually.
 
 You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
