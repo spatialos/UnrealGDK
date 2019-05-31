@@ -248,22 +248,43 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 							.AutoHeight()
 							.Padding(2.0f)
 							.VAlign(VAlign_Center)
+							.HAlign(HAlign_Center)
+							[
+								SNew(STextBlock)
+								.Text(FText::FromString(FString(TEXT("Simulated Players"))))
+							]
+							// Toggle
+							+ SVerticalBox::Slot()
+							.AutoHeight()
+							.Padding(2.0f)
+							.VAlign(VAlign_Center)
 							[
 								SNew(SHorizontalBox)
 								+ SHorizontalBox::Slot()
-								.AutoWidth()
-								[
-									SNew(SCheckBox)
-									.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled)
-									.ToolTipText(FText::FromString(FString(TEXT("Toggle to scale test."))))
-									.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedSimulatedPlayers)
-								]
-								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
-								.HAlign(HAlign_Center)
 								[
-									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("Simulated Player Deployment Configuration"))))
+									SNew(SVerticalBox)
+									+ SVerticalBox::Slot()
+									.AutoHeight()
+									.Padding(2.0f)
+									.VAlign(VAlign_Center)
+									[
+										SNew(SHorizontalBox)
+										+ SHorizontalBox::Slot()
+										.AutoWidth()
+										[
+											SNew(SCheckBox)
+											.IsChecked(this, &SSpatialGDKSimulatedPlayerDeployment::IsSimulatedPlayersEnabled)
+											.OnCheckStateChanged(this, &SSpatialGDKSimulatedPlayerDeployment::OnCheckedSimulatedPlayers)
+										]
+										+ SHorizontalBox::Slot()
+										.AutoWidth()
+										.HAlign(HAlign_Center)
+										[
+											SNew(STextBlock)
+											.Text(FText::FromString(FString(TEXT("Add simulated players"))))
+										]
+									]
 								]
 							]
 							// Simulated Players Deployment Name
