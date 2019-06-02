@@ -1213,22 +1213,25 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 			UE_LOG(LogNetTraffic, Verbose, TEXT("%s replicated %d actors"), *GetDescription(), Updated);
 		}
 		LastUpdateCount = Updated;
+
+		const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+		if (SpatialGDKSettings->bBatchSpatialPositionUpdates && Sender != nullptr)
+		{
+			if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / SpatialGDKSettings->PositionUpdateFrequency))
+			{
+				TimeWhenPositionLastUpdated = Time;
+
+				Sender->ProcessPositionUpdates();
+			}
+		}
+
 #endif // WITH_SERVER_CODE
 	}
 
 	// Tick the timer manager
 	{
 		TimerManager.Tick(DeltaTime);
-	}
-
-	if (GetDefault<USpatialGDKSettings>()->bBatchSpatialPositionUpdates)
-	{
-		if ((Time - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
-		{
-			TimeWhenPositionLastUpdated = Time;
-
-			Sender->ProcessPositionUpdates();
-		}
 	}
 
 	Super::TickFlush(DeltaTime);

@@ -768,6 +768,12 @@ void USpatialActorChannel::UpdateSpatialPosition()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
 
+	// Additional check to validate Actor is still present
+	if (Actor == nullptr || Actor->IsPendingKill())
+	{
+		return;
+	}
+
 	// When we update an Actor's position, we want to update the position of all the children of this Actor.
 	// If this Actor is a PlayerController, we want to update all of its children and its possessed Pawn.
 	// That means if this Actor has an Owner or has a NetConnection and is NOT a PlayerController
