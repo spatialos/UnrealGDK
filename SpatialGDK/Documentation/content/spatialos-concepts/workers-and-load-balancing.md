@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Concepts: workers and load balancing
+# SpatialOS concepts: workers and load balancing
 
 > **Tip:** Before you read this page, you should read [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos) and [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components).
 
@@ -62,3 +62,6 @@ We need to create the following how-to docs:
 Creating worker types https://improbableio.atlassian.net/browse/DOC-1064
 Setting up load balancing https://improbableio.atlassian.net/browse/DOC-1065
 -->
+
+</br>------</br>
+_2019-05-21 Page added with editorial review_

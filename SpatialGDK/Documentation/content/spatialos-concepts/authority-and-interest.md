@@ -1,6 +1,6 @@
 <%(TOC)%>
 
-# Concepts: authority and interest
+# SpatialOS concepts: authority and interest
 
 > **Tip:** Before you read this page, you should read [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos), [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components), and [Workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing). 
 
@@ -49,3 +49,5 @@ Interest in SpatialOS means a worker instance wants to receive updates about com
 TODO
 WIP QBI doc: https://improbableio.atlassian.net/browse/UNR-1210
 -->
+</br>------</br>
+_2019-05-21 Page added with editorial review_

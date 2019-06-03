@@ -1,5 +1,6 @@
 <%(TOC)%>
-# Step 1: Set up
+# The Example Project 
+## 1: Set up
 
 To run the GDK and the Example Project, you need to:
 
@@ -7,13 +8,13 @@ To run the GDK and the Example Project, you need to:
 * Clone the Example Project and GDK repositories
 * Build and launch the Example Project
 
-## Step 1: Sign up or log in
+### Step 1: Sign up or log in
 
 If you have not signed up for a SpatialOS account, you can do this [here](https://improbable.io/get-spatialos).
 <br/>
 If you have already signed up, make sure you are logged into [Improbable.io](https://improbable.io). If you are logged in, you should see your picture in the top right of this page; if you are not logged in, select __Sign in__ at the top of this page and follow the instructions.
 
-## Step 2: Clone the Example Project repository
+### Step 2: Clone the Example Project repository
 
 <%(#Expandable title="Using the command line")%>
 
@@ -40,7 +41,7 @@ _Image: The Github Desktop Clone a repository window_<br/>
 
 > **TIP:** Clone the Example project into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealGDKExampleProject`.
 
-## Step 3: Clone the GDK 
+### Step 3: Clone the GDK 
 
 Next, you need to clone the GDK into your project. To do this: 
 
@@ -52,7 +53,7 @@ Next, you need to clone the GDK into your project. To do this:
 | HTTPS | `git clone https://github.com/spatialos/UnrealGDK.git` |
 | SSH | `git clone git@github.com:spatialos/UnrealGDK.git`|
 
-## Step 4: Build the dependencies and launch the project
+### Step 4: Build the dependencies and launch the project
 
 To use the Example project, you must build the GDK for Unreal module dependencies. To do this:
 
@@ -72,10 +73,10 @@ To use the Example project, you must build the GDK for Unreal module dependencie
    ![img]({{assetRoot}}assets/example-project/example-project-editor.png)<br/>
    _Image: The Example Project in the Unreal Editor_<br/><br/>
 
-#### **Next:** [Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 
+**> Next:** [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 
 
 </br>
 
 --------<br/>
 
-_2019-05-21 Page added with full review_
+_2019-05-21 Page added with editorial review_

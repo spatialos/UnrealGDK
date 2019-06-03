@@ -1,6 +1,8 @@
-## Step 3: Build your worker assemblies 
+<%(TOC)%>
+# Multiple deployments for session-based games
+## 3: Build and upload workers 
 
-Before you build your worker assemblies, you need to edit the Example Project DefaultEngine.ini file.
+Before you build your worker assemblies, you need to edit the Example Project `DefaultEngine.ini` file.
 
 In File Explorer, navigate to `UnrealGDKExampleProject\Game\Config` and open `DefaultEngine.ini` in a text editor. 
 
@@ -16,6 +18,11 @@ bPreventAutoConnectWithLocator=True
 Save and close `DefaultEngine.ini` once you have made your changes. 
 
 > **Note**: You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers, the command will fail.
+</br>
+</br>
+
+
+### Step 1: Build your worker assemblies
 
 There are two ways to build your worker assemblies (known as “building workers”):
 
@@ -46,7 +53,11 @@ In a terminal window, navigate to the `UnrealGDKExampleProject` directory.
 
 <%(/Expandable)%>
 
-### Troubleshooting
+
+</br>
+
+**Troubleshooting**</br>
+
 
 <%(#Expandable title="BuildProject.bat can’t find the path specified")%>
 
@@ -54,7 +65,7 @@ If you receive the error `The system cannot find the path specified. Builds fail
 
 <%(/Expandable)%>
 
-## Step 4: Upload your worker assemblies
+### Step 2: Upload your worker assemblies
 
 Before launching a cloud deployment, you must upload your server-worker and client-worker assemblies to the cloud. To do this: 
 
@@ -64,8 +75,10 @@ Before launching a cloud deployment, you must upload your server-worker and clie
 
 Make a note of the `<assembly_name>` you create, as you will need it later. 
 
-**Next**: [Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
+</br>
+</br>
+**> Next**: [4. Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
 
 --------<br/>
 
-_2019-05-21 Page added with full review_
+_2019-05-21 Page added with editorial review_

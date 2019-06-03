@@ -25,18 +25,18 @@ Project, you can learn more about the GDK’s functionality with:
 <img src="{{assetRoot}}assets/example-project/example-project-headline.png" style=" float: right; margin: 0; display: block; width: 60%; padding: 20px 20px"/>
 
 
-* **The Multiple deployments for session-based games tutorial**: upload a session-based FPS example game to the cloud.
+* **The tutorial on multiple deployments for session-based games**: upload a session-based FPS example game to the cloud.
 * **The Multiserver Shooter tutorial**: implement shooting across the boundaries of different servers simulating one game world.
 * **The Porting guide**: porting your existing UE project to SpatialOS.
 
 ## Find out more
 
 * Learn more about how the GDK works and how it fits into your game stack. 
-<br/>**Read the [Technical overview]({{urlRoot}}/content/technical-overview/gdk-principles)** (5-minute read).
+<br/>**Read the [Technical overview]({{urlRoot}}/content/technical-overview/gdk-principles)** (10-minute read).
 <br/>
 <br/>
 * If you aren’t already familiar with SpatialOS, you can find out about the concepts which enable it to support game worlds with more persistence, scale, and complexity than previously possible.
-<br/> **Read the [SpatialOS concept docs](https://docs.improbable.io/reference/latest/shared/concepts/spatialos)** on the SpatialOS documentation website (5 minute read).
+<br/> **Read the [SpatialOS concept docs]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)** (10-minute read).
 <br/>
 <br/>
 * We’d love to hear your game ideas and answer any questions you have about making games on SpatialOS. <br/>
@@ -46,5 +46,5 @@ Project, you can learn more about the GDK’s functionality with:
 
 #### Next: [Get started]({{urlRoot}}/content/get-started/dependencies.md)
 
-------
-_2019-05-21 Page updated_
+</br>------</br>
+_2019-05-21 Page updated with editorial review_

@@ -1,6 +1,5 @@
-<%(TOC)%>
-
-# Multiserver Shooter tutorial
+# Tutorials and guides
+## Multiserver Shooter tutorial
 
 <%(Callout type="warn" message="This tutorial is available as a preview to demonstrate early multiserver functionality in the GDK. Please note we do not yet recommend development of multiserver games. For more information, please follow our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support]({{urlRoot}}/unreal-features-support) pages.")%>	
 
@@ -12,10 +11,10 @@ In this tutorial you’ll implement cross-server remote procedure calls (RPCs) i
 The exercise demonstrates that the workflows and iteration speed you’re used to as an Unreal developer are almost entirely unaltered by the GDK: it’s just like regular Unreal!
 </br>
 </br>
-**Next:** 
-[Step 1: Setup]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
+**> Next:** 
+[1: Setup]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
 <br/>
 <br/>
 
--------------
+-------------</br>
 _2019-04-30 Page updated with limited editorial review_

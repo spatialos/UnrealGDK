@@ -2,39 +2,43 @@
     - [Welcome]({{urlRoot}}/index)
     - Get started
         - [Introduction]({{urlRoot}}/content/get-started/introduction)
-        - [1: Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
-        - [2: Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-        - Set up a project
-            - [The GDK Example project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
-                - [Step 1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
-                - [Step 2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
-                - [Step 3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment)
-                - [Step 4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
-            - [The GDK Starter Template]({{urlRoot}}/content/get-started/gdk-template)
+        - [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
+        - [2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+        - 3 - Set up a project
+            - The Example Project
+                - [Introduction]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
+                - [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
+                - [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
+                - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment)
+                - [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
+            - The Starter Template
+                - [Create a project]({{urlRoot}}/content/get-started/gdk-template)
     - Technical overview
         - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
         - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
         - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
-    - Tutorials
+    - Tutorials and guides
         - Multiple deployments for session-based games
             - [Introduction]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro)
-            - [Step 1: Clone the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
-            - [Step 2: Generate a development authentication token]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication)
-            - [Steps 3 & 4: Build your worker assemblies]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
-            - [Step 5: Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
-            - [Step 6: Launch multiple session-based cloud deployments]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
-            - [Step 7: Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
+            - [1: Clone the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
+            - [2: Generate an authentication token]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication)
+            - [3: Build and upload workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
+            - [4: Configure the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-configure)
+            - [5: Launch multiple session-based deployments]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
+            - [6: Play your game]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-play)
         - Multiserver Shooter tutorial
             - [Introduction]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-intro)
-            - [Step 1: Set up]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
-            - [Step 2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
-            - [Step 3: Test your changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
-            - [Step 4: Test your changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
-        - [Port your own project to the GDK]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
+            - [1: Set up]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
+            - [2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
+            - [3: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
+            - [4: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+        - Port your project to SpatialOS
+            - [Porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
     - [Unreal features support]({{urlRoot}}/unreal-features-support)
     - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
     - SpatialOS concepts
+        - [Introduction]({{urlRoot}}/content/spatialos-concepts/introduction)
         - [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)
         - [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components)
         - [Workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)

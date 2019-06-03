@@ -1,5 +1,5 @@
 <%(TOC)%>
-# Concepts: world, entities, components
+# SpatialOS concepts: world, entities, components
 
 > **Tip:** Before you read this page, you should read [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)
 
@@ -22,3 +22,6 @@ _Image: Entities, components, and component properties_
 ## Why is a SpatialOS game world necessary?
 
 The SpatialOS game world, with its entities and their components, stores the state of the game world in a way that enables many servers and game clients to access and change it, without needing to communicate directly with each other.
+
+</br>------</br>
+_2019-05-21 Page added with editorial review_

@@ -1,15 +1,12 @@
 <%(TOC)%>
-
 # Multiserver Shooter tutorial
-
-## Step 1: Set up
-
-### Check you have the prerequistes
+## 1: Set up
+### Step 1: Check you have the prerequistes
 
 Before following the Multiserver Shooter tutorial, you need to have followed:
 
-* [Get started: 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
-* [Get started: 2 - Get and build the GDK's Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork).
+* [Get started 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
+* [Get started 2 - Get and build the GDK's Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 
 Once you have done this, you are ready to get going with the Multiserver Shooter tutorial by following the steps below.
 <br/>
@@ -17,7 +14,7 @@ Once you have done this, you are ready to get going with the Multiserver Shooter
 **Let's get started!**<br/>
 <br/>
 
-### Clone the Unreal GDK Third Person Shooter repository
+### Step 2: Clone the Unreal GDK Third Person Shooter repository
 
 Clone the Unreal GDK Third Person Shooter repository and checkout the tutorial branch using one of the following commands:
 
@@ -31,7 +28,7 @@ This repository contains a version of Unreal’s Third Person template that has 
 > **Note:**  A completed version of this tutorial is available in the `tutorial-complete` branch.
 
 <br/>
-### Clone the GDK into the `Plugins` directory
+### Step 3: Clone the GDK into the `Plugins` directory
 
 1. Navigate to `UnrealGDKThirdPersonShooter\Game` and create a `Plugins` directory.
 1. In a terminal window,  change directory to the  `Plugins` directory and clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository using one of the following commands:
@@ -47,7 +44,7 @@ The GDK's [default branch (GitHub documentation)](https://help.github.com/en/art
 
 <br/>
 
-### Build dependencies 
+### Step 4: Build dependencies 
 
 In this step, you're going to build the Unreal GDK's dependencies.
 
@@ -67,7 +64,7 @@ _Image: The Visual Studio toolbar_<br/><br/>
 _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 <br/>
-### Deploy the project locally
+### Step 5: Deploy the project locally
 
 In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will run a [cloud deployment](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
 
@@ -89,10 +86,10 @@ _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** 
 Notice that when players shoot each other, their health does not go down. It's not much fun with no skin in the game is it? Let’s fix the health system.
 </br>
 </br>
-**Next:** 
-[Step 2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
+**> Next:** 
+[2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
 <br/>
 <br/>
 
--------------
+-------------</br>
 _2019-04-30 Page updated with limited editorial review_

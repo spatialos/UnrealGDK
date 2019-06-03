@@ -1,17 +1,18 @@
 <%(TOC)%>
-# Get started: 1 - Get the dependencies
+# Get started
+## 1 - Get the dependencies
 
 To start using the GDK for Unreal, you need to ensure you have the correct software installed and that your machine is capable of running Unreal Engine. 
 
-## Sign up for a SpatialOS account, or make sure you are logged in
+### Step 1: Login
 
-If you have already signed up, make sure you are logged into [Improbable.io](https://improbable.io). If you are logged in, you should see your picture in the top right of this page. If you are not logged in, select __Sign in__ at the top of this page and follow the instructions.
+Before you start, make sure you are logged in to your SpatialOS account.
 
-If you have not signed up before, you can sign up [here](<https://improbable.io/get-spatialos>).
+* If you have already signed up to SpatialOS, make sure you are logged into [Improbable.io](https://improbable.io). If you are logged in, you should see your picture in the top right of this page. If you are not logged in, select __Sign in__ at the top of this page and follow the instructions.
 
-## Set up your machine
+* If you have not signed up before, you can sign up [here](<https://improbable.io/get-spatialos>).
 
-### Step 1: Hardware
+### Step 2: Hardware
 
 - Ensure your machine meets the minimum hardware requirements for Unreal Engine. 
 
@@ -19,11 +20,11 @@ Refer to the <a href="https://docs.unrealengine.com/en-US/GettingStarted/Recomme
 
 - Recommended storage: 60GB+ available space
 
-### Step 2: Network settings
+### Step 3: Network settings
 
 To configure your network to work with SpatialOS, refer to the [SpatialOS network settings](https://docs.improbable.io/reference/latest/shared/setup/requirements#network-settings). 
 
-### Step 3: Software
+### Step 4: Software
 
 To build the GDK for Unreal you need the following software installed on your machine:
 
@@ -48,9 +49,11 @@ To build the GDK for Unreal you need the following software installed on your ma
     - **Desktop development with C++**<br>
     - **Game development with C++**, including the optional **Unreal Engine installer** component.
 
-#### Next: [Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork.md)
+</br>
+</br>
+**> Next:** [2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork.md)
 
 <br/>
 
-------	
-_2019-04-16 Page updated with limited editorial review_
+------</br>
+_2019-05-23 Page updated with limited editorial review_

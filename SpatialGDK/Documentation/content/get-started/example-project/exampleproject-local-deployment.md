@@ -1,4 +1,6 @@
-# Step 2: Launch a local deployment
+<%(TOC)%>
+# The Example Project 
+## 2: Launch a local deployment
 
 When you want to try out your game, you need to run a deployment. 
 
@@ -59,11 +61,12 @@ To launch a local deployment:
 8. When you’re done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>
    ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Stop**_
-
-#### Next: [Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment) 
+</br>
+</br>
+**> Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment) 
 
 </br>
 
 --------<br/>
 
-_2019-05-21 Page added with full review_
+_2019-05-21 Page added with editorial review_

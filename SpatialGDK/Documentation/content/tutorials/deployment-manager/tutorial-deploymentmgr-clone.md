@@ -1,4 +1,6 @@
-## Step 1: Clone the Deployment Manager repository
+<%(TOC)%>
+# Multiple deployments for session-based games
+## 1: Clone the Deployment Manager
 
 First, clone the Deployment Manager repository. 
 
@@ -32,8 +34,10 @@ _Image: The Github Desktop Clone a repository window_<br/>
 
 Your cloned directory should now have a path similar to `C:\Dev\deployment-manager\...`
 
-**Next**: [Generate a development authentication token]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication)
+</br
+</br>
+**> Next**: [2: Generate an authentification token]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication)
 
 --------<br/>
 
-_2019-05-21 Page added with full review_
+_2019-05-21 Page added with editorial review_
