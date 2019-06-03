@@ -79,6 +79,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bEnableMetrics;
 
+	/** Display server metrics on clients.*/
+	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
+	bool bEnableMetricsDisplay;
+
 	/** Frequency that metrics are reported to SpatialOS.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false), DisplayName = "Metrics Report Rate (seconds)")
 	float MetricsReportRate;
@@ -90,5 +94,9 @@ public:
 	/** Include an order index with reliable RPCs and warn if they are executed out of order.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bCheckRPCOrder;
+
+	/** Batch entity position updates to be processed on a single frame.*/
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	bool bBatchSpatialPositionUpdates;
 };
 
