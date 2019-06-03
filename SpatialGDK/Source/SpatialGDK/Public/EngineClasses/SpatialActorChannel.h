@@ -8,6 +8,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Interop/SpatialStaticComponentView.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialCommonTypes.h"
 #include "Utils/RepDataUtils.h"
@@ -105,8 +106,13 @@ public:
 	}
 
 	// UChannel interface
+#if ENGINE_MINOR_VERSION <= 20
 	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, bool bOpenedLocally) override;
 	virtual int64 Close() override;
+#else
+	virtual void Init(UNetConnection * InConnection, int32 ChannelIndex, EChannelCreateFlags CreateFlag) override;
+	virtual int64 Close(EChannelCloseReason Reason) override;
+#endif
 	virtual int64 ReplicateActor() override;
 	virtual void SetChannelActor(AActor* InActor) override;
 
@@ -134,6 +140,8 @@ public:
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
 	void UpdateShadowData();
+	void UpdateSpatialPositionWithFrequencyCheck();
+	void UpdateSpatialPosition();
 
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
@@ -146,7 +154,11 @@ public:
 
 protected:
 	// UChannel Interface
+#if ENGINE_MINOR_VERSION <= 20
 	virtual bool CleanUp(const bool bForDestroy) override;
+#else
+	virtual bool CleanUp(const bool bForDestroy, EChannelCloseReason CloseReason) override;
+#endif
 
 private:
 	void ServerProcessOwnershipChange();
@@ -155,7 +167,6 @@ private:
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
 
-	void UpdateSpatialPosition();
 	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);

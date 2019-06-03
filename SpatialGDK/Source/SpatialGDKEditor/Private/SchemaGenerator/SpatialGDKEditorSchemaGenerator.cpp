@@ -458,7 +458,7 @@ TArray<UClass*> GetAllSupportedClasses()
 		{
 			continue;
 		}
-		
+
 		Classes.Add(SupportedClass);
 	}
 
@@ -518,14 +518,6 @@ bool TryLoadExistingSchemaDatabase()
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
-
-		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
-		if (ClassPathToSchemaData.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
-		{
-			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
-			ClassPathToSchemaData.Empty();
-			DeleteGeneratedSchemaFiles();
-		}
 	}
 	else
 	{

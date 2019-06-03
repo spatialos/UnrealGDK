@@ -47,8 +47,6 @@ pushd "$($gdk_home)"
     popd
 
     $unreal_path = "$($gdk_home)\UnrealEngine"
-    Write-Log "Setting UNREAL_HOME environment variable to $($unreal_path)"
-    [Environment]::SetEnvironmentVariable("UNREAL_HOME", "$($unreal_path)", "Machine")
 
     $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
