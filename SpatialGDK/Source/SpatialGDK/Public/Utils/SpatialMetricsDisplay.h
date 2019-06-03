@@ -39,7 +39,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(Category = "SpatialGDK", BlueprintCallable)
 	void ToggleStatDisplay();
 
 private:
