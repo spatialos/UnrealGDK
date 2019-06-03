@@ -53,4 +53,4 @@ To use the project, you must build the GDK for Unreal module dependencies. To do
 
 You can now launch a local or cloud deployment, or edit the project. 
 
-For information about launching a local or cloud deployment, see the [Starter Template]({{urlRoot}}/content/get-started/gdk-template#deploy-your-project) or [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) guides. 
+For information about launching a local or cloud deployment, see the [Starter Template]({{urlRoot}}/content/get-started/gdk-template#4-deploy-your-project) or [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) guides. 
