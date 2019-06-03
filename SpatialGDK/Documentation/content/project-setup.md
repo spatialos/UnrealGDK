@@ -1,3 +1,6 @@
+<!--- DO NOT DELETE - I am a page linked to from the Third-Person Shooter game
+(https://github.com/spatialos/UnrealGDKThirdPersonShooter) and Test Suite (https://github.com/spatialos/UnrealGDKTestSuite) repos --->
+
 # Set up the Third-Person Shooter game or Test Suite 
 
 Use this guide to set up the [Third-Person Shooter game](https://github.com/spatialos/UnrealGDKThirdPersonShooter) or the [Test Suite](https://github.com/spatialos/UnrealGDKTestSuite) GDK projects. 
