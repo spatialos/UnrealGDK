@@ -44,12 +44,13 @@ call :MarkEndOfBlock "Setup the git hooks"
 call :MarkStartOfBlock "Check dependencies"
     rem Find the Unreal Engine used to build this project.
     set UNREAL_ENGINE=""
+    set UPROJECT=""
 
     rem Get the Unreal Engine used by this project by querying the registry for the engine association found in the .uproject.
-    for /f "delims=" %%A in (' powershell -Command "Get-Childitem -Path %ProjectDirectory% -Recurse -Depth 1 -Include *.uproject -File | %% {$_.FullName}" ') do set UPROJECT="%%A"
+    for /f "delims=" %%A in (' powershell -Command "Get-ChildItem %ProjectDirectory% -Depth 1 -Filter *.uproject -File | %% {$_.FullName}" ') do set UPROJECT="%%A"
     
     rem If the regex failed then it will return a string containing only a space.
-    if %UPROJECT%==" " (
+    if %UPROJECT%=="" (
         echo Error: Could not find uproject. Please make sure you have passed in the project directory correctly.
         pause
         exit /b 1
