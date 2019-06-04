@@ -91,7 +91,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Test", meta = (ConfigRestartRequired = false))
 	FString DevelopmentAuthenticationToken;
 
-	/** The deployment to connect when using Development Authentication Flow. If left empty, use the first available one. The deployment need to be tagged with 'dev_login'. */
+	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one. The deployment needs to be tagged with 'dev_login'. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Test", meta = (ConfigRestartRequired = false))
 	FString DevelopmentDeploymentToConnect;
 
