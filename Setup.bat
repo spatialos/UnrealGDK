@@ -1,6 +1,6 @@
 @echo off
 
-setlocal
+setlocal EnableDelayedExpansion
 
 pushd "%~dp0"
 
@@ -12,7 +12,10 @@ if defined ProjectDirectory (
     echo Project directory for installation is: %ProjectDirectory%
 ) else (
     rem If no argument for the project is provided, assume this script is being run as a plugin within a game project.
-    set ProjectDirectory="%~dp0..\..\.."
+    pushd "%~dp0..\..\.."
+    set ProjectDirectory="!cd!"
+    popd
+    echo Setup running as project plugin. Project directory is: !ProjectDirectory!
 )
 
 if not exist %ProjectDirectory% (
@@ -72,16 +75,14 @@ call :MarkStartOfBlock "Check dependencies"
 
     rem If there was no engine association then we need to climb the directory path of the project to find the Engine.
     if %UNREAL_ENGINE%=="" (
-        pushd "%~dp0"
-        cd /d  %ProjectDirectory%
+        pushd %ProjectDirectory%
 
         :climb_parent_directory
-        cd ..
+        echo Checking for Engine in directory: !cd!
         if exist Engine (
             rem Check for the Build.version file to be sure we have found a correct Engine folder.
             if exist "Engine\Build\Build.version" (
-                echo Found Engine at: "%cd%"
-                set UNREAL_ENGINE="%cd%"
+                set UNREAL_ENGINE="!cd!"
             )
         ) else (
             rem This checks if we are in a root directory. If so we cannot check any higher and so should error out.
@@ -90,11 +91,11 @@ call :MarkStartOfBlock "Check dependencies"
                 pause
                 exit /b 1
             )
+            cd ..
             goto :climb_parent_directory
         )
 
         popd
-        pushd "%~dp0"
     )
 
     if %UNREAL_ENGINE%=="" (
