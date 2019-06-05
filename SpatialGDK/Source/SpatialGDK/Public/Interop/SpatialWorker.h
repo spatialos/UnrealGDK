@@ -19,5 +19,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	static bool CanHaveAuthority(const AActor* Actor);
-	
+
+	/** Check whether a SpatialOS worker responsible for simulating the given world can have authority over the actor of the given class.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	static bool CanHaveAuthorityForClass(const UWorld* World, const UClass* Class);
 };

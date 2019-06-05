@@ -17,6 +17,7 @@
 #include "Interop/GlobalStateManager.h"
 #include "Interop/SpatialPlayerSpawner.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialWorker.h"
 #include "Schema/DynamicComponent.h"
 #include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
@@ -719,7 +720,7 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnInfo.bRemoteOwned = true;
+	SpawnInfo.bRemoteOwned = !USpatialWorker::CanHaveAuthorityForClass(NetDriver->GetWorld(), ActorClass);
 	SpawnInfo.bNoFail = true;
 
 	FVector SpawnLocation = FRepMovement::RebaseOntoLocalOrigin(SpawnDataComp->Location, NetDriver->GetWorld()->OriginLocation);
