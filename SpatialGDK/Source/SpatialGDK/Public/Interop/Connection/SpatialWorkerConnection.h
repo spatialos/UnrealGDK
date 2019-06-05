@@ -59,8 +59,6 @@ public:
 	FString GetWorkerId() const;
 	const TArray<FString>& GetWorkerAttributes() const;
 
-	void FinishDevelopmentAuth();
-
 	FReceptionistConfig ReceptionistConfig;
 	FLocatorConfig LocatorConfig;
 

@@ -82,15 +82,12 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	}
 
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
-	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow)
+	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
 	{
-		if (bInitAsClient)
-		{
-			LocatorConfig.WorkerType = bInitAsClient ? SpatialConstants::ClientWorkerType : SpatialConstants::ServerWorkerType;
-			LocatorConfig.UseExternalIp = true;
-			StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
-			return;
-		}
+		LocatorConfig.WorkerType = SpatialConstants::ClientWorkerType;
+		LocatorConfig.UseExternalIp = true;
+		StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
+		return;
 	}
 
 	switch (GetConnectionType())
@@ -104,7 +101,6 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	}
 }
 
-#pragma optimize("", off)
 void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
 {
 	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
@@ -122,7 +118,7 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Success: Login Token Count %d"), LoginTokens->login_token_count);
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
 	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
-	// If not set, use the first deployment.
+	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
 	if (DeploymentToConnect.IsEmpty())
 	{
 		Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
@@ -139,7 +135,7 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 			}
 		}
 	}
-	Connection->FinishDevelopmentAuth();
+	Connection->ConnectToLocator();
 }
 
 void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
@@ -153,12 +149,12 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Success: Received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
 	Connection->LocatorConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
-	Worker_Alpha_LoginTokensRequest* LTParams = new Worker_Alpha_LoginTokensRequest();
-	LTParams->player_identity_token = PIToken->player_identity_token;
-	LTParams->worker_type = TCHAR_TO_UTF8(*Connection->LocatorConfig.WorkerType);
-	LTParams->use_insecure_connection = false;
+	Worker_Alpha_LoginTokensRequest LTParams{};
+	LTParams.player_identity_token = PIToken->player_identity_token;
+	LTParams.worker_type = TCHAR_TO_UTF8(*Connection->LocatorConfig.WorkerType);
+	LTParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, LTParams))
+	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
 	{
 		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, Connection, &USpatialWorkerConnection::OnLoginTokens);
 	}
@@ -166,23 +162,19 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 
 void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
 {
-	Worker_Alpha_PlayerIdentityTokenRequest* PITParams = new Worker_Alpha_PlayerIdentityTokenRequest();
-	PITParams->development_authentication_token = TCHAR_TO_UTF8(*DevAuthToken);
-	PITParams->player_id = TCHAR_TO_UTF8(*SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
-	PITParams->display_name = "";
-	PITParams->metadata = "";
-	PITParams->use_insecure_connection = false;
+	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
+	FTCHARToUTF8 dev_auth_token = FTCHARToUTF8(*DevAuthToken);
+	FTCHARToUTF8 player_id = FTCHARToUTF8(*SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
+	PITParams.development_authentication_token = dev_auth_token.Get();
+	PITParams.player_id = player_id.Get();
+	PITParams.display_name = "";
+	PITParams.metadata = "";
+	PITParams.use_insecure_connection = false;
 
-	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, PITParams))
+	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
 	{
 		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialWorkerConnection::OnPlayerIdentityToken);
 	}
-}
-#pragma optimize("", on)
-
-void USpatialWorkerConnection::FinishDevelopmentAuth()
-{
-	ConnectToLocator();
 }
 
 void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
