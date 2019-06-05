@@ -34,6 +34,7 @@ Worker_ComponentUpdate InterestFactory::CreateInterestUpdate()
 	return CreateInterest().CreateInterestUpdate();
 }
 
+// TODO - timgibson - change API so that we can avoid attaching empty Interest components.
 Interest InterestFactory::CreateInterest()
 {
 	if (!GetDefault<USpatialGDKSettings>()->bUsingQBI)
@@ -41,147 +42,86 @@ Interest InterestFactory::CreateInterest()
 		return Interest{};
 	}
 
-	if (Actor->GetNetConnection() != nullptr)
+	// TODO - timgibson - validate that there's a connection.
+	if (Actor->IsA(APlayerController::StaticClass()))
 	{
-		return CreatePlayerOwnedActorInterest();
+		return CreateClientWorkerInterest();
 	}
-	else
+
+	// TODO - timgibson - need a better way to attach server interest.
+	if (Actor->IsA(AWorldSettings::StaticClass()))
 	{
-		return CreateActorInterest();
+		return CreateServerWorkerInterest();
 	}
+
+	return Interest{};
 }
 
-Interest InterestFactory::CreateActorInterest()
+Interest InterestFactory::CreateClientWorkerInterest()
 {
-	Interest NewInterest;
-
-	QueryConstraint DefinedConstraints = CreateDefinedConstraints();
-
-	if (!DefinedConstraints.IsValid())
-	{
-		return NewInterest;
-	}
-
-	Query NewQuery;
-	NewQuery.Constraint = DefinedConstraints;
-	// TODO: Make result type handle components certain workers shouldn't see
-	// e.g. Handover, OwnerOnly, etc.
-	NewQuery.FullSnapshotResult = true;
-
-	ComponentInterest NewComponentInterest;
-	NewComponentInterest.Queries.Add(NewQuery);
-
-	// Server Interest
-	NewInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, NewComponentInterest);
-
-	return NewInterest;
-}
-
-Interest InterestFactory::CreatePlayerOwnedActorInterest()
-{
-	QueryConstraint DefinedConstraints = CreateDefinedConstraints();
-
-	// Servers only need the defined constraints
-	Query ServerQuery;
-	ServerQuery.Constraint = DefinedConstraints;
-	ServerQuery.FullSnapshotResult = true;
-
-	ComponentInterest ServerComponentInterest;
-	ServerComponentInterest.Queries.Add(ServerQuery);
-
-	// Clients should only check out entities that are in loaded sublevels
-	QueryConstraint LevelConstraints = CreateLevelConstraints();
-
 	QueryConstraint ClientConstraint;
-
-	if (DefinedConstraints.IsValid())
 	{
-		ClientConstraint.AndConstraint.Add(DefinedConstraints);
-	}
+		QueryConstraint NearnessConstraint;
+		const QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraint();
+		const QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint();
+		check(CheckoutRadiusConstraint.IsValid());
+		if (AlwaysInterestedConstraint.IsValid())
+		{
+			NearnessConstraint.OrConstraint.Add(CheckoutRadiusConstraint);
+			NearnessConstraint.OrConstraint.Add(AlwaysInterestedConstraint);
+		}
+		else 
+		{
+			NearnessConstraint = CheckoutRadiusConstraint;
+		}
+		
+		QueryConstraint StreamingConstraint;
+		const QueryConstraint LevelConstraints = CreateLevelConstraints();
+		check(LevelConstraints.IsValid());
+		check(NearnessConstraint.IsValid());
+		StreamingConstraint.AndConstraint.Add(LevelConstraints);
+		StreamingConstraint.AndConstraint.Add(NearnessConstraint);
 
-	if (LevelConstraints.IsValid())
-	{
-		ClientConstraint.AndConstraint.Add(LevelConstraints);
+		QueryConstraint SingletonConstraint = CreateSingletonConstraint();
+		check(SingletonConstraint.IsValid());
+		check(SingletonConstraint.IsValid());
+		ClientConstraint.OrConstraint.Add(SingletonConstraint);
+		ClientConstraint.OrConstraint.Add(StreamingConstraint);
 	}
 
 	Query ClientQuery;
 	ClientQuery.Constraint = ClientConstraint;
 	ClientQuery.FullSnapshotResult = true;
 
+	// TODO - timgibson - add actor-based queries defined in userland. These need to conjoin with level streaming constraints.
+
 	ComponentInterest ClientComponentInterest;
 	ClientComponentInterest.Queries.Add(ClientQuery);
 
-	Interest NewInterest;
-	// Server Interest
-	if (DefinedConstraints.IsValid())
-	{
-		NewInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, ServerComponentInterest);
-	}
-	// Client Interest
-	if (ClientConstraint.IsValid())
-	{
-		NewInterest.ComponentInterestMap.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, ClientComponentInterest);
-	}
-
-	return NewInterest;
+	Interest ClientInterest;
+	ClientInterest.ComponentInterestMap.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, ClientComponentInterest);
+	return ClientInterest;
 }
 
-QueryConstraint InterestFactory::CreateDefinedConstraints()
+Interest InterestFactory::CreateServerWorkerInterest()
 {
-	QueryConstraint SystemDefinedConstraints = CreateSystemDefinedConstraints();
-	QueryConstraint UserDefinedConstraints = CreateUserDefinedConstraints();
+	// TODO - timgibson - Solve zoning and offloading.
+	// With single-server, no interest is needed since the sole server worker has authority
+	// over basically everything.
+	//
+	// Server worker interest should be
+	// Singleton OR (Levels AND Buffer around my zone)
 
-	QueryConstraint DefinedConstraints;
-
-	if (SystemDefinedConstraints.IsValid())
-	{
-		DefinedConstraints.OrConstraint.Add(SystemDefinedConstraints);
-	}
-
-	if (UserDefinedConstraints.IsValid())
-	{
-		DefinedConstraints.OrConstraint.Add(UserDefinedConstraints);
-	}
-
-	return DefinedConstraints;
-}
-
-QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
-{
-	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraint();
-	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint();
-	QueryConstraint SingletonConstraint = CreateSingletonConstraint();
-
-	QueryConstraint SystemDefinedConstraints;
-
-	if (CheckoutRadiusConstraint.IsValid())
-	{
-		SystemDefinedConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
-	}
-
-	if (AlwaysInterestedConstraint.IsValid())
-	{
-		SystemDefinedConstraints.OrConstraint.Add(AlwaysInterestedConstraint);
-	}
-
-	if (SingletonConstraint.IsValid())
-	{
-		SystemDefinedConstraints.OrConstraint.Add(SingletonConstraint);
-	}
-
-	return SystemDefinedConstraints;
-}
-
-QueryConstraint InterestFactory::CreateUserDefinedConstraints()
-{
-	return QueryConstraint{};
+	Interest ServerInterest;
+	// TODO - timgibson - add constraints.
+	return ServerInterest;
 }
 
 QueryConstraint InterestFactory::CreateCheckoutRadiusConstraint()
 {
 	QueryConstraint CheckoutRadiusConstraint;
 
-	float CheckoutRadius = Actor->CheckoutRadius / 100.0f; // Convert to meters
+	const float CheckoutRadius = static_cast<float>(GetDefault<USpatialGDKSettings>()->DefaultClientCheckoutRadius) / 100.0f; // Convert to meters
 	CheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
 
 	return CheckoutRadiusConstraint;
@@ -220,6 +160,7 @@ QueryConstraint InterestFactory::CreateSingletonConstraint()
 {
 	QueryConstraint SingletonConstraint;
 
+	// TODO - timgibson - Client workers don't need the singleton manager.
 	Worker_ComponentId SingletonComponentIds[] = {
 		SpatialConstants::SINGLETON_COMPONENT_ID,
 		SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID };

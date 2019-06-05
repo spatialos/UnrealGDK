@@ -27,20 +27,8 @@ public:
 private:
 	Interest CreateInterest();
 
-	// Only uses Defined Constraint
-	Interest CreateActorInterest();
-	// Defined Constraint AND Level Constraint
-	Interest CreatePlayerOwnedActorInterest();
-
-private:
-	// System Constraint OR User Constraint
-	QueryConstraint CreateDefinedConstraints();
-
-	// Checkout Constraint OR AlwaysInterested Constraint
-	QueryConstraint CreateSystemDefinedConstraints();
-
-	// TODO: Will be created utilizing user defined structs
-	QueryConstraint CreateUserDefinedConstraints();
+	Interest CreateClientWorkerInterest();
+	Interest CreateServerWorkerInterest();
 
 	// System Defined Constraints
 	QueryConstraint CreateCheckoutRadiusConstraint();
