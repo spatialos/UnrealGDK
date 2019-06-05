@@ -67,6 +67,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Query Based Interest", meta = (ConfigRestartRequired = false, DisplayName = "Query Based Interest Enabled"))
 	bool bUsingQBI;
 
+	/** Client Workers will include a query to gain interest on all actors within this radius from the PlayerController.*/
+	UPROPERTY(EditAnywhere, config, Category = "Query Based Interest", meta = (ConfigRestartRequired = false, ClampMin = 0))
+	int32 DefaultClientCheckoutRadius;
+
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false))
 	float PositionUpdateFrequency;

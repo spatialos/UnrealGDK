@@ -21,6 +21,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, OpsUpdateRate(1000.0f)
 	, bEnableHandover(true)
 	, bUsingQBI(true)
+	, DefaultClientCheckoutRadius(10000) // 100m
 	, PositionUpdateFrequency(1.0f)
 	, PositionDistanceThreshold(100.0f) // 1m (100cm)
 	, bEnableMetrics(true)
