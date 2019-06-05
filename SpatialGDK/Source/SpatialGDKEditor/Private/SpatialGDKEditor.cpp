@@ -13,6 +13,7 @@
 #include "GeneralProjectSettings.h"
 #include "Misc/ScopedSlowTask.h"
 #include "UObject/StrongObjectPtr.h"
+#include "Settings/ProjectPackagingSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
@@ -55,6 +56,12 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	RemoveEditorAssetLoadedCallback();
 
+	if (!TryLoadExistingSchemaDatabase())
+	{
+		bSchemaGeneratorRunning = false;
+		return false;
+	}
+
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
 	if (bFullScan)
 	{
@@ -76,7 +83,10 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
 	}
 
-	TryLoadExistingSchemaDatabase();
+	if (bFullScan)
+	{
+		DeleteGeneratedSchemaFiles();
+	}
 
 	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
 	bool bResult = SpatialGDKGenerateSchema();
@@ -101,94 +111,17 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
 	bSchemaGeneratorRunning = false;
 
+	if (bResult)
+	{
+		UE_LOG(LogSpatialGDKEditor, Display, TEXT("Schema Generation succeeded!"));
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema Generation failed. View earlier log messages for errors."));
+	}
+
 	return bResult;
 }
-
-//bool FSpatialGDKEditor::SaveAllAssets()
-//{
-	// Set up the save package dialog
-	//FPackagesDialogModule& PackagesDialogModule = FModuleManager::LoadModuleChecked<FPackagesDialogModule>(TEXT("PackagesDialog"));
-	//PackagesDialogModule.CreatePackagesDialog(NSLOCTEXT("PackagesDialogModule", "PackagesDialogTitle", "Save Content"), NSLOCTEXT("PackagesDialogModule", "PackagesDialogMessage", "Select content to save."));
-	//PackagesDialogModule.AddButton(DRT_Save, NSLOCTEXT("PackagesDialogModule", "SaveSelectedButton", "Save Selected"), NSLOCTEXT("PackagesDialogModule", "SaveSelectedButtonTip", "Attempt to save the selected content"));
-	//PackagesDialogModule.AddButton(DRT_DontSave, NSLOCTEXT("PackagesDialogModule", "DontSaveSelectedButton", "Don't Save"), NSLOCTEXT("PackagesDialogModule", "DontSaveSelectedButtonTip", "Do not save any content"));
-	//PackagesDialogModule.AddButton(DRT_Cancel, NSLOCTEXT("PackagesDialogModule", "CancelButton", "Cancel"), NSLOCTEXT("PackagesDialogModule", "CancelButtonTip", "Do not save any content and cancel the current operation"));
-
-	//TArray<UPackage*> AddPackageItemsChecked;
-	//TArray<UPackage*> AddPackageItemsUnchecked;
-	//for (TArray<UPackage*>::TConstIterator PkgIter(InPackages); PkgIter; ++PkgIter)
-	//{
-	//	UPackage* CurPackage = *PkgIter;
-	//	check(CurPackage);
-
-	//	// If the caller set bCheckDirty to true, only consider dirty packages
-	//	if (!bCheckDirty || (bCheckDirty && CurPackage->IsDirty()))
-	//	{
-	//		// Never save the transient package
-	//		if (CurPackage != GetTransientPackage())
-	//		{
-	//			// Never save compiled in packages
-	//			if (CurPackage->HasAnyPackageFlags(PKG_CompiledIn) == false)
-	//			{
-	//				if (UncheckedPackages.Contains(MakeWeakObjectPtr(CurPackage)))
-	//				{
-	//					AddPackageItemsUnchecked.Add(CurPackage);
-	//				}
-	//				else
-	//				{
-	//					AddPackageItemsChecked.Add(CurPackage);
-	//				}
-	//			}
-	//			else
-	//			{
-	//				UE_LOG(LogFileHelpers, Warning, TEXT("PromptForCheckoutAndSave attempted to open the save dialog with a compiled in package: %s"), *CurPackage->GetName());
-	//			}
-	//		}
-	//		else
-	//		{
-	//			UE_LOG(LogFileHelpers, Warning, TEXT("PromptForCheckoutAndSave attempted to open the save dialog with the transient package"));
-	//		}
-	//	}
-	//}
-
-	//if (AddPackageItemsUnchecked.Num() > 0 || AddPackageItemsChecked.Num() > 0)
-	//{
-	//	for (auto Iter = AddPackageItemsChecked.CreateIterator(); Iter; ++Iter)
-	//	{
-	//		PackagesDialogModule.AddPackageItem(*Iter, (*Iter)->GetName(), ECheckBoxState::Checked);
-	//	}
-	//	for (auto Iter = AddPackageItemsUnchecked.CreateIterator(); Iter; ++Iter)
-	//	{
-	//		PackagesDialogModule.AddPackageItem(*Iter, (*Iter)->GetName(), ECheckBoxState::Unchecked);
-	//	}
-
-	//	// If valid packages were added to the dialog, display it to the user
-	//	const EDialogReturnType UserResponse = PackagesDialogModule.ShowPackagesDialog(PackagesNotSavedDuringSaveAll);
-
-	//	// If the user has responded yes, they want to save the packages they have checked
-	//	if (UserResponse == DRT_Save)
-	//	{
-	//		PackagesDialogModule.GetResults(FilteredPackages, ECheckBoxState::Checked);
-
-	//		TArray<UPackage*> UncheckedPackagesRaw;
-	//		PackagesDialogModule.GetResults(UncheckedPackagesRaw, ECheckBoxState::Unchecked);
-	//		UncheckedPackages.Empty();
-	//		for (UPackage* Package : UncheckedPackagesRaw)
-	//		{
-	//			UncheckedPackages.Add(MakeWeakObjectPtr(Package));
-	//		}
-	//	}
-	//	// If the user has responded they don't wish to save, set the response type accordingly
-	//	else if (UserResponse == DRT_DontSave)
-	//	{
-	//		ReturnResponse = PR_Declined;
-	//	}
-	//	// If the user has cancelled from the dialog, set the response type accordingly
-	//	else
-	//	{
-	//		ReturnResponse = PR_Cancelled;
-	//	}
-	//}
-//}
 
 bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets)
 {
@@ -200,9 +133,32 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 	TArray<FAssetData> FoundAssets;
 	AssetRegistryModule.Get().GetAllAssets(FoundAssets, true);
 
-	// Filter assets to game blueprint classes that are not loaded.
-	FoundAssets = FoundAssets.FilterByPredicate([](FAssetData Data) {
-		return (!Data.IsAssetLoaded() && Data.TagsAndValues.Contains("GeneratedClass") && Data.PackagePath.ToString().StartsWith("/Game"));
+	const TArray<FDirectoryPath>& DirectoriesToNeverCook = GetDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
+
+	// Filter assets to game blueprint classes that are not loaded and not inside DirectoriesToNeverCook.
+	FoundAssets = FoundAssets.FilterByPredicate([&DirectoriesToNeverCook](const FAssetData& Data)
+	{
+		if (Data.IsAssetLoaded())
+		{
+			return false;
+		}
+		if (!Data.TagsAndValues.Contains("GeneratedClass"))
+		{
+			return false;
+		}
+		const FString PackagePath = Data.PackagePath.ToString();
+		if (!PackagePath.StartsWith("/Game"))
+		{
+			return false;
+		}
+		for (const auto& Directory : DirectoriesToNeverCook)
+		{
+			if (PackagePath.StartsWith(Directory.Path))
+			{
+				return false;
+			}
+		}
+		return true;
 	});
 
 	FScopedSlowTask Progress(static_cast<float>(FoundAssets.Num()), FText::FromString(FString::Printf(TEXT("Loading %d Assets before generating schema"), FoundAssets.Num())));

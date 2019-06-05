@@ -2,7 +2,7 @@
 
 #include "Templates/UniquePtr.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 template <typename T>
@@ -103,10 +103,10 @@ private:
 	TUniquePtr<T> Value;
 };
 
+} // namespace SpatialGDK
+
 template <typename T>
-inline uint32 GetTypeHash(const improbable::TSchemaOption<T>& Option)
+inline uint32 GetTypeHash(const SpatialGDK::TSchemaOption<T>& Option)
 {
 	return Option.IsSet() ? 1327u * (GetTypeHash(*Option) + 977u) : 977u;
-}
-
 }

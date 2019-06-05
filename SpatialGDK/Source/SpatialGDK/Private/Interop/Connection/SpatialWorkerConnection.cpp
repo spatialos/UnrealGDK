@@ -21,7 +21,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
-using namespace improbable;
+using namespace SpatialGDK;
 
 #if WITH_EDITOR
 static EditorWorkerController WorkerController;
@@ -121,7 +121,7 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 
 	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Success: Login Token Count %d"), LoginTokens->login_token_count);
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
-	FString DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
+	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
 	// If not set, use the first deployment.
 	if (DeploymentToConnect.IsEmpty())
 	{
@@ -413,7 +413,7 @@ Worker_RequestId USpatialWorkerConnection::SendEntityQueryRequest(const Worker_E
 	return NextRequestId++;
 }
 
-void USpatialWorkerConnection::SendMetrics(const improbable::Metrics& Metrics)
+void USpatialWorkerConnection::SendMetrics(const SpatialMetrics& Metrics)
 {
 	QueueOutgoingMessage<FMetrics>(Metrics);
 }
@@ -529,7 +529,15 @@ void USpatialWorkerConnection::InitializeOpsProcessingThread()
 
 void USpatialWorkerConnection::QueueLatestOpList()
 {
-	OpListQueue.Enqueue(Worker_Connection_GetOpList(WorkerConnection, 0));
+	Worker_OpList* OpList = Worker_Connection_GetOpList(WorkerConnection, 0);
+	if (OpList->op_count > 0)
+	{
+		OpListQueue.Enqueue(OpList);
+	}
+	else
+	{
+		Worker_OpList_Destroy(OpList);
+	}
 }
 
 void USpatialWorkerConnection::ProcessOutgoingMessages()
@@ -574,7 +582,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 		{
 			FComponentUpdate* Message = static_cast<FComponentUpdate*>(OutgoingMessage.Get());
 
-			static const Worker_Alpha_UpdateParameters DisableLoopback{ false /* loopback */ };
+			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
 			Worker_Alpha_Connection_SendComponentUpdate(WorkerConnection,
 				Message->EntityId,
 				&Message->Update,
