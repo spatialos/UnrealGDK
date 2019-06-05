@@ -25,7 +25,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableMetrics(true)
 	, MetricsReportRate(2.0f)
 	, bUseDevelopmentAuthenticationFlow(false)
-	, bConnectLocalServerWorker(false)
 {
 }
 

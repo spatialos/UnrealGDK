@@ -7,8 +7,8 @@
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/Connection/OutgoingMessages.h"
-#include "UObject/WeakObjectPtr.h"
 #include "SpatialGDKSettings.h"
+#include "UObject/WeakObjectPtr.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>

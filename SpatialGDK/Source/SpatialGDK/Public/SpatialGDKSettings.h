@@ -91,12 +91,8 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Test", meta = (ConfigRestartRequired = false))
 	FString DevelopmentAuthenticationToken;
 
-	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one. The deployment needs to be tagged with 'dev_login'. */
+	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Test", meta = (ConfigRestartRequired = false))
 	FString DevelopmentDeploymentToConnect;
-
-	/** If true, connect the local server worker(s) to the cloud deployment using the same Development Authentication Flow (if enabled) as the client. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Test", meta = (ConfigRestartRequired = false))
-	bool bConnectLocalServerWorker;
 };
 
