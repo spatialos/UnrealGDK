@@ -101,9 +101,19 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 Console.WriteLine("Engine Association: " + engineAssociation);
 
                 string unrealEngineBuildKey = "HKEY_CURRENT_USER\\Software\\Epic Games\\Unreal Engine\\Builds";
-                unrealEngine = Registry.GetValue(unrealEngineBuildKey, engineAssociation, "").ToString();
+                var unrealEngineKey = Registry.GetValue(unrealEngineBuildKey, engineAssociation, "");
+
+                if (unrealEngineKey != null)
+                {
+                    unrealEngine = unrealEngineKey.ToString();
+                }
+                else
+                {
+                    Console.Error.WriteLine("Engine Association not found in the registry! Please run Setup.bat from within the UnrealEngine.");
+                }
             }
-            else // If we couldn't find the Engine Association. Climb the parent directories of the project looking for the "Engine" and Build.version.
+
+            if(string.IsNullOrEmpty(unrealEngine)) // If we couldn't find the UnrealEngine via engine association. Climb the parent directories of the project looking for the "Engine" and Build.version.
             {
                 DirectoryInfo currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
                 while (currentDir.Parent != null && string.IsNullOrEmpty(unrealEngine))
