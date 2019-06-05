@@ -36,6 +36,11 @@ public class SpatialGDK : ModuleRules
 			PublicDependencyModuleNames.Add("SpatialGDKEditorToolbar");
 		}
 
+        if (Target.bWithPerfCounters)
+        {
+            PublicDependencyModuleNames.Add("PerfCounters");
+        }
+
         var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
 
         string LibPrefix = "";
@@ -89,8 +94,5 @@ public class SpatialGDK : ModuleRules
         {
             PublicDelayLoadDLLs.Add(WorkerSharedLib);
         }
-
-        // Point generated code to the correct API spec.
-        PublicDefinitions.Add("IMPROBABLE_DLL_API=SPATIALGDK_API");
 	}
 }

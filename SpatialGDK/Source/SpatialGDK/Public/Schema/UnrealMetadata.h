@@ -16,7 +16,7 @@
 
 using SubobjectToOffsetMap = TMap<UObject*, uint32>;
 
-namespace improbable
+namespace SpatialGDK
 {
 
 struct UnrealMetadata : Component
@@ -111,4 +111,4 @@ FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const F
 	return SubobjectNameToOffset;
 }
 
-}
+} // namespace SpatialGDK

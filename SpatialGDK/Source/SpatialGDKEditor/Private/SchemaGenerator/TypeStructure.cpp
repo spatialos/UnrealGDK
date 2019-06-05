@@ -369,7 +369,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		return TypeNode;
 	}
 
-	TArray<UFunction*> RelevantClassFunctions = improbable::GetClassRPCFunctions(Class);
+	TArray<UFunction*> RelevantClassFunctions = SpatialGDK::GetClassRPCFunctions(Class);
 
 	// Iterate through each RPC in the class.
 	for (UFunction* RemoteFunction : RelevantClassFunctions)
@@ -418,7 +418,7 @@ TSharedPtr<FUnrealType> CreateUnrealTypeInfo(UStruct* Type, uint32 ParentChecksu
 		}
 
 		// Jump over invalid replicated property types
-		if (Cmd.Property->IsA<UDelegateProperty>() || Cmd.Property->IsA<UMulticastDelegateProperty>())
+		if (Cmd.Property->IsA<UDelegateProperty>() || Cmd.Property->IsA<UMulticastDelegateProperty>() || Cmd.Property->IsA<UInterfaceProperty>())
 		{
 			continue;
 		}

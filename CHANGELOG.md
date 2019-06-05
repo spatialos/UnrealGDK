@@ -4,7 +4,54 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - yyyy-mm-dd
+## [Unreleased-`0.5.0`] - 2019-xx-xx
+- Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
+
+### New Known Issues:
+
+### Features:
+- Setup.bat can now take a project path as an argument. This allows the UnrealGDK to be installed as an Engine Plugin, pass the project path as the first variable if you are running Setup.bat from UnrealEngine/Engine/Plugins.
+- Removed the need for setting the `UNREAL_HOME` environment variable. The build and setup scripts will now use your project's engine association to find the Unreal Engine directory. If an association is not set they will search parent directories looking for the 'Engine' folder.
+- Added SpatialMetricsDisplay class, which allows you to view UnrealWorker stats as an overlay on the client.
+- Added runtime option to disable property handover when running in non-zoned deployments - bEnableHandover.
+- Added runtime option to auto spawn the ASpatialMetricsDisplay for remote debugging of server metrics - bEnableMetricsDisplay.
+- Added runtime option to batch spatial position updates to runtime.
+
+### Bug fixes:
+- BeginPlay is not called with authority when checking out entities from Spatial.
+- Launching SpatialOS would fail if there was a space in the full directory path.
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- Reliable RPC checking no longer breaks compatibility between development and shipping builds.
+- Fixed an issue with schema name collisions.
+- Running Schema (Full Scan) now clears generated schema files first.
+- Singletons authority and state resumes correct when reconnecting servers to snapshot.
+- Fixed a crash when retrying reliable RPCs with UObject arguments that got destroyed before the RPC was retried.
+- Fixed path naming issues in setup.sh
+- Fixed assert/crash in SpatialMetricsDisplay that occurred when reloading a snapshot.
+- Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
+
+### External contributors:
+
+In addition to all of the updates from Improbable, this release includes x improvements submitted by the incredible community of SpatialOS developers on GitHub! Thanks to these contributors:
+
+* @cyberbibby
+
+## [`0.4.2`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.2) - 2019-05-20
+
+### New Known Issues:
+- `BeginPlay()` is not called on all `WorldSettings` actors [#937](https://github.com/spatialos/UnrealGDK/issues/937)
+- Replicated properties within `DEBUG` or `WITH_EDITORONLY_DATA` macros are not supported [#939](https://github.com/spatialos/UnrealGDK/issues/939)
+- Client connections will be closed by the `ServerWorker` when using Blueprint or C++ breakpoints during play-in-editor sessions [#940](https://github.com/spatialos/UnrealGDK/issues/940)
+- Clients that connect after a Startup Actor (with `bNetLoadOnClient = true`) will not delete the Actor [#941](https://github.com/spatialos/UnrealGDK/issues/941)
+- Generating schema while asset manager is asynchronously loading causes editor to crash [#944](https://github.com/spatialos/UnrealGDK/issues/944)
+
+### Bug fixes:
+- Adjusted dispatcher tickrate to reduce latency
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- Launching SpatialOS would fail if there was a space in the full directory path.
+- Fixed an issue with schema name collisions.
+- Fixed an issue where schema generation was not respecting "Directories to never cook".
+- Fixed an issue causing the editor to crash during schema generation if the database is readonly.
 
 ## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
 
@@ -12,8 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue where schema components were sometimes generated with incorrect component IDs.
 
 ## [`0.4.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.0) - 2019-04-30
-
-### New Known Issues:
 
 ### Features:
 - The GDK now uses SpatialOS `13.6.2`.

@@ -9,7 +9,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd, void* Data, bool& bHasUnmapped);
@@ -213,4 +213,4 @@ inline UScriptStruct* GetFastArraySerializerProperty(UArrayProperty* Property)
 	return nullptr;
 }
 
-}
+} // namespace SpatialGDK

@@ -250,11 +250,11 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 
 	if (SpatialGDKEditorInstance->GenerateSchema(false))
 	{
-		ShowSuccessNotification("Incremental Schema Generation Completed!");
+		ShowSuccessNotification("Incremental Schema Generation completed!");
 	}
 	else
 	{
-		ShowFailedNotification("Incremental Schema Generation Failed");
+		ShowFailedNotification("Incremental Schema Generation failed");
 	}
 }
 
@@ -264,11 +264,11 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 
 	if (SpatialGDKEditorInstance->GenerateSchema(true))
 	{
-		ShowSuccessNotification("Full Schema Generation Completed!");
+		ShowSuccessNotification("Full Schema Generation completed!");
 	}
 	else
 	{
-		ShowFailedNotification("Full Schema Generation Failed");
+		ShowFailedNotification("Full Schema Generation failed");
 	}
 }
 		
@@ -344,7 +344,7 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	{
 		if (SpatialGDKRuntimeSettings->bUsingQBI && (*EnableChunkInterest == TEXT("true")))
 		{
-			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. This flag needs to be set to false when QBI is enabled.\n\nDo you want to configure your launch config settings now?"))));
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. This flag needs to be set to false when QBI is enabled.\n\nDo you want to configure your launch config settings now?")));
 
 			if (Result == EAppReturnType::Yes)
 			{
@@ -355,7 +355,7 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 		}
 		else if (!SpatialGDKRuntimeSettings->bUsingQBI && (*EnableChunkInterest == TEXT("false")))
 		{
-			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("The legacy flag \"enable_chunk_interest\" is set to false in the generated launch configuration. This flag needs to be set to true when QBI is disabled.\n\nDo you want to configure your launch config settings now?"))));
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to false in the generated launch configuration. This flag needs to be set to true when QBI is disabled.\n\nDo you want to configure your launch config settings now?")));
 
 			if (Result == EAppReturnType::Yes)
 			{
@@ -367,11 +367,25 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	}
 	else
 	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("The legacy flag \"enable_chunk_interest\" is not specified in the generated launch configuration.\n\nDo you want to configure your launch config settings now?"))));
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is not specified in the generated launch configuration.\n\nDo you want to configure your launch config settings now?")));
 
 		if (Result == EAppReturnType::Yes)
 		{
 			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+		}
+
+		return false;
+	}
+
+	int32 PlayNumberOfServers;
+	GetDefault<ULevelEditorPlaySettings>()->GetPlayNumberOfServers(PlayNumberOfServers);
+	if (!SpatialGDKRuntimeSettings->bEnableHandover && PlayNumberOfServers > 1)
+	{
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and multiple launch servers are specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
+
+		if (Result == EAppReturnType::Yes)
+		{
+			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
 		}
 
 		return false;
@@ -404,7 +418,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch %s %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch \"%s\" %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
