@@ -5,7 +5,7 @@
 #include "EngineClasses/SpatialNetBitReader.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 bool FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(USpatialNetDriver* NetDriver, FSpatialNetBitReader& Reader, UObject* Object, int32 ArrayIndex, UProperty* ParentProperty, UScriptStruct* NetDeltaStruct)
@@ -70,4 +70,4 @@ void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, F
 	}
 }
 
-}
+} // namespace SpatialGDK

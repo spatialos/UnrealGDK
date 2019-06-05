@@ -7,7 +7,7 @@
 
 #include "EngineClasses/SpatialNetConnection.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 inline FString GetOwnerWorkerAttribute(AActor* Actor)
@@ -20,4 +20,4 @@ inline FString GetOwnerWorkerAttribute(AActor* Actor)
 	return FString();
 }
 
-} // namespace improbable
+} // namespace SpatialGDK
