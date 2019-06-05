@@ -177,3 +177,31 @@ namespace SpatialConstants
 
 	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
 }
+
+FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)
+{
+	switch (SchemaType)
+	{
+	case SCHEMA_CrossServerRPC:
+	{
+		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+	}
+	case SCHEMA_NetMulticastRPC:
+	{
+		return SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
+	}
+	case SCHEMA_ClientReliableRPC:
+	case SCHEMA_ClientUnreliableRPC:
+	{
+		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+	}
+	case SCHEMA_ServerReliableRPC:
+	case SCHEMA_ServerUnreliableRPC:
+	{
+		return SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+	}
+	default:
+		checkNoEntry();
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+}

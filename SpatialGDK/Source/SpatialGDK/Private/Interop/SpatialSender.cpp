@@ -516,7 +516,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	{
 	case SCHEMA_CrossServerRPC:
 	{
-		Worker_ComponentId ComponentId = RPCInfo->Type == SCHEMA_ClientReliableRPC ? SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo->Type);
 
 		TArray<uint8> Payload;
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, Payload, Params->ReliableRPCIndex);
@@ -552,7 +552,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		EntityId = TargetObjectRef.Entity;
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-		Worker_ComponentId ComponentId = SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
+		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo->Type);
 
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 		{
@@ -588,17 +588,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		EntityId = TargetObjectRef.Entity;
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-		Worker_ComponentId ComponentId;
-		if ((RPCInfo->Type == SCHEMA_ClientUnreliableRPC) ||
-			(RPCInfo->Type == SCHEMA_ClientReliableRPC))
-		{
-			ComponentId = SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
-		}
-		else
-		{
-			check((RPCInfo->Type == SCHEMA_ServerUnreliableRPC) || (RPCInfo->Type == SCHEMA_ServerReliableRPC));
-			ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
-		}
+		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo->Type);
 
 		if (!NetDriver->IsEntityListening(EntityId))
 		{
