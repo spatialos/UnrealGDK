@@ -18,6 +18,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
+#include "Interop/SpatialWorker.h"
 #include "Kismet/GameplayStatics.h"
 #include "Runtime/Engine/Public/TimerManager.h"
 #include "Schema/UnrealMetadata.h"
@@ -53,7 +54,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 		}
 	}
 #endif // WITH_EDITOR
-  
+
 	bAcceptingPlayers = false;
 	bCanBeginPlay = false;
 	bTriggeredBeginPlay = false;
@@ -68,7 +69,7 @@ void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& 
 void UGlobalStateManager::ApplyDeploymentMapData(const Worker_ComponentData& Data)
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
-	
+
 	// Set the Deployment Map URL.
 	SetDeploymentMapURL(GetStringFromSchema(ComponentObject, SpatialConstants::DEPLOYMENT_MAP_MAP_URL_ID));
 
@@ -135,7 +136,7 @@ void UGlobalStateManager::SendShutdownMultiProcessRequest()
 	  * Standard UnrealEngine behavior is to call TerminateProc on external processes and there is no method to send any messaging
 	  * to those external process.
 	  * The GDK requires shutdown code to be ran for workers to disconnect cleanly so instead of abruptly shutting down the server worker,
-	  * just send a command to the worker to begin it's shutdown phase. 
+	  * just send a command to the worker to begin it's shutdown phase.
 	  */
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID;
@@ -149,7 +150,7 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	if (NetDriver && NetDriver->GetNetMode() == NM_DedicatedServer)
 	{
 		UE_LOG(LogGlobalStateManager, Log, TEXT("Received shutdown multi-process request."));
-		
+
 		// Since the server works are shutting down, set reset the accepting_players flag to false to prevent race conditions  where the client connects quicker than the server. 
 		SetAcceptingPlayers(false);
 
@@ -217,6 +218,7 @@ void UGlobalStateManager::ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate)
 	// For now, this will only be called on non-authoritative workers.
 	if (bCanBeginPlay)
 	{
+		BecomeAuthoritativeOverAllActors(); // todo tencho: this doesn't work if using multiple workers of the same type
 		TryTriggerBeginPlay();
 	}
 }
@@ -479,7 +481,7 @@ void UGlobalStateManager::TryTriggerBeginPlay()
 
 void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID)
 {
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM has changed. This worker %s authority."),  bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM has changed. This worker %s authority."), bWorkerAuthority ? TEXT("now has") : TEXT("does not have"));
 
 	if (bWorkerAuthority)
 	{
@@ -537,13 +539,10 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
 	{
 		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill())
+		if (Actor != nullptr && !Actor->IsPendingKill() && USpatialWorker::CanHaveAuthority(Actor) && Actor->GetIsReplicated())
 		{
-			if (Actor->GetIsReplicated())
-			{
-				Actor->Role = ROLE_Authority;
-				Actor->RemoteRole = ROLE_SimulatedProxy;
-			}
+			Actor->Role = ROLE_Authority;
+			Actor->RemoteRole = ROLE_SimulatedProxy;
 		}
 	}
 }
