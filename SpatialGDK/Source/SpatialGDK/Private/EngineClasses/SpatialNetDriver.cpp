@@ -285,9 +285,9 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 		ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
 
 		TArray<Worker_ComponentData> Components;
-		Components.Add(improbable::Position().CreatePositionData());
-		Components.Add(improbable::Metadata(WorkerId).CreateMetadataData());
-		Components.Add(improbable::EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
+		Components.Add(Position().CreatePositionData());
+		Components.Add(Metadata(WorkerId).CreateMetadataData());
+		Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 
 		Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 	}
