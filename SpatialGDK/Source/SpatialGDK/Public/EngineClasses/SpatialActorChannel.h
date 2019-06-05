@@ -41,7 +41,7 @@ public:
 	FORCEINLINE bool IsReadyForReplication()
 	{
 		// Make sure we have authority
-		if (Actor->Role != ROLE_Authority)
+		if (Actor->Role != ROLE_Authority && !bCreatingNewEntity)
 		{
 			return false;
 		}
