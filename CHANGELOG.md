@@ -5,12 +5,17 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`0.5.0`] - 2019-xx-xx
+- Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
 
 ### New Known Issues:
 
 ### Features:
+- Setup.bat can now take a project path as an argument. This allows the UnrealGDK to be installed as an Engine Plugin, pass the project path as the first variable if you are running Setup.bat from UnrealEngine/Engine/Plugins.
+- Removed the need for setting the `UNREAL_HOME` environment variable. The build and setup scripts will now use your project's engine association to find the Unreal Engine directory. If an association is not set they will search parent directories looking for the 'Engine' folder.
 - Added SpatialMetricsDisplay class, which allows you to view UnrealWorker stats as an overlay on the client.
-- Added runtime option to disable property handover when running in non-zoned deployments.
+- Added runtime option to disable property handover when running in non-zoned deployments - bEnableHandover.
+- Added runtime option to auto spawn the ASpatialMetricsDisplay for remote debugging of server metrics - bEnableMetricsDisplay.
+- Added runtime option to batch spatial position updates to runtime.
 
 ### Bug fixes:
 - BeginPlay is not called with authority when checking out entities from Spatial.
@@ -22,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Singletons authority and state resumes correct when reconnecting servers to snapshot.
 - Fixed a crash when retrying reliable RPCs with UObject arguments that got destroyed before the RPC was retried.
 - Fixed path naming issues in setup.sh
+- Fixed assert/crash in SpatialMetricsDisplay that occurred when reloading a snapshot.
+- Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
 - Ordering and reliability for single worker reliable RPCs are now guaranteed.
 
 ### External contributors:

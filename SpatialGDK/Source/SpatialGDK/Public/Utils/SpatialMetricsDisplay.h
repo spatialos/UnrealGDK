@@ -26,7 +26,7 @@ struct FWorkerStats
 	}
 };
 
-UCLASS()
+UCLASS(SpatialType=Singleton)
 class SPATIALGDK_API ASpatialMetricsDisplay :
 	public AInfo
 {
@@ -39,7 +39,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void Destroyed() override;
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(Category = "SpatialGDK", BlueprintCallable)
 	void ToggleStatDisplay();
 
 private:
@@ -59,6 +59,7 @@ private:
 	UFUNCTION(CrossServer, Unreliable, WithValidation)
 	virtual void ServerUpdateWorkerStats(const float Time, const FWorkerStats& OneWorkerStats);
 
+	bool ShouldRemoveStats(const float CurrentTime, const FWorkerStats& OneWorkerStats) const;
 	void DrawDebug(class UCanvas* Canvas, APlayerController* Controller);
 
 	struct MovementCorrectionRecord

@@ -1,10 +1,28 @@
 @echo off
 
-setlocal
+setlocal EnableDelayedExpansion
 
 pushd "%~dp0"
 
 call :MarkStartOfBlock "%~0"
+
+set ProjectDirectory=%1
+
+if defined ProjectDirectory (
+    echo Project directory for installation is: %ProjectDirectory%
+) else (
+    rem If no argument for the project is provided, assume this script is being run as a plugin within a game project.
+    pushd "%~dp0..\..\.."
+    set ProjectDirectory="!cd!"
+    popd
+    echo Setup running as project plugin. Project directory is: !ProjectDirectory!
+)
+
+if not exist %ProjectDirectory% (
+    echo Error: Project directory does not exist. Please make sure you have passed in the project directory correctly.
+    pause
+    exit /b 1
+)
 
 call :MarkStartOfBlock "Setup the git hooks"
     if not exist .git\hooks goto SkipGitHooks
@@ -27,14 +45,69 @@ call :MarkStartOfBlock "Setup the git hooks"
 call :MarkEndOfBlock "Setup the git hooks"
 
 call :MarkStartOfBlock "Check dependencies"
-    if not defined UNREAL_HOME (
-        echo Error: Please set UNREAL_HOME environment variable to point to the Unreal Engine folder.
+    rem Find the Unreal Engine used to build this project.
+    set UNREAL_ENGINE=""
+    set UPROJECT=""
+
+    rem Get the Unreal Engine used by this project by querying the registry for the engine association found in the .uproject.
+    for /f "delims=" %%A in (' powershell -Command "Get-ChildItem %ProjectDirectory% -Depth 1 -Filter *.uproject -File | %% {$_.FullName}" ') do set UPROJECT="%%A"
+    
+    rem If the regex failed then it will return a string containing only a space.
+    if %UPROJECT%=="" (
+        echo Error: Could not find uproject. Please make sure you have passed in the project directory correctly.
         pause
         exit /b 1
     )
 
+    echo Using uproject: %UPROJECT%
+
+    rem Get the Engine association from the uproject.
+    for /f "delims=" %%A in (' powershell -Command "Select-String -Pattern '..{8}-.{4}-.{4}-.{4}-.{12}.' %UPROJECT% -AllMatches | %% { $_.Matches } | %% { $_.Value }" ') do set ENGINE_ASSOCIATION="%%A"
+    
+    echo Engine association for uproject is: "%ENGINE_ASSOCIATION%"
+
+    if not "%ENGINE_ASSOCIATION%"=="" (
+        rem Query the registry for the path to the Unreal Engine using the engine associtation.
+        for /f "usebackq tokens=3*" %%A in (`reg query "HKCU\Software\Epic Games\Unreal Engine\Builds" /v %ENGINE_ASSOCIATION%`) do (
+            set UNREAL_ENGINE="%%A"
+        )
+    )
+
+    rem If there was no engine association then we need to climb the directory path of the project to find the Engine.
+    if %UNREAL_ENGINE%=="" (
+        pushd %ProjectDirectory%
+
+        :climb_parent_directory
+        echo Checking for Engine in directory: !cd!
+        if exist Engine (
+            rem Check for the Build.version file to be sure we have found a correct Engine folder.
+            if exist "Engine\Build\Build.version" (
+                set UNREAL_ENGINE="!cd!"
+            )
+        ) else (
+            rem This checks if we are in a root directory. If so we cannot check any higher and so should error out.
+            if "%cd:~3,1%"=="" (
+                echo Error: Could not find Unreal Engine folder. Please set a project association or ensure your game project is within an Unreal Engine folder.
+                pause
+                exit /b 1
+            )
+            cd ..
+            goto :climb_parent_directory
+        )
+
+        popd
+    )
+
+    if %UNREAL_ENGINE%=="" (
+        echo Error: Could not find the Unreal Engine. Please associate your '.uproject' with an engine version or ensure this game project is nested within an engine build.
+        pause
+        exit /b 1
+    )
+
+    echo Using Unreal Engine at: %UNREAL_ENGINE%
+
     rem Use Unreal Engine's script to get the path to MSBuild. This turns off echo so turn it back on for TeamCity.
-    call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
+    call "%UNREAL_ENGINE%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
 
     if not defined MSBUILD_EXE (
         echo Error: Could not find the MSBuild executable. Please make sure you have Microsoft Visual Studio or Microsoft Build Tools installed.
@@ -57,8 +130,11 @@ call :MarkStartOfBlock "Setup variables"
     set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
     set WORKER_SDK_DIR_OLD=%~dp0SpatialGDK\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
-    set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
-    set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
+
+    rem Copy schema to the projects spatial directory.
+    set SCHEMA_COPY_DIR=%ProjectDirectory%\spatial\schema\unreal\gdk
+    set SCHEMA_STD_COPY_DIR=%ProjectDirectory%\spatial\build\dependencies\schema\standard_library
+
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"

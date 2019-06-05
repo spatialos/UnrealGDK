@@ -671,6 +671,24 @@ void USpatialSender::RetryReliableRPC(TSharedRef<FReliableRPCForRetry> RetryRPC)
 	Receiver->AddPendingReliableRPC(RequestId, RetryRPC);
 }
 
+void USpatialSender::RegisterChannelForPositionUpdate(USpatialActorChannel* Channel)
+{
+	ChannelsToUpdatePosition.Add(Channel);
+}
+
+void USpatialSender::ProcessPositionUpdates()
+{
+	for (auto& Channel : ChannelsToUpdatePosition)
+	{
+		if (Channel.IsValid())
+		{
+			Channel->UpdateSpatialPosition();
+		}
+	}
+
+	ChannelsToUpdatePosition.Empty();
+}
+
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
 {
 	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s"), *Channel->Actor->GetName());
