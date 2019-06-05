@@ -560,11 +560,16 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			return;
 		}
 
-		Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
+		const UObject* UnresolvedParameter = nullptr;
+		Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedParameter);
 
-		if (!UnresolvedObject)
+		if (!UnresolvedParameter)
 		{
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+		}
+		else
+		{
+			UnresolvedObject = TargetObject;
 		}
 		break;
 	}
@@ -583,14 +588,6 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		EntityId = TargetObjectRef.Entity;
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-		if (!NetDriver->IsEntityListening(EntityId))
-		{
-			// If the Entity endpoint is not yet ready to receive RPCs -
-			// treat the corresponding object as unresolved and queue RPC
-			UnresolvedObject = TargetObject;
-			break;
-		}
-
 		Worker_ComponentId ComponentId;
 		if ((RPCInfo->Type == SCHEMA_ClientUnreliableRPC) ||
 			(RPCInfo->Type == SCHEMA_ClientReliableRPC))
@@ -603,17 +600,30 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			ComponentId = SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
 		}
 
+		if (!NetDriver->IsEntityListening(EntityId))
+		{
+			// If the Entity endpoint is not yet ready to receive RPCs -
+			// treat the corresponding object as unresolved and queue RPC
+			UnresolvedObject = TargetObject;
+			break;
+		}
+
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 		{
 			UE_LOG(LogSpatialSender, Error, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
 			return;
 		}
 
-		Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
+		const UObject* UnresolvedParameter = nullptr;
+		Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedParameter);
 
-		if (!UnresolvedObject)
+		if (!UnresolvedParameter)
 		{
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+		}
+		else
+		{
+			UnresolvedObject = TargetObject;
 		}
 
 		break;
