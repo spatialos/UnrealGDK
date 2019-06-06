@@ -501,14 +501,6 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 	check(RPCInfo);
 
-	if (PackageMap->GetUnrealObjectRefFromObject(TargetObject) == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
-	{
-		// This could potentially occur for singletons in multi-worker scenario
-		UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s on unresolved Actor %s."), *Params->Function->GetName(), *TargetObject->GetName());
-		QueueOutgoingRPC(TargetObject, RPCInfo->Type, Params);
-		return;
-	}
-
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 	const UObject* UnresolvedObject = nullptr;
 
@@ -546,7 +538,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 	case SCHEMA_ClientUnreliableRPC:
 	case SCHEMA_ServerUnreliableRPC:
 	{
-		FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
+		FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
 			UnresolvedObject = TargetObject;
