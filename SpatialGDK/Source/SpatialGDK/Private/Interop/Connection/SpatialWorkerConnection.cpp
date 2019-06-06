@@ -163,7 +163,7 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
 {
 	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
-	FTCHARToUTF8 dev_auth_token = FTCHARToUTF8(*DevAuthToken);
+	FTCHARToUTF8 dev_auth_token(*DevAuthToken);
 	FTCHARToUTF8 player_id = FTCHARToUTF8(*SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
 	PITParams.development_authentication_token = dev_auth_token.Get();
 	PITParams.player_id = player_id.Get();
