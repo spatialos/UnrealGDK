@@ -151,7 +151,8 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 	Connection->LocatorConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
 	Worker_Alpha_LoginTokensRequest LTParams{};
 	LTParams.player_identity_token = PIToken->player_identity_token;
-	LTParams.worker_type = TCHAR_TO_UTF8(*Connection->LocatorConfig.WorkerType);
+	FTCHARToUTF8 worker_type(*Connection->LocatorConfig.WorkerType);
+	LTParams.worker_type = worker_type.Get();
 	LTParams.use_insecure_connection = false;
 
 	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
