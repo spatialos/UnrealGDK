@@ -64,3 +64,11 @@ The tables below show where cross-server RPCs are executed based on where they w
 #### Invoking a cross-server RPC from a client-worker
 
 The call will not get fully processed in this situation because the intended purpose of this RPC type is for it to get called from a server-worker only.
+
+
+<br/>
+
+------</br>
+_2019-06-06 Page updated with limited editorial review 
+_2019-06-06 Updated invoking a cross-server RPC from a client worker guidance_
+
