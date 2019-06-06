@@ -51,7 +51,7 @@ To launch a local deployment:
    ![Start]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Start**_</br>
 4. On the Editor toolbar, open the **Play** drop-down menu.
-6. Under **Multiplayer Options**, set the number of players to **2** and ensure that the checkbox next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)<br/>
+5. Under **Multiplayer Options**, set the number of players to **2** and ensure that checkboxes next to **Run Dedicated Server** and **Spatial Networking** are checked. Checking **Spatial Networking** makes deployments run using SpatialOS networking as opposed to native Unreal networking. If a checkbox is unchecked, select the checkbox to enable it.<br/>
    ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>
    _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_</br>
 6. Under **Modes**, select **New Editor Window (PIE)** to run the game. This starts one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor.
