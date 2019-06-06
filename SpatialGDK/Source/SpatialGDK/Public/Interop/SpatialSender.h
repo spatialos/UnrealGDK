@@ -59,7 +59,8 @@ struct FReliableRPCForRetry
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-using FOutgoingRPCMap = TMap<TWeakObjectPtr<const UObject>, TArray<TSharedRef<FPendingRPCParams>>>;
+using FArrayOfParams = TArray<TSharedRef<FPendingRPCParams>>;
+using FOutgoingRPCMap = TMap<TWeakObjectPtr<const UObject>, TUniquePtr<FArrayOfParams>>;
 using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
 using FUnresolvedEntry = TSharedPtr<TSet<TWeakObjectPtr<const UObject>>>;
 using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
@@ -114,7 +115,7 @@ private:
 	// Queuing
 	void ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover);
 	void QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, bool bIsHandover);
-	void QueueOutgoingRPC(const UObject* UnresolvedObject, TSharedRef<FPendingRPCParams> Params);
+	void QueueOutgoingRPC(const UObject* UnresolvedObject, ESchemaComponentType Type, TSharedRef<FPendingRPCParams> Params);
 
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const;
@@ -126,6 +127,7 @@ private:
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
 
 	RPCPayload CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams);
+	void ResolveOutgoingRPCs(UObject* Object, TUniquePtr<FArrayOfParams> RPCList);
 
 private:
 	UPROPERTY()
@@ -152,7 +154,11 @@ private:
 	FChannelToHandleToUnresolved HandoverPropertyToUnresolved;
 	FOutgoingRepUpdates HandoverObjectToUnresolved;
 
-	FOutgoingRPCMap OutgoingRPCs;
+	FOutgoingRPCMap OutgoingCommands;
+	FOutgoingRPCMap OutgoingMulticastRPCs;
+	FOutgoingRPCMap OutgoingReliableRPCs;
+	FOutgoingRPCMap OutgoingUnreliableRPCs;
+
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
