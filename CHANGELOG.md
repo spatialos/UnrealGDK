@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a crash when retrying reliable RPCs with UObject arguments that got destroyed before the RPC was retried.
 - Fixed path naming issues in setup.sh
 - Fixed assert/crash in SpatialMetricsDisplay that occurred when reloading a snapshot.
+- Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
 
 ### External contributors:
 
