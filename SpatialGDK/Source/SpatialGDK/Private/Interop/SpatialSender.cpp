@@ -776,53 +776,11 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
 {
 	check(UnresolvedObject);
-
-	switch(Type)
+	if (!OutgoingRPCs[Type].Contains(UnresolvedObject))
 	{
-	case SCHEMA_ClientUnreliableRPC:
-	case SCHEMA_ServerUnreliableRPC:
-	{
-		if (!OutgoingUnreliableRPCs.Contains(UnresolvedObject))
-		{
-			OutgoingUnreliableRPCs.Add(UnresolvedObject, MakeShared<FQueueOfParams>());
-		}
-		OutgoingUnreliableRPCs.FindChecked(UnresolvedObject)->Enqueue(Params);
-		break;
+		OutgoingRPCs[Type].Add(UnresolvedObject, MakeShared<FQueueOfParams>());
 	}
-	case SCHEMA_ClientReliableRPC:
-	case SCHEMA_ServerReliableRPC:
-	{
-		if (!OutgoingReliableRPCs.Contains(UnresolvedObject))
-		{
-			OutgoingReliableRPCs.Add(UnresolvedObject, MakeShared<FQueueOfParams>());
-		}
-		OutgoingReliableRPCs.FindChecked(UnresolvedObject)->Enqueue(Params);
-		break;
-	}
-	case SCHEMA_CrossServerRPC:
-	{
-		if (!OutgoingCommands.Contains(UnresolvedObject))
-		{
-			OutgoingCommands.Add(UnresolvedObject, MakeShared<FQueueOfParams>());
-		}
-		OutgoingCommands.FindChecked(UnresolvedObject)->Enqueue(Params);
-		break;
-	}
-	case SCHEMA_NetMulticastRPC:
-	{
-		if (!OutgoingMulticastRPCs.Contains(UnresolvedObject))
-		{
-			OutgoingMulticastRPCs.Add(UnresolvedObject, MakeShared<FQueueOfParams>());
-		}
-		OutgoingMulticastRPCs.FindChecked(UnresolvedObject)->Enqueue(Params);
-		break;
-	}
-	default:
-	{
-		checkNoEntry();
-		break;
-	}
-	}
+	OutgoingRPCs[Type].FindChecked(UnresolvedObject)->Enqueue(Params);
 }
 
 void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
@@ -1026,36 +984,15 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 
 void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 {
-	if (TSharedPtr<FQueueOfParams>* RPCList = OutgoingReliableRPCs.Find(Object))
+	for(auto& RPCs: OutgoingRPCs.OutgoingRPCs)
 	{
-		ResolveOutgoingRPCs(Object, *RPCList);
-		if ((*RPCList)->IsEmpty())
-	{
-			OutgoingReliableRPCs.Remove(Object);
-	}
-	}
-	if (TSharedPtr<FQueueOfParams>* RPCList = OutgoingCommands.Find(Object))
-	{
-		ResolveOutgoingRPCs(Object, *RPCList);
-		if ((*RPCList)->IsEmpty())
-	{
-			OutgoingCommands.Remove(Object);
-	}
-	}
-	if (TSharedPtr<FQueueOfParams>* RPCList = OutgoingMulticastRPCs.Find(Object))
-	{
-		ResolveOutgoingRPCs(Object, *RPCList);
-		if ((*RPCList)->IsEmpty())
-	{
-			OutgoingMulticastRPCs.Remove(Object);
-		}
-	}
-	if (TSharedPtr<FQueueOfParams>* RPCList = OutgoingUnreliableRPCs.Find(Object))
-	{
-		ResolveOutgoingRPCs(Object, *RPCList);
-		if ((*RPCList)->IsEmpty())
-	{
-			OutgoingUnreliableRPCs.Remove(Object);
+		if (TSharedPtr<FQueueOfParams>* RPCList = RPCs.Find(Object))
+		{
+			ResolveOutgoingRPCs(Object, *RPCList);
+			if ((*RPCList)->IsEmpty())
+			{
+				RPCs.Remove(Object);
+			}
 		}
 	}
 }

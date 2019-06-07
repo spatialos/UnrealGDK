@@ -158,11 +158,50 @@ private:
 	FChannelToHandleToUnresolved HandoverPropertyToUnresolved;
 	FOutgoingRepUpdates HandoverObjectToUnresolved;
 
-	FOutgoingRPCMap OutgoingCommands;
-	FOutgoingRPCMap OutgoingMulticastRPCs;
-	FOutgoingRPCMap OutgoingReliableRPCs;
-	FOutgoingRPCMap OutgoingUnreliableRPCs;
+	class RPCManager
+	{
+	public:
+		FOutgoingRPCMap& operator[](ESchemaComponentType ComponentType)
+		{
+			switch (ComponentType)
+			{
+			case SCHEMA_ClientUnreliableRPC:
+			case SCHEMA_ServerUnreliableRPC:
+			{
+				return OutgoingRPCs[int(RPCType::Unreliable)];
+			}
+			case SCHEMA_ClientReliableRPC:
+			case SCHEMA_ServerReliableRPC:
+			{
+				return OutgoingRPCs[int(RPCType::Reliable)];
+			}
+			case SCHEMA_CrossServerRPC:
+			{
+				return OutgoingRPCs[int(RPCType::Commands)];
+			}
+			case SCHEMA_NetMulticastRPC:
+			{
+				return OutgoingRPCs[int(RPCType::Multicast)];
+			}
+			default:
+			{
+				checkNoEntry();
+				return OutgoingRPCs[int(RPCType::Invalid)];
+				break;
+			}
+			}
+		}
 
+		const FOutgoingRPCMap& operator[](ESchemaComponentType ComponentType) const
+		{
+			return (*(const_cast<RPCManager*>(this)))[ComponentType];
+		}
+
+		enum class RPCType { Commands = 0, Multicast = 1, Reliable = 2, Unreliable = 3, Invalid = 4, NumTypes = Invalid };
+		FOutgoingRPCMap OutgoingRPCs[RPCType::NumTypes];
+	};
+
+	RPCManager OutgoingRPCs;
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
