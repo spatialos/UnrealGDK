@@ -449,12 +449,12 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
+bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 {
 	if (!Params->TargetObject.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
-		return;
+		return false;
 	}
 	UObject* TargetObject = Params->TargetObject.Get();
 
@@ -473,7 +473,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			// This is where we'll serialize this RPC and queue it to be added on entity creation
 			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(CreateRPCPayloadFromParams(*Params));
-			return;
+			return true;
 		}
 	}
 	else
@@ -498,11 +498,10 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			}
 		}
 	}
-
+	
 	check(RPCInfo);
 
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
-	const UObject* UnresolvedObject = nullptr;
 
 	switch (RPCInfo->Type)
 	{
@@ -511,6 +510,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo->Type);
 
 		TArray<uint8> Payload;
+		const UObject* UnresolvedObject = nullptr;
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, Payload, Params->ReliableRPCIndex);
 
 		if (!UnresolvedObject)
@@ -529,6 +529,11 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
 					EntityId, CommandRequest.component_id, *Params->Function->GetName());
 			}
+			return true;
+		}
+		else
+		{
+			return false;
 		}
 		break;
 	}
@@ -541,8 +546,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
-			UnresolvedObject = TargetObject;
-			break;
+			return true;
 		}
 
 		EntityId = TargetObjectRef.Entity;
@@ -553,7 +557,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 		{
 			UE_LOG(LogSpatialSender, Error, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
-			return;
+			return false;
 		}
 
 		if (RPCInfo->Type != SCHEMA_NetMulticastRPC && !NetDriver->IsEntityListening(EntityId))
@@ -561,8 +565,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			// If the Entity endpoint is not yet ready to receive RPCs -
 			// treat the corresponding object as unresolved and queue RPC
 			// However, it doesn't matter in case of Multicast
-			UnresolvedObject = TargetObject;
-			break;
+			return false;
 		}
 
 		const UObject* UnresolvedParameter = nullptr;
@@ -571,22 +574,19 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		if (!UnresolvedParameter)
 		{
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+			return true;
 		}
 		else
 		{
-			UnresolvedObject = TargetObject;
+			return false;
 		}
 
 		break;
 	}
 	default:
 		checkNoEntry();
+		return false;
 		break;
-	}
-
-	if (UnresolvedObject)
-	{
-		QueueOutgoingRPC(UnresolvedObject, RPCInfo->Type, Params);
 	}
 }
 
@@ -790,11 +790,10 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	}
 }
 
-void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, ESchemaComponentType Type, TSharedRef<FPendingRPCParams> Params)
+void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
 {
 	check(UnresolvedObject);
 
-	UE_LOG(LogSpatialSender, Log, TEXT("Added pending outgoing RPC depending on object: %s, target: %s, function: %s"), *UnresolvedObject->GetName(), *Params->TargetObject->GetName(), *Params->Function->GetName());
 	switch(Type)
 	{
 	case SCHEMA_ClientUnreliableRPC:
@@ -802,9 +801,9 @@ void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, ESchemaCo
 	{
 		if (!OutgoingUnreliableRPCs.Contains(UnresolvedObject))
 		{
-			OutgoingUnreliableRPCs.Add(UnresolvedObject, MakeUnique<FArrayOfParams>());
+			OutgoingUnreliableRPCs.Add(UnresolvedObject, MakeShared<FQueueOfParams>());
 		}
-		(*OutgoingUnreliableRPCs.Find(UnresolvedObject))->Add(Params);
+		OutgoingUnreliableRPCs.FindChecked(UnresolvedObject)->Enqueue(Params);
 		break;
 	}
 	case SCHEMA_ClientReliableRPC:
@@ -812,27 +811,27 @@ void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, ESchemaCo
 	{
 		if (!OutgoingReliableRPCs.Contains(UnresolvedObject))
 		{
-			OutgoingReliableRPCs.Add(UnresolvedObject, MakeUnique<FArrayOfParams>());
+			OutgoingReliableRPCs.Add(UnresolvedObject, MakeShared<FQueueOfParams>());
 		}
-		(*OutgoingReliableRPCs.Find(UnresolvedObject))->Add(Params);
+		OutgoingReliableRPCs.FindChecked(UnresolvedObject)->Enqueue(Params);
 		break;
 	}
 	case SCHEMA_CrossServerRPC:
 	{
 		if (!OutgoingCommands.Contains(UnresolvedObject))
 		{
-			OutgoingCommands.Add(UnresolvedObject, MakeUnique<FArrayOfParams>());
+			OutgoingCommands.Add(UnresolvedObject, MakeShared<FQueueOfParams>());
 		}
-		(*OutgoingCommands.Find(UnresolvedObject))->Add(Params);
+		OutgoingCommands.FindChecked(UnresolvedObject)->Enqueue(Params);
 		break;
 	}
 	case SCHEMA_NetMulticastRPC:
 	{
 		if (!OutgoingMulticastRPCs.Contains(UnresolvedObject))
 		{
-			OutgoingMulticastRPCs.Add(UnresolvedObject, MakeUnique<FArrayOfParams>());
+			OutgoingMulticastRPCs.Add(UnresolvedObject, MakeShared<FQueueOfParams>());
 		}
-		(*OutgoingMulticastRPCs.Find(UnresolvedObject))->Add(Params);
+		OutgoingMulticastRPCs.FindChecked(UnresolvedObject)->Enqueue(Params);
 		break;
 	}
 	default:
@@ -841,6 +840,21 @@ void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, ESchemaCo
 		break;
 	}
 	}
+}
+
+void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
+{
+	if (!Params->TargetObject.IsValid())
+	{
+		// Target object was destroyed before the RPC could be (re)sent
+		return;
+	}
+	UObject* TargetObject = Params->TargetObject.Get();
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Params->Function);
+	check(RPCInfo);
+
+	QueueOutgoingRPC(TargetObject, RPCInfo->Type, Params);
 }
 
 FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const
@@ -1030,40 +1044,62 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 
 void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 {
-	if (OutgoingReliableRPCs.Contains(Object))
+	if (TSharedPtr<FQueueOfParams>* RPCList = OutgoingReliableRPCs.Find(Object))
 	{
-		TUniquePtr<FArrayOfParams> RPCList = OutgoingReliableRPCs.FindAndRemoveChecked(Object);
-		ResolveOutgoingRPCs(Object, MoveTemp(RPCList));
+		ResolveOutgoingRPCs(Object, *RPCList);
+		if ((*RPCList)->IsEmpty())
+	{
+			OutgoingReliableRPCs.Remove(Object);
 	}
-	if (OutgoingCommands.Contains(Object))
-	{
-		TUniquePtr<FArrayOfParams> RPCList = OutgoingCommands.FindAndRemoveChecked(Object);
-		ResolveOutgoingRPCs(Object, MoveTemp(RPCList));
 	}
-	if (OutgoingMulticastRPCs.Contains(Object))
+	if (TSharedPtr<FQueueOfParams>* RPCList = OutgoingCommands.Find(Object))
 	{
-		TUniquePtr<FArrayOfParams> RPCList = OutgoingMulticastRPCs.FindAndRemoveChecked(Object);
-		ResolveOutgoingRPCs(Object, MoveTemp(RPCList));
+		ResolveOutgoingRPCs(Object, *RPCList);
+		if ((*RPCList)->IsEmpty())
+	{
+			OutgoingCommands.Remove(Object);
 	}
-	if (OutgoingUnreliableRPCs.Contains(Object))
+	}
+	if (TSharedPtr<FQueueOfParams>* RPCList = OutgoingMulticastRPCs.Find(Object))
 	{
-		TUniquePtr<FArrayOfParams> RPCList = OutgoingUnreliableRPCs.FindAndRemoveChecked(Object);
-		ResolveOutgoingRPCs(Object, MoveTemp(RPCList));
+		ResolveOutgoingRPCs(Object, *RPCList);
+		if ((*RPCList)->IsEmpty())
+	{
+			OutgoingMulticastRPCs.Remove(Object);
+		}
+	}
+	if (TSharedPtr<FQueueOfParams>* RPCList = OutgoingUnreliableRPCs.Find(Object))
+	{
+		ResolveOutgoingRPCs(Object, *RPCList);
+		if ((*RPCList)->IsEmpty())
+	{
+			OutgoingUnreliableRPCs.Remove(Object);
+		}
 	}
 }
 
-void USpatialSender::ResolveOutgoingRPCs(UObject* Object, TUniquePtr<FArrayOfParams> RPCList)
+void USpatialSender::ResolveOutgoingRPCs(UObject* Object, TSharedPtr<FQueueOfParams> RPCList)
 {
-	for (TSharedRef<FPendingRPCParams>& RPCParams : *RPCList)
+	FPendingRPCParamsPtr RPCParams = nullptr;
+	while(!RPCList->IsEmpty())
 	{
+		check(RPCList->Peek(RPCParams));
 		if (!RPCParams->TargetObject.IsValid())
 		{
 			// The target object was destroyed before we could send the RPC.
+			RPCList->Empty();
 			continue;
 		}
 
 		UE_LOG(LogSpatialSender, Verbose, TEXT("Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams->TargetObject->GetName(), *RPCParams->Function->GetName());
-		SendRPC(RPCParams);
+		if(SendRPC(RPCParams))
+		{
+			RPCList->Pop();
+		}
+		else
+		{
+			break;
+		}
 	}
 }
 

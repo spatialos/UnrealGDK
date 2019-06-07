@@ -59,8 +59,9 @@ struct FReliableRPCForRetry
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-using FArrayOfParams = TArray<TSharedRef<FPendingRPCParams>>;
-using FOutgoingRPCMap = TMap<TWeakObjectPtr<const UObject>, TUniquePtr<FArrayOfParams>>;
+using FPendingRPCParamsPtr = TSharedPtr<FPendingRPCParams>;
+using FQueueOfParams = TQueue<FPendingRPCParamsPtr>;
+using FOutgoingRPCMap = TMap<TWeakObjectPtr<const UObject>, TSharedPtr<FQueueOfParams>>;
 using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
 using FUnresolvedEntry = TSharedPtr<TSet<TWeakObjectPtr<const UObject>>>;
 using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
@@ -81,7 +82,7 @@ public:
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
 	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
-	void SendRPC(TSharedRef<FPendingRPCParams> Params);
+	bool SendRPC(FPendingRPCParamsPtr Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
@@ -106,6 +107,7 @@ public:
 	bool UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);
 
+	void QueueOutgoingRPC(FPendingRPCParamsPtr Params);
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 private:
 	// Actor Lifecycle
@@ -115,7 +117,7 @@ private:
 	// Queuing
 	void ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover);
 	void QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, bool bIsHandover);
-	void QueueOutgoingRPC(const UObject* UnresolvedObject, ESchemaComponentType Type, TSharedRef<FPendingRPCParams> Params);
+	void QueueOutgoingRPC(const UObject* UnresolvedObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params);
 
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const;
@@ -127,7 +129,7 @@ private:
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
 
 	RPCPayload CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams);
-	void ResolveOutgoingRPCs(UObject* Object, TUniquePtr<FArrayOfParams> RPCList);
+	void ResolveOutgoingRPCs(UObject* Object, TSharedPtr<FQueueOfParams> RPCList);
 
 private:
 	UPROPERTY()

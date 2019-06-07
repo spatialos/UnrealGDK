@@ -1178,7 +1178,8 @@ void USpatialNetDriver::ProcessRemoteFunction(
 			}
 		}
 
-		Sender->SendRPC(RPCParams);
+		Sender->QueueOutgoingRPC(RPCParams);
+		Sender->ResolveOutgoingRPCs(CallingObject);
 	}
 }
 

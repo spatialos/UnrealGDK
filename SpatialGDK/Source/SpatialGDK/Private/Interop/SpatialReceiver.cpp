@@ -1412,7 +1412,6 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
-	Sender->ResolveOutgoingRPCs(Object);
 	ResolveIncomingRPCs(Object, ObjectRef);
 }
 
