@@ -131,6 +131,8 @@ private:
 	RPCPayload CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams);
 	void ResolveOutgoingRPCs(UObject* Object, TSharedPtr<FQueueOfParams> RPCList);
 
+	const FRPCInfo* GetRPCInfo(UObject* Object, UFunction* Function) const;
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;

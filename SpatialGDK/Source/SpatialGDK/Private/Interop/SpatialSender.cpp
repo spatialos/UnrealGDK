@@ -414,7 +414,7 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(FPendingRPCParams& RPCPara
 	check(RPCParams.TargetObject.IsValid());
 	const UObject* Object = RPCParams.TargetObject.Get();
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
-	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(RPCParams.Function);
+	const FRPCInfo* RPCInfo = GetRPCInfo(RPCParams.TargetObject.Get(), RPCParams.Function);
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(Object)));
 	check(TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
@@ -481,24 +481,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
 	}
 
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Params->Function);
-
-	// We potentially have a parent function and need to find the child function.
-	// This exists as it's possible in blueprints to explicitly call the parent function.
-	if (RPCInfo == nullptr)
-	{
-		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
-		{
-			if (It.Key()->GetName() == Params->Function->GetName())
-			{
-				// Matching child function found. Use this for the remote function call.
-				RPCInfo = &It.Value();
-				break;
-			}
-		}
-	}
-	
+	const FRPCInfo* RPCInfo = GetRPCInfo(TargetObject, Params->Function);
 	check(RPCInfo);
 
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
@@ -850,8 +833,7 @@ void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
 		return;
 	}
 	UObject* TargetObject = Params->TargetObject.Get();
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Params->Function);
+	const FRPCInfo* RPCInfo = GetRPCInfo(TargetObject, Params->Function);
 	check(RPCInfo);
 
 	QueueOutgoingRPC(TargetObject, RPCInfo->Type, Params);
@@ -1101,6 +1083,29 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object, TSharedPtr<FQueueOfPar
 			break;
 		}
 	}
+}
+
+const FRPCInfo* USpatialSender::GetRPCInfo(UObject* Object, UFunction* Function) const
+{
+	check(Object && Function);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(Object);
+	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Function);
+
+	// We potentially have a parent function and need to find the child function.
+	// This exists as it's possible in blueprints to explicitly call the parent function.
+	if (RPCInfo == nullptr)
+	{
+		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
+		{
+			if (It.Key()->GetName() == Function->GetName())
+			{
+				// Matching child function found. Use this for the remote function call.
+				RPCInfo = &It.Value();
+				break;
+			}
+		}
+	}
+	return RPCInfo;
 }
 
 // Authority over the ClientRPC Schema component is dictated by the owning connection of a client.
