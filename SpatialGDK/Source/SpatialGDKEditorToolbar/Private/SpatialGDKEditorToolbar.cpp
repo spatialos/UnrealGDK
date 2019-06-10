@@ -430,6 +430,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	{
 		// If the project plugin doesn't exist then use the Engine Plugin.
 		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
+		ensure(FPaths::DirectoryExists(PluginDir));
 	}
 
 	FString SchemaCompilerExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe")));
@@ -440,7 +441,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	FString SchemaDescriptorOutput = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("build/descriptor/output/schema.descriptor"));
 	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *ImprobableSchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
 
-	FString SnapshotPath = FPaths::Combine(FPaths::Combine(SpatialGDKSettings->GetSpatialOSSnapshotFolderPath(), SpatialGDKSettings->GetSpatialOSSnapshotFile()));
+	FString SnapshotPath = FPaths::Combine(SpatialGDKSettings->GetSpatialOSSnapshotFolderPath(), SpatialGDKSettings->GetSpatialOSSnapshotFile());
 
 	const FString SpatialCmdArgument = FString::Printf(
 		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& %s %s ^& spatial.exe local launch --enable_pre_run_check=false \"%s\" %s ^& pause"), *SchemaCompilerExe, *SchemaCompilerArgs, *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
