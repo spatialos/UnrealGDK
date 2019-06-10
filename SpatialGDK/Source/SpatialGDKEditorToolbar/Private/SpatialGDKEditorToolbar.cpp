@@ -28,7 +28,6 @@
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonWriter.h"
-#include "HAL/PlatformFilemanager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
