@@ -418,38 +418,8 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
-	// Get the correct plugin directory.
-	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
-
-	if (!FPaths::DirectoryExists(PluginDir))
-	{
-		// If the Project Plugin doesn't exist then use the Engine Plugin.
-		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
-		ensure(FPaths::DirectoryExists(PluginDir));
-	}
-
-	// Get the schema_compiler path and arguments
-	FString SchemaCompilerExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe")));
-
-	FString SchemaDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("schema"));
-	FString ImprobableSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
-	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Build/core_sdk/schema/standard_library"));
-	FString SchemaDescriptorDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
-	FString SchemaDescriptorOutput = FPaths::Combine(SchemaDescriptorDir, TEXT("schema.descriptor"));
-
-	// The schema_compiler cannot create folders.
-	if (!FPaths::DirectoryExists(SchemaDescriptorDir))
-	{
-		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-		PlatformFile.CreateDirectory(*SchemaDescriptorDir);
-	}
-
-	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *ImprobableSchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
-
-	FString SnapshotPath = FPaths::Combine(SpatialGDKSettings->GetSpatialOSSnapshotFolderPath(), SpatialGDKSettings->GetSpatialOSSnapshotFile());
-
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& %s %s ^& spatial.exe local launch --enable_pre_run_check=false \"%s\" %s ^& pause"), *SchemaCompilerExe, *SchemaCompilerArgs, *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch --enable_pre_run_check=false \"%s\" %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to

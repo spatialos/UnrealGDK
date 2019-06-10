@@ -554,6 +554,57 @@ void ResetUsedNames()
 	}
 }
 
+void RunSchemaCompiler()
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	FProcHandle SchemaCompilerProcHandle;
+	uint32 SchemaCompilerProcessID;
+
+	// Get the correct plugin directory.
+	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
+
+	if (!FPaths::DirectoryExists(PluginDir))
+	{
+		// If the Project Plugin doesn't exist then use the Engine Plugin.
+		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
+		ensure(FPaths::DirectoryExists(PluginDir));
+	}
+
+	// Get the schema_compiler path and arguments
+	FString SchemaCompilerExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe")));
+
+	FString SchemaDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("schema"));
+	FString ImprobableSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
+	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Build/core_sdk/schema/standard_library"));
+	FString SchemaDescriptorDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
+	FString SchemaDescriptorOutput = FPaths::Combine(SchemaDescriptorDir, TEXT("schema.descriptor"));
+
+	// The schema_compiler cannot create folders.
+	if (!FPaths::DirectoryExists(SchemaDescriptorDir))
+	{
+		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+		PlatformFile.CreateDirectory(*SchemaDescriptorDir);
+	}
+
+	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *ImprobableSchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
+
+	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SchemaCompilerExe, *SchemaCompilerArgs);
+
+	SchemaCompilerProcHandle = FPlatformProcess::CreateProc(
+		*(SchemaCompilerExe), *SchemaCompilerArgs, true, false, false, &SchemaCompilerProcessID, 0,
+		nullptr, nullptr, nullptr);
+
+	if (!SchemaCompilerProcHandle.IsValid())
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema_compiler failed to generate schema descriptor."));
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Schema_compiler successfully generated schema descriptor."));
+	}
+}
+
 bool SpatialGDKGenerateSchema()
 {
 	ResetUsedNames();
@@ -595,6 +646,7 @@ bool SpatialGDKGenerateSchema()
 	GenerateSchemaForSublevels(SchemaOutputPath, IdGenerator);
 	NextAvailableComponentId = IdGenerator.Peek();
 	SaveSchemaDatabase();
+	RunSchemaCompiler();
 
 	return true;
 }
