@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
+#include "Utils/RPCContainer.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -27,21 +28,6 @@ class USpatialStaticComponentView;
 class USpatialClassInfoManager;
 class USpatialWorkerConnection;
 
-// This is currently only really used for queuing outgoing RPCs in case they have unresolved target object
-// or arguments. This is only possible for singletons in a multi-worker scenario.
-// TODO: remove this logic when singletons can be referenced without entity IDs (UNR-1456).
-struct FPendingRPCParams
-{
-	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex);
-	~FPendingRPCParams();
-
-	TWeakObjectPtr<UObject> TargetObject;
-	UFunction* Function;
-	TArray<uint8> Parameters;
-	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
-	int ReliableRPCIndex;
-};
-
 struct FReliableRPCForRetry
 {
 	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, TArray<uint8>&& InPayload, int InRetryIndex);
@@ -59,9 +45,6 @@ struct FReliableRPCForRetry
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-using FPendingRPCParamsPtr = TSharedPtr<FPendingRPCParams>;
-using FQueueOfParams = TQueue<FPendingRPCParamsPtr>;
-using FOutgoingRPCMap = TMap<TWeakObjectPtr<const UObject>, TSharedPtr<FQueueOfParams>>;
 using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
 using FUnresolvedEntry = TSharedPtr<TSet<TWeakObjectPtr<const UObject>>>;
 using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
@@ -158,50 +141,7 @@ private:
 	FChannelToHandleToUnresolved HandoverPropertyToUnresolved;
 	FOutgoingRepUpdates HandoverObjectToUnresolved;
 
-	class RPCManager
-	{
-	public:
-		FOutgoingRPCMap& operator[](ESchemaComponentType ComponentType)
-		{
-			switch (ComponentType)
-			{
-			case SCHEMA_ClientUnreliableRPC:
-			case SCHEMA_ServerUnreliableRPC:
-			{
-				return OutgoingRPCs[int(RPCType::Unreliable)];
-			}
-			case SCHEMA_ClientReliableRPC:
-			case SCHEMA_ServerReliableRPC:
-			{
-				return OutgoingRPCs[int(RPCType::Reliable)];
-			}
-			case SCHEMA_CrossServerRPC:
-			{
-				return OutgoingRPCs[int(RPCType::Commands)];
-			}
-			case SCHEMA_NetMulticastRPC:
-			{
-				return OutgoingRPCs[int(RPCType::Multicast)];
-			}
-			default:
-			{
-				checkNoEntry();
-				return OutgoingRPCs[int(RPCType::Invalid)];
-				break;
-			}
-			}
-		}
-
-		const FOutgoingRPCMap& operator[](ESchemaComponentType ComponentType) const
-		{
-			return (*(const_cast<RPCManager*>(this)))[ComponentType];
-		}
-
-		enum class RPCType { Commands = 0, Multicast = 1, Reliable = 2, Unreliable = 3, Invalid = 4, NumTypes = Invalid };
-		FOutgoingRPCMap OutgoingRPCs[RPCType::NumTypes];
-	};
-
-	RPCManager OutgoingRPCs;
+	RPCContainer OutgoingRPCs;
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;

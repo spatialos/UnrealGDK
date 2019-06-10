@@ -36,29 +36,6 @@ DECLARE_CYCLE_STAT(TEXT("SendComponentUpdates"), STAT_SpatialSenderSendComponent
 DECLARE_CYCLE_STAT(TEXT("ResetOutgoingUpdate"), STAT_SpatialSenderResetOutgoingUpdate, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("QueueOutgoingUpdate"), STAT_SpatialSenderQueueOutgoingUpdate, STATGROUP_SpatialNet);
 
-FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex)
-	: TargetObject(InTargetObject)
-	, Function(InFunction)
-	, RetryIndex(InRetryIndex)
-	, ReliableRPCIndex(0)
-{
-	Parameters.SetNumZeroed(Function->ParmsSize);
-
-	for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
-	{
-		It->InitializeValue_InContainer(Parameters.GetData());
-		It->CopyCompleteValue_InContainer(Parameters.GetData(), InParameters);
-	}
-}
-
-FPendingRPCParams::~FPendingRPCParams()
-{
-	for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
-	{
-		It->DestroyValue_InContainer(Parameters.GetData());
-	}
-}
-
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, TArray<uint8>&& InPayload, int InRetryIndex)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
@@ -984,7 +961,7 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 
 void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 {
-	for(auto& RPCs: OutgoingRPCs.OutgoingRPCs)
+	for(auto& RPCs: OutgoingRPCs)
 	{
 		if (TSharedPtr<FQueueOfParams>* RPCList = RPCs.Find(Object))
 		{
