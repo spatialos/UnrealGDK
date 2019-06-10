@@ -743,14 +743,14 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	}
 }
 
-void USpatialSender::QueueOutgoingRPC(const UObject* UnresolvedObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
+void USpatialSender::QueueOutgoingRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
 {
-	check(UnresolvedObject);
-	if (!OutgoingRPCs[Type].Contains(UnresolvedObject))
+	check(TargetObject);
+	if (!OutgoingRPCs[Type].Contains(TargetObject))
 	{
-		OutgoingRPCs[Type].Add(UnresolvedObject, MakeShared<FQueueOfParams>());
+		OutgoingRPCs[Type].Add(TargetObject, MakeShared<FQueueOfParams>());
 	}
-	OutgoingRPCs[Type].FindChecked(UnresolvedObject)->Enqueue(Params);
+	OutgoingRPCs[Type].FindChecked(TargetObject)->Enqueue(Params);
 }
 
 void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)

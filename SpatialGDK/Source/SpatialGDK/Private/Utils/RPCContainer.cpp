@@ -32,66 +32,66 @@ FPendingRPCParams::~FPendingRPCParams()
 
 RPCContainer::~RPCContainer()
 {
-	if(OutgoingRPCs[int(RPCType::Invalid)].Num() > 0)
+	if(RPCs[int(RPCType::Invalid)].Num() > 0)
 	{
 		UE_LOG(LogRPCContainer, Error, TEXT("Some RPCs have not been sent"));
 	}
 }
 
-FOutgoingRPCMap& RPCContainer::operator[](ESchemaComponentType ComponentType)
+FRPCMap& RPCContainer::operator[](ESchemaComponentType ComponentType)
 {
 	switch (ComponentType)
 	{
 	case SCHEMA_ClientUnreliableRPC:
 	case SCHEMA_ServerUnreliableRPC:
 	{
-		return OutgoingRPCs[int(RPCType::Unreliable)];
+		return RPCs[int(RPCType::Unreliable)];
 	}
 	case SCHEMA_ClientReliableRPC:
 	case SCHEMA_ServerReliableRPC:
 	{
-		return OutgoingRPCs[int(RPCType::Reliable)];
+		return RPCs[int(RPCType::Reliable)];
 	}
 	case SCHEMA_CrossServerRPC:
 	{
-		return OutgoingRPCs[int(RPCType::Commands)];
+		return RPCs[int(RPCType::Commands)];
 	}
 	case SCHEMA_NetMulticastRPC:
 	{
-		return OutgoingRPCs[int(RPCType::Multicast)];
+		return RPCs[int(RPCType::Multicast)];
 	}
 	default:
 	{
 		checkNoEntry();
-		return OutgoingRPCs[int(RPCType::Invalid)];
+		return RPCs[int(RPCType::Invalid)];
 		break;
 	}
 	}
 }
 
-const FOutgoingRPCMap& RPCContainer::operator[](ESchemaComponentType ComponentType) const
+const FRPCMap& RPCContainer::operator[](ESchemaComponentType ComponentType) const
 {
 	return (*(const_cast<RPCContainer*>(this)))[ComponentType];
 }
 
-const FOutgoingRPCMap* RPCContainer::begin() const
+const FRPCMap* RPCContainer::begin() const
 {
 	return const_cast<RPCContainer*>(this)->begin();
 }
 
-const FOutgoingRPCMap* RPCContainer::end() const
+const FRPCMap* RPCContainer::end() const
 {
 	return const_cast<RPCContainer*>(this)->end();
 }
 
-FOutgoingRPCMap* RPCContainer::begin()
+FRPCMap* RPCContainer::begin()
 {
-	return &OutgoingRPCs[0];
+	return &RPCs[0];
 }
 
-FOutgoingRPCMap* RPCContainer::end()
+FRPCMap* RPCContainer::end()
 {
-	return &OutgoingRPCs[int(RPCType::Invalid)];
+	return &RPCs[int(RPCType::Invalid)];
 }
 
 } // namespace SpatialGDK

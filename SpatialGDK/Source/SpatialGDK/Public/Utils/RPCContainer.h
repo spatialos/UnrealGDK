@@ -29,19 +29,19 @@ struct FPendingRPCParams
 
 using FPendingRPCParamsPtr = TSharedPtr<FPendingRPCParams>;
 using FQueueOfParams = TQueue<FPendingRPCParamsPtr>;
-using FOutgoingRPCMap = TMap<TWeakObjectPtr<const UObject>, TSharedPtr<FQueueOfParams>>;
+using FRPCMap = TMap<TWeakObjectPtr<const UObject>, TSharedPtr<FQueueOfParams>>;
 
 class RPCContainer
 {
 public:
 	~RPCContainer();
-	FOutgoingRPCMap& operator[](ESchemaComponentType ComponentType);
-	const FOutgoingRPCMap& operator[](ESchemaComponentType ComponentType) const;
+	FRPCMap& operator[](ESchemaComponentType ComponentType);
+	const FRPCMap& operator[](ESchemaComponentType ComponentType) const;
 
-	const FOutgoingRPCMap* begin() const;
-	const FOutgoingRPCMap* end() const;
-	FOutgoingRPCMap* begin();
-	FOutgoingRPCMap* end();
+	const FRPCMap* begin() const;
+	const FRPCMap* end() const;
+	FRPCMap* begin();
+	FRPCMap* end();
 
 private:
 	enum class RPCType
@@ -53,6 +53,6 @@ private:
 		Invalid = 4,
 		NumTypes = 5
 	};
-	FOutgoingRPCMap OutgoingRPCs[int(RPCType::NumTypes)];
+	FRPCMap RPCs[int(RPCType::NumTypes)];
 };
 } // namespace SpatialGDK
