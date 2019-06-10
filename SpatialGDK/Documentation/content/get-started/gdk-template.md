@@ -292,4 +292,4 @@ If you have an existing Unreal multiplayer project, follow our detailed [porting
 <br/>
 <br/>
 ------</br>
-_2019-04-30 Page updated with limited editorial review_
+_2019-06-10 Page updated with editorial review: added debug workaround_
