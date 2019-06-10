@@ -4,7 +4,10 @@
 
 #include "SpatialConstants.h"
 
+#include "Logging/LogMacros.h"
 #include "CoreMinimal.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogRPCContainer, Log, All);
 
 namespace SpatialGDK
 {
@@ -31,6 +34,7 @@ using FOutgoingRPCMap = TMap<TWeakObjectPtr<const UObject>, TSharedPtr<FQueueOfP
 class RPCContainer
 {
 public:
+	~RPCContainer();
 	FOutgoingRPCMap& operator[](ESchemaComponentType ComponentType);
 	const FOutgoingRPCMap& operator[](ESchemaComponentType ComponentType) const;
 
@@ -40,7 +44,16 @@ public:
 	FOutgoingRPCMap* end();
 
 private:
-	enum class RPCType { Commands = 0, Multicast = 1, Reliable = 2, Unreliable = 3, Invalid = 4, NumTypes = Invalid };
+	enum class RPCType
+	{
+		Commands = 0,
+		Multicast = 1,
+		Reliable = 2,
+		Unreliable = 3,
+		LastValid = Unreliable,
+		Invalid = 4,
+		NumTypes = 5
+	};
 	FOutgoingRPCMap OutgoingRPCs[int(RPCType::NumTypes)];
 };
 } // namespace SpatialGDK

@@ -2,6 +2,8 @@
 
 #include "RPCContainer.h"
 
+DEFINE_LOG_CATEGORY(LogRPCContainer);
+
 namespace SpatialGDK
 {
 
@@ -25,6 +27,14 @@ FPendingRPCParams::~FPendingRPCParams()
 	for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
 	{
 		It->DestroyValue_InContainer(Parameters.GetData());
+	}
+}
+
+RPCContainer::~RPCContainer()
+{
+	if(OutgoingRPCs[int(RPCType::Invalid)].Num() > 0)
+	{
+		UE_LOG(LogRPCContainer, Error, TEXT("Some RPCs have not been sent"));
 	}
 }
 
@@ -81,7 +91,7 @@ FOutgoingRPCMap* RPCContainer::begin()
 
 FOutgoingRPCMap* RPCContainer::end()
 {
-	return &OutgoingRPCs[int(RPCType::NumTypes)];
+	return &OutgoingRPCs[int(RPCType::LastValid)];
 }
 
 } // namespace SpatialGDK
