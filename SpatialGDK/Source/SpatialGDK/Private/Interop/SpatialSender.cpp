@@ -506,7 +506,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		FUnrealObjectRef TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
 		if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 		{
-			return true;
+			return false;
 		}
 
 		EntityId = TargetObjectRef.Entity;

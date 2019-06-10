@@ -50,7 +50,6 @@ private:
 		Multicast = 1,
 		Reliable = 2,
 		Unreliable = 3,
-		LastValid = Unreliable,
 		Invalid = 4,
 		NumTypes = 5
 	};

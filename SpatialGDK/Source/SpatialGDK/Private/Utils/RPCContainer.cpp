@@ -91,7 +91,7 @@ FOutgoingRPCMap* RPCContainer::begin()
 
 FOutgoingRPCMap* RPCContainer::end()
 {
-	return &OutgoingRPCs[int(RPCType::LastValid)];
+	return &OutgoingRPCs[int(RPCType::Invalid)];
 }
 
 } // namespace SpatialGDK
