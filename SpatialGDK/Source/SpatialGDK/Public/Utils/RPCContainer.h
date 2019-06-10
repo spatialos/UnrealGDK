@@ -41,6 +41,6 @@ public:
 
 private:
 	enum class RPCType { Commands = 0, Multicast = 1, Reliable = 2, Unreliable = 3, Invalid = 4, NumTypes = Invalid };
-	FOutgoingRPCMap OutgoingRPCs[RPCType::NumTypes];
+	FOutgoingRPCMap OutgoingRPCs[int(RPCType::NumTypes)];
 };
 } // namespace SpatialGDK
