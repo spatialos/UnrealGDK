@@ -4,7 +4,7 @@
 
 There could be a few different reasons for this. The list below provides some of the most common ones, ordered by likelihood:
 
-1. It's easy to forget to generate the schema for your replicated Actor. Make sure you run the Schema Generator before launching your project.
+1. It's easy to forget to generate the schema for your replicated Actor. Make sure you [generate schema]({{urlRoot}}/content/how-to-use-schema) before launching your project.
 
 2. As per Unreal Engine’s [replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), your Actor needs to be created on the server-worker instance before it can replicate to the client-worker instances.
 

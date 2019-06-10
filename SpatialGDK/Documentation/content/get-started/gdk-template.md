@@ -112,7 +112,9 @@ To launch a local deployment:
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
     _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 
-    > Due to a [known issue](https://github.com/spatialos/UnrealGDK/issues/940) with the GDK, you need to follow [these steps]({{urlRoot}}/content/troubleshooting#q-my-worker-instances-are-being-disconnected-from-the-spatialos-runtime-unexpectedly-while-debugging-locally) before debugging your game using C++ or Blueprint breakpoints.
+    > **Want to debug your project?**
+    > 
+    > There is a [known issue](https://github.com/spatialos/UnrealGDK/issues/940) debugging local deployments using C++ or Blueprint breakpoints. For a workaround, follow [these steps]({{urlRoot}}/content/troubleshooting#q-my-worker-instances-are-being-disconnected-from-the-spatialos-runtime-unexpectedly-while-debugging-locally).
 
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 
