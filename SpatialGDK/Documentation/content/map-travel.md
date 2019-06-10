@@ -60,8 +60,7 @@ PlayerController->ClientTravel(TravelURL.ToString(), TRAVEL_Absolute, false /*bS
 We have made changes to the Unreal Engine to detect if you have SpatialOS networking enabled. If you do, when you specify a ClientTravel URL containing a host to connect to, we create a `SpatialPendingNetGame` instead of a default Unreal `PendingNetGame`. This internally creates a `SpatialNetConnection` which connects you to the specified host. 
 
 ## UWorld::ServerTravel
-> Warning: `ServerTravel` is in an experimental state and we currently only support it in single server-worker configurations.   
-> We don’t support `ServerTravel` in [PIE](https://docs.unrealengine.com/en-us/GettingStarted/HowTo/PIE#playineditor).
+> Warning: `ServerTravel` is on the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1#card-22461878) but is not currently supported.
 
 ### In native Unreal
 `ServerTravel` in Unreal is the concept of changing the [map (or Level - see Unreal documentation)](http://api.unrealengine.com/INT/Shared/Glossary/index.html#l) for the server and all connected clients. A common use case is starting a server in a lobby level. Clients connect to this lobby level and choose loadout and character, for example. When ready, the server triggers a `ServerTravel`, which transitions the deployment and all clients into the main game level.
@@ -102,6 +101,8 @@ FString ServerTravelURL = TEXT("ExampleMap?snapshot=ExampleMap.snapshot?clientsS
 ```
 
 ### ServerTravel - technical details
+> Warning: `ServerTravel` is on the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1#card-22461878) but is not currently supported.
+
 There are a few things to consider when using `ServerTravel` with SpatialOS. It’s not normal for a SpatialOS deployment to ‘load a new world’, since SpatialOS was made for very large persistent worlds. This means you need to perform extra steps to support `ServerTravel`. 
 
 > Note that `ServerTravel` is only supported in non-PIE configurations. Launching a server-worker in PIE has a dependency on the `Use dedicated server` network configuration available in PIE. Unfortunately this setting has a dependency on `Use single process` which doesn’t support `ServerTravel`. To test and develop `ServerTravel` for your game with the SpatialOS GDK for Unreal, you need to launch workers outside of the editor, either via using the the `LaunchServer.bat` or by using a launch configuration which loads [managed workers](https://docs.improbable.io/reference/13.0/shared/concepts/workers#managed-and-external-workers).
