@@ -11,7 +11,7 @@ There could be a few different reasons for this. The list below provides some of
 3. Ensure that your call to `SpawnActor` is happening on your server-worker instance.<br/>
 Validate that the SpatialOS entity that represents your Actor appears in the Inspector. If it doesn't, then it's likely that it's not marked up for replication correctly.
 
-1. Mark your Actor for replication as per [Unreal Engine’s Actor replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors). You can validate that your Actor is replicated in `USpatialNetDriver::ServerReplicateActors`.
+1. Mark your Actor for replication as described in [Unreal's Actor replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors). You can validate that your Actor is replicated in `USpatialNetDriver::ServerReplicateActors`.
 
 1. Validate that you receive an `WORKER_OP_TYPE_ADD_ENTITY` for the entity representing your Actor in the `USpatialView::ProcessOps` and that your entity is spawned in `USpatialReceiver::CreateActor`.
 
@@ -78,4 +78,4 @@ To work around the issue:
     Once you’ve finished debugging your game and want to deploy it locally or in the cloud, make sure you set these values back to their defaults so that failing worker instances are correctly disconnected from the SpatialOS Runtime.
 
 <br/>------------<br/>
-_2019-05-31 Page updated with limited editorial review_
+_2019-06-10 Page updated with limited editorial review_
