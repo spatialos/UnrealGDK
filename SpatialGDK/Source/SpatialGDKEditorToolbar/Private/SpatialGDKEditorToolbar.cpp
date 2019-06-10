@@ -1,5 +1,4 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
 
 #include "SpatialGDKEditorToolbar.h"
 #include "Async/Async.h"
@@ -418,21 +417,17 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
-	//-------
-
-	// Get the schema_compiler path and arguments
-
-	// Get the correct plugin dir
-	// Start with the project plugin, if it exists use this.
+	// Get the correct plugin directory.
 	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
 
 	if (!FPaths::DirectoryExists(PluginDir))
 	{
-		// If the project plugin doesn't exist then use the Engine Plugin.
+		// If the Project Plugin doesn't exist then use the Engine Plugin.
 		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
 		ensure(FPaths::DirectoryExists(PluginDir));
 	}
 
+	// Get the schema_compiler path and arguments
 	FString SchemaCompilerExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe")));
 
 	FString SchemaDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("schema"));
