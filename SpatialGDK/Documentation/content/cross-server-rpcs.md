@@ -69,6 +69,6 @@ The call will not get fully processed in this situation because the intended pur
 <br/>
 
 ------</br>
-_2019-06-06 Page updated with limited editorial review 
+_2019-06-06 Page updated with limited editorial review_
 _2019-06-06 Updated invoking a cross-server RPC from a client worker guidance_
 
