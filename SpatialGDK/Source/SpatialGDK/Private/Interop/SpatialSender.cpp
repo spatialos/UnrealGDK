@@ -473,29 +473,27 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		const UObject* UnresolvedObject = nullptr;
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, Payload, Params->ReliableRPCIndex);
 
-		if (!UnresolvedObject)
-		{
-			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
-			Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
-
-			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
-			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
-					EntityId, CommandRequest.component_id, *Params->Function->GetName());
-				Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Params->Function, ComponentId, RPCInfo->Index, MoveTemp(Payload), Params->RetryIndex));
-			}
-			else
-			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
-					EntityId, CommandRequest.component_id, *Params->Function->GetName());
-			}
-			return true;
-		}
-		else
+		if (UnresolvedObject)
 		{
 			return false;
 		}
-		break;
+
+		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
+
+		if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
+		{
+			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
+				EntityId, CommandRequest.component_id, *Params->Function->GetName());
+			Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Params->Function, ComponentId, RPCInfo->Index, MoveTemp(Payload), Params->RetryIndex));
+		}
+		else
+		{
+			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
+				EntityId, CommandRequest.component_id, *Params->Function->GetName());
+		}
+
+		return true;
 	}
 	case SCHEMA_NetMulticastRPC:
 	case SCHEMA_ClientReliableRPC:
@@ -531,22 +529,17 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		const UObject* UnresolvedParameter = nullptr;
 		Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedParameter);
 
-		if (!UnresolvedParameter)
-		{
-			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
-			return true;
-		}
-		else
+		if (UnresolvedParameter)
 		{
 			return false;
 		}
 
-		break;
+		Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+		return true;
 	}
 	default:
 		checkNoEntry();
 		return false;
-		break;
 	}
 }
 
