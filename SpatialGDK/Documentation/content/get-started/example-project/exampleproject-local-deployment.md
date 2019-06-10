@@ -72,4 +72,4 @@ To launch a local deployment:
 
 --------<br/>
 
-_2019-05-21 Page added with editorial review_
+_2019-06-10 Page update with editorial review: added debug workaround_
