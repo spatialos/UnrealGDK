@@ -28,6 +28,7 @@
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonWriter.h"
+#include "HAL/PlatformFilemanager.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -433,7 +434,16 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	FString SchemaDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("schema"));
 	FString ImprobableSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
 	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Build/core_sdk/schema/standard_library"));
-	FString SchemaDescriptorOutput = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("build/descriptor/output/schema.descriptor"));
+	FString SchemaDescriptorDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
+	FString SchemaDescriptorOutput = FPaths::Combine(SchemaDescriptorDir, TEXT("schema.descriptor"));
+
+	// The schema_compiler cannot create folders.
+	if (!FPaths::DirectoryExists(SchemaDescriptorDir))
+	{
+		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+		PlatformFile.CreateDirectory(*SchemaDescriptorDir);
+	}
+
 	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *ImprobableSchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
 
 	FString SnapshotPath = FPaths::Combine(SpatialGDKSettings->GetSpatialOSSnapshotFolderPath(), SpatialGDKSettings->GetSpatialOSSnapshotFile());
