@@ -99,7 +99,7 @@ public:
 	bool bBatchSpatialPositionUpdates;
 
 	/** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
-	UPROPERTY(EditAnywhere, config, Category = "Local Test", meta = (ConfigRestartRequired = false))
+	UPROPERTY(EditAnywhere, config, Category = "Local Connection", meta = (ConfigRestartRequired = false))
 	FString DefaultReceptionistHost;
 };
 
