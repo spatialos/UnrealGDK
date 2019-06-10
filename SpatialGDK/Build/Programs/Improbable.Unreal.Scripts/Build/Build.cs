@@ -109,7 +109,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 while (currentDir.Parent != null && string.IsNullOrEmpty(unrealEngine))
                 {
                     currentDir = currentDir.Parent;
-                    unrealEngine = currentDir.GetDirectories().Where(d => d.Name == "Engine" && File.Exists(Path.Combine(d.FullName, @"Build\Build.version"))).Select(d => d.FullName).FirstOrDefault();
+                    unrealEngine = currentDir.GetDirectories().Where(d => d.Name == "Engine" && File.Exists(Path.Combine(d.FullName, @"Build\Build.version"))).Select(d => d.Parent.FullName).FirstOrDefault();
                 }
             }
 
@@ -123,8 +123,8 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 Console.WriteLine("Engine is at: " + unrealEngine);
             }
 
-            string runUATBat = Path.Combine(unrealEngine, @"Build\BatchFiles\RunUAT.bat");
-            string buildBat = Path.Combine(unrealEngine, @"Build\BatchFiles\Build.bat");
+            string runUATBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\RunUAT.bat");
+            string buildBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\Build.bat");
 
             if (gameName == baseGameName + "Editor")
             {
@@ -152,7 +152,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 }
 
                 var RunEditorScript = $@"setlocal ENABLEDELAYEDEXPANSION 
-                {Path.Combine(unrealEngine, @"Binaries\Win64\UE4Editor.exe")} ""{0}"" %*
+                {Path.Combine(unrealEngine, @"Engine\Binaries\Win64\UE4Editor.exe")} ""{0}"" %*
                 exit /b !ERRORLEVEL!
                 ";
 
