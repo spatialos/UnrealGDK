@@ -417,8 +417,23 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
 	const FString CmdExecutable = TEXT("cmd.exe");
 
+	// Get the correct plugin directory.
+	// TODO: Refactor this PluginDir method into re-usable code.
+	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
+
+	if (!FPaths::DirectoryExists(PluginDir))
+	{
+		// If the Project Plugin doesn't exist then use the Engine Plugin.
+		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
+		ensure(FPaths::DirectoryExists(PluginDir));
+	}
+
+	// Get the schema_compiler path and arguments
+	FString SpotExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe")));
+
+
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch --enable_pre_run_check=false \"%s\" %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& \"%s\" alpha deployment create --launch-config=\"%s\" --name=testname --project-name=testprojectname %s ^& pause"), *SpotExe, *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags);
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
