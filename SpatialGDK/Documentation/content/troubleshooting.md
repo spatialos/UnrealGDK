@@ -6,12 +6,12 @@ There could be a few different reasons for this. The list below provides some of
 
 1. It's easy to forget to generate the schema for your replicated Actor. Make sure you [generate schema]({{urlRoot}}/content/how-to-use-schema) before launching your project.
 
-2. As per Unreal Engine’s [replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), your Actor needs to be created on the server-worker instance before it can replicate to the client-worker instances.
+2. As described in Unreal's [replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors), your game needs to create an Actor on server-worker instances before it can replicate to client-worker instances.
 
 3. Ensure that your call to `SpawnActor` is happening on your server-worker instance.<br/>
 Validate that the SpatialOS entity that represents your Actor appears in the Inspector. If it doesn't, then it's likely that it's not marked up for replication correctly.
 
-1. Mark your Actor for replication as per [Unreal Engine’s Actor replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors). You can validate that your Actor is replicated in `USpatialNetDriver::ServerReplicateActors`.
+1. Mark your Actor for replication as described in [Unreal's Actor replication documentation](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors). You can validate that your Actor is replicated in `USpatialNetDriver::ServerReplicateActors`.
 
 1. Validate that you receive an `WORKER_OP_TYPE_ADD_ENTITY` for the entity representing your Actor in the `USpatialView::ProcessOps` and that your entity is spawned in `USpatialReceiver::CreateActor`.
 
@@ -64,18 +64,18 @@ When you install Visual Studio as part of the [GDK dependencies]({{urlRoot}}/con
 
 ### Q: My worker instances are being disconnected from the SpatialOS Runtime unexpectedly while debugging locally.
 
-(You’ll see log messages similar to these while debugging your game: `LogNet: UNetConnection::Cleanup: Closing open connection. [UNetConnection] RemoteAddr: , Name: SpatialNetConnection_14, Driver: GameNetDriver SpatialNetDriver_17, IsServer: YES, PC: BP_PlayerController_C_0, Owner: BP_PlayerController_C_0, UniqueId: …`)
+(You see log messages similar to these while debugging your game: `LogNet: UNetConnection::Cleanup: Closing open connection. [UNetConnection] RemoteAddr: , Name: SpatialNetConnection_14, Driver: GameNetDriver SpatialNetDriver_17, IsServer: YES, PC: BP_PlayerController_C_0, Owner: BP_PlayerController_C_0, UniqueId: …)`.
 
-This is caused by a [known issue](https://github.com/spatialos/UnrealGDK/issues/940) in the GDK for Unreal’s connection “heartbeating” logic that is used to disconnect worker instances that have stopped responding. 
+This is caused by a [known issue](https://github.com/spatialos/UnrealGDK/issues/940) in the GDK's connection “heartbeating” logic that disconnects worker instances that have stopped responding. 
 
 To work around the issue:
 
 1. In the Unreal Editor, navigate to **Edit** > **Project Settings** > **Runtime Settings**.
 1. Update the value of **Heartbeat Timeout** from the default 10 seconds to a much larger value that you’re unlikely to reach while debugging, such as 10000.
-1. **Navigate to Edit** > **Project Settings** > **Editor Settings**.
+1. Navigate to **Edit** > **Project Settings** > **Editor Settings**.
 1. Make sure the **Legacy Flags** section (within the **Launch** section) includes an entry to set [`bridge_qos_max_timeout`](https://docs.improbable.io/reference/latest/shared/project-layout/launch-config#legacy-flags) ) to `0`. 
 
     Once you’ve finished debugging your game and want to deploy it locally or in the cloud, make sure you set these values back to their defaults so that failing worker instances are correctly disconnected from the SpatialOS Runtime.
 
 <br/>------------<br/>
-_2019-05-31 Page updated with limited editorial review_
+_2019-06-10 Page updated with limited editorial review: added Visual Studio setup guidance, local debugging guidance_
