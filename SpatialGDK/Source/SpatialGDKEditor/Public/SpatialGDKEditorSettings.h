@@ -215,6 +215,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Generate default launch config"))
 	bool bGenerateDefaultLaunchConfig;
 
+	/** */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Enable experimental multi-server zoning support."))
+	bool bEnableMultiServerPreview;
+
 private:
 	/** Launch configuration file used for `spatial local launch`. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "!bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration"))

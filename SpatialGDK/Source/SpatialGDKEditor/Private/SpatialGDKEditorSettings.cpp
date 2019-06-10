@@ -6,6 +6,7 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	: Super(ObjectInitializer)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
+	, bEnableMultiServerPreview(false)
 	, bStopSpatialOnExit(false)
 	, bGeneratePlaceholderEntitiesInSnapshot(true)
 {

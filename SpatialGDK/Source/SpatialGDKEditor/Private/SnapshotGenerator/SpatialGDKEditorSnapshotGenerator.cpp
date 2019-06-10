@@ -31,6 +31,117 @@ using namespace SpatialGDK;
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSnapshot);
 
+bool CreateWorkerExtentsEntities(Worker_SnapshotOutputStream* OutputStream)
+{
+	// TODO - timgibson
+	//      - support hand-written launch configs?
+	//      - how should we deal with per-map launch config?
+	const USpatialGDKEditorSettings* EditorSettings = GetDefault<USpatialGDKEditorSettings>();
+	const bool bIsUsingGeneratedLaunchConfig = EditorSettings->bGenerateDefaultLaunchConfig;
+	const bool bEnableZoning = EditorSettings->bEnableMultiServerPreview;
+
+	if (!bEnableZoning)
+	{
+		return true;
+	}
+
+	if (!bIsUsingGeneratedLaunchConfig)
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Zoning is only supported when using a generated launch configuration."));
+		return false;
+	}
+
+	const FSpatialLaunchConfigDescription LaunchConfig = EditorSettings->LaunchConfigDesc;
+	const int32 MaxWorkerCount = SpatialConstants::WORKER_EXTENTS_ENTITY_ID_LAST - SpatialConstants::WORKER_EXTENTS_ENTITY_ID_FIRST;
+	if (LaunchConfig.Workers.Num() > MaxWorkerCount)
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Zoning is only supported for up to %d workers"), MaxWorkerCount);
+		return false;
+	}
+
+	const float WorldX = static_cast<float>(LaunchConfig.World.Dimensions.X);
+	const float WorldY = static_cast<float>(LaunchConfig.World.Dimensions.Y);
+
+	Worker_EntityId NextEntityId = SpatialConstants::WORKER_EXTENTS_ENTITY_ID_FIRST;
+	for (FWorkerTypeLaunchSection WorkerConfig: LaunchConfig.Workers)
+	{
+		const int32 Rows = WorkerConfig.Rows;
+		const int32 Cols = WorkerConfig.Columns;
+
+		const float RowSize = WorldY / Rows;
+		const float ColSize = WorldX / Cols;
+
+		for (int32 Row = 0; Row < Rows; ++Row)
+		{
+			for (int32 Col = 0; Col < Cols; ++Col)
+			{
+				Worker_Entity WorkerExtentsEntity;
+				WorkerExtentsEntity.entity_id = NextEntityId++;
+
+				TArray<Worker_ComponentData> Components;
+
+				WriteAclMap ComponentWriteAcl;
+				ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+				ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+				ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+				ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+				ComponentWriteAcl.Add(SpatialConstants::WORKER_EXTENTS_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
+
+				Worker_ComponentData WorkerExtentsData = {};
+				WorkerExtentsData.component_id = SpatialConstants::WORKER_EXTENTS_COMPONENT_ID;
+				WorkerExtentsData.schema_type = Schema_CreateComponentData(SpatialConstants::WORKER_EXTENTS_COMPONENT_ID);
+				Components.Add(WorkerExtentsData);
+
+				// Note mapping from y-axis (Unreal) to z-axis (SpatialOS)
+				Coordinates WorkerPseudoPosition;
+				WorkerPseudoPosition.X = (-WorldX / 2.0f) + (ColSize / 2.0f) + (ColSize * Col);
+				WorkerPseudoPosition.Z = (-WorldY / 2.0f) + (RowSize / 2.0f) + (RowSize * Row);
+				WorkerPseudoPosition.Y = 0.0;
+				Components.Add(Position(WorkerPseudoPosition).CreatePositionData());
+
+				Interest InterestComponent;
+				{
+					// TODO - timgibson - Add setting for overlap?
+					QueryConstraint WorkerZoneConstraint;
+					WorkerZoneConstraint.RelativeBoxConstraint = RelativeBoxConstraint
+					{
+						EdgeLength
+						{
+							ColSize * 1.2,
+							TNumericLimits<double>::Max(),
+							RowSize * 1.2
+						}
+					};
+
+					Query AuthoritativeWorkerQuery;
+					AuthoritativeWorkerQuery.Constraint = WorkerZoneConstraint;
+					AuthoritativeWorkerQuery.FullSnapshotResult = true;
+
+					ComponentInterest AuthoritativeWorkerInterst;
+					AuthoritativeWorkerInterst.Queries.Add(AuthoritativeWorkerQuery);
+
+					InterestComponent.ComponentInterestMap.Add(SpatialConstants::WORKER_EXTENTS_COMPONENT_ID, AuthoritativeWorkerInterst);
+				}
+				Components.Add(InterestComponent.CreateInterestData());
+
+				Components.Add(Metadata(TEXT("WorkerExtents")).CreateMetadataData());
+				Components.Add(Persistence().CreatePersistenceData());
+				Components.Add(EntityAcl(SpatialConstants::ClientOrServerPermission, ComponentWriteAcl).CreateEntityAclData());
+
+				WorkerExtentsEntity.component_count = Components.Num();
+				WorkerExtentsEntity.components = Components.GetData();
+
+				if (Worker_SnapshotOutputStream_WriteEntity(OutputStream, &WorkerExtentsEntity) == 0)
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
 bool CreateSpawnerEntity(Worker_SnapshotOutputStream* OutputStream)
 {
 	Worker_Entity SpawnerEntity;
@@ -252,6 +363,12 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
 			return false;
 		}
+	}
+
+	if (!CreateWorkerExtentsEntities(OutputStream))
+	{
+		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generatiting WorkerExtents entities in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
+		return false;
 	}
 
 	if (!RunUserSnapshotGenerationOverrides(OutputStream))

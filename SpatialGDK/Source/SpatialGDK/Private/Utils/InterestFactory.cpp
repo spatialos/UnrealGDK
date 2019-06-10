@@ -42,16 +42,9 @@ Interest InterestFactory::CreateInterest()
 		return Interest{};
 	}
 
-	// TODO - timgibson - validate that there's a connection.
-	if (Actor->IsA(APlayerController::StaticClass()))
+	if (Actor->IsA(APlayerController::StaticClass()) && Actor->GetNetConnection() != nullptr)
 	{
 		return CreateClientWorkerInterest();
-	}
-
-	// TODO - timgibson - need a better way to attach server interest.
-	if (Actor->IsA(AWorldSettings::StaticClass()))
-	{
-		return CreateServerWorkerInterest();
 	}
 
 	return Interest{};
@@ -70,11 +63,11 @@ Interest InterestFactory::CreateClientWorkerInterest()
 			NearnessConstraint.OrConstraint.Add(CheckoutRadiusConstraint);
 			NearnessConstraint.OrConstraint.Add(AlwaysInterestedConstraint);
 		}
-		else 
+		else
 		{
 			NearnessConstraint = CheckoutRadiusConstraint;
 		}
-		
+
 		QueryConstraint StreamingConstraint;
 		const QueryConstraint LevelConstraints = CreateLevelConstraints();
 		check(LevelConstraints.IsValid());
@@ -82,6 +75,7 @@ Interest InterestFactory::CreateClientWorkerInterest()
 		StreamingConstraint.AndConstraint.Add(LevelConstraints);
 		StreamingConstraint.AndConstraint.Add(NearnessConstraint);
 
+		// TODO - timgibson - verify the appropriate structure of singleton constraints.
 		QueryConstraint SingletonConstraint = CreateSingletonConstraint();
 		check(SingletonConstraint.IsValid());
 		check(SingletonConstraint.IsValid());
@@ -101,20 +95,6 @@ Interest InterestFactory::CreateClientWorkerInterest()
 	Interest ClientInterest;
 	ClientInterest.ComponentInterestMap.Add(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID, ClientComponentInterest);
 	return ClientInterest;
-}
-
-Interest InterestFactory::CreateServerWorkerInterest()
-{
-	// TODO - timgibson - Solve zoning and offloading.
-	// With single-server, no interest is needed since the sole server worker has authority
-	// over basically everything.
-	//
-	// Server worker interest should be
-	// Singleton OR (Levels AND Buffer around my zone)
-
-	Interest ServerInterest;
-	// TODO - timgibson - add constraints.
-	return ServerInterest;
 }
 
 QueryConstraint InterestFactory::CreateCheckoutRadiusConstraint()
