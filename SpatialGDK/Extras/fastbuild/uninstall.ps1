@@ -3,6 +3,8 @@ param (
 )
 
 $rootPath=[System.IO.Path]::GetFullPath("$env:HOMEDRIVE:\tools\fastbuild")
+# NOTE: When updating '$version', ensure you also update the '$brokerageFile' path to be correct.
+# This will involve replacing brokerage number after "main". e.g. "19.windows" -> "20.windows". Check your brokerage for the correct version.
 $version="v0.98"
 
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
