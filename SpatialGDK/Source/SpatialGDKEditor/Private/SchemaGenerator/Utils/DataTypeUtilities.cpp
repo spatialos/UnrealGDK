@@ -57,12 +57,12 @@ FString UnrealNameToSchemaComponentName(const FString& UnrealName)
 
 FString SchemaReplicatedDataName(EReplicatedPropertyGroup Group, UClass* Class)
 {
-	return FString::Printf(TEXT("%s%s"), *UnrealNameToSchemaComponentName(ClassToSchemaName[Class]), *GetReplicatedPropertyGroupName(Group));
+	return FString::Printf(TEXT("%s%s"), *UnrealNameToSchemaComponentName(ClassPathToSchemaName[Class->GetPathName()]), *GetReplicatedPropertyGroupName(Group));
 }
 
 FString SchemaHandoverDataName(UClass* Class)
 {
-	return FString::Printf(TEXT("%sHandover"), *UnrealNameToSchemaComponentName(ClassToSchemaName[Class]));
+	return FString::Printf(TEXT("%sHandover"), *UnrealNameToSchemaComponentName(ClassPathToSchemaName[Class->GetPathName()]));
 }
 
 FString SchemaRPCName(UFunction* Function)
