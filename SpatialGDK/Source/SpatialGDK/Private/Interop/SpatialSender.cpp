@@ -952,6 +952,7 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 	ObjectToUnresolved.Remove(Object);
 }
 
+#pragma optimize("", off)
 void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
 {
 	for(auto& RPCs: OutgoingRPCs)
@@ -991,6 +992,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object, TSharedPtr<FQueueOfPar
 		}
 	}
 }
+#pragma optimize("", on)
 
 const FRPCInfo* USpatialSender::GetRPCInfo(UObject* Object, UFunction* Function) const
 {
