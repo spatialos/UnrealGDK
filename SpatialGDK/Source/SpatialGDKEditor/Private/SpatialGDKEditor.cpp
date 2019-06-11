@@ -171,15 +171,21 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 			return false;
 		}
 		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Loading %s"), *Data.AssetName.ToString())));
+
+		const FString* GeneratedClassPathPtr = nullptr;
+
 #if ENGINE_MINOR_VERSION <= 20
-		if (const FString* GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass"))
-		{
+		GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass");
 #else
 		FAssetDataTagMapSharedView::FFindTagResult GeneratedClassFindTagResult = Data.TagsAndValues.FindTag("GeneratedClass");
-		if(GeneratedClassFindTagResult.IsSet())
+		if (GeneratedClassFindTagResult.IsSet())
 		{
-			const FString* GeneratedClassPathPtr = &GeneratedClassFindTagResult.GetValue();
+			GeneratedClassPathPtr = &GeneratedClassFindTagResult.GetValue();
+		}
 #endif
+
+		if (GeneratedClassPathPtr != nullptr)
+		{ 
 			const FString ClassObjectPath = FPackageName::ExportTextPathToObjectPath(*GeneratedClassPathPtr);
 			const FString ClassName = FPackageName::ObjectPathToObjectName(ClassObjectPath);
 			FSoftObjectPath SoftPath = FSoftObjectPath(ClassObjectPath);
