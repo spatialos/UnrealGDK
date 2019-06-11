@@ -63,9 +63,12 @@ The tables below show where cross-server RPCs are executed based on where they w
 
 #### Invoking a cross-server RPC from a client-worker
 
-| **Actor ownership** | **Cross-server RPC**
-|-----------|---------
-| Owned by invoking client | Runs on invoking client-worker
-| Owned by a different client | Runs on invoking client-worker
-| Server-owned Actor | Runs on invoking client-worker
-| Unowned Actor | Runs on invoking client-worker
+The call is not processed because this type of RPC is only for a server-worker instance to call.
+
+
+<br/>
+
+------</br>
+_2019-06-06 Page updated with limited editorial review_
+_2019-06-06 Updated invoking a cross-server RPC from a client worker guidance_
+
