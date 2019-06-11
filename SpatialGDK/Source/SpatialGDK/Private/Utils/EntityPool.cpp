@@ -76,8 +76,12 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 			WeakEntityPoolPtr->OnEntityRangeExpired(ExpiringEntityRangeId);
 		}, SpatialConstants::ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS, false);
 
-		bIsReady = true;
 		bIsAwaitingResponse = false;
+		if (!bIsReady)
+		{
+			bIsReady = true;
+			NetDriver->OnEntityPoolReady();
+		}
 	});
 
 	// Reserve the Entity IDs

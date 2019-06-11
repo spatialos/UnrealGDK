@@ -4,7 +4,6 @@
 # This file is experimental and is not maintained directly by Improbable. Please use at your own risk.
 
 set -e -u -o pipefail
-if [ -n "${TEAMCITY_CAPTURE_ENV:-}" ]; then set -x; else set +x; fi
 
 if [ "$(uname -s)" != "Darwin" ]; then
     echo "This script should only be used on OS X. If you are using Windows, please run Setup.bat."
@@ -12,19 +11,11 @@ if [ "$(uname -s)" != "Darwin" ]; then
 fi
 
 function markStartOfBlock {
-    if [ -n "${TEAMCITY_CAPTURE_ENV:-}" ]; then
-        echo -e "/x23/x23teamcity[blockOpened name='$1']"
-    else
-        echo "Starting: $1"
-    fi
+    echo "Starting: $1"
 }
 
 function markEndOfBlock {
-    if [ -n "${TEAMCITY_CAPTURE_ENV:-}" ]; then
-        echo -e "/x23/x23teamcity[blockClosed name='$1']"
-    else
-        echo "Finished: $1"
-    fi
+    echo "Finished: $1"
 }
 
 pushd "$(dirname "$0")"
@@ -32,7 +23,7 @@ pushd "$(dirname "$0")"
 markStartOfBlock "$0"
 
 markStartOfBlock "Setup the git hooks"
-    if [ -z "${TEAMCITY_CAPTURE_ENV:-}" -a -e .git/hooks ]; then
+    if [ -e .git/hooks ]; then
         # Remove the old post-checkout hook.
         if [ -e .git/hooks/post-checkout ]; then rm -f .git/hooks/post-checkout; fi
 
@@ -72,7 +63,7 @@ markStartOfBlock "Setup variables"
     PINNED_CORE_SDK_VERSION=$(cat ./SpatialGDK/Extras/core-sdk.version)
     BUILD_DIR="$(dirname "$0")/SpatialGDK/Build"
     CORE_SDK_DIR="$BUILD_DIR/core_sdk"
-    WORKER_SDK_DIR="$(dirname "$0")/SpatialGDK/Source/SpatialGDK/Public/WorkerSdk"
+    WORKER_SDK_DIR="$(dirname "$0")/SpatialGDK/Source/SpatialGDK/Public/WorkerSDK"
     BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
     SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
     SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
@@ -118,7 +109,7 @@ markEndOfBlock "Unpack dependencies"
 
 markStartOfBlock "Copy standard library schema"
     echo "Copying standard library schemas to $SCHEMA_STD_COPY_DIR"
-    cp -R $BINARIES_DIR/Programs/schema $SCHEMA_STD_COPY_DIR
+    cp -R $BINARIES_DIR/Programs/schema/* $SCHEMA_STD_COPY_DIR
 markEndOfBlock "Copy standard library schema"
 
 markStartOfBlock "Copy GDK schema"
@@ -126,7 +117,7 @@ markStartOfBlock "Copy GDK schema"
     mkdir -p $SCHEMA_COPY_DIR >/dev/null 2>/dev/null
 
     echo "Copying schemas to $SCHEMA_COPY_DIR."
-    cp -R $(dirname %0)/SpatialGDK/Extras/schema $SCHEMA_COPY_DIR
+    cp -R $(dirname %0)/SpatialGDK/Extras/schema/* $SCHEMA_COPY_DIR
 markEndOfBlock "Copy GDK schema"
 
 markStartOfBlock "Build C# utilities"

@@ -59,6 +59,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS Network Update Rate"))
 	float OpsUpdateRate;
 
+	/** Replicate handover properties between servers, required for zoned worker deployments.*/
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false))
+	bool bEnableHandover;
+
 	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
 	UPROPERTY(EditAnywhere, config, Category = "Query Based Interest", meta = (ConfigRestartRequired = false, DisplayName = "Query Based Interest Enabled"))
 	bool bUsingQBI;
@@ -75,6 +79,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bEnableMetrics;
 
+	/** Display server metrics on clients.*/
+	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
+	bool bEnableMetricsDisplay;
+
 	/** Frequency that metrics are reported to SpatialOS.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false), DisplayName = "Metrics Report Rate (seconds)")
 	float MetricsReportRate;
@@ -86,6 +94,10 @@ public:
 	/** Include an order index with reliable RPCs and warn if they are executed out of order.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bCheckRPCOrder;
+
+	/** Batch entity position updates to be processed on a single frame.*/
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	bool bBatchSpatialPositionUpdates;
 
 	/** Maximum number of ActorComponents/Subobjects of the same class that can be attached to an Actor.*/
 	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (ConfigRestartRequired = false), DisplayName = "Maximum Dynamically Attached Subobjects Per Class")
