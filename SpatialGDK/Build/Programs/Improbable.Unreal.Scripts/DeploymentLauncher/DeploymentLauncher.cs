@@ -470,6 +470,7 @@ namespace Improbable
                 }
             }
 
+            // Unknown command or error occurred.
             return 1;
         }
     }
