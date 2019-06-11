@@ -4,6 +4,7 @@ set DEPLOYMENT_LAUNCHER_EXE_PATH="%~dp0..\..\..\..\..\Plugins\UnrealGDK\SpatialG
 
 if not exist %DEPLOYMENT_LAUNCHER_EXE_PATH% (
 	echo Error: Deployment launcher executable not found! Please run Setup.bat in your UnrealGDK root to generate it.
+	pause
 	exit /b 1
 )
 
