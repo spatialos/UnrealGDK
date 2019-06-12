@@ -1006,10 +1006,7 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 
 		if (!TargetObject)
 		{
-			// NWX_BEGIN - aantrim - <May 10, 2019> - [TEMP UNR-1393] Switching message to use the verbose channel, the proposed fix from the GDK team.
-			//UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
-			// NWX_END
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
 
 			continue;
 		}
