@@ -152,7 +152,13 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			{
 				bHasUnmapped = true;
 			}
-			checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
+
+			// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
+			if (!bSuccess)
+			{
+				UE_LOG(LogRep, Warning, TEXT("AddProperty: NetSerialize %s failed."), *Struct->GetFullName());
+				return;
+			}
 		}
 		else
 		{
