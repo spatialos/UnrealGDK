@@ -40,24 +40,12 @@ After you have selected **Create Project**, the Unreal Engine generates the nece
 
 After Visual Studio has opened, save your solution then close Visual Studio before proceeding to the Clone the GDK step.
 
-### 2: Clone the GDK
+### 2: Build the dependencies 
 
-Now you need to clone the SpatialOS GDK for Unreal into your project. To do this: 
-
-1. In **File Explorer**, navigate to the `<GameRoot>` directory and create a `Plugins` folder in this directory.
-2. In a Git Bash terminal window, navigate to `<GameRoot>\Plugins` and clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
-    * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
-    * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`
-
-The GDK's [default branch (GitHub documentation)](https://help.github.com/en/articles/setting-the-default-branch) is `release`. This means that, at any point during the development of your game, you can get the latest release of the GDK by running `git pull` inside the `UnrealGDK` directory. When you pull the latest changes, you must also run `git pull` inside the `UnrealEngine` directory, so that your GDK and your Unreal Engine fork remain in sync.
-
-**Note:** You need to ensure that the root directory of the GDK for Unreal repository is called `UnrealGDK` so the file path is: `<GameRoot>\Plugins\UnrealGDK\...`
-
-### 3: Build the dependencies 
+> **Note:**  If you built the Unreal Engine Fork manually, you must clone and set up the GDK plugin by following the [manual GDK installation instructions]({{urlRoot}}/content/manual-engine-build#installing-the-spatialos-gdk-for-unreal) before you follow the rest of this guide.</br>
 
 To use the Starter Template, you must build the GDK for Unreal module dependencies and then add the GDK to your project. To do this: 
 
-1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository (`<GameRoot>\Plugins\UnrealGDK\...`), and double-click **`Setup.bat`**. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in. 
 1. In **File Explorer**, navigate to your `<GameRoot>` directory, right-click `<YourProject>`.uproject and select Generate Visual Studio Project files.
 1. In the same directory, double-click **`<YourProject>`.sln** to open it with Visual Studio.
 1. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
@@ -68,13 +56,13 @@ _Image: The Visual Studio toolbar_
 
 Note: Ensure that your Visual Studio Solution Configuration is set to **Development Editor**.
 
-### 4: Deploy your project 
+### 3: Deploy your project 
 
 To test your game, you need to launch a [deployment]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#deployments). This means launching your game with its own instance of the [SpatialOS Runtime]({{urlRoot}}/content/glossary#spatialos-runtime), either locally using a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment), or in the cloud using a [cloud deployment](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment).
 
 When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots), and then starts up the [worker instances]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#worker-instances-and-worker-types) needed to run the game world.
 
-### 5: Deploy locally with multiple clients
+### 4: Deploy locally with multiple clients
 
 Before you launch a deployment (local or cloud) you must generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) and a [snapshot]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots). 
 
@@ -137,7 +125,7 @@ To launch a local deployment:
 
 > **TIP:** Check out the [local deployment workflow page]({{urlRoot}}/content/local-deployment-workflow) for a reference diagram of this workflow.
 
-### 6: Launch a cloud deployment
+### 5: Launch a cloud deployment
 
 To launch a cloud deployment, you need to prepare your server-worker and client-worker [assemblies](https://docs.improbable.io/reference/latest/shared/glossary), and upload them to the cloud.        
 
@@ -257,7 +245,7 @@ A valid launch command looks like this:
 spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
 ```
 
-### 7. Play your game
+### 6. Play your game
 
 ![]({{assetRoot}}assets/tutorial/console.png)
 _Image: The SpatialOS Console_

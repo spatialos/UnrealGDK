@@ -26,21 +26,20 @@ We recommend following steps 1 to 3 of the [Get started]({{urlRoot}}/content/get
 Before porting your project: 
 
 * Set up the GDK and Starter Template.</br>
-If you haven't done this already, follow the three steps in _Get started_ guide in order to port your game:
+  If you haven't done this already, follow the three steps in _Get started_ guide in order to port your game:
     1. [Get started 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     1. [Get started 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
     1. [Get started 3 - Set up a project: The Starter Template]({{urlRoot}}/content/get-started/gdk-template) </br>
-    (Note that you must follow the Starter Template instructions and not the Example Project instructions.)
+  (Note that you must follow the Starter Template instructions and not the Example Project instructions.)
 </br>
 </br>
 * Update your local version of the SpatialOS CLI.</br>
 Open a terminal window and run the command `spatial update` to ensure your [SpatialOS CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli) installation is up to date. 
 </br>
-</br>
 
+> **Note:**  If you built the Unreal Engine Fork manually, you must clone and set up the GDK plugin by following the [manual GDK installation instructions]({{urlRoot}}/content/manual-engine-build#installing-the-spatialos-gdk-for-unreal) before you follow the rest of this guide.</br>
 
 ## 2. Set up the project structure
-
 
 1. Create a new empty directory to represent your `<ProjectRoot>` and move your `<GameRoot>` directory inside of it.  
    
@@ -84,23 +83,7 @@ Follow this step to set up your project paths:
 
     **Note**: The helper scripts `LaunchClient.bat` and `LaunchServer.bat` will not work if you do not follow this step correctly. 
 
-## 3. Clone the GDK
-
-Now you need to clone the SpatialOS GDK for Unreal into your project. To do this: 
-
-1. In **File Explorer**, navigate to the `<GameRoot>` directory and create a `Plugins` folder in this directory.
-2. In a Git Bash terminal window, navigate to `<GameRoot>\Plugins` and clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
-    * (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
-    * (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`<br/><br/>
-**Note:** You need to ensure that the root directory of the GDK for Unreal repository is called `UnrealGDK` so the file path is: `<GameRoot>\Plugins\UnrealGDK\...`<br/>
-3. Run `Setup.bat` which is in the root directory of the GDK repository (this should be `<ProjectRoot>\<GameRoot>\Plugins\UnrealGDK\`). To do this either:
-    - In a terminal window, navigate to the root directory of the GDK and run: `Setup.bat` or
-    - In your file manager, double-click the `Setup.bat` file.
-      
-
-    **Note**:`Setup.bat` will automatically open the SpatialOS authorization page in your default browser. You may be prompted to sign into your SpatialOS account if you have not already. 
-
-## 4. Add the SpatialGDK module to your project
+## 3. Add the SpatialGDK module to your project
 
 1. In **File Explorer**, navigate to `\<ProjectRoot>\<GameRoot>\Source\<YourProject>\`.
 2. Open the `<YourProject>.build.cs` file in a code editor and add add `"SpatialGDK"` to `PublicDependencyModuleNames`.
@@ -123,7 +106,7 @@ Now you need to clone the SpatialOS GDK for Unreal into your project. To do this
             );
     ```
 
-## 5. Build your project
+## 4. Build your project
 Set up your Unreal project to work with the GDK for Unreal fork of the Unreal Engine, which you cloned and installed in the [Before you start](#1-before-you-start) section. To do this:
 
 1. In **File Explorer**, navigate to `<ProjectRoot>\<GameRoot>`.
@@ -137,7 +120,7 @@ Set up your Unreal project to work with the GDK for Unreal fork of the Unreal En
 1. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
 
 
-## 6. Modify Unreal classes for GDK compatibility
+## 5. Modify Unreal classes for GDK compatibility
 You must modify your `GameInstance` class to work properly with the GDK.  
 
 1. Make your `GameInstance` inherit from `SpatialGameInstance`.  <br/>
@@ -171,7 +154,7 @@ You must modify your `GameInstance` class to work properly with the GDK.
 
     ![spatial game instance reparent]({{assetRoot}}assets/screen-grabs/spatial-game-instance-reparent.png)<br/>_Image: The Blueprint class settings screen_<br/>
 
-## 7. Generate schema and a snapshot
+## 6. Generate schema and a snapshot
 You need to generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) and generate a [snapshot]({{urlRoot}}/content/how-to-use-snapshots) before you start your deployment. To do this:
 
 1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
@@ -181,7 +164,7 @@ You need to generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
     _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
-## 8. Launch your game
+## 7. Launch your game
 1. Switch your game project to use the SpatialOS networking. To do this: 
 
 * In the Unreal Editor, from the toolbar, open the **Play** drop-down menu and check two checkboxes:

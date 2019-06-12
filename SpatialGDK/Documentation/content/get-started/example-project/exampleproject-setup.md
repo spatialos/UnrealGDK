@@ -2,7 +2,7 @@
 
 # The Example Project 
 
-If you used the **InstallGDK.bat** script to set up your Unreal Engine Fork then you can skip this step and open the **GDKShooter.uproject** by navigating to your Engine Fork `\samples\UnrealGDKExampleProject` directory and double clicking **GDKShooter.uproject**.
+If you used the **InstallGDK.bat** script to build your Unreal Engine Fork then you can skip this step and open the **GDKShooter.uproject** by navigating to your Engine Fork's `\samples\UnrealGDKExampleProject` directory and double-clicking **GDKShooter.uproject**.
 
 Follow the steps below if you manually built your Engine Fork, or if you want to download and set up the Example Project manually. 
 
