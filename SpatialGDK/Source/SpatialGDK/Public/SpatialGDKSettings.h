@@ -63,6 +63,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false))
 	bool bEnableHandover;
 
+	/** Pack unreliable RPCs sent during the same frame into a single update. */
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Pack Unreliable RPCs"))
+	bool bPackUnreliableRPCs;
+
 	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
 	UPROPERTY(EditAnywhere, config, Category = "Query Based Interest", meta = (ConfigRestartRequired = false, DisplayName = "Query Based Interest Enabled"))
 	bool bUsingQBI;
