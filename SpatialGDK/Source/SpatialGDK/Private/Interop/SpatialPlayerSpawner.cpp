@@ -4,6 +4,7 @@
 
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
+#include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
@@ -46,9 +47,15 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 		UniqueIdReader << UniqueId;
 
 		FName OnlinePlatformName = FName(*GetStringFromSchema(Payload, 3));
+		bool bSimulatedPlayer = Schema_GetBool(Payload, 4);
 
 		URLString.Append(TEXT("?workerAttribute=")).Append(Attributes);
-
+		if (bSimulatedPlayer)
+		{
+			// Start in spectator mode
+			URLString += TEXT("?simulatedPlayer=1");
+		}
+		
 		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
 	}
 
@@ -107,6 +114,9 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 			UniqueIdWriter << UniqueId;
 			AddBytesToSchema(RequestObject, 2, UniqueIdWriter);
 			AddStringToSchema(RequestObject, 3, OnlinePlatformName.ToString());
+			UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(NetDriver);
+			bool bSimulatedPlayer = GameInstance ? GameInstance->IsSimulatedPlayer() : false;
+			Schema_AddBool(RequestObject, 4, bSimulatedPlayer);
 
 			NetDriver->Connection->SendCommandRequest(Op.results[0].entity_id, &CommandRequest, 1);
 		}
