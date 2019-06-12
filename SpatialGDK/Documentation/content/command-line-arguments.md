@@ -59,6 +59,15 @@ When you use either method to connect a worker instance to a deployment, you can
                 <p>Default: <code>false</code></p>
             </td>
         </tr>
+        <tr>
+            <td style="width: 30%;"><code>-linkProtocol</code></td>
+            <td style="width: 8%;">string</td>
+            <td style="width: 62%;">The <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#choosing-a-network-stack">network stack</a> that the worker instance uses to communicate with the SpatialOS <a href="https://docs.improbable.io/reference/13.7/shared/glossary#the-runtime">Runtime</a>.
+                The available options are <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#kcp">KCP</a> and <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#tcp">TCP</a>.&nbsp;
+                <p><strong>Note</strong>: The GDK does not support <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#raknet">RakNet</a> network stack.</p>
+                <p>Default: <code>KCP</code></p>
+            </td>
+        </tr>
     </tbody>
 </table>
 
@@ -139,7 +148,7 @@ In addition to the arguments for worker connections, you can use the following a
             <td style="width: 30%;"><code>-useQBI</code></td>
             <td style="width: 8%;">bool</td>
             <td style="width: 62%;">Set to <code>true</code> to enable <a href="https://docs.improbable.io/reference/latest/shared/worker-configuration/query-based-interest#query-based-interest-beta">query-based interest</a>.
-                <p>Default: <code>false</code></p>
+                <p>Default: <code>true</code></p>
             </td>
         </tr>
         <tr>
@@ -158,12 +167,13 @@ In addition to the arguments for worker connections, you can use the following a
             </td>
         </tr>
         <tr>
-            <td style="width: 30%;"><code>-linkProtocol</code></td>
-            <td style="width: 8%;">string</td>
-            <td style="width: 62%;">The <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#choosing-a-network-stack">network stack</a> that the worker instance uses to communicate with the SpatialOS <a href="https://docs.improbable.io/reference/13.7/shared/glossary#the-runtime">Runtime</a>.
-                The available options are <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#kcp">KCP</a> and <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#tcp">TCP</a>.
-                The default value is <code>KCP</code>.
-                <p><strong>Note</strong>: The GDK does not support <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#raknet">RakNet</a> network stack.</p>
+            <td style="width: 30%;"><code>-OverrideSpatialNetworking</code></td>
+            <td style="width: 8%;">bool</td>
+            <td style="width: 62%;">Use this argument to override any other setting that you&#39;ve configured for the networking mode:
+                <ul>
+                    <li>When you run the command with the <code>-OverrideSpatialNetworking</code> or the <code>-OverrideSpatialNetworking=true</code> argument, you enable SpatialOS networking.</li>
+                    <li>When you run the command with the <code>-OverrideSpatialNetworking=false</code> argument, you disable SpatialOS networking and use native Unreal networking instead.</li>
+                </ul>
             </td>
         </tr>
     </tbody>
