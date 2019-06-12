@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added runtime option to disable property handover when running in non-zoned deployments - bEnableHandover.
 - Added runtime option to auto spawn the ASpatialMetricsDisplay for remote debugging of server metrics - bEnableMetricsDisplay.
 - Added runtime option to batch spatial position updates to runtime.
+- Added runtime option to pack unreliable RPCs from the same frame in a single component update to save bandwidth - bPackUnreliableRPCs.
 
 ### Bug fixes:
 - BeginPlay is not called with authority when checking out entities from Spatial.
