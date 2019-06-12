@@ -10,13 +10,13 @@
 #include "UObject/UnrealType.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
-class FToolBarBuilder;
 class FMenuBuilder;
-class FUICommandList;
-class USoundBase;
-class SSpatialGDKSimulatedPlayerDeployment;
 class FSpatialGDKEditor;
+class FToolBarBuilder;
+class FUICommandList;
+class SSpatialGDKSimulatedPlayerDeployment;
 class SWindow;
+class USoundBase;
 
 struct FWorkerTypeLaunchSection;
 
