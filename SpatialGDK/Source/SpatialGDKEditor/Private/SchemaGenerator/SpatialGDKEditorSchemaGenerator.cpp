@@ -572,7 +572,7 @@ void RunSchemaCompiler()
 	}
 
 	// Get the schema_compiler path and arguments
-	FString SchemaCompilerExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe")));
+	FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));
 
 	FString SchemaDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("schema"));
 	FString ImprobableSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
