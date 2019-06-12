@@ -392,27 +392,27 @@ public:
 	void SetPrimaryRegionCode(const ERegionCode::Type RegionCode);
 	FORCEINLINE FText GetPrimaryRegionCode() const
 	{
-		UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
-
 		if (!IsRegionCodeValid(PrimaryDeploymentRegionCode))
 		{
 			return FText::FromString(TEXT("Invalid"));
 		}
 
-		return pEnum->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
+		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
+
+		return Region->GetDisplayNameTextByValue(static_cast<int64>(PrimaryDeploymentRegionCode.GetValue()));
 	}
 
 	void SetSimulatedPlayerRegionCode(const ERegionCode::Type RegionCode);
 	FORCEINLINE FText GetSimulatedPlayerRegionCode() const
 	{
-		UEnum* pEnum = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
-
 		if (!IsRegionCodeValid(SimulatedPlayerDeploymentRegionCode))
 		{
 			return FText::FromString(TEXT("Invalid"));
 		}
 
-		return pEnum->GetDisplayNameTextByValue(static_cast<int64>(SimulatedPlayerDeploymentRegionCode.GetValue()));
+		UEnum* Region = FindObject<UEnum>(ANY_PACKAGE, TEXT("ERegionCode"), true);
+
+		return Region->GetDisplayNameTextByValue(static_cast<int64>(SimulatedPlayerDeploymentRegionCode.GetValue()));
 	}
 
 	void SetSimulatedPlayersEnabledState(bool IsEnabled);
