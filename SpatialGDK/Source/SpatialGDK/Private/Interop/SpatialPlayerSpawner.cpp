@@ -52,7 +52,6 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 		URLString.Append(TEXT("?workerAttribute=")).Append(Attributes);
 		if (bSimulatedPlayer)
 		{
-			// Start in spectator mode
 			URLString += TEXT("?simulatedPlayer=1");
 		}
 		
