@@ -1,0 +1,21 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "SimulatedPlayerMovementComponent.generated.h"
+
+/**
+ * 
+ */
+UCLASS()
+class GAME_API USimulatedPlayerMovementComponent : public UCharacterMovementComponent
+{
+	GENERATED_BODY()
+	
+public:
+	// Override to redirect these movement requests to the controlled player
+	virtual void RequestDirectMove(const FVector& MoveVelocity, bool bForceMaxSpeed) override;
+	virtual void RequestPathMove(const FVector& MoveInput) override;	
+};
