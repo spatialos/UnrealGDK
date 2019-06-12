@@ -251,6 +251,34 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Generate placeholder entities in snapshot"))
 	bool bGeneratePlaceholderEntitiesInSnapshot;
 
+	FORCEINLINE FString GetGDKPluginDir() const
+	{
+		FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
+
+		if (!FPaths::DirectoryExists(PluginDir))
+		{
+			// If the Project Plugin doesn't exist then use the Engine Plugin.
+			PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
+			ensure(FPaths::DirectoryExists(PluginDir));
+		}
+
+		return PluginDir;
+	}
+
+	FORCEINLINE FString GetSpotPath() const
+	{
+		FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
+
+		if (!FPaths::DirectoryExists(PluginDir))
+		{
+			// If the Project Plugin doesn't exist then use the Engine Plugin.
+			PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
+			ensure(FPaths::DirectoryExists(PluginDir));
+		}
+
+		return  FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe")));
+	}
+
 	FORCEINLINE FString GetSpatialOSDirectory() const
 	{
 		return SpatialOSDirectory.Path.IsEmpty()

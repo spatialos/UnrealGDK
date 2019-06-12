@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
+#pragma optimize("", off)
 #include "SpatialGDKEditorToolbar.h"
 #include "Async/Async.h"
 #include "Editor.h"
@@ -28,6 +28,8 @@
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
 #include "Serialization/JsonWriter.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -63,6 +65,10 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = GetDefault<USpatialGDKEditorSettings>()->bStopSpatialOnExit;
+
+	// For checking whether we can stop or start.
+	TimeSinceLastStatusCheck = FDateTime::Now();
+	bStopCanExecute = false;
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -415,33 +421,29 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	}
 
 	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
-	const FString CmdExecutable = TEXT("cmd.exe");
 
-	// Get the correct plugin directory.
-	// TODO: Refactor this PluginDir method into re-usable code.
-	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
+	FString SpotExe = SpatialGDKSettings->GetSpotPath();
 
-	if (!FPaths::DirectoryExists(PluginDir))
+	// TODO: Read the project name from the spatialos.json
+
+	// TODO: Removed build-build config. Add it back
+	const FString SpatialCmdArgument = FString::Printf(
+		TEXT("alpha deployment create --launch-config=\"%s\" --name=testname --project-name=your_project_name_here --json %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
+
+	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting spot.exe with `%s` arguments."), *SpatialCmdArgument);
+
+	// Create pipes to read output of spot.
+	void* ReadPipe;
+	void* WritePipe;
+	if(!FPlatformProcess::CreatePipe(ReadPipe, WritePipe))
 	{
-		// If the Project Plugin doesn't exist then use the Engine Plugin.
-		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
-		ensure(FPaths::DirectoryExists(PluginDir));
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to create pipes for local launch!"));
+		return;
 	}
 
-	// Get the schema_compiler path and arguments
-	FString SpotExe = FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe")));
-
-
-	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& \"%s\" alpha deployment create --launch-config=\"%s\" --name=testname --project-name=testprojectname %s ^& pause"), *SpotExe, *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags);
-
-	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
-	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
-	// execute it. We currently can't use pipes to capture output as it doesn't work properly with current
-	// spatial.exe.
 	SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
-		*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
-		*ExecuteAbsolutePath, nullptr, nullptr);
+		*(SpotExe), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
+		*ExecuteAbsolutePath, WritePipe, ReadPipe);
 
 	FNotificationInfo Info(SpatialOSStackProcHandle.IsValid() == true
 							 ? FText::FromString(TEXT("SpatialOS Starting..."))
@@ -449,6 +451,12 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	Info.ExpireDuration = 3.0f;
 	Info.bUseSuccessFailIcons = true;
 	TSharedPtr<SNotificationItem> NotificationItem = FSlateNotificationManager::Get().AddNotification(Info);
+
+	// TODO: This is blocking, move to async.
+	FPlatformProcess::WaitForProc(SpatialOSStackProcHandle);
+
+	FString WritePipeResult = FPlatformProcess::ReadPipe(WritePipe);
+	FString ReadPipeResult = FPlatformProcess::ReadPipe(ReadPipe);
 
 	if (!SpatialOSStackProcHandle.IsValid())
 	{
@@ -462,6 +470,9 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	else
 	{
 		NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
+
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("SPOT: %s"), *WritePipeResult);
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("SPOT: %s"), *ReadPipeResult);
 	}
 
 	NotificationItem->ExpireAndFadeout();
@@ -505,9 +516,99 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute() const
 	return !SpatialOSStackProcHandle.IsValid() && !FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID);
 }
 
-bool FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute() const
+TSharedPtr<FJsonObject> ParseJson(FString RawJsonString)
 {
-	return SpatialOSStackProcHandle.IsValid();
+	TSharedPtr<FJsonObject> JsonParsed;
+	TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(RawJsonString);
+	FJsonSerializer::Deserialize(JsonReader, JsonParsed);
+
+	return JsonParsed;
+}
+
+// TODO: How often is this called? might be expensive to call Spot all the time.
+bool FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute()
+{
+	FDateTime ModTime = TimeSinceLastStatusCheck;
+	ModTime += FTimespan::FromSeconds(2);
+	FDateTime NowTime = FDateTime::Now();
+
+	if(NowTime < ModTime)
+	{
+		return bStopCanExecute;
+	}
+
+	// TODO: Seems strange to have this here, is it expensive?
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	FString SpotExe = SpatialGDKSettings->GetSpotPath();
+
+	const FString SpotListArgument = FString::Printf(
+		TEXT("alpha deployment list --project-name=your_project_name_here --json ^& pause"));
+
+	// Create pipes to read output of spot.
+	void* ReadPipe;
+	void* WritePipe;
+	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
+
+	FProcHandle SpotListHandle;
+	uint32 SpotListProcessID;
+
+	SpotListHandle = FPlatformProcess::CreateProc(
+		*(SpotExe), *SpotListArgument, true, false, false, &SpotListProcessID, 0,
+		*SpatialGDKSettings->GetSpatialOSDirectory(), WritePipe, ReadPipe);
+
+	if (!SpotListHandle.IsValid())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to spot list"));
+		return bStopCanExecute;
+	}
+
+
+	FString WritePipeResult = FPlatformProcess::ReadPipe(WritePipe);
+	FString ReadPipeResult = FPlatformProcess::ReadPipe(ReadPipe);
+
+	// Make sure the pipe doesn't get clogged.
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [&ReadPipe, &ReadPipeResult, &SpotListHandle]
+	{
+		while(FPlatformProcess::IsProcRunning(SpotListHandle))
+		{
+			ReadPipeResult += FPlatformProcess::ReadPipe(ReadPipe);
+		}
+	});
+
+	// TODO: This is blocking, move to async.
+	if (FPlatformProcess::IsProcRunning(SpotListHandle))
+	{
+		FPlatformProcess::WaitForProc(SpotListHandle);
+	}
+
+	TSharedPtr<FJsonObject> SpotJsonResult = ParseJson(ReadPipeResult);
+	if(!SpotJsonResult.IsValid())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Json parsing of spot result failed. Can't check deployment status."));
+	}
+
+	TSharedPtr<FJsonObject> SpotJsonContent = SpotJsonResult->GetObjectField(TEXT("content"));
+
+	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spot deployments --------------"));
+
+	// TODO: This is crashing randomly, use TryGetArrayField.
+	TArray<TSharedPtr<FJsonValue>> deployments = SpotJsonContent->GetArrayField(TEXT("deployments"));
+
+	for (TSharedPtr<FJsonValue> JsonDeployment : deployments)
+	{
+		FString DeploymentStatus = JsonDeployment->AsObject()->GetStringField(TEXT("status"));
+		if (DeploymentStatus == TEXT("RUNNING"))
+		{
+			FString DeploymentId = JsonDeployment->AsObject()->GetStringField(TEXT("id"));
+
+			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Running deployment found: %s"), *DeploymentId);
+			bStopCanExecute = true;
+		}
+	}
+
+	TimeSinceLastStatusCheck = FDateTime::Now();
+	return bStopCanExecute;
 }
 
 void FSpatialGDKEditorToolbarModule::CheckForRunningStack()

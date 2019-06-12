@@ -52,7 +52,7 @@ private:
 	void StartSpatialOSButtonClicked();
 	void StopSpatialOSButtonClicked();
 	bool StartSpatialOSStackCanExecute() const;
-	bool StopSpatialOSStackCanExecute() const;
+	bool StopSpatialOSStackCanExecute();
 
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
@@ -98,4 +98,7 @@ private:
 
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
+
+	FDateTime TimeSinceLastStatusCheck;
+	bool bStopCanExecute;
 };
