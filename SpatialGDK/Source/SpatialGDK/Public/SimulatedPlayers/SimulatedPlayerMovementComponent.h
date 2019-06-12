@@ -10,7 +10,7 @@
  * 
  */
 UCLASS()
-class GAME_API USimulatedPlayerMovementComponent : public UCharacterMovementComponent
+class SPATIALGDK_API USimulatedPlayerMovementComponent : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
 	
