@@ -3,6 +3,7 @@
 #include "SpatialGDKSettings.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
+#include "GameFramework/Actor.h"
 
 #if WITH_EDITOR
 #include "Modules/ModuleManager.h"
@@ -31,6 +32,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(true)
 	, bEnableServerQBI(bUsingQBI)
 	, bPackUnreliableRPCs(true)
+	, ActorGroups({
+		TPairInitializer<const FName&, const FActorGroupList&>(FName(TEXT("Default")), FActorGroupList({ AActor::StaticClass() }))
+	})
 {
 }
 

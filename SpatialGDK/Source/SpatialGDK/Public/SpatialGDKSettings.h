@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "ActorGroupManager.h"
 
 #include "SpatialGDKSettings.generated.h"
+
 
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
@@ -107,5 +109,7 @@ public:
 	/** Pack unreliable RPCs sent during the same frame into a single update. */
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bPackUnreliableRPCs;
-};
 
+	UPROPERTY(EditAnywhere, Config, Category = "Actor Groups")
+	TMap<FName, FActorGroupList> ActorGroups;
+};
