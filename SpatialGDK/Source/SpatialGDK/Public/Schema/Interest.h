@@ -55,7 +55,7 @@ struct QueryConstraint
 	TArray<QueryConstraint> AndConstraint;
 	TArray<QueryConstraint> OrConstraint;
 
-	FORCEINLINE bool IsValid()
+	FORCEINLINE bool IsValid() const
 	{
 		if (SphereConstraint.IsSet())
 		{
