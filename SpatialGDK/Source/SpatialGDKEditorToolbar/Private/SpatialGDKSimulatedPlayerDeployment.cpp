@@ -510,10 +510,14 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnLaunchClicked()
 			FSimpleDelegate::CreateLambda([NotificationItem]() {
 				NotificationItem->SetText(FText::FromString(TEXT("Successfully initiated launching of the cloud deployment.")));
 				NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
+				NotificationItem->SetExpireDuration(7.5f);
+				NotificationItem->ExpireAndFadeout();
 			}),
 			FSimpleDelegate::CreateLambda([NotificationItem]() {
 				NotificationItem->SetText(FText::FromString(TEXT("Failed to launch the DeploymentLauncher script properly.")));
 				NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+				NotificationItem->SetExpireDuration(7.5f);
+				NotificationItem->ExpireAndFadeout();
 			})
 		);
 		return FReply::Handled();
