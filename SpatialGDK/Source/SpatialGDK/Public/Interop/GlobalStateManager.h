@@ -50,6 +50,7 @@ public:
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void SetCanBeginPlay(bool bInCanBeginPlay);
+	void SetAuthBeginPlayCalled(const bool bAuthBeginPlayCalled);
 
 	void TryTriggerBeginPlay();
 
@@ -73,6 +74,7 @@ public:
 
 	// Startup Actor Manager Component
 	bool bCanBeginPlay;
+	bool bAuthBeginPlayCalled;
 
 #if WITH_EDITOR
 	void OnPrePIEEnded(bool bValue);
@@ -85,8 +87,19 @@ private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
 	void ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate);
+	void ApplyAuthBeginPlayCalledUpdate(const bool bAuthBeginPlayCalledUpdate);
 
-	void BecomeAuthoritativeOverAllActors();
+	struct ActorAuthCapture
+	{
+		// CMS_TODO: potentially use a weak pointer here
+		AActor* Actor;
+		TEnumAsByte<ENetRole> Role;
+		TEnumAsByte<ENetRole> RemoteRole;
+	};
+
+	void SetRolesOnAllReplicatedActors(const ENetRole InRole, const ENetRole InRoleAuthority, TArray<ActorAuthCapture>* OutOriginalActorAuths);
+	void RestoreRolesOnCapturedActors(const TArray<ActorAuthCapture>& OutOriginalActorAuths);
+
 	void TriggerBeginPlay();
 
 #if WITH_EDITOR

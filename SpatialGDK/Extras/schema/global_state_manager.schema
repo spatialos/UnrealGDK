@@ -24,6 +24,7 @@ component DeploymentMap {
 component StartupActorManager {
     id = 9993;
     bool can_begin_play = 1;
+    bool auth_begin_play_called = 2;
 }
 
 component GSMShutdown {

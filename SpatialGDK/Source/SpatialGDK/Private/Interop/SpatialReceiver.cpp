@@ -478,7 +478,47 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Taken from PostNetInit
 		if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 		{
+			if (!NetDriver->IsServer())
+			{
+				check(!EntityActor->HasAuthority());
+			}
+
+			// For a given replicated EntityActor and deployment, we should only ever call BeginPlay() with authority once,
+			// and it should have already happened by this point:
+
+			// For Startup actors - BeginPlay() with auth called by worker with authority over GSM
+			// For Dynamic actors - BeginPlay() with auth called immediately after creation on worker that created them
+
+			// CMS_TODO: verify there aren't any other cases that need to call BeginPlay() here with auth
+			// CMS_TODO: verify singletons / actors from sublevels work correctly
+
+			// That being said, it is possible to reach this code and already be authoritative over the EntityActor we are receiving
+			// over the wire (even though the AuthorityGained op has not been processed yet).  This happens because we receive
+			// Role/RemoteRole through initial replicated properties.  There is special handling for these fields in ComponentReader which
+			// will swap them under certain circumstances, but it does not apply to this case.  This means there are cases
+			// where we need to adjust the EntityActor authority to be non-auth for the duration of the DispatchBeginPlay() call below.
+			
+			// One example of this: An actor that was spawned dynamically then saved into a snapshot, and we have restarted the deployment from that snapshot,
+			// and received this actor over the wire on the new authoritative server.
+			
+			bool bRestoreAuthority = false;
+			const ENetRole OriginalRole = EntityActor->Role;
+			const ENetRole OriginalRemoteRole = EntityActor->RemoteRole;
+
+			if (EntityActor->HasAuthority())
+			{
+				EntityActor->Role = OriginalRemoteRole;
+				EntityActor->RemoteRole = OriginalRole;
+				bRestoreAuthority = true;
+			}
+
 			EntityActor->DispatchBeginPlay();
+
+			if (bRestoreAuthority)
+			{
+				EntityActor->Role = OriginalRole;
+				EntityActor->RemoteRole = OriginalRemoteRole;
+			}
 		}
 
 		if (EntityActor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
@@ -966,7 +1006,11 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 
 		if (!TargetObject)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
+			// NWX_BEGIN - aantrim - <May 10, 2019> - [TEMP UNR-1393] Switching message to use the verbose channel, the proposed fix from the GDK team.
+			//UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
+			// NWX_END
+
 			continue;
 		}
 
