@@ -47,11 +47,11 @@ If you have registered the environment variable correctly, this returns the path
 This installs prerequisites for building Unreal Engine 4.<br>
 This process can take a long time to complete.
 
-> **Note:** While running the Setup file, you should see `Checking dependencies (excluding Mac, Android)...`. If it also says `excluding Linux`, make sure that you set the environment variable `LINUX_MULTIARCH_ROOT` correctly, and run the Setup file again.
+    > **Note:** While running the Setup file, you should see `Checking dependencies (excluding Mac, Android)...`. If it also says `excluding Linux`, make sure that you set the environment variable `LINUX_MULTIARCH_ROOT` correctly, and run the Setup file again.
 
 1. In the same directory, double-click **GenerateProjectFiles.bat**. This file automatically sets up the project files you require to build Unreal Engine 4.<br/>
 
-> **Note:** If you encounter the message, `error MSB4036: The "GetReferenceNearestTargetFrameworkTask" task was not found` when building with Visual Studio 2017, check that you have the NuGet Package Manager installed via the Visual Studio installer.    
+    > **Note:** If you encounter the message, `error MSB4036: The "GetReferenceNearestTargetFrameworkTask" task was not found` when building with Visual Studio 2017, check that you have the NuGet Package Manager installed via the Visual Studio installer.    
 
 1. In the same directory, open **UE4.sln** in Visual Studio.
 1. In Visual Studio, on the toolbar, navigate to **Build** > **Configuration Manager**; set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
@@ -63,9 +63,7 @@ You have now built Unreal Engine 4 with cross-compilation for Linux.
 
 > **Note:** Once you've built Unreal Engine, *don't move it into another directory*. That will break the integration.
 
-</br>
-</br>
-**> Next:** 3 - Set up a project...</br>
+### Step 5: Set up a project
 
 Choose either:
 
