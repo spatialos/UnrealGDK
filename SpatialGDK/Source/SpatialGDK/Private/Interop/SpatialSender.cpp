@@ -243,43 +243,63 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
 	{
-		UObject* Subobject = RepSubobject.Value()->GetWeakObjectPtr().Get();
+		if(UObject* Subobject = RepSubobject.Value()->GetWeakObjectPtr().Get())
 		{
-			//PackageMap->GetUnrealObjectRefFrom
+			const FClassInfo& SubobjectInfo = ClassInfoManager->GetOrCreateClassInfoByObject(Subobject);
+
+			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
+			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+
+			// Reset unresolved objects so they can be filled again by DataFactory
+			UnresolvedObjectsMap.Empty();
+			HandoverUnresolvedObjectsMap.Empty();
+
+			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+			ComponentDatas.Append(ActorSubobjectDatas);
+
+			for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
+			{
+				QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
+			}
+
+			for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
+			{
+				QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
+			}
 		}
 	}
 
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	{
-		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
+	//for (auto& SubobjectInfoPair : Info.SubobjectInfo)
+	//{
+	//	FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
-		if (!Subobject.IsValid())
-		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("Tried to generate initial replication state for an invalid sub-object (class %s, sub-object %s, actor %s). Object may have been deleted or is PendingKill."), *SubobjectInfo.Class->GetName(), *SubobjectInfo.SubobjectName.ToString(), *Actor->GetName());
-			continue;
-		}
+	//	TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
+	//	if (!Subobject.IsValid())
+	//	{
+	//		UE_LOG(LogSpatialSender, Warning, TEXT("Tried to generate initial replication state for an invalid sub-object (class %s, sub-object %s, actor %s). Object may have been deleted or is PendingKill."), *SubobjectInfo.Class->GetName(), *SubobjectInfo.SubobjectName.ToString(), *Actor->GetName());
+	//		continue;
+	//	}
 
-		FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
-		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+	//	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
+	//	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-		// Reset unresolved objects so they can be filled again by DataFactory
-		UnresolvedObjectsMap.Empty();
-		HandoverUnresolvedObjectsMap.Empty();
+	//	// Reset unresolved objects so they can be filled again by DataFactory
+	//	UnresolvedObjectsMap.Empty();
+	//	HandoverUnresolvedObjectsMap.Empty();
 
-		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
-		ComponentDatas.Append(ActorSubobjectDatas);
+	//	TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+	//	ComponentDatas.Append(ActorSubobjectDatas);
 
-		for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
-		{
-			QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
-		}
+	//	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
+	//	{
+	//		QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
+	//	}
 
-		for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
-		{
-			QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
-		}
-	}
+	//	for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
+	//	{
+	//		QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
+	//	}
+	//}
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
@@ -306,6 +326,81 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	}
 
 	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
+}
+
+void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info)
+{
+	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
+	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+
+	FUnresolvedObjectsMap UnresolvedObjectsMap;
+	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
+	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, false, NetDriver);
+
+	// Reset unresolved objects so they can be filled again by DataFactory
+	UnresolvedObjectsMap.Empty();
+	HandoverUnresolvedObjectsMap.Empty();
+
+	TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+
+	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
+	{
+		QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
+	}
+
+	for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
+	{
+		QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
+	}
+
+	for (Worker_ComponentData& ComponentData : ActorSubobjectDatas)
+	{
+		Connection->SendAddComponent(EntityId, ComponentData);
+	}
+}
+
+void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, const FClassInfo* Info)
+{
+	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
+
+	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
+
+	TSharedRef<FPendingSubobjectAttachment>& PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
+
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+	{
+		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			PendingSubobjectAttachment->PendingAuthorityDelegations.Add(ComponentId);
+			Receiver->PendingEntitySubobjectDelegations.Add(MakePair(Channel->GetEntityId(), ComponentId), PendingSubobjectAttachment);
+
+			EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[Type], ServerAttribute);
+		}
+	});
+
+	Connection->SendComponentUpdate(Channel->GetEntityId(), EntityACL->CreateEntityAclUpdate());
+}
+
+void USpatialSender::FinishSubobjectAttachment(const FPendingSubobjectAttachment& PendingSubobjectAttachment)
+{
+	if (!PendingSubobjectAttachment.Subobject.IsValid())
+	{
+		// Subobject no longer valid for replication
+		return;
+	}
+
+	UObject* Subobject = PendingSubobjectAttachment.Subobject.Get();
+
+	SendAddComponent(PendingSubobjectAttachment.Channel, Subobject, *PendingSubobjectAttachment.Info);
+}
+
+void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId[SCHEMA_Count] ComponentIds)
+{
+	for (Worker_ComponentId& SubobjectComponentId : ComponentIds)
+	{
+		NetDriver->Connection->SendRemoveComponent(EntityId, SubobjectComponentId);
+	}
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
@@ -656,8 +751,6 @@ void USpatialSender::ProcessPositionUpdates()
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
 {
 	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s"), *Channel->Actor->GetName());
-
-	FSoftClassPath ActorClassPath(Channel->Actor->GetClass());
 
 	Worker_RequestId RequestId = CreateEntity(Channel);
 	Receiver->AddPendingActorRequest(RequestId, Channel);

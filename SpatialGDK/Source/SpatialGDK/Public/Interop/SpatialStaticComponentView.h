@@ -36,6 +36,7 @@ public:
 
 		return nullptr;
 	}
+	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveEntity(Worker_EntityId EntityId);

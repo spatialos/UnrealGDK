@@ -153,13 +153,47 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		}
 	}
 
-	if (!bInCriticalSection)
+	if (bInCriticalSection)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received a dynamically added component, these are currently unsupported - component ID: %u entity ID: %lld"),
-			Op.data.component_id, Op.entity_id);
+		PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data));
+	}
+	else
+	{
+		HandleDynamicAddComponent(Op);
+	}
+}
+
+void USpatialReceiver::HandleDynamicAddComponent(Worker_AddComponentOp& Op)
+{
+	Worker_ComponentId ComponentId = Op.data.component_id;
+
+	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
+
+}
+
+void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FClassInfo& Info)
+{
+	TWeakObjectPtr<UObject> WeakObject = PackageMap->GetObjectFromEntityId(EntityId);
+
+	if (!WeakObject.IsValid())
+	{
 		return;
 	}
-	PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data));
+
+	AActor* Actor = Cast<AActor>(WeakObject.Get());
+
+	UObject* Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
+
+	if (Object == nullptr)
+	{
+		Subobject = NewObject<UObject>(Actor, Info.Class);
+		PackageMap->ResolveDynamicallyCreatedSubobject(Actor, Subobject, Info, EntityId);
+	}
+
+	for (Worker_ComponentData& Data : something)
+	{
+		ApplyComponentData(EntityId, NetDriver->GetActorChannelByEntityId(EntityId), Data);
+	}
 }
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
@@ -311,6 +345,17 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 				Actor->OnAuthorityLost();
 			}
 		}
+
+		// Subobject Delegation
+		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachment = PendingEntitySubobjectDelegations.Find({ Op.entity_id, Op.component_id }))
+		{
+			(*PendingSubobjectAttachment)->PendingAuthorityDelegations.Remove(Op.component_id);
+
+			if ((*PendingSubobjectAttachment)->PendingAuthorityDelegations.Empty())
+			{
+				Sender->FinishSubobjectAttachment(PendingSubobjectAttachment);
+			}
+		}
 	}
 	else
 	{
@@ -335,6 +380,33 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	}
 }
 
+bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
+{
+	// Check the pending add components, to find the root component for the received entity.
+	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
+	{
+		if (PendingAddComponent.EntityId != EntityId
+			|| ClassInfoManager->GetCategoryByComponentId(PendingAddComponent.ComponentId) != SCHEMA_Data)
+		{
+			continue;
+		}
+
+		UClass* Class = ClassInfoManager->GetClassByComponentId(PendingAddComponent.ComponentId);
+		if (!Class->IsChildOf<AActor>())
+		{
+			continue;
+		}
+
+		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData;
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
+		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
+		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was already torn off. The actor will not be spawned."), EntityId);
+			return;
+		}
+	}
+}
+
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 {
 	checkf(NetDriver, TEXT("We should have a NetDriver whilst processing ops."));
@@ -349,30 +421,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		return;
 	}
 
-	// If the received actor is torn off, don't bother receiving it.
-	// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
-	// Check the pending add components, to find the root component for the received entity.
-	for (PendingAddComponentWrapper& PendingAddComponent : PendingAddComponents)
-	{
-		if (PendingAddComponent.EntityId != EntityId
-			|| ClassInfoManager->GetCategoryByComponentId(PendingAddComponent.ComponentId) != SCHEMA_Data)
-		{
-			continue;
-		}
-		uint32 Offset = 0;
-		if (!ClassInfoManager->GetOffsetByComponentId(PendingAddComponent.ComponentId, Offset) || Offset != 0)
-		{
-			continue;
-		}
-
-		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData;
-		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
-		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
-		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was already torn off. The actor will not be spawned."), EntityId);
-			return;
-		}
-	}
 
 	if (AActor* EntityActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId)))
 	{
@@ -397,6 +445,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
+		// Make sure ClassInfo exists
+		ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadataComp->GetNativeEntityClass());
+
+		// If the received actor is torn off, don't bother spawning it.
+		// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
+		if (IsReceivedEntityTornOff(EntityId))
+		{
+			return;
+		}
+
 		EntityActor = TryGetOrCreateActor(UnrealMetadataComp, SpawnDataComp);
 
 		if (EntityActor == nullptr)

@@ -287,6 +287,16 @@ Worker_RequestId USpatialWorkerConnection::SendDeleteEntityRequest(Worker_Entity
 	return NextRequestId++;
 }
 
+void USpatialWorkerConnection::SendAddComponent(Worker_EntityId EntityId, const Worker_ComponentData* ComponentData)
+{
+	QueueOutgoingMessage<FAddComponent>(EntityId, *ComponentData);
+}
+
+void USpatialWorkerConnection::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	QueueOutgoingMessage<FRemoveComponent>(EntityId, ComponentId);
+}
+
 void USpatialWorkerConnection::SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate)
 {
 	QueueOutgoingMessage<FComponentUpdate>(EntityId, *ComponentUpdate);
@@ -487,6 +497,28 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			Worker_Connection_SendDeleteEntityRequest(WorkerConnection,
 				Message->EntityId,
 				nullptr);
+			break;
+		}
+		case EOutgoingMessageType::AddComponent:
+		{
+			FAddComponent* Message = static_cast<FAddComponent*>(OutgoingMessage.Get());
+
+			static const Worker_UpdateParameters DisableLoopback{ true /* loopback */ };
+			Worker_Connection_SendAddComponent(WorkerConnection,
+				Message->EntityId,
+				&Message->Data,
+				&DisableLoopback);
+			break;
+		}
+		case EOutgoingMessageType::RemoveComponent:
+		{
+			FRemoveComponent* Message = static_cast<FRemoveComponent*>(OutgoingMessage.Get());
+
+			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
+			Worker_Connection_SendRemoveComponent(WorkerConnection,
+				Message->EntityId,
+				&Message->ComponentId,
+				&DisableLoopback);
 			break;
 		}
 		case EOutgoingMessageType::ComponentUpdate:

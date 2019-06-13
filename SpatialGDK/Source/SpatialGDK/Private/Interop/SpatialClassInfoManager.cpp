@@ -212,7 +212,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
-			if (!bEnableHandover && Type == SCHEMA_Handover)
+			if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
 			{
 				return;
 			}
@@ -235,12 +235,26 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 {
 	for (const auto& DynamicSubobjectData : SchemaDatabase->SubobjectClassPathToSchema[ClassPath].DynamicSubobjectComponents)
 	{
-		TStaticArray<uint32, SCHEMA_Count> DynamicComponentIds;
-		for (uint32 i = 0; i < SCHEMA_Count; i++)
+		// Make a copy of the already made FClassInfo for this dynamic subobject
+		TSharedRef<FClassInfo> DynamicSubobjectInfo = MakeShared<FClassInfo>(Info);
+
+		int32 Offset = DynamicSubobjectData[SCHEMA_Data];
+		check(DynamicSubobjectData[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID);
+
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
-			DynamicComponentIds[i] = DynamicSubobjectData.SchemaComponents[i];
-			Info->DynamicSubobjectComponents.Add(MoveTemp(DynamicComponentIds));
-		}
+			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
+
+			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+			{
+				DynamicSubobjectInfo->SchemaComponents[Type] = ComponentId;
+				ComponentToClassInfoMap.Add(ComponentId, DynamicSubobjectInfo);
+				ComponentToOffsetMap.Add(ComponentId, Offset);
+				ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
+			}
+		});
+
+		Info->DynamicSubobjectInfo.Add(DynamicSubobjectInfo);
 	}
 }
 
@@ -284,7 +298,7 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject
 
 		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
 
-		check(ObjectRef.IsValid())
+		check(ObjectRef.IsValid());
 
 		return GetOrCreateClassInfoByClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
 	}

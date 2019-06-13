@@ -28,6 +28,16 @@ bool USpatialStaticComponentView::HasAuthority(Worker_EntityId EntityId, Worker_
 	return GetAuthority(EntityId, ComponentId) == WORKER_AUTHORITY_AUTHORITATIVE;
 }
 
+bool USpatialStaticComponentView::HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId)
+{
+	if (auto* EntityComponentStorage = EntityComponentMap.Find(EntityId))
+	{
+		return EntityComponentStorage->Contains(ComponentId);
+	}
+
+	return false;
+}
+
 void USpatialStaticComponentView::OnAddComponent(const Worker_AddComponentOp& Op)
 {
 	TUniquePtr<SpatialGDK::ComponentStorageBase> Data;

@@ -90,6 +90,15 @@ struct FPendingIncomingRPC
 	FString SenderWorkerId;
 };
 
+struct FPendingSubobjectAttachment
+{
+	USpatialActorChannel* Channel;
+	const FClassInfo* Info;
+	TWeakObjectPtr<UObject> Subobject;
+
+	TSet<Worker_ComponentId> PendingAuthorityDelegations;
+};
+
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
 DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
@@ -221,4 +230,7 @@ private:
 	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 
 	TMap<Worker_EntityId_Key, HeartbeatDelegate> HeartbeatDelegates;
+
+	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
+	TMap<TPair<Worker_EntityId, Worker_ComponentId>, PendingAddComponentWrapper >> PendingDynamicSubobjectComponents;
 };

@@ -72,7 +72,7 @@ struct FClassInfo
 	FName SubobjectName;
 
 	// Only for Subobject classes
-	TArray<TStaticArray<uint32, ESchemaComponentType::SCHEMA_Count>> DynamicSubobjectComponents;
+	TArray<TSharedRef<FClassInfo>> DynamicSubobjectInfo;
 };
 
 class USpatialNetDriver;

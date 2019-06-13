@@ -338,7 +338,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		SubobjectSchemaData.DynamicSubobjectComponents.Add(MoveTemp(DynamicSubobjectComponents));
 	}
 
-	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ActorClassPathToSchema[Class->GetPathName()]));
+	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
 
 	SubobjectClassPathToSchema.Add(Class->GetPathName(), SubobjectSchemaData);
 }

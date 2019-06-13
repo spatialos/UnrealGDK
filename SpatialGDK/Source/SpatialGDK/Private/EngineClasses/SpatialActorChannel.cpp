@@ -418,7 +418,9 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		if (bCreatingNewEntity)
 		{
-			Actor->ReplicateSubobjects();
+			// Need to try replicating all subobjects before entity creation to make sure their respective FObjectReplicator exists when creating the entity.
+			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
+
 			Sender->SendCreateEntityRequest(this);
 
 			// Since we've tried to create this Actor in Spatial, we no longer have authority over the actor since it hasn't been delegated to us.
@@ -491,14 +493,68 @@ int64 USpatialActorChannel::ReplicateActor()
 	return (bWroteSomethingImportant) ? 1 : 0;	// TODO: return number of bits written (UNR-664)
 }
 
+bool USpatialActorChannel::DynamicallyAttachComponentToEntity(UObject* Object)
+{
+	// Find out if this is a dynamic subobject or a subobject that is already attached but is now replicated
+	FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
+
+	const FClassInfo* SubobjectInfo = nullptr;
+
+	// Subobject that's a part of the CDO by default
+	if (ObjectRef.IsValid())
+	{
+		Info = &NetDriver->ClassInfoManager->GetClassInfoByComponentId(ObjectRef.Offset);
+	}
+	else
+	{
+		Info = &NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
+
+		for (auto& DyanmicSubobjectInfo : Info.DynamicSubobjectInfo)
+		{
+			if (!NetDriver->StaticComponentView->HasComponent(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data]))
+			{
+				SubobjectInfo = &DynamicSubobjectInfo;
+			}
+		}
+
+		//if (SubobjectComponentIds[SCHEMA_Data] == SpatialConstants::INVALID_COMPONENT_ID)
+		//{
+		//	// TODO: Error here regarding adding too many components 
+		//}
+	}
+
+	check(Info != nullptr);
+
+	// Check to see if we already have authority over the subobject to be added
+	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SubobjectInfo->SchemaComponents[SCHEMA_Data]))
+	{
+		Sender->SendAddComponent(Object, Info);
+	}
+	else
+	{
+		// If we don't, modify the entity ACL and to gain authority
+		Sender->GainAuthorityThenAddComponent(Channel, SubobjectInfo);
+	}
+}
+
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FClassInfo& Info, const FReplicationFlags& RepFlags)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateSubobject);
 
-	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
+	bool bCreatedReplicator = false;
+	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
+
+	// If we're creating an entity, don't try replicating 
 	if (bCreatingNewEntity)
 	{
 		return false;
+	}
+
+	// New subobject that hasn't been replicated before
+	if (bCreatedReplicator)
+	{
+
+		return;
 	}
 
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
