@@ -165,10 +165,30 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialReceiver::HandleDynamicAddComponent(Worker_AddComponentOp& Op)
 {
-	Worker_ComponentId ComponentId = Op.data.component_id;
+	PendingDynamicSubobjectComponents.Add(MakeTuple(Op.entity_id, Op.data.component_id), PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
 
-	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(ComponentId);
+	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.data.component_id);
 
+	bool bReadyToCreate = true;
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+	{
+		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
+
+		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return;
+		}
+
+		if (!PendingDynamicSubobjectComponents.Contains(MakeTuple(Op.entity_id, ComponentId )))
+		{
+			bReadyToCreate = false;
+		}
+	});
+
+	if (bReadyToCreate)
+	{
+		AttachDynamicSubobject(Op.entity_id, Info);
+	}
 }
 
 void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FClassInfo& Info)
@@ -182,18 +202,37 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 
 	AActor* Actor = Cast<AActor>(WeakObject.Get());
 
-	UObject* Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
+	TWeakObjectPtr<UObject> WeakSubobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
+	UObject* Subobject = nullptr;
 
-	if (Object == nullptr)
+	if (WeakSubobject.HasSameIndexAndSerialNumber(nullptr))
 	{
-		Subobject = NewObject<UObject>(Actor, Info.Class);
-		PackageMap->ResolveDynamicallyCreatedSubobject(Actor, Subobject, Info, EntityId);
+		Subobject = NewObject<UObject>(Actor, Info.Class.Get());
+		//PackageMap->ResolveDynamicallyCreatedSubobject(Actor, Subobject, Info, EntityId);
+	}
+	else if (!WeakSubobject.IsValid())
+	{
+		return;
+	}
+	else
+	{
+		Subobject = WeakSubobject.Get();
 	}
 
-	for (Worker_ComponentData& Data : something)
+	check(Subobject != nullptr);
+
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		ApplyComponentData(EntityId, NetDriver->GetActorChannelByEntityId(EntityId), Data);
-	}
+		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
+
+		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return;
+		}
+
+		PendingAddComponentWrapper& AddComponent = PendingDynamicSubobjectComponents[MakeTuple(EntityId, ComponentId)];
+		ApplyComponentData(EntityId, *AddComponent.Data->ComponentData, NetDriver->GetActorChannelByEntityId(EntityId));
+	});
 }
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
@@ -347,13 +386,18 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		}
 
 		// Subobject Delegation
-		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachment = PendingEntitySubobjectDelegations.Find({ Op.entity_id, Op.component_id }))
+		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachmentPtr = PendingEntitySubobjectDelegations.Find(MakeTuple(Op.entity_id, Op.component_id)))
 		{
-			(*PendingSubobjectAttachment)->PendingAuthorityDelegations.Remove(Op.component_id);
+			FPendingSubobjectAttachment& PendingSubobjectAttachment = PendingSubobjectAttachmentPtr->Get();
 
-			if ((*PendingSubobjectAttachment)->PendingAuthorityDelegations.Empty())
+			PendingSubobjectAttachment.PendingAuthorityDelegations.Remove(Op.component_id);
+
+			if (PendingSubobjectAttachment.PendingAuthorityDelegations.Num() == 0)
 			{
-				Sender->FinishSubobjectAttachment(PendingSubobjectAttachment);
+				if (UObject* Object = PendingSubobjectAttachment.Subobject.Get())
+				{
+					Sender->SendAddComponent(PendingSubobjectAttachment.Channel, Object, *PendingSubobjectAttachment.Info);
+				}
 			}
 		}
 	}
@@ -399,12 +443,10 @@ bool USpatialReceiver::IsReceivedEntityTornOff(Worker_EntityId EntityId)
 
 		Worker_ComponentData* ComponentData = PendingAddComponent.Data->ComponentData;
 		Schema_Object* ComponentObject = Schema_GetComponentDataFields(ComponentData->schema_type);
-		if (Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID))
-		{
-			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was already torn off. The actor will not be spawned."), EntityId);
-			return;
-		}
+		return Schema_GetBool(ComponentObject, SpatialConstants::ACTOR_TEAROFF_ID);
 	}
+
+	return false;
 }
 
 void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
@@ -452,6 +494,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
 		if (IsReceivedEntityTornOff(EntityId))
 		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("The received actor with entity id %lld was already torn off. The actor will not be spawned."), EntityId);
 			return;
 		}
 

@@ -254,17 +254,17 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 			UnresolvedObjectsMap.Empty();
 			HandoverUnresolvedObjectsMap.Empty();
 
-			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 			ComponentDatas.Append(ActorSubobjectDatas);
 
 			for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
 			{
-				QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
+				QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
 			}
 
 			for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
 			{
-				QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
+				QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 			}
 		}
 	}
@@ -328,7 +328,7 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
 }
 
-void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info)
+void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo)
 {
 	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
 	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
@@ -341,31 +341,34 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	UnresolvedObjectsMap.Empty();
 	HandoverUnresolvedObjectsMap.Empty();
 
-	TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 
 	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
 	{
-		QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
+		QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
 	}
 
 	for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
 	{
-		QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
+		QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 	}
 
-	for (Worker_ComponentData& ComponentData : ActorSubobjectDatas)
+	for (Worker_ComponentData& ComponentData : SubobjectDatas)
 	{
-		Connection->SendAddComponent(EntityId, ComponentData);
+		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData);
 	}
+
+	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
 }
 
 void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, const FClassInfo* Info)
 {
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
+	WorkerRequirementSet ServersOnly = { ServerAttribute };
 
 	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
 
-	TSharedRef<FPendingSubobjectAttachment>& PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
+	TSharedRef<FPendingSubobjectAttachment> PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
@@ -373,31 +376,19 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			PendingSubobjectAttachment->PendingAuthorityDelegations.Add(ComponentId);
-			Receiver->PendingEntitySubobjectDelegations.Add(MakePair(Channel->GetEntityId(), ComponentId), PendingSubobjectAttachment);
+			Receiver->PendingEntitySubobjectDelegations.Add(MakeTuple(Channel->GetEntityId(), ComponentId), PendingSubobjectAttachment);
 
-			EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[Type], ServerAttribute);
+			EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[Type], ServersOnly);
 		}
 	});
 
-	Connection->SendComponentUpdate(Channel->GetEntityId(), EntityACL->CreateEntityAclUpdate());
+	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
+	Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
 }
 
-void USpatialSender::FinishSubobjectAttachment(const FPendingSubobjectAttachment& PendingSubobjectAttachment)
+void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info)
 {
-	if (!PendingSubobjectAttachment.Subobject.IsValid())
-	{
-		// Subobject no longer valid for replication
-		return;
-	}
-
-	UObject* Subobject = PendingSubobjectAttachment.Subobject.Get();
-
-	SendAddComponent(PendingSubobjectAttachment.Channel, Subobject, *PendingSubobjectAttachment.Info);
-}
-
-void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId[SCHEMA_Count] ComponentIds)
-{
-	for (Worker_ComponentId& SubobjectComponentId : ComponentIds)
+	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
 		NetDriver->Connection->SendRemoveComponent(EntityId, SubobjectComponentId);
 	}

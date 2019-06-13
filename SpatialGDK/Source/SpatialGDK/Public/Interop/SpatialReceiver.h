@@ -163,12 +163,17 @@ private:
 	void HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
+	void HandleDynamicAddComponent(Worker_AddComponentOp& Op);
+	void AttachDynamicSubobject(Worker_EntityId EntityId, const FClassInfo& Info);
+
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
 	void ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
 
 	void ReceiveCommandResponse(Worker_CommandResponseOp& Op);
+
+	bool IsReceivedEntityTornOff(Worker_EntityId EntityId);
 
 	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs);
 	void QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
@@ -187,6 +192,8 @@ private:
 
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
+
+	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 private:
 	template <typename T>
@@ -231,6 +238,5 @@ private:
 
 	TMap<Worker_EntityId_Key, HeartbeatDelegate> HeartbeatDelegates;
 
-	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
-	TMap<TPair<Worker_EntityId, Worker_ComponentId>, PendingAddComponentWrapper >> PendingDynamicSubobjectComponents;
+	TMap<TPair<Worker_EntityId, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
 };

@@ -82,6 +82,8 @@ public:
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
+	void SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info);
+	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
@@ -103,6 +105,8 @@ public:
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
+	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, const FClassInfo* Info);
+
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);

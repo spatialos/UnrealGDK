@@ -236,10 +236,10 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 	for (const auto& DynamicSubobjectData : SchemaDatabase->SubobjectClassPathToSchema[ClassPath].DynamicSubobjectComponents)
 	{
 		// Make a copy of the already made FClassInfo for this dynamic subobject
-		TSharedRef<FClassInfo> DynamicSubobjectInfo = MakeShared<FClassInfo>(Info);
+		TSharedRef<FClassInfo> DynamicSubobjectInfo = MakeShared<FClassInfo>(Info.Get());
 
-		int32 Offset = DynamicSubobjectData[SCHEMA_Data];
-		check(DynamicSubobjectData[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID);
+		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
+		check(DynamicSubobjectData.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID);
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{

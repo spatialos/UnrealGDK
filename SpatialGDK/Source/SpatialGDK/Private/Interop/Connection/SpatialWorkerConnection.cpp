@@ -517,7 +517,7 @@ void USpatialWorkerConnection::ProcessOutgoingMessages()
 			static const Worker_UpdateParameters DisableLoopback{ false /* loopback */ };
 			Worker_Connection_SendRemoveComponent(WorkerConnection,
 				Message->EntityId,
-				&Message->ComponentId,
+				Message->ComponentId,
 				&DisableLoopback);
 			break;
 		}

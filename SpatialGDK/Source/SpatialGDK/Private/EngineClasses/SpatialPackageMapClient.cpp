@@ -135,6 +135,17 @@ FNetworkGUID USpatialPackageMapClient::ResolveEntityActor(AActor* Actor, Worker_
 	return NetGUID;
 }
 
+void USpatialPackageMapClient::ResolveSubobject(UObject* Object, const FUnrealObjectRef& ObjectRef)
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+	FNetworkGUID NetGUID = SpatialGuidCache->GetNetGUIDFromUnrealObjectRef(ObjectRef);
+
+	if (!NetGUID.IsValid())
+	{
+		SpatialGuidCache->AssignNewSubobjectNetGUID(Object, ObjectRef);
+	}
+}
+
 void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
@@ -324,6 +335,16 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 	return NetGUID;
 }
 
+void FSpatialNetGUIDCache::AssignNewSubobjectNetGUID(UObject* Subobject, const FUnrealObjectRef& SubobjectRef)
+{
+	// AssignNewStablyNamedObjectNetGUID is not used due to using the wrong ObjectRef as the outer of the subobject.
+	// So it is ok to use RegisterObjectRef in both cases since no prior bookkeeping was done (unlike Actors)
+	FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
+	RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
+
+	Cast<USpatialNetDriver>(Driver)->Receiver->ResolvePendingOperations(Subobject, SubobjectRef);
+}
+
 // Recursively assign netguids to the outer chain of a UObject. Then associate them with their Spatial representation (FUnrealObjectRef)
 // This is required in order to be able to refer to a non-replicated stably named UObject.
 // Dynamically spawned actors and references to their subobjects do not go through this codepath.
@@ -410,6 +431,41 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	{
 		UnrealObjectRefToNetGUID.Remove(StablyNamedRefOption.GetValue());
 	}
+}
+
+void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& SubobjectRef)
+{
+	if (!UnrealObjectRefToNetGUID.Contains(SubobjectRef))
+	{
+		return;
+	}
+
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(Driver);
+	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(SubobjectRef.Entity);
+
+	// There are times when the Editor is quitting out of PIE that UnrealMetadata is nullptr.
+	// Due to GetNativeEntityClass using LoadObject, if we are shutting down and garbage collecting, this will crash the editor.
+	// In this case, just return since everything will be cleaned up anyways.
+	if (UnrealMetadata == nullptr || (IsInGameThread() && IsGarbageCollecting()))
+	{
+		return;
+	}
+
+	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
+
+	// Part of the CDO
+	if (const TSharedRef<FClassInfo>* SubobjectInfoPtr = Info.SubobjectInfo.Find(SubobjectRef.Offset))
+	{
+		SpatialGDK::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
+
+		if (StablyNamedRefOption.IsSet())
+		{
+			UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPtr->Get().SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+		}
+	}
+	FNetworkGUID SubobjectNetGUID = UnrealObjectRefToNetGUID[SubobjectRef];
+	NetGUIDToUnrealObjectRef.Remove(SubobjectNetGUID);
+	UnrealObjectRefToNetGUID.Remove(SubobjectRef);
 }
 
 FNetworkGUID FSpatialNetGUIDCache::GetNetGUIDFromUnrealObjectRef(const FUnrealObjectRef& ObjectRef)

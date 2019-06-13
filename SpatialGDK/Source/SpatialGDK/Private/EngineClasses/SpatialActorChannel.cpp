@@ -479,6 +479,17 @@ int64 USpatialActorChannel::ReplicateActor()
 				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState);
 			}
 		}
+
+		// Look for deleted subobjects
+		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
+		{
+			if (!RepComp.Value()->GetWeakObjectPtr().IsValid())
+			{
+
+				RepComp.Value()->CleanUp();
+				RepComp.RemoveCurrent();
+			}
+		}
 	}
 
 	// If we evaluated everything, mark LastUpdateTime, even if nothing changed.
@@ -493,51 +504,53 @@ int64 USpatialActorChannel::ReplicateActor()
 	return (bWroteSomethingImportant) ? 1 : 0;	// TODO: return number of bits written (UNR-664)
 }
 
-bool USpatialActorChannel::DynamicallyAttachComponentToEntity(UObject* Object)
+void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 {
 	// Find out if this is a dynamic subobject or a subobject that is already attached but is now replicated
 	FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
 
-	const FClassInfo* SubobjectInfo = nullptr;
+	const FClassInfo* Info = nullptr;
 
 	// Subobject that's a part of the CDO by default
 	if (ObjectRef.IsValid())
 	{
-		Info = &NetDriver->ClassInfoManager->GetClassInfoByComponentId(ObjectRef.Offset);
+		Info = &NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 	}
 	else
 	{
-		Info = &NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
+		const FClassInfo& SubobjectInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
-		for (auto& DyanmicSubobjectInfo : Info.DynamicSubobjectInfo)
+		for (auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
 		{
 			if (!NetDriver->StaticComponentView->HasComponent(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data]))
 			{
-				SubobjectInfo = &DynamicSubobjectInfo;
+				Info = &DynamicSubobjectInfo.Get();
 			}
 		}
 
-		//if (SubobjectComponentIds[SCHEMA_Data] == SpatialConstants::INVALID_COMPONENT_ID)
-		//{
-		//	// TODO: Error here regarding adding too many components 
-		//}
+		if (Info == nullptr)
+		{
+			// TODO: Too many dynamic components attached
+			return;
+		}
+
+		NetDriver->PackageMap->ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
 	}
 
-	check(Info != nullptr);
-
 	// Check to see if we already have authority over the subobject to be added
-	if (NetDriver->StaticComponentView->HasAuthority(EntityId, SubobjectInfo->SchemaComponents[SCHEMA_Data]))
+	if (NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_Data]))
 	{
-		Sender->SendAddComponent(Object, Info);
+		Sender->SendAddComponent(this, Object, *Info);
 	}
 	else
 	{
 		// If we don't, modify the entity ACL and to gain authority
-		Sender->GainAuthorityThenAddComponent(Channel, SubobjectInfo);
+		PendingDynamicSubobjects.Add(TWeakObjectPtr<UObject>(Object));
+		Sender->GainAuthorityThenAddComponent(this, Info);
 	}
 }
 
-bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FClassInfo& Info, const FReplicationFlags& RepFlags)
+bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateSubobject);
 
@@ -553,8 +566,15 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FClassInfo&
 	// New subobject that hasn't been replicated before
 	if (bCreatedReplicator)
 	{
+		// Attach to to the entity
+		DynamicallyAttachSubobject(Object);
+		return false;
+	}
 
-		return;
+	if (PendingDynamicSubobjects.Contains(Replicator.GetWeakObjectPtr()))
+	{
+		// Still waiting on subobject to be attached so don't replicate
+		return false;
 	}
 
 	FRepChangelistState* ChangelistState = Replicator.ChangelistMgr->GetRepChangelistState();
@@ -590,7 +610,10 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FClassInfo&
 	if (RepChanged.Num() > 0)
 	{
 		FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Object) };
+		
+		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr);
+
 		Replicator.RepState->HistoryEnd++;
 	}
 
@@ -604,14 +627,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
 
-	if (!NetDriver->PackageMap->GetUnrealObjectRefFromObject(Obj).IsValid())
-	{
-		// Not supported for Spatial replication
-		return false;
-	}
-
-	const FClassInfo& SubobjectInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Obj);
-	return ReplicateSubobject(Obj, SubobjectInfo, RepFlags);
+	return ReplicateSubobject(Obj, RepFlags);
 }
 
 TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
