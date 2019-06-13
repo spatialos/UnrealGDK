@@ -67,6 +67,7 @@
     - Deployment workflows
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
+    - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Pricing and support</h3>

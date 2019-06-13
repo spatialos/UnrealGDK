@@ -31,7 +31,7 @@ The Locator is a SpatialOS service which allows you to connect to cloud deployme
 
 Using the locator flow is very similar to using the receptionist, except with different URL options. You must add the `locator`, or `legacylocator` option, and specify the appropriate options.  The `locator` workflow makes use of the new [Authentication flow](https://docs.improbable.io/reference/latest/shared/auth/integrate-authentication-platform-sdk), and the `legacylocator` makes use of the [Deprecated Authentication flow](https://docs.improbable.io/reference/latest/shared/auth/integrate-authentication)
 
-**Locator**: Add the options `locator`, `playeridentity` and `login`.
+**Locator**: Add the options `locator`, `playeridentity` and `login`. For more information about the options, see [Map travel URL options]({{urlRoot}}/content/command-line-arguments#map-travel-url-options).
 ```
 FURL TravelURL;
 TravelURL.Host = TEXT("locator.improbable.io");
@@ -131,3 +131,9 @@ The `LaunchClient.bat` (which we have provided) already includes the local host 
 When launching a client-worker from the SpatialOS Console using the [Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher#the-launcher), the client-worker will connect to SpatialOS by default. It has the `Locator` information required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client-workers will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.  
 
 > Connecting by default when using the launcher is subject to change.
+
+<br/>
+
+<br/>------------<br/>
+2019-06-13 Page updated with limited editorial review: Added Locator information
+
