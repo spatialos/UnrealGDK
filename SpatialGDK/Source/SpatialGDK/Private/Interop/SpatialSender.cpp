@@ -974,14 +974,20 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object, TSharedPtr<FQueueOfPar
 	while(!RPCList->IsEmpty())
 	{
 		check(RPCList->Peek(RPCParams));
+		if(!RPCParams.IsValid())
+		{
+			UE_LOG(LogSpatialSender, Warning, TEXT("===RPC Param Invalid"));
+			RPCList->Empty();
+			break;
+		}
+
 		if (!RPCParams->TargetObject.IsValid())
 		{
 			// The target object was destroyed before we could send the RPC.
 			RPCList->Empty();
-			continue;
+			break;
 		}
 
-		UE_LOG(LogSpatialSender, Verbose, TEXT("Resolving outgoing RPC depending on object: %s, target: %s, function: %s"), *Object->GetName(), *RPCParams->TargetObject->GetName(), *RPCParams->Function->GetName());
 		if(SendRPC(RPCParams))
 		{
 			RPCList->Pop();

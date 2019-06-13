@@ -9,6 +9,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogRPCContainer, Log, All);
 
+#pragma optimize("", off)
 namespace SpatialGDK
 {
 
@@ -55,4 +56,5 @@ private:
 	};
 	FRPCMap RPCs[int(RPCType::NumTypes)];
 };
+#pragma optimize("", on)
 } // namespace SpatialGDK
