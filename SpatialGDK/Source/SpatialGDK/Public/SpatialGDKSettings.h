@@ -99,6 +99,11 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bBatchSpatialPositionUpdates;
 
+	/** EXPERIMENTAL - This is a stop-gap until we can better define server interest on system entities.
+	Disabling this is not supported in any type of multi-server environment*/
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	bool bEnableServerQBI;
+
 	/** Pack unreliable RPCs sent during the same frame into a single update. */
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bPackUnreliableRPCs;
