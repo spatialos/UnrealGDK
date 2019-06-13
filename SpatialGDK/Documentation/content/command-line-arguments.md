@@ -154,7 +154,7 @@ In addition to the arguments for worker connections, you can use the following a
         <tr>
             <td style="width: 30%;"><code>-enableProtocolLogging</code></td>
             <td style="width: 8%;">bool</td>
-            <td style="width: 62%;">Set to <code>true</code> to enable <a href="https://docs.improbable.io/reference/latest/shared/debugging#protocol-logging">protocol logging</a>to record any data exchanged between the worker instance and the deployment it&#39;s connected to,
+            <td style="width: 62%;">Set to <code>true</code> to enable <a href="https://docs.improbable.io/reference/latest/shared/debugging#protocol-logging">protocol logging</a> to record any data exchanged between the worker instance and the deployment it&#39;s connected to,
                 as well as other significant events.
                 <p>Default:<code>false</code></p>
             </td>
