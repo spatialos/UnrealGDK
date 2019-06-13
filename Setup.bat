@@ -53,8 +53,8 @@ call :MarkStartOfBlock "Setup variables"
     set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
 
     rem Copy schema to the projects spatial directory.
-    set SCHEMA_COPY_DIR=%ProjectDirectory%\spatial\schema\unreal\gdk
-    set SCHEMA_STD_COPY_DIR=%ProjectDirectory%\spatial\build\dependencies\schema\standard_library
+    set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
+    set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
 
 call :MarkEndOfBlock "Setup variables"
 
