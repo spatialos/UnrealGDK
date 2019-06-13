@@ -53,6 +53,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			Receiver->OnAddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
+			Receiver->OnRemoveComponent(Op->remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
 			QueuedComponentUpdateOps.Add(Op);

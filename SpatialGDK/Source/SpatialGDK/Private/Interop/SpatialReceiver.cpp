@@ -165,6 +165,12 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialReceiver::HandleDynamicAddComponent(Worker_AddComponentOp& Op)
 {
+	// It is valid to receive multiple add components for the same component
+	if (StaticComponentView->HasComponent(Op.entity_id, Op.data.component_id))
+	{
+		return;
+	}
+
 	PendingDynamicSubobjectComponents.Add(MakeTuple(Op.entity_id, Op.data.component_id), PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
 
 	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.data.component_id);
@@ -238,6 +244,20 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 {
 	RemoveActor(Op.entity_id);
+}
+
+void USpatialReceiver::OnRemoveComponent(Worker_RemoveComponentOp& Op)
+{
+	if (bInCriticalSection)
+	{
+		return;
+	}
+
+	if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
+	{
+		//Object->BeginDestroy();
+		PackageMap->RemoveSubobject(FUnrealObjectRef(Op.entity_id, Op.component_id));
+	}
 }
 
 void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)

@@ -156,6 +156,16 @@ void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 	}
 }
 
+void USpatialPackageMapClient::RemoveSubobject(const FUnrealObjectRef& ObjectRef)
+{
+	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());
+
+	if (SpatialGuidCache->GetNetGUIDFromUnrealObjectRef(ObjectRef).IsValid())
+	{
+		SpatialGuidCache->RemoveSubobjectNetGUID(ObjectRef);
+	}
+}
+
 void USpatialPackageMapClient::UnregisterActorObjectRefOnly(const FUnrealObjectRef& ObjectRef)
 {
 	FSpatialNetGUIDCache* SpatialGuidCache = static_cast<FSpatialNetGUIDCache*>(GuidCache.Get());

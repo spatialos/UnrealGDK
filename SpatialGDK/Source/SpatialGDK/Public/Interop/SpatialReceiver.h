@@ -118,6 +118,7 @@ public:
 	void OnAddEntity(Worker_AddEntityOp& Op);
 	void OnAddComponent(Worker_AddComponentOp& Op);
 	void OnRemoveEntity(Worker_RemoveEntityOp& Op);
+	void OnRemoveComponent(Worker_RemoveComponentOp& Op);
 	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 
 	void OnComponentUpdate(Worker_ComponentUpdateOp& Op);
