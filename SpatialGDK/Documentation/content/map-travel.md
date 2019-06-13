@@ -131,5 +131,5 @@ When launching a client-worker from the SpatialOS Console using the [Launcher](h
 <br/>
 
 <br/>------------<br/>
-2019-06-13 Page updated with editorial review: Added Locator information
+2019-06-13 Page updated with limited editorial review: Added Locator information
 
