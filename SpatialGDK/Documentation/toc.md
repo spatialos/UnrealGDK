@@ -37,7 +37,6 @@
         - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
     - [Snapshots]({{urlRoot}}/content/spatialos-concepts/generating-a-snapshot) 
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
-    - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
     - [Map travel]({{urlRoot}}/content/map-travel)
 - <h3>Workflows</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
@@ -45,6 +44,7 @@
     - Deployment workflows
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
+    - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Pricing and support</h3>
