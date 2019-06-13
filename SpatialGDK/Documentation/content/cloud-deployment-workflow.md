@@ -48,6 +48,6 @@ Replacing:
 * `<launch_config>.json` - declares the world and load balancing configuration.
 * `<deployment_name>` - labels the deployment for SpatialOS to reference in the [Console]({{urlRoot}}/content/glossary#console).
 
-----
 
-_2019-04-15 Page added with editorial review_
+<br/>------<br/>
+_2019-04-15 Page updated with editorial review_

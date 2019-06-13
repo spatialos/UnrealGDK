@@ -98,6 +98,7 @@ When you are done, save and close your `config.json` file.
 </br>
 **> Next**: [5. Launch multiple session-based deployments]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-launch)
 
---------<br/>
 
-_2019-05-21 Page added with editorial review_
+
+<br/>------<br/>
+_2019-05-21 Page updated with editorial review_

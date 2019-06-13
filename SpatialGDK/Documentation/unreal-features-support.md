@@ -391,8 +391,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
 The table for multiserver support is coming soon. 
 
-<br/>
 
-------------
-*2019-04-25 Page added with full editorial review*
-<br/>
+
+<br/>------<br/>
+_2019-04-25 Page updated with editorial review_
