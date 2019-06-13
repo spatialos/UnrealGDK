@@ -64,7 +64,7 @@ When you use either method to connect a worker instance to a deployment, you can
             <td style="width: 8%;">string</td>
             <td style="width: 62%;">The <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#choosing-a-network-stack">network stack</a> that the worker instance uses to communicate with the SpatialOS <a href="https://docs.improbable.io/reference/13.7/shared/glossary#the-runtime">Runtime</a>.
                 The available options are <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#kcp">KCP</a> and <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#tcp">TCP</a>.&nbsp;
-                <p><strong>Note</strong>: The GDK does not support <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#raknet">RakNet</a> network stack.</p>
+                <p><strong>Note</strong>: The GDK does not support the <a href="https://docs.improbable.io/reference/13.7/shared/worker-configuration/network-configuration#raknet">RakNet</a> network stack.</p>
                 <p>Default: <code>KCP</code></p>
             </td>
         </tr>
