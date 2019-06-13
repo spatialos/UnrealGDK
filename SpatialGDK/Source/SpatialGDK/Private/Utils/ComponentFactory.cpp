@@ -156,7 +156,7 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
 			if (!bSuccess)
 			{
-				UE_LOG(LogRep, Warning, TEXT("AddProperty: NetSerialize %s failed."), *Struct->GetFullName());
+				UE_LOG(LogSpatialNetSerialize, Warning, TEXT("AddProperty: NetSerialize %s failed."), *Struct->GetFullName());
 				return;
 			}
 		}

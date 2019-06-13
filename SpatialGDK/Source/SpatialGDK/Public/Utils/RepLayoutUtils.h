@@ -6,6 +6,7 @@
 #include "Net/RepLayout.h"
 
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 
@@ -145,7 +146,7 @@ inline void ReadStructProperty(FSpatialNetBitReader& Reader, UStructProperty* Pr
 		// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
 		if (!bSuccess)
 		{
-			UE_LOG(LogRep, Warning, TEXT("ReadStructProperty: NetSerialize %s failed."), *Struct->GetFullName());
+			UE_LOG(LogSpatialNetSerialize, Warning, TEXT("ReadStructProperty: NetSerialize %s failed."), *Struct->GetFullName());
 		}
 	}
 	else
