@@ -55,6 +55,8 @@ This document outlines the process for releasing a version of the GDK for Unreal
 
 ### Serve docs locally
 It is vital that you test using the docs for the release version that you are about to publish, not with the currently live docs that relate to the previous version.
+1. cd `UnrealGDK`
+1. git checkout `docs-release`
 1. `improbadoc serve <path to x.y.z-rc-x docs>`
 
 ## Build your release candidate engine
