@@ -44,8 +44,8 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. `git push --set-upstream origin x.y.z-rc` to push the branch.
 1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
 
-### Create the `UnrealGDKTestSuite` release candidate
-1. `git clone` the [UnrealGDKTestSuite](https://github.com/spatialos/UnrealGDKTestSuite).
+### Create the `UnrealGDKExampleProject` release candidate
+1. `git clone` the [UnrealGDKExampleProject](https://github.com/spatialos/UnrealGDKExampleProject).
 1. `git checkout master`
 1. `git pull`
 1. Using `git log`, take note of the latest commit hash.
@@ -117,8 +117,8 @@ The workflow for this is:
 1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/gdk-template, bearing in mind the following caveat:
 * When you clone the GDK into the `Plugins` folder, be sure to checkout the release candidate branch, so you're working with the release version.
 
-## Validation (UnrealGDKTestSuite)
-1. Follow these steps: https://github.com/spatialos/UnrealGDKTestSuite/blob/release/README.md. All tests must pass.
+## Validation (UnrealGDKExampleProject)
+1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/example-project/exampleproject-intro. All tests must pass.
 
 ## Validation (Playtest)
 1. Follow these steps: https://brevi.link/unreal-release-playtests. All tests must pass.
@@ -148,8 +148,8 @@ Copy the latest release notes from `CHANGELOG.md` and paste them into the releas
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
 1. In `UnrealGDKThirdPersonShooter`, `git rebase` `release` into `tutorial`.
 1. In `UnrealGDKThirdPersonShooter`, `git rebase` `release` into `tutorial-complete`.
-1. In `UnrealGDKTestSuite`, create `staging-x.y.z-rc` from `x.y.z-rc`.
-1. In `UnrealGDKTestSuite`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
+1. In `UnrealGDKExampleProject`, create `staging-x.y.z-rc` from `x.y.z-rc`.
+1. In `UnrealGDKExampleProject`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
 1. Publish the docs to live using Improbadoc commands listed [here](https://improbableio.atlassian.net/wiki/spaces/GBU/pages/327485360/Publishing+GDK+Docs).
 1. Update the [roadmap](https://github.com/spatialos/UnrealGDK/pull/900), moving the release from **Planned** to **Released**, and linking to the release.
@@ -176,7 +176,7 @@ Use the above definition to perform the following:
 1. `UnrealGDK` repo: indirect-merge `staging-x.y.z-rc` into `master`.
 1. `improbableio/UnrealEngine` repo: indirect-merge `staging-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`.
 1. `UnrealGDKThirdPersonShooter` repo: (skip this step if `staging-x.y.z-rc` has no new commits compared to `master`) indirect-merge `staging-x.y.z-rc` into `master`.
-1. `UnrealGDKTestSuite` repo: (skip this step if `staging-x.y.z-rc` has no new commits compared to `master`) indirect-merge `staging-x.y.z-rc` into `master`.
+1. `UnrealGDKExampleProject` repo: (skip this step if `staging-x.y.z-rc` has no new commits compared to `master`) indirect-merge `staging-x.y.z-rc` into `master`.
 1. Delete the `staging-` branches.
 
 ## Appendix
