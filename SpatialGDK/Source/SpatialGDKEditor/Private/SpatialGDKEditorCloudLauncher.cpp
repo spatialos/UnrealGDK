@@ -35,7 +35,7 @@ bool SpatialGDKCloudLaunch()
 
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
 		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
-		*DeploymentLauncherAbsolutePath, nullptr, nullptr);
+		*SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
 
 	return DeploymentLauncherProcHandle.IsValid();
 }
@@ -49,7 +49,7 @@ bool SpatialGDKCloudStop()
 
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
 		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
-		*DeploymentLauncherAbsolutePath, nullptr, nullptr);
+		*SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
 
 	return DeploymentLauncherProcHandle.IsValid();
 }

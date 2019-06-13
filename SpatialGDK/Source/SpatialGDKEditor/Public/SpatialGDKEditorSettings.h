@@ -438,5 +438,10 @@ public:
 		return NumberOfSimulatedPlayers;
 	}
 
+	FORCEINLINE FString GetDeploymentLauncherPath() const
+	{
+		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir() / TEXT("Plugins/UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher")));
+	}
+
 	bool IsDeploymentConfigurationValid() const;
 };
