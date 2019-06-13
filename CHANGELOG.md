@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed path naming issues in setup.sh
 - Fixed assert/crash in SpatialMetricsDisplay that occurred when reloading a snapshot.
 - Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
+- Fixed a crash when failing to NetSerialize a struct in spatial. Now print a warning instead which matches native Unreal behavior.
 
 ### External contributors:
 
