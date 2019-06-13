@@ -2,7 +2,6 @@
 #include "SpatialGDKEditorSettings.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "MessageDialog.h"
-
 #include "Modules/ModuleManager.h"
 #include "ISettingsModule.h"
 
@@ -51,40 +50,37 @@ void USpatialGDKEditorSettings::PostInitProperties()
 
 void USpatialGDKEditorSettings::SafetyCheckSpatialOSDirectoryPaths()
 {
-	const FString path = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
+	const FString Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
 
-	FText text = FText::FromString(TEXT("The following directory paths are invalid in SpatialOS GDK for Unreal - Editor Settings:\n\n"));
+	FString DisplayMessage = TEXT("The following directory paths are invalid in SpatialOS GDK for Unreal - Editor Settings:\n\n");
 
 	bool bFoundInvalidPath = false;
 
 	if (!FPaths::DirectoryExists(SpatialOSDirectory.Path))
 	{
-		SpatialOSDirectory.Path.Empty();
-		SpatialOSDirectory.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
-		text = FText::FromString(text.ToString() + TEXT("SpatialOS directory\n"));
+		SpatialOSDirectory.Path = Path;
+		DisplayMessage += TEXT("SpatialOS directory\n");
 		bFoundInvalidPath = true;
 	}
 
 	if (!FPaths::DirectoryExists(SpatialOSSnapshotPath.Path))
 	{
-		SpatialOSSnapshotPath.Path.Empty();
-		SpatialOSSnapshotPath.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(path, TEXT("snapshots/")));
-		text = FText::FromString(text.ToString() + TEXT("Snapshot path\n"));
+		SpatialOSSnapshotPath.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(Path, TEXT("snapshots/")));
+		DisplayMessage += TEXT("Snapshot path\n");
 		bFoundInvalidPath = true;
 	}
 
 	if (!FPaths::DirectoryExists(GeneratedSchemaOutputFolder.Path))
 	{
-		GeneratedSchemaOutputFolder.Path.Empty();
-		GeneratedSchemaOutputFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(path, TEXT("schema/unreal/generated/")));
-		text = FText::FromString(text.ToString() + TEXT("Output path for the generated schemas\n"));
+		GeneratedSchemaOutputFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(Path, TEXT("schema/unreal/generated/")));
+		DisplayMessage += TEXT("Output path for the generated schemas\n");
 		bFoundInvalidPath = true;
 	}
 
 	if (bFoundInvalidPath)
 	{
-		text = FText::FromString(text.ToString() + TEXT("\nDefaults for these will now be set\n"));
-		FMessageDialog::Open(EAppMsgType::Ok, text);
+		DisplayMessage += TEXT("\nDefaults for these will now be set\n");
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DisplayMessage));
 		FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
 
 		PostEditChange();
