@@ -193,7 +193,7 @@ In the GDK, so that a client-worker instance executes a [map travel]({{urlRoot}}
             <td style="width: 30%;"><code>locator<code></td>
             <td style="width: 8%;">flag</td>
             <td style="width: 62%;">
-                <p dir="ltr">To connect a client-worker instance to a deployment using Locator, add this flag to the <code>ClientTravel</code> URL.</p>Note: If you add this option, ensure that you also add the <code>playeridentity</code> option and the <code>login</code> option to the URL.<br></td>
+                <p dir="ltr">To connect a client-worker instance to a deployment using the Locator, add this flag to the <code>ClientTravel</code> URL.</p><strong>Note</strong>: If you add this option, ensure that you also add the <code>playeridentity</code> option and the <code>login</code> option to the URL.<br></td>
         </tr>
         <tr>
             <td style="width: 30%;"><code>playeridentity</code></td>
