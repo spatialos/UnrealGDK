@@ -127,3 +127,9 @@ The `LaunchClient.bat` (which we have provided) already includes the local host 
 When launching a client-worker from the SpatialOS Console using the [Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher#the-launcher), the client-worker will connect to SpatialOS by default. It has the `Locator` information required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client-workers will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.  
 
 > Connecting by default when using the launcher is subject to change.
+
+<br/>
+
+<br/>------------<br/>
+2019-06-13 Page updated with editorial review: Added Locator information
+
