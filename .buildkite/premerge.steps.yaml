@@ -11,7 +11,7 @@ common: &common
     - "environment=production"
     - "platform=windows"
     - "permission_set=builder"
-    - "queue=v2-1551960839-2fc9bbe6e15deffd-------z"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1560265248-9d4cabb4d362b669-------z}"
   retry:
     automatic:
       - <<: *agent_transients
