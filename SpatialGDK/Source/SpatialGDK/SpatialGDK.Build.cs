@@ -41,7 +41,7 @@ public class SpatialGDK : ModuleRules
             PublicDependencyModuleNames.Add("PerfCounters");
         }
 
-        var WorkerLibraryDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString()));
+        var WorkerLibraryDir = Path.Combine(ModuleDirectory, "..", "..", "Binaries", "ThirdParty", "Improbable", Target.Platform.ToString());
 
         string LibPrefix = "";
         string ImportLibSuffix = "";
@@ -90,6 +90,7 @@ public class SpatialGDK : ModuleRules
         PublicAdditionalLibraries.AddRange(new[] { Path.Combine(WorkerLibraryDir, WorkerImportLib) });
         PublicLibraryPaths.Add(WorkerLibraryDir);
         RuntimeDependencies.Add(Path.Combine(WorkerLibraryDir, WorkerSharedLib), StagedFileType.NonUFS);
+        PublicRuntimeLibraryPaths.Add(WorkerLibraryDir);
         if (bAddDelayLoad)
         {
             PublicDelayLoadDLLs.Add(WorkerSharedLib);
