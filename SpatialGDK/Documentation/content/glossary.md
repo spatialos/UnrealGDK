@@ -441,6 +441,6 @@ See [authority](#authority).
 
 
 <br/>------<br/>
-_2019-03-15 Page updated with full editorial review_
+_2019-03-15 Page updated with editorial review_
 <br/>
 _2019-03-15 Added layers, non-Unreal layers, network operations (ops)_
