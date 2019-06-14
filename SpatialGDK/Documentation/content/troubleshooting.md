@@ -62,4 +62,4 @@ When you install Visual Studio as part of the [GDK dependencies]({{urlRoot}}/con
 
 
 <br/>------<br/>
-_2019-05-02 Page updated_
+_2019-05-02 Page updated with limited editorial review_
