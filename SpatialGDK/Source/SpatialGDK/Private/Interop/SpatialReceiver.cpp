@@ -421,7 +421,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 		if (Connection == nullptr)
 		{
-			UE_LOG(LogSpatialReceiver, Error, TEXT("Unable to find SpatialOSNetConnection! Have you timed out?"));
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Unable to find SpatialOSNetConnection! Has this worker been disconnected from SpatialOS due to a timeout?"));
 			return;
 		}
 
