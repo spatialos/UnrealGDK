@@ -419,6 +419,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			}
 		}
 
+		if (Connection == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Unable to find SpatialOSNetConnection! Have you timed out?"));
+			return;
+		}
+
 		// Set up actor channel.
 #if ENGINE_MINOR_VERSION <= 20
 		USpatialActorChannel* Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, NetDriver->IsServer()));
