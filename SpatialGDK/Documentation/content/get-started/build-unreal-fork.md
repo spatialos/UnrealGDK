@@ -63,7 +63,10 @@ You have now built Unreal Engine 4 with cross-compilation for Linux.
 
 > **Note:** Once you've built Unreal Engine, *don't move it into another directory*. That will break the integration.
 
-### Step 5: Set up a project
+</br>
+</br>
+
+**> Next:** 3 - Set up project
 
 Choose either:
 
