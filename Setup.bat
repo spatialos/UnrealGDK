@@ -1,6 +1,6 @@
 @echo off
 
-setlocal EnableDelayedExpansion
+setlocal
 
 pushd "%~dp0"
 
