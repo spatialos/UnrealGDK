@@ -205,4 +205,8 @@ private:
 	int NextRPCIndex;
 
 	float TimeWhenPositionLastUpdated;
+
+	// Counter for giving each connected client a unique IP address to satisfy Unreal's requirement of
+	// each client having a custom IP address. This address is not used for any networked purpose, only bookkeeping.
+	uint32 UniqueClientIpAddressCounter = 0;
 };
