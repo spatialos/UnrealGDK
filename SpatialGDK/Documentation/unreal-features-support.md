@@ -320,7 +320,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
     <td rowspan="3"><a href="https://docs.unrealengine.com/en-us/Gameplay/Networking/Travelling"><b>Travel<b></a></td>
     <td>Server Travel</td>
     <td class="roadmap"></td>
-    <td></td>
+    <td>Server Travel is on the <a href="https://github.com/spatialos/UnrealGDK/projects/1#card-22461878"> roadmap</a> but is not currently supported.</td>
   </tr>
   <tr>
     <td>Client Travel</td>
@@ -391,8 +391,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
 
 The table for multiserver support is coming soon. 
 
-<br/>
 
-------------
-*2019-04-25 Page added with full editorial review*
-<br/>
+
+<br/>------<br/>
+_2019-04-25 Page added with editorial review_
