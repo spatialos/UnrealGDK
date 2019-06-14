@@ -68,6 +68,14 @@ FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* I
 {
 }
 
+FPendingUnreliableRPC::FPendingUnreliableRPC(FPendingUnreliableRPC&& Other)
+	: Offset(Other.Offset)
+	, Index(Other.Index)
+	, Data(MoveTemp(Other.Data))
+	, Entity(Other.Entity)
+{
+}
+
 void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
@@ -379,8 +387,6 @@ void USpatialSender::FlushPackedUnreliableRPCs()
 	{
 		return;
 	}
-
-	check(NetDriver->GetWorld() != nullptr);
 
 	for (const auto& It : UnreliableRPCs)
 	{
@@ -983,7 +989,7 @@ void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, UFunction* F
 	RPC.Data.SetNumUninitialized(PayloadWriter.GetNumBytes());
 	FMemory::Memcpy(RPC.Data.GetData(), PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
 	RPC.Entity = TargetObjectRef.Entity;
-	UnreliableRPCs.FindOrAdd(ControllerObjectRef.Entity).Add(RPC);
+	UnreliableRPCs.FindOrAdd(ControllerObjectRef.Entity).Emplace(MoveTemp(RPC));
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)

@@ -58,6 +58,9 @@ struct FReliableRPCForRetry
 
 struct FPendingUnreliableRPC
 {
+	FPendingUnreliableRPC() = default;
+	FPendingUnreliableRPC(FPendingUnreliableRPC&& Other);
+
 	uint32 Offset;
 	Schema_FieldId Index;
 	TArray<uint8> Data;
