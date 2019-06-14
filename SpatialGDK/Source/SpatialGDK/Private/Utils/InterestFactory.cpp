@@ -195,7 +195,8 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraint()
 {
 	QueryConstraint CheckoutRadiusConstraint;
 
-	float CheckoutRadius = Actor->CheckoutRadius / 100.0f; // Convert to meters
+	// TODO - timgibson - Add seperate setting for server? Or rename setting to be agnostic.
+	const float CheckoutRadius = static_cast<float>(GetDefault<USpatialGDKSettings>()->DefaultClientInterestRadius) / 100.0f; // Convert to meters
 	CheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
 
 	return CheckoutRadiusConstraint;
