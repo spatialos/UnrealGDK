@@ -74,4 +74,4 @@ If you want to start a project from scratch, follow our [Template guide](https:/
 
 
 <br/>------<br/>
-_2019-05-21 Page updated with editorial review_
+_2019-05-21 Page added with editorial review_
