@@ -101,4 +101,4 @@ When you are done, save and close your `config.json` file.
 
 
 <br/>------<br/>
-_2019-05-21 Page updated with editorial review_
+_2019-05-21 Page added with editorial review_
