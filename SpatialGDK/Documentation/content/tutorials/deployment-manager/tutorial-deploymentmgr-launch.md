@@ -61,4 +61,4 @@ Make sure your Deployment Manager repository is in the same parent directory as 
 
 
 <br/>------<br/>
-_2019-05-21 Page updated with editorial review_
+_2019-05-21 Page added with editorial review_
