@@ -45,6 +45,7 @@ private:
 	// System Defined Constraints
 	QueryConstraint CreateCheckoutRadiusConstraint();
 	QueryConstraint CreateAlwaysInterestedConstraint();
+	QueryConstraint CreateSingletonConstraint();
 
 	// Only checkout entities that are in loaded sublevels
 	QueryConstraint CreateLevelConstraints();

@@ -6,7 +6,7 @@ Import-Module BitsTransfer
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $fileshare="\\lonv-file-01"
-$version="v0.96"
+$version="v0.98"
 $rootPath=[System.Io.Path]::GetFullPath("$env:HOMEDRIVE:\tools\fastbuild")
 
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
