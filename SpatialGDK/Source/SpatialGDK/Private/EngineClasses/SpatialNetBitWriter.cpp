@@ -10,6 +10,8 @@
 #include "SpatialConstants.h"
 #include "Utils/EntityPool.h"
 
+DEFINE_LOG_CATEGORY(LogSpatialNetSerialize);
+
 FSpatialNetBitWriter::FSpatialNetBitWriter(USpatialPackageMapClient* InPackageMap, TSet<TWeakObjectPtr<const UObject>>& InUnresolvedObjects)
 	: FNetBitWriter(InPackageMap, 0)
 	, UnresolvedObjects(InUnresolvedObjects)
