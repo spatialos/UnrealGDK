@@ -227,4 +227,4 @@ In the GDK, so that a client-worker instance executes a [map travel]({{urlRoot}}
 
 
 <br/>------<br/>
-_2019-06-13 Page updated with editorial review_
+_2019-06-13 Page added with editorial review_
