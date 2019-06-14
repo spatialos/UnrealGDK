@@ -388,6 +388,8 @@ void USpatialSender::FlushPackedUnreliableRPCs()
 		return;
 	}
 
+	// TODO: This could be further optimized for the case when there's only 1 RPC to be sent during this frame
+	// by sending it directly to the corresponding entity, without including the EntityId in the payload - UNR-1563.
 	for (const auto& It : UnreliableRPCs)
 	{
 		Worker_EntityId PlayerControllerEntityId = It.Key;
