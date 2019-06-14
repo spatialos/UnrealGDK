@@ -1243,9 +1243,13 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	{
 		return Cast<USpatialNetConnection>(ServerConnection);
 	}
-	else
+	else if(ClientConnections.Num() > 0)
 	{
 		return Cast<USpatialNetConnection>(ClientConnections[0]);
+	}
+	else
+	{
+		return nullptr;
 	}
 }
 
