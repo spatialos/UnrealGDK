@@ -5,6 +5,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SpatialWorkerFlags.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWorkerFlagsUpdated, FString, FlagName, FString, FlagValue);
 UCLASS()
 class SPATIALGDK_API USpatialWorkerFlags : public UBlueprintFunctionLibrary
 {
@@ -19,6 +20,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category="SpatialOS")
 	static bool GetWorkerFlag(const FString& Name, FString& OutValue);
 
+	static FOnWorkerFlagsUpdated OnWorkerFlagsUpdated;
 private:
 	static void ApplyWorkerFlagUpdate(const struct Worker_FlagUpdateOp& Op);
 

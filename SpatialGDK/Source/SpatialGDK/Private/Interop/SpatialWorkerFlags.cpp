@@ -4,6 +4,7 @@
 #include <WorkerSDK/improbable/c_worker.h>
 
 TMap<FString, FString> USpatialWorkerFlags::WorkerFlags;
+FOnWorkerFlagsUpdated USpatialWorkerFlags::OnWorkerFlagsUpdated;
 
 bool USpatialWorkerFlags::GetWorkerFlag(const FString& Name, FString& OutValue)
 {
@@ -25,6 +26,7 @@ void USpatialWorkerFlags::ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op)
 		FString NewValue = FString(UTF8_TO_TCHAR(Op.value));
 		FString& ValueFlag = WorkerFlags.FindOrAdd(NewName);
 		ValueFlag = NewValue;
+		OnWorkerFlagsUpdated.Broadcast(NewName, NewValue);
 	}
 	else
 	{
