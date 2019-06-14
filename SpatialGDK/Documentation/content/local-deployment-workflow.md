@@ -10,4 +10,4 @@ If you haven't already, please follow the [GDK Starter Template guide]({{urlRoot
 
 
 <br/>------<br/>
-_2019-04-15 Page updated with editorial review_
+_2019-04-15 Page added with editorial review_
