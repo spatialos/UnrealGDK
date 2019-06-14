@@ -75,8 +75,6 @@ To use the Example project, you must build the GDK for Unreal module dependencie
 
 **> Next:** [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 
 
-</br>
 
---------<br/>
-
+<br/>------<br/>
 _2019-05-21 Page added with editorial review_

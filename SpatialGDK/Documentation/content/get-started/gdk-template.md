@@ -287,7 +287,6 @@ You've successfully set up and launched the Starter Template and the GDK! You ar
 
 If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
 
-<br/>
-<br/>
-------</br>
-_2019-04-30 Page updated with limited editorial review_
+
+<br/>------<br/>
+_2019-04-30 Page updated with editorial review_

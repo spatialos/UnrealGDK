@@ -18,8 +18,7 @@ Multiple deployments of your game are useful for time-limited match-based games 
 
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-deployments.png)<br/>
 _Image: The Example Project deployment list screen_<br/>
-</br>
 
---------<br/>
 
+<br/>------<br/>
 _2019-05-21 Page added with editorial review_

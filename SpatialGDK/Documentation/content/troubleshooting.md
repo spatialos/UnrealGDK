@@ -60,5 +60,6 @@ This means you were using the GDK since pre-alpha. To fix the issue, delete the 
 
 When you install Visual Studio as part of the [GDK dependencies]({{urlRoot}}/content/get-started/dependencies) set up step, ensure you have selected the **Universal Windows Platform development** workload. This workload includes .NET Framework 4.5. If you have already installed Visual Studio, you can add the missing workload by running the Visual Studio installer and clicking **Modify** on your existing Visual Studio Installation. 
 
-------
-_2019-05-02 Page updated._
+
+<br/>------<br/>
+_2019-05-02 Page updated with limited editorial review_

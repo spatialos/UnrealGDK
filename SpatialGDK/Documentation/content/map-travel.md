@@ -132,8 +132,6 @@ When launching a client-worker from the SpatialOS Console using the [Launcher](h
 
 > Connecting by default when using the launcher is subject to change.
 
-<br/>
 
-<br/>------------<br/>
-2019-06-13 Page updated with limited editorial review: Added Locator information
-
+<br/>------<br/>
+_2019-06-13 Page updated with limited editorial review: Added Locator information_

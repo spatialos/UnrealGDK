@@ -70,8 +70,6 @@ When you’re done shooting your friends, you can click the **Stop** button in t
 * If you want to create a new game using the GDK, you should get the [Starter Template]({{urlRoot}}/content/get-started/gdk-template). 
 * If you want to port your existing game to the GDK, follow the [Porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide).
 
-<br/>
-<br/>
 
--------------</br>
+<br/>------<br/>
 _2019-03-20 Page updated with limited editorial review_

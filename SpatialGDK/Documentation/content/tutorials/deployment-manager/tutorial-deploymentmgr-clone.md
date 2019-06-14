@@ -38,6 +38,6 @@ Your cloned directory should now have a path similar to `C:\Dev\deployment-manag
 </br>
 **> Next**: [2: Generate an authentification token]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-authentication)
 
---------<br/>
 
+<br/>------<br/>
 _2019-05-21 Page added with editorial review_

@@ -41,6 +41,6 @@ If your project opens without errors you have successfully added the developer a
 
 **> Next**: [3: Build and upload workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
 
---------<br/>
 
+<br/>------<br/>
 _2019-05-21 Page added with editorial review_
