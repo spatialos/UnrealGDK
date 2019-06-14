@@ -64,7 +64,7 @@ public:
 	bool bEnableHandover;
 
 	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
-	UPROPERTY(EditAnywhere, config, Category = "Query Based Interest", meta = (ConfigRestartRequired = false, DisplayName = "Query Based Interest Enabled"))
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bUsingQBI;
 
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
@@ -98,5 +98,10 @@ public:
 	/** Batch entity position updates to be processed on a single frame.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bBatchSpatialPositionUpdates;
+
+	/** EXPERIMENTAL - This is a stop-gap until we can better define server interest on system entities.
+	Disabling this is not supported in any type of multi-server environment*/
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	bool bEnableServerQBI;
 };
 
