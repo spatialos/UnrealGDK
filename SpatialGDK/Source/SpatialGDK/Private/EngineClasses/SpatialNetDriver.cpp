@@ -1115,7 +1115,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
 	if (NetConnection == nullptr)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction but no SpatialOSNetConnection existed. Has this worker established a connection?"));
 		return;
 	}
 
@@ -1542,12 +1542,12 @@ USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_Entity
 
 USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection)
 {
-	USpatialActorChannel* Channel = nullptr;
-
 	if (InConnection == nullptr)
 	{
-		return Channel;
+		return nullptr;
 	}
+
+	USpatialActorChannel* Channel = nullptr;
 
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
