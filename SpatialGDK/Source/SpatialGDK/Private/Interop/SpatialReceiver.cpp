@@ -208,13 +208,18 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 
 	AActor* Actor = Cast<AActor>(WeakObject.Get());
 
-	TWeakObjectPtr<UObject> WeakSubobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
+	FUnrealObjectRef SubobjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]);
+
+	TWeakObjectPtr<UObject> WeakSubobject = PackageMap->GetObjectFromUnrealObjectRef(SubobjectRef);
 	UObject* Subobject = nullptr;
 
 	if (WeakSubobject.HasSameIndexAndSerialNumber(nullptr))
 	{
 		Subobject = NewObject<UObject>(Actor, Info.Class.Get());
-		//PackageMap->ResolveDynamicallyCreatedSubobject(Actor, Subobject, Info, EntityId);
+
+		Actor->OnSubobjectCreatedFromReplication(Subobject);
+
+		PackageMap->ResolveSubobject(Subobject, SubobjectRef);
 	}
 	else if (!WeakSubobject.IsValid())
 	{
