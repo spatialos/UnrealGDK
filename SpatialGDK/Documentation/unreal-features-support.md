@@ -394,4 +394,4 @@ The table for multiserver support is coming soon.
 
 
 <br/>------<br/>
-_2019-04-25 Page updated with editorial review_
+_2019-04-25 Page added with editorial review_
