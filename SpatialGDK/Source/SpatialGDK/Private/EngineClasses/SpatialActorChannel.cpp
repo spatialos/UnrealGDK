@@ -418,7 +418,8 @@ int64 USpatialActorChannel::ReplicateActor()
 	{
 		if (bCreatingNewEntity)
 		{
-			// Need to try replicating all subobjects before entity creation to make sure their respective FObjectReplicator exists when creating the entity.
+			// Need to try replicating all subobjects before entity creation to make sure their respective FObjectReplicator exists
+			// so we know what subobjects are relevant for replication when creating the entity.
 			Actor->ReplicateSubobjects(this, &Bunch, &RepFlags);
 
 			Sender->SendCreateEntityRequest(this);
@@ -473,11 +474,11 @@ int64 USpatialActorChannel::ReplicateActor()
 				continue;
 			}
 
-			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
-			if (SubobjectHandoverChangeState.Num() > 0)
-			{
-				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState);
-			}
+			//FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
+			//if (SubobjectHandoverChangeState.Num() > 0)
+			//{
+			//	Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState);
+			//}
 		}
 
 		// Look for deleted subobjects
@@ -485,6 +486,11 @@ int64 USpatialActorChannel::ReplicateActor()
 		{
 			if (!RepComp.Value()->GetWeakObjectPtr().IsValid())
 			{
+				FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromNetGUID(RepComp.Value().Get().ObjectNetGUID);
+				if (ObjectRef.IsValid())
+				{
+					Sender->SendRemoveComponent(EntityId, NetDriver->ClassInfoManager->GetClassInfoByComponentId(ObjectRef.Offset));
+				}
 
 				RepComp.Value()->CleanUp();
 				RepComp.RemoveCurrent();
@@ -520,7 +526,9 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	{
 		const FClassInfo& SubobjectInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 
-		for (auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
+		// Find the first ClassInfo relating to a dynamic subobject
+		// which has not been used on this entity.
+		for (const auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
 		{
 			if (!NetDriver->StaticComponentView->HasComponent(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data]))
 			{
@@ -528,14 +536,18 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 			}
 		}
 
+		// If all ClassInfos are used up, we error.
 		if (Info == nullptr)
 		{
-			// TODO: Too many dynamic components attached
+			UE_LOG(LogSpatialActorChannel, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
+				" the amount of max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *Actor->GetName());
 			return;
 		}
 
 		NetDriver->PackageMap->ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
 	}
+
+	check(Info != nullptr);
 
 	// Check to see if we already have authority over the subobject to be added
 	if (NetDriver->StaticComponentView->HasAuthority(EntityId, Info->SchemaComponents[SCHEMA_Data]))
@@ -626,7 +638,6 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags)
 {
 	// Intentionally don't call Super::ReplicateSubobject() but rather call our custom version instead.
-
 	return ReplicateSubobject(Obj, RepFlags);
 }
 

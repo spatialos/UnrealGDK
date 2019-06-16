@@ -39,6 +39,7 @@ public:
 	bool HasComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 
 	void OnAddComponent(const Worker_AddComponentOp& Op);
+	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
 	void OnRemoveEntity(Worker_EntityId EntityId);
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);

@@ -165,7 +165,9 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialReceiver::HandleDynamicAddComponent(Worker_AddComponentOp& Op)
 {
-	// It is valid to receive multiple add components for the same component
+	// If we are delegated a component that exists, we will receive an AddComponentOp.
+	// This will be a duplicate of the AddComponentOp we've already recieved in the AddEntity payload
+	// So it can be safely ignored.
 	if (StaticComponentView->HasComponent(Op.entity_id, Op.data.component_id))
 	{
 		return;
@@ -215,6 +217,7 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 
 	if (WeakSubobject.HasSameIndexAndSerialNumber(nullptr))
 	{
+		// If the subobject never existed, create it.
 		Subobject = NewObject<UObject>(Actor, Info.Class.Get());
 
 		Actor->OnSubobjectCreatedFromReplication(Subobject);
@@ -223,10 +226,12 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 	}
 	else if (!WeakSubobject.IsValid())
 	{
+		// If the subobject at one point existed but doesn't anymore, return.
 		return;
 	}
 	else
 	{
+		// If the subobject already exists, get it.
 		Subobject = WeakSubobject.Get();
 	}
 
@@ -253,16 +258,37 @@ void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 
 void USpatialReceiver::OnRemoveComponent(Worker_RemoveComponentOp& Op)
 {
+	// If we're in a critical section, we've received a RemoveEntityOp.
+	// Our RemoveEntityOp processing relies on component data which
+	// SpatialOS has told us to remove.
+	// Because of this, we skip over RemoveComponentOps in critical sections
+	// and let the RemoveEntityOp handle cleanup.
 	if (bInCriticalSection)
 	{
 		return;
 	}
 
-	if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
+	// If we are delegated authority over a component that does not exist, we will receive
+	// a RemoveComponentOp. We should only remove local data if this component does exist.
+	if (!StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
 	{
-		//Object->BeginDestroy();
-		PackageMap->RemoveSubobject(FUnrealObjectRef(Op.entity_id, Op.component_id));
+		return;
 	}
+
+	if (AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(Op.entity_id).Get()))
+	{
+		if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
+		{
+			Actor->OnSubobjectDestroyFromReplication(Object);
+
+			Object->PreDestroyFromReplication();
+			Object->MarkPendingKill();
+
+			PackageMap->RemoveSubobject(FUnrealObjectRef(Op.entity_id, Op.component_id));
+		}
+	}
+
+	StaticComponentView->OnRemoveComponent(Op);
 }
 
 void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
@@ -1127,6 +1153,11 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
+
+		Worker_CommandResponse Response = {};
+		Response.component_id = SpatialConstants::RPCS_ON_ENTITY_CREATION_ID;
+		Response.schema_type = Schema_CreateCommandResponse(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION);
+		Sender->SendCommandResponse(Op.request_id, Response);
 		return;
 	}
 #if WITH_EDITOR

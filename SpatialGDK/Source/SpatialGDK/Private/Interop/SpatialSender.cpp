@@ -344,10 +344,6 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
 	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, false, NetDriver);
 
-	// Reset unresolved objects so they can be filled again by DataFactory
-	UnresolvedObjectsMap.Empty();
-	HandoverUnresolvedObjectsMap.Empty();
-
 	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
 
 	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
@@ -382,6 +378,8 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
 		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
+			// For each valid ComponentId, we need to wait for its authority delegation before
+			// adding the subobject.
 			PendingSubobjectAttachment->PendingAuthorityDelegations.Add(ComponentId);
 			Receiver->PendingEntitySubobjectDelegations.Add(MakeTuple(Channel->GetEntityId(), ComponentId), PendingSubobjectAttachment);
 
@@ -397,8 +395,13 @@ void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, const FClassI
 {
 	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
 	{
-		NetDriver->Connection->SendRemoveComponent(EntityId, SubobjectComponentId);
+		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			NetDriver->Connection->SendRemoveComponent(EntityId, SubobjectComponentId);
+		}
 	}
+
+	PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
