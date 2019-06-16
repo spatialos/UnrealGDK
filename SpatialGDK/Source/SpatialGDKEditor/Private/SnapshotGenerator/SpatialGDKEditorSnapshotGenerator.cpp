@@ -106,6 +106,7 @@ Worker_ComponentData CreateStartupActorManagerData()
 	Schema_Object* StartupActorManagerObject = Schema_GetComponentDataFields(StartupActorManagerData.schema_type);
 
 	Schema_AddBool(StartupActorManagerObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, false);
+	Schema_AddBool(StartupActorManagerObject, SpatialConstants::STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID, false);
 
 	return StartupActorManagerData;
 }
