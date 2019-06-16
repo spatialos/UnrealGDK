@@ -533,6 +533,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 			if (!NetDriver->StaticComponentView->HasComponent(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data]))
 			{
 				Info = &DynamicSubobjectInfo.Get();
+				break;
 			}
 		}
 
