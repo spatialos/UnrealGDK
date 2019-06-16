@@ -474,11 +474,11 @@ int64 USpatialActorChannel::ReplicateActor()
 				continue;
 			}
 
-			//FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
-			//if (SubobjectHandoverChangeState.Num() > 0)
-			//{
-			//	Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState);
-			//}
+			FHandoverChangeState SubobjectHandoverChangeState = GetHandoverChangeList(SubobjectHandoverShadowData->Get(), Subobject);
+			if (SubobjectHandoverChangeState.Num() > 0)
+			{
+				Sender->SendComponentUpdates(Subobject, SubobjectInfo, this, nullptr, &SubobjectHandoverChangeState);
+			}
 		}
 
 		// Look for deleted subobjects

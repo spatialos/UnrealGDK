@@ -248,6 +248,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID));
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
+	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
 	{
 		if(UObject* Subobject = RepSubobject.Value()->GetWeakObjectPtr().Get())
@@ -276,37 +277,46 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		}
 	}
 
-	//for (auto& SubobjectInfoPair : Info.SubobjectInfo)
-	//{
-	//	FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
+	// Or if the subobject has handover properties, add it as well.
+	// NOTE: this is only for subobjects that are a part of the CDO.
+	// NOT dynamic subobjects which have been added before entity creation.
+	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
+	{
+		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-	//	TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
-	//	if (!Subobject.IsValid())
-	//	{
-	//		UE_LOG(LogSpatialSender, Warning, TEXT("Tried to generate initial replication state for an invalid sub-object (class %s, sub-object %s, actor %s). Object may have been deleted or is PendingKill."), *SubobjectInfo.Class->GetName(), *SubobjectInfo.SubobjectName.ToString(), *Actor->GetName());
-	//		continue;
-	//	}
+		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
+		TWeakObjectPtr<UObject> WeakSubobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
+		if (!WeakSubobject.IsValid())
+		{
+			continue;
+		}
 
-	//	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
-	//	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+		UObject* Subobject = WeakSubobject.Get();
 
-	//	// Reset unresolved objects so they can be filled again by DataFactory
-	//	UnresolvedObjectsMap.Empty();
-	//	HandoverUnresolvedObjectsMap.Empty();
+		if (SubobjectInfo.SchemaComponents[SCHEMA_Handover] == SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			continue;
+		}
 
-	//	TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
-	//	ComponentDatas.Append(ActorSubobjectDatas);
+		// If it contains it, we've already created handover data for it.
+		if (Channel->ReplicationMap.Contains(Subobject))
+		{
+			continue;
+		}
 
-	//	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
-	//	{
-	//		QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
-	//	}
+		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
-	//	for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
-	//	{
-	//		QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
-	//	}
-	//}
+		// Reset unresolved objects so they can be filled again by DataFactory
+		HandoverUnresolvedObjectsMap.Empty();
+
+		Worker_ComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges);
+		ComponentDatas.Add(SubobjectHandoverData);
+
+		for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
+		{
+			QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
+		}
+	}
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
