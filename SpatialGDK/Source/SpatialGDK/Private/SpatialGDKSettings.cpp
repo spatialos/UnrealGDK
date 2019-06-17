@@ -32,9 +32,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(true)
 	, bEnableServerQBI(bUsingQBI)
 	, bPackUnreliableRPCs(true)
-	, ActorGroups({
-		TPairInitializer<const FName&, const FActorGroupList&>(FName(TEXT("Default")), FActorGroupList({ AActor::StaticClass() }))
-	})
+	, ActorGroups(UActorGroupManager::DefaultActorGroups())
+	, WorkerTypes(UActorGroupManager::DefaultWorkerTypes())
+	, WorkerAssociation(UActorGroupManager::DefaultWorkerAssociation())
 {
 }
 
@@ -45,6 +45,9 @@ void USpatialGDKSettings::PostInitProperties()
 	// Check any command line overrides for using QBI (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
 	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
+
+	OldActorGroups = ActorGroups;
+	OldWorkerTypes = WorkerTypes;
 }
 
 #if WITH_EDITOR
@@ -68,6 +71,118 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
 		}
 	}
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ActorGroups))
+	{
+		ValidateOffloadingSettings();
+	}
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, WorkerTypes))
+	{
+		ValidateOffloadingSettings();
+	}
+
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
+
+// Returns the first key in A that is NOT in B.
+bool GetFirstDifferentValue(TArray<FName> A, TArray<FName> B, FName& OutDifferent)
+{
+	for (const FName AName : A)
+	{
+		if (!B.Contains(AName))
+		{
+			OutDifferent = AName;
+			return true;
+		}
+	}
+	return false;
+}
+
+void USpatialGDKSettings::ValidateOffloadingSettings()
+{
+	if (ActorGroups.Num() == 0)
+	{
+		ActorGroups = UActorGroupManager::DefaultActorGroups();
+	}
+
+	// Check for empty Worker Types
+	if (WorkerTypes.Num() == 0)
+	{
+		WorkerTypes = UActorGroupManager::DefaultWorkerTypes();
+	}
+
+	TArray<FName> ActorGroupKeys;
+	ActorGroups.GetKeys(ActorGroupKeys);
+
+	TArray<FName> OldActorGroupKeys;
+	OldActorGroups.GetKeys(OldActorGroupKeys);
+
+	// Check for renamed Actor Group
+	if (ActorGroups.Num() == OldActorGroups.Num())
+	{
+		FName FromActorGroup, ToActorGroup;
+		if (GetFirstDifferentValue(OldActorGroupKeys, ActorGroupKeys, FromActorGroup)
+			&& GetFirstDifferentValue(ActorGroupKeys, OldActorGroupKeys, ToActorGroup))
+		{
+			if (WorkerAssociation.ActorGroupToWorker.Contains(FromActorGroup))
+			{
+				WorkerAssociation.ActorGroupToWorker.Add(ToActorGroup, WorkerAssociation.ActorGroupToWorker.FindRef(FromActorGroup));
+				WorkerAssociation.ActorGroupToWorker.Remove(FromActorGroup);
+			}
+		}
+	}
+
+	// Check for renamed WorkerType
+	if (WorkerTypes.Num() == OldWorkerTypes.Num())
+	{
+		FName FromWorkerType, ToWorkerType;
+		if (GetFirstDifferentValue(OldWorkerTypes.Array(), WorkerTypes.Array(), FromWorkerType) &&
+			GetFirstDifferentValue(WorkerTypes.Array(), OldWorkerTypes.Array(), ToWorkerType))
+		{
+			for (auto Entry = WorkerAssociation.ActorGroupToWorker.CreateConstIterator(); Entry; ++Entry)
+			{
+				if (Entry->Value == FromWorkerType)
+				{
+					WorkerAssociation.ActorGroupToWorker.Add(Entry->Key, ToWorkerType);
+				}
+			}
+		}
+	}
+	
+	// Remove any keys for deleted actor groups.
+	TArray<FName> Keys;
+	WorkerAssociation.ActorGroupToWorker.GetKeys(Keys);
+	for (FName Key : Keys)
+	{
+		if (!ActorGroupKeys.Contains(Key))
+		{
+			WorkerAssociation.ActorGroupToWorker.Remove(Key);
+		}
+	}
+
+	FName FirstWorkerType = WorkerTypes.Array()[0];
+
+	// Add default key for any new actor groups.
+	for (FName ActorGroup : ActorGroupKeys)
+	{
+		if (!WorkerAssociation.ActorGroupToWorker.Contains(ActorGroup))
+		{
+			WorkerAssociation.ActorGroupToWorker.Add(ActorGroup, FirstWorkerType);
+		}
+	}
+
+	// Replace any now invalid Worker Types with FirstWorkerType.
+	for (auto Entry = WorkerAssociation.ActorGroupToWorker.CreateConstIterator(); Entry; ++Entry)
+	{
+		if (!WorkerTypes.Contains(Entry->Value))
+		{
+			WorkerAssociation.ActorGroupToWorker.Add(Entry->Key, FirstWorkerType);
+		}
+	}
+
+	OldActorGroups = ActorGroups;
+	OldWorkerTypes = WorkerTypes;
+}
+
 #endif

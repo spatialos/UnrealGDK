@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Utils/SchemaDatabase.h"
+#include "ActorGroupManager.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -67,6 +68,8 @@ struct FClassInfo
 	FName SubobjectName;
 
 	TMap<uint32, TSharedRef<FClassInfo>> SubobjectInfo;
+
+	FName ActorGroup;
 };
 
 class USpatialNetDriver;
@@ -101,6 +104,9 @@ public:
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
+
+	UPROPERTY()
+	UActorGroupManager* ActorGroupManager;
 
 private:
 	UPROPERTY()

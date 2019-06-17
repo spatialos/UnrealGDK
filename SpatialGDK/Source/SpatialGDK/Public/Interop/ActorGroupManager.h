@@ -1,25 +1,45 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
 
 #include "ActorGroupManager.generated.h"
 
 USTRUCT()
-struct FActorGroupList
+struct FActorClassSet
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
 	TSet<TSoftClassPtr<AActor>> ActorClasses;
 
-	FActorGroupList()
+	FActorClassSet()
 	{
 		ActorClasses = {};
 	}
 
-	FActorGroupList(TSet<TSoftClassPtr<AActor>> Classes)
+	FActorClassSet(TSet<TSoftClassPtr<AActor>> Classes)
 	{
 		ActorClasses = Classes;
+	}
+};
+
+USTRUCT()
+struct FWorkerAssociation
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	TMap<FName, FName> ActorGroupToWorker;
+
+	FWorkerAssociation()
+	{
+		ActorGroupToWorker = {};
+	}
+
+	FWorkerAssociation(TMap<FName, FName> Values)
+	{
+		ActorGroupToWorker = TMap<FName, FName>(Values);
 	}
 };
 
@@ -50,4 +70,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Actor Groups")
 	FName GetActorGroupForClass(UClass* Class);
+
+	static TMap<FName, FActorClassSet> DefaultActorGroups() {
+		return { TPairInitializer<const FName&, const FActorClassSet&>(FName(TEXT("Default")), FActorClassSet({ AActor::StaticClass() })) };
+	}
+
+	static TSet<FName> DefaultWorkerTypes() {
+		return { FName(TEXT("UnrealWorker")) };
+	}
+
+	static TMap<FName, FName> DefaultWorkerAssociation() {
+		return { TPairInitializer<const FName&, const FName&>(FName(TEXT("Default")), FName(TEXT("UnrealWorker"))) };
+	}
 };

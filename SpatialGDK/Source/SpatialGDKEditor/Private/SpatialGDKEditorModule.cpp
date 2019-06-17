@@ -8,6 +8,8 @@
 #include "ISettingsModule.h"
 #include "ISettingsContainer.h"
 #include "ISettingsSection.h"
+#include "PropertyEditor/Public/PropertyEditorModule.h"
+#include "WorkerAssociationCustomization.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
 
@@ -53,6 +55,9 @@ void FSpatialGDKEditorModule::RegisterSettings()
 			RuntimeSettingsSection->OnModified().BindRaw(this, &FSpatialGDKEditorModule::HandleRuntimeSettingsSaved);
 		}
 	}
+
+	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerAssociation", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerAssociationCustomization::MakeInstance));
 }
 
 void FSpatialGDKEditorModule::UnregisterSettings()
@@ -62,6 +67,8 @@ void FSpatialGDKEditorModule::UnregisterSettings()
 		SettingsModule->UnregisterSettings("Project", "SpatialGDKEditor", "Editor Settings");
 		SettingsModule->UnregisterSettings("Project", "SpatialGDKEditor", "Runtime Settings");
 	}
+	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	PropertyModule.UnregisterCustomPropertyTypeLayout("FWorkerAssociation");
 }
 
 bool FSpatialGDKEditorModule::HandleEditorSettingsSaved()

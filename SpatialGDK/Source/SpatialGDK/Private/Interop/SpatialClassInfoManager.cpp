@@ -32,6 +32,8 @@ void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
 		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication.")));
 		return;
 	}
+
+	ActorGroupManager = UActorGroupManager::GetInstance();
 }
 
 FORCEINLINE UClass* ResolveClass(FString& ClassPath)
@@ -215,6 +217,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
+
+	Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(Class);
+	UE_LOG(LogTemp, Log, TEXT("Class [%s] Maps to ActorGroup [%s]"), *GetPathNameSafe(Class), *Info->ActorGroup.ToString())
 }
 
 bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const

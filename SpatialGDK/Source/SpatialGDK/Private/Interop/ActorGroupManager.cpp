@@ -20,7 +20,7 @@ void UActorGroupManager::InitFromSettings()
 	ActorGroupSet.Empty();
 	ClassPathToActorGroup.Empty();
 
-	for (TPair<FName, FActorGroupList> ActorGroup : Settings->ActorGroups)
+	for (TPair<FName, FActorClassSet> ActorGroup : Settings->ActorGroups)
 	{
 		ActorGroupSet.Add(ActorGroup.Key);
 
@@ -53,6 +53,11 @@ TSet<FName> UActorGroupManager::GetActorGroups()
 
 FName UActorGroupManager::GetActorGroupForClass(UClass* Class)
 {
+	if (Class == nullptr || !Class->IsChildOf<AActor>())
+	{
+		return NAME_None;
+	}
+
 	UClass* FoundClass = Class;
 	TSoftClassPtr<AActor> ClassPtr = TSoftClassPtr<AActor>(FoundClass);
 
@@ -71,5 +76,5 @@ FName UActorGroupManager::GetActorGroupForClass(UClass* Class)
 			return ActorGroup;
 		}
 	}
-	return FName(TEXT("None"));
+	return NAME_None;
 }

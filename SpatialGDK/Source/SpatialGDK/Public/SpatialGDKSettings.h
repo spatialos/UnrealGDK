@@ -20,6 +20,9 @@ public:
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+
+	void ValidateOffloadingSettings();
+
 #endif
 
 	virtual void PostInitProperties() override;
@@ -110,6 +113,18 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bPackUnreliableRPCs;
 
-	UPROPERTY(EditAnywhere, Config, Category = "Actor Groups")
-	TMap<FName, FActorGroupList> ActorGroups;
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	TMap<FName, FActorClassSet> ActorGroups;
+
+	UPROPERTY()
+	TMap<FName, FActorClassSet> OldActorGroups;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	TSet<FName> WorkerTypes;
+
+	UPROPERTY()
+	TSet<FName> OldWorkerTypes;
+
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	FWorkerAssociation WorkerAssociation;
 };
