@@ -382,7 +382,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <tr>
     <td>iOS</td>
     <td class="roadmap"></td>
-    <td>While we have basic experimental support for iOS, it is not yet supported with sufficient testing and documentation for stable day to day development.</td>
+    <td>iOS support is experimental, with insufficient testing and documentation for stable development.</td>
   </tr>
   <tr>
     <td>Android</td>
