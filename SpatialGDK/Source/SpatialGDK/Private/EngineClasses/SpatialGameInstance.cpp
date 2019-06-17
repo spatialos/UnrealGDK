@@ -13,6 +13,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Utils/SpatialMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGameInstance);
 
@@ -118,11 +119,18 @@ bool USpatialGameInstance::ProcessConsoleExec(const TCHAR* Cmd, FOutputDevice& A
 {
 	if (!Super::ProcessConsoleExec(Cmd, Ar, Executor))
 	{
-		if (GetWorld() != nullptr && GetWorld()->GetNetDriver() != nullptr)
+		if (GetWorld() == nullptr)
 		{
-			return GetWorld()->GetNetDriver()->ProcessConsoleExec(Cmd, Ar, Executor);
+			return false;
 		}
-		return false;
+
+		USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver());
+		if (NetDriver == nullptr || NetDriver->SpatialMetrics == nullptr)
+		{
+			return false;
+		}
+
+		return NetDriver->SpatialMetrics->ProcessConsoleExec(Cmd, Ar, Executor);
 	}
 	return true;
 }

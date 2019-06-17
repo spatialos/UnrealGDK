@@ -25,6 +25,7 @@
 #include "Utils/ComponentReader.h"
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
@@ -1017,10 +1018,10 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		switch (CommandIndex)
 		{
 		case SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID:
-			NetDriver->OnStartRPCMetricsCommand(Op);
+			NetDriver->SpatialMetrics->OnStartRPCMetricsCommand(Op);
 			break;
 		case SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID:
-			NetDriver->OnStopRPCMetricsCommand(Op);
+			NetDriver->SpatialMetrics->OnStopRPCMetricsCommand(Op);
 			break;
 		}
 		return;

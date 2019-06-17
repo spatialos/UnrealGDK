@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+#include "SpatialConstants.h"
+
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -11,6 +13,8 @@
 
 class USpatialNetDriver;
 class USpatialWorkerConnection;
+
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialMetrics, Log, All);
 
 UCLASS()
 class USpatialMetrics : public UObject
@@ -27,6 +31,16 @@ public:
 	double GetAverageFPS() const { return AverageFPS; }
 	double GetWorkerLoad() const { return WorkerLoad; }
 
+	UFUNCTION(Exec)
+	void SpatialStartRPCMetrics();
+	void OnStartRPCMetricsCommand(Worker_CommandRequestOp& Op);
+
+	UFUNCTION(Exec)
+	void SpatialStopRPCMetrics();
+	void OnStopRPCMetricsCommand(Worker_CommandRequestOp& Op);
+
+	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -38,5 +52,17 @@ private:
 
 	double AverageFPS;
 	double WorkerLoad;
+
+	// TODO: Comment on how this is used.
+	struct RPCStat
+	{
+		ESchemaComponentType Type;
+		FString Name;
+		int Calls;
+		int TotalPayload;
+	};
+	TMap<FString, RPCStat> RecentRPCs;
+	bool bRPCTrackingEnabled;
+	float RPCTrackingStartTime;
 };
 

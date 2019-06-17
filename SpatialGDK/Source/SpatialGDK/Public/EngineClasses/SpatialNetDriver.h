@@ -155,16 +155,6 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
-	UFUNCTION(Exec)
-	void SpatialStartRPCMetrics();
-	void OnStartRPCMetricsCommand(Worker_CommandRequestOp& Op);
-
-	UFUNCTION(Exec)
-	void SpatialStopRPCMetrics();
-	void OnStopRPCMetricsCommand(Worker_CommandRequestOp& Op);
-
-	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
-
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -220,16 +210,4 @@ private:
 	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
 	// The GDK does not use this address for any networked purpose, only bookkeeping.
 	uint32 UniqueClientIpAddressCounter = 0;
-
-	// TODO: Comment on how this is used.
-	struct RPCStat
-	{
-		ESchemaComponentType Type;
-		FString Name;
-		int Calls;
-		int TotalPayload;
-	};
-	TMap<FString, RPCStat> RecentRPCs;
-	bool bRPCTrackingEnabled;
-	float RPCTrackingStartTime;
 };

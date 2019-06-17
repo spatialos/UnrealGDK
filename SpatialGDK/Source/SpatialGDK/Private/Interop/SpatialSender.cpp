@@ -25,6 +25,7 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
 
@@ -537,7 +538,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 			Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
-			NetDriver->TrackSentRPC(Params->Function, RPCInfo->Type, Payload.Num());
+			NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, Payload.Num());
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
@@ -589,7 +590,7 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 
-			NetDriver->TrackSentRPC(Params->Function, RPCInfo->Type, RPCPayloadSize);
+			NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, RPCPayloadSize);
 		}
 		break;
 	}
