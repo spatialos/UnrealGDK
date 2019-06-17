@@ -374,7 +374,7 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
 }
 
-void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, const FClassInfo* Info)
+void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info)
 {
 	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
 	WorkerRequirementSet ServersOnly = { ServerAttribute };
@@ -382,6 +382,9 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
 
 	TSharedRef<FPendingSubobjectAttachment> PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
+	PendingSubobjectAttachment->Subobject = Object;
+	PendingSubobjectAttachment->Channel = Channel;
+	PendingSubobjectAttachment->Info = Info;
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{

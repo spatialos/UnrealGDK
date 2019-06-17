@@ -105,7 +105,7 @@ public:
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
-	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, const FClassInfo* Info);
+	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info);
 
 private:
 	// Actor Lifecycle
