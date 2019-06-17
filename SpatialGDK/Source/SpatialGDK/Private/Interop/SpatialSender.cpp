@@ -958,14 +958,16 @@ void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, UFunction* F
 	UNetConnection* OwningConnection = TargetActor->GetNetConnection();
 	if (OwningConnection == nullptr)
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingUnreliableRPC: No connection for object %s (actor %s, entity %lld)"), *TargetObject->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity);
+		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingUnreliableRPC: No connection for object %s (RPC %s, actor %s, entity %lld)"),
+			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity);
 		return;
 	}
 
 	APlayerController* Controller = Cast<APlayerController>(OwningConnection->OwningActor);
 	if (Controller == nullptr)
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingUnreliableRPC: Connection's owner is not a player controller for object %s (actor %s, entity %lld): connection owner %s"), *TargetObject->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
+		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingUnreliableRPC: Connection's owner is not a player controller for object %s (RPC %s, actor %s, entity %lld): connection owner %s"),
+			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
 		return;
 	}
 
