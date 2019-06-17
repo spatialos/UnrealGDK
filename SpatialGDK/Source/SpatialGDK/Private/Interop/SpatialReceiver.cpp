@@ -958,15 +958,33 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 
-	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID);
+	Schema_FieldId EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
+	// Client and Server Unreliable RPCs can be packed, in which case they're sent using a different event ID.
+	if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs && Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
+	{
+		EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID;
+	}
+
+	uint32 EventCount = Schema_GetObjectCount(EventsObject, EventId);
 
 	for (uint32 i = 0; i < EventCount; i++)
 	{
-		Schema_Object* EventData = Schema_IndexObject(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID, i);
+		Schema_Object* EventData = Schema_IndexObject(EventsObject, EventId, i);
 
 		RPCPayload Payload(EventData);
 
 		FUnrealObjectRef ObjectRef(EntityId, Payload.Offset);
+
+		if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs)
+		{
+			// When packing unreliable RPCs into one update, they also always go through the PlayerController.
+			// This means we need to retrieve the actual target Entity ID from the payload.
+			if (Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
+				Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
+			{
+				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
+			}
+		}
 
 		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 

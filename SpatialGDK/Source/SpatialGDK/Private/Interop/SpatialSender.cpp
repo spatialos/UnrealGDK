@@ -68,6 +68,14 @@ FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* I
 {
 }
 
+FPendingUnreliableRPC::FPendingUnreliableRPC(FPendingUnreliableRPC&& Other)
+	: Offset(Other.Offset)
+	, Index(Other.Index)
+	, Data(MoveTemp(Other.Data))
+	, Entity(Other.Entity)
+{
+}
+
 void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
@@ -380,6 +388,43 @@ void USpatialSender::ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId
 	}
 }
 
+void USpatialSender::FlushPackedUnreliableRPCs()
+{
+	if (UnreliableRPCs.Num() == 0)
+	{
+		return;
+	}
+
+	// TODO: This could be further optimized for the case when there's only 1 RPC to be sent during this frame
+	// by sending it directly to the corresponding entity, without including the EntityId in the payload - UNR-1563.
+	for (const auto& It : UnreliableRPCs)
+	{
+		Worker_EntityId PlayerControllerEntityId = It.Key;
+		const TArray<FPendingUnreliableRPC>& PendingRPCArray = It.Value;
+
+		Worker_ComponentUpdate ComponentUpdate = {};
+
+		Worker_ComponentId ComponentId = NetDriver->IsServer() ? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+		ComponentUpdate.component_id = ComponentId;
+		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(ComponentId);
+		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
+
+		for (const FPendingUnreliableRPC& RPC : PendingRPCArray)
+		{
+			Schema_Object* EventData = Schema_AddObject(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID);
+
+			Schema_AddUint32(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_OFFSET_ID, RPC.Offset);
+			Schema_AddUint32(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_INDEX_ID, RPC.Index);
+			SpatialGDK::AddBytesToSchema(EventData, SpatialConstants::UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID, RPC.Data.GetData(), RPC.Data.Num());
+			Schema_AddEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID, RPC.Entity);
+		}
+
+		Connection->SendComponentUpdate(PlayerControllerEntityId, &ComponentUpdate);
+	}
+
+	UnreliableRPCs.Empty();
+}
+
 void FillComponentInterests(const FClassInfo& Info, bool bNetOwned, TArray<Worker_InterestOverride>& ComponentInterest)
 {
 	if (Info.SchemaComponents[SCHEMA_OwnerOnly] != SpatialConstants::INVALID_COMPONENT_ID)
@@ -565,19 +610,26 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			ComponentId = SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
 		}
 
-		Worker_ComponentUpdate ComponentUpdate = CreateUnreliableRPCUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject);
-
-		if (!UnresolvedObject)
+		if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs && RPCInfo->Type != SCHEMA_NetMulticastRPC)
 		{
-			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
+			AddPendingUnreliableRPC(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, UnresolvedObject);
+		}
+		else
+		{
+			Worker_ComponentUpdate ComponentUpdate = CreateUnreliableRPCUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject);
 
-			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
+			if (!UnresolvedObject)
 			{
-				UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
-				return;
-			}
+				check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 
-			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+				if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentUpdate.component_id))
+				{
+					UE_LOG(LogSpatialSender, Verbose, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
+					return;
+				}
+
+				Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+			}
 		}
 		break;
 	}
@@ -890,6 +942,65 @@ Worker_ComponentUpdate USpatialSender::CreateUnreliableRPCUpdate(UObject* Target
 	RPCPayload::WriteToSchemaObject(EventData, TargetObjectRef.Offset, EventIndex, PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
 
 	return ComponentUpdate;
+}
+
+void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject)
+{
+	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
+	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+	{
+		OutUnresolvedObject = TargetObject;
+		return;
+	}
+
+	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(TargetObjectRef.Entity).Get());
+	check(TargetActor != nullptr);
+	UNetConnection* OwningConnection = TargetActor->GetNetConnection();
+	if (OwningConnection == nullptr)
+	{
+		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingUnreliableRPC: No connection for object %s (RPC %s, actor %s, entity %lld)"),
+			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity);
+		return;
+	}
+
+	APlayerController* Controller = Cast<APlayerController>(OwningConnection->OwningActor);
+	if (Controller == nullptr)
+	{
+		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingUnreliableRPC: Connection's owner is not a player controller for object %s (RPC %s, actor %s, entity %lld): connection owner %s"),
+			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
+		return;
+	}
+
+	FUnrealObjectRef ControllerObjectRef = PackageMap->GetUnrealObjectRefFromObject(Controller);
+	if (ControllerObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+	{
+		OutUnresolvedObject = Controller;
+		return;
+	}
+
+	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+	FSpatialNetBitWriter PayloadWriter(PackageMap, UnresolvedObjects);
+
+	TSharedPtr<FRepLayout> RepLayout = NetDriver->GetFunctionRepLayout(Function);
+	RepLayout_SendPropertiesForRPC(*RepLayout, PayloadWriter, Parameters);
+
+	for (TWeakObjectPtr<const UObject> Object : UnresolvedObjects)
+	{
+		if (Object.IsValid())
+		{
+			// Take the first unresolved object
+			OutUnresolvedObject = Object.Get();
+			return;
+		}
+	}
+
+	FPendingUnreliableRPC RPC;
+	RPC.Offset = TargetObjectRef.Offset;
+	RPC.Index = RPCIndex;
+	RPC.Data.SetNumUninitialized(PayloadWriter.GetNumBytes());
+	FMemory::Memcpy(RPC.Data.GetData(), PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
+	RPC.Entity = TargetObjectRef.Entity;
+	UnreliableRPCs.FindOrAdd(ControllerObjectRef.Entity).Emplace(MoveTemp(RPC));
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)
