@@ -526,7 +526,7 @@ bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentRunning()
 
 FString FSpatialGDKEditorToolbarModule::ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun)
 {
-	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Attempting to execute '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
+	UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Attempting to execute '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
 
 	// Create pipes to read output of spot.
 	void* ReadPipe;
@@ -568,14 +568,14 @@ FString FSpatialGDKEditorToolbarModule::ExecuteAndReadOutput(FString Executable,
 void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 {
 	// TODO: This takes way to long to run.
-	if (!IsSpatialServiceRunning())
-	{
-		if(!TryStartSpatialService())
-		{
-			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not start local spatial deployment. Spatial service could not be started."));
-			return;
-		}
-	}
+	//if (!IsSpatialServiceRunning())
+	//{
+	//	if(!TryStartSpatialService())
+	//	{
+	//		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not start local spatial deployment. Spatial service could not be started."));
+	//		return;
+	//	}
+	//}
 
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -607,6 +607,8 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, SpotExe, SpotCreateArgs, SpatialDirectory]
 	{
+		FDateTime SpotCreateStart = FDateTime::Now();
+
 		FString SpotCreateResult = ExecuteAndReadOutput(*SpotExe, *SpotCreateArgs, *SpatialDirectory);
 
 		TSharedPtr<FJsonObject> SpotJsonResult = ParseJson(SpotCreateResult);
@@ -621,10 +623,15 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 		FString DeploymentStatus = SpotJsonContent->GetStringField(TEXT("status"));
 		if (DeploymentStatus == TEXT("RUNNING"))
 		{
-			LocalRunningDeploymentID = SpotJsonContent->GetStringField(TEXT("id"));
+			FString DeploymentID = SpotJsonContent->GetStringField(TEXT("id"));
+			LocalRunningDeploymentID = DeploymentID;
+
+			FDateTime SpotCreateEnd = FDateTime::Now();
+
+			FTimespan Span = SpotCreateEnd - SpotCreateStart;
 
 			//NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
-			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Successfully created local deplyoment with id=%s", *LocalRunningDeploymentID));
+			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
 		}
 		else
 		{
@@ -697,6 +704,13 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute()
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		bSpatialServiceRunning = IsSpatialServiceRunning();
+		if(!bSpatialServiceRunning)
+		{
+			if (!TryStartSpatialService())
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not start local spatial deployment. Spatial service could not be started."));
+			}
+		}
 	});
 
 	TimeSinceLastStartStatusCheck = FDateTime::Now();
