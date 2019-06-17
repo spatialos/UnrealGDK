@@ -1001,7 +1001,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
-		Sender->SendEmptyCommandResponse(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION, Op.request_id);
+		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 		return;
 	}
 #if WITH_EDITOR
