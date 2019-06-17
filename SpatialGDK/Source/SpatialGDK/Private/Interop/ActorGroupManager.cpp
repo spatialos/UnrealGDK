@@ -129,6 +129,12 @@ void UActorGroupManager::ValidateOffloadingSettings(TMap<FName, FActorClassSet> 
 		}
 	}
 
+	// Check for invalid WorkerType (Currently just UnrealClient)
+	if (WorkerTypes->Contains(FName(*SpatialConstants::ClientWorkerType)))
+	{
+		WorkerTypes->Remove(FName(*SpatialConstants::ClientWorkerType));
+	}
+
 	// Check for renamed WorkerType
 	if (WorkerTypes->Num() == OldWorkerTypes.Num())
 	{

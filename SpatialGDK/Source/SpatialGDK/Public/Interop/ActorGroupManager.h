@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "SpatialConstants.h"
 
 #include "ActorGroupManager.generated.h"
 
@@ -76,7 +77,7 @@ public:
 	}
 
 	static TSet<FName> DefaultWorkerTypes() {
-		return { FName(TEXT("UnrealWorker")) };
+		return { FName(*SpatialConstants::ServerWorkerType) };
 	}
 
 	static TMap<FName, FName> DefaultWorkerAssociation() {
