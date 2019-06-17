@@ -9,7 +9,6 @@
 
 #include "SpatialGDKSettings.generated.h"
 
-
 UCLASS(config = SpatialGDKSettings, defaultconfig)
 class SPATIALGDK_API USpatialGDKSettings : public UObject
 {
