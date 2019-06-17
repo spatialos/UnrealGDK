@@ -597,7 +597,20 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
-	if (bFullScan || SpatialGDKEditorInstance->FullScanRequired())
+	if (SpatialGDKEditorInstance->FullScanRequired())
+	{
+		ShowTaskStartNotification("Initial Schema Generation");
+
+		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		{
+			ShowSuccessNotification("Initial Schema Generation completed!");
+		}
+		else
+		{
+			ShowFailedNotification("Initial Schema Generation failed");
+		}
+	}
+	else if (bFullScan)
 	{
 		ShowTaskStartNotification("Generating Schema (Full)");
 
