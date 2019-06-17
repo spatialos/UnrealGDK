@@ -531,8 +531,6 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		TArray<uint8> Payload;
 		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, Payload, Params->ReliableRPCIndex);
 
-		// TODO: We could track if RPCs fail here.
-
 		if (!UnresolvedObject)
 		{
 			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
@@ -552,6 +550,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 					EntityId, CommandRequest.component_id, *Params->Function->GetName());
 			}
 		}
+		// TODO: Track queued RPCs.
+
 		break;
 	}
 	case SCHEMA_NetMulticastRPC:
@@ -572,11 +572,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			ComponentId = SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
 		}
 
-		// TODO: passing this int as an out param, maybe can rework this to be nicer?
 		int RPCPayloadSize = 0;
 		Worker_ComponentUpdate ComponentUpdate = CreateUnreliableRPCUpdate(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, RPCPayloadSize);
-
-		// TODO: We could track if RPCs fail here.
 
 		if (!UnresolvedObject)
 		{
@@ -592,6 +589,8 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 
 			NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, RPCPayloadSize);
 		}
+		// TODO: Track queued RPCs.
+
 		break;
 	}
 	default:

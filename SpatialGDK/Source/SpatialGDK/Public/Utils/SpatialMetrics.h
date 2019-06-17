@@ -53,7 +53,10 @@ private:
 	double AverageFPS;
 	double WorkerLoad;
 
-	// TODO: Comment on how this is used.
+	// RPC tracking is activated with "SpatialStartRPCMetrics" and stopped with "SpatialStopRPCMetrics"
+	// console command. It will record every sent RPC as well as the size of its payload, and then display
+	// tracked data upon stopping. Calling these console commands on the client will also start/stop RPC
+	// tracking on the server.
 	struct RPCStat
 	{
 		ESchemaComponentType Type;

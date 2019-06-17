@@ -95,7 +95,10 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
 			NetDriver->Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
 		}
-		// TODO: Maybe warn if no player controller / couldn't send for any reason
+		else
+		{
+			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStartRPCMetrics: Could not resolve local PlayerController entity!"));
+		}
 	}
 }
 
@@ -186,6 +189,10 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
 			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
 			NetDriver->Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
+		}
+		else
+		{
+			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStopRPCMetrics: Could not resolve local PlayerController entity!"));
 		}
 	}
 }
