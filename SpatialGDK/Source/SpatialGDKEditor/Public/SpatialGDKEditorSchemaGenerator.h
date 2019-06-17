@@ -13,3 +13,5 @@ SPATIALGDKEDITOR_API void ClearGeneratedSchema();
 SPATIALGDKEDITOR_API void DeleteGeneratedSchemaFiles();
 
 SPATIALGDKEDITOR_API bool TryLoadExistingSchemaDatabase();
+
+SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists();
