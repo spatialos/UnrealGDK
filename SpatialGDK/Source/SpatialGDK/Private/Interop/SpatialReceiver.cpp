@@ -223,6 +223,10 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 		Actor->OnSubobjectCreatedFromReplication(Subobject);
 
 		PackageMap->ResolveSubobject(Subobject, SubobjectRef);
+
+		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+		check(Channel != nullptr);
+		Channel->CreateSubObjects.Add(Subobject);
 	}
 	else if (!WeakSubobject.IsValid())
 	{
@@ -279,6 +283,10 @@ void USpatialReceiver::OnRemoveComponent(Worker_RemoveComponentOp& Op)
 	{
 		if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
 		{
+			USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
+			check(Channel != nullptr);
+			Channel->CreateSubObjects.Remove(Object);
+
 			Actor->OnSubobjectDestroyFromReplication(Object);
 
 			Object->PreDestroyFromReplication();
@@ -931,8 +939,11 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	TWeakObjectPtr<UObject> TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, Offset));
 	if (!TargetObject.IsValid())
 	{
+		// If we can't find this subobject, it's a dynamically attached object. Create it now.
 		TargetObject = NewObject<UObject>(this, ClassInfoManager->GetClassByComponentId(Data.component_id));
 		PackageMap->ResolveSubobject(TargetObject.Get(), FUnrealObjectRef(EntityId, Offset));
+
+		Channel->CreateSubObjects.Add(TargetObject.Get());
 	}
 
 	UClass* Class = ClassInfoManager->GetClassByComponentId(Data.component_id);
