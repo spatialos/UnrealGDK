@@ -50,9 +50,9 @@ class SPATIALGDK_API UActorGroupManager : public UObject
 	GENERATED_BODY()
 
 private:
-	TSet<FName> ActorGroupSet;
-
 	TMap<TSoftClassPtr<AActor>, FName> ClassPathToActorGroup;
+
+	TMap<FName, FName> ActorGroupToWorkerType;
 
 	UActorGroupManager();
 
@@ -60,17 +60,11 @@ private:
 
 public:
 
-	UFUNCTION(BlueprintCallable, Category = "Actor Groups")
 	static UActorGroupManager* GetInstance();
 
-	UFUNCTION(BlueprintCallable, Category = "Actor Groups")
-	void DumpActorGroups();
-
-	UFUNCTION(BlueprintCallable, Category = "Actor Groups")
-	TSet<FName> GetActorGroups();
-
-	UFUNCTION(BlueprintCallable, Category = "Actor Groups")
 	FName GetActorGroupForClass(UClass* Class);
+
+	FName GetWorkerTypeForClass(UClass* Class);
 
 	static TMap<FName, FActorClassSet> DefaultActorGroups() {
 		return { TPairInitializer<const FName&, const FActorClassSet&>(FName(TEXT("Default")), FActorClassSet({ AActor::StaticClass() })) };

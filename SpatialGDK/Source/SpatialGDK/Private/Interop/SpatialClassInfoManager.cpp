@@ -219,7 +219,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	}
 
 	Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(Class);
-	UE_LOG(LogTemp, Log, TEXT("Class [%s] Maps to ActorGroup [%s]"), *GetPathNameSafe(Class), *Info->ActorGroup.ToString())
+	Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(Class);
 }
 
 bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const

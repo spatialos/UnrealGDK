@@ -70,6 +70,7 @@ struct FClassInfo
 	TMap<uint32, TSharedRef<FClassInfo>> SubobjectInfo;
 
 	FName ActorGroup;
+	FName WorkerType;
 };
 
 class USpatialNetDriver;

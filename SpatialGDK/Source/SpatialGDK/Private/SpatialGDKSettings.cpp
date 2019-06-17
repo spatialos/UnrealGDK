@@ -85,7 +85,6 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
-// Validate Offloading settings.
 void USpatialGDKSettings::ValidateOffloadingSettings()
 {
 	UActorGroupManager::ValidateOffloadingSettings(OldActorGroups, &ActorGroups, OldWorkerTypes, &WorkerTypes, WorkerAssociation);

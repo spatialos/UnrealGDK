@@ -17,38 +17,18 @@ void UActorGroupManager::InitFromSettings()
 {
 	const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>();
 
-	ActorGroupSet.Empty();
 	ClassPathToActorGroup.Empty();
+	ActorGroupToWorkerType.Empty();
 
 	for (TPair<FName, FActorClassSet> ActorGroup : Settings->ActorGroups)
 	{
-		ActorGroupSet.Add(ActorGroup.Key);
-
 		for (TSoftClassPtr<AActor> ClassPtr : ActorGroup.Value.ActorClasses)
 		{
 			ClassPathToActorGroup.Add(ClassPtr, ActorGroup.Key);
 		}
 	}
-}
 
-void UActorGroupManager::DumpActorGroups()
-{
-	UE_LOG(LogTemp, Log, TEXT("-- Actor Groups --"))
-	for (FName ActorGroup : ActorGroupSet)
-	{
-		UE_LOG(LogTemp, Log, TEXT("[%s]"), *ActorGroup.ToString())
-	}
-
-	UE_LOG(LogTemp, Log, TEXT("-- Actor Group Mappings --"))
-	for (TPair<TSoftClassPtr<AActor>, FName> Mapping : ClassPathToActorGroup)
-	{
-		UE_LOG(LogTemp, Log, TEXT("[%s] => [%s]"), *Mapping.Key.ToString(), *Mapping.Value.ToString())
-	}
-}
-
-TSet<FName> UActorGroupManager::GetActorGroups()
-{
-	return ActorGroupSet;
+	ActorGroupToWorkerType.Append(Settings->WorkerAssociation.ActorGroupToWorker);
 }
 
 FName UActorGroupManager::GetActorGroupForClass(UClass* Class)
@@ -76,6 +56,18 @@ FName UActorGroupManager::GetActorGroupForClass(UClass* Class)
 			return ActorGroup;
 		}
 	}
+	return NAME_None;
+}
+
+FName UActorGroupManager::GetWorkerTypeForClass(UClass* Class)
+{
+	FName ActorGroup = GetActorGroupForClass(Class);
+
+	if (ActorGroupToWorkerType.Contains(ActorGroup))
+	{
+		return ActorGroupToWorkerType.FindRef(ActorGroup);
+	}
+
 	return NAME_None;
 }
 
