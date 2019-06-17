@@ -51,7 +51,7 @@ void USpatialGDKSettings::PostInitProperties()
 }
 
 #if WITH_EDITOR
-// Add a pop-up to warn users to update their config upon changing the using QBI property.
+// Add a pop-up to warn users to update their config upon changing the using QBI property, validate offloading settings.
 void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	if (PropertyChangedEvent.Property == nullptr)
@@ -83,6 +83,23 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 	}
 
 	Super::PostEditChangeProperty(PropertyChangedEvent);
+}
+
+void USpatialGDKSettings::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
+{
+	if (PropertyChangedEvent.Property == nullptr)
+	{
+		return;
+	}
+
+	const FName PropertyName = PropertyChangedEvent.PropertyChain.GetHead()->GetValue()->GetFName();
+
+	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ActorGroups))
+	{
+		ValidateOffloadingSettings();
+	}
+
+	Super::PostEditChangeChainProperty(PropertyChangedEvent);
 }
 
 void USpatialGDKSettings::ValidateOffloadingSettings()

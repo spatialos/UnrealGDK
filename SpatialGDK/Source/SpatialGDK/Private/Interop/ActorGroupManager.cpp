@@ -174,6 +174,21 @@ void UActorGroupManager::ValidateOffloadingSettings(TMap<FName, FActorClassSet> 
 			WorkerAssociation.ActorGroupToWorker.Add(Entry->Key, FirstWorkerType);
 		}
 	}
+
+	// Check Actor base class is referenced somewhere, add to first Actor Group if not.
+	bool bFoundBaseActor = false;
+	for (const TPair<FName, FActorClassSet> ActorGroup : *ActorGroups)
+	{
+		if (ActorGroup.Value.ActorClasses.Contains(TSoftClassPtr<AActor>(AActor::StaticClass())))
+		{
+			bFoundBaseActor = true;
+			break;
+		}
+	}
+	if (!bFoundBaseActor)
+	{
+		(*ActorGroups)[ActorGroupKeys[0]].ActorClasses.Add(TSoftClassPtr<AActor>(AActor::StaticClass()));
+	}
 }
 
 #endif
