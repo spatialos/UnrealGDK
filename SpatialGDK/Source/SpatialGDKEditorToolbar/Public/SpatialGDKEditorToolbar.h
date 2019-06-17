@@ -51,7 +51,8 @@ private:
 
 	void StartSpatialOSButtonClicked();
 	void StopSpatialOSButtonClicked();
-	bool StartSpatialOSStackCanExecute() const;
+	bool StartSpatialOSStackCanExecute();
+	TSharedPtr<FJsonObject> ParseJson(FString RawJsonString);
 	bool StopSpatialOSStackCanExecute();
 
 	void LaunchInspectorWebpageButtonClicked();
@@ -74,6 +75,11 @@ private:
 	void ShowFailedNotification(const FString& NotificationText);
 
 	bool ValidateGeneratedLaunchConfig() const;
+	bool IsSpatialServiceRunning();
+	bool TryStartSpatialService();
+	bool TryStopLocalDeployment(FString DeploymentID);
+	bool IsLocalDeploymentRunning();
+	FString ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun);
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
 	bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const;
@@ -100,5 +106,9 @@ private:
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
 	FDateTime TimeSinceLastStatusCheck;
+	FDateTime TimeSinceLastStartStatusCheck;
 	bool bStopCanExecute;
+	bool bStartCanExecute;
+	bool bSpatialServiceRunning;
+	FString LocalRunningDeploymentID;
 };
