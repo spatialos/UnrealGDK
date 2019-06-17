@@ -897,6 +897,15 @@ void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_Com
 	Connection->SendCommandResponse(request_id, &Response);
 }
 
+void USpatialSender::SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId)
+{
+	Worker_CommandResponse Response = {};
+	Response.component_id = ComponentId;
+	Response.schema_type = Schema_CreateCommandResponse(ComponentId, CommandIndex);
+
+	Connection->SendCommandResponse(RequestId, &Response);
+}
+
 void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover)
 {
 	// Choose the correct container based on whether it's handover or not
