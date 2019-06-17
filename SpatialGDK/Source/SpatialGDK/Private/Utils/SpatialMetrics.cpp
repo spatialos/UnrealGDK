@@ -102,14 +102,9 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 	}
 }
 
-void USpatialMetrics::OnStartRPCMetricsCommand(Worker_CommandRequestOp& Op)
+void USpatialMetrics::OnStartRPCMetricsCommand()
 {
 	SpatialStartRPCMetrics();
-
-	Worker_CommandResponse Response = {};
-	Response.component_id = Op.request.component_id;
-	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID);
-	NetDriver->Sender->SendCommandResponse(Op.request_id, Response);
 }
 
 void USpatialMetrics::SpatialStopRPCMetrics()
@@ -197,14 +192,9 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 	}
 }
 
-void USpatialMetrics::OnStopRPCMetricsCommand(Worker_CommandRequestOp& Op)
+void USpatialMetrics::OnStopRPCMetricsCommand()
 {
 	SpatialStopRPCMetrics();
-
-	Worker_CommandResponse Response = {};
-	Response.component_id = Op.request.component_id;
-	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID);
-	NetDriver->Sender->SendCommandResponse(Op.request_id, Response);
 }
 
 void USpatialMetrics::TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize)
