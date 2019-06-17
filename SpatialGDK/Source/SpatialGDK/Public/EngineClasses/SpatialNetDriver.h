@@ -216,6 +216,11 @@ private:
 
 	float TimeWhenPositionLastUpdated;
 
+	// Counter for giving each connected client a unique IP address to satisfy Unreal's requirement of
+	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
+	// The GDK does not use this address for any networked purpose, only bookkeeping.
+	uint32 UniqueClientIpAddressCounter = 0;
+
 	// TODO: Comment on how this is used.
 	struct RPCStat
 	{
