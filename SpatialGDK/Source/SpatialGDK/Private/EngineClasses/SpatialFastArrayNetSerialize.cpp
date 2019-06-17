@@ -60,7 +60,12 @@ void SpatialFastArrayNetSerializeCB::NetSerializeStruct(UScriptStruct* Struct, F
 		{
 			bHasUnmapped = true;
 		}
-		checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
+
+		// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
+		if (!bSuccess)
+		{
+			UE_LOG(LogSpatialNetSerialize, Warning, TEXT("SpatialFastArrayNetSerialize: NetSerialize %s failed."), *Struct->GetFullName());
+		}
 	}
 	else
 	{
