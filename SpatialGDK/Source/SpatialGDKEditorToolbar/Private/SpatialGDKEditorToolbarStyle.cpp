@@ -60,16 +60,16 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSchema.Small",
 		new IMAGE_BRUSH(TEXT("Schema@0.5x"), Icon20x20));
 
-	Style->Set("SpatialGDKEditorToolbar.StartSpatialOSStackAction",
+	Style->Set("SpatialGDKEditorToolbar.StartSpatialDeployment",
 		new IMAGE_BRUSH(TEXT("Launch"), Icon40x40));
 
-	Style->Set("SpatialGDKEditorToolbar.StartSpatialOSStackAction.Small",
+	Style->Set("SpatialGDKEditorToolbar.StartSpatialDeployment.Small",
 		new IMAGE_BRUSH(TEXT("Launch@0.5x"), Icon20x20));
 	
-	Style->Set("SpatialGDKEditorToolbar.StopSpatialOSStackAction",
+	Style->Set("SpatialGDKEditorToolbar.StopSpatialDeployment",
 		new IMAGE_BRUSH(TEXT("Stop"), Icon40x40));
 
-	Style->Set("SpatialGDKEditorToolbar.StopSpatialOSStackAction.Small",
+	Style->Set("SpatialGDKEditorToolbar.StopSpatialDeployment.Small",
 		new IMAGE_BRUSH(TEXT("Stop@0.5x"), Icon20x20));
 	
 	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction",
@@ -77,6 +77,18 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	
 	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction.Small",
 		new IMAGE_BRUSH(TEXT("Inspector@0.5x"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.StartSpatialService",
+		new IMAGE_BRUSH(TEXT("ServiceStopped"), Icon40x40));
+
+	Style->Set("SpatialGDKEditorToolbar.StartSpatialService.Small",
+		new IMAGE_BRUSH(TEXT("ServiceStopped"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.StopSpatialService",
+		new IMAGE_BRUSH(TEXT("ServiceRunning"), Icon40x40));
+
+	Style->Set("SpatialGDKEditorToolbar.StopSpatialService.Small",
+		new IMAGE_BRUSH(TEXT("ServiceRunning"), Icon20x20));
 
 	return Style;
 }

@@ -67,7 +67,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	bStopSpatialOnExit = GetDefault<USpatialGDKEditorSettings>()->bStopSpatialOnExit;
 
 	// For checking whether we can stop or start.
-	TimeSinceLastStatusCheck = FDateTime::Now();
+	LastSpatialServiceCheck = FDateTime::Now();
 	bStopCanExecute = false;
 }
 
@@ -150,23 +150,37 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::CanExecuteSnapshotGenerator));
 
 	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute),
+		FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute),
 		FIsActionChecked(),
-		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute));
+		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute));
 
 	InPluginCommands->MapAction(
-		FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction,
-		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSButtonClicked),
-		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute),
+		FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute),
 		FIsActionChecked(),
-		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute));
+		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute));
 
 	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked),
 		FCanExecuteAction());
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().StartSpatialService,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute),
+		FIsActionChecked(),
+		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute));
+
+	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().StopSpatialService,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked),
+		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute),
+		FIsActionChecked(),
+		FIsActionButtonVisible::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute));
 }
 
 void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandList> InPluginCommands)
@@ -200,9 +214,11 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 	{
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSchema);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction);
-		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 	}
 	Builder.EndSection();
 }
@@ -220,9 +236,11 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 		true
 	);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().CreateSpatialGDKSnapshot);
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialOSStackAction);
-	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialOSStackAction);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 }
 
 TSharedRef<SWidget> FSpatialGDKEditorToolbarModule::CreateGenerateSchemaMenuContent()
@@ -435,22 +453,24 @@ bool FSpatialGDKEditorToolbarModule::TryStartSpatialService()
 	if (ServiceStartResult.Contains(TEXT("pid")))
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service started! %s"), *ServiceStartResult);
+		bSpatialServiceRunning = true;
 		return true;
 	}
 	else
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Spatial service failed to start! %s"), *ServiceStartResult);
+		bSpatialServiceRunning = false;
 		return false;
 	}
 }
 
 // TODO: Might want to just make this delete any running deployment.
-bool FSpatialGDKEditorToolbarModule::TryStopLocalDeployment(FString DeploymentID)
+bool FSpatialGDKEditorToolbarModule::TryStopLocalDeployment()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString SpotExe = SpatialGDKSettings->GetSpotPath();
-	FString SpotListArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *DeploymentID);
+	FString SpotListArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *LocalRunningDeploymentID);
 	const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
 
 	FString SpotDeleteResult = ExecuteAndReadOutput(*SpotExe, *SpotListArgs, *SpatialDirectory);
@@ -464,8 +484,10 @@ bool FSpatialGDKEditorToolbarModule::TryStopLocalDeployment(FString DeploymentID
 	TSharedPtr<FJsonObject> SpotJsonResult = ParseJson(SpotDeleteResult);
 	if (!SpotJsonResult.IsValid())
 	{
+		// TODO: This isn't robust
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Json parsing of spot delete result failed."));
-		LocalRunningDeploymentID = "";
+		LocalRunningDeploymentID.Empty();
+		bLocalDeploymentRunning = false;
 		return false;
 	}
 
@@ -474,9 +496,9 @@ bool FSpatialGDKEditorToolbarModule::TryStopLocalDeployment(FString DeploymentID
 	FString DeploymentStatus = SpotJsonContent->GetStringField(TEXT("status"));
 	if (DeploymentStatus == TEXT("STOPPED"))
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Successfully stopped local deplyoment with id=%s", *DeploymentID));
-
-		LocalRunningDeploymentID = "";
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Successfully stopped local deplyoment"));
+		LocalRunningDeploymentID.Empty();
+		bLocalDeploymentRunning = false;
 		return true;
 	}
 
@@ -486,6 +508,11 @@ bool FSpatialGDKEditorToolbarModule::TryStopLocalDeployment(FString DeploymentID
 
 bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentRunning()
 {
+	if(!bSpatialServiceRunning)
+	{
+		return false;
+	}
+
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString SpotExe = SpatialGDKSettings->GetSpotPath();
@@ -516,6 +543,7 @@ bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentRunning()
 
 			// TODO: Better way of getting current running deployment ID.
 			LocalRunningDeploymentID = DeploymentId;
+			bLocalDeploymentRunning = true;
 
 			return true;
 		}
@@ -565,18 +593,33 @@ FString FSpatialGDKEditorToolbarModule::ExecuteAndReadOutput(FString Executable,
 	return ReadPipeResult;
 }
 
-void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
+void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 {
-	// TODO: This takes way to long to run.
-	//if (!IsSpatialServiceRunning())
-	//{
-	//	if(!TryStartSpatialService())
-	//	{
-	//		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not start local spatial deployment. Spatial service could not be started."));
-	//		return;
-	//	}
-	//}
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+	{
+		if (!bSpatialServiceRunning)
+		{
+			FDateTime StartTime = FDateTime::Now();
+			if (!TryStartSpatialService())
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not start local spatial deployment. Spatial service could not be started."));
+				return;
+			}
 
+			FDateTime EndTime = FDateTime::Now();
+			FTimespan Span = EndTime - StartTime;
+			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatail service started in %f secoonds."), Span.GetTotalSeconds());
+		}
+	});
+}
+
+void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
+{
+	bSpatialServiceRunning = false;
+}
+
+void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentAsync()
+{
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString LaunchConfig;
@@ -615,7 +658,8 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 		if (!SpotJsonResult.IsValid())
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Json parsing of spot create result failed."));
-			LocalRunningDeploymentID = "";
+			LocalRunningDeploymentID.Empty();
+			bLocalDeploymentRunning = false;
 		}
 
 		TSharedPtr<FJsonObject> SpotJsonContent = SpotJsonResult->GetObjectField(TEXT("content"));
@@ -625,6 +669,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 		{
 			FString DeploymentID = SpotJsonContent->GetStringField(TEXT("id"));
 			LocalRunningDeploymentID = DeploymentID;
+			bLocalDeploymentRunning = true;
 
 			FDateTime SpotCreateEnd = FDateTime::Now();
 
@@ -643,10 +688,31 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	});
 }
 
-void FSpatialGDKEditorToolbarModule::StopSpatialOSButtonClicked()
+void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 {
-	// TODO: Might wanna check if any deployment is running first?
-	TryStopLocalDeployment(LocalRunningDeploymentID);
+	bLocalDeploymentRunning = true;
+
+	if(!bSpatialServiceRunning)
+	{
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+		{
+			TryStartSpatialService();
+			StartSpatialDeploymentAsync();
+		});
+		return;
+	}
+
+	StartSpatialDeploymentAsync();
+}
+
+void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
+{
+	if (bSpatialServiceRunning && bLocalDeploymentRunning) {
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+		{
+			TryStopLocalDeployment();
+		});
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::StopRunningStack()
@@ -686,60 +752,61 @@ TSharedPtr<FJsonObject> FSpatialGDKEditorToolbarModule::ParseJson(FString RawJso
 	return JsonParsed;
 }
 
-bool FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute()
+bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute()
 {
-	FDateTime ModTime = TimeSinceLastStartStatusCheck;
-
-	// TODO: Make this configurable.
-	ModTime += FTimespan::FromSeconds(2);
-	FDateTime NowTime = FDateTime::Now();
-
-	if (NowTime < ModTime)
-	{
-		// TODO: Better way of storing this stateful bool.
-		return bStartCanExecute;
-	}
-
-	// TODO: This should be moved to another location / gui item.
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
-	{
-		bSpatialServiceRunning = IsSpatialServiceRunning();
-		if(!bSpatialServiceRunning)
-		{
-			if (!TryStartSpatialService())
-			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not start local spatial deployment. Spatial service could not be started."));
-			}
-		}
-	});
-
-	TimeSinceLastStartStatusCheck = FDateTime::Now();
-
-	bStartCanExecute = LocalRunningDeploymentID.IsEmpty() && bSpatialServiceRunning;
+	bStartCanExecute = !bLocalDeploymentRunning && bSpatialServiceRunning;
 
 	return bStartCanExecute;
 }
 
-// TODO: How often is this called? might be expensive to call Spot all the time.
-bool FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute()
+bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute()
 {
-	FDateTime ModTime = TimeSinceLastStatusCheck;
+	return !bSpatialServiceRunning;
+}
 
-	// TODO: Make this configurable.
-	ModTime += FTimespan::FromSeconds(2);
-	FDateTime NowTime = FDateTime::Now();
+bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute()
+{
+	FDateTime CurrentTime = FDateTime::Now();
 
-	if(NowTime < ModTime)
+	FTimespan Span = CurrentTime - LastSpatialServiceCheck;
+
+	if (Span.GetSeconds() < 2)
 	{
-		// TODO: Better way of storing this stateful bool.
+		return bSpatialServiceRunning;
+	}
+
+	// TODO: Auto start spatial service based on config value
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+	{
+		bSpatialServiceRunning = IsSpatialServiceRunning();
+	});
+	
+	LastSpatialServiceCheck = FDateTime::Now();
+
+	return bSpatialServiceRunning;
+}
+
+// TODO: How often is this called? might be expensive to call Spot all the time.
+bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute()
+{
+	if(!bSpatialServiceRunning)
+	{
+		return false;
+	}
+
+	FDateTime CurrentTime = FDateTime::Now();
+
+	FTimespan Span = CurrentTime - LastDeploymentCheck;
+
+	if (Span.GetSeconds() < 2)
+	{
 		return bStopCanExecute;
 	}
 
-	bool bIsLocalDeploymentRunning = IsLocalDeploymentRunning();
+	// TODO: Update async
+	bStopCanExecute = IsLocalDeploymentRunning();
 
-	TimeSinceLastStatusCheck = FDateTime::Now();
-
-	bStopCanExecute = bIsLocalDeploymentRunning;
+	LastDeploymentCheck = FDateTime::Now();
 
 	return bStopCanExecute;
 }

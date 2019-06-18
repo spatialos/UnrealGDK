@@ -49,11 +49,13 @@ private:
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void AddMenuExtension(FMenuBuilder& Builder);
 
-	void StartSpatialOSButtonClicked();
-	void StopSpatialOSButtonClicked();
-	bool StartSpatialOSStackCanExecute();
+	void StartSpatialDeploymentButtonClicked();
+	void StopSpatialDeploymentButtonClicked();
+	bool StartSpatialDeploymentCanExecute();
+	bool StartSpatialServiceCanExecute();
+	bool StopSpatialServiceCanExecute();
 	TSharedPtr<FJsonObject> ParseJson(FString RawJsonString);
-	bool StopSpatialOSStackCanExecute();
+	bool StopSpatialDeploymentCanExecute();
 
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
@@ -77,9 +79,12 @@ private:
 	bool ValidateGeneratedLaunchConfig() const;
 	bool IsSpatialServiceRunning();
 	bool TryStartSpatialService();
-	bool TryStopLocalDeployment(FString DeploymentID);
+	bool TryStopLocalDeployment();
 	bool IsLocalDeploymentRunning();
 	FString ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun);
+	void StartSpatialServiceButtonClicked();
+	void StopSpatialServiceButtonClicked();
+	void StartSpatialDeploymentAsync();
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
 	bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const;
@@ -105,10 +110,14 @@ private:
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
-	FDateTime TimeSinceLastStatusCheck;
-	FDateTime TimeSinceLastStartStatusCheck;
+	FDateTime LastSpatialServiceCheck;
+	FDateTime LastDeploymentCheck;
 	bool bStopCanExecute;
 	bool bStartCanExecute;
 	bool bSpatialServiceRunning;
+	bool bLocalDeploymentRunning;
 	FString LocalRunningDeploymentID;
+
+	bool bStartSpatialServiceCanExecute;
+	bool bStopSpatialServiceCanExecute;
 };
