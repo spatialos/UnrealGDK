@@ -258,6 +258,17 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 	}
 }
 
+void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
+{
+	if (FString* ClassPath = SchemaDatabase->ComponentIdToClassPath.Find(ComponentId))
+	{
+		if (UClass* Class = LoadObject<UClass>(nullptr, **ClassPath))
+		{
+			CreateClassInfoForClass(Class);
+		}
+	}
+}
+
 bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const
 {
 	return SchemaDatabase->ActorClassPathToSchema.Contains(PathName) || SchemaDatabase->SubobjectClassPathToSchema.Contains(PathName);
@@ -271,19 +282,6 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* 
 	}
 	
 	return ClassInfoMap[Class].Get();
-}
-
-const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset)
-{
-	const FClassInfo& Info = GetOrCreateClassInfoByClass(Class);
-
-	if (Offset == 0)
-	{
-		return Info;
-	}
-
-	TSharedRef<FClassInfo> SubobjectInfo = Info.SubobjectInfo.FindChecked(Offset);
-	return SubobjectInfo.Get();
 }
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject* Object)
@@ -300,12 +298,17 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject
 
 		check(ObjectRef.IsValid());
 
-		return GetOrCreateClassInfoByClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
+		return ComponentToClassInfoMap[ObjectRef.Offset].Get();
 	}
 }
 
-const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_ComponentId ComponentId) const
+const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_ComponentId ComponentId)
 {
+	if (!ComponentToClassInfoMap.Contains(ComponentId))
+	{
+		TryCreateClassInfoForComponentId(ComponentId);
+	}
+
 	TSharedRef<FClassInfo> Info = ComponentToClassInfoMap.FindChecked(ComponentId);
 	return Info.Get();
 }
@@ -332,6 +335,11 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 
 bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {
+	if (!ComponentToOffsetMap.Contains(ComponentId))
+	{
+		TryCreateClassInfoForComponentId(ComponentId);
+	}
+
 	if (uint32* Offset = ComponentToOffsetMap.Find(ComponentId))
 	{
 		OutOffset = *Offset;
@@ -343,6 +351,11 @@ bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId Compone
 
 ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_ComponentId ComponentId)
 {
+	if (!ComponentToCategoryMap.Contains(ComponentId))
+	{
+		TryCreateClassInfoForComponentId(ComponentId);
+	}
+
 	if (ESchemaComponentType* Category = ComponentToCategoryMap.Find(ComponentId))
 	{
 		return *Category;

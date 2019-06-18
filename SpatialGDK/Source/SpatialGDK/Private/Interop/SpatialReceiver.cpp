@@ -613,6 +613,11 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				continue;
 			}
 
+			if (PendingAddComponent.ComponentId == 30146)
+			{
+				__debugbreak();
+			}
+
 			if (PendingAddComponent.EntityId == EntityId)
 			{
 				ApplyComponentData(EntityId, *PendingAddComponent.Data->ComponentData, Channel);
@@ -940,7 +945,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	if (!TargetObject.IsValid())
 	{
 		// If we can't find this subobject, it's a dynamically attached object. Create it now.
-		TargetObject = NewObject<UObject>(this, ClassInfoManager->GetClassByComponentId(Data.component_id));
+		TargetObject = NewObject<UObject>(Channel->GetActor(), ClassInfoManager->GetClassByComponentId(Data.component_id));
 		PackageMap->ResolveSubobject(TargetObject.Get(), FUnrealObjectRef(EntityId, Offset));
 
 		Channel->CreateSubObjects.Add(TargetObject.Get());

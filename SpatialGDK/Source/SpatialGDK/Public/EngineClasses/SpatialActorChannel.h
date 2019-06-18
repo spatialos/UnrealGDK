@@ -68,7 +68,7 @@ public:
 	}
 
 	// Indicates whether this client worker has "ownership" (authority over Client endpoint) over the entity corresponding to this channel.
-	FORCEINLINE bool IsOwnedByWorker() const
+	bool IsOwnedByWorker() const
 	{
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
 		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId)->ComponentWriteAcl.Find(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID))

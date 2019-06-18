@@ -92,9 +92,8 @@ public:
 	bool IsSupportedClass(const FString& PathName) const;
 
 	const FClassInfo& GetOrCreateClassInfoByClass(UClass* Class);
-	const FClassInfo& GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset);
 	const FClassInfo& GetOrCreateClassInfoByObject(UObject* Object);
-	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId) const;
+	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId);
 
 	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
@@ -107,6 +106,7 @@ public:
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
+	void TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId);
 
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);

@@ -21,10 +21,11 @@
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectIterator.h"
 
-#include "TypeStructure.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "SchemaGenerator.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
+#include "TypeStructure.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
@@ -360,6 +361,42 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
+TMap<uint32, FString> CreateComponentIdToClassPathMap()
+{
+	TMap<uint32, FString> ComponentIdToClassPath;
+
+	for (const auto& ActorSchemaData : ActorClassPathToSchema)
+	{
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
+			ComponentIdToClassPath.Add(ActorSchemaData.Value.SchemaComponents[Type], ActorSchemaData.Key);
+		});
+
+		for (const auto& SubobjectSchemaData : ActorSchemaData.Value.SubobjectData)
+		{
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+			{
+				ComponentIdToClassPath.Add(SubobjectSchemaData.Value.SchemaComponents[Type], SubobjectSchemaData.Value.ClassPath);
+			});
+		}
+	}
+
+	for (const auto& SubobjectSchemaData : SubobjectClassPathToSchema)
+	{
+		for (const auto& DynamicSubobjectData : SubobjectSchemaData.Value.DynamicSubobjectComponents)
+		{
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+			{
+				ComponentIdToClassPath.Add(DynamicSubobjectData.SchemaComponents[Type], SubobjectSchemaData.Key);
+			});
+		}
+	}
+
+	ComponentIdToClassPath.Remove(SpatialConstants::INVALID_COMPONENT_ID);
+
+	return ComponentIdToClassPath;
+}
+
 void SaveSchemaDatabase()
 {
 	FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
@@ -370,8 +407,9 @@ void SaveSchemaDatabase()
 	SchemaDatabase->ActorClassPathToSchema = ActorClassPathToSchema;
 	SchemaDatabase->SubobjectClassPathToSchema = SubobjectClassPathToSchema;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
+	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
 	SchemaDatabase->LevelComponentIds = LevelComponentIds;
-
+	
 	FAssetRegistryModule::AssetCreated(SchemaDatabase);
 	SchemaDatabase->MarkPackageDirty();
 
@@ -412,7 +450,8 @@ TArray<UClass*> GetAllSupportedClasses()
 			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("HOTRELOADED_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("PROTO_BP_"), ESearchCase::CaseSensitive))
+			|| SupportedClass->GetName().StartsWith(TEXT("PROTO_BP_"), ESearchCase::CaseSensitive)
+			|| SupportedClass->GetName().StartsWith(TEXT("PLACEHOLDER-CLASS_"), ESearchCase::CaseSensitive))
 		{
 			continue;
 		}

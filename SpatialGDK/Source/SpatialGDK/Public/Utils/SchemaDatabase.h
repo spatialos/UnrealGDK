@@ -88,6 +88,9 @@ public:
 	TMap<FString, uint32> LevelPathToComponentId;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	TMap<uint32, FString> ComponentIdToClassPath;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TSet<uint32> LevelComponentIds;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)

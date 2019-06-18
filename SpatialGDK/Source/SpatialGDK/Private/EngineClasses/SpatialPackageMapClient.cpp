@@ -347,8 +347,6 @@ FNetworkGUID FSpatialNetGUIDCache::AssignNewEntityActorNetGUID(AActor* Actor, Wo
 
 void FSpatialNetGUIDCache::AssignNewSubobjectNetGUID(UObject* Subobject, const FUnrealObjectRef& SubobjectRef)
 {
-	// AssignNewStablyNamedObjectNetGUID is not used due to using the wrong ObjectRef as the outer of the subobject.
-	// So it is ok to use RegisterObjectRef in both cases since no prior bookkeeping was done (unlike Actors)
 	FNetworkGUID SubobjectNetGUID = GetOrAssignNetGUID_SpatialGDK(Subobject);
 	RegisterObjectRef(SubobjectNetGUID, SubobjectRef);
 
