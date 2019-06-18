@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
-#include "ActorGroupManager.h"
+#include "Utils/ActorGroupManager.h"
 
 #include "SpatialGDKSettings.generated.h"
 
