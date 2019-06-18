@@ -87,7 +87,7 @@ void FDetailAssociationBuilder::GenerateChildContent(IDetailChildrenBuilder& Chi
 		ChildrenBuilder.AddCustomRow(LOCTEXT("", ""))
 		.NameContent()
 			[
-				SNew(STextBlock).Text(FText::FromName(ActorGroup))
+				SNew(STextBlock).Font(IDetailLayoutBuilder::GetDetailFont()).Text(FText::FromName(ActorGroup))
 			]
 		.ValueContent()
 			[

@@ -13,6 +13,7 @@ public class SpatialGDKEditor : ModuleRules
 			new string[] {
 				"Core",
 				"CoreUObject",
+                "EditorStyle",
 				"Engine",
  				"EngineSettings",
                 "PropertyEditor",
