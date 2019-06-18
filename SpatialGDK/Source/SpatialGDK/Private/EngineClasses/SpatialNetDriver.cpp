@@ -34,6 +34,7 @@
 #include "Utils/EntityPool.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
+#include "SpatialGDKEditorToolbar.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
