@@ -157,6 +157,8 @@ private:
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
+	void RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object);
+
 	void ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
 
 	void ReceiveCommandResponse(Worker_CommandResponseOp& Op);

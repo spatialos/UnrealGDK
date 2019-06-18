@@ -134,11 +134,12 @@ namespace SpatialConstants
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID = 2;
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID = 3;
 	// UnrealPackedRPCPayload additional Field ID
-	const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID = 4;
+	const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID = 4;	
 
 	// Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
-	const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID = 1;
-	const Schema_FieldId UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID = 2;
+	const Schema_FieldId UNREAL_RPC_ENDPOINT_READY_ID = 1;
+	const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID = 1;	
+	const Schema_FieldId UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID = 2;	
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID = 1;
 
 	const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
@@ -178,4 +179,33 @@ namespace SpatialConstants
 	const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
 
 	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
+}
+
+// TO-DO: Do we need this?
+FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)
+{
+	switch (SchemaType)
+	{
+	case SCHEMA_CrossServerRPC:
+	{
+		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+	}
+	case SCHEMA_NetMulticastRPC:
+	{
+		return SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
+	}
+	case SCHEMA_ClientReliableRPC:
+	case SCHEMA_ClientUnreliableRPC:
+	{
+		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+	}
+	case SCHEMA_ServerReliableRPC:
+	case SCHEMA_ServerUnreliableRPC:
+	{
+		return SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+	}
+	default:
+		checkNoEntry();
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
 }

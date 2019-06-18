@@ -1168,7 +1168,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		TSharedRef<FPendingRPCParams> RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++);
+		FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++);
 
 		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 		{
@@ -1178,7 +1178,8 @@ void USpatialNetDriver::ProcessRemoteFunction(
 			}
 		}
 
-		Sender->SendRPC(RPCParams);
+		Sender->QueueOutgoingRPC(RPCParams);
+		Sender->ResolveOutgoingRPCs(CallingObject);
 	}
 }
 
@@ -1695,4 +1696,19 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
+}
+
+bool USpatialNetDriver::IsEntityListening(Worker_EntityId EntityId) const
+{
+	return ListeningEntities.Contains(EntityId);
+}
+
+void USpatialNetDriver::RegisterListeningEntity(Worker_EntityId EntityId)
+{
+	ListeningEntities.Add(EntityId);
+}
+
+void USpatialNetDriver::UnregisterListeningEntity(Worker_EntityId EntityId)
+{
+	ListeningEntities.Remove(EntityId);
 }
