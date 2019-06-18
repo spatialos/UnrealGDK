@@ -24,9 +24,6 @@ public:
 
 	void ValidateOffloadingSettings();
 
-	void DoValidate(TMap<FName, FActorClassSet> OldActorGroups, TMap<FName, FActorClassSet>* ActorGroups,
-		TSet<FName> OldWorkerTypes, TSet<FName>* WorkerTypes, FWorkerAssociation& WorkerAssociation);
-
 #endif
 
 	virtual void PostInitProperties() override;
