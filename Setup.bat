@@ -27,14 +27,8 @@ call :MarkStartOfBlock "Setup the git hooks"
 call :MarkEndOfBlock "Setup the git hooks"
 
 call :MarkStartOfBlock "Check dependencies"
-    if not defined UNREAL_HOME (
-        echo Error: Please set UNREAL_HOME environment variable to point to the Unreal Engine folder.
-        pause
-        exit /b 1
-    )
 
-    rem Use Unreal Engine's script to get the path to MSBuild. This turns off echo so turn it back on for TeamCity.
-    call "%UNREAL_HOME%\Engine\Build\BatchFiles\GetMSBuildPath.bat"
+    call "%~dp0SpatialGDK\Build\Scripts\FindMSBuild.bat"
 
     if not defined MSBUILD_EXE (
         echo Error: Could not find the MSBuild executable. Please make sure you have Microsoft Visual Studio or Microsoft Build Tools installed.
@@ -57,8 +51,11 @@ call :MarkStartOfBlock "Setup variables"
     set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
     set WORKER_SDK_DIR_OLD=%~dp0SpatialGDK\Source\Public\WorkerSdk
     set BINARIES_DIR=%~dp0SpatialGDK\Binaries\ThirdParty\Improbable
+
+    rem Copy schema to the projects spatial directory.
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
+
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"

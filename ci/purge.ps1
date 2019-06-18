@@ -9,8 +9,6 @@
 # The expected usage is as follows:
 #   powershell -NoProfile -NonInteractive scripts/purge.ps1 -projectRoot <project root>
 
-cd $projectRoot
-
 function Kill-Dangling-Processes {
 	param( [string]$ProcessName )
 
@@ -28,7 +26,7 @@ function Kill-Dangling-Processes {
 	}
 }
 
-$ProcessesToKill = @("AutomationToolLauncher")
+$ProcessesToKill = @("AutomationToolLauncher", "UnrealHeaderTool")
 
 ForEach ($Process in $ProcessesToKill)
 {

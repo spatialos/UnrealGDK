@@ -10,9 +10,11 @@
 #include "FileHelpers.h"
 
 #include "AssetRegistryModule.h"
+#include "AssetDataTagMap.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/ScopedSlowTask.h"
 #include "UObject/StrongObjectPtr.h"
+#include "Settings/ProjectPackagingSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditor);
 
@@ -55,6 +57,12 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	RemoveEditorAssetLoadedCallback();
 
+	if (!TryLoadExistingSchemaDatabase())
+	{
+		bSchemaGeneratorRunning = false;
+		return false;
+	}
+
 	TArray<TStrongObjectPtr<UObject>> LoadedAssets;
 	if (bFullScan)
 	{
@@ -75,8 +83,6 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		const bool bPromptForCompilation = false;
 		UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
 	}
-
-	TryLoadExistingSchemaDatabase();
 
 	if (bFullScan)
 	{
@@ -128,9 +134,32 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 	TArray<FAssetData> FoundAssets;
 	AssetRegistryModule.Get().GetAllAssets(FoundAssets, true);
 
-	// Filter assets to game blueprint classes that are not loaded.
-	FoundAssets = FoundAssets.FilterByPredicate([](FAssetData Data) {
-		return (!Data.IsAssetLoaded() && Data.TagsAndValues.Contains("GeneratedClass") && Data.PackagePath.ToString().StartsWith("/Game"));
+	const TArray<FDirectoryPath>& DirectoriesToNeverCook = GetDefault<UProjectPackagingSettings>()->DirectoriesToNeverCook;
+
+	// Filter assets to game blueprint classes that are not loaded and not inside DirectoriesToNeverCook.
+	FoundAssets = FoundAssets.FilterByPredicate([&DirectoriesToNeverCook](const FAssetData& Data)
+	{
+		if (Data.IsAssetLoaded())
+		{
+			return false;
+		}
+		if (!Data.TagsAndValues.Contains("GeneratedClass"))
+		{
+			return false;
+		}
+		const FString PackagePath = Data.PackagePath.ToString();
+		if (!PackagePath.StartsWith("/Game"))
+		{
+			return false;
+		}
+		for (const auto& Directory : DirectoriesToNeverCook)
+		{
+			if (PackagePath.StartsWith(Directory.Path))
+			{
+				return false;
+			}
+		}
+		return true;
 	});
 
 	FScopedSlowTask Progress(static_cast<float>(FoundAssets.Num()), FText::FromString(FString::Printf(TEXT("Loading %d Assets before generating schema"), FoundAssets.Num())));
@@ -142,8 +171,21 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 			return false;
 		}
 		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Loading %s"), *Data.AssetName.ToString())));
-		if (auto GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass"))
+
+		const FString* GeneratedClassPathPtr = nullptr;
+
+#if ENGINE_MINOR_VERSION <= 20
+		GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass");
+#else
+		FAssetDataTagMapSharedView::FFindTagResult GeneratedClassFindTagResult = Data.TagsAndValues.FindTag("GeneratedClass");
+		if (GeneratedClassFindTagResult.IsSet())
 		{
+			GeneratedClassPathPtr = &GeneratedClassFindTagResult.GetValue();
+		}
+#endif
+
+		if (GeneratedClassPathPtr != nullptr)
+		{ 
 			const FString ClassObjectPath = FPackageName::ExportTextPathToObjectPath(*GeneratedClassPathPtr);
 			const FString ClassName = FPackageName::ObjectPathToObjectName(ClassObjectPath);
 			FSoftObjectPath SoftPath = FSoftObjectPath(ClassObjectPath);
@@ -166,6 +208,11 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	{
 		FailureCallback.ExecuteIfBound();
 	}
+}
+
+bool FSpatialGDKEditor::FullScanRequired()
+{
+	return !GeneratedSchemaFolderExists();
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()

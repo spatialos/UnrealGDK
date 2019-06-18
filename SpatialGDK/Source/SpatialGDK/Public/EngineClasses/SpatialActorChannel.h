@@ -140,6 +140,8 @@ public:
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
 	void UpdateShadowData();
+	void UpdateSpatialPositionWithFrequencyCheck();
+	void UpdateSpatialPosition();
 
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
@@ -165,7 +167,6 @@ private:
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
 
-	void UpdateSpatialPosition();
 	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
