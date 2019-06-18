@@ -43,6 +43,10 @@ public:
 
 	FSimpleMulticastDelegate OnSpatialShutdown;
 
+	FSimpleMulticastDelegate OnDeploymentStart;
+
+	bool bLocalDeploymentRunning;
+
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
@@ -115,7 +119,7 @@ private:
 	bool bStopCanExecute;
 	bool bStartCanExecute;
 	bool bSpatialServiceRunning;
-	bool bLocalDeploymentRunning;
+	
 	FString LocalRunningDeploymentID;
 
 	bool bStartSpatialServiceCanExecute;

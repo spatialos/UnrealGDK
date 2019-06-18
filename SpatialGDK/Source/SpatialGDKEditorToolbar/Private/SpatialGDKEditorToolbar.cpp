@@ -120,6 +120,15 @@ void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 	{
 		CleanupSpatialProcess();
 	}
+
+	// TODO: Don't bind if spatial is disabled
+	if (!GEditor->TryStartSpatialDeployment.IsBound())
+	{
+		GEditor->TryStartSpatialDeployment.BindLambda([this]
+		{
+			StartSpatialDeploymentButtonClicked();
+		});
+	}
 }
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator() const
@@ -521,6 +530,11 @@ bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentRunning()
 
 	FString SpotListResult = ExecuteAndReadOutput(*SpotExe, *SpotListArgs, *SpatialDirectory);
 
+	if (SpotListResult.IsEmpty())
+	{
+		return false;
+	}
+
 	TSharedPtr<FJsonObject> SpotJsonResult = ParseJson(SpotListResult);
 	if (!SpotJsonResult.IsValid())
 	{
@@ -549,6 +563,8 @@ bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentRunning()
 		}
 	}
 
+	LocalRunningDeploymentID.Empty();
+	bLocalDeploymentRunning = false;
 	return false;
 }
 
@@ -581,6 +597,7 @@ FString FSpatialGDKEditorToolbarModule::ExecuteAndReadOutput(FString Executable,
 	{
 		while (FPlatformProcess::IsProcRunning(ProcHandle))
 		{
+			// TODO: Reading from this pipe when debugging causes a crash.
 			ReadPipeResult += FPlatformProcess::ReadPipe(ReadPipe);
 		}
 	});
@@ -676,6 +693,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentAsync()
 			FTimespan Span = SpotCreateEnd - SpotCreateStart;
 
 			//NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
+			OnDeploymentStart.Broadcast();
 			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
 		}
 		else
@@ -690,8 +708,6 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentAsync()
 
 void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 {
-	bLocalDeploymentRunning = true;
-
 	if(!bSpatialServiceRunning)
 	{
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]

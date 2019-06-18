@@ -106,6 +106,23 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 	ClassInfoManager->Init(this);
 
+#if WITH_EDITOR
+	// If we're launching in PIE then ensure there is a deployment running before connecting.
+	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for spatial depoyment to start before connecting..."));
+	FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
+
+	// Just connect if a deployment is running.
+	if (!Toolbar.bLocalDeploymentRunning)
+	{
+		Toolbar.OnDeploymentStart.AddLambda([this, URL]
+		{
+			InitiateConnectionToSpatialOS(URL);
+		});
+
+		return true;
+	}
+#endif
+
 	InitiateConnectionToSpatialOS(URL);
 
 	return true;
