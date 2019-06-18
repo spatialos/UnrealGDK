@@ -4,7 +4,7 @@
 #include "PropertyEditor/Public/IPropertyTypeCustomization.h"
 #include "PropertyEditor/Public/IDetailCustomNodeBuilder.h"
 #include "PropertyEditor/Public/PropertyHandle.h"
-#include "SpatialGDK/Public/Interop/ActorGroupManager.h"
+#include "SpatialGDK/Public/Utils/ActorGroupManager.h"
 
 class FDetailAssociationBuilder : public IDetailCustomNodeBuilder
 {

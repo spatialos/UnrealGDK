@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Utils/ActorGroupManager.h"
 #include "Utils/SchemaDatabase.h"
-#include "ActorGroupManager.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 

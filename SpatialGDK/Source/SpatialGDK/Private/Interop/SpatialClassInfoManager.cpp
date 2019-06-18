@@ -119,7 +119,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	{
 		ESchemaComponentType RPCType = GetRPCType(RemoteFunction);
 		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
-		
+
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
 
@@ -218,8 +218,19 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
 
-	Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(Class);
-	Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(Class);
+	if (Class->IsChildOf<AActor>())
+	{
+		Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(Class);
+		if (Info->ActorGroup == NAME_None)
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to find ActorGroup for Class %s"), *Class->GetPathName())
+		}
+		Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(Class);
+		if (Info->WorkerType == NAME_None)
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to find WorkerType for ActorGroup %s (for Class %s)"), *Info->ActorGroup.ToString(), *Class->GetPathName())
+		}
+	}
 }
 
 bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const

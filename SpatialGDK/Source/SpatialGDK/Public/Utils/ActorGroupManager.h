@@ -44,7 +44,7 @@ struct FWorkerAssociation
 	}
 };
 
-UCLASS(Config=SpatialGDKSettings, BlueprintType)
+UCLASS(Config=SpatialGDKSettings)
 class SPATIALGDK_API UActorGroupManager : public UObject
 {
 	GENERATED_BODY()

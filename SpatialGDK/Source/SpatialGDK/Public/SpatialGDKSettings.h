@@ -129,7 +129,7 @@ public:
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	FWorkerAssociation WorkerAssociation;
 
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 
 	UPROPERTY()
 	TMap<FName, FActorClassSet> OldActorGroups;

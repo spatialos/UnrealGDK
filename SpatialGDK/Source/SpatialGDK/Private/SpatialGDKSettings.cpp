@@ -46,8 +46,10 @@ void USpatialGDKSettings::PostInitProperties()
 	const TCHAR* CommandLine = FCommandLine::Get();
 	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
 
+#if WITH_EDITOR
 	OldActorGroups = ActorGroups;
 	OldWorkerTypes = WorkerTypes;
+#endif
 }
 
 #if WITH_EDITOR
