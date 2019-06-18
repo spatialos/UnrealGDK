@@ -230,8 +230,6 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		{
 			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to find WorkerType for ActorGroup %s (for Class %s)"), *Info->ActorGroup.ToString(), *Class->GetPathName())
 		}
-
-		UE_LOG(LogTemp, Log, TEXT("%s -> [%s, %s]"), *Class->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
 	}
 }
 
