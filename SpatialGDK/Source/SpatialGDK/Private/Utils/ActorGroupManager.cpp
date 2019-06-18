@@ -20,7 +20,15 @@ void UActorGroupManager::InitFromSettings()
 	ClassPathToActorGroup.Empty();
 	ActorGroupToWorkerType.Empty();
 
-	for (TPair<FName, FActorClassSet> ActorGroup : Settings->ActorGroups)
+	auto ActorGroups = DefaultActorGroups();
+	auto WorkerAssociation = DefaultWorkerAssociation();
+	if (Settings->bEnableOffloading)
+	{
+		ActorGroups = Settings->ActorGroups;
+		WorkerAssociation = Settings->WorkerAssociation.ActorGroupToWorker;
+	}
+
+	for (TPair<FName, FActorClassSet> ActorGroup : ActorGroups)
 	{
 		for (TSoftClassPtr<AActor> ClassPtr : ActorGroup.Value.ActorClasses)
 		{
@@ -28,7 +36,7 @@ void UActorGroupManager::InitFromSettings()
 		}
 	}
 
-	ActorGroupToWorkerType.Append(Settings->WorkerAssociation.ActorGroupToWorker);
+	ActorGroupToWorkerType.Append(WorkerAssociation);
 }
 
 FName UActorGroupManager::GetActorGroupForClass(UClass* Class)

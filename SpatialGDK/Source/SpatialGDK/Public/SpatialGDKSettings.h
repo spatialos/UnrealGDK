@@ -114,16 +114,19 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bPackUnreliableRPCs;
 
-	/** Map of Actor Group to set of Actor classes it contains. */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	bool bEnableOffloading;
+
+	/** Map of Actor Group to set of Actor classes it contains. */
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
 	TMap<FName, FActorClassSet> ActorGroups;
 
 	/** Set of Managed worker types to run. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
 	TSet<FName> WorkerTypes;
 
 	/** Association of Actor Groups to Worker Types. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
 	FWorkerAssociation WorkerAssociation;
 
 #if WITH_EDITORONLY_DATA

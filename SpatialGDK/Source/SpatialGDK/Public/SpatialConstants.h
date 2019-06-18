@@ -152,6 +152,8 @@ namespace SpatialConstants
 	static const FString ServerWorkerType = TEXT("UnrealWorker");
 	static const FString ClientWorkerType = TEXT("UnrealClient");
 
+	static const FName DefaultActorGroup = FName(TEXT("Default"));
+
 	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ServerWorkerType};
 	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ClientWorkerType};
 

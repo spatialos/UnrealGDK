@@ -67,7 +67,7 @@ public:
 	FName GetWorkerTypeForClass(UClass* Class);
 
 	static TMap<FName, FActorClassSet> DefaultActorGroups() {
-		return { TPairInitializer<const FName&, const FActorClassSet&>(FName(TEXT("Default")), FActorClassSet({ AActor::StaticClass() })) };
+		return { TPairInitializer<const FName&, const FActorClassSet&>(SpatialConstants::DefaultActorGroup, FActorClassSet({ AActor::StaticClass() })) };
 	}
 
 	static TSet<FName> DefaultWorkerTypes() {
@@ -75,7 +75,7 @@ public:
 	}
 
 	static TMap<FName, FName> DefaultWorkerAssociation() {
-		return { TPairInitializer<const FName&, const FName&>(FName(TEXT("Default")), FName(TEXT("UnrealWorker"))) };
+		return { TPairInitializer<const FName&, const FName&>(SpatialConstants::DefaultActorGroup, FName(*SpatialConstants::ServerWorkerType)) };
 	}
 
 #if WITH_EDITOR
