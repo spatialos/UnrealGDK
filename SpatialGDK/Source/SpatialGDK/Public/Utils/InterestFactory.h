@@ -44,6 +44,7 @@ private:
 
 	// System Defined Constraints
 	QueryConstraint CreateCheckoutRadiusConstraint();
+	QueryConstraint CreateCullDistanceConstraints();
 	QueryConstraint CreateAlwaysInterestedConstraint();
 	QueryConstraint CreateSingletonConstraint();
 
