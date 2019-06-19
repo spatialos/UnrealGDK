@@ -91,6 +91,8 @@ private:
 	void StartSpatialDeploymentAsync();
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
+	void GenerateSchema(bool bFullScan);
+
 	bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const;
 	bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLaunchSection& FWorkerTypeLaunchSection) const;
 	bool WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, const int32 Columns, const int32 Rows, const bool bManualWorkerConnectionOnly) const;

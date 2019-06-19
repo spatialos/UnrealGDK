@@ -1247,6 +1247,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
+	if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs && Sender != nullptr)
+	{
+		Sender->FlushPackedUnreliableRPCs();
+	}
+
 	// Tick the timer manager
 	{
 		TimerManager.Tick(DeltaTime);
