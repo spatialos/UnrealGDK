@@ -613,11 +613,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				continue;
 			}
 
-			if (PendingAddComponent.ComponentId == 30146)
-			{
-				__debugbreak();
-			}
-
 			if (PendingAddComponent.EntityId == EntityId)
 			{
 				ApplyComponentData(EntityId, *PendingAddComponent.Data->ComponentData, Channel);

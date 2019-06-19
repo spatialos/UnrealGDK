@@ -117,13 +117,10 @@ public:
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
-<<<<<<< HEAD
-	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info);
-
-=======
 
 	void FlushPackedUnreliableRPCs();
->>>>>>> b00eef2f4d7cb87e70cff5081aa393e013c91544
+
+	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info);
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);

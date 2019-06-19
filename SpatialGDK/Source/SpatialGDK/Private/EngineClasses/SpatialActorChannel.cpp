@@ -279,16 +279,6 @@ FHandoverChangeState USpatialActorChannel::CreateInitialHandoverChangeState(cons
 	return HandoverChanged;
 }
 
-//FRepChangelistState* USpatialActorChannel::CreateChangelistState()
-//{
-//
-//}
-//
-//FReplicationFlags USpatialActorChannel::GetReplicationFlags()
-//{
-//
-//}
-
 int64 USpatialActorChannel::ReplicateActor()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateActor);
