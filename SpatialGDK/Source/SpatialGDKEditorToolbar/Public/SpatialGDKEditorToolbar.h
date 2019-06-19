@@ -58,6 +58,7 @@ private:
 	bool StartSpatialDeploymentCanExecute();
 	bool StartSpatialServiceCanExecute();
 	bool StopSpatialServiceCanExecute();
+	void RefreshServiceStatus();
 	TSharedPtr<FJsonObject> ParseJson(FString RawJsonString);
 	bool StopSpatialDeploymentCanExecute();
 
@@ -88,7 +89,7 @@ private:
 	FString ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun);
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
-	void StartSpatialDeploymentAsync();
+	void StartSpatialDeployment();
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
 	void GenerateSchema(bool bFullScan);
