@@ -43,8 +43,7 @@ private:
 	QueryConstraint CreateUserDefinedConstraints();
 
 	// System Defined Constraints
-	QueryConstraint CreateCheckoutRadiusConstraint();
-	QueryConstraint CreateCullDistanceConstraints();
+	QueryConstraint CreateCheckoutRadiusConstraints();
 	QueryConstraint CreateAlwaysInterestedConstraint();
 	QueryConstraint CreateSingletonConstraint();
 
@@ -52,6 +51,7 @@ private:
 	QueryConstraint CreateLevelConstraints();
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint);
+	void AddTypeHierarchyToConstraint(const UClass* BaseType, QueryConstraint& OutConstraint);
 
 	AActor* Actor;
 	const FClassInfo& Info;
