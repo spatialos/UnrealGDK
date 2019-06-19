@@ -31,6 +31,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(true)
 	, MaxDynamicallyAttachedSubobjectsPerClass(5)
 	, bEnableServerQBI(bUsingQBI)
+	, bPackUnreliableRPCs(true)
 {
 }
 
