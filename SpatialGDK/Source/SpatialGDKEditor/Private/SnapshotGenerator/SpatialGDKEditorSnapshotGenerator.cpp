@@ -147,7 +147,13 @@ bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream, Worker_Entity
 	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
 	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
 
-	const TArray<FString>& ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
+	const TArray<FName>& ServerWorkerTypeNames = GetDefault<USpatialGDKSettings>()->WorkerTypes.Array();
+	TArray<FString> ServerWorkerTypes;
+	for (auto& WorkerType : ServerWorkerTypeNames)
+	{
+		ServerWorkerTypes.Add(WorkerType.ToString());
+	}
+
 	const WorkerRequirementSet ServerWorkerRequirementSet{ {ServerWorkerTypes} };
 
 	for (int x = -SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; x < SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; x++)
