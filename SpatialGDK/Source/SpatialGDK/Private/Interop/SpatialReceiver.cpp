@@ -403,7 +403,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			// This could be nullptr if:
 			// a stably named actor could not be found
-			// the Actor is a singleton
+			// the Actor is a singleton that has arrived over the wire before it has been created on this worker
 			// the class couldn't be loaded
 			return;
 		}
@@ -500,24 +500,19 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 			
 			// One example of this: An actor that was spawned dynamically then saved into a snapshot, and we have restarted the deployment from that snapshot,
 			// and received this actor over the wire on the new authoritative server.
-			
-			bool bRestoreAuthority = false;
-			const ENetRole OriginalRole = EntityActor->Role;
-			const ENetRole OriginalRemoteRole = EntityActor->RemoteRole;
 
 			if (EntityActor->HasAuthority())
 			{
-				EntityActor->Role = OriginalRemoteRole;
-				EntityActor->RemoteRole = OriginalRole;
-				bRestoreAuthority = true;
+				GlobalStateManager->SetAuthorityRequiredInBeginPlay(false);
+				GlobalStateManager->SetRestoreRolesInPostBeginPlayDelegate(true);
+				GlobalStateManager->SetBeginPlayDelegatesEnabled(true);
 			}
 
 			EntityActor->DispatchBeginPlay();
 
-			if (bRestoreAuthority)
+			if (EntityActor->HasAuthority())
 			{
-				EntityActor->Role = OriginalRole;
-				EntityActor->RemoteRole = OriginalRemoteRole;
+				GlobalStateManager->SetBeginPlayDelegatesEnabled(false);
 			}
 		}
 
@@ -1006,7 +1001,10 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 
 		if (!TargetObject)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
+			// NWX_BEGIN - aantrim - <May 10, 2019> - [TEMP UNR-1393] Switching message to use the verbose channel, the proposed fix from the GDK team.
+			//UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
+			// NWX_END
 
 			continue;
 		}
@@ -1328,8 +1326,16 @@ AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("Found incorrect number (%d) of singleton actors (%s)"),
-			FoundActors.Num(), *SingletonClass->GetName());
+		// CMS: Removing this as it happens during the course of normal execution during snapshot reload.
+		//      It happens if we receive the Singleton over the wire before we've instantiated it.
+
+		// CMS_TODO: Consider creating the Singleton here if it doesn't exist yet.  This might be a nicer
+		//           approach so that actor creation isn't special-cased for singletons (ex. the fact that we create on non-auth servers).
+		//           This would also solve the problem that we don't have the correct auth over them for the BeginPlay() call currently.
+		//           From chatting with Mike S. though, it may introduce the problem of having to modify lots of
+		//           engine code so that non-auth servers can handle the fact they don't have a GameMode as early as expected at startup.
+		//UE_LOG(LogSpatialReceiver, Error, TEXT("Found incorrect number (%d) of singleton actors (%s)"),
+		//	FoundActors.Num(), *SingletonClass->GetName());
 	}
 
 	return nullptr;

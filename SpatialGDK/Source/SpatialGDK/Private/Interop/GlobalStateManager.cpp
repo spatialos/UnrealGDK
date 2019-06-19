@@ -29,6 +29,10 @@ DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
 using namespace SpatialGDK;
 
+bool UGlobalStateManager::bAuthorityRequiredInBeginPlay = false;
+bool UGlobalStateManager::bBeginPlayDelegatesEnabled = false;
+bool UGlobalStateManager::bRestoreRolesInPostBeginPlayDelegate = false;
+
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
@@ -58,6 +62,11 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 	bCanBeginPlay = false;
 	bAuthBeginPlayCalled = false;
 	bTriggeredBeginPlay = false;
+
+	if (NetDriver->IsServer())
+	{
+		BindBeginPlayDelegates();
+	}
 }
 
 void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
@@ -89,7 +98,6 @@ void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentDat
 	ApplyCanBeginPlayUpdate(bCanBeginPlayData);
 }
 
-// CMS_TODO: Verify if other changes are required to get singletons to limit auth BeginPlay() calls to once
 // CMS_TODO: Verify what's necessary for sublevel support
 
 void UGlobalStateManager::ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update)
@@ -495,6 +503,7 @@ void UGlobalStateManager::SetAuthBeginPlayCalled(const bool bInAuthBeginPlayCall
 	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
+	// Set AuthBeginPlayCalled on GSM
 	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID, static_cast<uint8_t>(bInAuthBeginPlayCalled));
 
 	bAuthBeginPlayCalled = bInAuthBeginPlayCalled;
@@ -511,27 +520,17 @@ void UGlobalStateManager::TryTriggerBeginPlay()
 		const bool bStartupActorAuthServer = NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 		const bool bCallBeginPlayWithAuthority = bStartupActorAuthServer && !bAuthBeginPlayCalled;
 
-		TArray<ActorAuthCapture> OutOriginalActorRoles;
-		const ENetRole RoleToSet = bCallBeginPlayWithAuthority ? ROLE_Authority : ROLE_SimulatedProxy;
-		const ENetRole RemoteRoleToSet = bCallBeginPlayWithAuthority ? ROLE_SimulatedProxy : ROLE_Authority;
-
-		// CMS_TODO: Is this approach ok, or should we only make sure Role is set as necessary,
-		// and preserve the value of RemoteRole, rather than setting it to SimulatedProxy?  Bigger issue when calling
-		// with authority, since we don't restore original roles in that case.
-		SetRolesOnAllReplicatedActors(RoleToSet, RemoteRoleToSet, &OutOriginalActorRoles);
+		SetAuthorityRequiredInBeginPlay(bCallBeginPlayWithAuthority);
+		SetRestoreRolesInPostBeginPlayDelegate(!bCallBeginPlayWithAuthority);
+		SetBeginPlayDelegatesEnabled(true);
 
 		TriggerBeginPlay();
+
+		SetBeginPlayDelegatesEnabled(false);
 
 		if (bCallBeginPlayWithAuthority)
 		{
 			SetAuthBeginPlayCalled(true);
-		}
-		else
-		{
-			// When calling BeginPlay with authority, we don't want to restore the original Role/RemoteRole.
-			// CMS_TODO: this mimics the original behaviour of not restoring original role/remoterole after 'BecomeAuthoritativeOverAllActors',
-			// but verify why we rely on that
-			RestoreRolesOnCapturedActors(OutOriginalActorRoles);
 		}
 
 		// Start accepting players only AFTER we've triggered BeginPlay
@@ -589,55 +588,13 @@ void UGlobalStateManager::BeginDestroy()
 		}
 	}
 #endif
+
+	UnbindBeginPlayDelegates();
 }
 
 bool UGlobalStateManager::HasAuthority()
 {
 	return NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID);
-}
-
-void UGlobalStateManager::SetRolesOnAllReplicatedActors(ENetRole InRole, ENetRole InRemoteRole, TArray<ActorAuthCapture>* OutOriginalActorAuths)
-{
-	for (TActorIterator<AActor> It(NetDriver->World); It; ++It)
-	{
-		AActor* Actor = *It;
-		if (Actor != nullptr && !Actor->IsPendingKill())
-		{
-			if (Actor->GetIsReplicated())
-			{
-				if (Actor->Role == InRole &&
-					Actor->RemoteRole == InRemoteRole)
-				{
-					continue;
-				}
-
-				ActorAuthCapture ActorAuth{};
-
-				ActorAuth.Actor = Actor;
-				ActorAuth.Role = Actor->Role;
-				ActorAuth.RemoteRole = Actor->RemoteRole;
-
-				Actor->Role = InRole;
-				Actor->RemoteRole = InRemoteRole;
-
-				if (OutOriginalActorAuths != nullptr)
-				{
-					OutOriginalActorAuths->Add(ActorAuth);
-				}
-			}
-		}
-	}
-}
-
-void UGlobalStateManager::RestoreRolesOnCapturedActors(const TArray<ActorAuthCapture>& InOriginalActorAuths)
-{
-	for (const ActorAuthCapture& ActorAuth : InOriginalActorAuths)
-	{
-		AActor* Actor = ActorAuth.Actor;
-
-		Actor->Role = ActorAuth.Role;
-		Actor->RemoteRole = ActorAuth.RemoteRole;
-	}
 }
 
 void UGlobalStateManager::TriggerBeginPlay()
@@ -771,4 +728,58 @@ void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
+}
+
+void UGlobalStateManager::SetAuthorityRequiredInBeginPlay(const bool bInAuthorityRequiredInBeginPlay)
+{
+	bAuthorityRequiredInBeginPlay = bInAuthorityRequiredInBeginPlay;
+}
+
+void UGlobalStateManager::SetBeginPlayDelegatesEnabled(const bool bInBeginPlayDelegatesEnabled)
+{
+	bBeginPlayDelegatesEnabled = bInBeginPlayDelegatesEnabled;
+}
+
+void UGlobalStateManager::SetRestoreRolesInPostBeginPlayDelegate(const bool bInRestoreRolesInPostBeginPlayDelegate)
+{
+	bRestoreRolesInPostBeginPlayDelegate = bInRestoreRolesInPostBeginPlayDelegate;
+}
+
+void UGlobalStateManager::BindBeginPlayDelegates()
+{
+	AActor::SetPreBeginPlayDelegate(FPreBeginPlayDelegate::CreateStatic(&UGlobalStateManager::PreBeginPlayDelegate));
+	AActor::SetPostBeginPlayDelegate(FPostBeginPlayDelegate::CreateStatic(&UGlobalStateManager::PostBeginPlayDelegate));
+}
+
+void UGlobalStateManager::UnbindBeginPlayDelegates()
+{
+	AActor::ClearBeginPlayDelegates();
+}
+
+
+void UGlobalStateManager::PreBeginPlayDelegate(AActor* InActor, bool& bOutSwappedRoles)
+{
+	if (bBeginPlayDelegatesEnabled && InActor->GetIsReplicated())
+	{
+		if ((bAuthorityRequiredInBeginPlay && InActor->Role != ROLE_Authority) ||
+			(!bAuthorityRequiredInBeginPlay && InActor->Role == ROLE_Authority))
+		{
+			InActor->SwapRoles();
+			bOutSwappedRoles = true;
+		}
+	}
+}
+
+void UGlobalStateManager::PostBeginPlayDelegate(AActor* InActor, const bool bWasSwappedInPreBeginPlayDelegate)
+{
+	if (bBeginPlayDelegatesEnabled && InActor->GetIsReplicated())
+	{
+		if (bWasSwappedInPreBeginPlayDelegate && bRestoreRolesInPostBeginPlayDelegate)
+		{
+			InActor->SwapRoles();
+		}
+	}
+
+	// If we go to a single boolean per actor indicating whether or not auth begin play has been called,
+	// we can set it here.
 }

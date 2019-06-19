@@ -50,7 +50,6 @@ public:
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void SetCanBeginPlay(bool bInCanBeginPlay);
-	void SetAuthBeginPlayCalled(const bool bAuthBeginPlayCalled);
 
 	void TryTriggerBeginPlay();
 
@@ -83,22 +82,18 @@ public:
 	void OnShutdownComponentUpdate(Worker_ComponentUpdate& Update);
 	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
+
+	static void SetAuthorityRequiredInBeginPlay(const bool bInAuthorityRequiredInBeginPlay);
+	static void SetBeginPlayDelegatesEnabled(const bool bInBeginPlayDelegatesEnabled);
+	static void SetRestoreRolesInPostBeginPlayDelegate(const bool bInRestoreRolesInPostBeginPlayDelegate);
+
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
 	void ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate);
 	void ApplyAuthBeginPlayCalledUpdate(const bool bAuthBeginPlayCalledUpdate);
 
-	struct ActorAuthCapture
-	{
-		// CMS_TODO: potentially use a weak pointer here
-		AActor* Actor;
-		TEnumAsByte<ENetRole> Role;
-		TEnumAsByte<ENetRole> RemoteRole;
-	};
-
-	void SetRolesOnAllReplicatedActors(const ENetRole InRole, const ENetRole InRoleAuthority, TArray<ActorAuthCapture>* OutOriginalActorAuths);
-	void RestoreRolesOnCapturedActors(const TArray<ActorAuthCapture>& OutOriginalActorAuths);
+	void SetAuthBeginPlayCalled(const bool bAuthBeginPlayCalled);
 
 	void TriggerBeginPlay();
 
@@ -106,6 +101,16 @@ private:
 	void SendShutdownMultiProcessRequest();
 	void SendShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
+
+	static bool bAuthorityRequiredInBeginPlay;
+	static bool bBeginPlayDelegatesEnabled;
+	static bool bRestoreRolesInPostBeginPlayDelegate;
+
+	static void PreBeginPlayDelegate(AActor* InActor, bool& bOutSwappedRoles);
+	static void PostBeginPlayDelegate(AActor* InActor, const bool bWasSwappedInPreBeginPlayDelegate);
+
+	static void BindBeginPlayDelegates();
+	static void UnbindBeginPlayDelegates();
 
 private:
 	UPROPERTY()
