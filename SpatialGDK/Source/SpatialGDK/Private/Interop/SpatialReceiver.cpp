@@ -946,6 +946,9 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 	{
 		// If we can't find this subobject, it's a dynamically attached object. Create it now.
 		TargetObject = NewObject<UObject>(Channel->GetActor(), ClassInfoManager->GetClassByComponentId(Data.component_id));
+
+		Channel->GetActor()->OnSubobjectCreatedFromReplication(TargetObject.Get());
+
 		PackageMap->ResolveSubobject(TargetObject.Get(), FUnrealObjectRef(EntityId, Offset));
 
 		Channel->CreateSubObjects.Add(TargetObject.Get());
