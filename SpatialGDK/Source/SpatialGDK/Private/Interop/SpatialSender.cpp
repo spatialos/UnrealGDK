@@ -41,6 +41,7 @@ FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunct
 	, Function(InFunction)
 	, RetryIndex(InRetryIndex)
 	, ReliableRPCIndex(0)
+	, Payload(0, 0, TArray<uint8>{})
 {
 	Parameters.SetNumZeroed(Function->ParmsSize);
 
@@ -468,7 +469,10 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(FPendingRPCParams& RPCPara
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
 	const FRPCInfo* RPCInfo = GetRPCInfo(RPCParams.TargetObject.Get(), RPCParams.Function);
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(Object)));
-	check(TargetObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
+	if(TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+	{
+		UnresolvedObjects.Add(Object);
+	}
 
 	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(RPCParams.Function, RPCParams.Parameters.GetData(), RPCParams.ReliableRPCIndex, UnresolvedObjects);
 	if (UnresolvedObjects.Num() > 0)
@@ -524,7 +528,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 
 			// This is where we'll serialize this RPC and queue it to be added on entity creation
 			TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(CreateRPCPayloadFromParams(*Params, UnresolvedObjects));
+			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Params->Payload);
 			return true;
 		}
 	}
@@ -614,7 +618,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 			}
 
 			const UObject* UnresolvedParameter = nullptr;
-			Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params, ComponentId, RPCInfo->Index, UnresolvedParameter);
+			Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Payload, ComponentId, RPCInfo->Index, UnresolvedParameter);
 
 			if (UnresolvedParameter)
 			{
@@ -929,7 +933,7 @@ Worker_CommandRequest USpatialSender::CreateRetryRPCCommandRequest(const FReliab
 	return CommandRequest;
 }
 
-Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, FPendingRPCParamsPtr Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, const UObject*& OutUnresolvedObject)
+Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, const UObject*& OutUnresolvedObject)
 {
 	Worker_ComponentUpdate ComponentUpdate = {};
 
@@ -944,20 +948,6 @@ Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 		OutUnresolvedObject = TargetObject;
 		Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
 		return ComponentUpdate;
-	}
-
-	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-	RPCPayload Payload = CreateRPCPayloadFromParams(*Parameters, UnresolvedObjects);
-
-	for (TWeakObjectPtr<const UObject> Object : UnresolvedObjects)
-	{
-		if (Object.IsValid())
-		{
-			// Take the first unresolved object
-			OutUnresolvedObject = Object.Get();
-			Schema_DestroyComponentUpdate(ComponentUpdate.schema_type);
-			return ComponentUpdate;
-		}
 	}
 
 	RPCPayload::WriteToSchemaObject(EventData, Payload.Offset, Payload.Index, Payload.PayloadData.GetData(), Payload.PayloadData.Num());
@@ -1000,23 +990,12 @@ void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, FPendingRPCP
 	}
 
 	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-	RPCPayload Payload = CreateRPCPayloadFromParams(*Parameters, UnresolvedObjects);
-
-	for (TWeakObjectPtr<const UObject> Object : UnresolvedObjects)
-	{
-		if (Object.IsValid())
-		{
-			// Take the first unresolved object
-			OutUnresolvedObject = Object.Get();
-			return;
-		}
-	}
 
 	FPendingUnreliableRPC RPC;
 	RPC.Offset = TargetObjectRef.Offset;
 	RPC.Index = RPCIndex;
-	RPC.Data.SetNumUninitialized(Payload.PayloadData.Num());
-	FMemory::Memcpy(RPC.Data.GetData(), Payload.PayloadData.GetData(), Payload.PayloadData.Num());
+	RPC.Data.SetNumUninitialized(Parameters->Payload.PayloadData.Num());
+	FMemory::Memcpy(RPC.Data.GetData(), Parameters->Payload.PayloadData.GetData(), Parameters->Payload.PayloadData.Num());
 	RPC.Entity = TargetObjectRef.Entity;
 	UnreliableRPCs.FindOrAdd(ControllerObjectRef.Entity).Emplace(MoveTemp(RPC));
 }

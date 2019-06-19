@@ -1178,8 +1178,23 @@ void USpatialNetDriver::ProcessRemoteFunction(
 			}
 		}
 
-		Sender->QueueOutgoingRPC(RPCParams);
-		Sender->ResolveOutgoingRPCs(CallingObject);
+		if(IsServer())
+		{
+			// TO-DO: Should it be elsewhere?
+			GetOrCreateSpatialActorChannel(CallingObject);
+		}
+
+		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+		RPCParams->Payload = Sender->CreateRPCPayloadFromParams(*RPCParams, UnresolvedObjects);
+		if(UnresolvedObjects.Num() == 0)
+		{
+			Sender->QueueOutgoingRPC(RPCParams);
+			Sender->ResolveOutgoingRPCs(CallingObject);
+		}
+		else
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("===Unresolved Objects!"));
+		}
 	}
 }
 

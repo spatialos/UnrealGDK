@@ -40,6 +40,7 @@ struct FPendingRPCParams
 	TArray<uint8> Parameters;
 	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
 	int ReliableRPCIndex;
+	RPCPayload Payload;
 };
 
 struct FReliableRPCForRetry
@@ -135,6 +136,8 @@ public:
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
 	void FlushPackedUnreliableRPCs();
+
+	RPCPayload CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects);
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
@@ -150,12 +153,11 @@ private:
 
 	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, TArray<uint8>& OutPayload, int ReliableRPCIndex);
 	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
-	Worker_ComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, FPendingRPCParamsPtr Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, const UObject*& OutUnresolvedObject);
+	Worker_ComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, const UObject*& OutUnresolvedObject);
 	void AddPendingUnreliableRPC(UObject* TargetObject, FPendingRPCParamsPtr Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject);	
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
 
-	RPCPayload CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects);
 	void ResolveOutgoingRPCs(UObject* Object, FQueueOfParams* RPCList);
 
 	const FRPCInfo* GetRPCInfo(UObject* Object, UFunction* Function) const;
