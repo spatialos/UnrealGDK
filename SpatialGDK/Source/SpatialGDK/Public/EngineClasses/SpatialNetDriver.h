@@ -178,6 +178,8 @@ private:
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
 
+	// Creates an entity representing the server worker. This ensures that even if a server worker isn't authoritative over anything, it will be able to receive updates for the GSM.
+	void CreateServerWorkerEntity();
 	void CreateServerSpatialOSNetConnection();
 
 	void QueryGSMToLoadMap();
