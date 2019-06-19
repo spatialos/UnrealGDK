@@ -33,14 +33,8 @@ private:
 	Interest CreatePlayerOwnedActorInterest();
 
 private:
-	// System Constraint OR User Constraint
-	QueryConstraint CreateDefinedConstraints();
-
 	// Checkout Constraint OR AlwaysInterested Constraint
 	QueryConstraint CreateSystemDefinedConstraints();
-
-	// TODO: Will be created utilizing user defined structs
-	QueryConstraint CreateUserDefinedConstraints();
 
 	// System Defined Constraints
 	QueryConstraint CreateCheckoutRadiusConstraints();

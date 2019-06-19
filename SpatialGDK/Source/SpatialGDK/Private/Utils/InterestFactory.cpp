@@ -70,7 +70,7 @@ Interest InterestFactory::CreateActorInterest()
 {
 	Interest NewInterest;
 
-	QueryConstraint DefinedConstraints = CreateDefinedConstraints();
+	QueryConstraint DefinedConstraints = CreateSystemDefinedConstraints();
 
 	if (!DefinedConstraints.IsValid())
 	{
@@ -94,7 +94,7 @@ Interest InterestFactory::CreateActorInterest()
 
 Interest InterestFactory::CreatePlayerOwnedActorInterest()
 {
-	QueryConstraint DefinedConstraints = CreateDefinedConstraints();
+	QueryConstraint DefinedConstraints = CreateSystemDefinedConstraints();
 
 	// Servers only need the defined constraints
 	Query ServerQuery;
@@ -141,26 +141,6 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 	return NewInterest;
 }
 
-QueryConstraint InterestFactory::CreateDefinedConstraints()
-{
-	QueryConstraint SystemDefinedConstraints = CreateSystemDefinedConstraints();
-	QueryConstraint UserDefinedConstraints = CreateUserDefinedConstraints();
-
-	QueryConstraint DefinedConstraints;
-
-	if (SystemDefinedConstraints.IsValid())
-	{
-		DefinedConstraints.OrConstraint.Add(SystemDefinedConstraints);
-	}
-
-	if (UserDefinedConstraints.IsValid())
-	{
-		DefinedConstraints.OrConstraint.Add(UserDefinedConstraints);
-	}
-
-	return DefinedConstraints;
-}
-
 QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 {
 	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraints();
@@ -185,11 +165,6 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 	}
 
 	return SystemDefinedConstraints;
-}
-
-QueryConstraint InterestFactory::CreateUserDefinedConstraints()
-{
-	return QueryConstraint{};
 }
 
 QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
@@ -269,7 +244,6 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 	for (const auto& CullDistanceSquared : OptimizedCullDistances)
 	{
 		QueryConstraint CheckoutRadiusConstraint;
-		check(!CheckoutRadiusConstraint.IsValid());
 
 		QueryConstraint RadiusConstraint;
 		const float CheckoutRadius = FMath::Sqrt(CullDistanceSquared.Value / (100.0f * 100.0f));
