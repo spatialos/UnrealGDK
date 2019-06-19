@@ -526,6 +526,7 @@ bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentRunning()
 	TSharedPtr<FJsonObject> SpotJsonContent = SpotJsonResult->GetObjectField(TEXT("content"));
 
 	// TODO: This is crashing randomly, use TryGetArrayField.
+	// TODO: This can be null if no deployments exist.
 	TArray<TSharedPtr<FJsonValue>> deployments = SpotJsonContent->GetArrayField(TEXT("deployments"));
 
 	for (TSharedPtr<FJsonValue> JsonDeployment : deployments)

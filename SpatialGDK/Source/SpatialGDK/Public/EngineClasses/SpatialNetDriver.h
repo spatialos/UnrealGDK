@@ -168,10 +168,12 @@ private:
 	bool bWaitingForAcceptingPlayersToSpawn;
 	FString SnapshotToLoad;
 
+	void OnDeploymentStarted(const FURL& URL);
+
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
-
 	void InitializeSpatialOutputDevice();
+
 	void CreateAndInitializeCoreClasses();
 
 	void CreateServerSpatialOSNetConnection();
@@ -210,4 +212,6 @@ private:
 	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
 	// The GDK does not use this address for any networked purpose, only bookkeeping.
 	uint32 UniqueClientIpAddressCounter = 0;
+
+	FDelegateHandle SpatialDeploymentStartHandle;
 };

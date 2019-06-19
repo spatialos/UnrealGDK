@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-
+#pragma optimize("", off)
 #include "EngineClasses/SpatialNetDriver.h"
 
 #include "EngineGlobals.h"
@@ -115,9 +115,9 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// Just connect if a deployment is running.
 	if (!Toolbar.bLocalDeploymentRunning)
 	{
-		Toolbar.OnDeploymentStart.AddLambda([this, URL]
+		SpatialDeploymentStartHandle = Toolbar.OnDeploymentStart.AddLambda([this, URL]
 		{
-			InitiateConnectionToSpatialOS(URL);
+			OnDeploymentStarted(URL);
 		});
 
 		return true;
@@ -138,6 +138,16 @@ void USpatialNetDriver::PostInitProperties()
 		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
 		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
 	}
+}
+
+void USpatialNetDriver::OnDeploymentStarted(const FURL& URL)
+{
+#if WITH_EDITOR
+	FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
+	Toolbar.OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+#endif
+
+	InitiateConnectionToSpatialOS(URL);
 }
 
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
