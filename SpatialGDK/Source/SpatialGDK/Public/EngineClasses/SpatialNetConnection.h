@@ -51,6 +51,8 @@ public:
 	void OnHeartbeat();
 	void UpdateActorInterest(AActor* Actor);
 
+	void NotifyClientHasQuit();
+
 	UPROPERTY()
 	bool bReliableSpatialConnection;
 

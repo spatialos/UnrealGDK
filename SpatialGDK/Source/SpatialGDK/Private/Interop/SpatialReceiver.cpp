@@ -195,6 +195,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 		{
 			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
 			{
+				EntityConnectionMap.Add(Op.entity_id, Connection);
 				Connection->InitHeartbeat(TimerManager, Op.entity_id);
 			}
 		}
@@ -202,7 +203,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 		{
 			if (NetDriver->IsServer())
 			{
-				HeartbeatDelegates.Remove(Op.entity_id);
+				EntityConnectionMap.Remove(Op.entity_id);
 			}
 			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
 			{
@@ -855,10 +856,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 #endif // WITH_EDITOR
 		return;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		if (HeartbeatDelegate* UpdateDelegate = HeartbeatDelegates.Find(Op.entity_id))
-		{
-			UpdateDelegate->ExecuteIfBound(Op);
-		}
+		OnHeartbeatComponentUpdate(Op);
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
@@ -1279,11 +1277,6 @@ void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, R
 	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
 }
 
-void USpatialReceiver::AddHeartbeatDelegate(Worker_EntityId EntityId, HeartbeatDelegate Delegate)
-{
-	HeartbeatDelegates.Add(EntityId, Delegate);
-}
-
 TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
 {
 	TWeakObjectPtr<USpatialActorChannel>* ChannelPtr = PendingActorRequests.Find(RequestId);
@@ -1615,6 +1608,55 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		else
 		{
 			It.RemoveCurrent();
+		}
+	}
+}
+
+void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
+{
+	if (!NetDriver->IsServer())
+	{
+		return;
+	}
+
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
+	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
+	if (EventCount > 0)
+	{
+		if (EventCount > 1)
+		{
+			UE_LOG(LogSpatialNetConnection, Log, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), Op.entity_id);
+		}
+
+		if (TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = EntityConnectionMap.Find(Op.entity_id))
+		{
+			if (ConnectionPtr->IsValid())
+			{
+				ConnectionPtr->Get()->OnHeartbeat();
+			}
+			else
+			{
+				UE_LOG(LogSpatialNetConnection, Warning, TEXT("Received heartbeat event after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
+			}
+		}
+	}
+
+	Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+	if (Schema_GetBoolCount(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID) > 0 &&
+		GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
+	{
+		// Client has disconnected, let's clean up their connection.
+		if (TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = EntityConnectionMap.Find(Op.entity_id))
+		{
+			if (ConnectionPtr->IsValid())
+			{
+				ConnectionPtr->Get()->CleanUp();
+				EntityConnectionMap.Remove(Op.entity_id);
+			}
+			else
+			{
+				UE_LOG(LogSpatialNetConnection, Warning, TEXT("Received heartbeat component update after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
+			}
 		}
 	}
 }
