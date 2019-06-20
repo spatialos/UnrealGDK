@@ -76,7 +76,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bCreatedEntity(false)
 	, bCreatingNewEntity(false)
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
-	, bFirstTick(true)
 	, bInterestDirty(false)
 	, bNetOwned(false)
 	, NetDriver(nullptr)
@@ -880,13 +879,12 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 
-	if (bFirstTick || SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
+	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{
 		bool bSuccess = Sender->UpdateEntityACLs(GetEntityId(), NewOwnerWorkerAttribute);
 
 		if (bSuccess)
 		{
-			bFirstTick = false;
 			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		}
 	}
@@ -897,10 +895,9 @@ void USpatialActorChannel::ClientProcessOwnershipChange()
 	bool bOldNetOwned = bNetOwned;
 	bNetOwned = IsOwnedByWorker();
 
-	if (bFirstTick || bOldNetOwned != bNetOwned)
+	if (bOldNetOwned != bNetOwned)
 	{
 		Sender->SendComponentInterest(Actor, GetEntityId(), bNetOwned);
-		bFirstTick = false;
 	}
 }
 

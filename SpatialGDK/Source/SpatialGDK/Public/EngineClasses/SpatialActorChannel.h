@@ -174,7 +174,6 @@ private:
 
 private:
 	Worker_EntityId EntityId;
-	bool bFirstTick;
 	bool bInterestDirty;
 
 	// Used on the client to track gaining/losing ownership.

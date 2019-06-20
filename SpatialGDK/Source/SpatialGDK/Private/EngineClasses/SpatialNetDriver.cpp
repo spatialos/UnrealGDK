@@ -588,6 +588,8 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 	}
 
 	Channel->MarkInterestDirty();
+
+	Channel->ProcessOwnershipChange();
 }
 
 //SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
