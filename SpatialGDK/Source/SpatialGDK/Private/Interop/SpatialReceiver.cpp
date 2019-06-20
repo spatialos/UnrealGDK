@@ -1616,8 +1616,26 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
 {
 	if (!NetDriver->IsServer())
 	{
+		// Clients can ignore Heartbeat component updates.
 		return;
 	}
+
+	TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = EntityConnectionMap.Find(Op.entity_id);
+	if (ConnectionPtr == nullptr)
+	{
+		// Heartbeat component update on a PlayerController that this server does not have authority over.
+		// TODO: Disable component interest for Heartbeat components this server doesn't care about - UNR-986
+		return;
+	}
+
+	if (!ConnectionPtr->IsValid())
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received heartbeat component update after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
+		EntityConnectionMap.Remove(Op.entity_id);
+		return;
+	}
+
+	USpatialNetConnection* NetConnection = ConnectionPtr->Get();
 
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
@@ -1625,20 +1643,10 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
 	{
 		if (EventCount > 1)
 		{
-			UE_LOG(LogSpatialNetConnection, Log, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), Op.entity_id);
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), Op.entity_id);
 		}
 
-		if (TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = EntityConnectionMap.Find(Op.entity_id))
-		{
-			if (ConnectionPtr->IsValid())
-			{
-				ConnectionPtr->Get()->OnHeartbeat();
-			}
-			else
-			{
-				UE_LOG(LogSpatialNetConnection, Warning, TEXT("Received heartbeat event after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
-			}
-		}
+		NetConnection->OnHeartbeat();
 	}
 
 	Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
@@ -1646,17 +1654,7 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
 		GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
 	{
 		// Client has disconnected, let's clean up their connection.
-		if (TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = EntityConnectionMap.Find(Op.entity_id))
-		{
-			if (ConnectionPtr->IsValid())
-			{
-				ConnectionPtr->Get()->CleanUp();
-				EntityConnectionMap.Remove(Op.entity_id);
-			}
-			else
-			{
-				UE_LOG(LogSpatialNetConnection, Warning, TEXT("Received heartbeat component update after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
-			}
-		}
+		NetConnection->CleanUp();
+		EntityConnectionMap.Remove(Op.entity_id);
 	}
 }
