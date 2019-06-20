@@ -595,7 +595,6 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 					EntityId, CommandRequest.component_id, *Params->Function->GetName());
 			}
 		}
-		// TODO: Track queued RPCs.
 
 		break;
 	}
@@ -645,7 +644,6 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 		{
 			NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, RPCPayloadSize);
 		}
-		// TODO: Track queued RPCs.
 
 		break;
 	}
