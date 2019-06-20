@@ -64,7 +64,7 @@ public:
 	bool bEnableHandover;
 
 	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
-	UPROPERTY(EditAnywhere, config, Category = "Query Based Interest", meta = (ConfigRestartRequired = false, DisplayName = "Query Based Interest Enabled"))
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bUsingQBI;
 
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
@@ -99,7 +99,16 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bBatchSpatialPositionUpdates;
 
-	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
+	/** EXPERIMENTAL - This is a stop-gap until we can better define server interest on system entities.
+	Disabling this is not supported in any type of multi-server environment*/
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	bool bEnableServerQBI;
+
+	/** Pack unreliable RPCs sent during the same frame into a single update. */
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	bool bPackUnreliableRPCs;
+
+  /** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
 	bool bUseDevelopmentAuthenticationFlow;
 

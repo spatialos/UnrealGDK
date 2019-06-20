@@ -29,6 +29,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseFrameTimeAsLoad(false)
 	, bCheckRPCOrder(false)
 	, bBatchSpatialPositionUpdates(true)
+	, bEnableServerQBI(bUsingQBI)
+	, bPackUnreliableRPCs(true)
 	, bUseDevelopmentAuthenticationFlow(false)
 {
 }
