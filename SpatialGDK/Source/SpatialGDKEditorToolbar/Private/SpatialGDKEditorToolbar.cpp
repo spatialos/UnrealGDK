@@ -30,6 +30,9 @@
 #include "Serialization/JsonWriter.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+#include "HAL/PlatformFilemanager.h"
+#include "FileCache.h"
+#include "DirectoryWatcherModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -68,6 +71,15 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	// For checking whether we can stop or start.
 	LastSpatialServiceCheck = FDateTime::Now();
+
+	// Get the project name from the spatialos.json.
+	ProjectName = GetProjectName();
+
+	// Ensure the worker.jsons are up to date.
+	WorkerBuildConfigAsync();
+
+	// Watch the worker config directory for changes.
+	StartUpDirectoryWatcher();
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -120,12 +132,14 @@ void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 		CleanupSpatialProcess();
 	}
 
-	// TODO: Don't bind if spatial is disabled
 	if (!GEditor->TryStartSpatialDeployment.IsBound())
 	{
 		GEditor->TryStartSpatialDeployment.BindLambda([this]
 		{
-			StartSpatialDeploymentButtonClicked();
+			if(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			{
+				StartSpatialDeploymentButtonClicked();
+			}
 		});
 	}
 
@@ -197,7 +211,6 @@ void FSpatialGDKEditorToolbarModule::SetupToolbar(TSharedPtr<class FUICommandLis
 {
 	FLevelEditorModule& LevelEditorModule =
 		FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-
 	{
 		TSharedPtr<FExtender> MenuExtender = MakeShareable(new FExtender());
 		MenuExtender->AddMenuExtension(
@@ -432,6 +445,9 @@ FString FSpatialGDKEditorToolbarModule::ExecuteAndReadOutput(FString Executable,
 
 	FProcHandle ProcHandle;
 	uint32 ProcessID;
+	FString ReadPipeResult;
+	FString WritePipeResult;
+
 
 	// TODO: For some reason this is starting in it's own window when it shouldn't.
 	ProcHandle = FPlatformProcess::CreateProc(*Executable, *Arguments, false, true, true, &ProcessID, 0, *DirectoryToRun, WritePipe, ReadPipe);
@@ -439,11 +455,11 @@ FString FSpatialGDKEditorToolbarModule::ExecuteAndReadOutput(FString Executable,
 	if (!ProcHandle.IsValid())
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Command execution failed. '%s' with arguments '%s' in directory '%s' "), *Executable, *Arguments, *DirectoryToRun);
-		return ""; // TODO: Better return
+		return ReadPipeResult;
 	}
 
-	FString WritePipeResult = FPlatformProcess::ReadPipe(WritePipe);
-	FString ReadPipeResult = FPlatformProcess::ReadPipe(ReadPipe);
+	WritePipeResult = FPlatformProcess::ReadPipe(WritePipe);
+	ReadPipeResult = FPlatformProcess::ReadPipe(ReadPipe);
 
 	// Make sure the pipe doesn't get clogged.
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [&ReadPipe, &ReadPipeResult, &ProcHandle]
@@ -488,6 +504,68 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialServiceRunning()
 	}
 }
 
+// TODO: This probably shouldn't be changing member variable and returning.
+FString FSpatialGDKEditorToolbarModule::GetProjectName()
+{
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
+
+	FString SpatialFileName = TEXT("spatialos.json");
+	FString SpatialFileResult;
+	FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName));
+
+	TSharedPtr<FJsonObject> JsonParsedSpatialFile = ParseJson(SpatialFileResult);
+
+	if(!JsonParsedSpatialFile.IsValid())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Json parsing of spatialos.json failed. Can't get project name."));
+	}
+
+	if(!JsonParsedSpatialFile->TryGetStringField(TEXT("name"), ProjectName))
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("'name' does not exist in spatialos.json. Can't read project name."));
+	}
+
+	return ProjectName;
+}
+
+void FSpatialGDKEditorToolbarModule::WorkerBuildConfigAsync()
+{
+	FString SpatialExe = TEXT("spatial.exe");
+	FString SpatialServiceStatusArgs = TEXT("worker build build-config");
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+	const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
+
+	FString WorkerBuildConfigResult = ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStatusArgs, *SpatialDirectory);
+
+	if(!WorkerBuildConfigResult.Contains(TEXT("succeeded")))
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Building worker configurations failed. Please ensure your .worker.json files are correct."));
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::StartUpDirectoryWatcher()
+{
+	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
+	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
+	if (DirectoryWatcher)
+	{
+		// Watch the worker config directory for changes.
+		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+		const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
+		// TODO: This might need /unreal too
+		FString WorkerConfigDirectory = FPaths::Combine(SpatialDirectory, TEXT("workers"));
+		WorkerConfigDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnWorkerConfigDirectoryChanged);
+		DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate, WorkerConfigDirectoryChangedDelegateHandle);
+	}
+}
+
+void FSpatialGDKEditorToolbarModule::OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges)
+{
+	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Worker config files updated. Regenerating worker descriptors ('spatial worker build build-config')."));
+	WorkerBuildConfigAsync();
+}
+
 bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentRunning()
 {
 	if (!bSpatialServiceRunning)
@@ -499,7 +577,7 @@ bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentRunning()
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString SpotExe = SpatialGDKSettings->GetSpotPath();
-	FString SpotListArgs = FString::Printf(TEXT("alpha deployment list --project-name=unreal_gdk --json"));
+	FString SpotListArgs = FString::Printf(TEXT("alpha deployment list --project-name=%s --json"), *ProjectName);
 	const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
 
 	FString SpotListResult = ExecuteAndReadOutput(*SpotExe, *SpotListArgs, *SpatialDirectory);
@@ -642,7 +720,7 @@ void FSpatialGDKEditorToolbarModule::TryStartLocalDeployment()
 	// TODO: Read the project name from the spatialos.json
 	// TODO: Removed build-build config. Add it back
 	FString SpotExe = SpatialGDKSettings->GetSpotPath();
-	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=testname --project-name=unreal_gdk --json %s"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
+	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=testname --project-name=%s --json %s"), *LaunchConfig, *ProjectName, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
 	const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
 
 	FDateTime SpotCreateStart = FDateTime::Now();
@@ -861,7 +939,7 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute()
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialServiceIsVisible()
 {
-	return !bSpatialServiceRunning;
+	return false;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute()
@@ -871,7 +949,7 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute()
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible()
 {
-	return bSpatialServiceRunning;
+	return false;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute()

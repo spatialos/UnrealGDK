@@ -9,6 +9,7 @@
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "FileCache.h"
 
 class FToolBarBuilder;
 class FMenuBuilder;
@@ -19,6 +20,8 @@ class FSpatialGDKEditor;
 struct FWorkerTypeLaunchSection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
+
+using namespace DirectoryWatcher;
 
 class FSpatialGDKEditorToolbarModule : public IModuleInterface, public FTickableEditorObject
 {
@@ -89,6 +92,10 @@ private:
 
 	bool ValidateGeneratedLaunchConfig() const;
 	bool IsSpatialServiceRunning();
+	FString GetProjectName();
+	void WorkerBuildConfigAsync();
+	void StartUpDirectoryWatcher();
+	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 	bool TryStartSpatialService();
 	bool TryStopSpatialService();
 	bool TryStopLocalDeployment();
@@ -134,4 +141,8 @@ private:
 	bool bStoppingSpatialService = false;
 
 	FString LocalRunningDeploymentID;
+	FString ProjectName;
+
+	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
+	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
 };
