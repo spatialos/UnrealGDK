@@ -6,6 +6,8 @@
 #include "UObject/CoreNet.h"
 #include "Schema/UnrealObjectRef.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogSpatialNetSerialize, All, All);
+
 class USpatialPackageMapClient;
 
 class SPATIALGDK_API FSpatialNetBitWriter : public FNetBitWriter

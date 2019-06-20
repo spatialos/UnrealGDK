@@ -10,6 +10,7 @@
 #include "FileHelpers.h"
 
 #include "AssetRegistryModule.h"
+#include "AssetDataTagMap.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/ScopedSlowTask.h"
 #include "UObject/StrongObjectPtr.h"
@@ -170,8 +171,21 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 			return false;
 		}
 		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Loading %s"), *Data.AssetName.ToString())));
-		if (auto GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass"))
+
+		const FString* GeneratedClassPathPtr = nullptr;
+
+#if ENGINE_MINOR_VERSION <= 20
+		GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass");
+#else
+		FAssetDataTagMapSharedView::FFindTagResult GeneratedClassFindTagResult = Data.TagsAndValues.FindTag("GeneratedClass");
+		if (GeneratedClassFindTagResult.IsSet())
 		{
+			GeneratedClassPathPtr = &GeneratedClassFindTagResult.GetValue();
+		}
+#endif
+
+		if (GeneratedClassPathPtr != nullptr)
+		{ 
 			const FString ClassObjectPath = FPackageName::ExportTextPathToObjectPath(*GeneratedClassPathPtr);
 			const FString ClassName = FPackageName::ObjectPathToObjectName(ClassObjectPath);
 			FSoftObjectPath SoftPath = FSoftObjectPath(ClassObjectPath);
@@ -194,6 +208,11 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	{
 		FailureCallback.ExecuteIfBound();
 	}
+}
+
+bool FSpatialGDKEditor::FullScanRequired()
+{
+	return !GeneratedSchemaFolderExists();
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()
