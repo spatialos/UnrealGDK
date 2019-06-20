@@ -150,6 +150,8 @@ public:
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
 
+	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
+
 protected:
 	// UChannel Interface
 #if ENGINE_MINOR_VERSION <= 20

@@ -164,10 +164,11 @@ private:
 	void HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
 	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
 
+	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
+	void ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, Worker_ComponentData& Data);
 	void HandleDynamicAddComponent(Worker_AddComponentOp& Op);
 	void AttachDynamicSubobject(Worker_EntityId EntityId, const FClassInfo& Info);
 
-	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
 	void ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
@@ -197,9 +198,6 @@ public:
 	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 private:
-	template <typename T>
-	friend T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId);
-
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 

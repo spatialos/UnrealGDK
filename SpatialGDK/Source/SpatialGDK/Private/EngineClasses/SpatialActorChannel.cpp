@@ -507,35 +507,19 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 
 	const FClassInfo* Info = nullptr;
 
-	// Subobject that's a part of the CDO by default
+	// Subobject that's a part of the CDO by default does not need to be created.
 	if (ObjectRef.IsValid())
 	{
 		Info = &NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 	}
 	else
 	{
-		const FClassInfo& SubobjectInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
+		Info = TryResolveNewDynamicSubobjectAndGetClassInfo(Object);
 
-		// Find the first ClassInfo relating to a dynamic subobject
-		// which has not been used on this entity.
-		for (const auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
-		{
-			if (!NetDriver->StaticComponentView->HasComponent(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data]))
-			{
-				Info = &DynamicSubobjectInfo.Get();
-				break;
-			}
-		}
-
-		// If all ClassInfos are used up, we error.
 		if (Info == nullptr)
 		{
-			UE_LOG(LogSpatialActorChannel, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
-				" the amount of max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *Actor->GetName());
 			return;
 		}
-
-		NetDriver->PackageMap->ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
 	}
 
 	check(Info != nullptr);
@@ -551,6 +535,36 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 		PendingDynamicSubobjects.Add(TWeakObjectPtr<UObject>(Object));
 		Sender->GainAuthorityThenAddComponent(this, Object, Info);
 	}
+}
+
+const FClassInfo* USpatialActorChannel::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
+{
+	const FClassInfo* Info = nullptr;
+
+	const FClassInfo& SubobjectInfo = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
+
+	// Find the first ClassInfo relating to a dynamic subobject
+	// which has not been used on this entity.
+	for (const auto& DynamicSubobjectInfo : SubobjectInfo.DynamicSubobjectInfo)
+	{
+		if (!NetDriver->PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(EntityId, DynamicSubobjectInfo->SchemaComponents[SCHEMA_Data])).IsValid())
+		{
+			Info = &DynamicSubobjectInfo.Get();
+			break;
+		}
+	}
+
+	// If all ClassInfos are used up, we error.
+	if (Info == nullptr)
+	{
+		UE_LOG(LogSpatialActorChannel, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
+			" the amount of max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *Actor->GetName());
+		return Info;
+	}
+
+	NetDriver->PackageMap->ResolveSubobject(Object, FUnrealObjectRef(EntityId, Info->SchemaComponents[SCHEMA_Data]));
+
+	return Info;
 }
 
 bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicationFlags& RepFlags)

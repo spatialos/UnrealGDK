@@ -135,24 +135,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 		return;
 	}
 
-	// If a client gains ownership over something it had already checked out, it will
-	// add component interest on the owner only data components, which will trigger an
-	// AddComponentOp, but it is not guaranteed to be inside a critical section.
-	if (!NetDriver->IsServer())
-	{
-		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
-		{
-			if (ClassInfoManager->GetCategoryByComponentId(Op.data.component_id) == SCHEMA_OwnerOnly)
-			{
-				// We received owner only data, and we have the entity checked out already,
-				// so this happened as a result of adding component interest. Apply the data
-				// immediately instead of queuing it up (since there will be no AddEntityOp).
-				ApplyComponentData(Op.entity_id, Op.data, Channel);
-				return;
-			}
-		}
-	}
-
 	if (bInCriticalSection)
 	{
 		PendingAddComponents.Emplace(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data));
@@ -161,98 +143,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	{
 		HandleDynamicAddComponent(Op);
 	}
-}
-
-void USpatialReceiver::HandleDynamicAddComponent(Worker_AddComponentOp& Op)
-{
-	// If we are delegated a component that exists, we will receive an AddComponentOp.
-	// This will be a duplicate of the AddComponentOp we've already recieved in the AddEntity payload
-	// So it can be safely ignored.
-	if (StaticComponentView->HasComponent(Op.entity_id, Op.data.component_id))
-	{
-		return;
-	}
-
-	PendingDynamicSubobjectComponents.Add(MakeTuple(Op.entity_id, Op.data.component_id), PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
-
-	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.data.component_id);
-
-	bool bReadyToCreate = true;
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-	{
-		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
-
-		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			return;
-		}
-
-		if (!PendingDynamicSubobjectComponents.Contains(MakeTuple(Op.entity_id, ComponentId )))
-		{
-			bReadyToCreate = false;
-		}
-	});
-
-	if (bReadyToCreate)
-	{
-		AttachDynamicSubobject(Op.entity_id, Info);
-	}
-}
-
-void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FClassInfo& Info)
-{
-	TWeakObjectPtr<UObject> WeakObject = PackageMap->GetObjectFromEntityId(EntityId);
-
-	if (!WeakObject.IsValid())
-	{
-		return;
-	}
-
-	AActor* Actor = Cast<AActor>(WeakObject.Get());
-
-	FUnrealObjectRef SubobjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]);
-
-	TWeakObjectPtr<UObject> WeakSubobject = PackageMap->GetObjectFromUnrealObjectRef(SubobjectRef);
-	UObject* Subobject = nullptr;
-
-	if (WeakSubobject.HasSameIndexAndSerialNumber(nullptr))
-	{
-		// If the subobject never existed, create it.
-		Subobject = NewObject<UObject>(Actor, Info.Class.Get());
-
-		Actor->OnSubobjectCreatedFromReplication(Subobject);
-
-		PackageMap->ResolveSubobject(Subobject, SubobjectRef);
-
-		USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
-		check(Channel != nullptr);
-		Channel->CreateSubObjects.Add(Subobject);
-	}
-	else if (!WeakSubobject.IsValid())
-	{
-		// If the subobject at one point existed but doesn't anymore, return.
-		return;
-	}
-	else
-	{
-		// If the subobject already exists, get it.
-		Subobject = WeakSubobject.Get();
-	}
-
-	check(Subobject != nullptr);
-
-	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
-	{
-		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
-
-		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			return;
-		}
-
-		PendingAddComponentWrapper& AddComponent = PendingDynamicSubobjectComponents[MakeTuple(EntityId, ComponentId)];
-		ApplyComponentData(EntityId, *AddComponent.Data->ComponentData, NetDriver->GetActorChannelByEntityId(EntityId));
-	});
 }
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
@@ -445,7 +335,8 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 		}
 
 		// Subobject Delegation
-		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachmentPtr = PendingEntitySubobjectDelegations.Find(MakeTuple(Op.entity_id, Op.component_id)))
+		TPair<Worker_EntityId_Key, Worker_ComponentId> EntityComponentPair = MakeTuple(Op.entity_id, Op.component_id);
+		if (TSharedRef<FPendingSubobjectAttachment>* PendingSubobjectAttachmentPtr = PendingEntitySubobjectDelegations.Find(EntityComponentPair))
 		{
 			FPendingSubobjectAttachment& PendingSubobjectAttachment = PendingSubobjectAttachmentPtr->Get();
 
@@ -458,6 +349,8 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 					Sender->SendAddComponent(PendingSubobjectAttachment.Channel, Object, *PendingSubobjectAttachment.Info);
 				}
 			}
+
+			PendingEntitySubobjectDelegations.Remove(EntityComponentPair);
 		}
 	}
 	else
@@ -615,7 +508,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 
 			if (PendingAddComponent.EntityId == EntityId)
 			{
-				ApplyComponentData(EntityId, *PendingAddComponent.Data->ComponentData, Channel);
+				ApplyComponentDataOnActorCreation(EntityId, *PendingAddComponent.Data->ComponentData, Channel);
 			}
 		}
 
@@ -926,7 +819,7 @@ FTransform USpatialReceiver::GetRelativeSpawnTransform(UClass* ActorClass, FTran
 	return NewTransform;
 }
 
-void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel)
+void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel)
 {
 	uint32 Offset = 0;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Data.component_id, Offset);
@@ -949,6 +842,99 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 		Channel->CreateSubObjects.Add(TargetObject.Get());
 	}
 
+}
+
+void USpatialReceiver::HandleDynamicAddComponent(Worker_AddComponentOp& Op)
+{
+	// If we are delegated a component that exists, we will receive an AddComponentOp.
+	// This will be a duplicate of the AddComponentOp we've already recieved in the AddEntity payload
+	// So it can be safely ignored.
+	if (StaticComponentView->HasComponent(Op.entity_id, Op.data.component_id))
+	{
+		return;
+	}
+
+	uint32 Offset = 0;
+	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.data.component_id, Offset);
+	if (!bFoundOffset)
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id when receiving dynamic AddComponent."), Op.entity_id, Op.data.component_id);
+		return;
+	}
+
+	// Object already exists, we can apply data directly. 
+	if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Offset)).Get())
+	{
+		ApplyComponentData(Object, NetDriver->GetActorChannelByEntityId(Op.entity_id), Op.data);
+		return;
+	}
+
+	// Otherwise this is a dynamically attached component. We need to make sure we have all related components before creation.
+	PendingDynamicSubobjectComponents.Add(MakeTuple(Op.entity_id, Op.data.component_id), PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
+
+	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.data.component_id);
+
+	bool bReadyToCreate = true;
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+	{
+		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
+
+		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return;
+		}
+
+		if (!PendingDynamicSubobjectComponents.Contains(MakeTuple(Op.entity_id, ComponentId )))
+		{
+			bReadyToCreate = false;
+		}
+	});
+
+	if (bReadyToCreate)
+	{
+		AttachDynamicSubobject(Op.entity_id, Info);
+	}
+}
+
+void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FClassInfo& Info)
+{
+	AActor* Actor = Cast<AActor>(PackageMap->GetObjectFromEntityId(EntityId).Get());
+
+	if (Actor == nullptr)
+	{
+		return;
+	}
+
+	UObject* Subobject = NewObject<UObject>(Actor, Info.Class.Get());
+
+	Actor->OnSubobjectCreatedFromReplication(Subobject);
+
+	PackageMap->ResolveSubobject(Subobject, FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
+
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	check(Channel != nullptr);
+	Channel->CreateSubObjects.Add(Subobject);
+
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+	{
+		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
+
+		if (ComponentId == SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			return;
+		}
+
+		TPair<Worker_EntityId_Key, Worker_ComponentId> EntityComponentPair = MakeTuple(EntityId, ComponentId);
+
+		PendingAddComponentWrapper& AddComponent = PendingDynamicSubobjectComponents[EntityComponentPair];
+		ApplyComponentData(Subobject, NetDriver->GetActorChannelByEntityId(EntityId), *AddComponent.Data->ComponentData);
+		PendingDynamicSubobjectComponents.Remove(EntityComponentPair);
+	});
+
+}
+
+void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, Worker_ComponentData& Data)
+{
 	UClass* Class = ClassInfoManager->GetClassByComponentId(Data.component_id);
 	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."), Data.component_id);
 
@@ -972,7 +958,7 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 		TSet<FUnrealObjectRef> UnresolvedRefs;
 
 		ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
-		Reader.ApplyComponentData(Data, TargetObject.Get(), Channel, /* bIsHandover */ false);
+		Reader.ApplyComponentData(Data, TargetObject, Channel, /* bIsHandover */ false);
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
@@ -982,13 +968,13 @@ void USpatialReceiver::ApplyComponentData(Worker_EntityId EntityId, Worker_Compo
 		TSet<FUnrealObjectRef> UnresolvedRefs;
 
 		ComponentReader Reader(NetDriver, ObjectReferencesMap, UnresolvedRefs);
-		Reader.ApplyComponentData(Data, TargetObject.Get(), Channel, /* bIsHandover */ true);
+		Reader.ApplyComponentData(Data, TargetObject, Channel, /* bIsHandover */ true);
 
 		QueueIncomingRepUpdates(ChannelObjectPair, ObjectReferencesMap, UnresolvedRefs);
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because RPC components don't have actual data."), EntityId, Data.component_id);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because RPC components don't have actual data."), Channel->GetEntityId(), Data.component_id);
 	}
 }
 
