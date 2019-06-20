@@ -105,7 +105,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// case we'll crash upon trying to load SchemaDatabase.
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 	// If it fails to load, don't attempt to connect to spatial.
-	if (!ClassInfoManager->Init(this))
+	if (!ClassInfoManager->TryLoadSchemaDatabase(this))
 	{
 		return false;
 	}

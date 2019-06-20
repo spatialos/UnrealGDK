@@ -20,7 +20,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
+bool USpatialClassInfoManager::TryLoadSchemaDatabase(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 
