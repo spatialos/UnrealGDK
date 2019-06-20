@@ -1071,7 +1071,7 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 		bool bCanRetry = false;
 
 		// Only attempt to retry if the error code indicates it makes sense too
-		if ( (Op.status_code == WORKER_STATUS_CODE_TIMEOUT || Op.status_code == WORKER_STATUS_CODE_NOT_FOUND)
+		if ((Op.status_code == WORKER_STATUS_CODE_TIMEOUT || Op.status_code == WORKER_STATUS_CODE_NOT_FOUND)
 			&& (ReliableRPC->Attempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS))
 		{
 			bCanRetry = true;
