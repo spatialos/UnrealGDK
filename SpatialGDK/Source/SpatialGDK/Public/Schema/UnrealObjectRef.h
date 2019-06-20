@@ -89,8 +89,8 @@ struct FUnrealObjectRef
 
 	Worker_EntityId Entity;
 	uint32 Offset;
-	improbable::TSchemaOption<FString> Path;
-	improbable::TSchemaOption<FUnrealObjectRef> Outer;
+	SpatialGDK::TSchemaOption<FString> Path;
+	SpatialGDK::TSchemaOption<FUnrealObjectRef> Outer;
 	bool bNoLoadOnClient = false;
 };
 

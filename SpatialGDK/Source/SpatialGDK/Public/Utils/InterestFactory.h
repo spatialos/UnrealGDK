@@ -13,7 +13,7 @@ class AActor;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 
-namespace improbable
+namespace SpatialGDK
 {
 
 class SPATIALGDK_API InterestFactory
@@ -45,6 +45,7 @@ private:
 	// System Defined Constraints
 	QueryConstraint CreateCheckoutRadiusConstraint();
 	QueryConstraint CreateAlwaysInterestedConstraint();
+	QueryConstraint CreateSingletonConstraint();
 
 	// Only checkout entities that are in loaded sublevels
 	QueryConstraint CreateLevelConstraints();
@@ -57,4 +58,4 @@ private:
 	USpatialPackageMapClient* PackageMap;
 };
 
-}
+} // namespace SpatialGDK

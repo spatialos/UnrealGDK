@@ -6,10 +6,11 @@
 #include "Net/RepLayout.h"
 
 #include "EngineClasses/SpatialNetBitReader.h"
+#include "EngineClasses/SpatialNetBitWriter.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 void RepLayout_SerializeProperties(FRepLayout& RepLayout, FArchive& Ar, UPackageMap* Map, const int32 CmdStart, const int32 CmdEnd, void* Data, bool& bHasUnmapped);
@@ -141,7 +142,12 @@ inline void ReadStructProperty(FSpatialNetBitReader& Reader, UStructProperty* Pr
 		{
 			bOutHasUnmapped = true;
 		}
-		checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
+
+		// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
+		if (!bSuccess)
+		{
+			UE_LOG(LogSpatialNetSerialize, Warning, TEXT("ReadStructProperty: NetSerialize %s failed."), *Struct->GetFullName());
+		}
 	}
 	else
 	{
@@ -213,4 +219,4 @@ inline UScriptStruct* GetFastArraySerializerProperty(UArrayProperty* Property)
 	return nullptr;
 }
 
-}
+} // namespace SpatialGDK

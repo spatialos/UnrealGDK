@@ -13,7 +13,7 @@
 
 using StringToEntityMap = TMap<FString, Worker_EntityId>;
 
-namespace improbable
+namespace SpatialGDK
 {
 
 inline void AddStringToSchema(Schema_Object* Object, Schema_FieldId Id, const FString& Value)
@@ -43,12 +43,16 @@ inline bool GetBoolFromSchema(const Schema_Object* Object, Schema_FieldId Id)
 	return !!Schema_GetBool(Object, Id);
 }
 
+inline void AddBytesToSchema(Schema_Object* Object, Schema_FieldId Id, const uint8* Data, uint32 NumBytes)
+{
+	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(char) * NumBytes);
+	FMemory::Memcpy(PayloadBuffer, Data, sizeof(char) * NumBytes);
+	Schema_AddBytes(Object, Id, PayloadBuffer, sizeof(char) * NumBytes);
+}
+
 inline void AddBytesToSchema(Schema_Object* Object, Schema_FieldId Id, FBitWriter& Writer)
 {
-	uint32 PayloadSize = Writer.GetNumBytes();
-	uint8* PayloadBuffer = Schema_AllocateBuffer(Object, sizeof(char) * PayloadSize);
-	FMemory::Memcpy(PayloadBuffer, Writer.GetData(), sizeof(char) * PayloadSize);
-	Schema_AddBytes(Object, Id, PayloadBuffer, sizeof(char) * PayloadSize);
+	AddBytesToSchema(Object, Id, Writer.GetData(), Writer.GetNumBytes());
 }
 
 inline TArray<uint8> IndexBytesFromSchema(const Schema_Object* Object, Schema_FieldId Id, uint32 Index)
@@ -243,4 +247,4 @@ inline Schema_ComponentData* DeepCopyComponentData(Schema_ComponentData* Source)
 // Does not clear OutPath first.
 void GetFullPathFromUnrealObjectReference(const FUnrealObjectRef& ObjectRef, FString& OutPath);
 
-}
+} // namespace SpatialGDK

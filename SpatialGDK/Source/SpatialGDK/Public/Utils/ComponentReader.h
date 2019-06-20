@@ -7,7 +7,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialComponentReader, All, All);
 
-namespace improbable
+namespace SpatialGDK
 {
 
 class ComponentReader
@@ -22,8 +22,8 @@ private:
 	void ApplySchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds);
 	void ApplyHandoverSchemaObject(Schema_Object* ComponentObject, UObject* Object, USpatialActorChannel* Channel, bool bIsInitialData, TArray<Schema_FieldId>& UpdatedIds);
 
-	void ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex);
-	void ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, UArrayProperty* Property, uint8* Data, int32 Offset, int32 ParentIndex);
+	void ApplyProperty(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, uint32 Index, UProperty* Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex);
+	void ApplyArray(Schema_Object* Object, Schema_FieldId FieldId, FObjectReferencesMap& InObjectReferencesMap, UArrayProperty* Property, uint8* Data, int32 Offset, int32 CmdIndex, int32 ParentIndex);
 
 	uint32 GetPropertyCount(const Schema_Object* Object, Schema_FieldId Id, UProperty* Property);
 
@@ -35,4 +35,4 @@ private:
 	TSet<FUnrealObjectRef>& UnresolvedRefs;
 };
 
-}
+} // namespace SpatialGDK

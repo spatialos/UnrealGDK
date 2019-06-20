@@ -2,7 +2,7 @@
 
 #include "Interop/Connection/OutgoingMessages.h"
 
-namespace improbable
+namespace SpatialGDK
 {
 
 void FEntityQueryRequest::TraverseConstraint(Worker_Constraint* Constraint)
@@ -52,4 +52,4 @@ void FEntityQueryRequest::TraverseConstraint(Worker_Constraint* Constraint)
 	}
 }
 
-} // namespace improbable
+} // namespace SpatialGDK
