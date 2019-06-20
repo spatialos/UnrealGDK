@@ -778,7 +778,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 
 		FDateTime EndTime = FDateTime::Now();
 		FTimespan Span = EndTime - StartTime;
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatail service stopped in %f secoonds."), Span.GetTotalSeconds());
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f secoonds."), Span.GetTotalSeconds());
 		bStoppingSpatialService = false;
 	});
 	 
@@ -789,6 +789,17 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		bStartingDeployment = true;
+
+		// If schema has been regenerated then we need to restart spatial.
+		if(bRedeployRequired)
+		{
+			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Schema has changed since last session. Local deployment must restart."));
+			TryStopLocalDeployment();
+			bRedeployRequired = false;
+		}
+
+		// Make Sahil's vision come true.
+
 		// If the service is not running then start it.
 		if (!bSpatialServiceRunning)
 		{
@@ -835,7 +846,7 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible()
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute()
 {
-	return bSpatialServiceRunning && !bStartingDeployment;
+	return !bStartingDeployment;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible()
@@ -1022,6 +1033,8 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
+	bRedeployRequired = true;
+
 	if (SpatialGDKEditorInstance->FullScanRequired())
 	{
 		ShowTaskStartNotification("Initial Schema Generation");

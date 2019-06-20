@@ -47,6 +47,7 @@ public:
 
 	bool bLocalDeploymentRunning = false;
 	bool bSpatialServiceRunning = false;
+	bool bRedeployRequired = false;
 
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
