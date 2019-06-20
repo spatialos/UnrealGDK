@@ -96,6 +96,7 @@ private:
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
 	void TryStartLocalDeployment();
+	void StandardNotification(FString NotificationText);
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
 	void GenerateSchema(bool bFullScan);

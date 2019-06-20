@@ -473,14 +473,14 @@ bool FSpatialGDKEditorToolbarModule::IsSpatialServiceRunning()
 	// TODO: More robust result check
 	if (ServiceStatusResult.Contains(TEXT("Local API service is not running")))
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service not running."));
+		UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Spatial service not running."));
 		bSpatialServiceRunning = false;
 		bLocalDeploymentRunning = false;
 		return false;
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service running."));
+		UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Spatial service running."));
 		bSpatialServiceRunning = true;
 		return true;
 	}
@@ -531,7 +531,7 @@ bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentRunning()
 
 	if (!bParsingSuccess)
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("No local deployments running."));
+		UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("No local deployments running."));
 		return false;
 	}
 
@@ -542,7 +542,7 @@ bool FSpatialGDKEditorToolbarModule::IsLocalDeploymentRunning()
 		{
 			FString DeploymentId = JsonDeployment->AsObject()->GetStringField(TEXT("id"));
 
-			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Running deployment found: %s"), *DeploymentId);
+			UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Running deployment found: %s"), *DeploymentId);
 
 			// TODO: Better way of getting current running deployment ID.
 			LocalRunningDeploymentID = DeploymentId;
@@ -564,17 +564,21 @@ bool FSpatialGDKEditorToolbarModule::TryStartSpatialService()
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
 
+	StandardNotification(TEXT("Starting spatial service..."));
+
 	FString ServiceStartResult = ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStartArgs, *SpatialDirectory);
 
 	// TODO: More robust result check
 	if (ServiceStartResult.Contains(TEXT("RUNNING")))
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service started! %s"), *ServiceStartResult);
+		StandardNotification(TEXT("Spatial service started!"));
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service started!"));
 		bSpatialServiceRunning = true;
 		return true;
 	}
 	else
 	{
+		StandardNotification(TEXT("Spatial service failed to start!"));
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Spatial service failed to start! %s"), *ServiceStartResult);
 		bSpatialServiceRunning = false;
 		bLocalDeploymentRunning = false;
@@ -589,18 +593,22 @@ bool FSpatialGDKEditorToolbarModule::TryStopSpatialService()
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 	const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
 
+	StandardNotification(TEXT("Stopping Spatial service..."));
+
 	FString ServiceStartResult = ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStartArgs, *SpatialDirectory);
 
 	// TODO: More robust result check
 	if (ServiceStartResult.Contains(TEXT("Local API service stopped")))
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped! %s"), *ServiceStartResult);
+		StandardNotification(TEXT("Spatial service stopped!"));
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped!"));
 		bSpatialServiceRunning = false;
 		bLocalDeploymentRunning = false;
 		return true;
 	}
 	else
 	{
+		StandardNotification(TEXT("Spatial service failed to stop!"));
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Spatial service failed to stop! %s"), *ServiceStartResult);
 
 		// Who knows what happened. Do a service status.
@@ -635,11 +643,9 @@ void FSpatialGDKEditorToolbarModule::TryStartLocalDeployment()
 	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=testname --project-name=unreal_gdk --json %s"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
 	const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
 
-	//FNotificationInfo Info(FText::FromString(TEXT("SpatialOS Starting...")));
-	//Info.ExpireDuration = 2.0f;
-	//FSlateNotificationManager::Get().QueueNotification(&Info);
-
 	FDateTime SpotCreateStart = FDateTime::Now();
+
+	StandardNotification(TEXT("Starting local deployment..."));
 
 	FString SpotCreateResult = ExecuteAndReadOutput(*SpotExe, *SpotCreateArgs, *SpatialDirectory);
 
@@ -663,17 +669,27 @@ void FSpatialGDKEditorToolbarModule::TryStartLocalDeployment()
 		FDateTime SpotCreateEnd = FDateTime::Now();
 		FTimespan Span = SpotCreateEnd - SpotCreateStart;
 
-		//NotificationItem->SetCompletionState(SNotificationItem::CS_Success);
 		OnDeploymentStart.Broadcast();
+
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
+		StandardNotification(TEXT("Local deployment started!"));
 	}
 	else
 	{
 		bLocalDeploymentRunning = false;
-		//NotificationItem->SetCompletionState(SNotificationItem::CS_Fail);
+
+		// TODO: Is this the correct log path anymore?
 		const FString SpatialLogPath = SpatialGDKSettings->GetSpatialOSDirectory() + FString(TEXT("/logs/spatial.log"));
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."), *SpatialLogPath);
+		StandardNotification(TEXT("Local deployment started!"));
 	}
+}
+
+void FSpatialGDKEditorToolbarModule::StandardNotification(FString NotificationText)
+{
+	FNotificationInfo* NotificationInfo = new FNotificationInfo(FText::FromString(NotificationText));
+	NotificationInfo->ExpireDuration = 3.0f;
+	FSlateNotificationManager::Get().QueueNotification(NotificationInfo);
 }
 
 // TODO: Might want to just make this delete any running deployment.
@@ -684,6 +700,8 @@ bool FSpatialGDKEditorToolbarModule::TryStopLocalDeployment()
 	FString SpotExe = SpatialGDKSettings->GetSpotPath();
 	FString SpotListArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *LocalRunningDeploymentID);
 	const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
+
+	StandardNotification(TEXT("Stopping local deployment..."));
 
 	FString SpotDeleteResult = ExecuteAndReadOutput(*SpotExe, *SpotListArgs, *SpatialDirectory);
 
@@ -715,6 +733,8 @@ bool FSpatialGDKEditorToolbarModule::TryStopLocalDeployment()
 	{
 		// TODO: Wtf happened here.
 	}
+
+	StandardNotification(bSuccess ? TEXT("Local deployment stopped!") : TEXT("Failed to stop local deployment!"));
 
 	// Make sure deployment state internally is updated.
 	IsLocalDeploymentRunning();
