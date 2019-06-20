@@ -20,7 +20,7 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
+bool USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
 {
 	NetDriver = InNetDriver;
 
@@ -29,9 +29,12 @@ void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
 
 	if (SchemaDatabase == nullptr)
 	{
-		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication.")));
-		return;
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("SchemaDatabase not found! Please generate schema or turn off SpatialOS networking."));
+		QuitGame();
+		return false;
 	}
+
+	return true;
 }
 
 FORCEINLINE UClass* ResolveClass(FString& ClassPath)
@@ -96,18 +99,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is explicitly referenced from the starting scene and schema has been generated."), *ClassPath);
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *ClassPath);
-#if WITH_EDITOR
-		// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
-		// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
-#if ENGINE_MINOR_VERSION <= 20
-		UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit);
-#else
-		UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit, false);
-#endif
-
-#else
-		FGenericPlatformMisc::RequestExit(false);
-#endif
+		QuitGame();
 		return;
 	}
 
@@ -313,4 +305,20 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
+}
+
+void USpatialClassInfoManager::QuitGame()
+{
+#if WITH_EDITOR
+	// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
+	// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
+#if ENGINE_MINOR_VERSION <= 20
+	UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit);
+#else
+	UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit, false);
+#endif
+
+#else
+	FGenericPlatformMisc::RequestExit(false);
+#endif
 }
