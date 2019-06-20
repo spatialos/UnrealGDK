@@ -99,8 +99,12 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	}
 
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
-	// If it fails to load, don't attempt to connect to spatial.
+	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
+	// from OnConnectedToSpatialOS callback which could be executed with the async
+	// loading thread suspended (e.g. when resuming rendering thread), in which
+	// case we'll crash upon trying to load SchemaDatabase.
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
+	// If it fails to load, don't attempt to connect to spatial.
 	if (!ClassInfoManager->Init(this))
 	{
 		return false;

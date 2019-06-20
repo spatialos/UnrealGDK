@@ -101,6 +101,7 @@ public:
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
+	void QuitGame();
 
 private:
 	UPROPERTY()
@@ -110,6 +111,4 @@ private:
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;
 	TMap<Worker_ComponentId, uint32> ComponentToOffsetMap;
 	TMap<Worker_ComponentId, ESchemaComponentType> ComponentToCategoryMap;
-
-	void QuitGame();
 };
