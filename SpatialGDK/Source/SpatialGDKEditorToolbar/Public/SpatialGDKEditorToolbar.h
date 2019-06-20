@@ -45,7 +45,8 @@ public:
 
 	FSimpleMulticastDelegate OnDeploymentStart;
 
-	bool bLocalDeploymentRunning;
+	bool bLocalDeploymentRunning = false;
+	bool bSpatialServiceRunning = false;
 
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
@@ -55,13 +56,17 @@ private:
 
 	void StartSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
+	bool StartSpatialDeploymentIsVisible();
 	bool StartSpatialDeploymentCanExecute();
+	bool StartSpatialServiceIsVisible();
 	bool StartSpatialServiceCanExecute();
+	bool StopSpatialServiceIsVisible();
 	bool StopSpatialServiceCanExecute();
 	void RefreshServiceStatus();
 	TSharedPtr<FJsonObject> ParseJson(FString RawJsonString);
-	bool StopSpatialDeploymentCanExecute();
+	bool StopSpatialDeploymentIsVisible();
 
+	bool StopSpatialDeploymentCanExecute();
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -84,12 +89,13 @@ private:
 	bool ValidateGeneratedLaunchConfig() const;
 	bool IsSpatialServiceRunning();
 	bool TryStartSpatialService();
+	bool TryStopSpatialService();
 	bool TryStopLocalDeployment();
 	bool IsLocalDeploymentRunning();
 	FString ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun);
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
-	void StartSpatialDeployment();
+	void TryStartLocalDeployment();
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
 	void GenerateSchema(bool bFullScan);
@@ -119,12 +125,11 @@ private:
 
 	FDateTime LastSpatialServiceCheck;
 	FDateTime LastDeploymentCheck;
-	bool bStopCanExecute;
-	bool bStartCanExecute;
-	bool bSpatialServiceRunning;
-	
-	FString LocalRunningDeploymentID;
 
-	bool bStartSpatialServiceCanExecute;
-	bool bStopSpatialServiceCanExecute;
+	bool bStartingDeployment = false;
+	bool bStoppingDeployment = false;
+	bool bStartingSpatialService = false;
+	bool bStoppingSpatialService = false;
+
+	FString LocalRunningDeploymentID;
 };
