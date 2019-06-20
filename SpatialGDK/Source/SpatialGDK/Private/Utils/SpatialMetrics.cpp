@@ -6,10 +6,10 @@
 #include "EngineGlobals.h"
 #include "GameFramework/PlayerController.h"
 
+#include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/SpatialSender.h"
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
@@ -83,9 +83,9 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 	RPCTrackingStartTime = FPlatformTime::Seconds();
 
 	// If RPC tracking is activated on a client, send a command to the server to start tracking.
-	if (!NetDriver->IsServer() && NetDriver->Sender != nullptr && NetDriver->GetWorld() != nullptr && NetDriver->GetWorld()->GetGameInstance() != nullptr)
+	if (!NetDriver->IsServer())
 	{
-		FUnrealObjectRef PCObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(NetDriver->GetWorld()->GetGameInstance()->GetPrimaryPlayerController());
+		FUnrealObjectRef PCObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Cast<APlayerController>(NetDriver->GetSpatialOSNetConnection()->OwningActor));
 		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
@@ -173,9 +173,9 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 	bRPCTrackingEnabled = false;
 
 	// If RPC tracking is stopped on a client, send a command to the server to stop tracking.
-	if (!NetDriver->IsServer() && NetDriver->Sender != nullptr && NetDriver->GetWorld() != nullptr && NetDriver->GetWorld()->GetGameInstance() != nullptr)
+	if (!NetDriver->IsServer())
 	{
-		FUnrealObjectRef PCObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(NetDriver->GetWorld()->GetGameInstance()->GetPrimaryPlayerController());
+		FUnrealObjectRef PCObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Cast<APlayerController>(NetDriver->GetSpatialOSNetConnection()->OwningActor));
 		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
 
 		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
