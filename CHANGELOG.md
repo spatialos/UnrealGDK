@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added runtime option to disable property handover when running in non-zoned deployments - bEnableHandover.
 - Added runtime option to auto spawn the ASpatialMetricsDisplay for remote debugging of server metrics - bEnableMetricsDisplay.
 - Added runtime option to batch spatial position updates to runtime.
+- Changed Interest so that NetCullDistanceSquared is used to define checkout radii rather than the divergent CheckoutRadius property on AActor. AActor NetCullDistanceSquared defines the default checkout radius for a client. Actor types that override that property to be larger than the default will cause additional interest constraints. 
 
 ### Bug fixes:
 - BeginPlay is not called with authority when checking out entities from Spatial.
