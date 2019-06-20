@@ -1076,9 +1076,9 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 		{
 			bCanRetry = true;
 		}
+		// Don't apply the retry limit on auth lost, as it should eventually succeed
 		else if (Op.status_code == WORKER_STATUS_CODE_AUTHORITY_LOST)
 		{
-			// Don't apply the retry limit on auth lost, as it should eventually succeed
 			bCanRetry = true;
 		}
 
