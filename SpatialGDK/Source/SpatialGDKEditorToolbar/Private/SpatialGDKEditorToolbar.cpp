@@ -339,7 +339,7 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 		Notification->SetText(FText::AsCultureInvariant(NotificationText));
 		Notification->SetCompletionState(SNotificationItem::CS_Success);
 		Notification->ExpireAndFadeout();
-		TaskNotificationPtr.Reset();
+		//TaskNotificationPtr.Reset();
 
 		if (GEditor && ExecutionSuccessSound)
 		{
@@ -553,7 +553,7 @@ void FSpatialGDKEditorToolbarModule::StartUpDirectoryWatcher()
 		// Watch the worker config directory for changes.
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 		const FString SpatialDirectory = SpatialGDKSettings->GetSpatialOSDirectory();
-		// TODO: This might need /unreal too
+		// TODO: If directory exists otherwise panic.
 		FString WorkerConfigDirectory = FPaths::Combine(SpatialDirectory, TEXT("workers"));
 		WorkerConfigDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FSpatialGDKEditorToolbarModule::OnWorkerConfigDirectoryChanged);
 		DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate, WorkerConfigDirectoryChangedDelegateHandle);
@@ -699,6 +699,12 @@ bool FSpatialGDKEditorToolbarModule::TryStopSpatialService()
 
 void FSpatialGDKEditorToolbarModule::TryStartLocalDeployment()
 {
+	if (bLocalDeploymentRunning)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Tried to start a local deployment but one is already running."));
+		return;
+	}
+
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString LaunchConfig;
