@@ -31,16 +31,16 @@ struct FWorkerAssociation
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TMap<FName, FName> ActorGroupToWorker;
+	TMap<FName, FString> ActorGroupToWorker;
 
 	FWorkerAssociation()
 	{
 		ActorGroupToWorker = {};
 	}
 
-	FWorkerAssociation(TMap<FName, FName> Values)
+	FWorkerAssociation(TMap<FName, FString> Values)
 	{
-		ActorGroupToWorker = TMap<FName, FName>(Values);
+		ActorGroupToWorker = TMap<FName, FString>(Values);
 	}
 };
 
@@ -52,7 +52,7 @@ class SPATIALGDK_API UActorGroupManager : public UObject
 private:
 	TMap<TSoftClassPtr<AActor>, FName> ClassPathToActorGroup;
 
-	TMap<FName, FName> ActorGroupToWorkerType;
+	TMap<FName, FString> ActorGroupToWorkerType;
 
 	UActorGroupManager();
 
@@ -64,22 +64,22 @@ public:
 
 	FName GetActorGroupForClass(UClass* Class);
 
-	FName GetWorkerTypeForClass(UClass* Class);
+	FString GetWorkerTypeForClass(UClass* Class);
 
 	static TMap<FName, FActorClassSet> DefaultActorGroups() {
 		return { TPairInitializer<const FName&, const FActorClassSet&>(SpatialConstants::DefaultActorGroup, FActorClassSet({ AActor::StaticClass() })) };
 	}
 
-	static TSet<FName> DefaultWorkerTypes() {
-		return { FName(*SpatialConstants::ServerWorkerType) };
+	static TSet<FString> DefaultWorkerTypes() {
+		return { SpatialConstants::ServerWorkerType };
 	}
 
-	static TMap<FName, FName> DefaultWorkerAssociation() {
-		return { TPairInitializer<const FName&, const FName&>(SpatialConstants::DefaultActorGroup, FName(*SpatialConstants::ServerWorkerType)) };
+	static TMap<FName, FString> DefaultWorkerAssociation() {
+		return { TPairInitializer<const FName&, const FString&>(SpatialConstants::DefaultActorGroup, SpatialConstants::ServerWorkerType) };
 	}
 
 #if WITH_EDITOR
 	static void ValidateOffloadingSettings(TMap<FName, FActorClassSet> OldActorGroups, TMap<FName, FActorClassSet>* ActorGroups,
-		TSet<FName> OldWorkerTypes, TSet<FName>* WorkerTypes, FWorkerAssociation& WorkerAssociation);
+		TSet<FString> OldWorkerTypes, TSet<FString>* WorkerTypes, FWorkerAssociation& WorkerAssociation);
 #endif
 };

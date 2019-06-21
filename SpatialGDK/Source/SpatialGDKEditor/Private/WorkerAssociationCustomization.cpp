@@ -106,11 +106,11 @@ void FWorkerAssociationCustomization::OnActorGroupsChanged()
 
 void FDetailAssociationBuilder::OnGetStrings(TArray<TSharedPtr<FString>>& OutComboBoxStrings, TArray<TSharedPtr<class SToolTip>>& OutToolTips, TArray<bool>& OutRestrictedItems)
 {
-	for (FName WorkerType : Settings->WorkerTypes)
+	for (FString WorkerType : Settings->WorkerTypes)
 	{
-		TSharedPtr<FString> WorkerTypePtr = MakeShared<FString>(WorkerType.ToString());
+		TSharedPtr<FString> WorkerTypePtr = MakeShared<FString>(WorkerType);
 		OutComboBoxStrings.Add(WorkerTypePtr);
-		OutToolTips.Add(SNew(SToolTip).Text(FText::FromName(WorkerType)));
+		OutToolTips.Add(SNew(SToolTip).Text(FText::FromString(WorkerType)));
 		OutRestrictedItems.Add(false);
 	}
 }
@@ -119,20 +119,19 @@ FString FDetailAssociationBuilder::OnGetValue(FName ActorGroup)
 {
 	if (Settings->WorkerAssociation.ActorGroupToWorker.Contains(ActorGroup))
 	{
-		return Settings->WorkerAssociation.ActorGroupToWorker.FindRef(ActorGroup).ToString();
+		return Settings->WorkerAssociation.ActorGroupToWorker.FindRef(ActorGroup);
 	}
 	else
 	{
-		return Settings->WorkerTypes.Array()[0].ToString();
+		return Settings->WorkerTypes.Array()[0];
 	}
 }
 
 void FDetailAssociationBuilder::OnValueSelected(const FString& Value, FName ActorGroup)
 {
-	FName WorkerType = FName(*Value);
-	if (Settings->WorkerAssociation.ActorGroupToWorker.FindRef(ActorGroup) != WorkerType)
+	if (Settings->WorkerAssociation.ActorGroupToWorker.FindRef(ActorGroup) != Value)
 	{
-		Settings->WorkerAssociation.ActorGroupToWorker.Add(ActorGroup, FName(*Value));
+		Settings->WorkerAssociation.ActorGroupToWorker.Add(ActorGroup, Value);
 		Settings->SaveConfig(CPF_Config, *Settings->GetDefaultConfigFilename());
 	}
 }

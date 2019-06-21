@@ -67,7 +67,7 @@ FName UActorGroupManager::GetActorGroupForClass(UClass* Class)
 	return NAME_None;
 }
 
-FName UActorGroupManager::GetWorkerTypeForClass(UClass* Class)
+FString UActorGroupManager::GetWorkerTypeForClass(UClass* Class)
 {
 	FName ActorGroup = GetActorGroupForClass(Class);
 
@@ -76,10 +76,23 @@ FName UActorGroupManager::GetWorkerTypeForClass(UClass* Class)
 		return ActorGroupToWorkerType.FindRef(ActorGroup);
 	}
 
-	return NAME_None;
+	return TEXT("");
 }
 
 #if WITH_EDITOR
+
+bool GetFirstDifferentValue(TArray<FString> A, TArray<FString> B, FString& OutDifferent)
+{
+	for (const FString AName : A)
+	{
+		if (!B.Contains(AName))
+		{
+			OutDifferent = AName;
+			return true;
+		}
+	}
+	return false;
+}
 
 bool GetFirstDifferentValue(TArray<FName> A, TArray<FName> B, FName& OutDifferent)
 {
@@ -95,7 +108,7 @@ bool GetFirstDifferentValue(TArray<FName> A, TArray<FName> B, FName& OutDifferen
 }
 
 void UActorGroupManager::ValidateOffloadingSettings(TMap<FName, FActorClassSet> OldActorGroups, TMap<FName, FActorClassSet>* ActorGroups,
-	TSet<FName> OldWorkerTypes, TSet<FName>* WorkerTypes, FWorkerAssociation& WorkerAssociation)
+	TSet<FString> OldWorkerTypes, TSet<FString>* WorkerTypes, FWorkerAssociation& WorkerAssociation)
 {
 	if (ActorGroups->Num() == 0)
 	{
@@ -130,15 +143,15 @@ void UActorGroupManager::ValidateOffloadingSettings(TMap<FName, FActorClassSet> 
 	}
 
 	// Check for invalid WorkerType (Currently just UnrealClient)
-	if (WorkerTypes->Contains(FName(*SpatialConstants::ClientWorkerType)))
+	if (WorkerTypes->Contains(SpatialConstants::ClientWorkerType))
 	{
-		WorkerTypes->Remove(FName(*SpatialConstants::ClientWorkerType));
+		WorkerTypes->Remove(SpatialConstants::ClientWorkerType);
 	}
 
 	// Check for renamed WorkerType
 	if (WorkerTypes->Num() == OldWorkerTypes.Num())
 	{
-		FName FromWorkerType, ToWorkerType;
+		FString FromWorkerType, ToWorkerType;
 		if (GetFirstDifferentValue(OldWorkerTypes.Array(), WorkerTypes->Array(), FromWorkerType) &&
 			GetFirstDifferentValue(WorkerTypes->Array(), OldWorkerTypes.Array(), ToWorkerType))
 		{
@@ -163,7 +176,7 @@ void UActorGroupManager::ValidateOffloadingSettings(TMap<FName, FActorClassSet> 
 		}
 	}
 
-	FName FirstWorkerType = WorkerTypes->Array()[0];
+	FString FirstWorkerType = WorkerTypes->Array()[0];
 
 	// Add default key for any new actor groups.
 	for (FName ActorGroup : ActorGroupKeys)
