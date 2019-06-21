@@ -149,7 +149,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// If there are pending RPCs, add this component.
 	if (OutgoingOnCreateEntityRPCs.Contains(Actor))
 	{
-		ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, ServersOnly);
+		ComponentWriteAcl.Add(SpatialConstants::RPCS_ON_ENTITY_CREATION_ID, AuthoritativeWorkerRequirementSet);
 	}
 
 	// If Actor is a PlayerController, add the heartbeat component.
