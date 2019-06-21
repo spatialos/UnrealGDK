@@ -20,20 +20,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	GeneratedSchemaOutputFolder.Path = GetGeneratedSchemaOutputFolder();
 }
 
-void USpatialGDKEditorSettings::SynchronizeGDKWorkerNames()
-{
-	USpatialGDKSettings* SpatialGDKSettings = GetMutableDefault<USpatialGDKSettings>();
-	SpatialGDKSettings->ServerWorkerTypes.Empty();
-
-	for (const FWorkerTypeLaunchSection& WorkerLaunchDescription : LaunchConfigDesc.Workers)
-	{
-		SpatialGDKSettings->ServerWorkerTypes.Add(WorkerLaunchDescription.WorkerTypeName);
-	}
-
-	SpatialGDKSettings->PostEditChange();
-	SpatialGDKSettings->UpdateDefaultConfigFile();
-}
-
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);

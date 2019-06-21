@@ -321,7 +321,4 @@ public:
 
 		return CommandLineLaunchFlags;
 	}
-
-private:
-	void SynchronizeGDKWorkerNames();
 };
