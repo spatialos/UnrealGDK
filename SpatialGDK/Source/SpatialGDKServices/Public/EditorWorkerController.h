@@ -6,7 +6,6 @@
 #include "Editor.h"
 #include "Modules/ModuleManager.h"
 #include "Settings/LevelEditorPlaySettings.h"
-#include "SpatialGDKEditorToolbar.h"
 
 namespace SpatialGDK
 {
@@ -22,8 +21,6 @@ struct EditorWorkerController
 	void OnSpatialShutdown()
 	{
 		LastPIEEndTime = 0;	// Reset PIE end time to ensure replace-a-worker isn't called
-		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
-		Toolbar.OnSpatialShutdown.Remove(SpatialShutdownHandle);
 		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
 	}
 
@@ -41,9 +38,6 @@ struct EditorWorkerController
 		UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Seconds since last session - %d"), SecondsSinceLastSession);
 
 		PIEEndHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &EditorWorkerController::OnPrePIEEnded);
-
-		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
-		SpatialShutdownHandle = Toolbar.OnSpatialShutdown.AddRaw(this, &EditorWorkerController::OnSpatialShutdown);
 
 		int32 PlayNumberOfServers;
 		GetDefault<ULevelEditorPlaySettings>()->GetPlayNumberOfServers(PlayNumberOfServers);

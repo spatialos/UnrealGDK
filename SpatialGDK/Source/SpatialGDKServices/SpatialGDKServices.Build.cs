@@ -13,10 +13,8 @@ public class SpatialGDKServices : ModuleRules
 			new string[] {
 				"Core",
 				"Engine",
-				"SpatialGDK",
             });
 
-        PublicDependencyModuleNames.Add("SpatialGDKEditorToolbar");
         PrivateIncludePaths.Add("SpatialGDKServices/Private");
 	}
 }

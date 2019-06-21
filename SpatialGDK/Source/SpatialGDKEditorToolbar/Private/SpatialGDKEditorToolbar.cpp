@@ -501,7 +501,7 @@ void FSpatialGDKEditorToolbarModule::CleanupSpatialProcess()
 	FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
 	SpatialOSStackProcessID = 0;
 
-	OnSpatialShutdown.Broadcast();
+	// TO-DO: Call OnSpatialShutdown here
 }
 
 /**
