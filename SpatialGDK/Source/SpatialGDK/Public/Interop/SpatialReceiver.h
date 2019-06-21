@@ -217,5 +217,8 @@ private:
 	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
 	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 
-	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> EntityConnectionMap;
+	// This will map PlayerController entities to the corresponding SpatialNetConnection
+	// for PlayerControllers that this server has authority over. This is used for player
+	// lifecycle logic (Heartbeat component updates, disconnection logic).
+	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 };

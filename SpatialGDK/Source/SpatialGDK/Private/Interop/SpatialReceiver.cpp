@@ -195,7 +195,10 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 		{
 			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
 			{
-				EntityConnectionMap.Add(Op.entity_id, Connection);
+				if (NetDriver->IsServer())
+				{
+					AuthorityPlayerControllerConnectionMap.Add(Op.entity_id, Connection);
+				}
 				Connection->InitHeartbeat(TimerManager, Op.entity_id);
 			}
 		}
@@ -203,7 +206,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 		{
 			if (NetDriver->IsServer())
 			{
-				EntityConnectionMap.Remove(Op.entity_id);
+				AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 			}
 			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
 			{
@@ -1620,7 +1623,7 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
 		return;
 	}
 
-	TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = EntityConnectionMap.Find(Op.entity_id);
+	TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = AuthorityPlayerControllerConnectionMap.Find(Op.entity_id);
 	if (ConnectionPtr == nullptr)
 	{
 		// Heartbeat component update on a PlayerController that this server does not have authority over.
@@ -1631,7 +1634,7 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
 	if (!ConnectionPtr->IsValid())
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received heartbeat component update after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
-		EntityConnectionMap.Remove(Op.entity_id);
+		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 		return;
 	}
 
@@ -1655,6 +1658,6 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
 	{
 		// Client has disconnected, let's clean up their connection.
 		NetConnection->CleanUp();
-		EntityConnectionMap.Remove(Op.entity_id);
+		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
 }
