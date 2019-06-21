@@ -24,6 +24,9 @@ namespace CodeGenerator
 
     internal class Program
     {
+        static readonly uint ExternalComponentIdLowerBound = 1000;
+        static readonly uint ExternalComponentIdUpperBound = 2000;
+
         private static void Main(string[] args)
         {
             Parser.Default.ParseArguments<Options>(args)
@@ -45,6 +48,8 @@ namespace CodeGenerator
             {
                 var bundle = SchemaBundleLoader.LoadBundle(options.InputBundle);
 
+                ValidateBundle(bundle);
+
                 var generators = new List<ICodeGenerator>
                 {
                     new UnrealGenerator()
@@ -63,6 +68,18 @@ namespace CodeGenerator
             {
                 Console.Error.WriteLine(exception);
                 Environment.ExitCode = 1;
+            }
+        }
+
+        private static void ValidateBundle(Bundle bundle)
+        {
+            foreach (var component in bundle.Components)
+            {
+                if (component.Value.ComponentId < ExternalComponentIdLowerBound || component.Value.ComponentId > ExternalComponentIdUpperBound)
+                {
+                    throw new Exception($@"External schema component IDs must be in the range {ExternalComponentIdLowerBound}-{ExternalComponentIdUpperBound}
+Component {component.Value.Identifier.QualifiedName} has ID: {component.Value.ComponentId}");
+                }
             }
         }
 

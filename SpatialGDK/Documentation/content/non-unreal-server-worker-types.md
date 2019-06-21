@@ -36,7 +36,7 @@ The external schema code generator is a tool in the GDK that generates C++ code 
 Below is a summary of the steps required to use the external schema code generator. There is a more complete example in the [examples section below](#using-the-code-generator-example).
 
 * Run the `ExternalSchemaCodegen.bat` file as described in the [helper scripts documentation]({{urlRoot}}/content/helper-scripts) to generate code from a directory containing external schema files.
-* Regenerate the Visual Studio solution.
+* [Regenerate](https://wiki.unrealengine.com/Generate_Visual_Studio_Project) the Visual Studio project files.
 * Instantiate the `ExternalSchemaInterface` class inside your game module. If you want to ensure that the SpatialOS worker connection registers your callbacks to receive initial network operations, you need to register the callbacks inside your game instance's `OnConnected` event callback.
 * To send SpatialOS component updates and commands, call the overloaded `SendComponentUpdate`, `SendCommandRequest`, or `SendCommandResponse` method for the relevant schema type.
 * To register callbacks for receiving network operations, call the overloaded `OnAddComponent`, `OnComponentUpdate`, `OnAuthorityChange`, `OnRemoveComponent`, `OnCommandRequest` or `OnCommandResponse` method for the relevant schema type.
@@ -122,7 +122,7 @@ Using the above schema file placed in the project relative directory `spatial\sc
 
 `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\ExternalSchemaCodegen.bat spatial\schema\my_external_schema Game\Source\<your_project_name>\ExternalSchemaCodegen`
 
-This will generate code in the `Game\Source\<your_project_name>\ExternalSchemaCode` folder. To see these changes, the Visual Studio solution needs to be regenerated.
+This will generate code in the `Game\Source\<your_project_name>\ExternalSchemaCode` folder. To see these changes in Visual Studio, the Visual Studio project files need to be regenerated.
 
 To send or receive network operations, you need to instantiate the `ExternalSchemaInterface` class inside your game module.
 

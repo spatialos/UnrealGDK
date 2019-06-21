@@ -217,7 +217,7 @@ return *this;")}
 {Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}List;")}
 }}
 
-{Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}< {Types.GetTypeDisplayName(_event.Type.Type.QualifiedName)} >& {name}::Update::Get({Text.SnakeCaseToPascalCase(_event.Identifier.Name)}List()
+{Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}< {Types.GetTypeDisplayName(_event.Type.Type.QualifiedName)} >& {name}::Update::Get{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}List()
 {{
 {Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}List;")}
 }}

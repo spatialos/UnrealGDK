@@ -225,8 +225,8 @@ public:
 struct Request
 {{
 {Text.Indent(1, $@"using Type = {Types.GetTypeDisplayName(command.RequestType.Type.QualifiedName)};
-Request({string.Join($", ", types.Find(t => t.QualifiedName == command.ResponseType.Type.QualifiedName).Fields.Select(f => $"{Types.GetConstAccessorTypeModification(f, bundle, type)} {Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))})
-: Data({string.Join($", ", types.Find(t => t.QualifiedName == command.ResponseType.Type.QualifiedName).Fields.Select(f => $"{Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))}) {{}}
+Request({string.Join($", ", types.Find(t => t.QualifiedName == command.RequestType.Type.QualifiedName).Fields.Select(f => $"{Types.GetConstAccessorTypeModification(f, bundle, type)} {Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))})
+: Data({string.Join($", ", types.Find(t => t.QualifiedName == command.RequestType.Type.QualifiedName).Fields.Select(f => $"{Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))}) {{}}
 Request(Type Data) : Data{{ Data }} {{}}
 Type Data;")}
 }};

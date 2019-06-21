@@ -30,15 +30,15 @@ namespace Improbable.CodeGen.Unreal
 
 #include ""CoreMinimal.h""
 #include ""Connection/SpatialWorkerConnection.h""
-#include ""Engine/NetDriver.h""
 #include ""SpatialConstants.h""
 #include ""SpatialDispatcher.h""
-#include ""SpatialNetDriver.h""
 #include ""HelperFunctions.h""
 
 {string.Join(Environment.NewLine, componentTypes.Select(component => $"#include \"{Types.TypeToHeaderFilename(component.QualifiedName)}\""))}
 
 #include <WorkerSDK/improbable/c_worker.h>
+
+class USpatialWorkerConnection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogExternalSchemaInterface, All, All);
 
