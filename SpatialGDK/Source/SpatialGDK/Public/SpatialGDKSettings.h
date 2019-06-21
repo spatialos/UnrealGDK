@@ -88,10 +88,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bUseFrameTimeAsLoad;
 
-	/** Server Worker Type Names. Edit the launch configuration description to affect this property. */
-	UPROPERTY(config, meta = (ConfigRestartRequired = false))
-	TArray<FString> ServerWorkerTypes;
-
 	/** Include an order index with reliable RPCs and warn if they are executed out of order.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bCheckRPCOrder;
