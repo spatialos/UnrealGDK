@@ -139,7 +139,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// If Actor is a PlayerController, add the heartbeat component.
 	if (Actor->IsA<APlayerController>())
 	{
+#if !UE_BUILD_SHIPPING
 		ComponentWriteAcl.Add(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, ServersOnly);
+#endif // !UE_BUILD_SHIPPING
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
 	}
 
@@ -228,7 +230,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	if (Actor->IsA<APlayerController>())
 	{
+#if !UE_BUILD_SHIPPING
 		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
+#endif // !UE_BUILD_SHIPPING
 		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
 	}
 
@@ -581,7 +585,9 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 			Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
+#if !UE_BUILD_SHIPPING
 			NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, Payload.Num());
+#endif // !UE_BUILD_SHIPPING
 
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 			{
@@ -595,7 +601,6 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 					EntityId, CommandRequest.component_id, *Params->Function->GetName());
 			}
 		}
-
 		break;
 	}
 	case SCHEMA_NetMulticastRPC:
@@ -640,10 +645,12 @@ void USpatialSender::SendRPC(TSharedRef<FPendingRPCParams> Params)
 			}
 		}
 
+#if !UE_BUILD_SHIPPING
 		if (!UnresolvedObject)
 		{
 			NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, RPCPayloadSize);
 		}
+#endif // !UE_BUILD_SHIPPING
 
 		break;
 	}

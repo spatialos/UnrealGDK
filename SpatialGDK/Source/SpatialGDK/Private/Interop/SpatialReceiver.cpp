@@ -1032,6 +1032,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 #endif // WITH_EDITOR
+#if !UE_BUILD_SHIPPING
 	else if (Op.request.component_id == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
 	{
 		switch (CommandIndex)
@@ -1050,6 +1051,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 		return;
 	}
+#endif // !UE_BUILD_SHIPPING
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
 

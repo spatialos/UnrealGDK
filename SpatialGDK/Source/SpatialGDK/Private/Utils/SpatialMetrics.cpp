@@ -97,7 +97,7 @@ void USpatialMetrics::SpatialStartRPCMetrics()
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStartRPCMetrics: Could not resolve local PlayerController entity!"));
+			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStartRPCMetrics: Could not resolve local PlayerController entity! RPC metrics will not start on the server."));
 		}
 	}
 }
@@ -111,7 +111,7 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 {
 	if (!bRPCTrackingEnabled)
 	{
-		UE_LOG(LogSpatialMetrics, Log, TEXT("Haven't been recording RPC metrics"));
+		UE_LOG(LogSpatialMetrics, Log, TEXT("Could not stop recording RPC metrics. RPC metrics not yet started."));
 		return;
 	}
 
@@ -187,7 +187,7 @@ void USpatialMetrics::SpatialStopRPCMetrics()
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStopRPCMetrics: Could not resolve local PlayerController entity!"));
+			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialStopRPCMetrics: Could not resolve local PlayerController entity! RPC metrics will not stop on the server."));
 		}
 	}
 }
