@@ -51,6 +51,7 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->SaveConfig();
 
 	SetRuntimeWorkerTypes();
+	SetLevelEditorPlaySettingsWorkerTypes();
 	SafetyCheckSpatialOSDirectoryPaths();
 }
 
@@ -113,5 +114,15 @@ void USpatialGDKEditorSettings::SafetyCheckSpatialOSDirectoryPaths()
 
 		PostEditChange();
 		SaveConfig(CPF_Config, *GetDefaultConfigFilename());
+	}
+}
+
+void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
+{
+	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+
+	for (const FWorkerTypeLaunchSection WorkerLaunch : LaunchConfigDesc.Workers)
+	{
+		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
 	}
 }

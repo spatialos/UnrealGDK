@@ -3,6 +3,13 @@
 #include "SpatialGDKSettings.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
+#include "GameFramework/Actor.h"
+
+#if WITH_EDITOR
+#include "ISettingsModule.h"
+#include "Modules/ModuleManager.h"
+#include "Settings/LevelEditorPlaySettings.h"
+#endif
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)

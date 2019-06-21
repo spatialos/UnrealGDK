@@ -210,6 +210,7 @@ private:
 
 	/** Set WorkerTypes in runtime settings. */
 	void SetRuntimeWorkerTypes();
+	void SetLevelEditorPlaySettingsWorkerTypes();
 
 	/** Check if the Editor Settings contains valid directory paths or not. */
 	void SafetyCheckSpatialOSDirectoryPaths();
