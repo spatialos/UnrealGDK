@@ -112,7 +112,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 
 	// Just connect if a deployment is running.
-	if (!Toolbar.bLocalDeploymentRunning || Toolbar.bStoppingDeployment)
+	if (!Toolbar.bLocalDeploymentRunning || Toolbar.bStoppingDeployment || Toolbar.bStartingDeployment)
 	{
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for local spatial depoyment to start before connecting..."));
 		SpatialDeploymentStartHandle = Toolbar.OnDeploymentStart.AddLambda([this, URL, &Toolbar]

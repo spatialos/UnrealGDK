@@ -52,6 +52,7 @@ public:
 	bool bSpatialServiceRunning = false;
 	bool bRedeployRequired = false;
 	bool bStoppingDeployment = false;
+	bool bStartingDeployment = false;
 
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
@@ -136,7 +137,6 @@ private:
 	FDateTime LastSpatialServiceCheck;
 	FDateTime LastDeploymentCheck;
 
-	bool bStartingDeployment = false;
 	bool bStartingSpatialService = false;
 	bool bStoppingSpatialService = false;
 
