@@ -13,6 +13,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/RepDataUtils.h"
 #include "Utils/RepLayoutUtils.h"
@@ -134,7 +135,17 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	Components.Add(CreateDeploymentData());
 	Components.Add(CreateGSMShutdownData());
 	Components.Add(CreateStartupActorManagerData());
-	Components.Add(EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
+
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+
+	WorkerRequirementSet ReadACL;
+	for (const FName& WorkerType : SpatialGDKSettings->WorkerTypes)
+	{
+		const WorkerAttributeSet WorkerTypeAttributeSet{ { WorkerType.ToString() } };
+		ReadACL.Add(WorkerTypeAttributeSet);
+	}
+
+	Components.Add(SpatialGDK::EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();
