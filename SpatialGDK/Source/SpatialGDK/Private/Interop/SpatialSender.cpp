@@ -1135,7 +1135,7 @@ void USpatialSender::ResolveOutgoingRPCs(UObject* Object, FQueueOfParams* RPCLis
 	FPendingRPCParamsPtr RPCParams = nullptr;
 	while(!RPCList->IsEmpty())
 	{
-		check(RPCList->Peek(RPCParams));
+		RPCList->Peek(RPCParams);
 		if(!RPCParams.IsValid())
 		{
 			UE_LOG(LogSpatialSender, Warning, TEXT("===RPC Param Invalid"));
