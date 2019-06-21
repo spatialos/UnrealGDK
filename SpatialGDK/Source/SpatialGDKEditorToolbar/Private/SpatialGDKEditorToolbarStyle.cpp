@@ -39,6 +39,7 @@ namespace
 const FVector2D Icon16x16(16.0f, 16.0f);
 const FVector2D Icon20x20(20.0f, 20.0f);
 const FVector2D Icon40x40(40.0f, 40.0f);
+const FVector2D Icon120x43(120.0f, 43.0f);
 }
 
 TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
@@ -89,6 +90,9 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 
 	Style->Set("SpatialGDKEditorToolbar.StopSpatialService.Small",
 		new IMAGE_BRUSH(TEXT("ServiceRunning"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.SpatialOSLogo",
+		new IMAGE_BRUSH(TEXT("SPATIALOS_LOGO_WHITE"), Icon120x43));
 
 	return Style;
 }

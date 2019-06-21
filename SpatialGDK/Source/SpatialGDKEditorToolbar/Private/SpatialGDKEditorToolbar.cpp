@@ -69,8 +69,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = GetDefault<USpatialGDKEditorSettings>()->bStopSpatialOnExit;
 
-	// For checking whether we can stop or start.
-	LastSpatialServiceCheck = FDateTime::Now();
+	// For checking whether we can stop or start. Set in the past so the first RefreshServiceStatus does not wait.
+	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(2);
 
 	// Get the project name from the spatialos.json.
 	ProjectName = GetProjectName();
@@ -316,7 +316,7 @@ void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& No
 		}
 
 		FNotificationInfo Info(FText::AsCultureInvariant(NotificationText));
-		Info.Image = FSpatialGDKEditorToolbarStyle::Get().GetBrush(TEXT("SpatialGDKEditorToolbar.StopSpatialService"));
+		Info.Image = FSpatialGDKEditorToolbarStyle::Get().GetBrush(TEXT("SpatialGDKEditorToolbar.SpatialOSLogo"));
 		Info.ExpireDuration = 5.0f;
 		Info.bFireAndForget = false;
 
@@ -788,9 +788,14 @@ void FSpatialGDKEditorToolbarModule::StandardNotification(FString NotificationTe
 	FSlateNotificationManager::Get().QueueNotification(NotificationInfo);
 }
 
-// TODO: Might want to just make this delete any running deployment.
 bool FSpatialGDKEditorToolbarModule::TryStopLocalDeployment()
 {
+	if(!bLocalDeploymentRunning || LocalRunningDeploymentID.IsEmpty())
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Tried to stop local deployment but no active deployment exists."));
+		return false;
+	}
+
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	FString SpotExe = SpatialGDKSettings->GetSpotPath();
@@ -807,6 +812,8 @@ bool FSpatialGDKEditorToolbarModule::TryStopLocalDeployment()
 	if (SpotDeleteResult.Contains(TEXT("failed to get deployment with id")))
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to stop local deployment! %s"), *SpotDeleteResult);
+		IsLocalDeploymentRunning();
+		return bSuccess;
 	}
 
 	TSharedPtr<FJsonObject> SpotJsonResult = ParseJson(SpotDeleteResult);

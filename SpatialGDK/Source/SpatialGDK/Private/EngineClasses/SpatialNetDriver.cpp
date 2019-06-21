@@ -109,18 +109,17 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 #if WITH_EDITOR
 	// If we're launching in PIE then ensure there is a deployment running before connecting.
-	UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for spatial depoyment to start before connecting..."));
 	FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 
 	// Just connect if a deployment is running.
 	if (!Toolbar.bLocalDeploymentRunning || Toolbar.bStoppingDeployment)
 	{
+		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for local spatial depoyment to start before connecting..."));
 		SpatialDeploymentStartHandle = Toolbar.OnDeploymentStart.AddLambda([this, URL, &Toolbar]
 		{
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Delaying connection with URL: %s", *URL.ToString()));
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Local deployment started, connecting with URL: %s", *URL.ToString()));
 			InitiateConnectionToSpatialOS(URL);
 			Toolbar.OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Delegate Removed"));
 		});
 
 		return true;
