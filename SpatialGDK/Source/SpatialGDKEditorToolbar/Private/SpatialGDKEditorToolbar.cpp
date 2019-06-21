@@ -362,9 +362,20 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 		return false;
 	}
 
-	int32 PlayNumberOfServers;
-	GetDefault<ULevelEditorPlaySettings>()->GetPlayNumberOfServers(PlayNumberOfServers);
-	if (!SpatialGDKRuntimeSettings->bEnableHandover && PlayNumberOfServers > 1)
+	const ULevelEditorPlaySettings* LevelEditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
+
+	bool bLaunchingMultipleServerWorkers = false;
+	if(const int32* ServerCount = LevelEditorPlaySettings->WorkerTypesToLaunch.Find(SpatialConstants::ServerWorkerType))
+	{
+		if (*ServerCount > 1)
+		{
+			bLaunchingMultipleServerWorkers = true;
+		}
+	}
+
+	bLaunchingMultipleServerWorkers = bLaunchingMultipleServerWorkers || LevelEditorPlaySettings->WorkerTypesToLaunch.Num() > 1;
+	
+	if (!SpatialGDKRuntimeSettings->bEnableHandover && bLaunchingMultipleServerWorkers)
 	{
 		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and multiple launch servers are specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
 
