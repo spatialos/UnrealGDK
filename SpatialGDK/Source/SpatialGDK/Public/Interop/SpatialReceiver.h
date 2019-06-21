@@ -97,7 +97,7 @@ DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsRespo
 DECLARE_DELEGATE_OneParam(HeartbeatDelegate, Worker_ComponentUpdateOp&);
 
 UCLASS()
-class SPATIALGDK_API USpatialReceiver : public UObject
+class USpatialReceiver : public UObject
 {
 	GENERATED_BODY()
 
