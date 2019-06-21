@@ -122,7 +122,7 @@ public:
 	TMap<FName, FActorClassSet> ActorGroups;
 
 	/** Set of Managed worker types to run. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
+	UPROPERTY(Config)
 	TSet<FString> WorkerTypes;
 
 	/** Association of Actor Groups to Worker Types. */
