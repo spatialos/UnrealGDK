@@ -142,57 +142,6 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	return Worker_SnapshotOutputStream_WriteEntity(OutputStream, &GSM) != 0;
 }
 
-bool CreatePlaceholders(Worker_SnapshotOutputStream* OutputStream, Worker_EntityId& NextAvailableEntityID)
-{
-	// Set up grid of "placeholder" entities to allow workers to be authoritative over _something_.
-	const float CHUNK_SIZE = 5.0f; // in SpatialOS coordinates.
-
-	const TArray<FName>& ServerWorkerTypeNames = GetDefault<USpatialGDKSettings>()->WorkerTypes.Array();
-	TArray<FString> ServerWorkerTypes;
-	for (auto& WorkerType : ServerWorkerTypeNames)
-	{
-		ServerWorkerTypes.Add(WorkerType.ToString());
-	}
-
-	const WorkerRequirementSet ServerWorkerRequirementSet{ {ServerWorkerTypes} };
-
-	for (int x = -SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; x < SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; x++)
-	{
-		for (int y = -SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; y < SpatialConstants::PLACEHOLDER_ENTITY_GRID_SIZE / 2; y++)
-		{
-			const Coordinates PlaceholderPosition{ x * CHUNK_SIZE + CHUNK_SIZE * 0.5f, 0, y * CHUNK_SIZE + CHUNK_SIZE * 0.5f };
-
-			Worker_Entity Placeholder;
-			Placeholder.entity_id = NextAvailableEntityID;
-
-			TArray<Worker_ComponentData> Components;
-
-			WriteAclMap ComponentWriteAcl;
-			ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-			ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-			ComponentWriteAcl.Add(SpatialConstants::PERSISTENCE_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-			ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, SpatialConstants::UnrealServerPermission);
-
-			Components.Add(Position(PlaceholderPosition).CreatePositionData());
-			Components.Add(Metadata(TEXT("Placeholder")).CreateMetadataData());
-			Components.Add(Persistence().CreatePersistenceData());
-			Components.Add(EntityAcl(SpatialConstants::UnrealServerPermission, ComponentWriteAcl).CreateEntityAclData());
-
-			Placeholder.component_count = Components.Num();
-			Placeholder.components = Components.GetData();
-
-			if (Worker_SnapshotOutputStream_WriteEntity(OutputStream, &Placeholder) == 0)
-			{
-				return false;
-			}
-
-			NextAvailableEntityID++;
-		}
-	}
-
-	return true;
-}
-
 bool ValidateAndCreateSnapshotGenerationPath(FString& SavePath)
 {
 	FString DirectoryPath = FPaths::GetPath(SavePath);
@@ -247,16 +196,6 @@ bool FillSnapshot(Worker_SnapshotOutputStream* OutputStream, UWorld* World)
 	}
 
 	Worker_EntityId NextAvailableEntityID = SpatialConstants::FIRST_AVAILABLE_ENTITY_ID;
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-	if (SpatialGDKSettings->bGeneratePlaceholderEntitiesInSnapshot)
-	{
-		if (!CreatePlaceholders(OutputStream, NextAvailableEntityID))
-		{
-			UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error generating Placeholders in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
-			return false;
-		}
-	}
-
 	if (!RunUserSnapshotGenerationOverrides(OutputStream, NextAvailableEntityID))
 	{
 		UE_LOG(LogSpatialGDKSnapshot, Error, TEXT("Error running user defined snapshot generation overrides in snapshot: %s"), UTF8_TO_TCHAR(Worker_SnapshotOutputStream_GetError(OutputStream)));
