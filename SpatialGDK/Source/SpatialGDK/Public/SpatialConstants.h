@@ -90,8 +90,6 @@ namespace SpatialConstants
 		FIRST_AVAILABLE_ENTITY_ID = 3,
 	};
 
-	const int32 PLACEHOLDER_ENTITY_GRID_SIZE = 6;
-
 	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
 
 	const Worker_ComponentId ENTITY_ACL_COMPONENT_ID						= 50;
