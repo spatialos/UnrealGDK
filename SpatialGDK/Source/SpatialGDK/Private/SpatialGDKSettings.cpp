@@ -110,5 +110,7 @@ void USpatialGDKSettings::ValidateOffloadingSettings()
 
 	OldActorGroups = ActorGroups;
 	OldWorkerTypes = WorkerTypes;
+
+	SaveConfig(CPF_Config, *GetDefaultConfigFilename());
 }
 #endif

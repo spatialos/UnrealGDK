@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #include "SpatialGDKEditorSettings.h"
 #include "Settings/LevelEditorPlaySettings.h"
+#include "SpatialGDKSettings.h"
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -31,6 +32,10 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	{
+		SetRuntimeWorkerTypes();
+	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -42,4 +47,22 @@ void USpatialGDKEditorSettings::PostInitProperties()
 
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
+
+	SetRuntimeWorkerTypes();
+
+}
+
+void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
+{
+	TSet<FString> WorkerTypes;
+
+	for (const FWorkerTypeLaunchSection WorkerLaunch : LaunchConfigDesc.Workers)
+	{
+		WorkerTypes.Add(WorkerLaunch.WorkerTypeName);
+	}
+
+	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	RuntimeSettings->WorkerTypes.Empty();
+	RuntimeSettings->WorkerTypes.Append(WorkerTypes);
+	RuntimeSettings->ValidateOffloadingSettings();
 }

@@ -132,7 +132,7 @@ void FDetailAssociationBuilder::OnValueSelected(const FString& Value, FName Acto
 	if (Settings->WorkerAssociation.ActorGroupToWorker.FindRef(ActorGroup) != Value)
 	{
 		Settings->WorkerAssociation.ActorGroupToWorker.Add(ActorGroup, Value);
-		Settings->SaveConfig(CPF_Config, *Settings->GetDefaultConfigFilename());
+		Settings->ValidateOffloadingSettings();
 	}
 }
 #undef LOCTEXT_NAMESPACE

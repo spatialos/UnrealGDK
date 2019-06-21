@@ -202,6 +202,9 @@ public:
 	virtual void PostInitProperties() override;
 
 private:
+	void SetRuntimeWorkerTypes();
+
+private:
 	/** Path to the directory containing the SpatialOS-related files. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
 	FDirectoryPath SpatialOSDirectory;
