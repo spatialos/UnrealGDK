@@ -118,6 +118,7 @@ struct FWorkerTypeLaunchSection
 		, LoginRateLimit()
 		, Columns(1)
 		, Rows(1)
+		, NumEditorInstances(1)
 		, bManualWorkerConnectionOnly(true)
 	{
 	}
@@ -149,6 +150,10 @@ struct FWorkerTypeLaunchSection
 	/** Number of rows in the rectangle grid load balancing config. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
 	int32 Rows;
+
+	/** Number of instances to launch when playing in editor. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Instances to launch in editor", ClampMin = "0", UIMin = "0"))
+	int32 NumEditorInstances;
 
 	/** Flags defined for a worker instance. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Flags"))
