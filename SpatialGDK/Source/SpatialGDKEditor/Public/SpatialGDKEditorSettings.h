@@ -207,6 +207,10 @@ private:
 	FDirectoryPath SpatialOSDirectory;
 
 public:
+	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Show Spatial service button"))
+	bool bShowSpatialServiceButton;
+
 	/** If checked, all dynamically spawned entities will be deleted when server workers disconnect. */
 	UPROPERTY(EditAnywhere, config, Category = "Play in editor settings", meta = (ConfigRestartRequired = false, DisplayName = "Delete dynamically spawned entities"))
 	bool bDeleteDynamicEntities;

@@ -155,6 +155,8 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
+	virtual void FinishDestroy() override;
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -167,8 +169,6 @@ private:
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
 	FString SnapshotToLoad;
-
-	void OnDeploymentStarted(const FURL& URL);
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 

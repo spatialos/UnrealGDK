@@ -113,11 +113,14 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 
 	// Just connect if a deployment is running.
-	if (!Toolbar.bLocalDeploymentRunning)
+	if (!Toolbar.bLocalDeploymentRunning || Toolbar.bStoppingDeployment)
 	{
-		SpatialDeploymentStartHandle = Toolbar.OnDeploymentStart.AddLambda([this, URL]
+		SpatialDeploymentStartHandle = Toolbar.OnDeploymentStart.AddLambda([this, URL, &Toolbar]
 		{
-			OnDeploymentStarted(URL);
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Delaying connection with URL: %s", *URL.ToString()));
+			InitiateConnectionToSpatialOS(URL);
+			Toolbar.OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Delegate Removed"));
 		});
 
 		return true;
@@ -140,14 +143,14 @@ void USpatialNetDriver::PostInitProperties()
 	}
 }
 
-void USpatialNetDriver::OnDeploymentStarted(const FURL& URL)
+void USpatialNetDriver::FinishDestroy()
 {
+	// Ensure our deployment started delegate is removed when the net driver is shut down.
 #if WITH_EDITOR
 	FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 	Toolbar.OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
 #endif
-
-	InitiateConnectionToSpatialOS(URL);
+	Super::FinishDestroy();
 }
 
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)

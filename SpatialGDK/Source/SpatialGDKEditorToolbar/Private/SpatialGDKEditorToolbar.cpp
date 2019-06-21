@@ -699,6 +699,15 @@ bool FSpatialGDKEditorToolbarModule::TryStopSpatialService()
 
 void FSpatialGDKEditorToolbarModule::TryStartLocalDeployment()
 {
+	if (bStoppingDeployment)
+	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Local deployment is in the process of stopping. New deployment will start when previous one has stopped."));
+		while (bStoppingDeployment)
+		{
+			FPlatformProcess::Sleep(0.1f);
+		}
+	}
+
 	if (bLocalDeploymentRunning)
 	{
 		UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Tried to start a local deployment but one is already running."));
@@ -947,7 +956,9 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute()
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialServiceIsVisible()
 {
-	return false;
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	return SpatialGDKSettings->bShowSpatialServiceButton && !bSpatialServiceRunning;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute()
@@ -957,7 +968,9 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute()
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible()
 {
-	return false;
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	return SpatialGDKSettings->bShowSpatialServiceButton && bSpatialServiceRunning;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute()
