@@ -13,6 +13,12 @@ namespace SpatialGDK
 
 struct EditorWorkerController
 {
+	// Only issue the worker replace request if there's a chance the load balancer hasn't acknowledged
+	// that the previous session's workers have disconnected. There's no hard `heartbeat` time for this as
+	// it's dependent on multiple factors (fabric load etc.), so this value was landed on after significant
+	// trial and error.
+	const int64 WorkerReplaceThresholdSeconds = 8;
+
 	void OnPrePIEEnded(bool bValue)
 	{
 		LastPIEEndTime = FDateTime::Now().ToUnixTimestamp();
@@ -30,12 +36,6 @@ struct EditorWorkerController
 	void InitWorkers(const FString& WorkerType)
 	{
 		ReplaceProcesses.Empty();
-
-		// Only issue the worker replace request if there's a chance the load balancer hasn't acknowledged
-		// that the previous session's workers have disconnected. There's no hard `heartbeat` time for this as
-		// it's dependent on multiple factors (fabric load etc.), so this value was landed on after significant
-		// trial and error.
-		const int64 WorkerReplaceThresholdSeconds = 8;
 
 		int64 SecondsSinceLastSession = FDateTime::Now().ToUnixTimestamp() - LastPIEEndTime;
 		UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Seconds since last session - %d"), SecondsSinceLastSession);
@@ -66,10 +66,13 @@ struct EditorWorkerController
 	{
 		const FString CmdExecutable = TEXT("spatial.exe");
 
+		FString ServicePort = TEXT("9876");
+
 		const FString CmdArgs = FString::Printf(
 			TEXT("local worker replace "
+				"--local_service_grpc_port %s "
 				"--existing_worker_id %s "
-				"--replacing_worker_id %s"), *OldWorker, *NewWorker);
+				"--replacing_worker_id %s"), *ServicePort, *OldWorker, *NewWorker);
 		uint32 ProcessID = 0;
 		FProcHandle ProcHandle = FPlatformProcess::CreateProc(
 			*(CmdExecutable), *CmdArgs, false, true, true, &ProcessID, 2 /*PriorityModifier*/,
@@ -82,9 +85,16 @@ struct EditorWorkerController
 	{
 		if (WorkerIdx < ReplaceProcesses.Num())
 		{
+			// Record a start time for timeout
+			FDateTime BlockingStartTime =  FDateTime::Now();
+
 			while (FPlatformProcess::IsProcRunning(ReplaceProcesses[WorkerIdx]))
 			{
-				FPlatformProcess::Sleep(0.1f);
+				// Only block until the worker connection will have timed out.
+				if ((FDateTime::Now() - BlockingStartTime).GetTotalSeconds() < WorkerReplaceThresholdSeconds)
+				{
+					FPlatformProcess::Sleep(0.1f);
+				}
 			}
 		}
 	}
