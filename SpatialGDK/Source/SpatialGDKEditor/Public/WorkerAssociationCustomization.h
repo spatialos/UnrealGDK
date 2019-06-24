@@ -19,4 +19,5 @@ public:
 private:
 	static void OnGetStrings(TArray<TSharedPtr<FString>>& OutComboBoxStrings, TArray<TSharedPtr<class SToolTip>>& OutToolTips, TArray<bool>& OutRestrictedItems);
 	static FString OnGetValue(TSharedPtr<IPropertyHandle> WorkerTypeNameHandle);
+	static void OnValueSelected(const FString& SelectedValue, TSharedPtr<IPropertyHandle> WorkerTypeNameHandle);
 };

@@ -33,9 +33,6 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableServerQBI(bUsingQBI)
 	, bPackUnreliableRPCs(true)
 {
-	TArray<FName> ActorGroupNames;
-	int NumKeys = ActorGroups.GetKeys(ActorGroupNames);
-	UE_LOG(LogTemp, Log, TEXT("[AG] Keys %d"), NumKeys)
 }
 
 void USpatialGDKSettings::PostInitProperties()
@@ -47,11 +44,14 @@ void USpatialGDKSettings::PostInitProperties()
 	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
 }
 
+
 #if WITH_EDITOR
 // Add a pop-up to warn users to update their config upon changing the using QBI property, validate offloading settings.
 void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
-	if (PropertyChangedEvent.Property == nullptr)
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	/*if (PropertyChangedEvent.Property == nullptr)
 	{
 		Super::PostEditChangeProperty(PropertyChangedEvent);
 		return;
@@ -70,7 +70,7 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 		}
 	}
 
-	Super::PostEditChangeProperty(PropertyChangedEvent);
+	Super::PostEditChangeProperty(PropertyChangedEvent);*/
 }
 
 void USpatialGDKSettings::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)

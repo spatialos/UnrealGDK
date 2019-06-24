@@ -12,11 +12,11 @@ struct FWorkerType
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	FString WorkerTypeName;
+	FName WorkerTypeName;
 
 	FWorkerType()
 	{
-		WorkerTypeName = "";
+		WorkerTypeName = NAME_None;
 	}
 };
 

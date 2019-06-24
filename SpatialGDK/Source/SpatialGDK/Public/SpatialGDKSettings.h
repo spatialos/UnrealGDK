@@ -15,11 +15,14 @@ class SPATIALGDK_API USpatialGDKSettings : public UObject
 	GENERATED_BODY()
 
 public:
+
+
+
+
 	USpatialGDKSettings(const FObjectInitializer& ObjectInitializer);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-
 	virtual void PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent) override;
 #endif
 
@@ -124,5 +127,5 @@ public:
 
 	/** Set of Managed worker types to run. */
 	UPROPERTY(Config)
-	TSet<FString> WorkerTypes;
+	TSet<FName> WorkerTypes;
 };

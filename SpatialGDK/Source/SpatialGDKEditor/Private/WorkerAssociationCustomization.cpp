@@ -29,7 +29,8 @@ void FWorkerAssociationCustomization::CustomizeHeader(TSharedRef<class IProperty
 			[
 				PropertyCustomizationHelpers::MakePropertyComboBox(WorkerTypeNameProperty,
 				FOnGetPropertyComboBoxStrings::CreateStatic(&FWorkerAssociationCustomization::OnGetStrings),
-				FOnGetPropertyComboBoxValue::CreateStatic(&FWorkerAssociationCustomization::OnGetValue, WorkerTypeNameProperty))
+				FOnGetPropertyComboBoxValue::CreateStatic(&FWorkerAssociationCustomization::OnGetValue, WorkerTypeNameProperty),
+				FOnPropertyComboBoxValueSelected::CreateStatic(&FWorkerAssociationCustomization::OnValueSelected, WorkerTypeNameProperty))
 			];
 	}
 }
@@ -43,11 +44,10 @@ void FWorkerAssociationCustomization::OnGetStrings(TArray<TSharedPtr<FString>>& 
 {
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
-		for (FString WorkerType : Settings->WorkerTypes)
+		for (FName WorkerType : Settings->WorkerTypes)
 		{
-			TSharedPtr<FString> WorkerTypePtr = MakeShared<FString>(WorkerType);
-			OutComboBoxStrings.Add(WorkerTypePtr);
-			OutToolTips.Add(SNew(SToolTip).Text(FText::FromString(WorkerType)));
+			OutComboBoxStrings.Add(MakeShared<FString>(WorkerType.ToString()));
+			OutToolTips.Add(SNew(SToolTip).Text(FText::FromName(WorkerType)));
 			OutRestrictedItems.Add(false);
 		}
 	}
@@ -55,13 +55,19 @@ void FWorkerAssociationCustomization::OnGetStrings(TArray<TSharedPtr<FString>>& 
 
 FString FWorkerAssociationCustomization::OnGetValue(TSharedPtr<IPropertyHandle> WorkerTypeNameHandle)
 {
+	if (!WorkerTypeNameHandle->IsValidHandle())
+	{
+		return "";
+	}
+
 	FString WorkerTypeValue;
 
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
 		WorkerTypeNameHandle->GetValue(WorkerTypeValue);
+		FName WorkerTypeName = FName(*WorkerTypeValue);
 
-		if (Settings->WorkerTypes.Contains(WorkerTypeValue))
+		if (Settings->WorkerTypes.Contains(WorkerTypeName))
 		{
 			return WorkerTypeValue;
 		}
@@ -72,4 +78,13 @@ FString FWorkerAssociationCustomization::OnGetValue(TSharedPtr<IPropertyHandle> 
 	}
 
 	return WorkerTypeValue;
+}
+
+void FWorkerAssociationCustomization::OnValueSelected(const FString& SelectedValue, TSharedPtr<IPropertyHandle> WorkerTypeNameHandle)
+{
+	if (WorkerTypeNameHandle->IsValidHandle())
+	{
+		const FName NewValue = FName(*SelectedValue);
+		WorkerTypeNameHandle->SetValue(NewValue);
+	}
 }
