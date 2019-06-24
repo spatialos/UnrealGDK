@@ -115,7 +115,7 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 		return;
 	}
 
-	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
+	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
 	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
 	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
