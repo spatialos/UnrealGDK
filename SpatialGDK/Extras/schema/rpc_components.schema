@@ -1,6 +1,8 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
+import "unreal/gdk/core_types.schema";
+
 type UnrealRPCPayload {
     uint32 offset = 1;
     uint32 rpc_index = 2;
@@ -12,9 +14,6 @@ type UnrealPackedRPCPayload {
     uint32 rpc_index = 2;
     bytes rpc_payload = 3;
     EntityId entity = 4;
-}
-
-type Void {
 }
 
 component UnrealClientRPCEndpoint {

@@ -27,6 +27,7 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
 #include "Utils/SpatialActorUtils.h"
+#include "Utils/SpatialMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialSender);
 
@@ -141,6 +142,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// If Actor is a PlayerController, add the heartbeat component.
 	if (Actor->IsA<APlayerController>())
 	{
+#if !UE_BUILD_SHIPPING
+		ComponentWriteAcl.Add(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, ServersOnly);
+#endif // !UE_BUILD_SHIPPING
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnly);
 	}
 
@@ -229,6 +233,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	if (Actor->IsA<APlayerController>())
 	{
+#if !UE_BUILD_SHIPPING
+		ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::DEBUG_METRICS_COMPONENT_ID));
+#endif // !UE_BUILD_SHIPPING
 		ComponentDatas.Add(Heartbeat().CreateHeartbeatData());
 	}
 
@@ -560,6 +567,10 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		check(EntityId != SpatialConstants::INVALID_ENTITY_ID);
 		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
+#if !UE_BUILD_SHIPPING
+		NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, Payload.Num());
+#endif // !UE_BUILD_SHIPPING		
+
 		if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 		{
 			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
@@ -599,6 +610,9 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		{
 			const UObject* UnresolvedObject = nullptr;
 			AddPendingUnreliableRPC(TargetObject, Params, ComponentId, RPCInfo->Index, UnresolvedObject);
+#if !UE_BUILD_SHIPPING
+			NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, Params->Payload.PayloadData.Num());
+#endif // !UE_BUILD_SHIPPING
 			return true;
 		}
 		else
@@ -626,6 +640,9 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 			}
 
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
+#if !UE_BUILD_SHIPPING
+			NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, Params->Payload.PayloadData.Num());
+#endif // !UE_BUILD_SHIPPING
 			return true;
 		}
 	}
