@@ -30,7 +30,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseFrameTimeAsLoad(false)
 	, bCheckRPCOrder(false)
 	, bBatchSpatialPositionUpdates(true)
-	, bUseDevelopmentAuthenticationFlow(false)
+	, bEnableServerQBI(bUsingQBI)
+	, bPackUnreliableRPCs(true)
+    , bUseDevelopmentAuthenticationFlow(false)
 {
 	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }

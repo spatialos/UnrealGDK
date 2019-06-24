@@ -64,7 +64,7 @@ public:
 	bool bEnableHandover;
 
 	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
-	UPROPERTY(EditAnywhere, config, Category = "Query Based Interest", meta = (ConfigRestartRequired = false, DisplayName = "Query Based Interest Enabled"))
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bUsingQBI;
 
 	/** Frequency for updating an Actor's SpatialOS Position. Updating position should have a low update rate since it is expensive.*/
@@ -98,20 +98,29 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bBatchSpatialPositionUpdates;
 
-	/** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
-	UPROPERTY(EditAnywhere, config, Category = "Local Test", meta = (ConfigRestartRequired = false))
-	FString DefaultReceptionistHost;
+	/** EXPERIMENTAL - This is a stop-gap until we can better define server interest on system entities.
+	Disabling this is not supported in any type of multi-server environment*/
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	bool bEnableServerQBI;
 
-	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
-	bool bUseDevelopmentAuthenticationFlow;
-
-	/** The token created using 'spatial project auth dev-auth-token' */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
-	FString DevelopmentAuthenticationToken;
-
-	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
-	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
-	FString DevelopmentDeploymentToConnect;
+	/** Pack unreliable RPCs sent during the same frame into a single update. */
+	UPROPERTY(config, meta = (ConfigRestartRequired = false))
+	bool bPackUnreliableRPCs;
+    
+    /** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
+    UPROPERTY(EditAnywhere, config, Category = "Local Test", meta = (ConfigRestartRequired = false))
+    FString DefaultReceptionistHost;
+    
+    /** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
+    UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
+    bool bUseDevelopmentAuthenticationFlow;
+    
+    /** The token created using 'spatial project auth dev-auth-token' */
+    UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
+    FString DevelopmentAuthenticationToken;
+    
+    /** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
+    UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
+    FString DevelopmentDeploymentToConnect;
 };
 

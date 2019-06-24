@@ -246,30 +246,12 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 {
-	ShowTaskStartNotification("Generating Schema (Incremental)");
-
-	if (SpatialGDKEditorInstance->GenerateSchema(false))
-	{
-		ShowSuccessNotification("Incremental Schema Generation completed!");
-	}
-	else
-	{
-		ShowFailedNotification("Incremental Schema Generation failed");
-	}
+	GenerateSchema(false);
 }
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 {
-	ShowTaskStartNotification("Generating Schema (Full)");
-
-	if (SpatialGDKEditorInstance->GenerateSchema(true))
-	{
-		ShowSuccessNotification("Full Schema Generation completed!");
-	}
-	else
-	{
-		ShowFailedNotification("Full Schema Generation failed");
-	}
+	GenerateSchema(true);
 }
 		
 
@@ -626,6 +608,49 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 	}
 
 	return false;
+}
+
+void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
+{
+	if (SpatialGDKEditorInstance->FullScanRequired())
+	{
+		ShowTaskStartNotification("Initial Schema Generation");
+
+		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		{
+			ShowSuccessNotification("Initial Schema Generation completed!");
+		}
+		else
+		{
+			ShowFailedNotification("Initial Schema Generation failed");
+		}
+	}
+	else if (bFullScan)
+	{
+		ShowTaskStartNotification("Generating Schema (Full)");
+
+		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		{
+			ShowSuccessNotification("Full Schema Generation completed!");
+		}
+		else
+		{
+			ShowFailedNotification("Full Schema Generation failed");
+		}
+	}
+	else
+	{
+		ShowTaskStartNotification("Generating Schema (Incremental)");
+
+		if (SpatialGDKEditorInstance->GenerateSchema(false))
+		{
+			ShowSuccessNotification("Incremental Schema Generation completed!");
+		}
+		else
+		{
+			ShowFailedNotification("Incremental Schema Generation failed");
+		}
+	}
 }
 
 bool FSpatialGDKEditorToolbarModule::WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const
