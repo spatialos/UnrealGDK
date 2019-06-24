@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKServicesModule.h"
+#include "SpatialGDKServicesPrivate.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKServicesModule"
 

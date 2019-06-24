@@ -1,11 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpatialGDKServicesPrivate.h"
-
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
 
-class FSpatialGDKServicesModule : public IModuleInterface
+class SPATIALGDKSERVICES_API FSpatialGDKServicesModule : public IModuleInterface
 {
 public:
 	virtual void StartupModule() override;

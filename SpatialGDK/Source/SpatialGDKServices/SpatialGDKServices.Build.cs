@@ -12,9 +12,9 @@ public class SpatialGDKServices : ModuleRules
         PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"Core",
-				"Engine",
+				"CoreUObject",
+                "EngineSettings",
+                "UnrealEd"
             });
-
-        PrivateIncludePaths.Add("SpatialGDKServices/Private");
 	}
 }

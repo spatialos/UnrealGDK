@@ -23,10 +23,6 @@ DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
 
-#if WITH_EDITOR
-static EditorWorkerController WorkerController;
-#endif
-
 void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
 	GameInstance = InGameInstance;
@@ -101,17 +97,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	}
 
 #if WITH_EDITOR
-	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
-	const int32 FirstServerEditorID = 1;
-	if (bSingleThreadedServer)
-	{
-		if (GPlayInEditorID == FirstServerEditorID)
-		{
-			WorkerController.InitWorkers(ReceptionistConfig.WorkerType);
-		}
-
-		ReceptionistConfig.WorkerId = WorkerController.WorkerIds[GPlayInEditorID - 1];
-	}
+	ReceptionistConfig.WorkerId = SpatialGDKServices::InitWorkers(ReceptionistConfig.WorkerType, bConnectAsClient);
 #endif
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
@@ -145,13 +131,6 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	ConnectionParams.network.use_external_ip = ReceptionistConfig.UseExternalIp;
 	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
 	// end TODO
-
-#if WITH_EDITOR
-	if (bSingleThreadedServer)
-	{
-		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);
-	}
-#endif
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
 		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,
