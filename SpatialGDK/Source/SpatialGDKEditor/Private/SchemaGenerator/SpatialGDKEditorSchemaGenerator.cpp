@@ -528,6 +528,13 @@ bool TryLoadExistingSchemaDatabase()
 	return true;
 }
 
+SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists()
+{
+	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+	return PlatformFile.DirectoryExists(*SchemaOutputPath);
+}
+
 void ResetUsedNames()
 {
 	ClassPathToSchemaName.Empty();
