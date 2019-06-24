@@ -288,8 +288,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 
 void USpatialNetDriver::CreateServerWorkerEntity()
 {
-	const FString WorkerId = FString(TEXT("workerId:")) + Connection->GetWorkerId();
-	const WorkerRequirementSet WorkerIdPermission{ { WorkerId } };
+	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
 
 	WriteAclMap ComponentWriteAcl;
 	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerIdPermission);
@@ -312,7 +311,7 @@ void USpatialNetDriver::CreateServerWorkerEntity()
 
 	TArray<Worker_ComponentData> Components;
 	Components.Add(Position().CreatePositionData());
-	Components.Add(Metadata(WorkerId).CreateMetadataData());
+	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(interest.CreateInterestData());
 
@@ -949,7 +948,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						continue;
 					}
 
-					Channel = CreateSpatialActorChannel(Actor, Cast<USpatialNetConnection>(InConnection)); 
+					Channel = CreateSpatialActorChannel(Actor, Cast<USpatialNetConnection>(InConnection));
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
 						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
@@ -1313,7 +1312,7 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	{
 		return Cast<USpatialNetConnection>(ServerConnection);
 	}
-	else if(ClientConnections.Num() > 0)
+	else if (ClientConnections.Num() > 0)
 	{
 		return Cast<USpatialNetConnection>(ClientConnections[0]);
 	}
