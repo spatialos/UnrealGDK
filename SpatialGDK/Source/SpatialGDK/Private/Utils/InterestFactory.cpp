@@ -15,6 +15,66 @@
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
 
+namespace
+{
+static TMap<UClass*, float> ClientInterestDistances;
+void GatherClientInterestDistancesOnce()
+{
+	if (ClientInterestDistances.Num() > 0)
+	{
+		return;
+	}
+
+	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
+	const float DefaultDistance = DefaultActor->ClientInterestDistance;
+
+	// Gather ClientInterestDistance settings, and add any larger than the default radius to a list for processing.
+	TMap<UClass*, float> DiscoveredInterestDistances;
+	for (TObjectIterator<UClass> It; It; ++It)
+	{
+		if (!It->IsChildOf<AActor>())
+		{
+			continue;
+		}
+
+		const AActor* IteratedDefaultActor = Cast<AActor>(It->GetDefaultObject());
+		if (IteratedDefaultActor->ClientInterestDistance > DefaultDistance)
+		{
+			DiscoveredInterestDistances.Add(*It, IteratedDefaultActor->ClientInterestDistance);
+		}
+	}
+
+	// Sort the map for iteration so that parent classes are seen before derived classes. This lets us skip
+	// derived classes that have a smaller interest distance than a parent class.
+	DiscoveredInterestDistances.KeySort([](const UClass& LHS, const UClass& RHS) {
+		return
+			LHS.IsChildOf(&RHS) ? -1 :
+			RHS.IsChildOf(&LHS) ? 1 :
+			0;
+	});
+
+	// If an actor's interest distance is smaller than that of a parent class, there's no need to add interest for that actor.
+	// Can't do inline removal since the sorted order is only guaranteed when the map isn't changed.
+	for (const auto& ActorInterestDistance : DiscoveredInterestDistances)
+	{
+		bool bShouldAdd = true;
+		for (auto& OptimizedInterestDistance : ClientInterestDistances)
+		{
+			if (ActorInterestDistance.Key->IsChildOf(OptimizedInterestDistance.Key) && ActorInterestDistance.Value <= OptimizedInterestDistance.Value)
+			{
+				// No need to add this interest distance since it's captured in the optimized map already.
+				bShouldAdd = false;
+				break;
+			}
+		}
+		if (bShouldAdd)
+		{
+			ClientInterestDistances.Add(ActorInterestDistance.Key, ActorInterestDistance.Value);
+		}
+	}
+}
+} // anonymous namespace
+
 namespace SpatialGDK
 {
 
@@ -23,7 +83,9 @@ InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpa
 	, Info(InInfo)
 	, NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
-{}
+{
+	GatherClientInterestDistancesOnce();
+}
 
 Worker_ComponentData InterestFactory::CreateInterestData()
 {
@@ -181,52 +243,6 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
 	const float DefaultDistance= DefaultActor->ClientInterestDistance;
 
-	// Gather ClientInterestDistance settings, and add any larger than the default radius to a list for processing.
-	TMap<UClass*, float> ClientInterestDistances;
-	for (TObjectIterator<UClass> It; It; ++It)
-	{
-		if (!It->IsChildOf<AActor>())
-		{
-			continue;
-		}
-
-		const AActor* IteratedDefaultActor = Cast<AActor>(It->GetDefaultObject());
-		if (IteratedDefaultActor->ClientInterestDistance> DefaultDistance)
-		{
-			ClientInterestDistances.Add(*It, IteratedDefaultActor->ClientInterestDistance);
-		}
-	}
-
-	// Sort the map for the next iteration so that base classes are seen before derived classes. This lets us skip
-	// derived classes that have a smaller cull distance than a parent class.
-	ClientInterestDistances.KeySort([](const UClass& LHS, const UClass& RHS) {
-		return
-			LHS.IsChildOf(&RHS) ? -1 :
-			RHS.IsChildOf(&LHS) ? 1 :
-			0;
-	});
-
-	// If an actor's cull distance is smaller than that of a parent class, there's no need to add interest for that actor.
-	// Can't do inline removal since the sorted order is only guaranteed when the map isn't changed.
-	TMap<UClass*, float> OptimizedInterestDistances;
-	for (const auto& ActorInterestDistance : ClientInterestDistances)
-	{
-		bool bShouldAdd = true;
-		for (auto& OptimizedInterestDistance : OptimizedInterestDistances)
-		{
-			if (ActorInterestDistance.Key->IsChildOf(OptimizedInterestDistance.Key) && ActorInterestDistance.Value <= OptimizedInterestDistance.Value)
-			{
-				// No need to add this cull distance since it's captured in the optimized map already.
-				bShouldAdd = false;
-				break;
-			}
-		}
-		if (bShouldAdd)
-		{
-			OptimizedInterestDistances.Add(ActorInterestDistance.Key, ActorInterestDistance.Value);
-		}
-	}
-
 	QueryConstraint CheckoutRadiusConstraints;
 
 	// Use AActor's ClientInterestDistance for the default radius (all actors in that radius will be checked out)
@@ -235,18 +251,18 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 	DefaultCheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ DefaultCheckoutRadiusMeters };
 	CheckoutRadiusConstraints.OrConstraint.Add(DefaultCheckoutRadiusConstraint);
 
-	// For every cull distance that we still want, add a constraint with the distance for the actor type and all of its derived types.
-	for (const auto& InterestDistances: OptimizedInterestDistances)
+	// For every interest distance that we still want, add a constraint with the distance for the actor type and all of its derived types.
+	for (const auto& InterestDistance: ClientInterestDistances)
 	{
 		QueryConstraint CheckoutRadiusConstraint;
 
 		QueryConstraint RadiusConstraint;
-		const float CheckoutRadiusMeters = InterestDistances.Value / 100.0f;
+		const float CheckoutRadiusMeters = InterestDistance.Value / 100.0f;
 		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadiusMeters };
 		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 
 		QueryConstraint ActorTypeConstraint;
-		AddTypeHierarchyToConstraint(InterestDistances.Key, ActorTypeConstraint);
+		AddTypeHierarchyToConstraint(InterestDistance.Key, ActorTypeConstraint);
 		CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
 
 		CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);

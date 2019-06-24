@@ -33,6 +33,7 @@ private:
 	Interest CreatePlayerOwnedActorInterest();
 
 private:
+
 	// Checkout Constraint OR AlwaysInterested Constraint
 	QueryConstraint CreateSystemDefinedConstraints();
 
