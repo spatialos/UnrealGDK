@@ -604,11 +604,11 @@ void RunSchemaCompiler()
 
 	if (!SchemaCompilerProcHandle.IsValid())
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Schema_compiler failed to generate schema descriptor."));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("schema_compiler failed to generate schema descriptor."));
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Schema_compiler successfully generated schema descriptor."));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated schema descriptor."));
 	}
 }
 
