@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added runtime option to auto spawn the ASpatialMetricsDisplay for remote debugging of server metrics - bEnableMetricsDisplay.
 - Added runtime option to batch spatial position updates to runtime.
 - Added runtime option to pack unreliable RPCs from the same frame in a single component update to save bandwidth - bPackUnreliableRPCs.
-- Changed Interest so that NetCullDistanceSquared is used to define checkout radii rather than the divergent CheckoutRadius property on AActor. AActor NetCullDistanceSquared defines the default checkout radius for a client. Actor types that override that property to be larger than the default will cause additional interest constraints. Note that there is a semantic change to the meaning of the property: CheckoutRadius held "Interested in" semantics while NetCullDistanceSquared implies and "Interesting to" relationship.
+- Changed Interest so that ClientInterestDistance is used to define the distance from a player that the actor type is *interesting to* the player. This replaces CheckoutRadius which defined the distance that an actor is *interested in* other types. Requires engine update for the new property.
 
 ### Bug fixes:
 - BeginPlay is not called with authority when checking out entities from Spatial.
@@ -90,7 +90,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 
 ## [`0.3.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.3.0) - 2019-04-04
 
-### New Known Issues: 
+### New Known Issues:
 - Enabling Query Based Interest is needed for level streaming support, but this might affect performance in certain scenarios and is currently being investigated.
 - Replicated `TimelineComponents` are not supported.
 
@@ -145,7 +145,7 @@ In addition to all of the updates from Improbable, this release includes 2 impro
 
 Startup actors revamp is merged! Snapshots are now simpler. Many bugfixes.
 
-### New Known Issues: 
+### New Known Issues:
 - A warning about an out of date net driver is printed at startup of clients and server.
 
 For current known issues, please visit [this](https://docs.improbable.io/unreal/alpha/known-issues) docs page
@@ -165,7 +165,7 @@ For current known issues, please visit [this](https://docs.improbable.io/unreal/
 	3. The paths passed in via -MapPaths are flexible
 
 ### Bug fixes:
-- StartPlayInEditorGameInstance() now correctly call OnStart() on PIE_Client - (@DW-Sebastien) 
+- StartPlayInEditorGameInstance() now correctly call OnStart() on PIE_Client - (@DW-Sebastien)
 - Redirect logging in the cloud to output to the correct file
 - Changed type of key in `TMap` so Linux build will not give errors
 - Disabled loopback of component updates
@@ -189,7 +189,7 @@ For current known issues, please visit [this](https://docs.improbable.io/unreal/
 - Fixed up default connection flows
 - Fixed issue will stale shadow data when crossing worker boundaries.
 - Removed actors from replication consider list if Unreal server-worker is not authoritative over said actor
-- Remove legacy flag "qos_max_unacked_pings_rate" in generated default config - (@DW-Sebastien) 
+- Remove legacy flag "qos_max_unacked_pings_rate" in generated default config - (@DW-Sebastien)
 
 ### External contributors:
 @DW-Sebastien
@@ -200,12 +200,12 @@ For current known issues, please visit [this](https://docs.improbable.io/unreal/
 
 Support for the new Player Auth APIs has been added and general stability improvements.
 
-### New Known Issues: 
+### New Known Issues:
 Level streaming is currently not supported.
 For other current known issues, please visit [this docs page](https://docs.improbable.io/unreal/alpha/known-issues).
 
 ### Features:
-* Support for the new Player Auth APIs 
+* Support for the new Player Auth APIs
 * FUniqueNetId support
 * Support for the new network protocol KCP
 * Lazy loading of FClassInfo
