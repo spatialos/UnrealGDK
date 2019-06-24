@@ -608,7 +608,7 @@ void RunSchemaCompiler()
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Schema_compiler successfully generated schema descriptor."));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated schema descriptor."));
 	}
 }
 
