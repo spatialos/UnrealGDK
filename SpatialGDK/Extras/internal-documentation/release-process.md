@@ -44,8 +44,8 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. `git push --set-upstream origin x.y.z-rc` to push the branch.
 1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
 
-### Create the `UnrealGDKTestSuite` release candidate
-1. `git clone` the [UnrealGDKTestSuite](https://github.com/spatialos/UnrealGDKTestSuite).
+### Create the `UnrealGDKExampleProject` release candidate
+1. `git clone` the [UnrealGDKExampleProject](https://github.com/spatialos/UnrealGDKExampleProject).
 1. `git checkout master`
 1. `git pull`
 1. Using `git log`, take note of the latest commit hash.
@@ -55,6 +55,8 @@ This document outlines the process for releasing a version of the GDK for Unreal
 
 ### Serve docs locally
 It is vital that you test using the docs for the release version that you are about to publish, not with the currently live docs that relate to the previous version.
+1. cd `UnrealGDK`
+1. git checkout `docs-release`
 1. `improbadoc serve <path to x.y.z-rc-x docs>`
 
 ## Build your release candidate engine
@@ -117,8 +119,8 @@ The workflow for this is:
 1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/gdk-template, bearing in mind the following caveat:
 * When you clone the GDK into the `Plugins` folder, be sure to checkout the release candidate branch, so you're working with the release version.
 
-## Validation (UnrealGDKTestSuite)
-1. Follow these steps: https://github.com/spatialos/UnrealGDKTestSuite/blob/release/README.md. All tests must pass.
+## Validation (UnrealGDKExampleProject)
+1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/example-project/exampleproject-intro. All tests must pass.
 
 ## Validation (Playtest)
 1. Follow these steps: https://brevi.link/unreal-release-playtests. All tests must pass.
@@ -132,22 +134,24 @@ The workflow for this is:
 
 All of the above tests **must** have passed and there must be no outstanding blocking issues before you start this, the release phase.
 
+If you want to soak test this release in `staging-` before releasing to `master`, only execute the `staging-` steps.
+
 When merging the following PRs, you need to enable `Allow merge commits` option on the repos and choose `Create a merge commit` from the dropdown in the pull request UI to merge the branch, then disable `Allow merge commits` option on the repos once the release process is complete. You need to be an admin to perform this.
 
-1. In `UnrealGDK`, create `premerge-x.y.z-rc` from `x.y.z-rc` (select `x.y.z-rc` in the branch dropdown, then type the name of the new branch to create. If there's already a branch with that name, delete it first).
+1. In `UnrealGDK`, create `staging-x.y.z-rc` from `x.y.z-rc` (select `x.y.z-rc` in the branch dropdown, then type the name of the new branch to create. If there's already a branch with that name, delete it first).
 1. In `UnrealGDK`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
-1. In `improbableio/UnrealEngine`, create `premerge-4.xx-SpatialOSUnrealGDK-x.y.z-rc` from `4.xx-SpatialOSUnrealGDK-x.y.z-rc`.
+1. In `improbableio/UnrealEngine`, create `staging-4.xx-SpatialOSUnrealGDK-x.y.z-rc` from `4.xx-SpatialOSUnrealGDK-x.y.z-rc`.
 1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-release` using GitHub PR (use `Update branch` button to merge `4.xx-SpatialOSUnrealGDK-release` into `4.xx-SpatialOSUnrealGDK-x.y.z-rc`).
 1. Use the GitHub Release UI to tag the commit you just made as `4.xx-SpatialOSUnrealGDK-x.y.z`.<br/>
-1. In `UnrealGDKThirdPersonShooter`, create `premerge-x.y.z-rc` from `x.y.z-rc`.
+1. In `UnrealGDKThirdPersonShooter`, create `staging-x.y.z-rc` from `x.y.z-rc`.
 1. In `UnrealGDKThirdPersonShooter`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
 1. In `UnrealGDKThirdPersonShooter`, `git rebase` `release` into `tutorial`.
 1. In `UnrealGDKThirdPersonShooter`, `git rebase` `release` into `tutorial-complete`.
-1. In `UnrealGDKTestSuite`, create `premerge-x.y.z-rc` from `x.y.z-rc`.
-1. In `UnrealGDKTestSuite`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
+1. In `UnrealGDKExampleProject`, create `staging-x.y.z-rc` from `x.y.z-rc`.
+1. In `UnrealGDKExampleProject`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
 1. Publish the docs to live using Improbadoc commands listed [here](https://improbableio.atlassian.net/wiki/spaces/GBU/pages/327485360/Publishing+GDK+Docs).
 1. Update the [roadmap](https://github.com/spatialos/UnrealGDK/pull/900), moving the release from **Planned** to **Released**, and linking to the release.
@@ -164,18 +168,18 @@ Congratulations, you've done the release!
 
 There are potentially changes that were merged into the release candidate branches that aren't merged into the corresponding development (master) branches yet. Because there are some race conditions involved, a GDK engineer should be in charge of doing this.
 
-Indirect-merge from `A` into `B` (`premerge-x.y.z-rc` into `master`, except `improbableio/UnrealEngine` repo where this is `premerge-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`) is defined as:
+Indirect-merge from `A` into `B` (`staging-x.y.z-rc` into `master`, except `improbableio/UnrealEngine` repo where this is `staging-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`) is defined as:
 1. Make sure there is no `merge-A-into-B` branch created already, and delete it if it exists.
 1. Create branch `merge-A-into-B` from `B` (`git checkout B`, `git checkout -b merge-A-into-B`).
 1. Merge `A` into `merge-A-into-B` (`git merge A`, `git push origin merge-A-into-B`).
 1. Merge `merge-A-into-B` into `B` using GitHub PR. Make sure you use `Create a merge commit` option.
 
 Use the above definition to perform the following:
-1. `UnrealGDK` repo: indirect-merge `premerge-x.y.z-rc` into `master`.
-1. `improbableio/UnrealEngine` repo: indirect-merge `premerge-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`.
-1. `UnrealGDKThirdPersonShooter` repo: (skip this step if `premerge-x.y.z-rc` has no new commits compared to `master`) indirect-merge `premerge-x.y.z-rc` into `master`.
-1. `UnrealGDKTestSuite` repo: (skip this step if `premerge-x.y.z-rc` has no new commits compared to `master`) indirect-merge `premerge-x.y.z-rc` into `master`.
-1. Delete the `premerge-` branches.
+1. `UnrealGDK` repo: indirect-merge `staging-x.y.z-rc` into `master`.
+1. `improbableio/UnrealEngine` repo: indirect-merge `staging-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`.
+1. `UnrealGDKThirdPersonShooter` repo: (skip this step if `staging-x.y.z-rc` has no new commits compared to `master`) indirect-merge `staging-x.y.z-rc` into `master`.
+1. `UnrealGDKExampleProject` repo: (skip this step if `staging-x.y.z-rc` has no new commits compared to `master`) indirect-merge `staging-x.y.z-rc` into `master`.
+1. Delete the `staging-` branches.
 
 ## Appendix
 

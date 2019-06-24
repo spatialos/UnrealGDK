@@ -25,6 +25,7 @@
 #include "Utils/ComponentReader.h"
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
@@ -116,6 +117,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
+	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -417,6 +419,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 				// If entity is a PlayerController, create channel on the PlayerController's connection.
 				Connection = PlayerController->NetConnection;
 			}
+		}
+
+		if (Connection == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Unable to find SpatialOSNetConnection! Has this worker been disconnected from SpatialOS due to a timeout?"));
+			return;
 		}
 
 		// Set up actor channel.
@@ -841,6 +849,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
+	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -952,15 +961,33 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 
-	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID);
+	Schema_FieldId EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
+	// Client and Server Unreliable RPCs can be packed, in which case they're sent using a different event ID.
+	if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs && Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
+	{
+		EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID;
+	}
+
+	uint32 EventCount = Schema_GetObjectCount(EventsObject, EventId);
 
 	for (uint32 i = 0; i < EventCount; i++)
 	{
-		Schema_Object* EventData = Schema_IndexObject(EventsObject, SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID, i);
+		Schema_Object* EventData = Schema_IndexObject(EventsObject, EventId, i);
 
 		RPCPayload Payload(EventData);
 
 		FUnrealObjectRef ObjectRef(EntityId, Payload.Offset);
+
+		if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs)
+		{
+			// When packing unreliable RPCs into one update, they also always go through the PlayerController.
+			// This means we need to retrieve the actual target Entity ID from the payload.
+			if (Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID ||
+				Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
+			{
+				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
+			}
+		}
 
 		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 
@@ -995,6 +1022,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	else if (Op.request.component_id == SpatialConstants::RPCS_ON_ENTITY_CREATION_ID && CommandIndex == SpatialConstants::CLEAR_RPCS_ON_ENTITY_CREATION)
 	{
 		Sender->ClearRPCsOnEntityCreation(Op.entity_id);
+		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 		return;
 	}
 #if WITH_EDITOR
@@ -1004,10 +1032,26 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 #endif // WITH_EDITOR
+#if !UE_BUILD_SHIPPING
+	else if (Op.request.component_id == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
+	{
+		switch (CommandIndex)
+		{
+		case SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID:
+			NetDriver->SpatialMetrics->OnStartRPCMetricsCommand();
+			break;
+		case SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID:
+			NetDriver->SpatialMetrics->OnStopRPCMetricsCommand();
+			break;
+		default:
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"), CommandIndex, Op.entity_id);
+			break;
+		}
 
-	Worker_CommandResponse Response = {};
-	Response.component_id = Op.request.component_id;
-	Response.schema_type = Schema_CreateCommandResponse(Op.request.component_id, CommandIndex);
+		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+		return;
+	}
+#endif // !UE_BUILD_SHIPPING
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
 
@@ -1017,7 +1061,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	if (TargetObject == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object found for EntityId %d"), Op.entity_id);
-		Sender->SendCommandResponse(Op.request_id, Response);
+		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 		return;
 	}
 
@@ -1030,7 +1074,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 
 	ApplyRPC(TargetObject, Function, Payload, UTF8_TO_TCHAR(Op.caller_worker_id));
 
-	Sender->SendCommandResponse(Op.request_id, Response);
+	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
 
 void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
