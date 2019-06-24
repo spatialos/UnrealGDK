@@ -25,13 +25,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	static void BindToOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate);
 
+	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
+	static void UnbindFromOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate);
+
 	static FOnWorkerFlagsUpdated OnWorkerFlagsUpdated;
 private:
 	static void ApplyWorkerFlagUpdate(const struct Worker_FlagUpdateOp& Op);
 
 	static TMap<FString, FString> WorkerFlags;
-
-	
 
 	friend class USpatialDispatcher;
 };

@@ -38,3 +38,7 @@ void USpatialWorkerFlags::BindToOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdated
 	OnWorkerFlagsUpdated.Add(InDelegate);
 }
 
+void USpatialWorkerFlags::UnbindFromOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate)
+{
+	OnWorkerFlagsUpdated.Remove(InDelegate);
+}
