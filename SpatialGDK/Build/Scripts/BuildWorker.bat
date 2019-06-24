@@ -28,8 +28,6 @@ if not exist %BUILD_EXE_PATH% (
 
 %BUILD_EXE_PATH% %*
 
-
-
 popd
 
 exit /b %ERRORLEVEL%
