@@ -44,29 +44,18 @@ FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunct
 	, ReliableRPCIndex(0)
 	, Payload(0, 0, TArray<uint8>{})
 {
-	Parameters.SetNumZeroed(Function->ParmsSize);
-
-	for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
-	{
-		It->InitializeValue_InContainer(Parameters.GetData());
-		It->CopyCompleteValue_InContainer(Parameters.GetData(), InParameters);
-	}
 }
 
 FPendingRPCParams::~FPendingRPCParams()
 {
-	for (TFieldIterator<UProperty> It(Function); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
-	{
-		It->DestroyValue_InContainer(Parameters.GetData());
-	}
 }
 
-FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, TArray<uint8>&& InPayload, int InRetryIndex)
+FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, ComponentId(InComponentId)
 	, RPCIndex(InRPCIndex)
-	, Payload(MoveTemp(InPayload))
+	, Payload(InPayload)
 	, Attempts(1)
 	, RetryIndex(InRetryIndex)
 {
@@ -469,7 +458,7 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 	return ComponentInterest;
 }
 
-RPCPayload USpatialSender::CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects)
+RPCPayload USpatialSender::CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects)
 {
 	check(RPCParams.TargetObject.IsValid());
 	const UObject* Object = RPCParams.TargetObject.Get();
@@ -481,7 +470,7 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(FPendingRPCParams& RPCPara
 		UnresolvedObjects.Add(Object);
 	}
 
-	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(RPCParams.Function, RPCParams.Parameters.GetData(), RPCParams.ReliableRPCIndex, UnresolvedObjects);
+	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(RPCParams.Function, Params, RPCParams.ReliableRPCIndex, UnresolvedObjects);
 	if (UnresolvedObjects.Num() > 0)
 	{
 		UE_LOG(LogSpatialSender, Warning, TEXT("Some RPC parameters for %s were not resolved."), *RPCParams.Function->GetName());
@@ -555,9 +544,8 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 	{
 		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo->Type);
 
-		TArray<uint8> Payload;
 		const UObject* UnresolvedObject = nullptr;
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Function, Params->Parameters.GetData(), ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, Payload, Params->ReliableRPCIndex);
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Payload, ComponentId, RPCInfo->Index, EntityId, UnresolvedObject, Params->ReliableRPCIndex);
 
 		if (UnresolvedObject)
 		{
@@ -568,14 +556,14 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
 #if !UE_BUILD_SHIPPING
-		NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, Payload.Num());
+		NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo->Type, Params->Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING		
 
 		if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 		{
 			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
 				EntityId, CommandRequest.component_id, *Params->Function->GetName());
-			Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Params->Function, ComponentId, RPCInfo->Index, MoveTemp(Payload), Params->RetryIndex));
+			Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Params->Function, ComponentId, RPCInfo->Index, Params->Payload.PayloadData, Params->RetryIndex));
 		}
 		else
 		{
@@ -900,7 +888,7 @@ FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction*
 	return PayloadWriter;
 }
 
-Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, TArray<uint8>& OutPayload, int ReliableRPCId)
+Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int ReliableRPCId)
 {
 	Worker_CommandRequest CommandRequest = {};
 	CommandRequest.component_id = ComponentId;
@@ -917,23 +905,7 @@ Worker_CommandRequest USpatialSender::CreateRPCCommandRequest(UObject* TargetObj
 
 	OutEntityId = TargetObjectRef.Entity;
 
-	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Parameters, ReliableRPCId, UnresolvedObjects);
-
-	for (TWeakObjectPtr<const UObject> Object : UnresolvedObjects)
-	{
-		if (Object.IsValid())
-		{
-			// Take the first unresolved object
-			OutUnresolvedObject = Object.Get();
-			Schema_DestroyCommandRequest(CommandRequest.schema_type);
-			return CommandRequest;
-		}
-	}
-
-	RPCPayload::WriteToSchemaObject(RequestObject, TargetObjectRef.Offset, CommandIndex, PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
-	// Save payload in case we need to retry later.
-	OutPayload = TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes());
+	RPCPayload::WriteToSchemaObject(RequestObject, TargetObjectRef.Offset, CommandIndex, Payload.PayloadData.GetData(), Payload.PayloadData.Num());
 
 	return CommandRequest;
 }

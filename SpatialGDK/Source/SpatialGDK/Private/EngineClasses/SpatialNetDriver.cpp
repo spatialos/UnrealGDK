@@ -1185,7 +1185,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		}
 
 		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-		RPCParams->Payload = Sender->CreateRPCPayloadFromParams(*RPCParams, UnresolvedObjects);
+		RPCParams->Payload = Sender->CreateRPCPayloadFromParams(*RPCParams, Parameters, UnresolvedObjects);
 		if(UnresolvedObjects.Num() == 0)
 		{
 			Sender->QueueOutgoingRPC(RPCParams);

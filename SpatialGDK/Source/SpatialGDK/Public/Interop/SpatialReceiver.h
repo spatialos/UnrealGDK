@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "EngineClasses/RPCContainer.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -210,6 +211,7 @@ private:
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
 	TMap<FUnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
+	RPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;

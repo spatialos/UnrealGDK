@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "EngineClasses/RPCContainer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
@@ -27,25 +28,9 @@ class USpatialStaticComponentView;
 class USpatialClassInfoManager;
 class USpatialWorkerConnection;
 
-// This is currently only really used for queuing outgoing RPCs in case they have unresolved target object
-// or arguments. This is only possible for singletons in a multi-worker scenario.
-// TODO: remove this logic when singletons can be referenced without entity IDs (UNR-1456).
-struct FPendingRPCParams
-{
-	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex);
-	~FPendingRPCParams();
-
-	TWeakObjectPtr<UObject> TargetObject;
-	UFunction* Function;
-	TArray<uint8> Parameters;
-	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
-	int ReliableRPCIndex;
-	RPCPayload Payload;
-};
-
 struct FReliableRPCForRetry
 {
-	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, TArray<uint8>&& InPayload, int InRetryIndex);
+	FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex);
 
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
@@ -71,7 +56,6 @@ struct FPendingUnreliableRPC
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
-//using FOutgoingRPCMap = TMap<TWeakObjectPtr<const UObject>, TArray<TSharedRef<FPendingRPCParams>>>;
 using FRPCsOnEntityCreationMap = TMap<TWeakObjectPtr<const UObject>, RPCsOnEntityCreation>;
 using FUnresolvedEntry = TSharedPtr<TSet<TWeakObjectPtr<const UObject>>>;
 using FHandleToUnresolved = TMap<uint16, FUnresolvedEntry>;
@@ -79,20 +63,6 @@ using FChannelToHandleToUnresolved = TMap<FChannelObjectPair, FHandleToUnresolve
 using FOutgoingRepUpdates = TMap<TWeakObjectPtr<const UObject>, FChannelToHandleToUnresolved>;
 using FUpdatesQueuedUntilAuthority = TMap<Worker_EntityId_Key, TArray<Worker_ComponentUpdate>>;
 using FChannelsToUpdatePosition = TSet<TWeakObjectPtr<USpatialActorChannel>>;
-
-// TO-DO: Remove unused definitions
-using FPendingRPCParamsPtr = TSharedPtr<FPendingRPCParams>;
-using FQueueOfParams = TQueue<FPendingRPCParamsPtr>;
-using FRPCMap = TMap<TWeakObjectPtr<const UObject>, TSharedPtr<FQueueOfParams>>;
-enum class RPCType
-{
-	Commands = 0,
-	Multicast = 1,
-	Reliable = 2,
-	Unreliable = 3,
-	Invalid = 4,
-	NumTypes = 5
-};
 
 UCLASS()
 class SPATIALGDK_API USpatialSender : public UObject
@@ -137,7 +107,7 @@ public:
 
 	void FlushPackedUnreliableRPCs();
 
-	RPCPayload CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects);
+	RPCPayload CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects);
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
@@ -151,7 +121,7 @@ private:
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const;
 
-	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, TArray<uint8>& OutPayload, int ReliableRPCIndex);
+	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int ReliableRPCIndex);
 	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
 	Worker_ComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, const UObject*& OutUnresolvedObject);
 	void AddPendingUnreliableRPC(UObject* TargetObject, FPendingRPCParamsPtr Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject);	
@@ -188,7 +158,7 @@ private:
 	FOutgoingRepUpdates HandoverObjectToUnresolved;
 
 	// TO-DO: What container to use? Is Ref better than Ptr for Params?
-	TMap<ESchemaComponentType, FRPCMap> OutgoingRPCs;
+	RPCContainer OutgoingRPCs;
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 
 	TMap<Worker_RequestId, USpatialActorChannel*> PendingActorRequests;
