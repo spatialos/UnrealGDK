@@ -7,6 +7,7 @@
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/Connection/OutgoingMessages.h"
+#include "SpatialGDKSettings.h"
 #include "UObject/WeakObjectPtr.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -85,6 +86,10 @@ private:
 	void InitializeOpsProcessingThread();
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
+
+	void StartDevelopmentAuth(FString DevAuthToken);
+	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
+	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);
