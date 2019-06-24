@@ -169,25 +169,20 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 
 QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 {
-	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
+	// Checkout Radius constraints are defined by the ClientInterestDistance property on actors.
 	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
-	//   - NetCullDistanceSquared on AActor is used to define the default checkout radius with no other constraints.
-	//   - NetCullDistanceSquared on other actor types is used to define additional constraints if needed.
+	//   - ClientInterestDistance on AActor is used to define the default checkout radius with no other constraints.
+	//   - ClientInterestDistance on other actor types is used to define additional constraints if needed.
 	//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
 	//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
 	//   - Other than the default from AActor, all radius constraints also include Component constraints to
 	//     capture specific types, including all derived types of that actor.
-	//
-	// For best performance, the AActor NetCullDistanceSquared should be set to a value that captures the
-	// majority of actors important to a client, and actors outside that distance should be included by
-	// increasing the NetCullDistanceSquared property on that actor (or a parent actor type to capture a
-	// hierarchy). This should result in a minimal set of constraints for the default query.
 
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
-	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
+	const float DefaultDistance= DefaultActor->ClientInterestDistance;
 
-	// Gather NetCullDistance settings, and add any larger than the default radius to a list for processing.
-	TMap<UClass*, float> ActorCullDistances;
+	// Gather ClientInterestDistance settings, and add any larger than the default radius to a list for processing.
+	TMap<UClass*, float> ClientInterestDistances;
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
 		if (!It->IsChildOf<AActor>())
@@ -196,15 +191,15 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 		}
 
 		const AActor* IteratedDefaultActor = Cast<AActor>(It->GetDefaultObject());
-		if (IteratedDefaultActor->NetCullDistanceSquared > DefaultDistanceSquared)
+		if (IteratedDefaultActor->ClientInterestDistance> DefaultDistance)
 		{
-			ActorCullDistances.Add(*It, IteratedDefaultActor->NetCullDistanceSquared);
+			ClientInterestDistances.Add(*It, IteratedDefaultActor->ClientInterestDistance);
 		}
 	}
 
 	// Sort the map for the next iteration so that base classes are seen before derived classes. This lets us skip
 	// derived classes that have a smaller cull distance than a parent class.
-	ActorCullDistances.KeySort([](UClass& LHS, UClass& RHS) {
+	ClientInterestDistances.KeySort([](const UClass& LHS, const UClass& RHS) {
 		return
 			LHS.IsChildOf(&RHS) ? -1 :
 			RHS.IsChildOf(&LHS) ? 1 :
@@ -213,13 +208,13 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 
 	// If an actor's cull distance is smaller than that of a parent class, there's no need to add interest for that actor.
 	// Can't do inline removal since the sorted order is only guaranteed when the map isn't changed.
-	TMap<UClass*, float> OptimizedCullDistances;
-	for (const auto& ActorCullDistance : ActorCullDistances)
+	TMap<UClass*, float> OptimizedInterestDistances;
+	for (const auto& ActorInterestDistance : ClientInterestDistances)
 	{
 		bool bShouldAdd = true;
-		for (auto& OptimizedCullDistance : OptimizedCullDistances)
+		for (auto& OptimizedInterestDistance : OptimizedInterestDistances)
 		{
-			if (ActorCullDistance.Key->IsChildOf(OptimizedCullDistance.Key) && ActorCullDistance.Value <= OptimizedCullDistance.Value)
+			if (ActorInterestDistance.Key->IsChildOf(OptimizedInterestDistance.Key) && ActorInterestDistance.Value <= OptimizedInterestDistance.Value)
 			{
 				// No need to add this cull distance since it's captured in the optimized map already.
 				bShouldAdd = false;
@@ -228,30 +223,30 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 		}
 		if (bShouldAdd)
 		{
-			OptimizedCullDistances.Add(ActorCullDistance.Key, ActorCullDistance.Value);
+			OptimizedInterestDistances.Add(ActorInterestDistance.Key, ActorInterestDistance.Value);
 		}
 	}
 
 	QueryConstraint CheckoutRadiusConstraints;
 
-	// Use AActor's NetCullDistance for the default radius (all actors in that radius will be checked out)
-	const float DefaultCheckoutRadius= FMath::Sqrt(DefaultDistanceSquared / (100.0f * 100.0f));
+	// Use AActor's ClientInterestDistance for the default radius (all actors in that radius will be checked out)
+	const float DefaultCheckoutRadiusMeters = DefaultDistance / 100.0f;
 	QueryConstraint DefaultCheckoutRadiusConstraint;
-	DefaultCheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ DefaultCheckoutRadius };
+	DefaultCheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ DefaultCheckoutRadiusMeters };
 	CheckoutRadiusConstraints.OrConstraint.Add(DefaultCheckoutRadiusConstraint);
 
 	// For every cull distance that we still want, add a constraint with the distance for the actor type and all of its derived types.
-	for (const auto& CullDistanceSquared : OptimizedCullDistances)
+	for (const auto& InterestDistances: OptimizedInterestDistances)
 	{
 		QueryConstraint CheckoutRadiusConstraint;
 
 		QueryConstraint RadiusConstraint;
-		const float CheckoutRadius = FMath::Sqrt(CullDistanceSquared.Value / (100.0f * 100.0f));
-		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
+		const float CheckoutRadiusMeters = InterestDistances.Value / 100.0f;
+		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadiusMeters };
 		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 
 		QueryConstraint ActorTypeConstraint;
-		AddTypeHierarchyToConstraint(CullDistanceSquared.Key, ActorTypeConstraint);
+		AddTypeHierarchyToConstraint(InterestDistances.Key, ActorTypeConstraint);
 		CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
 
 		CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
@@ -330,13 +325,15 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 
 void InterestFactory::AddTypeHierarchyToConstraint(const UClass* BaseType, QueryConstraint& OutConstraint)
 {
+	const UClass* AuthoritativeBaseType = BaseType->GetAuthoritativeClass();
+
 	check(NetDriver && NetDriver->ClassInfoManager && NetDriver->ClassInfoManager->SchemaDatabase);
 	const USchemaDatabase* SchemaDatabase = NetDriver->ClassInfoManager->SchemaDatabase;
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
 		UClass* Class = *ClassIt;
 		check(Class);
-		if (Class->IsChildOf(BaseType))
+		if (Class->IsChildOf(AuthoritativeBaseType))
 		{
 			const uint32 ComponentId = SchemaDatabase->GetComponentIdForClass(*Class);
 			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
@@ -347,6 +344,7 @@ void InterestFactory::AddTypeHierarchyToConstraint(const UClass* BaseType, Query
 			}
 		}
 	}
+	check(OutConstraint.IsValid());
 }
 
 QueryConstraint InterestFactory::CreateLevelConstraints()
