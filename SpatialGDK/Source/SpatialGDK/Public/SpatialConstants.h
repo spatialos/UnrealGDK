@@ -63,9 +63,13 @@ FORCEINLINE FString RPCSchemaTypeToString(ESchemaComponentType RPCType)
 	switch (RPCType)
 	{
 	case SCHEMA_ClientReliableRPC:
-		return TEXT("Client");
+		return TEXT("Client, Reliable");
+	case SCHEMA_ClientUnreliableRPC:
+		return TEXT("Client, Unreliable");
 	case SCHEMA_ServerReliableRPC:
-		return TEXT("Server");
+		return TEXT("Server, Reliable");
+	case SCHEMA_ServerUnreliableRPC:
+		return TEXT("Server, Unreliable");
 	case SCHEMA_NetMulticastRPC:
 		return TEXT("Multicast");
 	case SCHEMA_CrossServerRPC:
@@ -109,6 +113,7 @@ namespace SpatialConstants
 	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9987;
 	const Worker_ComponentId NOT_STREAMED_COMPONENT_ID						= 9986;
 	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
+	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -128,6 +133,10 @@ namespace SpatialConstants
 	const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
 
 	const Schema_FieldId CLEAR_RPCS_ON_ENTITY_CREATION						= 1;
+
+	// DebugMetrics command IDs
+	const Schema_FieldId DEBUG_METRICS_START_RPC_METRICS_ID					= 1;
+	const Schema_FieldId DEBUG_METRICS_STOP_RPC_METRICS_ID					= 2;
 
 	// UnrealRPCPayload Field IDs
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID = 1;

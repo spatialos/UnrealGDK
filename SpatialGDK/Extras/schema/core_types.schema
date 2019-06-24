@@ -1,6 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 package unreal;
 
+type Void {
+}
+
 type UnrealObjectRef {
     EntityId entity = 1;
     uint32 offset = 2;
