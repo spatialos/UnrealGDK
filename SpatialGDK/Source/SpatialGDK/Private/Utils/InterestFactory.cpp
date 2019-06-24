@@ -41,13 +41,27 @@ Interest InterestFactory::CreateInterest()
 		return Interest{};
 	}
 
-	if (Actor->GetNetConnection() != nullptr)
+	if (GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
 	{
-		return CreatePlayerOwnedActorInterest();
+		if (Actor->GetNetConnection() != nullptr)
+		{
+			return CreatePlayerOwnedActorInterest();
+		}
+		else
+		{
+			return CreateActorInterest();
+		}
 	}
 	else
 	{
-		return CreateActorInterest();
+		if (Actor->IsA(APlayerController::StaticClass()))
+		{
+			return CreatePlayerOwnedActorInterest();
+		}
+		else
+		{
+			return Interest{};
+		}
 	}
 }
 
@@ -113,7 +127,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 
 	Interest NewInterest;
 	// Server Interest
-	if (DefinedConstraints.IsValid())
+	if (DefinedConstraints.IsValid() && GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
 	{
 		NewInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, ServerComponentInterest);
 	}
