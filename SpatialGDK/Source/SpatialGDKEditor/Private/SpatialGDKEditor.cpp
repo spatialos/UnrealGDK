@@ -210,6 +210,11 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	}
 }
 
+bool FSpatialGDKEditor::FullScanRequired()
+{
+	return !GeneratedSchemaFolderExists();
+}
+
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()
 {
 	if (OnAssetLoadedHandle.IsValid())

@@ -21,6 +21,7 @@ public:
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
+	bool FullScanRequired();
 
 private:
 	bool bSchemaGeneratorRunning;
