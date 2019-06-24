@@ -1,0 +1,90 @@
+# Port your project to SpatialOS
+
+## 3. Modify and build your project
+
+Before you open your project in the Editor you need to: 
+* Add the SpatialGDK module to your project
+* Build your project using Visual Studio
+
+<!--- **Note:**  If you built the Unreal Engine Fork manually, you must clone and set up the GDK plugin by following the [manual GDK installation instructions]({{urlRoot}}/content/manual-engine-build#installing-the-spatialos-gdk-for-unreal) before you follow the rest of this guide.</br> --->
+
+## Step 1: Add the SpatialGDK module to your project
+
+The SpatialGDK module is a <what?>
+
+1. In **File Explorer**, navigate to `\<ProjectRoot>\<GameRoot>\Source\<YourProject>\`.
+1. Open the `<YourProject>.build.cs` file in a code editor and add add `"SpatialGDK"` to `PublicDependencyModuleNames`.
+For example:  
+
+```
+   PublicDependencyModuleNames.AddRange(`
+               new string[] {
+                   "Core",
+                   "CoreUObject",
+                   "Engine",
+                   "OnlineSubsystem",
+                   "OnlineSubsystemUtils",
+                   "AssetRegistry",
+                   "AIModule",
+                   "GameplayTasks",
+                   "SpatialGDK",
+               }
+           );
+```
+
+## Step 2: Build your project
+
+Set up your Unreal project to work with the GDK Unreal Engine Fork, which you cloned and installed in the [Before you start](#1-before-you-start) section. To do this:
+
+1. In **File Explorer**, navigate to `<ProjectRoot>\<GameRoot>`.
+2. Right-click your `<YourProject>.uproject` file and select **Switch Unreal Engine version**.
+3. Select the path to the Unreal Engine fork you cloned earlier. This associates your project with the Unreal Engine Fork and automatically generates a Visual Studio solution file for your project called `<YourProject.sln>`
+4. In the same directory, double-click `<YourProject>`.sln to open it with Visual Studio.
+5. On the Visual Studio toolbar, set your Solution configuration to **Development Editor**. <br/>
+![Visual studio toolbar]({{AssetRoot}}assets/screen-grabs/porting-solution-config.png)<br/>
+   _Image: The Visual Studio toolbar, with the Development Editor Solution configuration highlighted in red._
+6. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
+
+## 5. Modify Unreal classes for GDK compatibility
+
+You must modify your `GameInstance` class to work with the GDK.  
+
+1. Make your `GameInstance` inherit from `SpatialGameInstance`.  <br/>
+
+   > If you have not made a `GameInstance` for your game and are still using the default `GameInstance`, you must either create a Blueprint or a native `GameInstance` class now. Remember to configure your `Project Settings` to use this new `GameInstance` by default, under **Project Settings > Project Maps and Modes > Game Instance > Game Instance Class**. <br/>
+
+- If your game's `GameInstance` is a C++ class, locate its header file and add the following `#include`:
+  `"SpatialGameInstance.h"`
+
+  For example:
+
+  ```cpp
+  #include "CoreMinimal.h"
+  #include "SpatialGameInstance.h"
+  #include "YourProjectGameInstance.generated.h"
+  ```
+
+  Then, under `UCLASS()`, change the parent class from `UGameInstance` to `USpatialGameInstance`:
+
+  For example:  
+
+  ```cpp
+  UCLASS()
+  class YOURPROJECT_API UYourProjectGameInstance : public USpatialGameInstance
+  {
+      GENERATED_BODY()
+  };
+  ```
+
+- If your `GameInstance` is a Blueprint class, you need to open and edit it in the Blueprint Editor: 
+
+      * From the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** set the **Parent Class** to `SpatialGameInstance`.
+
+  ![spatial game instance reparent]({{AssetRoot}}assets/screen-grabs/spatial-game-instance-reparent.png)<br/>
+  
+  
+  
+  Next: Launch a local deployment
+  
+  _Image: The Blueprint class settings screen_<br/>
+
