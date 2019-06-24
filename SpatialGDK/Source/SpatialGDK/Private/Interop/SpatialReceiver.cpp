@@ -25,6 +25,7 @@
 #include "Utils/ComponentReader.h"
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
@@ -116,6 +117,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
+	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -851,6 +853,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
+	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -1030,6 +1033,26 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 #endif // WITH_EDITOR
+#if !UE_BUILD_SHIPPING
+	else if (Op.request.component_id == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
+	{
+		switch (CommandIndex)
+		{
+		case SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID:
+			NetDriver->SpatialMetrics->OnStartRPCMetricsCommand();
+			break;
+		case SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID:
+			NetDriver->SpatialMetrics->OnStopRPCMetricsCommand();
+			break;
+		default:
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"), CommandIndex, Op.entity_id);
+			break;
+		}
+
+		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+		return;
+	}
+#endif // !UE_BUILD_SHIPPING
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
 
