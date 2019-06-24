@@ -101,5 +101,17 @@ public:
 	/** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
 	UPROPERTY(EditAnywhere, config, Category = "Local Test", meta = (ConfigRestartRequired = false))
 	FString DefaultReceptionistHost;
+
+	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
+	bool bUseDevelopmentAuthenticationFlow;
+
+	/** The token created using 'spatial project auth dev-auth-token' */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
+	FString DevelopmentAuthenticationToken;
+
+	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
+	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
+	FString DevelopmentDeploymentToConnect;
 };
 

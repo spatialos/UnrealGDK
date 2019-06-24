@@ -15,7 +15,7 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
-#if WITH_EDITOR
+#if WITH_EDITOR && PLATFORM_WINDOWS
 #include "EditorWorkerController.h"
 #endif
 
@@ -23,7 +23,7 @@ DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
 
-#if WITH_EDITOR
+#if WITH_EDITOR && PLATFORM_WINDOWS
 static EditorWorkerController WorkerController;
 #endif
 
@@ -81,6 +81,15 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 		return;
 	}
 
+	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
+	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
+	{
+		LocatorConfig.WorkerType = SpatialConstants::ClientWorkerType;
+		LocatorConfig.UseExternalIp = true;
+		StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
+		return;
+	}
+
 	switch (GetConnectionType())
 	{
 	case SpatialConnectionType::Receptionist:
@@ -92,6 +101,83 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	}
 }
 
+void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens)
+{
+	if (LoginTokens->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get login token, StatusCode: %d, Error: %s"), LoginTokens->status.code, UTF8_TO_TCHAR(LoginTokens->status.detail));
+		return;
+	}
+
+	if (LoginTokens->login_token_count == 0)
+	{
+		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No deployment found to connect to. Did you add the 'dev_login' tag to the deployment you want to connect to?"));
+		return;
+	}
+
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Success: Login Token Count %d"), LoginTokens->login_token_count);
+	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
+	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
+	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
+	if (DeploymentToConnect.IsEmpty())
+	{
+		Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[0].login_token);
+	}
+	else
+	{
+		for (uint32 i = 0; i < LoginTokens->login_token_count; i++)
+		{
+			FString DeploymentName = FString(LoginTokens->login_tokens[i].deployment_name);
+			if (DeploymentToConnect.Compare(DeploymentName) == 0)
+			{
+				Connection->LocatorConfig.LoginToken = FString(LoginTokens->login_tokens[i].login_token);
+				break;
+			}
+		}
+	}
+	Connection->ConnectToLocator();
+}
+
+void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken)
+{
+	if (PIToken->status.code != WORKER_CONNECTION_STATUS_CODE_SUCCESS)
+	{
+		UE_LOG(LogSpatialWorkerConnection, Error, TEXT("Failed to get PlayerIdentityToken, StatusCode: %d, Error: %s"), PIToken->status.code, UTF8_TO_TCHAR(PIToken->status.detail));
+		return;
+	}
+
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Success: Received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
+	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
+	Connection->LocatorConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
+	Worker_Alpha_LoginTokensRequest LTParams{};
+	LTParams.player_identity_token = PIToken->player_identity_token;
+	FTCHARToUTF8 worker_type(*Connection->LocatorConfig.WorkerType);
+	LTParams.worker_type = worker_type.Get();
+	LTParams.use_insecure_connection = false;
+
+	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
+	{
+		Worker_Alpha_LoginTokensResponseFuture_Get(LTFuture, nullptr, Connection, &USpatialWorkerConnection::OnLoginTokens);
+	}
+}
+
+void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
+{
+	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
+	FTCHARToUTF8 dev_auth_token(*DevAuthToken);
+	FTCHARToUTF8 player_id(*SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
+	PITParams.development_authentication_token = dev_auth_token.Get();
+	PITParams.player_id = player_id.Get();
+	PITParams.display_name = "";
+	PITParams.metadata = "";
+	PITParams.use_insecure_connection = false;
+
+	if (Worker_Alpha_PlayerIdentityTokenResponseFuture* PITFuture = Worker_Alpha_CreateDevelopmentPlayerIdentityTokenAsync(TCHAR_TO_UTF8(*LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &PITParams))
+	{
+		Worker_Alpha_PlayerIdentityTokenResponseFuture_Get(PITFuture, nullptr, this, &USpatialWorkerConnection::OnPlayerIdentityToken);
+	}
+}
+
 void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 {
 	if (ReceptionistConfig.WorkerType.IsEmpty())
@@ -100,7 +186,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
 	}
 
-#if WITH_EDITOR
+#if WITH_EDITOR && PLATFORM_WINDOWS
 	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
 	const int32 FirstServerEditorID = 1;
 	if (bSingleThreadedServer)
@@ -146,7 +232,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
 	// end TODO
 
-#if WITH_EDITOR
+#if WITH_EDITOR && PLATFORM_WINDOWS
 	if (bSingleThreadedServer)
 	{
 		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);

@@ -33,7 +33,11 @@ public class SpatialGDK : ModuleRules
 		if (Target.bBuildEditor)
 		{
 			PublicDependencyModuleNames.Add("UnrealEd");
-			PublicDependencyModuleNames.Add("SpatialGDKEditorToolbar");
+            
+            if (Target.Platform == UnrealTargetPlatform.Win64)
+            {
+			    PublicDependencyModuleNames.Add("SpatialGDKEditorToolbar");
+            }
 		}
 
         if (Target.bWithPerfCounters)

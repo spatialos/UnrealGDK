@@ -49,9 +49,9 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	PluginCommands = MakeShareable(new FUICommandList);
 	MapActions(PluginCommands);
 	SetupToolbar(PluginCommands);
-
+#if PLATFORM_WINDOWS
 	CheckForRunningStack();
-
+#endif
 	// load sounds
 	ExecutionStartSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileStart_Cue.CompileStart_Cue"));
 	ExecutionStartSound->AddToRoot();
@@ -414,7 +414,8 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 		LaunchConfig = SpatialGDKSettings->GetSpatialOSLaunchConfig();
 	}
 
-	const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
+    const FString ExecuteAbsolutePath = SpatialGDKSettings->GetSpatialOSDirectory();
+#if PLATFORM_WINDOWS
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
@@ -424,7 +425,15 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
 	// execute it. We currently can't use pipes to capture output as it doesn't work properly with current
 	// spatial.exe.
-	SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
+#else
+    const FString CmdExecutable = TEXT("osascript");
+    const FString SpatialCmdArgument = FString::Printf(
+       TEXT("-e 'tell app \"Terminal\"\n do script \"spatial local launch %s %s \"\n end tell'"),
+       *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
+    UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting SpatialOS with `%s` arguments."), *SpatialCmdArgument);
+#endif
+    
+    SpatialOSStackProcHandle = FPlatformProcess::CreateProc(
 		*(CmdExecutable), *SpatialCmdArgument, true, false, false, &SpatialOSStackProcessID, 0,
 		*ExecuteAbsolutePath, nullptr, nullptr);
 
@@ -487,7 +496,8 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialOSStackCanExecute() const
 {
-	return !SpatialOSStackProcHandle.IsValid() && !FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID);
+//    UE_LOG(LogTemp, Warning, TEXT("ProcHandle valid: %d, IsRunning: %d, ProcessID: %d"), SpatialOSStackProcHandle.IsValid(), FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID), SpatialOSStackProcessID);
+	return !SpatialOSStackProcHandle.IsValid() && (SpatialOSStackProcessID == 0 || !FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID));
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialOSStackCanExecute() const
@@ -502,7 +512,12 @@ void FSpatialGDKEditorToolbarModule::CheckForRunningStack()
 	{
 		FPlatformProcess::FProcEnumInfo Proc = ProcEnumerator.GetCurrent();
 		const FString ProcName = Proc.GetName();
-		if (ProcName.Compare(TEXT("spatial.exe"), ESearchCase::IgnoreCase) == 0)
+#if PLATFORM_WINDOWS
+        const FString SpatialProcName = TEXT("spatial.exe");
+#else
+        const FString SpatialProcName = TEXT("spatial");
+#endif
+		if (ProcName.Compare(SpatialProcName, ESearchCase::IgnoreCase) == 0)
 		{
 			uint32 ProcPID = Proc.GetPID();
 			SpatialOSStackProcHandle = FPlatformProcess::OpenProcess(ProcPID);

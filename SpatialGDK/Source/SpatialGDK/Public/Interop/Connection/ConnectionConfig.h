@@ -78,6 +78,10 @@ struct FReceptionistConfig : public FConnectionConfig
 			{
 				// If an IP is not specified then use default.
 				ReceptionistHost = GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost;
+				if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+				{
+					UseExternalIp = true;
+				}
 			}
 		}
 
@@ -91,7 +95,7 @@ struct FReceptionistConfig : public FConnectionConfig
 struct FLocatorConfig : public FConnectionConfig
 {
 	FLocatorConfig()
-		: LocatorHost(TEXT("locator.improbable.io")) {
+		: LocatorHost(SpatialConstants::LOCATOR_HOST) {
 		const TCHAR* CommandLine = FCommandLine::Get();
 		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 		FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
