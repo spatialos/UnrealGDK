@@ -7,21 +7,37 @@
 #include "ActorGroupManager.generated.h"
 
 USTRUCT()
-struct FActorClassSet
+struct FWorkerType
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-	TSet<TSoftClassPtr<AActor>> ActorClasses;
+	FString WorkerTypeName;
 
-	FActorClassSet()
+	FWorkerType()
 	{
-		ActorClasses = {};
+		WorkerTypeName = "";
 	}
+};
 
-	FActorClassSet(TSet<TSoftClassPtr<AActor>> Classes)
+USTRUCT()
+struct FActorGroupInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FName Name;
+
+	UPROPERTY(EditAnywhere)
+	FWorkerType OwningWorkerType;
+
+	UPROPERTY(EditAnywhere)
+	TSet<TSoftClassPtr<AActor>> ActorClasses;
+	
+	FActorGroupInfo()
 	{
-		ActorClasses = Classes;
+		Name = NAME_None;
+		OwningWorkerType = FWorkerType();
 	}
 };
 
@@ -65,21 +81,4 @@ public:
 	FName GetActorGroupForClass(UClass* Class);
 
 	FString GetWorkerTypeForClass(UClass* Class);
-
-	static TMap<FName, FActorClassSet> DefaultActorGroups() {
-		return { TPairInitializer<const FName&, const FActorClassSet&>(SpatialConstants::DefaultActorGroup, FActorClassSet({ AActor::StaticClass() })) };
-	}
-
-	static TSet<FString> DefaultWorkerTypes() {
-		return { SpatialConstants::ServerWorkerType };
-	}
-
-	static TMap<FName, FString> DefaultWorkerAssociation() {
-		return { TPairInitializer<const FName&, const FString&>(SpatialConstants::DefaultActorGroup, SpatialConstants::ServerWorkerType) };
-	}
-
-#if WITH_EDITOR
-	static void ValidateOffloadingSettings(TMap<FName, FActorClassSet> OldActorGroups, TMap<FName, FActorClassSet>* ActorGroups,
-		TSet<FString> OldWorkerTypes, TSet<FString>* WorkerTypes, FWorkerAssociation& WorkerAssociation);
-#endif
 };

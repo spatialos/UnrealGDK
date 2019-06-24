@@ -57,7 +57,7 @@ void FSpatialGDKEditorModule::RegisterSettings()
 	}
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerAssociation", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerAssociationCustomization::MakeInstance));
+	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerAssociationCustomization::MakeInstance));
 }
 
 void FSpatialGDKEditorModule::UnregisterSettings()

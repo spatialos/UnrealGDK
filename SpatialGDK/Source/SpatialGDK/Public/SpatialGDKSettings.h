@@ -21,9 +21,6 @@ public:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
 	virtual void PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent) override;
-
-	void ValidateOffloadingSettings();
-
 #endif
 
 	virtual void PostInitProperties() override;
@@ -114,28 +111,18 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bPackUnreliableRPCs;
 
+	/** Single worker type launch when offloading is disabled, fallback worker type when offloading is enabled (owns all actor classes by default). */
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	FWorkerType DefaultWorkerType;
+
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	bool bEnableOffloading;
 
-	/** Map of Actor Group to set of Actor classes it contains. */
+	/** Array of ActorGroups. */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
-	TMap<FName, FActorClassSet> ActorGroups;
+	TMap<FName, FActorGroupInfo> ActorGroups;
 
 	/** Set of Managed worker types to run. */
 	UPROPERTY(Config)
 	TSet<FString> WorkerTypes;
-
-	/** Association of Actor Groups to Worker Types. */
-	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
-	FWorkerAssociation WorkerAssociation;
-
-#if WITH_EDITORONLY_DATA
-
-	UPROPERTY()
-	TMap<FName, FActorClassSet> OldActorGroups;
-
-	UPROPERTY()
-	TSet<FString> OldWorkerTypes;
-
-#endif
 };

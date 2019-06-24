@@ -62,7 +62,10 @@ void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
 	}
 
 	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
-	RuntimeSettings->WorkerTypes.Empty();
-	RuntimeSettings->WorkerTypes.Append(WorkerTypes);
-	RuntimeSettings->ValidateOffloadingSettings();
+	if (RuntimeSettings != nullptr)
+	{
+		RuntimeSettings->WorkerTypes.Empty();
+		RuntimeSettings->WorkerTypes.Append(WorkerTypes);
+		//RuntimeSettings->SaveConfig(CPF_Config, *RuntimeSettings->GetDefaultConfigFilename());
+	}
 }

@@ -32,10 +32,10 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(true)
 	, bEnableServerQBI(bUsingQBI)
 	, bPackUnreliableRPCs(true)
-	, ActorGroups(UActorGroupManager::DefaultActorGroups())
-	, WorkerTypes(UActorGroupManager::DefaultWorkerTypes())
-	, WorkerAssociation(UActorGroupManager::DefaultWorkerAssociation())
 {
+	TArray<FName> ActorGroupNames;
+	int NumKeys = ActorGroups.GetKeys(ActorGroupNames);
+	UE_LOG(LogTemp, Log, TEXT("[AG] Keys %d"), NumKeys)
 }
 
 void USpatialGDKSettings::PostInitProperties()
@@ -45,11 +45,6 @@ void USpatialGDKSettings::PostInitProperties()
 	// Check any command line overrides for using QBI (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
 	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
-
-#if WITH_EDITOR
-	OldActorGroups = ActorGroups;
-	OldWorkerTypes = WorkerTypes;
-#endif
 }
 
 #if WITH_EDITOR
@@ -58,6 +53,7 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 {
 	if (PropertyChangedEvent.Property == nullptr)
 	{
+		Super::PostEditChangeProperty(PropertyChangedEvent);
 		return;
 	}
 	const FName PropertyName = PropertyChangedEvent.Property->GetFName();
@@ -74,43 +70,11 @@ void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& Property
 		}
 	}
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ActorGroups))
-	{
-		ValidateOffloadingSettings();
-	}
-
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, WorkerTypes))
-	{
-		ValidateOffloadingSettings();
-	}
-
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 
 void USpatialGDKSettings::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
 {
-	if (PropertyChangedEvent.Property == nullptr)
-	{
-		return;
-	}
-
-	const FName PropertyName = PropertyChangedEvent.PropertyChain.GetHead()->GetValue()->GetFName();
-
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, ActorGroups))
-	{
-		ValidateOffloadingSettings();
-	}
-
 	Super::PostEditChangeChainProperty(PropertyChangedEvent);
-}
-
-void USpatialGDKSettings::ValidateOffloadingSettings()
-{
-	UActorGroupManager::ValidateOffloadingSettings(OldActorGroups, &ActorGroups, OldWorkerTypes, &WorkerTypes, WorkerAssociation);
-
-	OldActorGroups = ActorGroups;
-	OldWorkerTypes = WorkerTypes;
-
-	SaveConfig(CPF_Config, *GetDefaultConfigFilename());
 }
 #endif
