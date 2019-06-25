@@ -258,6 +258,20 @@ public:
 			: SpatialOSDirectory.Path;
 	}
 
+	FORCEINLINE FString GetGDKPluginDirectory() const
+	{
+		// Get the correct plugin directory.
+		FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
+
+		if (!FPaths::DirectoryExists(PluginDir))
+		{
+			// If the Project Plugin doesn't exist then use the Engine Plugin.
+			PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
+		}
+
+		return PluginDir;
+	}
+
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()

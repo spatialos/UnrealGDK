@@ -467,18 +467,10 @@ TArray<UClass*> GetAllSupportedClasses()
 
 void CopyWellKnownSchemaFiles()
 {
-	// Get the correct plugin directory.
-	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
-
-	if (!FPaths::DirectoryExists(PluginDir))
-	{
-		// If the Project Plugin doesn't exist then use the Engine Plugin.
-		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
-		ensure(FPaths::DirectoryExists(PluginDir));
-	}
+	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
 
 	FString GDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
-	FString GDKSchemaCopyDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("schema/gdk"));
+	FString GDKSchemaCopyDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
 
 	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema"));
 	FString CoreSDKSchemaCopyDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
@@ -615,22 +607,15 @@ void RunSchemaCompiler()
 	FProcHandle SchemaCompilerProcHandle;
 	uint32 SchemaCompilerProcessID;
 
-	// Get the correct plugin directory.
-	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
-
-	if (!FPaths::DirectoryExists(PluginDir))
-	{
-		// If the Project Plugin doesn't exist then use the Engine Plugin.
-		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
-		ensure(FPaths::DirectoryExists(PluginDir));
-	}
+	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
 
 	// Get the schema_compiler path and arguments
 	FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));
 
 	FString SchemaDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("schema"));
-	FString ImprobableSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
-	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Build/core_sdk/schema/standard_library"));
+	//FString ImprobableSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
+	//FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Build/core_sdk/schema/standard_library"));
+	FString CoreSDKSchemaDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
 	FString SchemaDescriptorDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
 	FString SchemaDescriptorOutput = FPaths::Combine(SchemaDescriptorDir, TEXT("schema.descriptor"));
 
@@ -641,7 +626,7 @@ void RunSchemaCompiler()
 		PlatformFile.CreateDirectory(*SchemaDescriptorDir);
 	}
 
-	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *ImprobableSchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
+	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SchemaCompilerExe, *SchemaCompilerArgs);
 
