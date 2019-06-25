@@ -613,8 +613,6 @@ void RunSchemaCompiler()
 	FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));
 
 	FString SchemaDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("schema"));
-	//FString ImprobableSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
-	//FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Build/core_sdk/schema/standard_library"));
 	FString CoreSDKSchemaDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
 	FString SchemaDescriptorDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
 	FString SchemaDescriptorOutput = FPaths::Combine(SchemaDescriptorDir, TEXT("schema.descriptor"));
@@ -623,7 +621,7 @@ void RunSchemaCompiler()
 	if (!FPaths::DirectoryExists(SchemaDescriptorDir))
 	{
 		IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-		PlatformFile.CreateDirectory(*SchemaDescriptorDir);
+		PlatformFile.CreateDirectoryTree(*SchemaDescriptorDir);
 	}
 
 	FString SchemaCompilerArgs = FString::Printf(TEXT("--schema_path=\"%s\" --schema_path=\"%s\" --descriptor_set_out=\"%s\" --load_all_schema_on_schema_path"), *SchemaDir, *CoreSDKSchemaDir, *SchemaDescriptorOutput);
