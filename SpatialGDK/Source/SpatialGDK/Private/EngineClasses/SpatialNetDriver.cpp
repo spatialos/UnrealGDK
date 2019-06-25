@@ -596,6 +596,20 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	RenamedStartupActors.Remove(ThisActor->GetFName());
 }
 
+void USpatialNetDriver::Shutdown()
+{
+	if (!IsServer())
+	{
+		// Notify the server that we're disconnecting so it can clean up our actors.
+		if (USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(ServerConnection))
+		{
+			SpatialNetConnection->ClientNotifyClientHasQuit();
+		}
+	}
+
+	Super::Shutdown();
+}
+
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 {
 	// If PackageMap doesn't exist, we haven't connected yet, which means

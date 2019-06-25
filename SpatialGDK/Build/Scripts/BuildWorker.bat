@@ -1,11 +1,11 @@
 @echo off
 
+rem Generate worker configs
 pushd "%~dp0..\..\..\..\..\..\spatial"
-
 spatial worker build build-config
-
 popd
 
+rem Build Unreal project
 pushd "%~dp0..\..\..\..\..\"
 
 set BUILD_EXE_PATH="Plugins\UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Build.exe"
