@@ -202,6 +202,9 @@ public:
 	virtual void PostInitProperties() override;
 
 private:
+	/** Check if the Editor Settings contains valid directory paths or not */
+	void SafetyCheckSpatialOSDirectoryPaths();
+
 	/** Path to the directory containing the SpatialOS-related files. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
 	FDirectoryPath SpatialOSDirectory;
