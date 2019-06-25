@@ -41,6 +41,8 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
 	}
 
+	FSimpleMulticastDelegate OnSpatialShutdown;
+
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);

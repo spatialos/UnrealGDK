@@ -87,7 +87,7 @@ struct EditorWorkerController
 };
 
 static EditorWorkerController WorkerController;
-}
+} // end namespace
 
 namespace SpatialGDKServices
 {
