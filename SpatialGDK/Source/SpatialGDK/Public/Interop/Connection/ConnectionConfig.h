@@ -90,7 +90,7 @@ struct FReceptionistConfig : public FConnectionConfig
 struct FLocatorConfig : public FConnectionConfig
 {
 	FLocatorConfig()
-		: LocatorHost(TEXT("locator.improbable.io")) {
+		: LocatorHost(SpatialConstants::LOCATOR_HOST) {
 		const TCHAR* CommandLine = FCommandLine::Get();
 		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 		FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);
