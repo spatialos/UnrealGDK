@@ -1,6 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#if WITH_EDITOR
+#include "Interop/Connection/EditorWorkerController.h"
+#endif
 
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -14,10 +17,6 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
-
-#if WITH_EDITOR
-#include "EditorWorkerController.h"
-#endif
 
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
