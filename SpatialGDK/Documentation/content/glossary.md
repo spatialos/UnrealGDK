@@ -45,7 +45,7 @@ Short for [Global State Manager](#global-state-manager).
 
 ### SchemaDatabase
 
-The SchemaDatabase is a `uasset` file (named `schemadatabase.uasset`) that contains information about UObjects and associated [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) in your project. Information is automatically added to the `SchemaDatabase` by the GDK whenever you generate schema. It is an auto-generated file which you cannot manually edit. 
+The SchemaDatabase is a `uasset` file (named `SchemaDatabase.uasset`) that contains information about UObjects and associated [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) in your project. Information is automatically added to the `SchemaDatabase` by the GDK whenever you generate schema. It is a generated file which you cannot manually edit. 
 
 ### Schema generation
 A SpatialOS GDK for Unreal toolbar command (within the Unreal Editor) which takes a set of Unreal classes and generates SpatialOS [schema](#schema) that enables automatic communication between Unreal and SpatialOS. 
