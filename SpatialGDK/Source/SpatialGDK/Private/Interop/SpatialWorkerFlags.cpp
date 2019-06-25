@@ -35,7 +35,7 @@ void USpatialWorkerFlags::ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op)
 }
 FOnWorkerFlagsUpdated& USpatialWorkerFlags::GetOnWorkerFlagsUpdated()
 {
-	return USpatialWorkerFlags::OnWorkerFlagsUpdated;
+	return OnWorkerFlagsUpdated;
 }
 
 void USpatialWorkerFlags::BindToOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate)
