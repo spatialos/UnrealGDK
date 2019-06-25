@@ -890,28 +890,11 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 	}
 }
 
-void USpatialActorChannel::ClientProcessOwnershipChange()
+void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 {
-	bool bOldNetOwned = bNetOwned;
-	bNetOwned = IsOwnedByWorker();
-
-	if (bOldNetOwned != bNetOwned)
+	if (bNewNetOwned != bNetOwned)
 	{
+		bNetOwned = bNewNetOwned;
 		Sender->SendComponentInterest(Actor, GetEntityId(), bNetOwned);
-	}
-}
-
-void USpatialActorChannel::ProcessOwnershipChange()
-{
-	if (Actor != nullptr && !Actor->IsPendingKill())
-	{
-		if (NetDriver->IsServer())
-		{
-			ServerProcessOwnershipChange();
-		}
-		else
-		{
-			ClientProcessOwnershipChange();
-		}
 	}
 }
