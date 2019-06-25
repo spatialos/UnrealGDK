@@ -1,7 +1,7 @@
 {
   "FileVersion": 3,
-  "Version": 1,
-  "VersionName": "1.0",
+  "Version": 2,
+  "VersionName": "0.5.0",
   "FriendlyName": "SpatialOS GDK for Unreal",
   "Description": "The SpatialOS Game Development Kit (GDK) for Unreal Engine allows you to host your game and combine multiple dedicated server instances across one seamless game world whilst using the Unreal Engine networking API.",
   "Category": "SpatialOS",
@@ -11,7 +11,7 @@
   "MarketplaceURL": "",
   "SupportURL": "https://forums.improbable.io/",
   "EnabledByDefault": true,
-  "CanContainContent": true,
+  "CanContainContent": false,
   "IsBetaVersion": false,
   "Installed": true,
   "Modules": [

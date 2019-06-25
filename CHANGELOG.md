@@ -4,6 +4,43 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
+- Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
+
+### Breaking Changes:
+- If you are using Unreal Engine 4.22, the AutomationTool and UnrealBuildTool now require [.NET 4.6.2](https://dotnet.microsoft.com/download/dotnet-framework/net462).
+
+### New Known Issues:
+
+### Features:
+- Unreal Engine 4.22 is now supported. You can find the 4.22 verson of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.22-SpatialOSUnrealGDK-release).
+- Setup.bat can now take a project path as an argument. This allows the UnrealGDK to be installed as an Engine Plugin, pass the project path as the first variable if you are running Setup.bat from UnrealEngine/Engine/Plugins.
+- Removed the need for setting the `UNREAL_HOME` environment variable. The build and setup scripts will now use your project's engine association to find the Unreal Engine directory. If an association is not set they will search parent directories looking for the 'Engine' folder.
+- Added SpatialMetricsDisplay class, which allows you to view UnrealWorker stats as an overlay on the client.
+- Added runtime option to disable property handover when running in non-zoned deployments - bEnableHandover.
+- Added runtime option to auto spawn the ASpatialMetricsDisplay for remote debugging of server metrics - bEnableMetricsDisplay.
+- Added runtime option to batch spatial position updates to runtime.
+
+### Bug fixes:
+- BeginPlay is not called with authority when checking out entities from Spatial.
+- Launching SpatialOS would fail if there was a space in the full directory path.
+- GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
+- Reliable RPC checking no longer breaks compatibility between development and shipping builds.
+- Fixed an issue with schema name collisions.
+- Running Schema (Full Scan) now clears generated schema files first.
+- Singletons authority and state resumes correct when reconnecting servers to snapshot.
+- Fixed a crash when retrying reliable RPCs with UObject arguments that got destroyed before the RPC was retried.
+- Fixed path naming issues in setup.sh
+- Fixed assert/crash in SpatialMetricsDisplay that occurred when reloading a snapshot.
+- Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
+- Fixed a crash when failing to NetSerialize a struct in spatial. Now print a warning instead which matches native Unreal behavior.
+
+### External contributors:
+
+In addition to all of the updates from Improbable, this release includes x improvements submitted by the incredible community of SpatialOS developers on GitHub! Thanks to these contributors:
+
+* @cyberbibby
+
 ## [`0.4.2`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.2) - 2019-05-20
 
 ### New Known Issues:

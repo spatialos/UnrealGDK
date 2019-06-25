@@ -32,6 +32,7 @@ class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
 class USnapshotManager;
 class USpatialMetrics;
+class ASpatialMetricsDisplay;
 
 class UEntityPool;
 
@@ -46,6 +47,9 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	GENERATED_BODY()
 
 public:
+
+	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
+
 	// Begin UObject Interface
 	virtual void PostInitProperties() override;
 	// End UObject Interface
@@ -67,6 +71,7 @@ public:
 	virtual void OnOwnerUpdated(AActor* Actor);
 
 	void OnConnectedToSpatialOS();
+	void OnEntityPoolReady();
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
@@ -89,7 +94,9 @@ public:
 	void RemoveActorChannel(Worker_EntityId EntityId);
 	TMap<Worker_EntityId_Key, USpatialActorChannel*>& GetEntityToActorChannelMap();
 
+	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
+	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection);
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
@@ -119,6 +126,8 @@ public:
 	UEntityPool* EntityPool;
 	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
+	UPROPERTY()
+	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
@@ -126,7 +135,6 @@ public:
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
-#if !UE_BUILD_SHIPPING
 	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
 	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
 	void OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType);
@@ -144,7 +152,6 @@ public:
 	using FRPCTypeToReliableRPCIdMap = TMap<ESchemaComponentType, FReliableRPCId>;
 	// Per actor, maps from RPC type to the reliable RPC index used to detect if reliable RPCs go out of order.
 	TMap<TWeakObjectPtr<AActor>, FRPCTypeToReliableRPCIdMap> ReliableRPCIdMap;
-#endif // !UE_BUILD_SHIPPING
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
@@ -196,4 +203,11 @@ private:
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs
 	// in the correct order, if needed.
 	int NextRPCIndex;
+
+	float TimeWhenPositionLastUpdated;
+
+	// Counter for giving each connected client a unique IP address to satisfy Unreal's requirement of
+	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
+	// The GDK does not use this address for any networked purpose, only bookkeeping.
+	uint32 UniqueClientIpAddressCounter = 0;
 };

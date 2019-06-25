@@ -23,6 +23,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
+#include "Utils/EntityPool.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
@@ -216,7 +217,7 @@ void UGlobalStateManager::ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate)
 	// For now, this will only be called on non-authoritative workers.
 	if (bCanBeginPlay)
 	{
-		TriggerBeginPlay();
+		TryTriggerBeginPlay();
 	}
 }
 
@@ -262,7 +263,12 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 
 	// We're now ready to start replicating this actor, create a channel
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+
+#if ENGINE_MINOR_VERSION <= 20
 	Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
+#else
+	Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
+#endif
 
 	if (StaticComponentView->GetAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -327,7 +333,11 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	{
 		// We have control over the GSM, so can safely setup a new channel and let it allocate an entity id
 		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+#if ENGINE_MINOR_VERSION <= 20
 		Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
+#else
+		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
+#endif
 
 		// If entity id already exists for this singleton, set the actor to it
 		// Otherwise SetChannelActor will issue a new entity id request
@@ -352,6 +362,17 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	}
 
 	return Channel;
+}
+
+void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel)
+{
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActor->GetClass());
+
+	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
+	check(ActorChannelPair.Value == nullptr || ActorChannelPair.Value == SingletonChannel);
+
+	ActorChannelPair.Key = SingletonActor;
+	ActorChannelPair.Value = SingletonChannel;
 }
 
 void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
@@ -442,6 +463,20 @@ void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
+void UGlobalStateManager::TryTriggerBeginPlay()
+{
+	if (bCanBeginPlay && NetDriver->EntityPool != nullptr && NetDriver->EntityPool->IsReady())
+	{
+		TriggerBeginPlay();
+
+		// Start accepting players only AFTER we've triggered BeginPlay
+		if (NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
+		{
+			SetAcceptingPlayers(true);
+		}
+	}
+}
+
 void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM has changed. This worker %s authority."),  bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
@@ -455,11 +490,15 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 		{
 			SetCanBeginPlay(true);
 			BecomeAuthoritativeOverAllActors();
-			TriggerBeginPlay();
+			TryTriggerBeginPlay();
 		}
-
-		// Start accepting players only AFTER we've triggered BeginPlay
-		SetAcceptingPlayers(true);
+		else
+		{
+			// This handles the case when a server shuts down without deleting entities,
+			// and a new server connects, so we don't want to call BeginPlay with authority
+			// again, but need to let the clients know they can connect.
+			SetAcceptingPlayers(true);
+		}
 	}
 }
 

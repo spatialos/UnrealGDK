@@ -41,13 +41,27 @@ Interest InterestFactory::CreateInterest()
 		return Interest{};
 	}
 
-	if (Actor->GetNetConnection() != nullptr)
+	if (GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
 	{
-		return CreatePlayerOwnedActorInterest();
+		if (Actor->GetNetConnection() != nullptr)
+		{
+			return CreatePlayerOwnedActorInterest();
+		}
+		else
+		{
+			return CreateActorInterest();
+		}
 	}
 	else
 	{
-		return CreateActorInterest();
+		if (Actor->IsA(APlayerController::StaticClass()))
+		{
+			return CreatePlayerOwnedActorInterest();
+		}
+		else
+		{
+			return Interest{};
+		}
 	}
 }
 
@@ -113,7 +127,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 
 	Interest NewInterest;
 	// Server Interest
-	if (DefinedConstraints.IsValid())
+	if (DefinedConstraints.IsValid() && GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
 	{
 		NewInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, ServerComponentInterest);
 	}
@@ -150,6 +164,7 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 {
 	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraint();
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint();
+	QueryConstraint SingletonConstraint = CreateSingletonConstraint();
 
 	QueryConstraint SystemDefinedConstraints;
 
@@ -161,6 +176,11 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 	if (AlwaysInterestedConstraint.IsValid())
 	{
 		SystemDefinedConstraints.OrConstraint.Add(AlwaysInterestedConstraint);
+	}
+
+	if (SingletonConstraint.IsValid())
+	{
+		SystemDefinedConstraints.OrConstraint.Add(SingletonConstraint);
 	}
 
 	return SystemDefinedConstraints;
@@ -207,6 +227,25 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint()
 	}
 
 	return AlwaysInterestedConstraint;
+}
+
+
+QueryConstraint InterestFactory::CreateSingletonConstraint()
+{
+	QueryConstraint SingletonConstraint;
+
+	Worker_ComponentId SingletonComponentIds[] = {
+		SpatialConstants::SINGLETON_COMPONENT_ID,
+		SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID };
+
+	for (Worker_ComponentId ComponentId : SingletonComponentIds)
+	{
+		QueryConstraint Constraint;
+		Constraint.ComponentConstraint = ComponentId;
+		SingletonConstraint.OrConstraint.Add(Constraint);
+	}
+
+	return SingletonConstraint;
 }
 
 void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint)
