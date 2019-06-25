@@ -1182,21 +1182,22 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, NextRPCIndex++);
-
-		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
-		{
-			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-			{
-				RPCParams->ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
-			}
-		}
-
 		if(IsServer())
 		{
 			// TO-DO: Should it be elsewhere?
 			GetOrCreateSpatialActorChannel(CallingObject);
 		}
+
+		int ReliableRPCIndex = 0;
+		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
+		{
+			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+			{
+				ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
+			}
+		}
+
+		FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, ReliableRPCIndex);
 
 		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 		RPCParams->Payload = Sender->CreateRPCPayloadFromParams(*RPCParams, Parameters, UnresolvedObjects);

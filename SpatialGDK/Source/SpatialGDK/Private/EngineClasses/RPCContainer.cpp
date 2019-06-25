@@ -4,11 +4,10 @@
 
 namespace SpatialGDK
 {
-FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, int InRetryIndex /*= 0*/)
+FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, int InReliableRPCIndex /* = 0 */)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
-	, RetryIndex(InRetryIndex)
-	, ReliableRPCIndex(0)
+	, ReliableRPCIndex(InReliableRPCIndex)
 	, Payload(0, 0, TArray<uint8>{})
 {
 }
