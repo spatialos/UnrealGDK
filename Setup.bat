@@ -63,10 +63,11 @@ call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
     rd /s /q "%WORKER_SDK_DIR_OLD%"     2>nul
+    rd /s /q "%BINARIES_DIR%"           2>nul
 
     if exist "%SPATIAL_DIR%" (
-        rd /s /q "%BINARIES_DIR%"           2>nul
-        rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
+        rd /s /q "%SCHEMA_STD_COPY_DIR%"  2>nul
+        rd /s /q "%SCHEMA_COPY_DIR%"      2>nul
     )
 call :MarkEndOfBlock "Clean folders"
 
@@ -75,10 +76,11 @@ call :MarkStartOfBlock "Create folders"
     md "%CORE_SDK_DIR%\schema"       >nul 2>nul
     md "%CORE_SDK_DIR%\tools"        >nul 2>nul
     md "%CORE_SDK_DIR%\worker_sdk"   >nul 2>nul
+    md "%BINARIES_DIR%"              >nul 2>nul
 
     if exist "%SPATIAL_DIR%" (
-        md "%BINARIES_DIR%"              >nul 2>nul
-        md "%SCHEMA_STD_COPY_DIR%"       >nul 2>nul
+        md "%SCHEMA_STD_COPY_DIR%"   >nul 2>nul
+        md "%SCHEMA_COPY_DIR%"       >nul 2>nul
     )
 call :MarkEndOfBlock "Create folders"
 
@@ -108,9 +110,6 @@ if exist "%SPATIAL_DIR%" (
     call :MarkEndOfBlock "Copy standard library schema"
 
     call :MarkStartOfBlock "Copy GDK schema"
-        rd /s /q "%SCHEMA_COPY_DIR%"      2>nul
-        md "%SCHEMA_COPY_DIR%"       >nul 2>nul
-
         echo Copying schemas to "%SCHEMA_COPY_DIR%".
         xcopy /s /i /q "%~dp0\SpatialGDK\Extras\schema" "%SCHEMA_COPY_DIR%"
     call :MarkEndOfBlock "Copy GDK schema"
