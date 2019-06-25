@@ -128,6 +128,7 @@ namespace SpatialConstants
 	const Schema_FieldId ACTOR_TEAROFF_ID									= 3;
 
 	const Schema_FieldId HEARTBEAT_EVENT_ID                                 = 1;
+	const Schema_FieldId HEARTBEAT_CLIENT_HAS_QUIT_ID						= 1;
 
 	const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID					= 1;
 	const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
