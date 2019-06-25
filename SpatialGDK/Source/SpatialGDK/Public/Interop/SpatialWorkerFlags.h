@@ -21,7 +21,9 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category="SpatialOS")
 	static bool GetWorkerFlag(const FString& Name, FString& OutValue);
-
+	
+	static FOnWorkerFlagsUpdated& GetOnWorkerFlagsUpdated();
+	
 	UFUNCTION(BlueprintCallable, Category = "SpatialOS")
 	static void BindToOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate);
 
