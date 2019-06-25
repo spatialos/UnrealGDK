@@ -2,7 +2,7 @@
 #include "SpatialGDKEditorSettings.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "ISettingsModule.h"
-#include "MessageDialog.h"
+#include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
