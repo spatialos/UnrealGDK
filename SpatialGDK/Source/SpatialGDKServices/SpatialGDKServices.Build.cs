@@ -7,14 +7,14 @@ public class SpatialGDKServices : ModuleRules
 	public SpatialGDKServices(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-        bFasterWithoutUnity = true;
+		bFasterWithoutUnity = true;
 
-        PrivateDependencyModuleNames.AddRange(
+		PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"Core",
 				"CoreUObject",
-                "EngineSettings",
-                "UnrealEd"
-            });
+				"EngineSettings",
+				"UnrealEd"
+			});
 	}
 }
