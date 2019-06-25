@@ -573,7 +573,7 @@ void USpatialNetDriver::Shutdown()
 		// Notify the server that we're disconnecting so it can clean up our actors.
 		if (USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(ServerConnection))
 		{
-			SpatialNetConnection->NotifyClientHasQuit();
+			SpatialNetConnection->ClientNotifyClientHasQuit();
 		}
 	}
 

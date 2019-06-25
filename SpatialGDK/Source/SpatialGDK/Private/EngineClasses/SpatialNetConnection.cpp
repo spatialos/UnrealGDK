@@ -115,7 +115,7 @@ void USpatialNetConnection::UpdateActorInterest(AActor* Actor)
 	}
 }
 
-void USpatialNetConnection::NotifyClientHasQuit()
+void USpatialNetConnection::ClientNotifyClientHasQuit()
 {
 	if (PlayerControllerEntity != SpatialConstants::INVALID_ENTITY_ID)
 	{
