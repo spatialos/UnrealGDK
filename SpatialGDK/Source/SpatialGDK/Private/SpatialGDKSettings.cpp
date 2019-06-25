@@ -32,6 +32,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, MaxDynamicallyAttachedSubobjectsPerClass(5)
 	, bEnableServerQBI(bUsingQBI)
 	, bPackUnreliableRPCs(true)
+	, bUseDevelopmentAuthenticationFlow(false)
 {
 }
 

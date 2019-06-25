@@ -49,8 +49,8 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 
 		// Components
 		case WORKER_OP_TYPE_ADD_COMPONENT:
-			Receiver->OnAddComponent(Op->add_component);
 			StaticComponentView->OnAddComponent(Op->add_component);
+			Receiver->OnAddComponent(Op->add_component);
 			break;
 		case WORKER_OP_TYPE_REMOVE_COMPONENT:
 			Receiver->OnRemoveComponent(Op->remove_component);
