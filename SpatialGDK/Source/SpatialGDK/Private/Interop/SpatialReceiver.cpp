@@ -25,6 +25,7 @@
 #include "Utils/ComponentReader.h"
 #include "Utils/ErrorCodeRemapping.h"
 #include "Utils/RepLayoutUtils.h"
+#include "Utils/SpatialMetrics.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialReceiver);
 
@@ -116,6 +117,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
+	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -195,6 +197,10 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 		{
 			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
 			{
+				if (NetDriver->IsServer())
+				{
+					AuthorityPlayerControllerConnectionMap.Add(Op.entity_id, Connection);
+				}
 				Connection->InitHeartbeat(TimerManager, Op.entity_id);
 			}
 		}
@@ -202,7 +208,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 		{
 			if (NetDriver->IsServer())
 			{
-				HeartbeatDelegates.Remove(Op.entity_id);
+				AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 			}
 			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
 			{
@@ -854,6 +860,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::UNREAL_METADATA_COMPONENT_ID:
 	case SpatialConstants::NOT_STREAMED_COMPONENT_ID:
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
+	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping because this is hand-written Spatial component"), Op.entity_id, Op.update.component_id);
 		return;
 	case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
@@ -862,10 +869,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 #endif // WITH_EDITOR
 		return;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		if (HeartbeatDelegate* UpdateDelegate = HeartbeatDelegates.Find(Op.entity_id))
-		{
-			UpdateDelegate->ExecuteIfBound(Op);
-		}
+		OnHeartbeatComponentUpdate(Op);
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
@@ -1036,6 +1040,26 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		return;
 	}
 #endif // WITH_EDITOR
+#if !UE_BUILD_SHIPPING
+	else if (Op.request.component_id == SpatialConstants::DEBUG_METRICS_COMPONENT_ID)
+	{
+		switch (CommandIndex)
+		{
+		case SpatialConstants::DEBUG_METRICS_START_RPC_METRICS_ID:
+			NetDriver->SpatialMetrics->OnStartRPCMetricsCommand();
+			break;
+		case SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID:
+			NetDriver->SpatialMetrics->OnStopRPCMetricsCommand();
+			break;
+		default:
+			UE_LOG(LogSpatialReceiver, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"), CommandIndex, Op.entity_id);
+			break;
+		}
+
+		Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
+		return;
+	}
+#endif // !UE_BUILD_SHIPPING
 
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
 
@@ -1284,11 +1308,6 @@ void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, Entity
 void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
 {
 	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
-}
-
-void USpatialReceiver::AddHeartbeatDelegate(Worker_EntityId EntityId, HeartbeatDelegate Delegate)
-{
-	HeartbeatDelegates.Add(EntityId, Delegate);
 }
 
 TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
@@ -1623,5 +1642,52 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		{
 			It.RemoveCurrent();
 		}
+	}
+}
+
+void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
+{
+	if (!NetDriver->IsServer())
+	{
+		// Clients can ignore Heartbeat component updates.
+		return;
+	}
+
+	TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = AuthorityPlayerControllerConnectionMap.Find(Op.entity_id);
+	if (ConnectionPtr == nullptr)
+	{
+		// Heartbeat component update on a PlayerController that this server does not have authority over.
+		// TODO: Disable component interest for Heartbeat components this server doesn't care about - UNR-986
+		return;
+	}
+
+	if (!ConnectionPtr->IsValid())
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received heartbeat component update after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
+		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
+		return;
+	}
+
+	USpatialNetConnection* NetConnection = ConnectionPtr->Get();
+
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
+	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
+	if (EventCount > 0)
+	{
+		if (EventCount > 1)
+		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), Op.entity_id);
+		}
+
+		NetConnection->OnHeartbeat();
+	}
+
+	Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+	if (Schema_GetBoolCount(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID) > 0 &&
+		GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
+	{
+		// Client has disconnected, let's clean up their connection.
+		NetConnection->CleanUp();
+		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
 }
