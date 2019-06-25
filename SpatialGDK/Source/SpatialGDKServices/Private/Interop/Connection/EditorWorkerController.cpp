@@ -3,6 +3,7 @@
 
 #include "SpatialGDKServicesPrivate.h"
 
+#include "Algo/Accumulate.h"
 #include "Editor.h"
 
 #if WITH_EDITOR
@@ -41,13 +42,10 @@ struct EditorWorkerController
 		SpatialShutdownHandle = Toolbar.OnSpatialShutdown.AddRaw(this, &EditorWorkerController::OnSpatialShutdown);
 
 		const TMap<FString, int32>& WorkerTypesToLaunch = GetDefault<ULevelEditorPlaySettings>()->WorkerTypesToLaunch;
-		int32 WorkerCount = 0;
-		for (const TPair<FString, int32>& WorkerType : WorkerTypesToLaunch)
-		{
-			WorkerCount += WorkerType.Value;
-		}
+		const int32 WorkerCount = Algo::Accumulate(WorkerTypesToLaunch, 0, [](int32 Current, const TPair<FString, int32>& Element) { return Current + Element.Value; });
 
 		WorkerIds.SetNum(WorkerCount);
+		ReplaceProcesses.SetNum(WorkerCount);
 
 		int32 WorkerIdIndex = 0;
 		for (const TPair<FString, int32>& WorkerType : WorkerTypesToLaunch)

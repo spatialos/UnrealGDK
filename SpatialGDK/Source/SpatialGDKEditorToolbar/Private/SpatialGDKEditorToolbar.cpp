@@ -26,6 +26,7 @@
 #include "HAL/FileManager.h"
 #include "Sound/SoundBase.h"
 
+#include "Algo/Accumulate.h"
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
@@ -363,19 +364,9 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	}
 
 	const ULevelEditorPlaySettings* LevelEditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
-
-	bool bLaunchingMultipleServerWorkers = false;
-	if(const int32* ServerCount = LevelEditorPlaySettings->WorkerTypesToLaunch.Find(SpatialConstants::ServerWorkerType))
-	{
-		if (*ServerCount > 1)
-		{
-			bLaunchingMultipleServerWorkers = true;
-		}
-	}
-
-	bLaunchingMultipleServerWorkers = bLaunchingMultipleServerWorkers || LevelEditorPlaySettings->WorkerTypesToLaunch.Num() > 1;
+	const int32 ServerCount = Algo::Accumulate(LevelEditorPlaySettings->WorkerTypesToLaunch, 0, [](int32 Current, const TPair<FString, int32>& Element) { return Current + Element.Value; });
 	
-	if (!SpatialGDKRuntimeSettings->bEnableHandover && bLaunchingMultipleServerWorkers)
+	if (!SpatialGDKRuntimeSettings->bEnableHandover && ServerCount > 1)
 	{
 		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and multiple launch servers are specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
 
