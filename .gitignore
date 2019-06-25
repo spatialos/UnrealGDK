@@ -1,3 +1,5 @@
+# Visual Studio Code user specific files
+.vscode/
 
 # Visual Studio 2015 user specific files
 .vs/
