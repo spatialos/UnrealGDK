@@ -86,6 +86,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	if (bFullScan)
 	{
+		CopyWellKnownSchemaFiles();
 		DeleteGeneratedSchemaFiles();
 	}
 

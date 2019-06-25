@@ -465,6 +465,31 @@ TArray<UClass*> GetAllSupportedClasses()
 	return Classes.Array();
 }
 
+void CopyWellKnownSchemaFiles()
+{
+	// Get the correct plugin directory.
+	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
+
+	if (!FPaths::DirectoryExists(PluginDir))
+	{
+		// If the Project Plugin doesn't exist then use the Engine Plugin.
+		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
+		ensure(FPaths::DirectoryExists(PluginDir));
+	}
+
+	FString ProjectSchemaDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("schema"));
+	FString SpatialGDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
+
+	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Build/core_sdk/schema"));
+	FString CoreSDKSchemaCopyDDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("build/dependencies"));
+	
+	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+
+	// Copy the SpatialGDK schema
+	PlatformFile.CopyDirectoryTree(*ProjectSchemaDir, *SpatialGDKSchemaDir, true /*bOverwriteExisting*/);
+	PlatformFile.CopyDirectoryTree(*CoreSDKSchemaCopyDDir, *CoreSDKSchemaDir, true /*bOverwriteExisting*/);
+}
+
 void DeleteGeneratedSchemaFiles()
 {
 	const FString SchemaOutputPath = GetDefault<USpatialGDKEditorSettings>()->GetGeneratedSchemaOutputFolder();
