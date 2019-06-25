@@ -792,7 +792,7 @@ bool FSpatialGDKEditorToolbarModule::TryStopLocalDeployment()
 {
 	if(!bLocalDeploymentRunning || LocalRunningDeploymentID.IsEmpty())
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Warning, TEXT("Tried to stop local deployment but no active deployment exists."));
+		UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Tried to stop local deployment but no active deployment exists."));
 		return false;
 	}
 

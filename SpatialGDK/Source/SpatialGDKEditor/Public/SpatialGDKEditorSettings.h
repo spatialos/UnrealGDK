@@ -274,6 +274,7 @@ public:
 
 	FORCEINLINE FString GetSpotPath() const
 	{
+		// TODO: Use GetGDKPluginDir()
 		FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
 
 		if (!FPaths::DirectoryExists(PluginDir))
