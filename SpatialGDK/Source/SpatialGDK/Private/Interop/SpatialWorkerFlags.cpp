@@ -33,6 +33,11 @@ void USpatialWorkerFlags::ApplyWorkerFlagUpdate(const Worker_FlagUpdateOp& Op)
 		WorkerFlags.Remove(NewName);
 	}
 }
+FOnWorkerFlagsUpdated& USpatialWorkerFlags::GetOnWorkerFlagsUpdated()
+{
+	return USpatialWorkerFlags::OnWorkerFlagsUpdated;
+}
+
 void USpatialWorkerFlags::BindToOnWorkerFlagsUpdated(const FOnWorkerFlagsUpdatedBP& InDelegate)
 {
 	OnWorkerFlagsUpdated.Add(InDelegate);
