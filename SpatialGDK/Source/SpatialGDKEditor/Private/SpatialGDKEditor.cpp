@@ -86,6 +86,7 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 
 	if (bFullScan)
 	{
+		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
 		CopyWellKnownSchemaFiles();
 		DeleteGeneratedSchemaFiles();
 	}
