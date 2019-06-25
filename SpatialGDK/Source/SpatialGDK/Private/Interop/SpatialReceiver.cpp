@@ -903,6 +903,8 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
 		HandleUnreliableRPC(Op);
+		//QueueIncomingRPC(UnresolvedRefs, TargetObject, Function, Payload, SenderWorkerId);
+		//ResolveIncomingRPCs(Object, ObjectRef);
 		return;
 	}
 
@@ -1026,8 +1028,13 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 
 		UFunction* Function = ClassInfo.RPCs[Payload.Index];
-		ApplyRPC(TargetObject, Function, Payload, FString());
+
+		FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function);
+		Params->Payload = Payload;
+		QueueIncomingRPC(Params);
 	}
+
+	ResolveIncomingRPCs();
 }
 
 void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
@@ -1098,8 +1105,11 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
-	ApplyRPC(TargetObject, Function, Payload, UTF8_TO_TCHAR(Op.caller_worker_id));
+	FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function);
+	Params->Payload = Payload;
+	QueueIncomingRPC(Params);
 
+	// TO-DO: Send it after RPC has been applied
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
 
@@ -1210,8 +1220,10 @@ void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, 
 	}
 }
 
-void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCPayload& Payload, const FString& SenderWorkerId)
+bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCPayload& Payload, const FString& SenderWorkerId)
 {
+	bool bApplied = false;
+
 	uint8* Parms = (uint8*)FMemory_Alloca(Function->ParmsSize);
 	FMemory::Memzero(Parms, Function->ParmsSize);
 
@@ -1248,10 +1260,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCP
 		}
 
 		TargetObject->ProcessEvent(Function, Parms);
-	}
-	else
-	{
-		QueueIncomingRPC(UnresolvedRefs, TargetObject, Function, Payload, SenderWorkerId);
+		bApplied = true;
 	}
 
 	// Destroy the parameters.
@@ -1260,6 +1269,12 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCP
 	{
 		It->DestroyValue_InContainer(Parms);
 	}
+	return bApplied;
+}
+
+bool USpatialReceiver::ApplyRPC(FPendingRPCParamsPtr Params)
+{
+	return ApplyRPC(Params->TargetObject.Get(), Params->Function, Params->Payload, FString{});
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op)
@@ -1433,16 +1448,29 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
-void USpatialReceiver::QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, RPCPayload& Payload, const FString& SenderWorkerId)
+void USpatialReceiver::QueueIncomingRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
 {
-	TSharedPtr<FPendingIncomingRPC> IncomingRPC = MakeShared<FPendingIncomingRPC>(UnresolvedRefs, TargetObject, Function, Payload);
-	IncomingRPC->SenderWorkerId = SenderWorkerId;
-
-	for (const FUnrealObjectRef& UnresolvedRef : UnresolvedRefs)
+	check(TargetObject);
+	TSharedPtr<FQueueOfParams>& QueuePtr = IncomingRPCs.FindOrAdd(Type).FindOrAdd(TargetObject);
+	if (!QueuePtr.IsValid())
 	{
-		FIncomingRPCArray& IncomingRPCArray = IncomingRPCMap.FindOrAdd(UnresolvedRef);
-		IncomingRPCArray.Add(IncomingRPC);
+		QueuePtr = MakeShared<FQueueOfParams>();
 	}
+	QueuePtr->Enqueue(Params);
+}
+
+void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
+{
+	if (!Params->TargetObject.IsValid())
+	{
+		// Target object was destroyed before the RPC could be (re)sent
+		return;
+	}
+	UObject* TargetObject = Params->TargetObject.Get();
+	const FRPCInfo* RPCInfo = GetRPCInfo(TargetObject, Params->Function);
+	check(RPCInfo);
+
+	QueueIncomingRPC(TargetObject, RPCInfo->Type, Params);
 }
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1454,7 +1482,7 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	ResolveIncomingOperations(Object, ObjectRef);
 	// TO-DO: is it acceptable to remove it?
 	//Sender->ResolveOutgoingRPCs(Object);
-	ResolveIncomingRPCs(Object, ObjectRef);
+	//ResolveIncomingRPCs(Object, ObjectRef);
 }
 
 void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1513,33 +1541,77 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 	IncomingRefsMap.Remove(ObjectRef);
 }
 
-void USpatialReceiver::ResolveIncomingRPCs(UObject* Object, const FUnrealObjectRef& ObjectRef)
+void USpatialReceiver::ResolveIncomingRPCs()
 {
-	FIncomingRPCArray* IncomingRPCArray = IncomingRPCMap.Find(ObjectRef);
-	if (!IncomingRPCArray)
+	for (auto& RPCs : IncomingRPCs)
 	{
-		return;
-	}
-
-	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolving incoming RPCs depending on object ref %s, resolved object: %s"), *ObjectRef.ToString(), *Object->GetName());
-
-	for (const TSharedPtr<FPendingIncomingRPC>& IncomingRPC : *IncomingRPCArray)
-	{
-		if (!IncomingRPC->TargetObject.IsValid())
+		for(auto& RPCMapItem : RPCs.Value)
 		{
-			// The target object has been destroyed before this RPC was resolved
-			continue;
-		}
-
-		IncomingRPC->UnresolvedRefs.Remove(ObjectRef);
-		if (IncomingRPC->UnresolvedRefs.Num() == 0)
-		{
-			FString SenderWorkerId = IncomingRPC->SenderWorkerId;
-			ApplyRPC(IncomingRPC->TargetObject.Get(), IncomingRPC->Function, IncomingRPC->Payload, SenderWorkerId);
+			TSharedPtr<FQueueOfParams> RPCList = RPCMapItem.Value;
+			ResolveIncomingRPCs(RPCList.Get());
+			if ((*RPCList).IsEmpty())
+			{
+				// TO-DO: add proper cleanup
+				//RPCs.Value.Remove(Object);
+			}
 		}
 	}
+}
 
-	IncomingRPCMap.Remove(ObjectRef);
+void USpatialReceiver::ResolveIncomingRPCs(FQueueOfParams* RPCList)
+{
+	check(RPCList);
+	FPendingRPCParamsPtr RPCParams = nullptr;
+	while(!RPCList->IsEmpty())
+	{
+		RPCList->Peek(RPCParams);
+		if(!RPCParams.IsValid())
+		{
+			UE_LOG(LogSpatialSender, Warning, TEXT("===RPC Param Invalid"));
+			RPCList->Empty();
+			break;
+		}
+
+		if (!RPCParams->TargetObject.IsValid())
+		{
+			// The target object was destroyed before we could send the RPC.
+			RPCList->Empty();
+			break;
+		}
+
+		if(ApplyRPC(RPCParams))
+		{
+			RPCList->Pop();
+		}
+		else
+		{
+			break;
+		}
+	}
+
+}
+
+const FRPCInfo* USpatialReceiver::GetRPCInfo(UObject* Object, UFunction* Function) const
+{
+	check(Object && Function);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(Object);
+	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Function);
+
+	// We potentially have a parent function and need to find the child function.
+	// This exists as it's possible in blueprints to explicitly call the parent function.
+	if (RPCInfo == nullptr)
+	{
+		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
+		{
+			if (It.Key()->GetName() == Function->GetName())
+			{
+				// Matching child function found. Use this for the remote function call.
+				RPCInfo = &It.Value();
+				break;
+			}
+		}
+	}
+	return RPCInfo;
 }
 
 void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved)

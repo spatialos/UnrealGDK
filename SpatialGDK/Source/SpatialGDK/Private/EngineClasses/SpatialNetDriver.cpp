@@ -1182,7 +1182,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++);
+		FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, NextRPCIndex++);
 
 		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
 		{

@@ -37,19 +37,6 @@ DECLARE_CYCLE_STAT(TEXT("SendComponentUpdates"), STAT_SpatialSenderSendComponent
 DECLARE_CYCLE_STAT(TEXT("ResetOutgoingUpdate"), STAT_SpatialSenderResetOutgoingUpdate, STATGROUP_SpatialNet);
 DECLARE_CYCLE_STAT(TEXT("QueueOutgoingUpdate"), STAT_SpatialSenderQueueOutgoingUpdate, STATGROUP_SpatialNet);
 
-FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, void* InParameters, int InRetryIndex)
-	: TargetObject(InTargetObject)
-	, Function(InFunction)
-	, RetryIndex(InRetryIndex)
-	, ReliableRPCIndex(0)
-	, Payload(0, 0, TArray<uint8>{})
-{
-}
-
-FPendingRPCParams::~FPendingRPCParams()
-{
-}
-
 FReliableRPCForRetry::FReliableRPCForRetry(UObject* InTargetObject, UFunction* InFunction, Worker_ComponentId InComponentId, Schema_FieldId InRPCIndex, const TArray<uint8>& InPayload, int InRetryIndex)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
@@ -843,17 +830,12 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 void USpatialSender::QueueOutgoingRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
 {
 	check(TargetObject);
-	//FRPCMap& Map = OutgoingRPCs.FindOrAdd(Type);
-	//Map.Add(TargetObject, FQueueOfParams{});
-	//Map.FindOrAdd(MoveTemp(MakeWeakObjectPtr(TargetObject)));
-	//FQueueOfParams queue;
 	TSharedPtr<FQueueOfParams>& QueuePtr = OutgoingRPCs.FindOrAdd(Type).FindOrAdd(TargetObject);
 	if (!QueuePtr.IsValid())
 	{
 		QueuePtr = MakeShared<FQueueOfParams>();
 	}
 	QueuePtr->Enqueue(Params);
-	//OutgoingRPCs.FindOrAdd(Type).FindOrAdd(TargetObject).Enqueue(Params);
 }
 
 void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
