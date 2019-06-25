@@ -574,7 +574,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 			}
 			// Write the client worker section
 			FWorkerTypeLaunchSection ClientWorker;
-			ClientWorker.WorkerTypeName = SpatialConstants::ClientWorkerType;
+			ClientWorker.WorkerTypeName = FName(*SpatialConstants::ClientWorkerType);
 			ClientWorker.WorkerPermissions.bAllPermissions = true;
 			ClientWorker.bLoginRateLimitEnabled = false;
 			WriteWorkerSection(Writer, ClientWorker);
@@ -651,7 +651,7 @@ bool FSpatialGDKEditorToolbarModule::WriteFlagSection(TSharedRef< TJsonWriter<> 
 bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLaunchSection& Worker) const
 {
 	Writer->WriteObjectStart();
-		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerTypeName);
+		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerTypeName.ToString());
 		Writer->WriteArrayStart(TEXT("flags"));
 		for (const auto& Flag : Worker.Flags)
 		{
@@ -703,10 +703,10 @@ bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<
 	return true;
 }
 
-bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly) const
+bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FName& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly) const
 {
 	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("layer"), WorkerType);
+	Writer->WriteValue(TEXT("layer"), *WorkerType.ToString());
 		Writer->WriteObjectStart("rectangle_grid");
 			Writer->WriteValue(TEXT("cols"), Columns);
 			Writer->WriteValue(TEXT("rows"), Rows);
