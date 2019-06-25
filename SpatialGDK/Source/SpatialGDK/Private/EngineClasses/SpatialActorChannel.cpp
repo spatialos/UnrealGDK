@@ -676,6 +676,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		check(!HandoverShadowDataMap.Contains(Subobject));
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
+
+	SavedOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(InActor);
 }
 
 bool USpatialActorChannel::TryResolveActor()
@@ -881,7 +883,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{
-		bool bSuccess = Sender->UpdateEntityACLs(GetEntityId(), NewOwnerWorkerAttribute);
+		bool bSuccess = Sender->UpdateEntityACLs(EntityId, NewOwnerWorkerAttribute);
 
 		if (bSuccess)
 		{
