@@ -55,6 +55,7 @@ call :MarkStartOfBlock "Setup variables"
     rem Copy schema to the projects spatial directory.
     set SCHEMA_COPY_DIR=%~dp0..\..\..\spatial\schema\unreal\gdk
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
+    set SPATIAL_DIR=%~dp0..\..\..\spatial
 
 call :MarkEndOfBlock "Setup variables"
 
@@ -62,8 +63,11 @@ call :MarkStartOfBlock "Clean folders"
     rd /s /q "%CORE_SDK_DIR%"           2>nul
     rd /s /q "%WORKER_SDK_DIR%"         2>nul
     rd /s /q "%WORKER_SDK_DIR_OLD%"     2>nul
-    rd /s /q "%BINARIES_DIR%"           2>nul
-    rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
+
+    if exist "%SPATIAL_DIR%" (
+        rd /s /q "%BINARIES_DIR%"           2>nul
+        rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
+    )
 call :MarkEndOfBlock "Clean folders"
 
 call :MarkStartOfBlock "Create folders"
@@ -71,8 +75,11 @@ call :MarkStartOfBlock "Create folders"
     md "%CORE_SDK_DIR%\schema"       >nul 2>nul
     md "%CORE_SDK_DIR%\tools"        >nul 2>nul
     md "%CORE_SDK_DIR%\worker_sdk"   >nul 2>nul
-    md "%BINARIES_DIR%"              >nul 2>nul
-    md "%SCHEMA_STD_COPY_DIR%"       >nul 2>nul
+
+    if exist "%SPATIAL_DIR%" (
+        md "%BINARIES_DIR%"              >nul 2>nul
+        md "%SCHEMA_STD_COPY_DIR%"       >nul 2>nul
+    )
 call :MarkEndOfBlock "Create folders"
 
 call :MarkStartOfBlock "Retrieve dependencies"
@@ -94,18 +101,20 @@ call :MarkStartOfBlock "Unpack dependencies"
     xcopy /s /i /q "%BINARIES_DIR%\Win64\include" "%WORKER_SDK_DIR%"
 call :MarkEndOfBlock "Unpack dependencies"
 
-call :MarkStartOfBlock "Copy standard library schema"
-    echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
-    xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
-call :MarkEndOfBlock "Copy standard library schema"
+if exist "%SPATIAL_DIR%" (
+    call :MarkStartOfBlock "Copy standard library schema"
+        echo Copying standard library schemas to "%SCHEMA_STD_COPY_DIR%"
+        xcopy /s /i /q "%BINARIES_DIR%\Programs\schema" "%SCHEMA_STD_COPY_DIR%"
+    call :MarkEndOfBlock "Copy standard library schema"
 
-call :MarkStartOfBlock "Copy GDK schema"
-    rd /s /q "%SCHEMA_COPY_DIR%"      2>nul
-    md "%SCHEMA_COPY_DIR%"       >nul 2>nul
+    call :MarkStartOfBlock "Copy GDK schema"
+        rd /s /q "%SCHEMA_COPY_DIR%"      2>nul
+        md "%SCHEMA_COPY_DIR%"       >nul 2>nul
 
-    echo Copying schemas to "%SCHEMA_COPY_DIR%".
-    xcopy /s /i /q "%~dp0\SpatialGDK\Extras\schema" "%SCHEMA_COPY_DIR%"
-call :MarkEndOfBlock "Copy GDK schema"
+        echo Copying schemas to "%SCHEMA_COPY_DIR%".
+        xcopy /s /i /q "%~dp0\SpatialGDK\Extras\schema" "%SCHEMA_COPY_DIR%"
+    call :MarkEndOfBlock "Copy GDK schema"
+)
 
 call :MarkStartOfBlock "Build C# utilities"
     %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
