@@ -58,6 +58,6 @@ You've sucessfully set up and launched the Example Project using the Deployment 
 
 * If you want to start a project from scratch, follow the set up guide for the [Starter Template]({{urlRoot}}/content/get-started/gdk-template) to set up a blank project using the GDK. 
 
---------<br/>
 
+<br/>------<br/>
 _2019-05-23 Page added with editorial review_

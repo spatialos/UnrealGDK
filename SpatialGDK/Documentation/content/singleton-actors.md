@@ -82,3 +82,8 @@ For all classes that you manually tag as Singleton Actors, make sure that Single
 Because each server-worker instance spawns each Singleton Actor locally, we have introduced the [Global State Manager]({{urlRoot}}/content/glossary#global-state-manager) (GSM) to ensure that there is only ever one instance of an [entity]({{urlRoot}}/content/glossary#entity) that represents a Singleton Actor, and to ensure data is replicated properly. 
 
 The GSM allows only the server-worker instance with [authority]({{urlRoot}}/content/glossary#authority) over the GSM to spawn a representative entity for each Singleton Actor. Every other server-worker instance spawns each Singleton Actor locally and then links it to the one on the server-worker instance that has authority over the GSM. Additionally, each Public Singleton Actor is replicated to every client-worker instance via the normal [Actor replication flow](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/ReplicationFlow).
+
+
+
+<br/>------<br/>
+_2019-06-13 Page updated with editorial review_

@@ -439,9 +439,8 @@ Within these broad types, you can define your own worker sub-types to create mor
 ### Write access
 See [authority](#authority).
 
+
+<br/>------<br/>
+_2019-03-15 Page updated with editorial review_
 <br/>
-------------
-2019-03-15 Page updated with full editorial review
-<br/>
-<br/>
-2019-03-15 Added layers, non-Unreal layers, network operations (ops)
+_2019-03-15 Added layers, non-Unreal layers, network operations (ops)_
