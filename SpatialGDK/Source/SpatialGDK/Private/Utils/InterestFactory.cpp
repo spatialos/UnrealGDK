@@ -84,7 +84,6 @@ InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpa
 	, NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
 {
-	GatherClientInterestDistancesOnce();
 }
 
 Worker_ComponentData InterestFactory::CreateInterestData()
@@ -231,6 +230,8 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 
 QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 {
+	GatherClientInterestDistancesOnce();
+
 	// Checkout Radius constraints are defined by the ClientInterestDistance property on actors.
 	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
 	//   - ClientInterestDistance on AActor is used to define the default checkout radius with no other constraints.
