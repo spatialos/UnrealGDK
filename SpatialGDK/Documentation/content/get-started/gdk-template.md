@@ -285,7 +285,7 @@ _Image: The SpatialOS console launch window_
 
 You've successfully set up and launched the Starter Template and the GDK! You are now ready to start developing a game with SpatialOS.
 
-If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
+If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-intro) to get it onto the GDK.
 
 
 <br/>------<br/>

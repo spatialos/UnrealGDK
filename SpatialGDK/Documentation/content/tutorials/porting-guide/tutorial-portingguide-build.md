@@ -34,18 +34,18 @@ For example:
 
 ## Step 2: Build your project
 
-Set up your Unreal project to work with the GDK Unreal Engine Fork, which you cloned and installed in the [Before you start](#1-before-you-start) section. To do this:
+Set up your Unreal project to work with the GDK Unreal Engine Fork, which you cloned and installed in the [Before you start]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-intro#before-you-start) section. To do this:
 
 1. In **File Explorer**, navigate to `<ProjectRoot>\<GameRoot>`.
-2. Right-click your `<YourProject>.uproject` file and select **Switch Unreal Engine version**.
-3. Select the path to the Unreal Engine fork you cloned earlier. This associates your project with the Unreal Engine Fork and automatically generates a Visual Studio solution file for your project called `<YourProject.sln>`
-4. In the same directory, double-click `<YourProject>`.sln to open it with Visual Studio.
-5. On the Visual Studio toolbar, set your Solution configuration to **Development Editor**. <br/>
-![Visual studio toolbar]({{AssetRoot}}assets/screen-grabs/porting-solution-config.png)<br/>
-   _Image: The Visual Studio toolbar, with the Development Editor Solution configuration highlighted in red._
-6. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
+1. Right-click your `<YourProject>.uproject` file and select **Switch Unreal Engine version**.
+1. Select the path to the Unreal Engine fork you cloned earlier. This associates your project with the Unreal Engine Fork and automatically generates a Visual Studio solution file for your project called `<YourProject.sln>`
+1. In the same directory, double-click `<YourProject>`.sln to open it with Visual Studio.
+1. On the Visual Studio toolbar, set your Solution configuration to **Development Editor**. <br/>
+![GDK for Unreal Documentation]({{assetRoot}}assets/porting-guide/porting-solution-config.png)<br/>
+ _Image: The Visual Studio toolbar, with the Development Editor Solution configuration highlighted in red._
+1. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
 
-## 5. Modify Unreal classes for GDK compatibility
+## Step 3: Modify Unreal classes for GDK compatibility
 
 You must modify your `GameInstance` class to work with the GDK.  
 
@@ -80,11 +80,9 @@ You must modify your `GameInstance` class to work with the GDK.
 
       * From the Blueprint Editor toolbar, navigate to the **Class Settings**. In **Class Options** set the **Parent Class** to `SpatialGameInstance`.
 
-  ![spatial game instance reparent]({{AssetRoot}}assets/screen-grabs/spatial-game-instance-reparent.png)<br/>
+  ![spatial game instance reparent]({{assetRoot}}assets/porting-guide/spatial-game-instance-reparent.png)<br/>
+    _Image: The Blueprint class settings screen_<br/>
   
+ **> Next:** [3. Launch a local deployment]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-deployment)
   
-  
-  Next: Launch a local deployment
-  
-  _Image: The Blueprint class settings screen_<br/>
 

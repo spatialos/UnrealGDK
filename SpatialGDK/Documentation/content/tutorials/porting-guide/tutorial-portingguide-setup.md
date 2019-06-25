@@ -1,6 +1,6 @@
 # Port your project to SpatialOS
 
-## 2. Set up your project
+## 1. Set up your project
 
 To begin porting your project to the GDK, you need to:
 
@@ -21,7 +21,7 @@ For example:
 
 ### Step 2: Copy files from the Template project
 
-Your project needs some extra files and folders to run with the GDK. Copy these files from the template project that you set up earlier in the [Before you start](#1-before-you-start) section.
+Your project needs some extra files and folders to run with the GDK. Copy these files from the template project that you set up earlier in the [Before you start]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-intro#before-you-start) section.
 
 To do this: Open File Explorer and navigate to the root of the `StarterTemplate` repository.
 
@@ -58,8 +58,8 @@ To do this:
 
 1. Open **`\<ProjectRoot>\ProjectPaths.bat`** in a text editor.  
 1. In `set PROJECT_PATH=Game`, replace `Game` with your `<GameRoot>` folder name.  
-1. In `set GAME_NAME= TP_SpatialGDK `, replace `TP_SpatialGDK ` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide](#terms-used-in-this-guide)).  
+1. In `set GAME_NAME= TP_SpatialGDK `, replace `TP_SpatialGDK ` with the name of your game's `.uproject` (`<YourProject>` [terms used in this guide]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-intro#terms-used-in-this-guide)).  
 
 **Note**: The helper scripts `LaunchClient.bat` and `LaunchServer.bat` will not work if you do not follow this step correctly. 
 
-Next: 2: Modify and build your project
+**> Next:** [2. Modify and build your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-build)

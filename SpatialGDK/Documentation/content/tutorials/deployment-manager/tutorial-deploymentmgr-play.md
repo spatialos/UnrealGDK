@@ -68,7 +68,7 @@ _Image: The SpatialOS Console Share Application screen with terms of service acc
 </br>
 **Next steps:**
 
-If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
+If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-intro) to get it onto the GDK.
 
 If you want to start a project from scratch, follow our [Template guide](https://docs-staging.improbable.io/unreal/1.0/content/get-started/gdk-template) to set up a blank project using the GDK.
 
