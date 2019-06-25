@@ -1,6 +1,6 @@
 # Port your project to SpatialOS
 
-## 3. Modify and build your project
+## 2. Modify and build your project
 
 Before you open your project in the Editor you need to: 
 * Add the SpatialGDK module to your project
