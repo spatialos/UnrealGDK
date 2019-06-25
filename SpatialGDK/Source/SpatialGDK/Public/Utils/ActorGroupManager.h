@@ -41,25 +41,6 @@ struct FActorGroupInfo
 	}
 };
 
-USTRUCT()
-struct FWorkerAssociation
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-	TMap<FName, FString> ActorGroupToWorker;
-
-	FWorkerAssociation()
-	{
-		ActorGroupToWorker = {};
-	}
-
-	FWorkerAssociation(TMap<FName, FString> Values)
-	{
-		ActorGroupToWorker = TMap<FName, FString>(Values);
-	}
-};
-
 UCLASS(Config=SpatialGDKSettings)
 class SPATIALGDK_API UActorGroupManager : public UObject
 {
