@@ -46,35 +46,26 @@ void USpatialGDKSettings::PostInitProperties()
 
 
 #if WITH_EDITOR
-// Add a pop-up to warn users to update their config upon changing the using QBI property, validate offloading settings.
+// Add a pop-up to warn users to update their config upon changing the using QBI property.
 void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	/*if (PropertyChangedEvent.Property == nullptr)
+	if (PropertyChangedEvent.Property != nullptr)
 	{
-		Super::PostEditChangeProperty(PropertyChangedEvent);
-		return;
-	}
-	const FName PropertyName = PropertyChangedEvent.Property->GetFName();
+		const FName PropertyName = PropertyChangedEvent.Property->GetFName();
 
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUsingQBI))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo,
-			FText::FromString(FString::Printf(TEXT("You must set the value of the \"enable_chunk_interest\" Legacy flag to \"%s\" in your launch configuration file for this to work.\n\nIf you are using an auto-generated launch config, you can set this value from within Unreal Editor by going to Edit > Project Settings > SpatialOS GDK for Unreal > Settings.\n\nDo you want to configure your launch config settings now?"),
-				bUsingQBI ? TEXT("false") : TEXT("true"))));
-
-		if (Result == EAppReturnType::Yes)
+		if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUsingQBI))
 		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo,
+				FText::FromString(FString::Printf(TEXT("You must set the value of the \"enable_chunk_interest\" Legacy flag to \"%s\" in your launch configuration file for this to work.\n\nIf you are using an auto-generated launch config, you can set this value from within Unreal Editor by going to Edit > Project Settings > SpatialOS GDK for Unreal > Settings.\n\nDo you want to configure your launch config settings now?"),
+					bUsingQBI ? TEXT("false") : TEXT("true"))));
+
+			if (Result == EAppReturnType::Yes)
+			{
+				FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+			}
 		}
 	}
 
-	Super::PostEditChangeProperty(PropertyChangedEvent);*/
-}
-
-void USpatialGDKSettings::PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeChainProperty(PropertyChangedEvent);
+	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
