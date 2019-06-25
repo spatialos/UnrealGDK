@@ -3,6 +3,7 @@
 
 #include "Private/SpatialGDKServicesPrivate.h"
 
+#if WITH_EDITOR
 namespace
 {
 struct EditorWorkerController
@@ -90,7 +91,7 @@ static EditorWorkerController WorkerController;
 
 namespace SpatialGDKServices
 {
-FString InitWorkers(const FString& WorkerType, bool bConnectAsClient)
+void InitWorkers(const FString& WorkerType, bool bConnectAsClient, FString& OutWorkerId)
 {
 	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
 	const int32 FirstServerEditorID = 1;
@@ -102,9 +103,8 @@ FString InitWorkers(const FString& WorkerType, bool bConnectAsClient)
 		}
 
 		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);
-		return WorkerController.WorkerIds[GPlayInEditorID - 1];
+		OutWorkerId = WorkerController.WorkerIds[GPlayInEditorID - 1];
 	}
-	return FString{};
 }
 
 void OnSpatialShutdown()
@@ -113,3 +113,4 @@ void OnSpatialShutdown()
 }
 
 } // namespace SpatialGDKServices
+#endif // WITH_EDITOR

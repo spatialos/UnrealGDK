@@ -96,7 +96,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	}
 
 #if WITH_EDITOR
-	ReceptionistConfig.WorkerId = SpatialGDKServices::InitWorkers(ReceptionistConfig.WorkerType, bConnectAsClient);
+	SpatialGDKServices::InitWorkers(ReceptionistConfig.WorkerType, bConnectAsClient, ReceptionistConfig.WorkerId);
 #endif
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
