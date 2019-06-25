@@ -75,6 +75,14 @@ public:
 	bool bCanBeginPlay;
 	bool bAuthBeginPlayCalled;
 
+	bool bAuthorityRequiredInBeginPlay;
+	bool bBeginPlayDelegatesEnabled;
+	bool bRestoreRolesInPostBeginPlayDelegate;
+
+	void SetAuthorityRequiredInBeginPlay(const bool bInAuthorityRequiredInBeginPlay);
+	void SetBeginPlayDelegatesEnabled(const bool bInBeginPlayDelegatesEnabled);
+	void SetRestoreRolesInPostBeginPlayDelegate(const bool bInRestoreRolesInPostBeginPlayDelegate);
+
 #if WITH_EDITOR
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
@@ -83,9 +91,8 @@ public:
 	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
 
-	static void SetAuthorityRequiredInBeginPlay(const bool bInAuthorityRequiredInBeginPlay);
-	static void SetBeginPlayDelegatesEnabled(const bool bInBeginPlayDelegatesEnabled);
-	static void SetRestoreRolesInPostBeginPlayDelegate(const bool bInRestoreRolesInPostBeginPlayDelegate);
+	void PreBeginPlayDelegate(AActor* InActor, bool& bOutSwappedRoles);
+	void PostBeginPlayDelegate(AActor* InActor, const bool bWasSwappedInPreBeginPlayDelegate);
 
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
@@ -102,15 +109,8 @@ private:
 	void SendShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
 
-	static bool bAuthorityRequiredInBeginPlay;
-	static bool bBeginPlayDelegatesEnabled;
-	static bool bRestoreRolesInPostBeginPlayDelegate;
-
-	static void PreBeginPlayDelegate(AActor* InActor, bool& bOutSwappedRoles);
-	static void PostBeginPlayDelegate(AActor* InActor, const bool bWasSwappedInPreBeginPlayDelegate);
-
-	static void BindBeginPlayDelegates();
-	static void UnbindBeginPlayDelegates();
+	void BindBeginPlayDelegates();
+	void UnbindBeginPlayDelegates();
 
 private:
 	UPROPERTY()

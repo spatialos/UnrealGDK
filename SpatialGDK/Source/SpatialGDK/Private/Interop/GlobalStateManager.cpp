@@ -29,10 +29,6 @@ DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
 using namespace SpatialGDK;
 
-bool UGlobalStateManager::bAuthorityRequiredInBeginPlay = false;
-bool UGlobalStateManager::bBeginPlayDelegatesEnabled = false;
-bool UGlobalStateManager::bRestoreRolesInPostBeginPlayDelegate = false;
-
 void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
@@ -62,6 +58,9 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 	bCanBeginPlay = false;
 	bAuthBeginPlayCalled = false;
 	bTriggeredBeginPlay = false;
+	bAuthorityRequiredInBeginPlay = false;
+	bBeginPlayDelegatesEnabled = false;
+	bRestoreRolesInPostBeginPlayDelegate = false;
 
 	if (NetDriver->IsServer())
 	{
@@ -97,8 +96,6 @@ void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentDat
 	const bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 	ApplyCanBeginPlayUpdate(bCanBeginPlayData);
 }
-
-// CMS_TODO: Verify what's necessary for sublevel support
 
 void UGlobalStateManager::ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update)
 {
@@ -747,13 +744,14 @@ void UGlobalStateManager::SetRestoreRolesInPostBeginPlayDelegate(const bool bInR
 
 void UGlobalStateManager::BindBeginPlayDelegates()
 {
-	AActor::SetPreBeginPlayDelegate(FPreBeginPlayDelegate::CreateStatic(&UGlobalStateManager::PreBeginPlayDelegate));
-	AActor::SetPostBeginPlayDelegate(FPostBeginPlayDelegate::CreateStatic(&UGlobalStateManager::PostBeginPlayDelegate));
+	AActor::PreBeginPlayDelegate.BindUObject(this, &UGlobalStateManager::PreBeginPlayDelegate);
+	AActor::PostBeginPlayDelegate.BindUObject(this, &UGlobalStateManager::PostBeginPlayDelegate);
 }
 
 void UGlobalStateManager::UnbindBeginPlayDelegates()
 {
-	AActor::ClearBeginPlayDelegates();
+	AActor::PreBeginPlayDelegate.Unbind();
+	AActor::PostBeginPlayDelegate.Unbind();
 }
 
 
