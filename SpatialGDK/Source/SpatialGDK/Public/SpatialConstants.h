@@ -128,6 +128,7 @@ namespace SpatialConstants
 	const Schema_FieldId ACTOR_TEAROFF_ID									= 3;
 
 	const Schema_FieldId HEARTBEAT_EVENT_ID                                 = 1;
+	const Schema_FieldId HEARTBEAT_CLIENT_HAS_QUIT_ID						= 1;
 
 	const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID					= 1;
 	const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
@@ -188,6 +189,11 @@ namespace SpatialConstants
 	const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
 
 	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
+
+	const FString LOCATOR_HOST = TEXT("locator.improbable.io");
+	const uint16 LOCATOR_PORT = 444;
+
+	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 }
 
 // TO-DO: Do we need this?

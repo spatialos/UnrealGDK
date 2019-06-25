@@ -32,6 +32,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableServerQBI(bUsingQBI)
 	// TO-DO: Enable it by default and fix
 	, bPackUnreliableRPCs(false)
+	, bUseDevelopmentAuthenticationFlow(false)
 {
 }
 

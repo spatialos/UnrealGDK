@@ -22,6 +22,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 
+class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
 
@@ -94,7 +95,6 @@ using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
 DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
-DECLARE_DELEGATE_OneParam(HeartbeatDelegate, Worker_ComponentUpdateOp&);
 
 UCLASS()
 class USpatialReceiver : public UObject
@@ -124,8 +124,6 @@ public:
 
 	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
 	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
-
-	void AddHeartbeatDelegate(Worker_EntityId EntityId, HeartbeatDelegate Delegate);
 
 	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
 
@@ -178,13 +176,12 @@ private:
 
 	AActor* FindSingletonActor(UClass* SingletonClass);
 
+	void OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op);
+
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
 private:
-	template <typename T>
-	friend T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId);
-
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
@@ -222,5 +219,8 @@ private:
 	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
 	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
 
-	TMap<Worker_EntityId_Key, HeartbeatDelegate> HeartbeatDelegates;
+	// This will map PlayerController entities to the corresponding SpatialNetConnection
+	// for PlayerControllers that this server has authority over. This is used for player
+	// lifecycle logic (Heartbeat component updates, disconnection logic).
+	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 };
