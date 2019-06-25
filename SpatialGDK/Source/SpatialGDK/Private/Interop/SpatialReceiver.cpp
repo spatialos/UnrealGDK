@@ -1213,7 +1213,7 @@ void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, 
 			{
 				if(UObject* TargetObject = Channel->GetActor())
 				{
-					Sender->ResolveOutgoingRPCs(TargetObject);
+					Sender->ResolveOutgoingRPCs();
 				}
 			}
 		}
@@ -1448,17 +1448,6 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 	}
 }
 
-void USpatialReceiver::QueueIncomingRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
-{
-	check(TargetObject);
-	TSharedPtr<FQueueOfParams>& QueuePtr = IncomingRPCs.FindOrAdd(Type).FindOrAdd(TargetObject);
-	if (!QueuePtr.IsValid())
-	{
-		QueuePtr = MakeShared<FQueueOfParams>();
-	}
-	QueuePtr->Enqueue(Params);
-}
-
 void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 {
 	if (!Params->TargetObject.IsValid())
@@ -1470,7 +1459,7 @@ void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 	const FRPCInfo* RPCInfo = GetRPCInfo(TargetObject, Params->Function);
 	check(RPCInfo);
 
-	QueueIncomingRPC(TargetObject, RPCInfo->Type, Params);
+	IncomingRPCs.QueueRPC(Params, RPCInfo->Type);
 }
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)
@@ -1543,52 +1532,9 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 
 void USpatialReceiver::ResolveIncomingRPCs()
 {
-	for (auto& RPCs : IncomingRPCs)
-	{
-		for(auto& RPCMapItem : RPCs.Value)
-		{
-			TSharedPtr<FQueueOfParams> RPCList = RPCMapItem.Value;
-			ResolveIncomingRPCs(RPCList.Get());
-			if ((*RPCList).IsEmpty())
-			{
-				// TO-DO: add proper cleanup
-				//RPCs.Value.Remove(Object);
-			}
-		}
-	}
-}
-
-void USpatialReceiver::ResolveIncomingRPCs(FQueueOfParams* RPCList)
-{
-	check(RPCList);
-	FPendingRPCParamsPtr RPCParams = nullptr;
-	while(!RPCList->IsEmpty())
-	{
-		RPCList->Peek(RPCParams);
-		if(!RPCParams.IsValid())
-		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("===RPC Param Invalid"));
-			RPCList->Empty();
-			break;
-		}
-
-		if (!RPCParams->TargetObject.IsValid())
-		{
-			// The target object was destroyed before we could send the RPC.
-			RPCList->Empty();
-			break;
-		}
-
-		if(ApplyRPC(RPCParams))
-		{
-			RPCList->Pop();
-		}
-		else
-		{
-			break;
-		}
-	}
-
+	FProcessRPCDelegate Delegate;
+	Delegate.BindUObject(this, &USpatialReceiver::ApplyRPC);
+	IncomingRPCs.ProcessRPCs(Delegate);
 }
 
 const FRPCInfo* USpatialReceiver::GetRPCInfo(UObject* Object, UFunction* Function) const
@@ -1801,4 +1747,4 @@ void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
 		NetConnection->CleanUp();
 		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
-}
+} 

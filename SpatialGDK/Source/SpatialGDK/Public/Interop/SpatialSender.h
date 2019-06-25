@@ -15,6 +15,7 @@
 
 #include "SpatialSender.generated.h"
 
+// TO-DO: Should we remove the next line?
 using namespace SpatialGDK;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
@@ -97,7 +98,7 @@ public:
 	void ProcessPositionUpdates();
 
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
-	void ResolveOutgoingRPCs(UObject* Object);
+	void ResolveOutgoingRPCs();
 
 	bool UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);
@@ -116,7 +117,6 @@ private:
 	// Queuing
 	void ResetOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, bool bIsHandover);
 	void QueueOutgoingUpdate(USpatialActorChannel* DependentChannel, UObject* ReplicatedObject, int16 Handle, const TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects, bool bIsHandover);
-	void QueueOutgoingRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params);
 
 	// RPC Construction
 	FSpatialNetBitWriter PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const;
@@ -127,8 +127,6 @@ private:
 	void AddPendingUnreliableRPC(UObject* TargetObject, FPendingRPCParamsPtr Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject);	
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
-
-	void ResolveOutgoingRPCs(UObject* Object, FQueueOfParams* RPCList);
 
 	const FRPCInfo* GetRPCInfo(UObject* Object, UFunction* Function) const;
 

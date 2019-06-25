@@ -158,24 +158,19 @@ private:
 
 	void RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object);
 
-	// TO-DO: move these functions to RPCContainer
-	bool ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
-	bool ApplyRPC(FPendingRPCParamsPtr Params);
+	bool ApplyRPC(SpatialGDK::FPendingRPCParamsPtr Params);
+	bool ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);	
 
 	void ReceiveCommandResponse(Worker_CommandResponseOp& Op);
 
 	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs);
 
-	// TO-DO: move these functions to RPCContainer
-	void QueueIncomingRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params);
-	void QueueIncomingRPC(FPendingRPCParamsPtr Params);
+	void QueueIncomingRPC(SpatialGDK::FPendingRPCParamsPtr Params);
 
 	void ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
 
-	// TO-DO: move these functions to RPCContainer
 	void ResolveIncomingRPCs();
-	void ResolveIncomingRPCs(FQueueOfParams* RPCList);
 	const FRPCInfo* GetRPCInfo(UObject* Object, UFunction* Function) const;
 
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
@@ -218,7 +213,7 @@ private:
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
 	TMap<FUnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
-	RPCContainer IncomingRPCs;
+	SpatialGDK::RPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;

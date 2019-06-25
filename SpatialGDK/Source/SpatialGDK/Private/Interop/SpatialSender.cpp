@@ -594,7 +594,8 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		{
 			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 			{
-				UE_LOG(LogSpatialSender, Error, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
+				// TO-DO: Guess it's safe to remove the error here?
+				//UE_LOG(LogSpatialSender, Error, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
 				return false;
 			}
 
@@ -827,17 +828,6 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 	}
 }
 
-void USpatialSender::QueueOutgoingRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
-{
-	check(TargetObject);
-	TSharedPtr<FQueueOfParams>& QueuePtr = OutgoingRPCs.FindOrAdd(Type).FindOrAdd(TargetObject);
-	if (!QueuePtr.IsValid())
-	{
-		QueuePtr = MakeShared<FQueueOfParams>();
-	}
-	QueuePtr->Enqueue(Params);
-}
-
 void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
 {
 	if (!Params->TargetObject.IsValid())
@@ -849,7 +839,7 @@ void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
 	const FRPCInfo* RPCInfo = GetRPCInfo(TargetObject, Params->Function);
 	check(RPCInfo);
 
-	QueueOutgoingRPC(TargetObject, RPCInfo->Type, Params);
+	OutgoingRPCs.QueueRPC(Params, RPCInfo->Type);
 }
 
 FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const
@@ -1058,51 +1048,11 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 	ObjectToUnresolved.Remove(Object);
 }
 
-void USpatialSender::ResolveOutgoingRPCs(UObject* Object)
+void USpatialSender::ResolveOutgoingRPCs()
 {
-	for (auto& RPCs : OutgoingRPCs)
-	{
-		if (TSharedPtr<FQueueOfParams>* RPCList = RPCs.Value.Find(Object))
-		{
-			ResolveOutgoingRPCs(Object, RPCList->Get());
-			if ((*RPCList)->IsEmpty())
-			{
-				RPCs.Value.Remove(Object);
-			}
-		}
-	}
-}
-
-void USpatialSender::ResolveOutgoingRPCs(UObject* Object, FQueueOfParams* RPCList)
-{
-	check(RPCList);
-	FPendingRPCParamsPtr RPCParams = nullptr;
-	while(!RPCList->IsEmpty())
-	{
-		RPCList->Peek(RPCParams);
-		if(!RPCParams.IsValid())
-		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("===RPC Param Invalid"));
-			RPCList->Empty();
-			break;
-		}
-
-		if (!RPCParams->TargetObject.IsValid())
-		{
-			// The target object was destroyed before we could send the RPC.
-			RPCList->Empty();
-			break;
-		}
-
-		if(SendRPC(RPCParams))
-		{
-			RPCList->Pop();
-		}
-		else
-		{
-			break;
-		}
-	}
+	FProcessRPCDelegate Delegate;
+	Delegate.BindUObject(this, &USpatialSender::SendRPC);
+	OutgoingRPCs.ProcessRPCs(Delegate);
 }
 
 const FRPCInfo* USpatialSender::GetRPCInfo(UObject* Object, UFunction* Function) const

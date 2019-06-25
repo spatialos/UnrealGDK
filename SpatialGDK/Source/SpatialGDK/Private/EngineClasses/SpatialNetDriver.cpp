@@ -1203,7 +1203,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		if(UnresolvedObjects.Num() == 0)
 		{
 			Sender->QueueOutgoingRPC(RPCParams);
-			Sender->ResolveOutgoingRPCs(CallingObject);
+			Sender->ResolveOutgoingRPCs();
 		}
 		else
 		{
