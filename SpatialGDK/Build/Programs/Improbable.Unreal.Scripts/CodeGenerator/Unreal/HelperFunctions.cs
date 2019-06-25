@@ -6,8 +6,8 @@ namespace Improbable.CodeGen.Unreal
 {
     public static class HelperFunctions
     {
-        public static string HeaderPath = "HelperFunctions.h";
-        public static string SourceFile = "HelperFunctions.cpp";
+        public static string HeaderPath = "ExternalSchemaHelperFunctions.h";
+        public static string SourceFile = "ExternalSchemaHelperFunctions.cpp";
 
         public static List<GeneratedFile> GetHelperFunctionFiles()
         {

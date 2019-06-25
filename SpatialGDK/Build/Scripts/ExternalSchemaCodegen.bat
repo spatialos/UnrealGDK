@@ -48,7 +48,15 @@ if not exist %CODEGEN_EXE_PATH% (
 
 call :MarkStartOfBlock "Running code generator"
 %CODEGEN_EXE_PATH% --input-bundle %BUNDLE_CACHE_DIR%\%SCHEMA_BUNDLE_FILE_NAME% --output-dir %GAME_FOLDER%\%2
-echo Code successfully generated at %GAME_FOLDER%\%2
+if ERRORLEVEL 1 (
+		echo Error: Code generation failed
+		pause
+		exit /b 1
+)
+rem  Trick to print generation path without sequences of /../../ 
+pushd %GAME_FOLDER%
+echo Code successfully generated at %cd%\%2
+popd 
 call :MarkEndOfBlock "Running code generator"
 
 exit /b %ERRORLEVEL%

@@ -29,10 +29,9 @@ namespace Improbable.CodeGen.Unreal
             builder.AppendLine($@"#pragma once
 
 #include ""CoreMinimal.h""
-#include ""Connection/SpatialWorkerConnection.h""
 #include ""SpatialConstants.h""
 #include ""SpatialDispatcher.h""
-#include ""HelperFunctions.h""
+#include ""{HelperFunctions.HeaderPath}""
 
 {string.Join(Environment.NewLine, componentTypes.Select(component => $"#include \"{Types.TypeToHeaderFilename(component.QualifiedName)}\""))}
 
@@ -40,14 +39,14 @@ namespace Improbable.CodeGen.Unreal
 
 class USpatialWorkerConnection;
 
-DECLARE_LOG_CATEGORY_EXTERN(LogExternalSchemaInterface, All, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogExternalSchemaInterface, Log, All);
 
 class {ClassName}
 {{
 public:
 {Text.Indent(1, $@"{ClassName} () = delete;
-{ClassName}(USpatialWorkerConnection* Connection, USpatialDispatcher* SpatialDispatcher)
-{Text.Indent(1, @": SpatialWorkerConnection(SpatialWorkerConnection), SpatialDispatcher(SpatialDispatcher) {{ }}")}
+{ClassName}(USpatialWorkerConnection* Connection, USpatialDispatcher* Dispatcher)
+{Text.Indent(1, @": SpatialWorkerConnection(Connection), SpatialDispatcher(Dispatcher) {{ }}")}
 ~{ClassName}() = default;
 
 void RemoveCallback(USpatialDispatcher::FCallbackId Id);
@@ -77,6 +76,7 @@ USpatialDispatcher::FCallbackId OnCommandResponse(const TFunction<void(const {Ty
 {Text.Indent(1, $@"void SerializeAndSendComponentUpdate(Worker_EntityId EntityId, Worker_ComponentId ComponentId, const ::improbable::SpatialComponentUpdate& Update);
 Worker_RequestId SerializeAndSendCommandRequest(Worker_EntityId EntityId, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, const ::improbable::SpatialType& Request);
 void SerializeAndSendCommandResponse(Worker_RequestId RequestId, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, const ::improbable::SpatialType& Response);
+
 USpatialWorkerConnection* SpatialWorkerConnection;
 USpatialDispatcher* SpatialDispatcher;")}
 }};");
@@ -87,6 +87,7 @@ USpatialDispatcher* SpatialDispatcher;")}
         public static string GenerateInterfaceSource(List<TypeDescription> componentTypes, Bundle bundle)
         {
             return $@"#include ""{HeaderPath}""
+#include ""Connection/SpatialWorkerConnection.h""
 
 DEFINE_LOG_CATEGORY(LogExternalSchemaInterface);
 

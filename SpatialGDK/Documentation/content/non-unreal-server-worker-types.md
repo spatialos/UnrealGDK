@@ -130,6 +130,7 @@ To send component updates or command requests / responses, you can call any of t
 
 ```
 auto Update = new ::improbable::testing::TestComponent::Update(20 /* counter field */);
+// further edit Update using constructor pattern methods, e.g. (void)Update->SetCounter(30);
 ExternalSchema->SendComponentUpdate(30 /* entity_id */, Update);
 ```
 
