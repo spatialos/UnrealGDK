@@ -222,6 +222,9 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	{
 		Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(Class));
 		Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(Class));
+
+		UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
+			*Class->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
 	}
 }
 
