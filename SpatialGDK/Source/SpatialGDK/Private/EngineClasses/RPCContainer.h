@@ -29,6 +29,7 @@ class RPCContainer
 public:
 	void QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
 	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply);
+	bool ObjectHasRPCsQueuedOfType(const UObject* TargetObject, ESchemaComponentType Type);
 
 private:
 	using FQueueOfParams = TQueue<FPendingRPCParamsPtr>;

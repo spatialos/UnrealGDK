@@ -84,6 +84,21 @@ void RPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
 	}
 }
 
+bool RPCContainer::ObjectHasRPCsQueuedOfType(const UObject* TargetObject, ESchemaComponentType Type)
+{
+	FRPCMap* MapOfQueues = QueuedRPCs.Find(Type);
+	if(MapOfQueues)
+	{
+		TSharedPtr<FQueueOfParams>* RPCList = MapOfQueues->Find(TargetObject);
+		if(RPCList)
+		{
+			return (*RPCList)->IsEmpty();
+		}
+	}
+
+	return false;
+}
+
 bool RPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParamsPtr Params)
 {
 	return FunctionToApply.Execute(Params);

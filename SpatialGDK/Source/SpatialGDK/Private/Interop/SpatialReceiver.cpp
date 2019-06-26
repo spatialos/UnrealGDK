@@ -1039,10 +1039,22 @@ void USpatialReceiver::HandleRPC(Worker_ComponentUpdateOp& Op)
 		UFunction* Function = ClassInfo.RPCs[Payload.Index];
 
 		FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function, MoveTemp(Payload));
-		QueueIncomingRPC(Params);
-	}
 
-	ResolveIncomingRPCs();
+		// Apply if possible, queue otherwise
+		const FRPCInfo* RPCInfo = NetDriver->GetRPCInfo(TargetObject, Params->Function);
+		check(RPCInfo);
+		if(!IncomingRPCs.ObjectHasRPCsQueuedOfType(TargetObject, RPCInfo->Type))
+		{
+			if(!ApplyRPC(Params))
+			{
+				QueueIncomingRPC(Params);
+			}
+		}
+		else
+		{
+			QueueIncomingRPC(Params);
+		}
+	}
 }
 
 void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
@@ -1116,7 +1128,6 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function, MoveTemp(Payload));
 
 	QueueIncomingRPC(Params);
-	ResolveIncomingRPCs();
 
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
@@ -1488,9 +1499,9 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
-	// TODO(Alex): is it acceptable to remove it?
-	//ResolveIncomingRPCs(Object, ObjectRef); - put it back + Try to execute as soon as Actor's queue is empty (on receiving)
-	// Also create a jira ticket for evaluation + optimization
+	// TODO(Alex): We're trying to resolve all queues, which introduces more overhead.
+	// Create a jira ticket for evaluation + optimization
+	ResolveIncomingRPCs();
 }
 
 void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
