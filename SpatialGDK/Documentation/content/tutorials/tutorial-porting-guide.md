@@ -29,7 +29,7 @@ Before porting your project:
 If you haven't done this already, follow the three steps in _Get started_ guide in order to port your game:
     1. [Get started 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
     1. [Get started 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-    1. [Get started 3 - Set up a project: The Starter Template]({{urlRoot}}/content/get-started/gdk-template) </br>
+    1. [Get started 3 - Set up a project: The Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro) </br>
     (Note that you must follow the Starter Template instructions and not the Example Project instructions.)
 </br>
 </br>

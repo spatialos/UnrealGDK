@@ -4,12 +4,12 @@
 
 # Introduction
 
-If you are ready to start developing your own game with the GDK, follow the steps below to create a new project.
+If you are ready to start developing your own game with the GDK, this guide takes you through setting up the SpatialOS GDK Starter Template, which you can use as a base for your own projects using the GDK. 
 
-- Before setting up the SpatialOS GDK Starter Template, you _**must**_ follow:
+Before setting up the  Starter Template, you _**must**_ follow:
   - [Get started 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
   - [Get started 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-- We recommend setting up the [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) before creating a new project. This gives you an overview of the GDK and using SpatialOS.
+- We recommend setting up the [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) before creating a new project with the Starter Template. This gives you an overview of the GDK and using SpatialOS.
 
 **Terms used in this guide**</br>
 
@@ -19,4 +19,5 @@ If you are ready to start developing your own game with the GDK, follow the step
 
 </br>
 
- **> Next:** [1. Set up](Linkto)
+ **> Next:** [1. Set up]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup)
+

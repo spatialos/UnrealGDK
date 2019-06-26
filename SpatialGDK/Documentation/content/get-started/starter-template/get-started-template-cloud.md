@@ -2,7 +2,7 @@
 
 ## 3.  Launch a cloud deployment
 
-To launch a cloud deployment, you need to prepare your server-worker and client-worker [assemblies](https://docs.improbable.io/reference/latest/shared/glossary), and upload them to the cloud.        
+To launch a cloud deployment, you need to prepare your server-worker and client-worker [assemblies](https://docs.improbable.io/reference/latest/shared/glossary), and upload them to the cloud.
 
 > **TIP:** Building the assemblies can take a while - we recommend installing <a href="https://www.incredibuild.com/" data-track-link="Incredibuild|product=Docs|platform=Win|label=Win" target="_blank">IncrediBuild</a> to speed up build times.
 
@@ -11,7 +11,7 @@ To launch a cloud deployment, you need to prepare your server-worker and client-
 When you signed up for SpatialOS, your account was automatically associated with an organisation and a project, both of which have the same generated name.
 
 1. Find this name by going to the [Console](https://console.improbable.io). 
-   The name should look something like `beta_randomword_anotherword_randomnumber`. In the example below, it’s `beta_yankee_hawaii_621`. <br/>![Toolbar](C:/GitHub/Improbable/UnrealGDK/SpatialGDK/Documentation/content/get-started/%7B%7BassetRoot%7D%7Dassets/set-up-template/template-project-page.png)<br/>
+   The name should look something like `beta_randomword_anotherword_randomnumber`. In the example below, it’s `beta_yankee_hawaii_621`. <br/>![Toolbar]({{assetRoot}}assets/set-up-template/template-project-page.png)<br/>
    _Image: The SpatialOS Console with a project name highlighted._
 2. In File Explorer, navigate to the `<YourProject>/spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 3. Replace the `name` field with the project name shown in the Console. This tells SpatialOS which SpatialOS project you intend to upload to.
@@ -121,35 +121,5 @@ A valid launch command looks like this:
 spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
 ```
 
-### 7. Play your game
+**> Next:** [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
 
-![](C:/GitHub/Improbable/UnrealGDK/SpatialGDK/Documentation/content/get-started/%7B%7BassetRoot%7D%7Dassets/tutorial/console.png)
-_Image: The SpatialOS Console_
-
-When your deployment has launched, SpatialOS automatically opens the [Console](https://console.improbable.io) in your browser.
-
-In the Console, Select **Launch** on the left of the page, and then select the **Launch** button that appears in the centre of the page to open the SpatialOS Launcher. The Launcher automatically downloads the game client for this deployment and runs it on your local machine.
-
-<%(#Expandable title="What is the SpatialOS Launcher?")%>
-
-The Launcher is a distribution tool which downloads and launches game clients for your deployment. You access the Launcher from the Console; use the Console to create a URL to give end-users access to a game client for your game.
-
-Find out more in the [glossary](({{urlRoot}}/content/glossary#launcher).
-<%(/Expandable)%>
-<br/>
-![](C:/GitHub/Improbable/UnrealGDK/SpatialGDK/Documentation/content/get-started/%7B%7BassetRoot%7D%7Dassets/tutorial/launch.png)<br/>
-_Image: The SpatialOS console launch window_
-
-**Note:** You install the SpatialOS Launcher during [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies).
-
-> **TIP:** Check out the [cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow) for a reference diagram of this workflow.
-
-</br>
-**Congratulations!**
-
-You've successfully set up and launched the Starter Template and the GDK! You are now ready to start developing a game with SpatialOS.
-
-If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
-
-<br/>------<br/>
-_2019-04-30 Page updated with editorial review_
