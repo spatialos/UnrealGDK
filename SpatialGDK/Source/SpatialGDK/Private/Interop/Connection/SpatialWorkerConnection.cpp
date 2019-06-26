@@ -115,7 +115,7 @@ void USpatialWorkerConnection::OnLoginTokens(void* UserData, const Worker_Alpha_
 		return;
 	}
 
-	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Success: Login Token Count %d"), LoginTokens->login_token_count);
+	UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Successfully received LoginTokens, Count: %d"), LoginTokens->login_token_count);
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
 	const FString& DeploymentToConnect = GetDefault<USpatialGDKSettings>()->DevelopmentDeploymentToConnect;
 	// If not set, use the first deployment. It can change every query if you have multiple items available, because the order is not guaranteed.
@@ -146,13 +146,13 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 		return;
 	}
 
-	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Success: Received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
+	UE_LOG(LogSpatialWorkerConnection, Log, TEXT("Successfully received PIToken: %s"), UTF8_TO_TCHAR(PIToken->player_identity_token));
 	USpatialWorkerConnection* Connection = static_cast<USpatialWorkerConnection*>(UserData);
 	Connection->LocatorConfig.PlayerIdentityToken = UTF8_TO_TCHAR(PIToken->player_identity_token);
 	Worker_Alpha_LoginTokensRequest LTParams{};
 	LTParams.player_identity_token = PIToken->player_identity_token;
-	FTCHARToUTF8 worker_type(*Connection->LocatorConfig.WorkerType);
-	LTParams.worker_type = worker_type.Get();
+	FTCHARToUTF8 WorkerType(*Connection->LocatorConfig.WorkerType);
+	LTParams.worker_type = WorkerType.Get();
 	LTParams.use_insecure_connection = false;
 
 	if (Worker_Alpha_LoginTokensResponseFuture* LTFuture = Worker_Alpha_CreateDevelopmentLoginTokensAsync(TCHAR_TO_UTF8(*Connection->LocatorConfig.LocatorHost), SpatialConstants::LOCATOR_PORT, &LTParams))
@@ -164,10 +164,10 @@ void USpatialWorkerConnection::OnPlayerIdentityToken(void* UserData, const Worke
 void USpatialWorkerConnection::StartDevelopmentAuth(FString DevAuthToken)
 {
 	Worker_Alpha_PlayerIdentityTokenRequest PITParams{};
-	FTCHARToUTF8 dev_auth_token(*DevAuthToken);
-	FTCHARToUTF8 player_id(*SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
-	PITParams.development_authentication_token = dev_auth_token.Get();
-	PITParams.player_id = player_id.Get();
+	FTCHARToUTF8 DAToken(*DevAuthToken);
+	FTCHARToUTF8 PlayerId(*SpatialConstants::DEVELOPMENT_AUTH_PLAYER_ID);
+	PITParams.development_authentication_token = DAToken.Get();
+	PITParams.player_id = PlayerId.Get();
 	PITParams.display_name = "";
 	PITParams.metadata = "";
 	PITParams.use_insecure_connection = false;

@@ -3,7 +3,6 @@
 #include "SpatialGDKSettings.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
-#include "SpatialConstants.h"
 
 #if WITH_EDITOR
 #include "Modules/ModuleManager.h"
@@ -32,9 +31,8 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(true)
 	, bEnableServerQBI(bUsingQBI)
 	, bPackUnreliableRPCs(true)
-    , bUseDevelopmentAuthenticationFlow(false)
+	, bUseDevelopmentAuthenticationFlow(false)
 {
-	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
 
 void USpatialGDKSettings::PostInitProperties()
