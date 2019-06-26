@@ -35,7 +35,11 @@ FName UActorGroupManager::GetActorGroupForClass(TSubclassOf<AActor> Class)
 	{
 		if (const FName* ActorGroup = ClassPathToActorGroup.Find(ClassPtr))
 		{
-			return ClassPathToActorGroup.Add(TSoftClassPtr<AActor>(Class), *ActorGroup);
+			if (FoundClass != Class)
+			{
+				ClassPathToActorGroup.Add(TSoftClassPtr<AActor>(Class), *ActorGroup);
+			}
+			return *ActorGroup;
 		}
 
 		FoundClass = FoundClass->GetSuperClass();
@@ -43,7 +47,8 @@ FName UActorGroupManager::GetActorGroupForClass(TSubclassOf<AActor> Class)
 	}
 
 	// No mapping found so set and return default actor group.
-	return ClassPathToActorGroup.Add(TSoftClassPtr<AActor>(Class), SpatialConstants::DefaultActorGroup);
+	ClassPathToActorGroup.Add(TSoftClassPtr<AActor>(Class), SpatialConstants::DefaultActorGroup);
+	return SpatialConstants::DefaultActorGroup;
 }
 
 FName UActorGroupManager::GetWorkerTypeForClass(TSubclassOf<AActor> Class)
