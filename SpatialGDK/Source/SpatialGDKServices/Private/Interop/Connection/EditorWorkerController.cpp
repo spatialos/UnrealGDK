@@ -1,7 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#include "EditorWorkerController.h"
+#include "Interop/Connection/EditorWorkerController.h"
 
-#include "Private/SpatialGDKServicesPrivate.h"
+#include "SpatialGDKServicesPrivate.h"
 
 #if WITH_EDITOR
 namespace
