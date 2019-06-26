@@ -6,9 +6,8 @@
 #include "GameFramework/Actor.h"
 
 #if WITH_EDITOR
-#include "ISettingsModule.h"
 #include "Modules/ModuleManager.h"
-#include "Settings/LevelEditorPlaySettings.h"
+#include "ISettingsModule.h"
 #endif
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
