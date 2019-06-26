@@ -34,7 +34,7 @@
 #include "Utils/EntityPool.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
-#include "SpatialGDKEditorToolbar.h"
+//#include "SpatialGDKServices.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -107,24 +107,24 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 	ClassInfoManager->Init(this);
 
-#if WITH_EDITOR
-	// If we're launching in PIE then ensure there is a deployment running before connecting.
-	FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
-
-	// Just connect if a deployment is running.
-	if (!Toolbar.bLocalDeploymentRunning || Toolbar.bStoppingDeployment || Toolbar.bStartingDeployment)
-	{
-		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for local spatial depoyment to start before connecting..."));
-		SpatialDeploymentStartHandle = Toolbar.OnDeploymentStart.AddLambda([this, URL, &Toolbar]
-		{
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
-			InitiateConnectionToSpatialOS(URL);
-			Toolbar.OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
-		});
-
-		return true;
-	}
-#endif
+//#if WITH_EDITOR
+//	// If we're launching in PIE then ensure there is a deployment running before connecting.
+//	FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
+//
+//	// Just connect if a deployment is running.
+//	if (!Toolbar.bLocalDeploymentRunning || Toolbar.bStoppingDeployment || Toolbar.bStartingDeployment)
+//	{
+//		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for local spatial depoyment to start before connecting..."));
+//		SpatialDeploymentStartHandle = Toolbar.OnDeploymentStart.AddLambda([this, URL, &Toolbar]
+//		{
+//			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
+//			InitiateConnectionToSpatialOS(URL);
+//			Toolbar.OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+//		});
+//
+//		return true;
+//	}
+//#endif
 
 	InitiateConnectionToSpatialOS(URL);
 
@@ -145,10 +145,10 @@ void USpatialNetDriver::PostInitProperties()
 void USpatialNetDriver::FinishDestroy()
 {
 	// Ensure our deployment started delegate is removed when the net driver is shut down.
-#if WITH_EDITOR
-	FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
-	Toolbar.OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
-#endif
+//#if WITH_EDITOR
+//	FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
+//	Toolbar.OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+//#endif
 	Super::FinishDestroy();
 }
 
