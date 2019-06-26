@@ -3,7 +3,7 @@
 
 #include "SpatialGDKServicesPrivate.h"
 
-#include "CoreMinimal.h"
+#include "Editor.h"
 
 #if WITH_EDITOR
 namespace
