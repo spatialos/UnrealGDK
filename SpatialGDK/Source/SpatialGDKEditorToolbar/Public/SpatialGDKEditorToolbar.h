@@ -11,6 +11,8 @@
 #include "Widgets/Notifications/SNotificationList.h"
 #include "FileCache.h"
 
+#include "LocalDeploymentManager.h"
+
 class FToolBarBuilder;
 class FMenuBuilder;
 class FUICommandList;
@@ -44,16 +46,6 @@ public:
 		RETURN_QUICK_DECLARE_CYCLE_STAT(FSpatialGDKEditorToolbarModule, STATGROUP_Tickables);
 	}
 
-	FSimpleMulticastDelegate OnSpatialShutdown;
-
-	FSimpleMulticastDelegate OnDeploymentStart;
-
-	bool bLocalDeploymentRunning = false;
-	bool bSpatialServiceRunning = false;
-	bool bRedeployRequired = false;
-	bool bStoppingDeployment = false;
-	bool bStartingDeployment = false;
-
 private:
 	void MapActions(TSharedPtr<FUICommandList> PluginCommands);
 	void SetupToolbar(TSharedPtr<FUICommandList> PluginCommands);
@@ -68,8 +60,6 @@ private:
 	bool StartSpatialServiceCanExecute();
 	bool StopSpatialServiceIsVisible();
 	bool StopSpatialServiceCanExecute();
-	void RefreshServiceStatus();
-	TSharedPtr<FJsonObject> ParseJson(FString RawJsonString);
 	bool StopSpatialDeploymentIsVisible();
 
 	bool StopSpatialDeploymentCanExecute();
@@ -93,19 +83,10 @@ private:
 	void ShowFailedNotification(const FString& NotificationText);
 
 	bool ValidateGeneratedLaunchConfig() const;
-	bool IsSpatialServiceRunning();
-	FString GetProjectName();
-	void WorkerBuildConfigAsync();
-	void StartUpDirectoryWatcher();
-	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
-	bool TryStartSpatialService();
-	bool TryStopSpatialService();
-	bool TryStopLocalDeployment();
-	bool IsLocalDeploymentRunning();
-	void ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult);
+
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
-	void TryStartLocalDeployment();
+
 	void StandardNotification(FString NotificationText);
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
@@ -134,15 +115,6 @@ private:
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
-	FDateTime LastSpatialServiceCheck;
-	FDateTime LastDeploymentCheck;
-
-	bool bStartingSpatialService = false;
-	bool bStoppingSpatialService = false;
-
-	FString LocalRunningDeploymentID;
-	FString ProjectName;
-
-	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
-	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
+	FLocalDeploymentManager LocalDeploymentManager;
+	bool bRedeployRequired = false;
 };
