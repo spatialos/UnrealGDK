@@ -196,7 +196,6 @@ namespace SpatialConstants
 	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 }
 
-// TO-DO: Do we need this?
 FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)
 {
 	switch (SchemaType)

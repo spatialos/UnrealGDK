@@ -30,7 +30,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bCheckRPCOrder(false)
 	, bBatchSpatialPositionUpdates(true)
 	, bEnableServerQBI(bUsingQBI)
-	// TO-DO: Enable it by default and fix
+	// TODO(Alex): Enable it by default and fix
 	, bPackUnreliableRPCs(false)
 	, bUseDevelopmentAuthenticationFlow(false)
 {

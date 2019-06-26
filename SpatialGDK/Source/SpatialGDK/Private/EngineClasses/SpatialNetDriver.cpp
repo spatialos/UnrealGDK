@@ -1191,7 +1191,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	{
 		if(IsServer())
 		{
-			// TO-DO: Should it be elsewhere?
+			// TODO(Alex): Should it be elsewhere?
 			GetOrCreateSpatialActorChannel(CallingObject);
 		}
 
@@ -1214,6 +1214,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		}
 		else
 		{
+			// TODO(Alex): Can happen with slow connection (e.g. pause execution for >10 sec)
 			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("There are unresolved objects, RPC %s will be dropped"), *Function->GetName());
 		}
 	}
@@ -1619,6 +1620,29 @@ void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate
 	{
 		SnapshotManager->WorldWipe(LoadSnapshotAfterWorldWipe);
 	}
+}
+
+const FRPCInfo* USpatialNetDriver::GetRPCInfo(UObject* Object, UFunction* Function) const
+{
+	check(Object && Function);
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(Object);
+	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Function);
+
+	// We potentially have a parent function and need to find the child function.
+	// This exists as it's possible in blueprints to explicitly call the parent function.
+	if (RPCInfo == nullptr)
+	{
+		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
+		{
+			if (It.Key()->GetName() == Function->GetName())
+			{
+				// Matching child function found. Use this for the remote function call.
+				RPCInfo = &It.Value();
+				break;
+			}
+		}
+	}
+	return RPCInfo;
 }
 
 uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject)

@@ -15,7 +15,6 @@
 
 #include "SpatialSender.generated.h"
 
-// TO-DO: Should we remove the next line?
 using namespace SpatialGDK;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialSender, Log, All);
@@ -128,8 +127,6 @@ private:
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
 
-	const FRPCInfo* GetRPCInfo(UObject* Object, UFunction* Function) const;
-
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
@@ -155,7 +152,6 @@ private:
 	FChannelToHandleToUnresolved HandoverPropertyToUnresolved;
 	FOutgoingRepUpdates HandoverObjectToUnresolved;
 
-	// TO-DO: What container to use? Is Ref better than Ptr for Params?
 	RPCContainer OutgoingRPCs;
 	FRPCsOnEntityCreationMap OutgoingOnCreateEntityRPCs;
 

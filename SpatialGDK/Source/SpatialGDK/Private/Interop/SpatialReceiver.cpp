@@ -1026,6 +1026,7 @@ void USpatialReceiver::HandleRPC(Worker_ComponentUpdateOp& Op)
 
 		if (!TargetObject)
 		{
+			// TODO(Alex): Can happen with slow connection (e.g. pause execution for >30 sec)
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
 			continue;
 		}
@@ -1112,7 +1113,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function, MoveTemp(Payload));
 	QueueIncomingRPC(Params);
 
-	// TO-DO: Send it after RPC has been applied
+	// TODO(Alex): Send it after RPC has been applied
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
 
@@ -1459,7 +1460,7 @@ void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 		return;
 	}
 	UObject* TargetObject = Params->TargetObject.Get();
-	const FRPCInfo* RPCInfo = GetRPCInfo(TargetObject, Params->Function);
+	const FRPCInfo* RPCInfo = NetDriver->GetRPCInfo(TargetObject, Params->Function);
 	check(RPCInfo);
 
 	IncomingRPCs.QueueRPC(Params, RPCInfo->Type);
@@ -1472,7 +1473,7 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ false);
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
-	// TO-DO: is it acceptable to remove it?
+	// TODO(Alex): is it acceptable to remove it?
 	//Sender->ResolveOutgoingRPCs(Object);
 	//ResolveIncomingRPCs(Object, ObjectRef);
 }
@@ -1538,29 +1539,6 @@ void USpatialReceiver::ResolveIncomingRPCs()
 	FProcessRPCDelegate Delegate;
 	Delegate.BindUObject(this, &USpatialReceiver::ApplyRPC);
 	IncomingRPCs.ProcessRPCs(Delegate);
-}
-
-const FRPCInfo* USpatialReceiver::GetRPCInfo(UObject* Object, UFunction* Function) const
-{
-	check(Object && Function);
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(Object);
-	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Function);
-
-	// We potentially have a parent function and need to find the child function.
-	// This exists as it's possible in blueprints to explicitly call the parent function.
-	if (RPCInfo == nullptr)
-	{
-		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
-		{
-			if (It.Key()->GetName() == Function->GetName())
-			{
-				// Matching child function found. Use this for the remote function call.
-				RPCInfo = &It.Value();
-				break;
-			}
-		}
-	}
-	return RPCInfo;
 }
 
 void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved)

@@ -448,7 +448,7 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, UFunction* Function, int ReliableRPCIndex, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects)
 {
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(TargetObject->GetClass());
-	const FRPCInfo* RPCInfo = GetRPCInfo(TargetObject, Function);
+	const FRPCInfo* RPCInfo = NetDriver->GetRPCInfo(TargetObject, Function);
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if(TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
@@ -518,7 +518,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		UE_LOG(LogSpatialSender, Warning, TEXT("Failed to create an Actor Channel for %s."), *TargetObject->GetName());
 	}
 
-	const FRPCInfo* RPCInfo = GetRPCInfo(TargetObject, Params->Function);
+	const FRPCInfo* RPCInfo = NetDriver->GetRPCInfo(TargetObject, Params->Function);
 	check(RPCInfo);
 
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
@@ -548,7 +548,6 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		{
 			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
 				EntityId, CommandRequest.component_id, *Params->Function->GetName());
-			// TO-DO: Do we need this?
 			Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Params->Function, ComponentId, RPCInfo->Index, Params->Payload.PayloadData, 0));
 		}
 		else
@@ -576,7 +575,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 
 		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo->Type);
 
-		// TO-DO: Is it merged correctly?
+		// TODO(Alex): Is it merged correctly?
 		if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs
 			&& RPCInfo->Type != SCHEMA_NetMulticastRPC
 			&& RPCInfo->Type != SCHEMA_ServerReliableRPC
@@ -593,8 +592,6 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		{
 			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 			{
-				// TO-DO: Guess it's safe to remove the error here?
-				//UE_LOG(LogSpatialSender, Error, TEXT("Trying to send RPC %s component update but don't have authority! Update will not be sent. Entity: %lld"), *Params->Function->GetName(), EntityId);
 				return false;
 			}
 
@@ -835,7 +832,7 @@ void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
 		return;
 	}
 	UObject* TargetObject = Params->TargetObject.Get();
-	const FRPCInfo* RPCInfo = GetRPCInfo(TargetObject, Params->Function);
+	const FRPCInfo* RPCInfo = NetDriver->GetRPCInfo(TargetObject, Params->Function);
 	check(RPCInfo);
 
 	OutgoingRPCs.QueueRPC(Params, RPCInfo->Type);
@@ -1052,29 +1049,6 @@ void USpatialSender::ResolveOutgoingRPCs()
 	FProcessRPCDelegate Delegate;
 	Delegate.BindUObject(this, &USpatialSender::SendRPC);
 	OutgoingRPCs.ProcessRPCs(Delegate);
-}
-
-const FRPCInfo* USpatialSender::GetRPCInfo(UObject* Object, UFunction* Function) const
-{
-	check(Object && Function);
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(Object);
-	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Function);
-
-	// We potentially have a parent function and need to find the child function.
-	// This exists as it's possible in blueprints to explicitly call the parent function.
-	if (RPCInfo == nullptr)
-	{
-		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
-		{
-			if (It.Key()->GetName() == Function->GetName())
-			{
-				// Matching child function found. Use this for the remote function call.
-				RPCInfo = &It.Value();
-				break;
-			}
-		}
-	}
-	return RPCInfo;
 }
 
 // Authority over the ClientRPC Schema component is dictated by the owning connection of a client.
