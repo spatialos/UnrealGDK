@@ -7,7 +7,7 @@
 // GDK Version to be updated with SPATIAL_ENGINE_VERSION
 // when breaking changes are made to the engine that requires
 // changes to the GDK to remain compatible
-#define SPATIAL_GDK_VERSION 2
+#define SPATIAL_GDK_VERSION 1
 
 // Check if GDK is compatible with the current version of Unreal Engine
 // SPATIAL_ENGINE_VERSION is incremented in engine when breaking changes

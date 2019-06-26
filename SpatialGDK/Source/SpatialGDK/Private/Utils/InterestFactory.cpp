@@ -17,19 +17,19 @@ DEFINE_LOG_CATEGORY(LogInterestFactory);
 
 namespace
 {
-static TMap<UClass*, float> ClientInterestDistances;
+static TMap<UClass*, float> ClientInterestDistancesSquared;
 void GatherClientInterestDistancesOnce()
 {
-	if (ClientInterestDistances.Num() > 0)
+	if (ClientInterestDistancesSquared.Num() > 0)
 	{
 		return;
 	}
 
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
-	const float DefaultDistance = DefaultActor->ClientInterestDistance;
+	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
 
 	// Gather ClientInterestDistance settings, and add any larger than the default radius to a list for processing.
-	TMap<UClass*, float> DiscoveredInterestDistances;
+	TMap<UClass*, float> DiscoveredInterestDistancesSquared;
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
 		if (!It->IsChildOf<AActor>())
@@ -38,15 +38,15 @@ void GatherClientInterestDistancesOnce()
 		}
 
 		const AActor* IteratedDefaultActor = Cast<AActor>(It->GetDefaultObject());
-		if (IteratedDefaultActor->ClientInterestDistance > DefaultDistance)
+		if (IteratedDefaultActor->NetCullDistanceSquared > DefaultDistanceSquared)
 		{
-			DiscoveredInterestDistances.Add(*It, IteratedDefaultActor->ClientInterestDistance);
+			DiscoveredInterestDistancesSquared.Add(*It, IteratedDefaultActor->NetCullDistanceSquared);
 		}
 	}
 
 	// Sort the map for iteration so that parent classes are seen before derived classes. This lets us skip
 	// derived classes that have a smaller interest distance than a parent class.
-	DiscoveredInterestDistances.KeySort([](const UClass& LHS, const UClass& RHS) {
+	DiscoveredInterestDistancesSquared.KeySort([](const UClass& LHS, const UClass& RHS) {
 		return
 			LHS.IsChildOf(&RHS) ? -1 :
 			RHS.IsChildOf(&LHS) ? 1 :
@@ -55,10 +55,10 @@ void GatherClientInterestDistancesOnce()
 
 	// If an actor's interest distance is smaller than that of a parent class, there's no need to add interest for that actor.
 	// Can't do inline removal since the sorted order is only guaranteed when the map isn't changed.
-	for (const auto& ActorInterestDistance : DiscoveredInterestDistances)
+	for (const auto& ActorInterestDistance : DiscoveredInterestDistancesSquared)
 	{
 		bool bShouldAdd = true;
-		for (auto& OptimizedInterestDistance : ClientInterestDistances)
+		for (auto& OptimizedInterestDistance : ClientInterestDistancesSquared)
 		{
 			if (ActorInterestDistance.Key->IsChildOf(OptimizedInterestDistance.Key) && ActorInterestDistance.Value <= OptimizedInterestDistance.Value)
 			{
@@ -69,7 +69,7 @@ void GatherClientInterestDistancesOnce()
 		}
 		if (bShouldAdd)
 		{
-			ClientInterestDistances.Add(ActorInterestDistance.Key, ActorInterestDistance.Value);
+			ClientInterestDistancesSquared.Add(ActorInterestDistance.Key, ActorInterestDistance.Value);
 		}
 	}
 }
@@ -242,28 +242,28 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 	//     capture specific types, including all derived types of that actor.
 
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
-	const float DefaultDistance = DefaultActor->ClientInterestDistance;
+	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
 
 	QueryConstraint CheckoutRadiusConstraints;
 
 	// Use AActor's ClientInterestDistance for the default radius (all actors in that radius will be checked out)
-	const float DefaultCheckoutRadiusMeters = DefaultDistance / 100.0f;
+	const float DefaultCheckoutRadiusMeters = FMath::Sqrt(DefaultDistanceSquared / (100.0f * 100.0f));
 	QueryConstraint DefaultCheckoutRadiusConstraint;
 	DefaultCheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ DefaultCheckoutRadiusMeters };
 	CheckoutRadiusConstraints.OrConstraint.Add(DefaultCheckoutRadiusConstraint);
 
 	// For every interest distance that we still want, add a constraint with the distance for the actor type and all of its derived types.
-	for (const auto& InterestDistance: ClientInterestDistances)
+	for (const auto& InterestDistanceSquared: ClientInterestDistancesSquared)
 	{
 		QueryConstraint CheckoutRadiusConstraint;
 
 		QueryConstraint RadiusConstraint;
-		const float CheckoutRadiusMeters = InterestDistance.Value / 100.0f;
+		const float CheckoutRadiusMeters = FMath::Sqrt(InterestDistanceSquared.Value / (100.0f * 100.0f));
 		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadiusMeters };
 		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 
 		QueryConstraint ActorTypeConstraint;
-		AddTypeHierarchyToConstraint(InterestDistance.Key, ActorTypeConstraint);
+		AddTypeHierarchyToConstraint(InterestDistanceSquared.Key, ActorTypeConstraint);
 		CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
 
 		CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
