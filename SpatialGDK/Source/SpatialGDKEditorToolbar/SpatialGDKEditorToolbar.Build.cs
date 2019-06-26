@@ -27,6 +27,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
                 "MessageLog",
                 "SpatialGDK",
                 "SpatialGDKEditor",
+                "SpatialGDKServices",
                 "UnrealEd"
             }
         );
