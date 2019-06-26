@@ -36,6 +36,7 @@
 #include "HAL/PlatformFilemanager.h"
 #include "FileCache.h"
 #include "DirectoryWatcherModule.h"
+#include "SpatialGDKServicesModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -72,8 +73,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	OnPropertyChangedDelegateHandle = FCoreUObjectDelegates::OnObjectPropertyChanged.AddRaw(this, &FSpatialGDKEditorToolbarModule::OnPropertyChanged);
 	bStopSpatialOnExit = GetDefault<USpatialGDKEditorSettings>()->bStopSpatialOnExit;
 
-	// Create an instance of the local deployment manager for tracking and controlling local deployment status.
-	LocalDeploymentManager = FLocalDeploymentManager();
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -137,7 +138,7 @@ void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 		});
 	}
 
-	LocalDeploymentManager.Tick(DeltaTime);
+	LocalDeploymentManager->Tick(DeltaTime);
 }
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator() const
@@ -432,7 +433,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 		FDateTime StartTime = FDateTime::Now();
 		ShowTaskStartNotification(TEXT("Starting spatial service..."));
 
-		if (!LocalDeploymentManager.TryStartSpatialService())
+		if (!LocalDeploymentManager->TryStartSpatialService())
 		{
 			ShowFailedNotification(TEXT("Spatial service failed to start"));
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not start spatial service."));
@@ -454,7 +455,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 		FDateTime StartTime = FDateTime::Now();
 		ShowTaskStartNotification(TEXT("Stopping Spatial service..."));
 
-		if (!LocalDeploymentManager.TryStopSpatialService())
+		if (!LocalDeploymentManager->TryStopSpatialService())
 		{
 			ShowFailedNotification(TEXT("Spatial service failed to stop"));
 			UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Could not stop spatial service."));
@@ -467,7 +468,6 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 		ShowSuccessNotification(TEXT("Spatial service stopped!"));
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f secoonds."), Span.GetTotalSeconds());
 	});
-	 
 }
 
 void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
@@ -475,11 +475,16 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		// If schema has been regenerated then we need to restart spatial.
-		if(bRedeployRequired)
+		if (bRedeployRequired)
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Schema has changed since last session. Local deployment must restart."));
-			LocalDeploymentManager.TryStopLocalDeployment();
+			LocalDeploymentManager->TryStopLocalDeployment();
 			bRedeployRequired = false;
+		}
+
+		if (LocalDeploymentManager->IsLocalDeploymentRunning())
+		{
+			return;
 		}
 
 		// Get the latest launch config.
@@ -502,7 +507,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 		}
 
 		ShowTaskStartNotification(TEXT("Starting local deployment..."));
-		if (LocalDeploymentManager.TryStartLocalDeployment(LaunchConfig, SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags()))
+		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags()))
 		{
 			ShowSuccessNotification(TEXT("Local deployment started!"));
 		}
@@ -510,7 +515,6 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 		{
 			ShowFailedNotification(TEXT("Local deployment failed to start"));
 		}
-		//IsLocalDeploymentRunning(); TODO: Do we need to do this now?
 	});
 }
 
@@ -519,7 +523,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		ShowTaskStartNotification(TEXT("Stopping local deployment..."));
-		if (LocalDeploymentManager.TryStopLocalDeployment())
+		if (LocalDeploymentManager->TryStopLocalDeployment())
 		{
 			ShowSuccessNotification(TEXT("Successfully stopped local deployment"));
 		}
@@ -547,25 +551,25 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible()
 {
-	return (LocalDeploymentManager.IsSpatialServiceRunning() && !LocalDeploymentManager.IsLocalDeploymentRunning()) || !LocalDeploymentManager.IsSpatialServiceRunning();
+	return (LocalDeploymentManager->IsSpatialServiceRunning() && !LocalDeploymentManager->IsLocalDeploymentRunning()) || !LocalDeploymentManager->IsSpatialServiceRunning();
 	//return (bSpatialServiceRunning && !bLocalDeploymentRunning) || !bSpatialServiceRunning;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute()
 {
-	return !LocalDeploymentManager.IsDeploymentStarting();
+	return !LocalDeploymentManager->IsDeploymentStarting();
 	//return !bStartingDeployment;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible()
 {
-	return LocalDeploymentManager.IsSpatialServiceRunning() && LocalDeploymentManager.IsLocalDeploymentRunning();
+	return LocalDeploymentManager->IsSpatialServiceRunning() && LocalDeploymentManager->IsLocalDeploymentRunning();
 	//return bSpatialServiceRunning && bLocalDeploymentRunning;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute()
 {
-	return !LocalDeploymentManager.IsDeploymentStopping();
+	return !LocalDeploymentManager->IsDeploymentStopping();
 	//return !bStoppingDeployment;
 }
 
@@ -573,13 +577,13 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialServiceIsVisible()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	return SpatialGDKSettings->bShowSpatialServiceButton && !LocalDeploymentManager.IsSpatialServiceRunning();
+	return SpatialGDKSettings->bShowSpatialServiceButton && !LocalDeploymentManager->IsSpatialServiceRunning();
 	//return SpatialGDKSettings->bShowSpatialServiceButton && !bSpatialServiceRunning;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute()
 {
-	return !LocalDeploymentManager.IsServiceStarting();
+	return !LocalDeploymentManager->IsServiceStarting();
 	//return !bStartingSpatialService;
 }
 
@@ -587,13 +591,13 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	return SpatialGDKSettings->bShowSpatialServiceButton && LocalDeploymentManager.IsSpatialServiceRunning();
+	return SpatialGDKSettings->bShowSpatialServiceButton && LocalDeploymentManager->IsSpatialServiceRunning();
 	//return SpatialGDKSettings->bShowSpatialServiceButton && bSpatialServiceRunning;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute()
 {
-	return !LocalDeploymentManager.IsServiceStopping();
+	return !LocalDeploymentManager->IsServiceStopping();
 	//return !bStoppingSpatialService;
 }
 

@@ -28,6 +28,15 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
 FLocalDeploymentManager::FLocalDeploymentManager()
 {
+	bLocalDeploymentRunning = false;
+	bSpatialServiceRunning = false;
+
+	bStartingDeployment = false;
+	bStoppingDeployment = false;
+
+	bStartingSpatialService = false;
+	bStoppingSpatialService = false;
+
 	// For checking whether we can stop or start. Set in the past so the first RefreshServiceStatus does not wait.
 	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(2);
 
@@ -140,7 +149,10 @@ void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString A
 	// Create pipes to read output of spot.
 	void* ReadPipe;
 	void* WritePipe;
-	FPlatformProcess::CreatePipe(ReadPipe, WritePipe);
+	if (!FPlatformProcess::CreatePipe(ReadPipe, WritePipe))
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Command execution failed. Could not create read and write pipes."));
+	}
 
 	FProcHandle ProcHandle;
 	uint32 ProcessID;
@@ -182,7 +194,7 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 
 	FTimespan Span = CurrentTime - LastSpatialServiceCheck;
 
-	if (Span.GetSeconds() < 2)
+	if (Span.GetSeconds() < 3)
 	{
 		return;
 	}

@@ -115,6 +115,6 @@ private:
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
-	FLocalDeploymentManager LocalDeploymentManager;
+	FLocalDeploymentManager* LocalDeploymentManager;
 	bool bRedeployRequired = false;
 };

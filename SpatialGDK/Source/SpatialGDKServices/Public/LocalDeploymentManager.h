@@ -16,7 +16,7 @@ using namespace DirectoryWatcher;
 class FLocalDeploymentManager
 {
 public:
-	SPATIALGDKSERVICES_API FLocalDeploymentManager();
+	FLocalDeploymentManager();
 
 	FSimpleMulticastDelegate OnSpatialShutdown;
 	FSimpleMulticastDelegate OnDeploymentStart;
@@ -58,14 +58,14 @@ public:
 	FString GetSpatialOSDirectory();
 
 private:
-	bool bLocalDeploymentRunning = false;
-	bool bSpatialServiceRunning = false;
+	bool bLocalDeploymentRunning;
+	bool bSpatialServiceRunning;
 
-	bool bStartingDeployment = false;
-	bool bStoppingDeployment = false;
+	bool bStartingDeployment;
+	bool bStoppingDeployment;
 
-	bool bStartingSpatialService = false;
-	bool bStoppingSpatialService = false;
+	bool bStartingSpatialService;
+	bool bStoppingSpatialService;
 
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 

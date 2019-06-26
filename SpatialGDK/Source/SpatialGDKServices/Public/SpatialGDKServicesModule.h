@@ -2,6 +2,7 @@
 
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
+#include "LocalDeploymentManager.h"
 
 class SPATIALGDKSERVICES_API FSpatialGDKServicesModule : public IModuleInterface
 {
@@ -13,4 +14,9 @@ public:
 	{
 		return true;
 	}
+
+	FLocalDeploymentManager* GetLocalDeploymentManager();
+
+private:
+	FLocalDeploymentManager LocalDeploymentManager;
 };
