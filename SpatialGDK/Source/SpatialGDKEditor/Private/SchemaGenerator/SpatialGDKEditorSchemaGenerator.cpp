@@ -479,7 +479,7 @@ void CopyWellKnownSchemaFiles()
 
 	if (!PlatformFile.DirectoryExists(*GDKSchemaCopyDir))
 	{
-		if(!PlatformFile.CreateDirectoryTree(*GDKSchemaCopyDir))
+		if (!PlatformFile.CreateDirectoryTree(*GDKSchemaCopyDir))
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Could not create gdk schema directory '%s'! Please make sure the parent directory is writeable."), *GDKSchemaCopyDir);
 		}
