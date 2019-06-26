@@ -477,7 +477,7 @@ void CopyWellKnownSchemaFiles()
 	
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
-	if(!PlatformFile.DirectoryExists(*GDKSchemaCopyDir))
+	if (!PlatformFile.DirectoryExists(*GDKSchemaCopyDir))
 	{
 		if(!PlatformFile.CreateDirectoryTree(*GDKSchemaCopyDir))
 		{
