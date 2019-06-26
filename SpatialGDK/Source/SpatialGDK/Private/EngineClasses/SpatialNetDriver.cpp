@@ -1204,18 +1204,17 @@ void USpatialNetDriver::ProcessRemoteFunction(
 			}
 		}
 
-		FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, ReliableRPCIndex);
-
 		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-		RPCParams->Payload = Sender->CreateRPCPayloadFromParams(*RPCParams, Parameters, UnresolvedObjects);
+		RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, Function, ReliableRPCIndex, Parameters, UnresolvedObjects);
 		if(UnresolvedObjects.Num() == 0)
 		{
+			FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, MoveTemp(Payload), ReliableRPCIndex);
 			Sender->QueueOutgoingRPC(RPCParams);
 			Sender->ResolveOutgoingRPCs();
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("===Unresolved Objects!"));
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("There are unresolved objects, RPC %s will be dropped", *Function->GetName()));
 		}
 	}
 }

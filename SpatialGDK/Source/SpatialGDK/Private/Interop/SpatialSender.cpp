@@ -445,22 +445,20 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 	return ComponentInterest;
 }
 
-RPCPayload USpatialSender::CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects)
+RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, UFunction* Function, int ReliableRPCIndex, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects)
 {
-	check(RPCParams.TargetObject.IsValid());
-	const UObject* Object = RPCParams.TargetObject.Get();
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Object->GetClass());
-	const FRPCInfo* RPCInfo = GetRPCInfo(RPCParams.TargetObject.Get(), RPCParams.Function);
-	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(Object)));
+	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(TargetObject->GetClass());
+	const FRPCInfo* RPCInfo = GetRPCInfo(TargetObject, Function);
+	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if(TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
-		UnresolvedObjects.Add(Object);
+		UnresolvedObjects.Add(TargetObject);
 	}
 
-	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(RPCParams.Function, Params, RPCParams.ReliableRPCIndex, UnresolvedObjects);
+	FSpatialNetBitWriter PayloadWriter = PackRPCDataToSpatialNetBitWriter(Function, Params, ReliableRPCIndex, UnresolvedObjects);
 	if (UnresolvedObjects.Num() > 0)
 	{
-		UE_LOG(LogSpatialSender, Warning, TEXT("Some RPC parameters for %s were not resolved."), *RPCParams.Function->GetName());
+		UE_LOG(LogSpatialSender, Warning, TEXT("Some RPC parameters for %s were not resolved."), *Function->GetName());
 	}
 
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo->Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));

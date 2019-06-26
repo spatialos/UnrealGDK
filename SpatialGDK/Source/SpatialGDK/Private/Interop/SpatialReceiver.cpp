@@ -909,9 +909,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 	case SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID:
-		HandleUnreliableRPC(Op);
-		//QueueIncomingRPC(UnresolvedRefs, TargetObject, Function, Payload, SenderWorkerId);
-		//ResolveIncomingRPCs(Object, ObjectRef);
+		HandleRPC(Op);
 		return;
 	}
 
@@ -976,7 +974,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 }
 
-void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
+void USpatialReceiver::HandleRPC(Worker_ComponentUpdateOp& Op)
 {
 	Worker_EntityId EntityId = Op.entity_id;
 
@@ -1028,7 +1026,7 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 
 		if (!TargetObject)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
 			continue;
 		}
 
@@ -1036,8 +1034,7 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 
 		UFunction* Function = ClassInfo.RPCs[Payload.Index];
 
-		FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function);
-		Params->Payload = Payload;
+		FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function, MoveTemp(Payload));
 		QueueIncomingRPC(Params);
 	}
 
@@ -1112,8 +1109,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
-	FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function);
-	Params->Payload = Payload;
+	FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function, MoveTemp(Payload));
 	QueueIncomingRPC(Params);
 
 	// TO-DO: Send it after RPC has been applied

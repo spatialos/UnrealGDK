@@ -4,11 +4,12 @@
 
 namespace SpatialGDK
 {
-FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, int InReliableRPCIndex /* = 0 */)
+
+FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, RPCPayload&& InPayload, int InReliableRPCIndex /*= 0*/)
 	: TargetObject(InTargetObject)
 	, Function(InFunction)
 	, ReliableRPCIndex(InReliableRPCIndex)
-	, Payload(0, 0, TArray<uint8>{})
+	, Payload(MoveTemp(InPayload))
 {
 }
 
@@ -44,7 +45,6 @@ void RPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FQueu
 		RPCList->Peek(RPCParams);
 		if (!RPCParams.IsValid())
 		{
-			//UE_LOG(LogSpatialSender, Warning, TEXT("===RPC Param Invalid"));
 			RPCList->Empty();
 			break;
 		}

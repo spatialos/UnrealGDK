@@ -108,7 +108,7 @@ public:
 
 	void FlushPackedUnreliableRPCs();
 
-	RPCPayload CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects);
+	RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, UFunction* Function, int ReliableRPCIndex, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects);
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);

@@ -10,7 +10,7 @@ namespace SpatialGDK
 // TODO: remove this logic when singletons can be referenced without entity IDs (UNR-1456) - deprecated???
 struct FPendingRPCParams
 {
-	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, int InReliableRPCIndex = 0);
+	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, RPCPayload&& InPayload, int InReliableRPCIndex = 0);
 	~FPendingRPCParams() = default;
 
 	TWeakObjectPtr<UObject> TargetObject;
