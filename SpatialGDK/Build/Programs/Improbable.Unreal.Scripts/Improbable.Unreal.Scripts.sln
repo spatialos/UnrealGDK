@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "Common\Common.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Linter", "Linter\Linter.csproj", "{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WriteLinuxScript", "WriteLinuxScript\WriteLinuxScript.csproj", "{884C3696-4722-47E5-9100-ED20FE33E05D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,8 +29,15 @@ Global
 		{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1A3A29F-BEA9-492B-8F09-0FEA58DF6D36}.Release|Any CPU.Build.0 = Release|Any CPU
+		{884C3696-4722-47E5-9100-ED20FE33E05D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{884C3696-4722-47E5-9100-ED20FE33E05D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{884C3696-4722-47E5-9100-ED20FE33E05D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{884C3696-4722-47E5-9100-ED20FE33E05D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2B494D99-F678-4410-8215-439DF6992E41}
 	EndGlobalSection
 EndGlobal
