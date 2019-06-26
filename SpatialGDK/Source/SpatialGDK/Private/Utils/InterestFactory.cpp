@@ -242,7 +242,7 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 	//     capture specific types, including all derived types of that actor.
 
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
-	const float DefaultDistance= DefaultActor->ClientInterestDistance;
+	const float DefaultDistance = DefaultActor->ClientInterestDistance;
 
 	QueryConstraint CheckoutRadiusConstraints;
 
