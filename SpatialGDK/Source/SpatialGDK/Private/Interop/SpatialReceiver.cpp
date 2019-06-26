@@ -1114,7 +1114,21 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 	PendingReliableRPCs.Remove(Op.request_id);
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		if (ReliableRPC->Attempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		bool bCanRetry = false;
+
+		// Only attempt to retry if the error code indicates it makes sense too
+		if ((Op.status_code == WORKER_STATUS_CODE_TIMEOUT || Op.status_code == WORKER_STATUS_CODE_NOT_FOUND)
+			&& (ReliableRPC->Attempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS))
+		{
+			bCanRetry = true;
+		}
+		// Don't apply the retry limit on auth lost, as it should eventually succeed
+		else if (Op.status_code == WORKER_STATUS_CODE_AUTHORITY_LOST)
+		{
+			bCanRetry = true;
+		}
+
+		if (bCanRetry)
 		{
 			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(ReliableRPC->Attempts);
 			UE_LOG(LogSpatialReceiver, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"),
