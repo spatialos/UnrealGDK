@@ -41,18 +41,18 @@ struct EditorWorkerController
 		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
 		SpatialShutdownHandle = Toolbar.OnSpatialShutdown.AddRaw(this, &EditorWorkerController::OnSpatialShutdown);
 
-		const TMap<FString, int32>& WorkerTypesToLaunch = GetDefault<ULevelEditorPlaySettings>()->WorkerTypesToLaunch;
-		const int32 WorkerCount = Algo::Accumulate(WorkerTypesToLaunch, 0, [](int32 Current, const TPair<FString, int32>& Element) { return Current + Element.Value; });
+		const TMap<FName, int32>& WorkerTypesToLaunch = GetDefault<ULevelEditorPlaySettings>()->WorkerTypesToLaunch;
+		const int32 WorkerCount = Algo::Accumulate(WorkerTypesToLaunch, 0, [](int32 Current, const TPair<FName, int32>& Element) { return Current + Element.Value; });
 
 		WorkerIds.SetNum(WorkerCount);
 		ReplaceProcesses.SetNum(WorkerCount);
 
 		int32 WorkerIdIndex = 0;
-		for (const TPair<FString, int32>& WorkerType : WorkerTypesToLaunch)
+		for (const TPair<FName, int32>& WorkerType : WorkerTypesToLaunch)
 		{
 			for (int i = 0; i < WorkerType.Value; ++i)
 			{
-				const FString NewWorkerId = WorkerType.Key + FGuid::NewGuid().ToString();
+				const FString NewWorkerId = WorkerType.Key.ToString() + FGuid::NewGuid().ToString();
 
 				if (!WorkerIds[WorkerIdIndex].IsEmpty() && SecondsSinceLastSession < WorkerReplaceThresholdSeconds)
 				{

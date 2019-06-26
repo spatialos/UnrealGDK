@@ -123,6 +123,6 @@ void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
 
 	for (const FWorkerTypeLaunchSection WorkerLaunch : LaunchConfigDesc.Workers)
 	{
-		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
+		PlayInSettings->WorkerTypesToLaunch.Add(FName(*WorkerLaunch.WorkerTypeName), WorkerLaunch.NumEditorInstances);
 	}
 }

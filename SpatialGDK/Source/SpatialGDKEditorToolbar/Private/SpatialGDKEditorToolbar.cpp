@@ -364,7 +364,7 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	}
 
 	const ULevelEditorPlaySettings* LevelEditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
-	const int32 ServerCount = Algo::Accumulate(LevelEditorPlaySettings->WorkerTypesToLaunch, 0, [](int32 Current, const TPair<FString, int32>& Element) { return Current + Element.Value; });
+	const int32 ServerCount = Algo::Accumulate(LevelEditorPlaySettings->WorkerTypesToLaunch, 0, [](int32 Current, const TPair<FName, int32>& Element) { return Current + Element.Value; });
 	
 	if (!SpatialGDKRuntimeSettings->bEnableHandover && ServerCount > 1)
 	{
