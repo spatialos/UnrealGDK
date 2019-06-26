@@ -20,16 +20,15 @@ component UnrealClientRPCEndpoint {
     id = 9990;
     bool ready = 1;
     event UnrealRPCPayload client_to_server_rpc_event;
-    event UnrealPackedRPCPayload unreliable_packed_client_to_server_rpc;
-    command Void server_to_client_rpc_command(UnrealRPCPayload);
+    event UnrealPackedRPCPayload packed_client_to_server_rpc;
 }
 
 component UnrealServerRPCEndPoint {
     id = 9989;
     bool ready = 1;
     event UnrealRPCPayload server_to_client_rpc_event;
-    event UnrealPackedRPCPayload unreliable_packed_server_to_client_rpc;
-    command Void client_to_server_rpc_command(UnrealRPCPayload);
+    event UnrealPackedRPCPayload packed_server_to_client_rpc;
+    command Void server_to_server_rpc_command(UnrealRPCPayload);
 }
 
 component UnrealMulticastRPCEndpoint {
