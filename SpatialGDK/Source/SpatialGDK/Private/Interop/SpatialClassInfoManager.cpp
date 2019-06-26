@@ -222,8 +222,6 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	{
 		Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(Class));
 		Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(Class));
-
-		UE_LOG(LogTemp, Display, TEXT("[AG] Class [%s] ActorGroup [%s], WorkerType, [%s]"), *Class->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
 	}
 }
 
