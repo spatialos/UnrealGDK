@@ -38,7 +38,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	bStoppingSpatialService = false;
 
 	// For checking whether we can stop or start. Set in the past so the first RefreshServiceStatus does not wait.
-	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(2);
+	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(5);
 
 	// Get the project name from the spatialos.json.
 	ProjectName = GetProjectName();
@@ -172,20 +172,14 @@ void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString A
 	// Make sure the pipe doesn't get clogged.
 	AsyncTask(ENamedThreads::AnyBackgroundHiPriTask, [&ReadPipe, &OutResult, &ProcHandle]
 	{
-		while (FPlatformProcess::IsProcRunning(ProcHandle))
+		while (ProcHandle.IsValid() && FPlatformProcess::IsProcRunning(ProcHandle))
 		{
 			// TODO: Reading from this pipe when debugging causes a crash.
-			if (ReadPipe)
-			{
-				OutResult += FPlatformProcess::ReadPipe(ReadPipe);
-			}
+			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
 		}
 	});
 
-	if (FPlatformProcess::IsProcRunning(ProcHandle))
-	{
-		FPlatformProcess::WaitForProc(ProcHandle);
-	}
+	FPlatformProcess::WaitForProc(ProcHandle);
 }
 
 void FLocalDeploymentManager::RefreshServiceStatus()
@@ -194,7 +188,7 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 
 	FTimespan Span = CurrentTime - LastSpatialServiceCheck;
 
-	if (Span.GetSeconds() < 3)
+	if (Span.GetSeconds() < 5)
 	{
 		return;
 	}
@@ -255,7 +249,12 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	TSharedPtr<FJsonObject> SpotJsonContent = SpotJsonResult->GetObjectField(TEXT("content"));
 
-	FString DeploymentStatus = SpotJsonContent->GetStringField(TEXT("status"));
+	FString DeploymentStatus;
+	if (!SpotJsonContent->TryGetStringField(TEXT("status"), DeploymentStatus))
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not get local deployment status."));
+	}
+
 	if (DeploymentStatus == TEXT("RUNNING"))
 	{
 		FString DeploymentID = SpotJsonContent->GetStringField(TEXT("id"));
@@ -274,11 +273,12 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	}
 	else
 	{
-		bLocalDeploymentRunning = false;
+		// We don't know if the deploy is running here so have to call IsLocalDeploymentRunning.
+		//bLocalDeploymentRunning = false;
 
 		// TODO: Is this the correct log path anymore?
-		const FString SpatialLogPath = GetSpatialOSDirectory() + FString(TEXT("/logs/spatial.log"));
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."), *SpatialLogPath);
+		//const FString SpatialLogPath = GetSpatialOSDirectory() + FString(TEXT("/logs/spatial.log"));
+		//UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."), *SpatialLogPath);
 		IsLocalDeploymentRunning();
 		return false;
 	}
