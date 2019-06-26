@@ -1214,7 +1214,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		}
 		else
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("There are unresolved objects, RPC %s will be dropped"), *Function->GetName()));
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("There are unresolved objects, RPC %s will be dropped"), *Function->GetName());
 		}
 	}
 }
