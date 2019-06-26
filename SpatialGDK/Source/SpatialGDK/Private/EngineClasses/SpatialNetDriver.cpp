@@ -49,6 +49,7 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bWaitingForAcceptingPlayersToSpawn(false)
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
+	, CreateServerWorkerEntityNumberOfAttempts(0)
 {
 }
 
@@ -315,7 +316,31 @@ void USpatialNetDriver::CreateServerWorkerEntity()
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
 	Components.Add(interest.CreateInterestData());
 
-	Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
+	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
+	CreateEntityDelegate OnCreateWorkerEntityResponse;
+	OnCreateWorkerEntityResponse.BindLambda([this](const Worker_CreateEntityResponseOp& Op)
+	{
+		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+		{
+			if (++CreateServerWorkerEntityNumberOfAttempts <= SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+			{
+				UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker entity creation request failed and will retry: \"%s\""),
+					UTF8_TO_TCHAR(Op.message));
+
+				FTimerHandle RetryTimer;
+				TimerManager.SetTimer(RetryTimer, [this]()
+				{
+					CreateServerWorkerEntity();
+				}, SpatialConstants::GetCommandRetryWaitTimeSeconds(CreateServerWorkerEntityNumberOfAttempts), false);
+			}
+			else
+			{
+				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request failed too many times. (%u attempts)"),
+					SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+			}
+		}
+	});
+	Dispatcher->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
 }
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()
