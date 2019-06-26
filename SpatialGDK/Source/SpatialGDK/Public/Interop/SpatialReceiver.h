@@ -158,6 +158,7 @@ private:
 
 	void RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object);
 
+	// TODO(Alex): process unreliableRPC always?
 	bool ApplyRPC(SpatialGDK::FPendingRPCParamsPtr Params);
 	bool ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);	
 

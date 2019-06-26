@@ -996,7 +996,7 @@ void USpatialReceiver::HandleRPC(Worker_ComponentUpdateOp& Op)
 
 	Schema_FieldId EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
 	// Client and Server Unreliable RPCs can be packed, in which case they're sent using a different event ID.
-	if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs && Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
+	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
 	{
 		EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID;
 	}
@@ -1011,7 +1011,7 @@ void USpatialReceiver::HandleRPC(Worker_ComponentUpdateOp& Op)
 
 		FUnrealObjectRef ObjectRef(EntityId, Payload.Offset);
 
-		if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs)
+		if (GetDefault<USpatialGDKSettings>()->bPackRPCs)
 		{
 			// When packing unreliable RPCs into one update, they also always go through the PlayerController.
 			// This means we need to retrieve the actual target Entity ID from the payload.
@@ -1024,9 +1024,12 @@ void USpatialReceiver::HandleRPC(Worker_ComponentUpdateOp& Op)
 		
 		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 
+		// TODO(Alex): Maybe queue by ObjectRef (create jira).
+		// It may happen when:
+		// 1. Packing RPCs (so that it's sent through a different entity)
+		// 2. Object has been destroyed (to fix that we need to clean queued component udpates for removed entity in void USpatialDispatcher::ProcessOps())
 		if (!TargetObject)
 		{
-			// TODO(Alex): Can happen with slow connection (e.g. pause execution for >30 sec)
 			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
 			continue;
 		}
@@ -1111,9 +1114,10 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
 	FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function, MoveTemp(Payload));
-	QueueIncomingRPC(Params);
 
-	// TODO(Alex): Send it after RPC has been applied
+	QueueIncomingRPC(Params);
+	ResolveIncomingRPCs();
+
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
 
@@ -1231,7 +1235,7 @@ void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, 
 			{
 				if(UObject* TargetObject = Channel->GetActor())
 				{
-					Sender->ResolveOutgoingRPCs();
+					Sender->SendOutgoingRPCs();
 				}
 			}
 		}
@@ -1485,8 +1489,8 @@ void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const 
 	Sender->ResolveOutgoingOperations(Object, /* bIsHandover */ true);
 	ResolveIncomingOperations(Object, ObjectRef);
 	// TODO(Alex): is it acceptable to remove it?
-	//Sender->ResolveOutgoingRPCs(Object);
-	//ResolveIncomingRPCs(Object, ObjectRef);
+	//ResolveIncomingRPCs(Object, ObjectRef); - put it back + Try to execute as soon as Actor's queue is empty (on receiving)
+	// Also create a jira ticket for evaluation + optimization
 }
 
 void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)

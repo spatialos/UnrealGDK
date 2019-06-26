@@ -447,7 +447,6 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* 
 
 RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, UFunction* Function, int ReliableRPCIndex, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects)
 {
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(TargetObject->GetClass());
 	const FRPCInfo* RPCInfo = NetDriver->GetRPCInfo(TargetObject, Function);
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if(TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
@@ -500,6 +499,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		{
 			if (Params->Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 			{
+				// TODO(Alex): Should we queue and send multicast as usual instead of trying to pack into RPCOnEntityCreation?
 				// TODO: UNR-1437 - Add Support for Multicast RPCs on Entity Creation
 				UE_LOG(LogSpatialSender, Warning, TEXT("NetMulticast RPC %s triggered on Object %s too close to initial creation."), *Params->Function->GetName(), *TargetObject->GetName());
 			}
@@ -575,11 +575,8 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 
 		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo->Type);
 
-		// TODO(Alex): Is it merged correctly?
-		if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs
-			&& RPCInfo->Type != SCHEMA_NetMulticastRPC
-			&& RPCInfo->Type != SCHEMA_ServerReliableRPC
-			&& RPCInfo->Type != SCHEMA_ClientReliableRPC)
+		if (GetDefault<USpatialGDKSettings>()->bPackRPCs
+			&& RPCInfo->Type != SCHEMA_NetMulticastRPC)
 		{
 			const UObject* UnresolvedObject = nullptr;
 			AddPendingUnreliableRPC(TargetObject, Params, ComponentId, RPCInfo->Index, UnresolvedObject);
@@ -1044,7 +1041,7 @@ void USpatialSender::ResolveOutgoingOperations(UObject* Object, bool bIsHandover
 	ObjectToUnresolved.Remove(Object);
 }
 
-void USpatialSender::ResolveOutgoingRPCs()
+void USpatialSender::SendOutgoingRPCs()
 {
 	FProcessRPCDelegate Delegate;
 	Delegate.BindUObject(this, &USpatialSender::SendRPC);

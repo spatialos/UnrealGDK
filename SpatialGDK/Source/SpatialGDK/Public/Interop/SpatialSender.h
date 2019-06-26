@@ -97,7 +97,7 @@ public:
 	void ProcessPositionUpdates();
 
 	void ResolveOutgoingOperations(UObject* Object, bool bIsHandover);
-	void ResolveOutgoingRPCs();
+	void SendOutgoingRPCs();
 
 	bool UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);

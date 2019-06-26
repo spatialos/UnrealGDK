@@ -206,6 +206,8 @@ private:
 	void ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
 #endif
 
+	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
+
 	friend USpatialNetConnection;
 	friend USpatialWorkerConnection;
 

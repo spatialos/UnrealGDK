@@ -982,6 +982,41 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 	// SpatialGDK - Here Unreal would return the position of the last replicated actor in PriorityActors before the channel became saturated.
 	// In Spatial we use ActorReplicationRateLimit and EntityCreationRateLimit to limit replication so this return value is not relevant.
 }
+
+void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
+{
+	// The RPC might have been called by an actor directly, or by a subobject on that actor
+	UObject* CallingObject = SubObject ? SubObject : Actor;
+
+	if (IsServer())
+	{
+		GetOrCreateSpatialActorChannel(CallingObject);
+	}
+
+	int ReliableRPCIndex = 0;
+	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
+	{
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		{
+			ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
+		}
+	}
+
+	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, Function, ReliableRPCIndex, Parameters, UnresolvedObjects);
+	if (UnresolvedObjects.Num() == 0)
+	{
+		FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, MoveTemp(Payload), ReliableRPCIndex);
+		Sender->QueueOutgoingRPC(RPCParams);
+		// TODO(Alex): Create jira ticket to remove queueing when not needed
+		Sender->SendOutgoingRPCs();
+	}
+	else
+	{
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("The object %s is unresolved, RPC %s will be dropped"), *UnresolvedObjects.CreateIterator()->Get()->GetName(), *Function->GetName());
+	}
+}
+
 #endif
 
 // SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
@@ -1188,39 +1223,9 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		}
 	}
 
-	// The RPC might have been called by an actor directly, or by a subobject on that actor
-	UObject* CallingObject = SubObject ? SubObject : Actor;
-
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		if(IsServer())
-		{
-			// TODO(Alex): Should it be elsewhere?
-			GetOrCreateSpatialActorChannel(CallingObject);
-		}
-
-		int ReliableRPCIndex = 0;
-		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
-		{
-			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-			{
-				ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
-			}
-		}
-
-		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-		RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, Function, ReliableRPCIndex, Parameters, UnresolvedObjects);
-		if(UnresolvedObjects.Num() == 0)
-		{
-			FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, MoveTemp(Payload), ReliableRPCIndex);
-			Sender->QueueOutgoingRPC(RPCParams);
-			Sender->ResolveOutgoingRPCs();
-		}
-		else
-		{
-			// TODO(Alex): Can happen with slow connection (e.g. pause execution for >10 sec)
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("There are unresolved objects, RPC %s will be dropped"), *Function->GetName());
-		}
+		ProcessRPC(Actor, SubObject, Function, Parameters);
 	}
 }
 
@@ -1271,7 +1276,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs && Sender != nullptr)
+	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Sender != nullptr)
 	{
 		Sender->FlushPackedUnreliableRPCs();
 	}
