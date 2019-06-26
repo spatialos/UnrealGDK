@@ -745,6 +745,7 @@ void FSpatialGDKEditorToolbarModule::TryStartLocalDeployment()
 	FString SpotCreateResult;
 	ExecuteAndReadOutput(*SpotExe, *SpotCreateArgs, *SpatialDirectory, SpotCreateResult);
 
+	// TODO: ParseJson should return a bool to check for failures.
 	TSharedPtr<FJsonObject> SpotJsonResult = ParseJson(SpotCreateResult);
 	if (!SpotJsonResult.IsValid())
 	{

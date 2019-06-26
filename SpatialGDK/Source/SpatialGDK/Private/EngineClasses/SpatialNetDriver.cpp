@@ -117,7 +117,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Waiting for local spatial depoyment to start before connecting..."));
 		SpatialDeploymentStartHandle = Toolbar.OnDeploymentStart.AddLambda([this, URL, &Toolbar]
 		{
-			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Local deployment started, connecting with URL: %s", *URL.ToString()));
+			UE_LOG(LogSpatialOSNetDriver, Log, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
 			InitiateConnectionToSpatialOS(URL);
 			Toolbar.OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
 		});
