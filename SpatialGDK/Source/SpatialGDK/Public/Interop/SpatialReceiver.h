@@ -94,7 +94,7 @@ struct FPendingIncomingRPC
 
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
-DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
+DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
 
 UCLASS()
@@ -126,7 +126,7 @@ public:
 	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
 	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
 
-	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
+	void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
