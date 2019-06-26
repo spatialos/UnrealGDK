@@ -1,25 +1,29 @@
 #include "Utils/ActorGroupManager.h"
 #include "SpatialGDKSettings.h"
 
-UActorGroupManager::UActorGroupManager()
+void UActorGroupManager::Init()
 {
-	InitFromSettings();
+	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
+	{
+		DefaultWorkerType = Settings->DefaultWorkerType.WorkerTypeName;
+		if (Settings->bEnableOffloading)
+		{
+			for (TPair<FName, FActorGroupInfo> ActorGroup : Settings->ActorGroups)
+			{
+				ActorGroupToWorkerType.Add(ActorGroup.Key, ActorGroup.Value.OwningWorkerType.WorkerTypeName);
+
+				for (TSoftClassPtr<AActor> ClassPtr : ActorGroup.Value.ActorClasses)
+				{
+					ClassPathToActorGroup.Add(ClassPtr, ActorGroup.Key);
+				}
+			}
+		}
+	}
 }
 
-UActorGroupManager* UActorGroupManager::GetInstance()
+FName UActorGroupManager::GetActorGroupForClass(TSubclassOf<AActor> Class)
 {
-	UActorGroupManager* Manager = NewObject<UActorGroupManager>();
-	Manager->InitFromSettings();
-	return Manager;
-}
-
-void UActorGroupManager::InitFromSettings()
-{
-}
-
-FName UActorGroupManager::GetActorGroupForClass(UClass* Class)
-{
-	if (Class == nullptr || !Class->IsChildOf<AActor>())
+	if (Class == nullptr)
 	{
 		return NAME_None;
 	}
@@ -27,32 +31,29 @@ FName UActorGroupManager::GetActorGroupForClass(UClass* Class)
 	UClass* FoundClass = Class;
 	TSoftClassPtr<AActor> ClassPtr = TSoftClassPtr<AActor>(FoundClass);
 
-	while (FoundClass != nullptr && !ClassPathToActorGroup.Contains(ClassPtr))
+	while (FoundClass != nullptr && FoundClass->IsChildOf(AActor::StaticClass()))
 	{
+		if (const FName* ActorGroup = ClassPathToActorGroup.Find(ClassPtr))
+		{
+			return ClassPathToActorGroup.Add(TSoftClassPtr<AActor>(Class), *ActorGroup);
+		}
+
 		FoundClass = FoundClass->GetSuperClass();
 		ClassPtr = TSoftClassPtr<AActor>(FoundClass);
 	}
 
-	if (FoundClass != nullptr)
-	{
-		if (ClassPathToActorGroup.Contains(ClassPtr))
-		{
-			FName ActorGroup = ClassPathToActorGroup.FindRef(ClassPtr);
-			ClassPathToActorGroup.Add(TSoftClassPtr<AActor>(Class), ActorGroup);
-			return ActorGroup;
-		}
-	}
-	return NAME_None;
+	// No mapping found so set and return default actor group.
+	return ClassPathToActorGroup.Add(TSoftClassPtr<AActor>(Class), SpatialConstants::DefaultActorGroup);
 }
 
-FString UActorGroupManager::GetWorkerTypeForClass(UClass* Class)
+FName UActorGroupManager::GetWorkerTypeForClass(TSubclassOf<AActor> Class)
 {
-	FName ActorGroup = GetActorGroupForClass(Class);
+	const FName ActorGroup = GetActorGroupForClass(Class);
 
-	if (ActorGroupToWorkerType.Contains(ActorGroup))
+	if (const FName* WorkerType = ActorGroupToWorkerType.Find(ActorGroup))
 	{
-		return ActorGroupToWorkerType.FindRef(ActorGroup);
+		return *WorkerType;
 	}
 
-	return TEXT("");
+	return DefaultWorkerType;
 }

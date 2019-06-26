@@ -49,17 +49,14 @@ class SPATIALGDK_API UActorGroupManager : public UObject
 private:
 	TMap<TSoftClassPtr<AActor>, FName> ClassPathToActorGroup;
 
-	TMap<FName, FString> ActorGroupToWorkerType;
+	TMap<FName, FName> ActorGroupToWorkerType;
 
-	UActorGroupManager();
-
-	void InitFromSettings();
+	FName DefaultWorkerType;
 
 public:
+	void Init();
 
-	static UActorGroupManager* GetInstance();
+	FName GetActorGroupForClass(TSubclassOf<AActor> Class);
 
-	FName GetActorGroupForClass(UClass* Class);
-
-	FString GetWorkerTypeForClass(UClass* Class);
+	FName GetWorkerTypeForClass(TSubclassOf<AActor> Class);
 };

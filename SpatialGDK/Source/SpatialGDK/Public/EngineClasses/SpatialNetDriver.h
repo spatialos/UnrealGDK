@@ -26,6 +26,7 @@ class USpatialWorkerConnection;
 class USpatialDispatcher;
 class USpatialSender;
 class USpatialReceiver;
+class UActorGroupManager;
 class USpatialClassInfoManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
@@ -110,6 +111,8 @@ public:
 	USpatialSender* Sender;
 	UPROPERTY()
 	USpatialReceiver* Receiver;
+	UPROPERTY()
+	UActorGroupManager* ActorGroupManager;
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()

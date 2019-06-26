@@ -16,13 +16,15 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Utils/ActorGroupManager.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
+void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver, UActorGroupManager* InActorGroupManager)
 {
 	NetDriver = InNetDriver;
+	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase"));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
@@ -32,8 +34,6 @@ void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
 		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication.")));
 		return;
 	}
-
-	ActorGroupManager = UActorGroupManager::GetInstance();
 }
 
 FORCEINLINE UClass* ResolveClass(FString& ClassPath)
@@ -220,16 +220,10 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	if (Class->IsChildOf<AActor>())
 	{
-		Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(Class);
-		if (Info->ActorGroup == NAME_None)
-		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to find ActorGroup for Class %s"), *Class->GetPathName())
-		}
-		Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(Class);
-		if (Info->WorkerType == TEXT(""))
-		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to find WorkerType for ActorGroup %s (for Class %s)"), *Info->ActorGroup.ToString(), *Class->GetPathName())
-		}
+		Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(Class));
+		Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(Class));
+
+		UE_LOG(LogTemp, Display, TEXT("[AG] Class [%s] ActorGroup [%s], WorkerType, [%s]"), *Class->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
 	}
 }
 
