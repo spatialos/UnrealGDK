@@ -49,7 +49,6 @@ USpatialNetDriver::USpatialNetDriver(const FObjectInitializer& ObjectInitializer
 	, bWaitingForAcceptingPlayersToSpawn(false)
 	, NextRPCIndex(0)
 	, TimeWhenPositionLastUpdated(0.f)
-	, CreateServerWorkerEntityNumberOfAttempts(0)
 {
 }
 
@@ -287,7 +286,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	}
 }
 
-void USpatialNetDriver::CreateServerWorkerEntity()
+void USpatialNetDriver::CreateServerWorkerEntity(int AttemptCounter)
 {
 	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
 
@@ -317,8 +316,9 @@ void USpatialNetDriver::CreateServerWorkerEntity()
 	Components.Add(interest.CreateInterestData());
 
 	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
+
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([this](const Worker_CreateEntityResponseOp& Op)
+	OnCreateWorkerEntityResponse.BindLambda([this, AttemptCounter](const Worker_CreateEntityResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -329,8 +329,7 @@ void USpatialNetDriver::CreateServerWorkerEntity()
 				return;
 			}
 
-			CreateServerWorkerEntityNumberOfAttempts++;
-			if (CreateServerWorkerEntityNumberOfAttempts == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+			if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 			{
 				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
 					SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
@@ -339,10 +338,10 @@ void USpatialNetDriver::CreateServerWorkerEntity()
 
 			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker entity creation request timed out and will retry."));
 			FTimerHandle RetryTimer;
-			TimerManager.SetTimer(RetryTimer, [this]()
+			TimerManager.SetTimer(RetryTimer, [this, AttemptCounter]()
 			{
-				CreateServerWorkerEntity();
-			}, SpatialConstants::GetCommandRetryWaitTimeSeconds(CreateServerWorkerEntityNumberOfAttempts), false);
+				CreateServerWorkerEntity(AttemptCounter + 1);
+			}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 		}
 	});
 	Dispatcher->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
