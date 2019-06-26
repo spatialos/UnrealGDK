@@ -71,37 +71,22 @@ void RPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
 {
 	for (auto& RPCs : QueuedRPCs)
 	{
-		for (auto& RPCMapItem : RPCs.Value)
+		FRPCMap& MapOfQueues = RPCs.Value;
+		for(auto It = MapOfQueues.CreateIterator(); It; ++It)
 		{
-			TSharedPtr<FQueueOfParams> RPCList = RPCMapItem.Value;
+			TSharedPtr<FQueueOfParams> RPCList = It.Value();
 			ProcessRPCs(FunctionToApply, RPCList.Get());
+			if ((*RPCList).IsEmpty())
+			{
+				It.RemoveCurrent();
+			}
 		}
 	}
-	// TODO(Alex): Should we do it less often or inside the ProcessRPCs loop?
-	PruneQueuedRPCs();
 }
 
 bool RPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParamsPtr Params)
 {
 	return FunctionToApply.Execute(Params);
-}
-
-void RPCContainer::PruneQueuedRPCs()
-{
-	RPCContainerType PrunedRPCs;
-	for (auto& RPCs : QueuedRPCs)
-	{
-		for (auto& RPCMapItem : RPCs.Value)
-		{
-			TSharedPtr<FQueueOfParams> RPCList = RPCMapItem.Value;
-			if (!(*RPCList).IsEmpty())
-			{
-				TSharedPtr<FQueueOfParams>& QueuePtr = PrunedRPCs.FindOrAdd(RPCs.Key).FindOrAdd(RPCMapItem.Key);
-				QueuePtr = RPCList;
-			}
-		}
-	}
-	QueuedRPCs = PrunedRPCs;
 }
 
 }

@@ -29,7 +29,6 @@ class RPCContainer
 public:
 	void QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
 	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply);
-	void PruneQueuedRPCs();
 
 private:
 	using FQueueOfParams = TQueue<FPendingRPCParamsPtr>;
