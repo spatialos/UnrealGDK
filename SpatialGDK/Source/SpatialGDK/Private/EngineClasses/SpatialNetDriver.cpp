@@ -320,29 +320,31 @@ void USpatialNetDriver::CreateServerWorkerEntity(int AttemptCounter)
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
 	OnCreateWorkerEntityResponse.BindLambda([this, AttemptCounter](const Worker_CreateEntityResponseOp& Op)
 	{
-		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
+		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
-			if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request failed: \"%s\""),
-					UTF8_TO_TCHAR(Op.message));
-				return;
-			}
-
-			if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-			{
-				UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
-					SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
-				return;
-			}
-
-			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker entity creation request timed out and will retry."));
-			FTimerHandle RetryTimer;
-			TimerManager.SetTimer(RetryTimer, [this, AttemptCounter]()
-			{
-				CreateServerWorkerEntity(AttemptCounter + 1);
-			}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
+			return;
 		}
+
+		if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request failed: \"%s\""),
+				UTF8_TO_TCHAR(Op.message));
+			return;
+		}
+
+		if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
+				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
+			return;
+		}
+
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker entity creation request timed out and will retry."));
+		FTimerHandle RetryTimer;
+		TimerManager.SetTimer(RetryTimer, [this, AttemptCounter]()
+		{
+			CreateServerWorkerEntity(AttemptCounter + 1);
+		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});
 	Dispatcher->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
 }
