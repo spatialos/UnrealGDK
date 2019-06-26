@@ -45,7 +45,6 @@ void USpatialGDKSettings::PostInitProperties()
 	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
 }
 
-
 #if WITH_EDITOR
 // Add a pop-up to warn users to update their config upon changing the using QBI property.
 void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)

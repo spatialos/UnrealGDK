@@ -15,10 +15,6 @@ class SPATIALGDK_API USpatialGDKSettings : public UObject
 	GENERATED_BODY()
 
 public:
-
-
-
-
 	USpatialGDKSettings(const FObjectInitializer& ObjectInitializer);
 
 #if WITH_EDITOR

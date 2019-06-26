@@ -8,11 +8,11 @@ void UActorGroupManager::Init()
 		DefaultWorkerType = Settings->DefaultWorkerType.WorkerTypeName;
 		if (Settings->bEnableOffloading)
 		{
-			for (TPair<FName, FActorGroupInfo> ActorGroup : Settings->ActorGroups)
+			for (const TPair<FName, FActorGroupInfo> ActorGroup : Settings->ActorGroups)
 			{
 				ActorGroupToWorkerType.Add(ActorGroup.Key, ActorGroup.Value.OwningWorkerType.WorkerTypeName);
 
-				for (TSoftClassPtr<AActor> ClassPtr : ActorGroup.Value.ActorClasses)
+				for (const TSoftClassPtr<AActor> ClassPtr : ActorGroup.Value.ActorClasses)
 				{
 					ClassPathToActorGroup.Add(ClassPtr, ActorGroup.Key);
 				}
@@ -21,7 +21,7 @@ void UActorGroupManager::Init()
 	}
 }
 
-FName UActorGroupManager::GetActorGroupForClass(TSubclassOf<AActor> Class)
+FName UActorGroupManager::GetActorGroupForClass(const TSubclassOf<AActor> Class)
 {
 	if (Class == nullptr)
 	{
@@ -51,7 +51,7 @@ FName UActorGroupManager::GetActorGroupForClass(TSubclassOf<AActor> Class)
 	return SpatialConstants::DefaultActorGroup;
 }
 
-FName UActorGroupManager::GetWorkerTypeForClass(TSubclassOf<AActor> Class)
+FName UActorGroupManager::GetWorkerTypeForClass(const TSubclassOf<AActor> Class)
 {
 	const FName ActorGroup = GetActorGroupForClass(Class);
 
