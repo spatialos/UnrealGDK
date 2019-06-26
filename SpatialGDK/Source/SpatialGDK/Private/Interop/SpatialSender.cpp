@@ -95,8 +95,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
-	WorkerAttributeSet ServerAttribute = { SpatialConstants::ServerWorkerType };
-	WorkerAttributeSet ClientAttribute = { SpatialConstants::ClientWorkerType };
+	WorkerAttributeSet ServerAttribute = { SpatialConstants::DefaultServerWorkerType };
+	WorkerAttributeSet ClientAttribute = { SpatialConstants::DefaultClientWorkerType };
 	WorkerAttributeSet OwningClientAttribute = { ClientWorkerAttribute };
 
 	WorkerRequirementSet ServersOnly = { ServerAttribute };
