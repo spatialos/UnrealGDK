@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 #pragma optimize("", off)
 #include "SpatialGDKEditorToolbar.h"
+
 #include "Async/Async.h"
 #include "Editor.h"
 #include "EditorStyleSet.h"
@@ -18,6 +19,8 @@
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+
+#include "Interop/Connection/EditorWorkerController.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -1044,7 +1047,7 @@ void FSpatialGDKEditorToolbarModule::CleanupSpatialProcess()
 	FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
 	SpatialOSStackProcessID = 0;
 
-	OnSpatialShutdown.Broadcast();
+	SpatialGDKServices::OnSpatialShutdown();
 }
 
 /**

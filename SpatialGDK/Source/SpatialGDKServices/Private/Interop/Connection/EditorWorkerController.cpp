@@ -1,16 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma once
+#include "EditorWorkerController.h"
+
+#include "Private/SpatialGDKServicesPrivate.h"
 
 #if WITH_EDITOR
-
-#include "Editor.h"
-#include "Modules/ModuleManager.h"
-#include "Settings/LevelEditorPlaySettings.h"
-#include "SpatialGDKEditorToolbar.h"
-
-namespace SpatialGDK
+namespace
 {
-
 struct EditorWorkerController
 {
 	// Only issue the worker replace request if there's a chance the load balancer hasn't acknowledged
@@ -28,8 +23,6 @@ struct EditorWorkerController
 	void OnSpatialShutdown()
 	{
 		LastPIEEndTime = 0;	// Reset PIE end time to ensure replace-a-worker isn't called
-		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
-		Toolbar.OnSpatialShutdown.Remove(SpatialShutdownHandle);
 		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
 	}
 
@@ -38,12 +31,9 @@ struct EditorWorkerController
 		ReplaceProcesses.Empty();
 
 		int64 SecondsSinceLastSession = FDateTime::Now().ToUnixTimestamp() - LastPIEEndTime;
-		UE_LOG(LogSpatialWorkerConnection, Verbose, TEXT("Seconds since last session - %d"), SecondsSinceLastSession);
+		UE_LOG(LogSpatialGDKServices, Verbose, TEXT("Seconds since last session - %d"), SecondsSinceLastSession);
 
 		PIEEndHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &EditorWorkerController::OnPrePIEEnded);
-
-		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
-		SpatialShutdownHandle = Toolbar.OnSpatialShutdown.AddRaw(this, &EditorWorkerController::OnSpatialShutdown);
 
 		int32 PlayNumberOfServers;
 		GetDefault<ULevelEditorPlaySettings>()->GetPlayNumberOfServers(PlayNumberOfServers);
@@ -106,6 +96,31 @@ struct EditorWorkerController
 	FDelegateHandle SpatialShutdownHandle;
 };
 
-} // namespace SpatialGDK
+static EditorWorkerController WorkerController;
+} // end namespace
 
-#endif
+namespace SpatialGDKServices
+{
+void InitWorkers(const FString& WorkerType, bool bConnectAsClient, FString& OutWorkerId)
+{
+	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
+	const int32 FirstServerEditorID = 1;
+	if (bSingleThreadedServer)
+	{
+		if (GPlayInEditorID == FirstServerEditorID)
+		{
+			WorkerController.InitWorkers(WorkerType);
+		}
+
+		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);
+		OutWorkerId = WorkerController.WorkerIds[GPlayInEditorID - 1];
+	}
+}
+
+void OnSpatialShutdown()
+{
+	WorkerController.OnSpatialShutdown();
+}
+
+} // namespace SpatialGDKServices
+#endif // WITH_EDITOR
