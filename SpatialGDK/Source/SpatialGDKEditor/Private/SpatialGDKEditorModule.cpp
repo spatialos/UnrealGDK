@@ -9,7 +9,7 @@
 #include "ISettingsContainer.h"
 #include "ISettingsSection.h"
 #include "PropertyEditor/Public/PropertyEditorModule.h"
-#include "WorkerAssociationCustomization.h"
+#include "WorkerTypeCustomization.h"
 
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorModule"
 
@@ -57,7 +57,7 @@ void FSpatialGDKEditorModule::RegisterSettings()
 	}
 
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
-	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerAssociationCustomization::MakeInstance));
+	PropertyModule.RegisterCustomPropertyTypeLayout("WorkerType", FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWorkerTypeCustomization::MakeInstance));
 }
 
 void FSpatialGDKEditorModule::UnregisterSettings()

@@ -6,7 +6,7 @@
 #include "PropertyEditor/Public/PropertyHandle.h"
 #include "SpatialGDK/Public/Utils/ActorGroupManager.h"
 
-class FWorkerAssociationCustomization : public IPropertyTypeCustomization
+class FWorkerTypeCustomization : public IPropertyTypeCustomization
 {
 public:
 
