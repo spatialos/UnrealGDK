@@ -104,7 +104,11 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// loading thread suspended (e.g. when resuming rendering thread), in which
 	// case we'll crash upon trying to load SchemaDatabase.
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
-	ClassInfoManager->Init(this);
+	// If it fails to load, don't attempt to connect to spatial.
+	if (!ClassInfoManager->TryLoadSchemaDatabase(this))
+	{
+		return false;
+	}
 
 	InitiateConnectionToSpatialOS(URL);
 
@@ -582,6 +586,11 @@ void USpatialNetDriver::Shutdown()
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 {
+	if (!IsServer())
+	{
+		return;
+	}
+
 	// If PackageMap doesn't exist, we haven't connected yet, which means
 	// we don't need to update the interest at this point
 	if (PackageMap == nullptr)
@@ -602,6 +611,8 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 	}
 
 	Channel->MarkInterestDirty();
+
+	Channel->ServerProcessOwnershipChange();
 }
 
 //SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
