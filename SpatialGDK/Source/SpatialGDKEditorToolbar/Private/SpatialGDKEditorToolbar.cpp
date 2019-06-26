@@ -448,12 +448,17 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 	});
 }
 
+<<<<<<< HEAD
 void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		FDateTime StartTime = FDateTime::Now();
 		ShowTaskStartNotification(TEXT("Stopping Spatial service..."));
+=======
+	const FString SpatialCmdArgument = FString::Printf(
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch --enable_pre_run_check=false \"%s\" %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
+>>>>>>> master
 
 		if (!LocalDeploymentManager->TryStopSpatialService())
 		{

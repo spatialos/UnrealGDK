@@ -44,8 +44,8 @@ public:
 
 	void QueryGSM(bool bRetryUntilAcceptingPlayers);
 	void RetryQueryGSM(bool bRetryUntilAcceptingPlayers);
-	bool GetAcceptingPlayersFromQueryResponse(Worker_EntityQueryResponseOp& Op);
-	void ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQueryResponseOp& Op);
+	bool GetAcceptingPlayersFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
+	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SetDeploymentMapURL(const FString& MapURL);
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);

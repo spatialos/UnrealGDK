@@ -105,7 +105,11 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// loading thread suspended (e.g. when resuming rendering thread), in which
 	// case we'll crash upon trying to load SchemaDatabase.
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
-	ClassInfoManager->Init(this);
+	// If it fails to load, don't attempt to connect to spatial.
+	if (!ClassInfoManager->TryLoadSchemaDatabase(this))
+	{
+		return false;
+	}
 
 #if WITH_EDITOR
 	// If we're launching in PIE then ensure there is a deployment running before connecting.
