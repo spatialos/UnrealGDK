@@ -8,7 +8,7 @@
             - The Example Project
                 - [Introduction]({{urlRoot}}/content/get-started/example-project/exampleproject-intro)
                 - [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
-                - [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
+                - [2: Launch a local deployment with multiple clients]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment)
                 - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment)
                 - [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
             - The Starter Template
