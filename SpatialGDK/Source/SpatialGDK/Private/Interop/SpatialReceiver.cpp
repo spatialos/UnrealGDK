@@ -99,6 +99,11 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
 
+	if (bInCriticalSection)
+	{
+		StaticComponentView->OnAddComponent(Op);
+	}
+
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
@@ -144,6 +149,7 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	else
 	{
 		HandleDynamicAddComponent(Op);
+		StaticComponentView->OnAddComponent(Op);
 	}
 }
 
@@ -936,7 +942,6 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 		ApplyComponentData(Subobject, NetDriver->GetActorChannelByEntityId(EntityId), *AddComponent.Data->ComponentData);
 		PendingDynamicSubobjectComponents.Remove(EntityComponentPair);
 	});
-
 }
 
 void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, Worker_ComponentData& Data)
