@@ -221,7 +221,7 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 
 	if (IsServer())
 	{
-		CreateServerWorkerEntity();
+		Sender->CreateServerWorkerEntity();
 		HandleOngoingServerTravel();
 	}
 }
@@ -272,7 +272,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->Init(this);
 	Dispatcher->Init(this);
-	Sender->Init(this);
+	Sender->Init(this, &TimerManager);
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
 	SnapshotManager->Init(this);
@@ -284,69 +284,6 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	{
 		EntityPool->Init(this, &TimerManager);
 	}
-}
-
-void USpatialNetDriver::CreateServerWorkerEntity(int AttemptCounter)
-{
-	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
-
-	WriteAclMap ComponentWriteAcl;
-	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
-	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
-
-	QueryConstraint Constraint;
-	Constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
-
-	Query Query;
-	Query.Constraint = Constraint;
-	Query.FullSnapshotResult = true;
-
-	ComponentInterest Queries;
-	Queries.Queries.Add(Query);
-
-	Interest Interest;
-	Interest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
-
-	TArray<Worker_ComponentData> Components;
-	Components.Add(Position().CreatePositionData());
-	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
-	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(Interest.CreateInterestData());
-
-	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
-
-	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([this, AttemptCounter](const Worker_CreateEntityResponseOp& Op)
-	{
-		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
-		{
-			return;
-		}
-
-		if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request failed: \"%s\""),
-				UTF8_TO_TCHAR(Op.message));
-			return;
-		}
-
-		if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
-				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
-			return;
-		}
-
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker entity creation request timed out and will retry."));
-		FTimerHandle RetryTimer;
-		TimerManager.SetTimer(RetryTimer, [this, AttemptCounter]()
-		{
-			CreateServerWorkerEntity(AttemptCounter + 1);
-		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
-	});
-	Receiver->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
 }
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()
