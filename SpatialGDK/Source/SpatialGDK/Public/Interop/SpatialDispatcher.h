@@ -21,8 +21,6 @@ class USpatialNetDriver;
 class USpatialReceiver;
 class USpatialStaticComponentView;
 
-DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
-
 UCLASS()
 class SPATIALGDK_API USpatialDispatcher : public UObject
 {
@@ -45,7 +43,6 @@ public:
 	FCallbackId OnCommandResponse(Worker_ComponentId ComponentId, const TFunction<void(const Worker_CommandResponseOp&)>& Callback);
 	bool RemoveOpCallback(FCallbackId Id);
 
-	void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate);
 private:
 	struct UserOpCallbackData
 	{
@@ -83,7 +80,4 @@ private:
 	FCallbackId NextCallbackId;
 	TMap<Worker_ComponentId, OpTypeToCallbacksMap> ComponentOpTypeToCallbacksMap;
 	TMap<FCallbackId, CallbackIdData> CallbackIdToDataMap;
-
-	TMap<Worker_RequestId, CreateEntityDelegate> CreateEntityDelegates;
-	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 };

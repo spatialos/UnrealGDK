@@ -1270,6 +1270,11 @@ void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request succeeded: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 	}
 
+	if (CreateEntityDelegate* Delegate = CreateEntityDelegates.Find(Op.request_id))
+	{
+		Delegate->ExecuteIfBound(Op);
+	}
+
 	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
 
 	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
@@ -1319,6 +1324,11 @@ void USpatialReceiver::AddEntityQueryDelegate(Worker_RequestId RequestId, Entity
 void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate)
 {
 	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
+}
+
+void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
+{
+	CreateEntityDelegates.Add(RequestId, Delegate);
 }
 
 TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
