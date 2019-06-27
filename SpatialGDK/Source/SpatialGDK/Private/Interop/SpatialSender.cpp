@@ -103,7 +103,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { OwningClientAttributeSet };
 	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
 
-	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->WorkerTypes)
+	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->ServerWorkerTypes)
 	{
 		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
 

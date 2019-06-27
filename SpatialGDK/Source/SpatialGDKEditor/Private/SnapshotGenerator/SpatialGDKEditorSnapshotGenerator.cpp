@@ -139,7 +139,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 
 	WorkerRequirementSet ReadACL;
-	for (const FName& WorkerType : SpatialGDKSettings->WorkerTypes)
+	for (const FName& WorkerType : SpatialGDKSettings->ServerWorkerTypes)
 	{
 		const WorkerAttributeSet WorkerTypeAttributeSet{ { WorkerType.ToString() } };
 		ReadACL.Add(WorkerTypeAttributeSet);
