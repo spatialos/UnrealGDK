@@ -103,10 +103,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	WorkerRequirementSet AnyServerOrOwningClientRequirementSet = { OwningClientAttributeSet };
 	WorkerRequirementSet OwningClientOnlyRequirementSet = { OwningClientAttributeSet };
 
-	const TArray<FString>& ServerWorkerTypes = GetDefault<USpatialGDKSettings>()->ServerWorkerTypes;
-	for (const FString& ServerWorkerType : ServerWorkerTypes)
+	for (const FName& WorkerType : GetDefault<USpatialGDKSettings>()->WorkerTypes)
 	{
-		WorkerAttributeSet ServerWorkerAttributeSet = { ServerWorkerType };
+		WorkerAttributeSet ServerWorkerAttributeSet = { WorkerType.ToString() };
 
 		AnyServerRequirementSet.Add(ServerWorkerAttributeSet);
 		AnyServerOrClientRequirementSet.Add(ServerWorkerAttributeSet);
@@ -130,7 +129,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
-	const WorkerAttributeSet WorkerAttribute{ Class->WorkerAssociation };
+	const WorkerAttributeSet WorkerAttribute{ Info.WorkerType.ToString() };
 	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 
 	WriteAclMap ComponentWriteAcl;
@@ -152,7 +151,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	if (Actor->IsA<APlayerController>())
 	{
 #if !UE_BUILD_SHIPPING
-		ComponentWriteAcl.Add(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, ServersOnly);
+		ComponentWriteAcl.Add(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, AnyServerRequirementSet);
 #endif // !UE_BUILD_SHIPPING
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	}
