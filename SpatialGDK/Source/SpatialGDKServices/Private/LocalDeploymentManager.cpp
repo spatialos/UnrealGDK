@@ -33,7 +33,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	bStoppingSpatialService = false;
 
 	// For checking whether we can stop or start. Set in the past so the first RefreshServiceStatus does not wait.
-	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(5);
+	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(RefreshFrequency);
 
 	// Get the project name from the spatialos.json.
 	ProjectName = GetProjectName();
@@ -175,12 +175,11 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 
 	FTimespan Span = CurrentTime - LastSpatialServiceCheck;
 
-	if (Span.GetSeconds() < 3)
+	if (Span.GetSeconds() < RefreshFrequency)
 	{
 		return;
 	}
 
-	// TODO: Auto start spatial service based on config value
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		GetServiceStatus();

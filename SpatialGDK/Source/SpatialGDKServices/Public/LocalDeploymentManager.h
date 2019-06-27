@@ -49,9 +49,6 @@ public:
 	void WorkerBuildConfigAsync();
 	bool ParseJson(FString RawJsonString, TSharedPtr<FJsonObject>& JsonParsed);
 	void ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult, int32& ExitCode);
-
-	// TODO: Find alternate way of getting this info, should come from settings.
-	// Probably use input arguments
 	FString GetSpotExe();
 	FString GetSpatialOSDirectory();
 
@@ -77,4 +74,5 @@ private:
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
 
 	static const int32 ExitCodeSuccess = 0;
+	static const int32 RefreshFrequency = 3;
 };

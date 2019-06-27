@@ -295,9 +295,7 @@ public:
 
 	FORCEINLINE FString GetSpotPath() const
 	{
-		// TODO: Use GetGDKPluginDir()
 		FString PluginDir = GetGDKPluginDirectory();
-
 		return  FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe")));
 	}
 

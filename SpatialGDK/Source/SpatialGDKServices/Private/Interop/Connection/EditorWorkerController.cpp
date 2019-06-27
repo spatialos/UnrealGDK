@@ -16,6 +16,8 @@ struct EditorWorkerController
 	// trial and error.
 	const int64 WorkerReplaceThresholdSeconds = 8;
 
+	const FString ServicePort = TEXT("9876");
+
 	void OnPrePIEEnded(bool bValue)
 	{
 		LastPIEEndTime = FDateTime::Now().ToUnixTimestamp();
@@ -58,8 +60,6 @@ struct EditorWorkerController
 	{
 		const FString CmdExecutable = TEXT("spatial.exe");
 
-		FString ServicePort = TEXT("9876");
-
 		const FString CmdArgs = FString::Printf(
 			TEXT("local worker replace "
 				"--local_service_grpc_port %s "
@@ -77,7 +77,7 @@ struct EditorWorkerController
 	{
 		if (WorkerIdx < ReplaceProcesses.Num())
 		{
-			// Record a start time for timeout
+			// Record a start time for timeout.
 			FDateTime BlockingStartTime =  FDateTime::Now();
 
 			while (FPlatformProcess::IsProcRunning(ReplaceProcesses[WorkerIdx]))

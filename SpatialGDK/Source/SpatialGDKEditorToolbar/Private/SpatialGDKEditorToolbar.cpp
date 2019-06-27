@@ -22,12 +22,12 @@
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
-#include "Misc/FileHelper.h"
 #include "Sound/SoundBase.h"
 
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
+#include "Misc/FileHelper.h"
 #include "SpatialGDKServicesModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
