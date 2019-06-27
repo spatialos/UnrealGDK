@@ -67,14 +67,7 @@ FString FWorkerTypeCustomization::OnGetValue(TSharedPtr<IPropertyHandle> WorkerT
 		WorkerTypeNameHandle->GetValue(WorkerTypeValue);
 		const FName WorkerTypeName = FName(*WorkerTypeValue);
 
-		if (Settings->WorkerTypes.Contains(WorkerTypeName))
-		{
-			return WorkerTypeValue;
-		}
-		else
-		{
-			return TEXT("INVALID");
-		}
+		return Settings->WorkerTypes.Contains(WorkerTypeName) ? WorkerTypeValue : TEXT("INVALID");
 	}
 
 	return WorkerTypeValue;
