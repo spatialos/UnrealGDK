@@ -1,14 +1,10 @@
 #include "WorkerTypeCustomization.h"
 
-#include "SpatialGDK/public/SpatialGDKSettings.h"
+#include "SpatialGDKSettings.h"
 
-#include "PropertyEditor/Public/DetailLayoutBuilder.h"
-#include "PropertyEditor/Public/DetailWidgetRow.h"
-#include "PropertyEditor/Public/IDetailChildrenBuilder.h"
-#include "PropertyEditor/Public/PropertyCustomizationHelpers.h"
-#include "PropertyEditor/Public/PropertyHandle.h"
+#include "PropertyCustomizationHelpers.h"
+#include "PropertyHandle.h"
 #include "Widgets/SToolTip.h"
-#include "Widgets/Text/STextBlock.h"
 
 TSharedRef<IPropertyTypeCustomization> FWorkerTypeCustomization::MakeInstance()
 {
@@ -37,7 +33,6 @@ void FWorkerTypeCustomization::CustomizeHeader(TSharedRef<class IPropertyHandle>
 
 void FWorkerTypeCustomization::CustomizeChildren(TSharedRef<class IPropertyHandle> StructPropertyHandle, class IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
-	
 }
 
 void FWorkerTypeCustomization::OnGetStrings(TArray<TSharedPtr<FString>>& OutComboBoxStrings, TArray<TSharedPtr<class SToolTip>>& OutToolTips, TArray<bool>& OutRestrictedItems)

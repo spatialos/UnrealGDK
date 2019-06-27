@@ -14,9 +14,8 @@ struct FWorkerType
 	UPROPERTY(EditAnywhere)
 	FName WorkerTypeName;
 
-	FWorkerType()
+	FWorkerType() : WorkerTypeName(NAME_None)
 	{
-		WorkerTypeName = NAME_None;
 	}
 };
 
@@ -36,10 +35,8 @@ struct FActorGroupInfo
 	UPROPERTY(EditAnywhere)
 	TSet<TSoftClassPtr<AActor>> ActorClasses;
 	
-	FActorGroupInfo()
+	FActorGroupInfo() : Name(NAME_None), OwningWorkerType()
 	{
-		Name = NAME_None;
-		OwningWorkerType = FWorkerType();
 	}
 };
 
