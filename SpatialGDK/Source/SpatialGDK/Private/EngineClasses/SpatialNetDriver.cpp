@@ -346,7 +346,7 @@ void USpatialNetDriver::CreateServerWorkerEntity(int AttemptCounter)
 			CreateServerWorkerEntity(AttemptCounter + 1);
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});
-	Dispatcher->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
+	Receiver->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
 }
 
 void USpatialNetDriver::CreateServerSpatialOSNetConnection()

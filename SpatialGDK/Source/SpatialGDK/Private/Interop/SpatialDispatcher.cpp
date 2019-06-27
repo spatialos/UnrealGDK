@@ -79,7 +79,6 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			break;
 		case WORKER_OP_TYPE_CREATE_ENTITY_RESPONSE:
 			Receiver->OnCreateEntityResponse(Op->create_entity_response);
-			OnCreateEntityResponse(Op->create_entity_response);
 			break;
 		case WORKER_OP_TYPE_DELETE_ENTITY_RESPONSE:
 			break;
@@ -283,18 +282,5 @@ void USpatialDispatcher::RunCallbacks(Worker_ComponentId ComponentId, const Work
 	for (UserOpCallbackData CallbackData : *ComponentCallbacks)
 	{
 		CallbackData.Callback(Op);
-	}
-}
-
-void USpatialDispatcher::AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate)
-{
-	CreateEntityDelegates.Add(RequestId, Delegate);
-}
-
-void USpatialDispatcher::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
-{
-	if (CreateEntityDelegate* Delegate = CreateEntityDelegates.Find(Op.request_id))
-	{
-		Delegate->ExecuteIfBound(Op);
 	}
 }
