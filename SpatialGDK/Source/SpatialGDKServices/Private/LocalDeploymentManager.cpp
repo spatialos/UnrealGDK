@@ -33,7 +33,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	bStoppingSpatialService = false;
 
 	// For checking whether we can stop or start. Set in the past so the first RefreshServiceStatus does not wait.
-	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(3);
+	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(5);
 
 	// Get the project name from the spatialos.json.
 	ProjectName = GetProjectName();

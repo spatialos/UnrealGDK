@@ -54,15 +54,22 @@ private:
 
 	void StartSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
+
 	bool StartSpatialDeploymentIsVisible();
 	bool StartSpatialDeploymentCanExecute();
+
+	bool StopSpatialDeploymentIsVisible();
+	bool StopSpatialDeploymentCanExecute();
+
+	void StartSpatialServiceButtonClicked();
+	void StopSpatialServiceButtonClicked();
+
 	bool StartSpatialServiceIsVisible();
 	bool StartSpatialServiceCanExecute();
+
 	bool StopSpatialServiceIsVisible();
 	bool StopSpatialServiceCanExecute();
-	bool StopSpatialDeploymentIsVisible();
 
-	bool StopSpatialDeploymentCanExecute();
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
 	void SchemaGenerateButtonClicked();
@@ -72,9 +79,6 @@ private:
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
-	void StopRunningStack();
-	void CheckForRunningStack();
-	void CleanupSpatialProcess();
 
 	TSharedRef<SWidget> CreateGenerateSchemaMenuContent();
 
@@ -83,11 +87,6 @@ private:
 	void ShowFailedNotification(const FString& NotificationText);
 
 	bool ValidateGeneratedLaunchConfig() const;
-
-	void StartSpatialServiceButtonClicked();
-	void StopSpatialServiceButtonClicked();
-
-	void StandardNotification(FString NotificationText);
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
 	void GenerateSchema(bool bFullScan);
@@ -100,10 +99,7 @@ private:
 
 	TSharedPtr<FUICommandList> PluginCommands;
 	FDelegateHandle OnPropertyChangedDelegateHandle;
-	FProcHandle SpatialOSStackProcHandle;
 	bool bStopSpatialOnExit;
-	
-	uint32 SpatialOSStackProcessID;
 
 	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 

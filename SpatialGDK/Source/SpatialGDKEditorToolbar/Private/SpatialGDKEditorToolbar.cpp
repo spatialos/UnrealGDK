@@ -20,22 +20,14 @@
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
 
-#include "Interop/Connection/EditorWorkerController.h"
-
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
+#include "Misc/FileHelper.h"
 #include "Sound/SoundBase.h"
 
 #include "AssetRegistryModule.h"
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
-#include "Misc/FileHelper.h"
-#include "Serialization/JsonWriter.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
-#include "HAL/PlatformFilemanager.h"
-#include "FileCache.h"
-#include "DirectoryWatcherModule.h"
 #include "SpatialGDKServicesModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
@@ -58,8 +50,6 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	PluginCommands = MakeShareable(new FUICommandList);
 	MapActions(PluginCommands);
 	SetupToolbar(PluginCommands);
-
-	CheckForRunningStack();
 
 	// load sounds
 	ExecutionStartSound = LoadObject<USoundBase>(nullptr, TEXT("/Engine/EditorSounds/Notifications/CompileStart_Cue.CompileStart_Cue"));
@@ -116,22 +106,18 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 {
 	if (bStopSpatialOnExit)
 	{
-		StopRunningStack();
+		LocalDeploymentManager->TryStopLocalDeployment();
 	}
 }
 
 void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 {
-	if (SpatialOSStackProcessID != 0 && !FPlatformProcess::IsApplicationRunning(SpatialOSStackProcessID))
-	{
-		CleanupSpatialProcess();
-	}
-
+	// Bind the play button delegate to starting a local spatial deployment.
 	if (!GEditor->TryStartSpatialDeployment.IsBound())
 	{
 		GEditor->TryStartSpatialDeployment.BindLambda([this]
 		{
-			if(GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
 			{
 				StartSpatialDeploymentButtonClicked();
 			}
@@ -333,7 +319,6 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 		Notification->SetText(FText::AsCultureInvariant(NotificationText));
 		Notification->SetCompletionState(SNotificationItem::CS_Success);
 		Notification->ExpireAndFadeout();
-		//TaskNotificationPtr.Reset();
 
 		if (GEditor && ExecutionSuccessSound)
 		{
@@ -419,16 +404,9 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	return true;
 }
 
-void FSpatialGDKEditorToolbarModule::StandardNotification(FString NotificationText)
-{
-	FNotificationInfo* NotificationInfo = new FNotificationInfo(FText::FromString(NotificationText));
-	NotificationInfo->ExpireDuration = 3.0f;
-	FSlateNotificationManager::Get().QueueNotification(NotificationInfo);
-}
-
 void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+	AsyncTask(ENamedThreads::AnyBackgroundHiPriTask, [this]
 	{
 		FDateTime StartTime = FDateTime::Now();
 		ShowTaskStartNotification(TEXT("Starting spatial service..."));
@@ -481,11 +459,6 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 			LocalDeploymentManager->TryStopLocalDeployment();
 			bRedeployRequired = false;
 		}
-
-		//if (LocalDeploymentManager->IsLocalDeploymentRunning())
-		//{
-		//	return;
-		//}
 
 		// Get the latest launch config.
 		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
@@ -552,25 +525,21 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible()
 {
 	return (LocalDeploymentManager->IsSpatialServiceRunning() && !LocalDeploymentManager->IsLocalDeploymentRunning()) || !LocalDeploymentManager->IsSpatialServiceRunning();
-	//return (bSpatialServiceRunning && !bLocalDeploymentRunning) || !bSpatialServiceRunning;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute()
 {
 	return !LocalDeploymentManager->IsDeploymentStarting();
-	//return !bStartingDeployment;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible()
 {
 	return LocalDeploymentManager->IsSpatialServiceRunning() && LocalDeploymentManager->IsLocalDeploymentRunning();
-	//return bSpatialServiceRunning && bLocalDeploymentRunning;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute()
 {
 	return !LocalDeploymentManager->IsDeploymentStopping();
-	//return !bStoppingDeployment;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialServiceIsVisible()
@@ -578,13 +547,11 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialServiceIsVisible()
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	return SpatialGDKSettings->bShowSpatialServiceButton && !LocalDeploymentManager->IsSpatialServiceRunning();
-	//return SpatialGDKSettings->bShowSpatialServiceButton && !bSpatialServiceRunning;
 }
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute()
 {
 	return !LocalDeploymentManager->IsServiceStarting();
-	//return !bStartingSpatialService;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible()
@@ -592,53 +559,11 @@ bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible()
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	return SpatialGDKSettings->bShowSpatialServiceButton && LocalDeploymentManager->IsSpatialServiceRunning();
-	//return SpatialGDKSettings->bShowSpatialServiceButton && bSpatialServiceRunning;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute()
 {
 	return !LocalDeploymentManager->IsServiceStopping();
-	//return !bStoppingSpatialService;
-}
-
-void FSpatialGDKEditorToolbarModule::CheckForRunningStack()
-{
-	FPlatformProcess::FProcEnumerator ProcEnumerator;
-	do
-	{
-		FPlatformProcess::FProcEnumInfo Proc = ProcEnumerator.GetCurrent();
-		const FString ProcName = Proc.GetName();
-		if (ProcName.Compare(TEXT("spatial.exe"), ESearchCase::IgnoreCase) == 0)
-		{
-			uint32 ProcPID = Proc.GetPID();
-			SpatialOSStackProcHandle = FPlatformProcess::OpenProcess(ProcPID);
-			if (SpatialOSStackProcHandle.IsValid())
-			{
-				SpatialOSStackProcessID = ProcPID;
-			}
-		}
-	} while (ProcEnumerator.MoveNext() && !SpatialOSStackProcHandle.IsValid());
-}
-
-void FSpatialGDKEditorToolbarModule::StopRunningStack()
-{
-	if (SpatialOSStackProcHandle.IsValid())
-	{
-		if (FPlatformProcess::IsProcRunning(SpatialOSStackProcHandle))
-		{
-			FPlatformProcess::TerminateProc(SpatialOSStackProcHandle, true);
-		}
-
-		CleanupSpatialProcess();
-	}
-}
-
-void FSpatialGDKEditorToolbarModule::CleanupSpatialProcess()
-{
-	FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
-	SpatialOSStackProcessID = 0;
-
-	SpatialGDKServices::OnSpatialShutdown();
 }
 
 /**
