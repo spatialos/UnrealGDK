@@ -272,9 +272,6 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
 	}
 	
-
-	// Make sure the internal deployment state tracking is updated.
-	IsLocalDeploymentRunning();
 	return bSuccess;
 }
 
@@ -289,12 +286,12 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	bStoppingDeployment = true;
 
 	FString SpotExe = GetSpotExe();
-	FString SpotListArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *LocalRunningDeploymentID);
+	FString SpotDeleteArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *LocalRunningDeploymentID);
 	const FString SpatialDirectory = GetSpatialOSDirectory();
 
 	FString SpotDeleteResult;
 	int32 ExitCode;
-	ExecuteAndReadOutput(*SpotExe, *SpotListArgs, *SpatialDirectory, SpotDeleteResult, ExitCode);
+	ExecuteAndReadOutput(*SpotExe, *SpotDeleteArgs, *SpatialDirectory, SpotDeleteResult, ExitCode);
 	bStoppingDeployment = false;
 
 	if (ExitCode != ExitCodeSuccess)
@@ -338,9 +335,6 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot delete': %s"), *SpotDeleteResult);
 	}
 	
-
-	// Make sure the internal deployment state tracking is updated.
-	IsLocalDeploymentRunning();
 	return bSuccess;
 }
 
@@ -427,7 +421,7 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 	}
 
 	FString SpotExe = GetSpotExe();
-	FString SpotListArgs = FString::Printf(TEXT("alpha deployment list --project-name=%s --json"), *ProjectName);
+	FString SpotListArgs = FString::Printf(TEXT("alpha deployment list --project-name=%s --json --view BASIC --status-filter NOT_STOPPED_DEPLOYMENTS"), *ProjectName);
 	const FString SpatialDirectory = GetSpatialOSDirectory();
 
 	FString SpotListResult;
