@@ -41,7 +41,7 @@ struct EditorWorkerController
 		SpatialShutdownHandle = Toolbar.OnSpatialShutdown.AddRaw(this, &EditorWorkerController::OnSpatialShutdown);
 
 		const ULevelEditorPlaySettings* LevelEditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
-		const int32 WorkerCount = LevelEditorPlaySettings->GetTotalServerWorkerCount();
+		const int32 WorkerCount = LevelEditorPlaySettings->GetTotalPIEServerWorkerCount();
 		WorkerIds.SetNum(WorkerCount);
 		ReplaceProcesses.SetNum(WorkerCount);
 
