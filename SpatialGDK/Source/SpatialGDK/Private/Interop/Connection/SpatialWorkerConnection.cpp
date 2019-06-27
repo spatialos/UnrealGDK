@@ -182,17 +182,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	}
 
 #if WITH_EDITOR
-	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
-	const int32 FirstServerEditorID = 1;
-	if (bSingleThreadedServer)
-	{
-		if (GPlayInEditorID == FirstServerEditorID)
-		{
-			WorkerController.InitWorkers();
-		}
-
-		ReceptionistConfig.WorkerId = WorkerController.WorkerIds[GPlayInEditorID - 1];
-	}
+	SpatialGDKServices::InitWorkers(bConnectAsClient, ReceptionistConfig.WorkerId);
 #endif
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())

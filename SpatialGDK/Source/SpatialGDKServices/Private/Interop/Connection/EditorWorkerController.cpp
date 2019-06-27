@@ -37,9 +37,6 @@ struct EditorWorkerController
 
 		PIEEndHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &EditorWorkerController::OnPrePIEEnded);
 
-		FSpatialGDKEditorToolbarModule& Toolbar = FModuleManager::GetModuleChecked<FSpatialGDKEditorToolbarModule>("SpatialGDKEditorToolbar");
-		SpatialShutdownHandle = Toolbar.OnSpatialShutdown.AddRaw(this, &EditorWorkerController::OnSpatialShutdown);
-
 		const ULevelEditorPlaySettings* LevelEditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
 		const int32 WorkerCount = LevelEditorPlaySettings->GetTotalPIEServerWorkerCount();
 		WorkerIds.SetNum(WorkerCount);
@@ -102,7 +99,7 @@ static EditorWorkerController WorkerController;
 
 namespace SpatialGDKServices
 {
-void InitWorkers(const FString& WorkerType, bool bConnectAsClient, FString& OutWorkerId)
+void InitWorkers(bool bConnectAsClient, FString& OutWorkerId)
 {
 	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
 	const int32 FirstServerEditorID = 1;
@@ -110,7 +107,7 @@ void InitWorkers(const FString& WorkerType, bool bConnectAsClient, FString& OutW
 	{
 		if (GPlayInEditorID == FirstServerEditorID)
 		{
-			WorkerController.InitWorkers(WorkerType);
+			WorkerController.InitWorkers();
 		}
 
 		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);
