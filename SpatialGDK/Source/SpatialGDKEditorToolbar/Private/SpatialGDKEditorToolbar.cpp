@@ -478,6 +478,12 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 			LaunchConfig = SpatialGDKSettings->GetSpatialOSLaunchConfig();
 		}
 
+		// If the last local deployment is still stopping then wait until it's finished.
+		while(LocalDeploymentManager->IsDeploymentStopping())
+		{
+			FPlatformProcess::Sleep(0.1f);
+		}
+
 		ShowTaskStartNotification(TEXT("Starting local deployment..."));
 		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags()))
 		{
