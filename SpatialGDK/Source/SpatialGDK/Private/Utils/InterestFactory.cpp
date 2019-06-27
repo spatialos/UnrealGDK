@@ -32,6 +32,10 @@ void GatherClientInterestDistancesOnce()
 	TMap<UClass*, float> DiscoveredInterestDistancesSquared;
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		{
+			continue;
+		}
 		if (!It->IsChildOf<AActor>())
 		{
 			continue;
