@@ -10,6 +10,6 @@ These scripts are located under `Plugins\UnrealGDK\SpatialGDK\Build\Scripts\` di
 <br/>
 
 <br/>------------<br/>
-2019-06-27 Page updated with editorial review: added ExternalSchemaCodegen.bat`
+2019-06-27 Page updated with editorial review: added `ExternalSchemaCodegen.bat`
 <br/>
 <br/>
