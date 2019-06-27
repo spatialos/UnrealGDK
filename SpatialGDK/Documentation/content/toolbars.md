@@ -115,5 +115,5 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 <br/>
 
 <br/>------------<br/>
-_2019-05-30 Page updated with limited editorial review_
+_2019-06-27 Page updated with limited editorial review_
 <br/>	<br/>

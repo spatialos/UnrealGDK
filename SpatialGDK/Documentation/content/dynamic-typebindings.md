@@ -31,8 +31,6 @@ When comparing the two network stacks, it’s useful to keep the following mappi
 * Unreal NetMulticast RPC <-> SpatialOS event
 * Unreal Replication Condition <-> SpatialOS component design
 
-<br/>
-
 <br/>------------<br/>
-_2019-05-30 Page updated with limited editorial review_
+_2019-06-27 Page updated with limited editorial review_
 <br/>

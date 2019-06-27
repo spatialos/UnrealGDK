@@ -168,7 +168,7 @@ There are two ways to build your worker assemblies (known as “building workers
 This script automatically builds both the server-workers and client-workers required to run your game in the cloud. It then compresses your workers and saves them as .zip files to the `<ProjectRoot>\spatial\build\assembly\worker` directory. Use this script if you want to build server-workers and client-workers at the same time. <br/><br/>
 
 * Build your workers manually using the command line. </br>
-Use the [SpatialOS CLI]({{urlroot}}/content/glossary#spatialos-command-line-tool-cli) command line to build server-workers and client-workers separately, or to use command-line arguments to build different worker configurations for different purposes.</br>
+Use the [SpatialOS CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli) command line to build server-workers and client-workers separately, or to use command-line arguments to build different worker configurations for different purposes.</br>
 For example:
  
  * `Editor` to build server-workers to run on local machine for testing.
@@ -207,7 +207,7 @@ If you receive the error `The system cannot find the path specified. Builds fail
 Before launching a cloud deployment, you must upload your sever-worker and client-worker assemblies to the cloud. To do this: 
 
 1. In a terminal window, navigate to your `<ProjectRoot>\spatial\` directory 
-1. Run the following command:  `spatial cloud upload <assembly_name>`
+2. Run the following command:  `spatial cloud upload <assembly_name>`
 
 You must replace `<assembly_name>` with a name for your assembly (for example: `gdktemplateassembly`). 
 
@@ -292,5 +292,5 @@ If you have an existing Unreal multiplayer project, follow the detailed [porting
 <br/>
 
  <br/>------------<br/>
-_2019-05-30 Page updated with limited editorial review_
+_2019-06-27 Page updated with limited editorial review_
 <br/>

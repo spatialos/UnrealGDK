@@ -67,6 +67,6 @@ To launch a local deployment:
 
 <br/>
 
- <br/>------------<br/>
-_2019-05-30 Page updated with full editorial review_
+<br/>------------<br/>
+_2019-06-27 Page updated with full editorial review_
 <br/>

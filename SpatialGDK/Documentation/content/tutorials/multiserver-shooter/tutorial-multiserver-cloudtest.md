@@ -9,7 +9,7 @@ An assembly is what’s created when you run `BuildWorker.bat`. They’re `.zip`
 
 **Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
 
-**Note:** Unreal GDK projects default to using Spatial for networking. However, if the `bSpatialNetworking` option is present in your `DefaultGame.ini` configuration file (located in `<ProjectRoot>\Game\Config` directory), ensure that it is set to `True` (as in, `bSpatialNetworking=True`) to enable networking with Spatial for your cloud deployment.
+**Note:** Unreal GDK projects default to using [Spatial for networking](). However, if the `bSpatialNetworking` option is present in your `DefaultGame.ini` configuration file (located in `<ProjectRoot>\Game\Config` directory), ensure that it is set to `True` (as in, `bSpatialNetworking=True`) to enable networking with Spatial for your cloud deployment.
 
 1. In a terminal window, change directory to the root directory of the Third-Person Shooter repository.
 1. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`

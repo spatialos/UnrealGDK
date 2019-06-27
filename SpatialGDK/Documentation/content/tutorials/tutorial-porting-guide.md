@@ -21,9 +21,6 @@ Before porting your project:
 * `<ProjectRoot>` - The directory containing your `<GameRoot>`.  
 * `<YourProject>` - The name of your project's `.uproject` file (for example, `\<GameRoot>\TP_SpatialGDK.uproject`).
 
-<!-- <%(Callout type="tip" message=" -->
-<!-- ")%> -->
-
 > **TIP: Reference project** 
 <br /><br />
 > As you port your own Unreal project to SpatialOS, you could use our pre-ported [Unreal Shooter Game](https://docs.unrealengine.com/en-us/Resources/SampleGames/ShooterGame) as a reference. You should already have this project as it is included in the `Samples` directory of [the SpatialOS Unreal Engine fork](https://github.com/improbableio/UnrealEngine) which you downloaded as part of the _Get Started_ steps. 
