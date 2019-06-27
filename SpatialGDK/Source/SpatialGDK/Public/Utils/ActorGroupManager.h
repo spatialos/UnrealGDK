@@ -46,6 +46,8 @@ class SPATIALGDK_API UActorGroupManager : public UObject
 	GENERATED_BODY()
 
 private:
+
+	// Using TSoftClassPtr here to avoid the classes being eagerly loaded.
 	TMap<TSoftClassPtr<AActor>, FName> ClassPathToActorGroup;
 
 	TMap<FName, FName> ActorGroupToWorkerType;
