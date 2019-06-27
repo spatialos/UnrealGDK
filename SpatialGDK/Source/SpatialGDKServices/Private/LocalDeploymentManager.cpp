@@ -38,7 +38,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	bStoppingSpatialService = false;
 
 	// For checking whether we can stop or start. Set in the past so the first RefreshServiceStatus does not wait.
-	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(5);
+	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(2);
 
 	// Get the project name from the spatialos.json.
 	ProjectName = GetProjectName();
@@ -144,42 +144,40 @@ TSharedPtr<FJsonObject> FLocalDeploymentManager::ParseJson(FString RawJsonString
 
 void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult)
 {
-	UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Attempting to execute '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
+	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Attempting to execute '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
 
 	// Create pipes to read output of spot.
-	void* ReadPipe;
-	void* WritePipe;
-	if (!FPlatformProcess::CreatePipe(ReadPipe, WritePipe))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Command execution failed. Could not create read and write pipes."));
-	}
+	void* ReadPipe = nullptr;
+	void* WritePipe = nullptr;
+	ensure(FPlatformProcess::CreatePipe(ReadPipe, WritePipe));
 
 	FProcHandle ProcHandle;
-	uint32 ProcessID;
-	FString WritePipeResult;
+	int32 ExitCode;
 
-	ProcHandle = FPlatformProcess::CreateProc(*Executable, *Arguments, false, true, true, &ProcessID, 1 /*PriorityModifer*/, *DirectoryToRun, WritePipe, ReadPipe);
+	ProcHandle = FPlatformProcess::CreateProc(*Executable, *Arguments, false, true, true, nullptr, 1 /*PriorityModifer*/, *DirectoryToRun, WritePipe);
 
-	if (!ProcHandle.IsValid())
+	if (ProcHandle.IsValid())
+	{
+		uint32 count = 0;
+
+		for (bool bProcessFinished = false; !bProcessFinished; )
+		{
+			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &ExitCode);
+
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Unclogging pipe for '%s' with arguments '%s' in directory '%s'. Count = %d"), *Executable, *Arguments, *DirectoryToRun, count);
+			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
+
+			count++;
+			FPlatformProcess::Sleep(0.1f);
+		}
+	}
+	else
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Command execution failed. '%s' with arguments '%s' in directory '%s' "), *Executable, *Arguments, *DirectoryToRun);
-		return;
 	}
 
-	WritePipeResult = FPlatformProcess::ReadPipe(WritePipe);
-	OutResult = FPlatformProcess::ReadPipe(ReadPipe);
-
-	// Make sure the pipe doesn't get clogged.
-	AsyncTask(ENamedThreads::AnyBackgroundHiPriTask, [&ReadPipe, &OutResult, &ProcHandle]
-	{
-		while (ProcHandle.IsValid() && FPlatformProcess::IsProcRunning(ProcHandle))
-		{
-			// TODO: Reading from this pipe when debugging causes a crash.
-			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
-		}
-	});
-
-	FPlatformProcess::WaitForProc(ProcHandle);
+	FPlatformProcess::ClosePipe(0, ReadPipe);
+	FPlatformProcess::ClosePipe(0, WritePipe);
 }
 
 void FLocalDeploymentManager::RefreshServiceStatus()
@@ -188,7 +186,7 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 
 	FTimespan Span = CurrentTime - LastSpatialServiceCheck;
 
-	if (Span.GetSeconds() < 5)
+	if (Span.GetSeconds() < 3)
 	{
 		return;
 	}
@@ -247,17 +245,21 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		bLocalDeploymentRunning = false;
 	}
 
-	TSharedPtr<FJsonObject> SpotJsonContent = SpotJsonResult->GetObjectField(TEXT("content"));
+	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
+	if (!SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not get parse result from 'spot create'."));
+	}
 
 	FString DeploymentStatus;
-	if (!SpotJsonContent->TryGetStringField(TEXT("status"), DeploymentStatus))
+	if (!SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not get local deployment status."));
 	}
 
 	if (DeploymentStatus == TEXT("RUNNING"))
 	{
-		FString DeploymentID = SpotJsonContent->GetStringField(TEXT("id"));
+		FString DeploymentID = SpotJsonContent->Get()->GetStringField(TEXT("id"));
 		LocalRunningDeploymentID = DeploymentID;
 		bLocalDeploymentRunning = true;
 
