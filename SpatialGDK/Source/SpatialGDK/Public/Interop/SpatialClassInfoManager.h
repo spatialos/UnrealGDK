@@ -83,7 +83,8 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver, UActorGroupManager* ActorGroupManager);
+
+	bool Init(USpatialNetDriver* NetDriver, UActorGroupManager* ActorGroupManager);
 
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
 	// In PIE, PathName must be NetworkRemapped (bReading = false)
@@ -105,6 +106,7 @@ public:
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
+	void QuitGame();
 
 private:
 	UPROPERTY()
