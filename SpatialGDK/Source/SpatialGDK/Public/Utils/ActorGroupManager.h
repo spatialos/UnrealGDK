@@ -28,9 +28,11 @@ struct FActorGroupInfo
 	UPROPERTY()
 	FName Name;
 
+	/** The server worker type that has authority of all classes in this actor group. */
 	UPROPERTY(EditAnywhere)
 	FWorkerType OwningWorkerType;
 
+	/** The Actor classes contained within this group. Children of these classes will also be included. */
 	UPROPERTY(EditAnywhere)
 	TSet<TSoftClassPtr<AActor>> ActorClasses;
 	

@@ -12,7 +12,7 @@
 
 TSharedRef<IPropertyTypeCustomization> FWorkerTypeCustomization::MakeInstance()
 {
-	return MakeShareable(new FWorkerTypeCustomization());
+	return MakeShared<FWorkerTypeCustomization>();
 }
 
 void FWorkerTypeCustomization::CustomizeHeader(TSharedRef<class IPropertyHandle> StructPropertyHandle, class FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
@@ -44,7 +44,7 @@ void FWorkerTypeCustomization::OnGetStrings(TArray<TSharedPtr<FString>>& OutComb
 {
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
-		for (FName WorkerType : Settings->WorkerTypes)
+		for (const FName& WorkerType : Settings->WorkerTypes)
 		{
 			OutComboBoxStrings.Add(MakeShared<FString>(WorkerType.ToString()));
 			OutToolTips.Add(SNew(SToolTip).Text(FText::FromName(WorkerType)));
@@ -65,7 +65,7 @@ FString FWorkerTypeCustomization::OnGetValue(TSharedPtr<IPropertyHandle> WorkerT
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
 		WorkerTypeNameHandle->GetValue(WorkerTypeValue);
-		FName WorkerTypeName = FName(*WorkerTypeValue);
+		const FName WorkerTypeName = FName(*WorkerTypeValue);
 
 		if (Settings->WorkerTypes.Contains(WorkerTypeName))
 		{
