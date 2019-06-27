@@ -3,7 +3,6 @@
 
 #include "SpatialGDKServicesPrivate.h"
 
-#include "Algo/Accumulate.h"
 #include "Editor.h"
 
 #if WITH_EDITOR
