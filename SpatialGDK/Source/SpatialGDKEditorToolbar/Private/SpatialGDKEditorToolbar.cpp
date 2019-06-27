@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKEditorToolbar.h"
+
 #include "Async/Async.h"
 #include "Editor.h"
 #include "EditorStyleSet.h"
@@ -18,6 +19,8 @@
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+
+#include "Interop/Connection/EditorWorkerController.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -400,7 +403,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch \"%s\" %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch --enable_pre_run_check=false \"%s\" %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
@@ -501,7 +504,7 @@ void FSpatialGDKEditorToolbarModule::CleanupSpatialProcess()
 	FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
 	SpatialOSStackProcessID = 0;
 
-	OnSpatialShutdown.Broadcast();
+	SpatialGDKServices::OnSpatialShutdown();
 }
 
 /**
