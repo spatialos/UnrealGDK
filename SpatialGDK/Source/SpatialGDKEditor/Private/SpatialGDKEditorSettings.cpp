@@ -39,6 +39,7 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
 	{
 		SetRuntimeWorkerTypes();
+		SetLevelEditorPlaySettingsWorkerTypes();
 	}
 }
 
