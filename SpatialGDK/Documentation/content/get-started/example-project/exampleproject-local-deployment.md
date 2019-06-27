@@ -20,7 +20,8 @@ Before you launch a local deployment, you have to:
 
 <%(#Expandable title="What is Schema?")%>
 
-Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
+Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang by the GDK.</br>
+Select **Schema** from the GDK toolbar and the GDK generates schema files and their contents for you, so you do not have to write or edit schema files manually.
 
 You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
@@ -51,8 +52,8 @@ To launch a local deployment:
    ![Start]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Start**_</br>
 4. On the Editor toolbar, open the **Play** drop-down menu.
-6. Under **Multiplayer Options**, set the number of players to **2** and ensure that the checkbox next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)<br/>
-   ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
+5. Under **Multiplayer Options**, set the number of players to **2** and ensure that checkboxes next to **Run Dedicated Server** and **Spatial Networking** are checked. Checking **Spatial Networking** makes deployments run using SpatialOS networking as opposed to native Unreal networking. If a checkbox is unchecked, select the checkbox to enable it.<br/>
+   ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>
    _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_</br>
 6. Under **Modes**, select **New Editor Window (PIE)** to run the game. This starts one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor.
    The server-worker instance is acting as an Unreal server and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
@@ -65,6 +66,8 @@ To launch a local deployment:
 </br>
 **> Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment) 
 
+<br/>
 
-<br/>------<br/>
-_2019-05-21 Page added with editorial review_
+<br/>------------<br/>
+_2019-06-27 Page updated with full editorial review_
+<br/>
