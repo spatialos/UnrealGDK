@@ -564,14 +564,14 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 		Writer->WriteObjectEnd(); // World section end
 		Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
 			Writer->WriteArrayStart("layer_configurations");
-			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.Workers)
+			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
 			{
 				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.bManualWorkerConnectionOnly);
 			}
 			Writer->WriteArrayEnd();
 			Writer->WriteObjectEnd(); // Load balancing section end
 			Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
-			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.Workers)
+			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
 			{
 				WriteWorkerSection(Writer, Worker);
 			}

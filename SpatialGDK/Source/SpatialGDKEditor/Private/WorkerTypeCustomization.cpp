@@ -39,7 +39,7 @@ void FWorkerTypeCustomization::OnGetStrings(TArray<TSharedPtr<FString>>& OutComb
 {
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
-		for (const FName& WorkerType : Settings->WorkerTypes)
+		for (const FName& WorkerType : Settings->ServerWorkerTypes)
 		{
 			OutComboBoxStrings.Add(MakeShared<FString>(WorkerType.ToString()));
 			OutToolTips.Add(SNew(SToolTip).Text(FText::FromName(WorkerType)));
@@ -52,7 +52,7 @@ FString FWorkerTypeCustomization::OnGetValue(TSharedPtr<IPropertyHandle> WorkerT
 {
 	if (!WorkerTypeNameHandle->IsValidHandle())
 	{
-		return "";
+		return FString();
 	}
 
 	FString WorkerTypeValue;
@@ -62,7 +62,7 @@ FString FWorkerTypeCustomization::OnGetValue(TSharedPtr<IPropertyHandle> WorkerT
 		WorkerTypeNameHandle->GetValue(WorkerTypeValue);
 		const FName WorkerTypeName = FName(*WorkerTypeValue);
 
-		return Settings->WorkerTypes.Contains(WorkerTypeName) ? WorkerTypeValue : TEXT("INVALID");
+		return Settings->ServerWorkerTypes.Contains(WorkerTypeName) ? WorkerTypeValue : TEXT("INVALID");
 	}
 
 	return WorkerTypeValue;

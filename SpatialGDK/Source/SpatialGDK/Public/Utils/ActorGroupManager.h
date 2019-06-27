@@ -31,7 +31,8 @@ struct FActorGroupInfo
 	UPROPERTY(EditAnywhere)
 	FWorkerType OwningWorkerType;
 
-	/** The Actor classes contained within this group. Children of these classes will also be included. */
+	// Using TSoftClassPtr here to prevent eagerly loading all classes.
+	/** The Actor classes contained within this group. Children of these classes will also be included. */	
 	UPROPERTY(EditAnywhere)
 	TSet<TSoftClassPtr<AActor>> ActorClasses;
 	
@@ -46,8 +47,6 @@ class SPATIALGDK_API UActorGroupManager : public UObject
 	GENERATED_BODY()
 
 private:
-
-	// Using TSoftClassPtr here to avoid the classes being eagerly loaded.
 	TMap<TSoftClassPtr<AActor>, FName> ClassPathToActorGroup;
 
 	TMap<FName, FName> ActorGroupToWorkerType;

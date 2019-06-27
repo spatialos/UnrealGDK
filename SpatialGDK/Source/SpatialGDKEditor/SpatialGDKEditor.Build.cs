@@ -12,16 +12,16 @@ public class SpatialGDKEditor : ModuleRules
         PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"Core",
-				"CoreUObject",
+                "CoreUObject",
                 "EditorStyle",
-				"Engine",
- 				"EngineSettings",
+                "Engine",
+                "EngineSettings",
                 "PropertyEditor",
                 "Slate",
                 "SlateCore",
                 "SpatialGDK",
-				"UnrealEd",
-				"GameplayAbilities"
+                "UnrealEd",
+                "GameplayAbilities"
             });
 
 		PrivateIncludePaths.AddRange(

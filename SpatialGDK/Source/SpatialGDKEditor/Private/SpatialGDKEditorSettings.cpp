@@ -59,7 +59,7 @@ void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
 {
 	TSet<FName> WorkerTypes;
 
-	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.Workers)
+	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
 	{
 		if (WorkerLaunch.WorkerTypeName != NAME_None)
 		{
@@ -70,8 +70,8 @@ void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
 	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
 	if (RuntimeSettings != nullptr)
 	{
-		RuntimeSettings->WorkerTypes.Empty(WorkerTypes.Num());
-		RuntimeSettings->WorkerTypes.Append(WorkerTypes);
+		RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
+		RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
 		RuntimeSettings->PostEditChange();
 		RuntimeSettings->SaveConfig(CPF_Config, *RuntimeSettings->GetDefaultConfigFilename());
 	}

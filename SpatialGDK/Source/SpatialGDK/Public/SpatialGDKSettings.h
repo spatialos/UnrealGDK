@@ -131,5 +131,5 @@ public:
 
 	/** Available server worker types. */
 	UPROPERTY(Config)
-	TSet<FName> WorkerTypes;
+	TSet<FName> ServerWorkerTypes;
 };

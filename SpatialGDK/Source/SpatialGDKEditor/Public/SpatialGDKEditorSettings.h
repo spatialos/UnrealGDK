@@ -179,7 +179,7 @@ struct FSpatialLaunchConfigDescription
 		UnrealWorkerDefaultSetting.Columns = 1;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
 
-		Workers.Add(UnrealWorkerDefaultSetting);
+		ServerWorkers.Add(UnrealWorkerDefaultSetting);
 	}
 
 	/** Deployment template. */
@@ -192,7 +192,7 @@ struct FSpatialLaunchConfigDescription
 
 	/** Worker-specific configuration parameters. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
-	TArray<FWorkerTypeLaunchSection> Workers;
+	TArray<FWorkerTypeLaunchSection> ServerWorkers;
 };
 
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
