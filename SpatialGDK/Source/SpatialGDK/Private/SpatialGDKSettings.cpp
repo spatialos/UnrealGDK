@@ -1,7 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKSettings.h"
-#include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
 
