@@ -92,7 +92,7 @@ bool RPCContainer::ObjectHasRPCsQueuedOfType(const UObject* TargetObject, ESchem
 		TSharedPtr<FQueueOfParams>* RPCList = MapOfQueues->Find(TargetObject);
 		if(RPCList)
 		{
-			return (*RPCList)->IsEmpty();
+			return !(*RPCList)->IsEmpty();
 		}
 	}
 
