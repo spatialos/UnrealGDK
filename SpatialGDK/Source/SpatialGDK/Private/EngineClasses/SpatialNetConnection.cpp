@@ -158,28 +158,34 @@ void USpatialNetConnection::InitHeartbeat(FTimerManager* InTimerManager, Worker_
 
 void USpatialNetConnection::SetHeartbeatTimeoutTimer()
 {
-	TimerManager->SetTimer(HeartbeatTimer, [this]()
+	TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
 	{
-		// This client timed out. Disconnect it and trigger OnDisconnected logic.
-		CleanUp();
+		if (USpatialNetConnection* Connection = WeakThis.Get())
+		{
+			// This client timed out. Disconnect it and trigger OnDisconnected logic.
+			Connection->CleanUp();
+		}
 	}, GetDefault<USpatialGDKSettings>()->HeartbeatTimeoutSeconds, false);
 }
 
 void USpatialNetConnection::SetHeartbeatEventTimer()
 {
-	TimerManager->SetTimer(HeartbeatTimer, [this]()
+	TimerManager->SetTimer(HeartbeatTimer, [WeakThis = TWeakObjectPtr<USpatialNetConnection>(this)]()
 	{
-		Worker_ComponentUpdate ComponentUpdate = {};
-
-		ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
-		ComponentUpdate.schema_type = Schema_CreateComponentUpdate(SpatialConstants::HEARTBEAT_COMPONENT_ID);
-		Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
-		Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
-
-		USpatialWorkerConnection* Connection = Cast<USpatialNetDriver>(Driver)->Connection;
-		if (Connection->IsConnected())
+		if (USpatialNetConnection* Connection = WeakThis.Get())
 		{
-			Connection->SendComponentUpdate(PlayerControllerEntity, &ComponentUpdate);
+			Worker_ComponentUpdate ComponentUpdate = {};
+
+			ComponentUpdate.component_id = SpatialConstants::HEARTBEAT_COMPONENT_ID;
+			ComponentUpdate.schema_type = Schema_CreateComponentUpdate(SpatialConstants::HEARTBEAT_COMPONENT_ID);
+			Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(ComponentUpdate.schema_type);
+			Schema_AddObject(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
+
+			USpatialWorkerConnection* WorkerConnection = Cast<USpatialNetDriver>(Connection->Driver)->Connection;
+			if (WorkerConnection->IsConnected())
+			{
+				WorkerConnection->SendComponentUpdate(Connection->PlayerControllerEntity, &ComponentUpdate);
+			}
 		}
 	}, GetDefault<USpatialGDKSettings>()->HeartbeatIntervalSeconds, true, 0.0f);
 }

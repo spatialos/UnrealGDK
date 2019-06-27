@@ -378,9 +378,13 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker entity creation request timed out and will retry."));
 		FTimerHandle RetryTimer;
-		TimerManager->SetTimer(RetryTimer, [this, AttemptCounter]()
+		TWeakObjectPtr<USpatialSender> WeakThis(this);
+		TimerManager->SetTimer(RetryTimer, [WeakThis, AttemptCounter]()
 		{
-			CreateServerWorkerEntity(AttemptCounter + 1);
+			if (USpatialSender* Sender = WeakThis.Get())
+			{
+				Sender->CreateServerWorkerEntity(AttemptCounter + 1);
+			}
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});
 	Receiver->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);

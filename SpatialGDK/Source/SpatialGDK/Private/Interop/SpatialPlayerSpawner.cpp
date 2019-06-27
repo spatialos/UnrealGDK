@@ -130,9 +130,12 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(const Worker_CommandRespo
 			UTF8_TO_TCHAR(Op.message));
 
 		FTimerHandle RetryTimer;
-		TimerManager->SetTimer(RetryTimer, [this]()
+		TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<USpatialPlayerSpawner>(this)]()
 		{
-			SendPlayerSpawnRequest();
+			if (USpatialPlayerSpawner* Spawner = WeakThis.Get())
+			{
+				Spawner->SendPlayerSpawnRequest();
+			}
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
 	}
 	else
