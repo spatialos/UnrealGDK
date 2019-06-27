@@ -125,7 +125,7 @@ public:
 
 	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
 	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
-	void AddCreateEntityDelegate(Worker_RequestId RequestId, CreateEntityDelegate Delegate);
+	void AddCreateEntityDelegate(Worker_RequestId RequestId, const CreateEntityDelegate& Delegate);
 
 	void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
