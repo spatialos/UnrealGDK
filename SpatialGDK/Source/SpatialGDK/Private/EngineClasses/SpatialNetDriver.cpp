@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("", off)
+
 #include "EngineClasses/SpatialNetDriver.h"
 
 #include "EngineGlobals.h"
@@ -72,7 +72,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// Make absolutely sure that the actor channel that we are using is our Spatial actor channel
 #if ENGINE_MINOR_VERSION <= 20
 	ChannelClasses[CHTYPE_Actor] = USpatialActorChannel::StaticClass();
-#else#
+#else
 	// Copied from what the Engine does with UActorChannel
 	FChannelDefinition SpatialChannelDefinition{};
 	SpatialChannelDefinition.ChannelName = NAME_Actor;

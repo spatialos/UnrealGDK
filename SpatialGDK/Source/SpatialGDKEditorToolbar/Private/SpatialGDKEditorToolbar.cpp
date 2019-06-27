@@ -35,8 +35,7 @@ DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 #define LOCTEXT_NAMESPACE "FSpatialGDKEditorToolbarModule"
 
 FSpatialGDKEditorToolbarModule::FSpatialGDKEditorToolbarModule()
-: bStopSpatialOnExit(false),
-SpatialOSStackProcessID(0)
+: bStopSpatialOnExit(false)
 {
 }
 
@@ -406,7 +405,7 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 
 void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundHiPriTask, [this]
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		FDateTime StartTime = FDateTime::Now();
 		ShowTaskStartNotification(TEXT("Starting spatial service..."));

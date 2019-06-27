@@ -272,21 +272,6 @@ public:
 		return PluginDir;
 	}
 
-	FORCEINLINE FString GetSpotPath() const
-	{
-		// TODO: Use GetGDKPluginDir()
-		FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
-
-		if (!FPaths::DirectoryExists(PluginDir))
-		{
-			// If the Project Plugin doesn't exist then use the Engine Plugin.
-			PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
-			ensure(FPaths::DirectoryExists(PluginDir));
-		}
-
-		return  FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe")));
-	}
-
 	FORCEINLINE FString GetSpatialOSDirectory() const
 	{
 		return SpatialOSDirectory.Path.IsEmpty()
@@ -306,6 +291,14 @@ public:
 		}
 
 		return PluginDir;
+	}
+
+	FORCEINLINE FString GetSpotPath() const
+	{
+		// TODO: Use GetGDKPluginDir()
+		FString PluginDir = GetGDKPluginDirectory();
+
+		return  FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe")));
 	}
 
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const

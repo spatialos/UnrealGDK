@@ -147,7 +147,7 @@ void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString A
 	void* WritePipe = nullptr;
 	ensure(FPlatformProcess::CreatePipe(ReadPipe, WritePipe));
 
-	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Executable, *Arguments, false, true, true, nullptr, 2 /*PriorityModifer*/, *DirectoryToRun, WritePipe);
+	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Executable, *Arguments, false, true, true, nullptr, 1 /*PriorityModifer*/, *DirectoryToRun, WritePipe);
 
 	if (ProcHandle.IsValid())
 	{
@@ -156,6 +156,7 @@ void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString A
 			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &ExitCode);
 
 			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
+			FPlatformProcess::Sleep(0.01f);
 		}
 		ProcHandle.Reset();
 	}
