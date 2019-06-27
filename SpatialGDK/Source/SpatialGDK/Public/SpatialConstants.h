@@ -160,8 +160,8 @@ namespace SpatialConstants
 
 	static const FName DefaultActorGroup = FName(TEXT("Default"));
 
-	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType};
-	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType};
+	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
+	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};
 
 	const WorkerRequirementSet UnrealServerPermission{ {UnrealServerAttributeSet} };
 	const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };

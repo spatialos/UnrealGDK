@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added runtime option to pack unreliable RPCs from the same frame in a single component update to save bandwidth - bPackUnreliableRPCs.
 - Enabled new Development Authentication Flow.
 - Added new "worker" entities which are created for each server worker in a deployment so they correctly receive interest in the global state manager.
-- Removed the references to the `Number of servers` slider in the Play in editor drop-down menu.
+- Removed the references to the `Number of servers` slider in the Play in editor drop-down menu. The number of each server worker type to launch in PIE is now specified within the launch configuration in the `Spatial GDK Editor Settings` settings tab.
 
 ### Bug fixes:
 - BeginPlay is not called with authority when checking out entities from Spatial.
