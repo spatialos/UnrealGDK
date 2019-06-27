@@ -18,7 +18,7 @@
     {
       "Name": "SpatialGDK",
       "Type": "Runtime",
-      "LoadingPhase": "PreDefault",
+      "LoadingPhase": "Default",
       "WhitelistPlatforms": [ "Win64", "Linux", "Mac", "XboxOne", "PS4", "IOS" ]
     },
     {

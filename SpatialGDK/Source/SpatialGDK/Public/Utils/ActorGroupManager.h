@@ -56,7 +56,12 @@ private:
 public:
 	void Init();
 
+	// Returns the first ActorGroup that contains this, or a parent of this class,
+	// or the default actor group, if no mapping is found.
 	FName GetActorGroupForClass(TSubclassOf<AActor> Class);
 
+	// Returns the Server worker type that is authoritative over the ActorGroup
+	// that contains this class (or parent class). Returns DefaultWorkerType
+	// if no mapping is found.
 	FName GetWorkerTypeForClass(TSubclassOf<AActor> Class);
 };
