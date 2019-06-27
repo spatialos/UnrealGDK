@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Started using the [schema_compiler tool](https://docs.improbable.io/reference/13.8/shared/schema/introduction#using-the-schema-compiler-directly) to generate [schema descriptors](https://docs.improbable.io/reference/13.8/shared/flexible-project-layout/build-process/schema-descriptor-build-process#schema-descriptor-introduction) rather than relying on 'spatial local launch' to do this.
 - Added runtime option to pack unreliable RPCs from the same frame in a single component update to save bandwidth - bPackUnreliableRPCs.
 - Enabled new Development Authentication Flow.
-- An entity is now created for each server worker.
+- Added new "worker" entities which are created for each server worker in a deployment so they correctly receive interest in the global state manager.
 
 ### Bug fixes:
 - BeginPlay is not called with authority when checking out entities from Spatial.
