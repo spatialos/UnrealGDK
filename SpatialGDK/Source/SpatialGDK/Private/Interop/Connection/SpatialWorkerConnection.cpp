@@ -79,7 +79,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
 	{
-		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType;
+		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 		LocatorConfig.UseExternalIp = true;
 		StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
 		return;
@@ -177,7 +177,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 {
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
-		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType : SpatialConstants::DefaultServerWorkerType;
+		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString() : SpatialConstants::DefaultServerWorkerType.ToString();
 		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
 	}
 
@@ -238,7 +238,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 {
 	if (LocatorConfig.WorkerType.IsEmpty())
 	{
-		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType;
+		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LocatorConfig.WorkerType);
 	}
 

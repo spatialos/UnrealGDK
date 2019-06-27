@@ -576,7 +576,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 			}
 			// Write the client worker section
 			FWorkerTypeLaunchSection ClientWorker;
-			ClientWorker.WorkerTypeName = FName(*SpatialConstants::DefaultClientWorkerType);
+			ClientWorker.WorkerTypeName = SpatialConstants::DefaultClientWorkerType;
 			ClientWorker.WorkerPermissions.bAllPermissions = true;
 			ClientWorker.bLoginRateLimitEnabled = false;
 			WriteWorkerSection(Writer, ClientWorker);
