@@ -2,22 +2,18 @@
 
 #include "LocalDeploymentManager.h"
 
-#include "Async/Async.h"
-
-#include "Interop/Connection/EditorWorkerController.h"
-
-#include "HAL/FileManager.h"
-
 #include "AssetRegistryModule.h"
+#include "Async/Async.h"
+#include "DirectoryWatcherModule.h"
+#include "FileCache.h"
 #include "GeneralProjectSettings.h"
+#include "HAL/FileManager.h"
+#include "HAL/PlatformFilemanager.h"
+#include "Interop/Connection/EditorWorkerController.h"
 #include "Misc/FileHelper.h"
-
-#include "Serialization/JsonWriter.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
-#include "HAL/PlatformFilemanager.h"
-#include "FileCache.h"
-#include "DirectoryWatcherModule.h"
+#include "Serialization/JsonWriter.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
