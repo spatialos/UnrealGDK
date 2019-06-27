@@ -8,6 +8,7 @@
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
 #include "Utils/RepDataUtils.h"
+#include "TimerManager.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -85,7 +86,7 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
@@ -117,6 +118,9 @@ public:
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
 	void FlushPackedUnreliableRPCs();
+
+	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
+	void CreateServerWorkerEntity(int AttemptCounter = 1);
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
@@ -157,6 +161,8 @@ private:
 
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
+
+	FTimerManager* TimerManager;
 
 	FChannelToHandleToUnresolved RepPropertyToUnresolved;
 	FOutgoingRepUpdates RepObjectToUnresolved;
