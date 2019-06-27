@@ -296,24 +296,24 @@ void USpatialNetDriver::CreateServerWorkerEntity(int AttemptCounter)
 	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
 
-	QueryConstraint constraint;
-	constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
+	QueryConstraint Constraint;
+	Constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
-	Query query;
-	query.Constraint = constraint;
-	query.FullSnapshotResult = true;
+	Query Query;
+	Query.Constraint = Constraint;
+	Query.FullSnapshotResult = true;
 
-	ComponentInterest queries;
-	queries.Queries.Add(query);
+	ComponentInterest Queries;
+	Queries.Queries.Add(Query);
 
-	Interest interest;
-	interest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, queries);
+	Interest Interest;
+	Interest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
 
 	TArray<Worker_ComponentData> Components;
 	Components.Add(Position().CreatePositionData());
 	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
 	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
-	Components.Add(interest.CreateInterestData());
+	Components.Add(Interest.CreateInterestData());
 
 	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
