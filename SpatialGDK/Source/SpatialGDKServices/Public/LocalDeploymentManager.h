@@ -24,8 +24,6 @@ public:
 	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
 	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
 
-	void SPATIALGDKSERVICES_API Tick(float DeltaTime);
-
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning();
@@ -49,12 +47,12 @@ public:
 	// TODO: Refactor these into Utils
 	FString GetProjectName();
 	void WorkerBuildConfigAsync();
-	TSharedPtr<FJsonObject> ParseJson(FString RawJsonString);
-	void ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult);
+	bool ParseJson(FString RawJsonString, TSharedPtr<FJsonObject>& JsonParsed);
+	void ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult, int32& ExitCode);
 
 	// TODO: Find alternate way of getting this info, should come from settings.
 	// Probably use input arguments
-	FString GetSpotPath();
+	FString GetSpotExe();
 	FString GetSpatialOSDirectory();
 
 private:
@@ -75,6 +73,8 @@ private:
 	FString LocalRunningDeploymentID;
 	FString ProjectName;
 
-	void StartUpDirectoryWatcher();
+	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
+
+	static const int32 ExitCodeSuccess = 0;
 };

@@ -138,7 +138,7 @@ void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 		});
 	}
 
-	LocalDeploymentManager->Tick(DeltaTime);
+	LocalDeploymentManager->RefreshServiceStatus();
 }
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator() const

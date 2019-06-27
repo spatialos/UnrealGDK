@@ -4,11 +4,6 @@
 
 #include "Async/Async.h"
 
-//#include "SpatialGDKEditor.h"
-//#include "SpatialGDKSettings.h"
-//#include "SpatialGDKEditorSettings.h"
-//#include "SpatialGDKEditorSettings.h"
-
 #include "Interop/Connection/EditorWorkerController.h"
 
 #include "HAL/FileManager.h"
@@ -38,7 +33,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	bStoppingSpatialService = false;
 
 	// For checking whether we can stop or start. Set in the past so the first RefreshServiceStatus does not wait.
-	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(2);
+	LastSpatialServiceCheck = FDateTime::Now() - FTimespan::FromSeconds(3);
 
 	// Get the project name from the spatialos.json.
 	ProjectName = GetProjectName();
@@ -47,15 +42,10 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	WorkerBuildConfigAsync();
 
 	// Watch the worker config directory for changes.
-	StartUpDirectoryWatcher();
+	StartUpWorkerConfigDirectoryWatcher();
 }
 
-void FLocalDeploymentManager::Tick(float DeltaTime)
-{
-	RefreshServiceStatus();
-}
-
-FString FLocalDeploymentManager::GetSpotPath()
+FString FLocalDeploymentManager::GetSpotExe()
 {
 	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
 
@@ -74,7 +64,7 @@ FString FLocalDeploymentManager::GetSpatialOSDirectory()
 	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
 }
 
-void FLocalDeploymentManager::StartUpDirectoryWatcher()
+void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 {
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
 	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
@@ -82,10 +72,17 @@ void FLocalDeploymentManager::StartUpDirectoryWatcher()
 	{
 		// Watch the worker config directory for changes.
 		const FString SpatialDirectory = GetSpatialOSDirectory();
-		// TODO: If directory exists otherwise panic.
 		FString WorkerConfigDirectory = FPaths::Combine(SpatialDirectory, TEXT("workers"));
-		WorkerConfigDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FLocalDeploymentManager::OnWorkerConfigDirectoryChanged);
-		DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate, WorkerConfigDirectoryChangedDelegateHandle);
+
+		if (FPaths::DirectoryExists(WorkerConfigDirectory))
+		{
+			WorkerConfigDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FLocalDeploymentManager::OnWorkerConfigDirectoryChanged);
+			DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate, WorkerConfigDirectoryChangedDelegateHandle);
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Worker config directory does not exist! Please ensure you have your worker configurations at %s"), *WorkerConfigDirectory);
+		}
 	}
 }
 
@@ -103,9 +100,8 @@ FString FLocalDeploymentManager::GetProjectName()
 	FString SpatialFileResult;
 	FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName));
 
-	TSharedPtr<FJsonObject> JsonParsedSpatialFile = ParseJson(SpatialFileResult);
-
-	if (!JsonParsedSpatialFile.IsValid())
+	TSharedPtr<FJsonObject> JsonParsedSpatialFile;
+	if (!ParseJson(SpatialFileResult, JsonParsedSpatialFile))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spatialos.json failed. Can't get project name."));
 	}
@@ -120,60 +116,52 @@ FString FLocalDeploymentManager::GetProjectName()
 
 void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
-	FString SpatialExe = TEXT("spatial.exe");
-	FString SpatialServiceStatusArgs = TEXT("worker build build-config");
-	const FString SpatialDirectory = GetSpatialOSDirectory();
-
-	FString WorkerBuildConfigResult;
-	ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStatusArgs, *SpatialDirectory, WorkerBuildConfigResult);
-
-	if (!WorkerBuildConfigResult.Contains(TEXT("succeeded")))
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Building worker configurations failed. Please ensure your .worker.json files are correct."));
-	}
+		FString SpatialExe = TEXT("spatial.exe");
+		FString SpatialServiceStatusArgs = TEXT("worker build build-config");
+		const FString SpatialDirectory = GetSpatialOSDirectory();
+
+		FString WorkerBuildConfigResult;
+		int32 ExitCode;
+		ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStatusArgs, *SpatialDirectory, WorkerBuildConfigResult, ExitCode);
+
+		if (ExitCode == ExitCodeSuccess)
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Building worker configurations failed. Please ensure your .worker.json files are correct."));
+		}
+	});
 }
 
-TSharedPtr<FJsonObject> FLocalDeploymentManager::ParseJson(FString RawJsonString)
+bool FLocalDeploymentManager::ParseJson(FString RawJsonString, TSharedPtr<FJsonObject>& JsonParsed)
 {
-	TSharedPtr<FJsonObject> JsonParsed;
 	TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(RawJsonString);
-	FJsonSerializer::Deserialize(JsonReader, JsonParsed);
-
-	return JsonParsed;
+	return FJsonSerializer::Deserialize(JsonReader, JsonParsed);
 }
 
-void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult)
+void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult, int32& ExitCode)
 {
-	UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Attempting to execute '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
+	UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Executing '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
 
-	// Create pipes to read output of spot.
 	void* ReadPipe = nullptr;
 	void* WritePipe = nullptr;
 	ensure(FPlatformProcess::CreatePipe(ReadPipe, WritePipe));
 
-	FProcHandle ProcHandle;
-	int32 ExitCode;
-
-	ProcHandle = FPlatformProcess::CreateProc(*Executable, *Arguments, false, true, true, nullptr, 1 /*PriorityModifer*/, *DirectoryToRun, WritePipe);
+	FProcHandle ProcHandle = FPlatformProcess::CreateProc(*Executable, *Arguments, false, true, true, nullptr, 2 /*PriorityModifer*/, *DirectoryToRun, WritePipe);
 
 	if (ProcHandle.IsValid())
 	{
-		uint32 count = 0;
-
 		for (bool bProcessFinished = false; !bProcessFinished; )
 		{
 			bProcessFinished = FPlatformProcess::GetProcReturnCode(ProcHandle, &ExitCode);
 
-			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Unclogging pipe for '%s' with arguments '%s' in directory '%s'. Count = %d"), *Executable, *Arguments, *DirectoryToRun, count);
 			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
-
-			count++;
-			FPlatformProcess::Sleep(0.1f);
 		}
+		ProcHandle.Reset();
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Command execution failed. '%s' with arguments '%s' in directory '%s' "), *Executable, *Arguments, *DirectoryToRun);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s' "), *Executable, *Arguments, *DirectoryToRun);
 	}
 
 	FPlatformProcess::ClosePipe(0, ReadPipe);
@@ -218,77 +206,84 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		return false;
 	}
 
+	LocalRunningDeploymentID.Empty();
+
+	bStartingDeployment = true;
+
 	// If the service is not running then start it.
 	if (!bSpatialServiceRunning)
 	{
 		TryStartSpatialService();
 	}
 
-	bStartingDeployment = true;
-
-	FString SpotExe = GetSpotPath();
-	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=testname --project-name=%s --json %s"), *LaunchConfig, *ProjectName, *LaunchArgs);
+	FString SpotExe = GetSpotExe();
+	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json %s"), *LaunchConfig, *ProjectName, *LaunchArgs);
 	const FString SpatialDirectory = GetSpatialOSDirectory();
 
 	FDateTime SpotCreateStart = FDateTime::Now();
 
 	FString SpotCreateResult;
-	ExecuteAndReadOutput(*SpotExe, *SpotCreateArgs, *SpatialDirectory, SpotCreateResult);
+	int32 ExitCode;
+	ExecuteAndReadOutput(*SpotExe, *SpotCreateArgs, *SpatialDirectory, SpotCreateResult, ExitCode);
 	bStartingDeployment = false;
 
-	// TODO: ParseJson should return a bool to check for failures.
-	TSharedPtr<FJsonObject> SpotJsonResult = ParseJson(SpotCreateResult);
-	if (!SpotJsonResult.IsValid())
+	if (ExitCode != ExitCodeSuccess)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. %s"), *SpotCreateResult);
+		return false;
+	}
+
+	bool bSuccess = false;
+
+	TSharedPtr<FJsonObject> SpotJsonResult;
+	bool bPasingSuccess = ParseJson(SpotCreateResult, SpotJsonResult);
+	if (!bPasingSuccess)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot create result failed."));
-		LocalRunningDeploymentID.Empty();
-		bLocalDeploymentRunning = false;
 	}
 
 	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
-	if (!SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
+	if (bPasingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not get parse result from 'spot create'."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'content' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
+		bPasingSuccess = false;
 	}
 
 	FString DeploymentStatus;
-	if (!SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
+	if (bPasingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Could not get local deployment status."));
-	}
+		if (DeploymentStatus == TEXT("RUNNING"))
+		{
+			FString DeploymentID = SpotJsonContent->Get()->GetStringField(TEXT("id"));
+			LocalRunningDeploymentID = DeploymentID;
+			bLocalDeploymentRunning = true;
 
-	if (DeploymentStatus == TEXT("RUNNING"))
-	{
-		FString DeploymentID = SpotJsonContent->Get()->GetStringField(TEXT("id"));
-		LocalRunningDeploymentID = DeploymentID;
-		bLocalDeploymentRunning = true;
+			FDateTime SpotCreateEnd = FDateTime::Now();
+			FTimespan Span = SpotCreateEnd - SpotCreateStart;
 
-		FDateTime SpotCreateEnd = FDateTime::Now();
-		FTimespan Span = SpotCreateEnd - SpotCreateStart;
+			OnDeploymentStart.Broadcast();
 
-		OnDeploymentStart.Broadcast();
-
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
-		// TODO: refactor into bSuccess
-		IsLocalDeploymentRunning();
-		return true;
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully created local deployment in %f seconds."), Span.GetTotalSeconds());
+			bSuccess = true;
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Local deployment creation failed. Deployment status: %s"), *DeploymentStatus);
+		}
 	}
 	else
 	{
-		// We don't know if the deploy is running here so have to call IsLocalDeploymentRunning.
-		//bLocalDeploymentRunning = false;
-
-		// TODO: Is this the correct log path anymore?
-		//const FString SpatialLogPath = GetSpatialOSDirectory() + FString(TEXT("/logs/spatial.log"));
-		//UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to start SpatialOS, please refer to log file `%s` for more information."), *SpatialLogPath);
-		IsLocalDeploymentRunning();
-		return false;
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
 	}
+	
+
+	// Make sure the internal deployment state tracking is updated.
+	IsLocalDeploymentRunning();
+	return bSuccess;
 }
 
 bool FLocalDeploymentManager::TryStopLocalDeployment()
 {
-	// if (bSpatialServiceRunning && bLocalDeploymentRunning) 
 	if (!bLocalDeploymentRunning || LocalRunningDeploymentID.IsEmpty())
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to stop local deployment but no active deployment exists."));
@@ -297,53 +292,70 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 
 	bStoppingDeployment = true;
 
-	FString SpotExe = GetSpotPath();
+	FString SpotExe = GetSpotExe();
 	FString SpotListArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *LocalRunningDeploymentID);
 	const FString SpatialDirectory = GetSpatialOSDirectory();
 
 	FString SpotDeleteResult;
-	ExecuteAndReadOutput(*SpotExe, *SpotListArgs, *SpatialDirectory, SpotDeleteResult);
+	int32 ExitCode;
+	ExecuteAndReadOutput(*SpotExe, *SpotListArgs, *SpatialDirectory, SpotDeleteResult, ExitCode);
 	bStoppingDeployment = false;
+
+	if (ExitCode != ExitCodeSuccess)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local deployment! %s"), *SpotDeleteResult);
+	}
 
 	bool bSuccess = false;
 
-	if (SpotDeleteResult.Contains(TEXT("failed to get deployment with id")))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local deployment! %s"), *SpotDeleteResult);
-		IsLocalDeploymentRunning();
-		return bSuccess;
-	}
-
-	TSharedPtr<FJsonObject> SpotJsonResult = ParseJson(SpotDeleteResult);
-	if (!SpotJsonResult.IsValid())
+	TSharedPtr<FJsonObject> SpotJsonResult;
+	bool bPasingSuccess = ParseJson(SpotDeleteResult, SpotJsonResult);
+	if (!bPasingSuccess)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot delete result failed."));
-		return bSuccess;
 	}
 
-	TSharedPtr<FJsonObject> SpotJsonContent = SpotJsonResult->GetObjectField(TEXT("content"));
-
-	FString DeploymentStatus = SpotJsonContent->GetStringField(TEXT("status"));
-	if (DeploymentStatus == TEXT("STOPPED"))
+	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
+	if (bPasingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
 	{
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully stopped local deplyoment"));
-		LocalRunningDeploymentID.Empty();
-		bLocalDeploymentRunning = false;
-		bSuccess = true;
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'content' does not exist in Json result from 'spot delete': %s"), *SpotDeleteResult);
+		bPasingSuccess = false;
+	}
+
+	FString DeploymentStatus;
+	if(bPasingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
+	{
+		if (DeploymentStatus == TEXT("STOPPED"))
+		{
+			UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Successfully stopped local deplyoment"));
+			LocalRunningDeploymentID.Empty();
+			bLocalDeploymentRunning = false;
+			bSuccess = true;
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Stopping local deployment failed. Deployment status: %s"), *DeploymentStatus);
+		}
 	}
 	else
 	{
-		// TODO: Wtf happened here.
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot delete': %s"), *SpotDeleteResult);
 	}
+	
 
-	// Make sure deployment state internally is updated.
+	// Make sure the internal deployment state tracking is updated.
 	IsLocalDeploymentRunning();
 	return bSuccess;
 }
 
 bool FLocalDeploymentManager::TryStartSpatialService()
 {
-	// TODO: Wrap this in if running code
+	if (bSpatialServiceRunning)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Tried to start spatial service but it is already running."));
+		return false;
+	}
+
 	bStartingSpatialService = true;
 
 	FString SpatialExe = TEXT("spatial.exe");
@@ -351,10 +363,16 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 	const FString SpatialDirectory = GetSpatialOSDirectory();
 
 	FString ServiceStartResult;
-	ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStartArgs, *SpatialDirectory, ServiceStartResult);
+	int32 ExitCode;
+	ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStartArgs, *SpatialDirectory, ServiceStartResult, ExitCode);
 	bStartingSpatialService = false;
 
-	// TODO: More robust result check
+	if (ExitCode != ExitCodeSuccess)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to start! %s"), *ServiceStartResult);
+		return false;
+	}
+
 	if (ServiceStartResult.Contains(TEXT("RUNNING")))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service started!"));
@@ -372,19 +390,23 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 
 bool FLocalDeploymentManager::TryStopSpatialService()
 {
-	// TODO: Wrap this in if service running. 
-	bStoppingSpatialService = true;
+	if (!bSpatialServiceRunning)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Tried to stop spatial service but it's not running."));
+		return false;
+	}
 
+	bStoppingSpatialService = true;
 	FString SpatialExe = TEXT("spatial.exe");
 	FString SpatialServiceStartArgs = TEXT("service stop");
 	const FString SpatialDirectory = GetSpatialOSDirectory();
 
-	FString ServiceStartResult;
-	ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStartArgs, *SpatialDirectory, ServiceStartResult);
+	FString ServiceStopResult;
+	int32 ExitCode;
+	ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStartArgs, *SpatialDirectory, ServiceStopResult, ExitCode);
 	bStoppingSpatialService = false;
 
-	// TODO: More robust result check
-	if (ServiceStartResult.Contains(TEXT("Local API service stopped")))
+	if (ExitCode == ExitCodeSuccess)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service stopped!"));
 		bSpatialServiceRunning = false;
@@ -393,12 +415,11 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to stop! %s"), *ServiceStartResult);
-
-		// Who knows what happened. Do a service status.
-		IsSpatialServiceRunning();
-		return false;
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to stop! %s"), *ServiceStopResult);
 	}
+
+	IsSpatialServiceRunning();
+	return false;
 }
 
 bool FLocalDeploymentManager::GetLocalDeploymentStatus()
@@ -409,61 +430,58 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 		return bLocalDeploymentRunning;
 	}
 
-	FString SpotExe = GetSpotPath();
-
+	FString SpotExe = GetSpotExe();
 	FString SpotListArgs = FString::Printf(TEXT("alpha deployment list --project-name=%s --json"), *ProjectName);
 	const FString SpatialDirectory = GetSpatialOSDirectory();
 
 	FString SpotListResult;
-	ExecuteAndReadOutput(*SpotExe, *SpotListArgs, *SpatialDirectory, SpotListResult);
+	int32 ExitCode;
+	ExecuteAndReadOutput(*SpotExe, *SpotListArgs, *SpatialDirectory, SpotListResult, ExitCode);
 
-	if (SpotListResult.IsEmpty())
+	if (ExitCode != ExitCodeSuccess)
 	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to check local deployment status."));
 		return false;
 	}
 
-	TSharedPtr<FJsonObject> SpotJsonResult = ParseJson(SpotListResult);
-	if (!SpotJsonResult.IsValid())
+	TSharedPtr<FJsonObject> SpotJsonResult;
+	bool bPasingSuccess = ParseJson(SpotListResult, SpotJsonResult);
+	if (!bPasingSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot result failed. Can't check deployment status."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot list result failed."));
 	}
 
-	bool bParsingSuccess;
-
-	const TSharedPtr<FJsonObject>* SpotJsonContent;
-	bParsingSuccess = SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent);
-
-	if (!bParsingSuccess)
+	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
+	if (bPasingSuccess && SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot result failed. Can't check deployment status."));
-		return false;
-	}
-
-	// TODO: This can be null if no deployments exist.
-	const TArray<TSharedPtr<FJsonValue>>* JsonDeployments;
-	bParsingSuccess = SpotJsonContent->Get()->TryGetArrayField(TEXT("deployments"), JsonDeployments);
-
-	if (!bParsingSuccess)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("No local deployments running."));
-		return false;
-	}
-
-	for (TSharedPtr<FJsonValue> JsonDeployment : *JsonDeployments)
-	{
-		FString DeploymentStatus = JsonDeployment->AsObject()->GetStringField(TEXT("status"));
-		if (DeploymentStatus == TEXT("RUNNING"))
+		const TArray<TSharedPtr<FJsonValue>>* JsonDeployments;
+		if(!SpotJsonContent->Get()->TryGetArrayField(TEXT("deployments"), JsonDeployments))
 		{
-			FString DeploymentId = JsonDeployment->AsObject()->GetStringField(TEXT("id"));
-
-			UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Running deployment found: %s"), *DeploymentId);
-
-			// TODO: Better way of getting current running deployment ID.
-			LocalRunningDeploymentID = DeploymentId;
-			bLocalDeploymentRunning = true;
-
-			return true;
+			UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("No local deployments running."));
+			return false;
 		}
+
+		for (TSharedPtr<FJsonValue> JsonDeployment : *JsonDeployments)
+		{
+			FString DeploymentStatus;
+			if(JsonDeployment->AsObject()->TryGetStringField(TEXT("status"), DeploymentStatus))
+			{
+				if (DeploymentStatus == TEXT("RUNNING"))
+				{
+					FString DeploymentId = JsonDeployment->AsObject()->GetStringField(TEXT("id"));
+
+					UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Running deployment found: %s"), *DeploymentId);
+
+					LocalRunningDeploymentID = DeploymentId;
+					bLocalDeploymentRunning = true;
+					return true;
+				}
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot list result failed. Can't check deployment status."));
 	}
 
 	LocalRunningDeploymentID.Empty();
@@ -478,10 +496,15 @@ bool FLocalDeploymentManager::GetServiceStatus()
 	const FString SpatialDirectory = GetSpatialOSDirectory();
 
 	FString ServiceStatusResult;
-	ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStatusArgs, *SpatialDirectory, ServiceStatusResult);
+	int32 ExitCode;
+	ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStatusArgs, *SpatialDirectory, ServiceStatusResult, ExitCode);
 
-	// TODO: More robust result check
-	if (ServiceStatusResult.Contains(TEXT("Local API service is not running")))
+	if (ExitCode != ExitCodeSuccess)
+	{
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to check spatial service status: %s"), *ServiceStatusResult);
+	}
+
+	if (ServiceStatusResult.Contains(TEXT("Local API service is not running.")))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service not running."));
 		bSpatialServiceRunning = false;
@@ -494,6 +517,8 @@ bool FLocalDeploymentManager::GetServiceStatus()
 		bSpatialServiceRunning = true;
 		return true;
 	}
+
+	return false;
 }
 
 bool FLocalDeploymentManager::IsLocalDeploymentRunning()
