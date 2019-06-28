@@ -211,7 +211,7 @@ private:
 	/** Set WorkerTypes in runtime settings. */
 	void SetRuntimeWorkerTypes();
 
-	/** Set WorkerTypes in level editor play settings. */
+	/** Set WorkerTypesToLaunch in level editor play settings. */
 	void SetLevelEditorPlaySettingsWorkerTypes();
 
 	/** Check if the Editor Settings contains valid directory paths or not. */
