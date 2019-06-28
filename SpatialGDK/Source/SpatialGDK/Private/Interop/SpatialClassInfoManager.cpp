@@ -224,13 +224,16 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
 
-	if (Class->IsChildOf<AActor>())
+	if (UClass* ActorClass = Info->Class.Get())
 	{
-		Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(Class));
-		Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(Class));
+		if (ActorClass->IsChildOf<AActor>())
+		{
+			Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
+			Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
 
-		UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
-			*Class->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
+			UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
+				*ActorClass->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
+		}
 	}
 }
 

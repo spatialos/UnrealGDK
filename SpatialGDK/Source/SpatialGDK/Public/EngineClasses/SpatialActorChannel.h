@@ -165,9 +165,6 @@ protected:
 private:
 	void DynamicallyAttachSubobject(UObject* Object);
 
-	void ServerProcessOwnershipChange();
-	void ClientProcessOwnershipChange();
-
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
 
