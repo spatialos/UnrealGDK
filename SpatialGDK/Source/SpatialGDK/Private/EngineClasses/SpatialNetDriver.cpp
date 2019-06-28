@@ -33,6 +33,7 @@
 #include "Utils/ActorGroupManager.h"
 #include "Utils/EngineVersionCheck.h"
 #include "Utils/EntityPool.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 
@@ -114,6 +115,11 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
 	{
 		return false;
+	}
+
+	if (!bInitAsClient)
+	{
+		GatherClientInterestDistances();
 	}
 
 	InitiateConnectionToSpatialOS(URL);

@@ -16,6 +16,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 namespace SpatialGDK
 {
 
+void GatherClientInterestDistances();
+
 class SPATIALGDK_API InterestFactory
 {
 public:

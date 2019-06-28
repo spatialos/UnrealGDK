@@ -18,12 +18,13 @@ DEFINE_LOG_CATEGORY(LogInterestFactory);
 namespace
 {
 static TMap<UClass*, float> ClientInterestDistancesSquared;
-void GatherClientInterestDistancesOnce()
+}
+
+namespace SpatialGDK
 {
-	if (ClientInterestDistancesSquared.Num() > 0)
-	{
-		return;
-	}
+void GatherClientInterestDistances()
+{
+	ClientInterestDistancesSquared.Empty();
 
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
 	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
@@ -77,10 +78,6 @@ void GatherClientInterestDistancesOnce()
 		}
 	}
 }
-} // anonymous namespace
-
-namespace SpatialGDK
-{
 
 InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialNetDriver* InNetDriver)
 	: Actor(InActor)
@@ -234,8 +231,6 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 
 QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 {
-	GatherClientInterestDistancesOnce();
-
 	// Checkout Radius constraints are defined by the ClientInterestDistance property on actors.
 	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
 	//   - ClientInterestDistance on AActor is used to define the default checkout radius with no other constraints.
