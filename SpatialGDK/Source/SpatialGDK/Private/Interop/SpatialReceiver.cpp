@@ -896,7 +896,7 @@ void USpatialReceiver::HandleDynamicAddComponent(Worker_AddComponentOp& Op)
 			return;
 		}
 
-		if (!PendingDynamicSubobjectComponents.Contains(MakeTuple(Op.entity_id, ComponentId )))
+		if (!PendingDynamicSubobjectComponents.Contains(MakeTuple(Op.entity_id, ComponentId)))
 		{
 			bReadyToCreate = false;
 		}
@@ -914,6 +914,7 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 
 	if (Actor == nullptr)
 	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Tried to dynamically attach subobject of type %s to entity %lld but couldn't find Actor!"), *Info.Class->GetName(), EntityId);
 		return;
 	}
 

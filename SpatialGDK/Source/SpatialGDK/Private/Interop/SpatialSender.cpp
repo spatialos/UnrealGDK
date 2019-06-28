@@ -265,7 +265,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	// Only add subobjects which are replicating
 	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
 	{
-		if(UObject* Subobject = RepSubobject.Value()->GetWeakObjectPtr().Get())
+		if (UObject* Subobject = RepSubobject.Value()->GetWeakObjectPtr().Get())
 		{
 			// If this object is not in the PackageMap, it has been dynamically created.
 			if (!PackageMap->GetUnrealObjectRefFromObject(Subobject).IsValid())

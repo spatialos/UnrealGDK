@@ -200,7 +200,7 @@ void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& C
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
 		if (SubobjectClass == nullptr)
 		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to resolve the class for subobject %s (class path: %s) on actor class %s! This subobject will not be able to replicate in Spatial!"), *SubobjectSchemaData.Name.ToString(), *SubobjectSchemaData.ClassPath, *SubobjectSchemaData.ClassPath);
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to resolve the class for subobject %s (class path: %s) on actor class %s! This subobject will not be able to replicate in Spatial!"), *SubobjectSchemaData.Name.ToString(), *SubobjectSchemaData.ClassPath, *ClassPath);
 			continue;
 		}
 
@@ -239,7 +239,7 @@ void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FStrin
 		TSharedRef<FClassInfo> DynamicSubobjectInfo = MakeShared<FClassInfo>(Info.Get());
 
 		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
-		check(DynamicSubobjectData.SchemaComponents[SCHEMA_Data] != SpatialConstants::INVALID_COMPONENT_ID);
+		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
@@ -276,7 +276,7 @@ bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* Class)
 {
-	if (ClassInfoMap.Find(Class) == nullptr)
+	if (!ClassInfoMap.Contains(Class))
 	{
 		CreateClassInfoForClass(Class);
 	}

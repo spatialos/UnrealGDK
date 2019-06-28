@@ -444,7 +444,6 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 
 FActorSpecificSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex)
 {
-	const FActorSchemaData* const SchemaData = ActorClassPathToSchema.Find(*ActorClass->GetPathName());
 	const FActorSpecificSubobjectSchemaData* const SubobjectSchemaData = nullptr; // SchemaData ? SchemaData->SubobjectData.Find(MapIndex) : nullptr;
 	
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
@@ -559,8 +558,6 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInfo)
 {
 	TSet<UStruct*> AlreadyImported;
-
-	bool bImportCoreTypes = false;
 
 	for (auto& PropertyPair : TypeInfo->Properties)
 	{

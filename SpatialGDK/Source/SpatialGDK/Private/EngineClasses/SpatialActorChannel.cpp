@@ -518,6 +518,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 
 		if (Info == nullptr)
 		{
+			// This is a faliure but there is already a log inside TryResolveNewDynamicSubbojectAndGetClassInfo
 			return;
 		}
 	}
