@@ -42,9 +42,11 @@ void USpatialGDKSettings::PostInitProperties()
 	const TCHAR* CommandLine = FCommandLine::Get();
 	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
 
+#if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
 	PlayInSettings->bEnableOffloading = bEnableOffloading;
 	PlayInSettings->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
+#endif
 }
 
 #if WITH_EDITOR
