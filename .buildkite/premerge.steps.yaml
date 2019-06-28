@@ -27,7 +27,7 @@ steps:
     artifact_paths:
       - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
     plugins:
-      - ca-johnson/handle:
+      - ca-johnson/handle#v1.0:
         processes: AutomationToolLauncher.exe,UnrealHeaderTool.exe
 
   - label: "build-GDK-:linux:"
