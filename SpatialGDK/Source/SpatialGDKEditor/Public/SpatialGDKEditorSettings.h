@@ -214,6 +214,9 @@ private:
 	/** Set WorkerTypes in level editor play settings. */
 	void SetLevelEditorPlaySettingsWorkerTypes();
 
+	/** Set WorkerTypes in level editor play settings. */
+	void SetLevelEditorPlaySettingsWorkerTypes();
+
 	/** Check if the Editor Settings contains valid directory paths or not. */
 	void SafetyCheckSpatialOSDirectoryPaths();
 

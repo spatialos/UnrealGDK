@@ -17,6 +17,7 @@ class SPATIALGDK_API USpatialGDKSettings : public UObject
 public:
 	USpatialGDKSettings(const FObjectInitializer& ObjectInitializer);
 
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostInitProperties() override;
 
 	/** The number of entity IDs to be reserved when the entity pool is first created */
