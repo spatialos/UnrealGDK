@@ -1005,6 +1005,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 
 	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, Function, ReliableRPCIndex, Parameters, UnresolvedObjects);
+
 	if (UnresolvedObjects.Num() == 0)
 	{
 		FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, MoveTemp(Payload), ReliableRPCIndex);
