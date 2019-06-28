@@ -5,26 +5,26 @@
 #include "Schema/RPCPayload.h"
 #include "SpatialConstants.h"
 
-namespace SpatialGDK
-{
+#include "CoreMinimal.h"
+
 // TODO(Alex): remove this logic when singletons can be referenced without entity IDs (UNR-1456) - deprecated???
 struct FPendingRPCParams
 {
-	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, RPCPayload&& InPayload, int InReliableRPCIndex = 0);
+	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, SpatialGDK::RPCPayload&& InPayload, int InReliableRPCIndex = 0);
 	~FPendingRPCParams() = default;
 
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
 
 	int ReliableRPCIndex;
-	RPCPayload Payload;
+	SpatialGDK::RPCPayload Payload;
 };
 
 using FPendingRPCParamsPtr = TSharedPtr<FPendingRPCParams>;
 
 DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessRPCDelegate, FPendingRPCParamsPtr)
 
-class RPCContainer
+class FRPCContainer
 {
 public:
 	void QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
@@ -42,4 +42,3 @@ private:
 
 	RPCContainerType QueuedRPCs;
 };
-}

@@ -161,14 +161,14 @@ private:
 	void RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object);
 
 	// TODO(Alex): unreliableRPC are also queued. Should this be changed?
-	bool ApplyRPC(SpatialGDK::FPendingRPCParamsPtr Params);
+	bool ApplyRPC(FPendingRPCParamsPtr Params);
 	bool ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);	
 
 	void ReceiveCommandResponse(Worker_CommandResponseOp& Op);
 
 	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs);
 
-	void QueueIncomingRPC(SpatialGDK::FPendingRPCParamsPtr Params);
+	void QueueIncomingRPC(FPendingRPCParamsPtr Params);
 
 	void ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
@@ -215,7 +215,7 @@ private:
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
 	TMap<FUnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
-	SpatialGDK::RPCContainer IncomingRPCs;
+	FRPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;

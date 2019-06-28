@@ -2,8 +2,7 @@
 
 #include "RPCContainer.h"
 
-namespace SpatialGDK
-{
+using namespace SpatialGDK;
 
 FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, RPCPayload&& InPayload, int InReliableRPCIndex /*= 0*/)
 	: TargetObject(InTargetObject)
@@ -13,7 +12,7 @@ FPendingRPCParams::FPendingRPCParams(UObject* InTargetObject, UFunction* InFunct
 {
 }
 
-void RPCContainer::QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type)
+void FRPCContainer::QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type)
 {
 	if (!Params->TargetObject.IsValid())
 	{
@@ -25,7 +24,7 @@ void RPCContainer::QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Ty
 	QueueRPC(TargetObject, Type, Params);
 }
 
-void RPCContainer::QueueRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
+void FRPCContainer::QueueRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
 {
 	check(TargetObject);
 	TSharedPtr<FQueueOfParams>& QueuePtr = QueuedRPCs.FindOrAdd(Type).FindOrAdd(TargetObject);
@@ -36,7 +35,7 @@ void RPCContainer::QueueRPC(const UObject* TargetObject, ESchemaComponentType Ty
 	QueuePtr->Enqueue(Params);
 }
 
-void RPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FQueueOfParams* RPCList)
+void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FQueueOfParams* RPCList)
 {
 	check(RPCList);
 	FPendingRPCParamsPtr RPCParams = nullptr;
@@ -67,7 +66,7 @@ void RPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FQueu
 	}
 }
 
-void RPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
+void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
 {
 	for (auto& RPCs : QueuedRPCs)
 	{
@@ -84,7 +83,7 @@ void RPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
 	}
 }
 
-bool RPCContainer::ObjectHasRPCsQueuedOfType(const UObject* TargetObject, ESchemaComponentType Type)
+bool FRPCContainer::ObjectHasRPCsQueuedOfType(const UObject* TargetObject, ESchemaComponentType Type)
 {
 	FRPCMap* MapOfQueues = QueuedRPCs.Find(Type);
 	if(MapOfQueues)
@@ -99,9 +98,7 @@ bool RPCContainer::ObjectHasRPCsQueuedOfType(const UObject* TargetObject, ESchem
 	return false;
 }
 
-bool RPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParamsPtr Params)
+bool FRPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParamsPtr Params)
 {
 	return FunctionToApply.Execute(Params);
-}
-
 }
