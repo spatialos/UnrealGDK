@@ -43,7 +43,7 @@ struct EditorWorkerController
 		ReplaceProcesses.SetNum(WorkerCount);
 
 		int32 WorkerIdIndex = 0;
-		for (const TPair<FName, int32>& WorkerType : LevelEditorPlaySettings->WorkerTypesToLaunch)
+		for (const TPair<FName, int32>& WorkerType : LevelEditorPlaySettings->GetPIEServerWorkers())
 		{
 			for (int i = 0; i < WorkerType.Value; ++i)
 			{
