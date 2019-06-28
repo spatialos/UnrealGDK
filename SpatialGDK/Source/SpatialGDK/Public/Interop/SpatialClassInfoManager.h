@@ -84,7 +84,7 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 
 public:
 
-	bool Init(USpatialNetDriver* NetDriver, UActorGroupManager* ActorGroupManager);
+	bool TryInit(USpatialNetDriver* NetDriver, UActorGroupManager* ActorGroupManager);
 
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
 	// In PIE, PathName must be NetworkRemapped (bReading = false)

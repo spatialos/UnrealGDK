@@ -1,18 +1,14 @@
 #include "WorkerTypeCustomization.h"
 
-#include "SpatialGDK/public/SpatialGDKSettings.h"
+#include "SpatialGDKSettings.h"
 
-#include "PropertyEditor/Public/DetailLayoutBuilder.h"
-#include "PropertyEditor/Public/DetailWidgetRow.h"
-#include "PropertyEditor/Public/IDetailChildrenBuilder.h"
-#include "PropertyEditor/Public/PropertyCustomizationHelpers.h"
-#include "PropertyEditor/Public/PropertyHandle.h"
+#include "PropertyCustomizationHelpers.h"
+#include "PropertyHandle.h"
 #include "Widgets/SToolTip.h"
-#include "Widgets/Text/STextBlock.h"
 
 TSharedRef<IPropertyTypeCustomization> FWorkerTypeCustomization::MakeInstance()
 {
-	return MakeShareable(new FWorkerTypeCustomization());
+	return MakeShared<FWorkerTypeCustomization>();
 }
 
 void FWorkerTypeCustomization::CustomizeHeader(TSharedRef<class IPropertyHandle> StructPropertyHandle, class FDetailWidgetRow& HeaderRow, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
@@ -37,14 +33,13 @@ void FWorkerTypeCustomization::CustomizeHeader(TSharedRef<class IPropertyHandle>
 
 void FWorkerTypeCustomization::CustomizeChildren(TSharedRef<class IPropertyHandle> StructPropertyHandle, class IDetailChildrenBuilder& StructBuilder, IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
-	
 }
 
 void FWorkerTypeCustomization::OnGetStrings(TArray<TSharedPtr<FString>>& OutComboBoxStrings, TArray<TSharedPtr<class SToolTip>>& OutToolTips, TArray<bool>& OutRestrictedItems)
 {
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
-		for (FName WorkerType : Settings->WorkerTypes)
+		for (const FName& WorkerType : Settings->ServerWorkerTypes)
 		{
 			OutComboBoxStrings.Add(MakeShared<FString>(WorkerType.ToString()));
 			OutToolTips.Add(SNew(SToolTip).Text(FText::FromName(WorkerType)));
@@ -57,7 +52,7 @@ FString FWorkerTypeCustomization::OnGetValue(TSharedPtr<IPropertyHandle> WorkerT
 {
 	if (!WorkerTypeNameHandle->IsValidHandle())
 	{
-		return "";
+		return FString();
 	}
 
 	FString WorkerTypeValue;
@@ -65,16 +60,9 @@ FString FWorkerTypeCustomization::OnGetValue(TSharedPtr<IPropertyHandle> WorkerT
 	if (const USpatialGDKSettings* Settings = GetDefault<USpatialGDKSettings>())
 	{
 		WorkerTypeNameHandle->GetValue(WorkerTypeValue);
-		FName WorkerTypeName = FName(*WorkerTypeValue);
+		const FName WorkerTypeName = FName(*WorkerTypeValue);
 
-		if (Settings->WorkerTypes.Contains(WorkerTypeName))
-		{
-			return WorkerTypeValue;
-		}
-		else
-		{
-			return TEXT("INVALID");
-		}
+		return Settings->ServerWorkerTypes.Contains(WorkerTypeName) ? WorkerTypeValue : TEXT("INVALID");
 	}
 
 	return WorkerTypeValue;

@@ -1,10 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "PropertyEditor/Public/IPropertyTypeCustomization.h"
-#include "PropertyEditor/Public/IDetailCustomNodeBuilder.h"
-#include "PropertyEditor/Public/PropertyHandle.h"
-#include "SpatialGDK/Public/Utils/ActorGroupManager.h"
+#include "IPropertyTypeCustomization.h"
+#include "Utils/ActorGroupManager.h"
 
 class FWorkerTypeCustomization : public IPropertyTypeCustomization
 {

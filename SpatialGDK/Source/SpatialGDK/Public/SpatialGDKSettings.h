@@ -117,18 +117,19 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
 	FString DevelopmentDeploymentToConnect;
 
-	/** Single worker type launch when offloading is disabled, fallback worker type when offloading is enabled (owns all actor classes by default). */
+	/** Single server worker type to launch when offloading is disabled, fallback server worker type when offloading is enabled (owns all actor classes by default). */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	FWorkerType DefaultWorkerType;
 
+	/** Enable running different server worker types to split the simulation by Actor Groups. */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
 	bool bEnableOffloading;
 
-	/** Array of ActorGroups. */
+	/** Actor Group configuration. */
 	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
 	TMap<FName, FActorGroupInfo> ActorGroups;
 
-	/** Set of Managed worker types to run. */
+	/** Available server worker types. */
 	UPROPERTY(Config)
-	TSet<FName> WorkerTypes;
+	TSet<FName> ServerWorkerTypes;
 };

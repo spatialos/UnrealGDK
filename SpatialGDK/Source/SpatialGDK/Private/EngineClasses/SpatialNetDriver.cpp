@@ -111,7 +111,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
 
 	// If it fails to load, don't attempt to connect to spatial.
-	if (!ClassInfoManager->Init(this, ActorGroupManager))
+	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
 	{
 		return false;
 	}

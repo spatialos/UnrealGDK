@@ -8,11 +8,11 @@ void UActorGroupManager::Init()
 		DefaultWorkerType = Settings->DefaultWorkerType.WorkerTypeName;
 		if (Settings->bEnableOffloading)
 		{
-			for (const TPair<FName, FActorGroupInfo> ActorGroup : Settings->ActorGroups)
+			for (const TPair<FName, FActorGroupInfo>& ActorGroup : Settings->ActorGroups)
 			{
 				ActorGroupToWorkerType.Add(ActorGroup.Key, ActorGroup.Value.OwningWorkerType.WorkerTypeName);
 
-				for (const TSoftClassPtr<AActor> ClassPtr : ActorGroup.Value.ActorClasses)
+				for (const TSoftClassPtr<AActor>& ClassPtr : ActorGroup.Value.ActorClasses)
 				{
 					ClassPathToActorGroup.Add(ClassPtr, ActorGroup.Key);
 				}

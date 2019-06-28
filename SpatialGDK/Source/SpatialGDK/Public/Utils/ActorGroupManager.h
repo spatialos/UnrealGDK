@@ -14,9 +14,8 @@ struct FWorkerType
 	UPROPERTY(EditAnywhere)
 	FName WorkerTypeName;
 
-	FWorkerType()
+	FWorkerType() : WorkerTypeName(NAME_None)
 	{
-		WorkerTypeName = NAME_None;
 	}
 };
 
@@ -28,16 +27,17 @@ struct FActorGroupInfo
 	UPROPERTY()
 	FName Name;
 
+	/** The server worker type that has authority of all classes in this actor group. */
 	UPROPERTY(EditAnywhere)
 	FWorkerType OwningWorkerType;
 
+	// Using TSoftClassPtr here to prevent eagerly loading all classes.
+	/** The Actor classes contained within this group. Children of these classes will also be included. */	
 	UPROPERTY(EditAnywhere)
 	TSet<TSoftClassPtr<AActor>> ActorClasses;
 	
-	FActorGroupInfo()
+	FActorGroupInfo() : Name(NAME_None), OwningWorkerType()
 	{
-		Name = NAME_None;
-		OwningWorkerType = FWorkerType();
 	}
 };
 
