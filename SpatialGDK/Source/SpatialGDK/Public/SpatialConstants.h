@@ -87,8 +87,7 @@ namespace SpatialConstants
 		INVALID_ENTITY_ID = 0,
 		INITIAL_SPAWNER_ENTITY_ID = 1,
 		INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
-		PLACEHOLDER_ENTITY_ID_FIRST = 3,
-		PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
+		FIRST_AVAILABLE_ENTITY_ID = 3,
 	};
 
 	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
@@ -162,6 +161,8 @@ namespace SpatialConstants
 
 	static const FString ServerWorkerType = TEXT("UnrealWorker");
 	static const FString ClientWorkerType = TEXT("UnrealClient");
+
+	static const FName DefaultActorGroup = FName(TEXT("Default"));
 
 	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ServerWorkerType};
 	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ClientWorkerType};

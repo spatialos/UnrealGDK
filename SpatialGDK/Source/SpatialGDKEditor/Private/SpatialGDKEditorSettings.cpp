@@ -4,6 +4,7 @@
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
 #include "Settings/LevelEditorPlaySettings.h"
+#include "SpatialGDKSettings.h"
 
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
@@ -11,7 +12,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, bStopSpatialOnExit(false)
-	, bGeneratePlaceholderEntitiesInSnapshot(true)
 {
 	SpatialOSDirectory.Path = GetSpatialOSDirectory();
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
@@ -35,6 +35,10 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	{
+		SetRuntimeWorkerTypes();
+	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -46,7 +50,30 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
 
+	SetRuntimeWorkerTypes();
 	SafetyCheckSpatialOSDirectoryPaths();
+}
+
+void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
+{
+	TSet<FName> WorkerTypes;
+
+	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
+	{
+		if (WorkerLaunch.WorkerTypeName != NAME_None)
+		{
+			WorkerTypes.Add(WorkerLaunch.WorkerTypeName);
+		}
+	}
+
+	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	if (RuntimeSettings != nullptr)
+	{
+		RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
+		RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
+		RuntimeSettings->PostEditChange();
+		RuntimeSettings->SaveConfig(CPF_Config, *RuntimeSettings->GetDefaultConfigFilename());
+	}
 }
 
 void USpatialGDKEditorSettings::SafetyCheckSpatialOSDirectoryPaths()
