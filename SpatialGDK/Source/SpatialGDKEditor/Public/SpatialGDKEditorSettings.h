@@ -174,7 +174,7 @@ struct FSpatialLaunchConfigDescription
 		, World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-		UnrealWorkerDefaultSetting.WorkerTypeName = FName(*SpatialConstants::ServerWorkerType);
+		UnrealWorkerDefaultSetting.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 		UnrealWorkerDefaultSetting.Rows = 1;
 		UnrealWorkerDefaultSetting.Columns = 1;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
@@ -210,6 +210,9 @@ private:
 
 	/** Set WorkerTypes in runtime settings. */
 	void SetRuntimeWorkerTypes();
+
+	/** Set WorkerTypesToLaunch in level editor play settings. */
+	void SetLevelEditorPlaySettingsWorkerTypes();
 
 	/** Check if the Editor Settings contains valid directory paths or not. */
 	void SafetyCheckSpatialOSDirectoryPaths();
