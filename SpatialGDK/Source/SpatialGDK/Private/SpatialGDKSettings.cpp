@@ -1,9 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKSettings.h"
+#include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
-#include "GameFramework/Actor.h"
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
