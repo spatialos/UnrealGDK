@@ -104,7 +104,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 
 ## [`0.3.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.3.0) - 2019-04-04
 
-### New Known Issues:
+### New Known Issues: 
 - Enabling Query Based Interest is needed for level streaming support, but this might affect performance in certain scenarios and is currently being investigated.
 - Replicated `TimelineComponents` are not supported.
 
@@ -159,7 +159,7 @@ In addition to all of the updates from Improbable, this release includes 2 impro
 
 Startup actors revamp is merged! Snapshots are now simpler. Many bugfixes.
 
-### New Known Issues:
+### New Known Issues: 
 - A warning about an out of date net driver is printed at startup of clients and server.
 
 For current known issues, please visit [this](https://docs.improbable.io/unreal/alpha/known-issues) docs page
@@ -179,7 +179,7 @@ For current known issues, please visit [this](https://docs.improbable.io/unreal/
 	3. The paths passed in via -MapPaths are flexible
 
 ### Bug fixes:
-- StartPlayInEditorGameInstance() now correctly call OnStart() on PIE_Client - (@DW-Sebastien)
+- StartPlayInEditorGameInstance() now correctly call OnStart() on PIE_Client - (@DW-Sebastien) 
 - Redirect logging in the cloud to output to the correct file
 - Changed type of key in `TMap` so Linux build will not give errors
 - Disabled loopback of component updates
@@ -214,12 +214,12 @@ For current known issues, please visit [this](https://docs.improbable.io/unreal/
 
 Support for the new Player Auth APIs has been added and general stability improvements.
 
-### New Known Issues:
+### New Known Issues: 
 Level streaming is currently not supported.
 For other current known issues, please visit [this docs page](https://docs.improbable.io/unreal/alpha/known-issues).
 
 ### Features:
-* Support for the new Player Auth APIs
+* Support for the new Player Auth APIs 
 * FUniqueNetId support
 * Support for the new network protocol KCP
 * Lazy loading of FClassInfo

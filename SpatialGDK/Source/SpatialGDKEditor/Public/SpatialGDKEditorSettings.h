@@ -174,11 +174,7 @@ struct FSpatialLaunchConfigDescription
 		, World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-<<<<<<< HEAD
 		UnrealWorkerDefaultSetting.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
-=======
-		UnrealWorkerDefaultSetting.WorkerTypeName = FName(*SpatialConstants::ServerWorkerType);
->>>>>>> origin/master
 		UnrealWorkerDefaultSetting.Rows = 1;
 		UnrealWorkerDefaultSetting.Columns = 1;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
