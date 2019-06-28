@@ -311,7 +311,7 @@ public:
 <br/>------------<br/>
 2019-06-28 Page updated with draft content: code generator, setting up, manual (de)serialzation added
 
-[//]: # (https://improbableio.atlassian.net/browse/DOC-1189)
+[//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1189)
 
 _2019-04-11 Page updated with limited editorial review_<br/>
 _2019-03-15 Page added with editorial review_
