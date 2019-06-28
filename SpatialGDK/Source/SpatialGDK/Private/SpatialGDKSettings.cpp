@@ -3,7 +3,10 @@
 #include "SpatialGDKSettings.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
+
+#if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
+#endif
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -44,6 +47,7 @@ void USpatialGDKSettings::PostInitProperties()
 	PlayInSettings->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
 }
 
+#if WITH_EDITOR
 void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -60,3 +64,4 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 		GetMutableDefault<ULevelEditorPlaySettings>()->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
 	}
 }
+#endif
