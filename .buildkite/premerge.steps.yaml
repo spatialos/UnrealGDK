@@ -26,6 +26,9 @@ steps:
     <<: *common # This folds the YAML named anchor into this step. Overrides, if any, should follow, not precede.
     artifact_paths:
       - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
+    plugins:
+      - ca-johnson/handle:
+        processes: AutomationToolLauncher.exe,UnrealHeaderTool.exe
 
   - label: "build-GDK-:linux:"
     command: "powershell ./ci/setup-and-build-gdk.ps1 -target_platform Linux"
