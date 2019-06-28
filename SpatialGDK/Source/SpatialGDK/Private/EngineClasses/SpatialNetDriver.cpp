@@ -1632,29 +1632,6 @@ void USpatialNetDriver::WipeWorld(const USpatialNetDriver::PostWorldWipeDelegate
 	}
 }
 
-const FRPCInfo* USpatialNetDriver::GetRPCInfo(UObject* Object, UFunction* Function) const
-{
-	check(Object && Function);
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(Object);
-	const FRPCInfo* RPCInfo = Info.RPCInfoMap.Find(Function);
-
-	// We potentially have a parent function and need to find the child function.
-	// This exists as it's possible in blueprints to explicitly call the parent function.
-	if (RPCInfo == nullptr)
-	{
-		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
-		{
-			if (It.Key()->GetName() == Function->GetName())
-			{
-				// Matching child function found. Use this for the remote function call.
-				RPCInfo = &It.Value();
-				break;
-			}
-		}
-	}
-	return RPCInfo;
-}
-
 uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject)
 {
 	if (!ReliableRPCIdMap.Contains(Actor))

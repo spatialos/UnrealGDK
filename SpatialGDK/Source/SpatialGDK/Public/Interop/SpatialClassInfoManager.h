@@ -94,6 +94,8 @@ public:
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 
+	FRPCInfo GetRPCInfo(UObject* Object, UFunction* Function);
+
 	bool IsSublevelComponent(Worker_ComponentId ComponentId);
 
 	UPROPERTY()
