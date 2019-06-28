@@ -28,7 +28,7 @@ steps:
       - "UnrealEngine/Engine/Programs/AutomationTool/Saved/Logs/*"
     plugins:
       - ca-johnson/handle#v1.0:
-        processes: AutomationToolLauncher.exe,UnrealHeaderTool.exe
+          processes: AutomationToolLauncher.exe,UnrealHeaderTool.exe
 
   - label: "build-GDK-:linux:"
     command: "powershell ./ci/setup-and-build-gdk.ps1 -target_platform Linux"
