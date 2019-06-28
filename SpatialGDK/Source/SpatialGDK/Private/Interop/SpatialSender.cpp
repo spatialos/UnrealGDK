@@ -77,7 +77,7 @@ FPendingUnreliableRPC::FPendingUnreliableRPC(FPendingUnreliableRPC&& Other)
 {
 }
 
-void USpatialSender::Init(USpatialNetDriver* InNetDriver)
+void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager)
 {
 	NetDriver = InNetDriver;
 	StaticComponentView = InNetDriver->StaticComponentView;
@@ -85,6 +85,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver)
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
+	TimerManager = InTimerManager;
 }
 
 Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
@@ -320,6 +321,75 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	}
 
 	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
+}
+
+// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
+void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
+{
+	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
+
+	WriteAclMap ComponentWriteAcl;
+	ComponentWriteAcl.Add(SpatialConstants::POSITION_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::METADATA_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::ENTITY_ACL_COMPONENT_ID, WorkerIdPermission);
+	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
+
+	QueryConstraint Constraint;
+	// Ensure server worker receives the GSM entity
+	Constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
+
+	Query Query;
+	Query.Constraint = Constraint;
+	Query.FullSnapshotResult = true;
+
+	ComponentInterest Queries;
+	Queries.Queries.Add(Query);
+
+	Interest Interest;
+	Interest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, Queries);
+
+	TArray<Worker_ComponentData> Components;
+	Components.Add(Position().CreatePositionData());
+	Components.Add(Metadata(FString::Format(TEXT("WorkerEntity:{0}"), { Connection->GetWorkerId() })).CreateMetadataData());
+	Components.Add(EntityAcl(WorkerIdPermission, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(Interest.CreateInterestData());
+
+	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
+
+	CreateEntityDelegate OnCreateWorkerEntityResponse;
+	OnCreateWorkerEntityResponse.BindLambda([this, AttemptCounter](const Worker_CreateEntityResponseOp& Op)
+	{
+		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+		{
+			return;
+		}
+
+		if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request failed: \"%s\""),
+				UTF8_TO_TCHAR(Op.message));
+			return;
+		}
+
+		if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
+				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
+			return;
+		}
+
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker entity creation request timed out and will retry."));
+		FTimerHandle RetryTimer;
+		TWeakObjectPtr<USpatialSender> WeakThis(this);
+		TimerManager->SetTimer(RetryTimer, [WeakThis, AttemptCounter]()
+		{
+			if (USpatialSender* Sender = WeakThis.Get())
+			{
+				Sender->CreateServerWorkerEntity(AttemptCounter + 1);
+			}
+		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
+	});
+	Receiver->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
 }
 
 void USpatialSender::SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges)
