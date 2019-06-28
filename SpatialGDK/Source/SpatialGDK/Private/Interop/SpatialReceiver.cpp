@@ -1145,9 +1145,9 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 			FTimerHandle RetryTimer;
 			TimerManager->SetTimer(RetryTimer, [WeakSender = TWeakObjectPtr<USpatialSender>(Sender), ReliableRPC]()
 			{
-				if (USpatialSender* Sender = WeakSender.Get())
+				if (USpatialSender* OurSender = WeakSender.Get())
 				{
-					Sender->EnqueueRetryRPC(ReliableRPC);
+					OurSender->EnqueueRetryRPC(ReliableRPC);
 				}
 			}, WaitTime, false);
 		}
