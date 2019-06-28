@@ -9,7 +9,6 @@
 #include "Schema/RPCPayload.h"
 #include "TimerManager.h"
 #include "Utils/RepDataUtils.h"
-#include "TimerManager.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>

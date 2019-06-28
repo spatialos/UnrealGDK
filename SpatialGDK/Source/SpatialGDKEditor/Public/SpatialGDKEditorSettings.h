@@ -210,9 +210,6 @@ private:
 
 	/** Set WorkerTypes in runtime settings. */
 	void SetRuntimeWorkerTypes();
-	
-	/** Set WorkerTypes in level editor play settings. */
-	void SetLevelEditorPlaySettingsWorkerTypes();
 
 	/** Set WorkerTypes in level editor play settings. */
 	void SetLevelEditorPlaySettingsWorkerTypes();
