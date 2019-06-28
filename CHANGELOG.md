@@ -203,7 +203,7 @@ For current known issues, please visit [this](https://docs.improbable.io/unreal/
 - Fixed up default connection flows
 - Fixed issue will stale shadow data when crossing worker boundaries.
 - Removed actors from replication consider list if Unreal server-worker is not authoritative over said actor
-- Remove legacy flag "qos_max_unacked_pings_rate" in generated default config - (@DW-Sebastien)
+- Remove legacy flag "qos_max_unacked_pings_rate" in generated default config - (@DW-Sebastien) 
 
 ### External contributors:
 @DW-Sebastien
