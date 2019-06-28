@@ -159,8 +159,11 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
+	// Check if the Endpoint is ready to receive RPCs
 	bool IsEntityListening(Worker_EntityId EntityId) const;
+	// Register the Endpoint since it's ready to receive RPCs
 	void RegisterListeningEntity(Worker_EntityId EntityId);
+	// Unregister the Endpoint since it's not ready to receive RPCs anymore
 	void UnregisterListeningEntity(Worker_EntityId EntityId);
 
 private:

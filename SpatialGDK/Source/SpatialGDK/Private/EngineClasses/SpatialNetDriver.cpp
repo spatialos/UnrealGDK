@@ -986,10 +986,11 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
 {
 	// The RPC might have been called by an actor directly, or by a subobject on that actor
-	UObject* CallingObject = SubObject ? SubObject : Actor;
+	UObject* CallingObject = SubObject != nullptr ? SubObject : Actor;
 
 	if (IsServer())
 	{
+		// Creating channel to ensure that object will be resolvable
 		GetOrCreateSpatialActorChannel(CallingObject);
 	}
 
@@ -1013,7 +1014,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	}
 	else
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("The object %s is unresolved, RPC %s will be dropped"), *UnresolvedObjects.CreateIterator()->Get()->GetName(), *Function->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("The object %s is unresolved, RPC %s will be dropped"), *UnresolvedObjects.CreateIterator()->Get()->GetName(), *Function->GetName());
 	}
 }
 

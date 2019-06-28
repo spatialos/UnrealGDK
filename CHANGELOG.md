@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
 - Fixed a crash when failing to NetSerialize a struct in spatial. Now print a warning instead which matches native Unreal behavior.
 - Query response delegates now execute even if response status shows failure. This allows handlers to implement custom retry logic such as clients querying for the GSM.
-- Ordering and reliability for single worker reliable RPCs are now guaranteed.
+- Ordering and reliability for single worker RPCs of the same type on the same Actor are now guaranteed.
 
 ### External contributors:
 
