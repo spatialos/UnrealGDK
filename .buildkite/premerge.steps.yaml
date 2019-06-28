@@ -20,7 +20,6 @@ common: &common
     - ca-johnson/taskkill#v3.0:
         processes: AutomationToolLauncher.exe,UnrealHeaderTool.exe
 
-
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
 
