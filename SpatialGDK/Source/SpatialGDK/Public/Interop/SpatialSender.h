@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
+#include "TimerManager.h"
 #include "Utils/RepDataUtils.h"
 #include "TimerManager.h"
 
