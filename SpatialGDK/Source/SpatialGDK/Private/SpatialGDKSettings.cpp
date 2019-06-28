@@ -53,12 +53,10 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 
 	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bEnableOffloading))
 	{
-		ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-		PlayInSettings->bEnableOffloading = bEnableOffloading;
+		GetMutableDefault<ULevelEditorPlaySettings>()->bEnableOffloading = bEnableOffloading;
 	}
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultWorkerType))
 	{
-		ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
-		PlayInSettings->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
+		GetMutableDefault<ULevelEditorPlaySettings>()->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
 	}
 }
