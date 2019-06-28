@@ -5,11 +5,6 @@
 #include "Misc/CommandLine.h"
 #include "GameFramework/Actor.h"
 
-#if WITH_EDITOR
-#include "Modules/ModuleManager.h"
-#include "ISettingsModule.h"
-#endif
-
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, EntityPoolInitialReservationCount(3000)
