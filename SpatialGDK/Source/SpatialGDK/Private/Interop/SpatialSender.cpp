@@ -323,6 +323,7 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
 }
 
+// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 {
 	const WorkerRequirementSet WorkerIdPermission{ { FString::Format(TEXT("workerId:{0}"), { Connection->GetWorkerId() }) } };
@@ -334,6 +335,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	ComponentWriteAcl.Add(SpatialConstants::INTEREST_COMPONENT_ID, WorkerIdPermission);
 
 	QueryConstraint Constraint;
+	// Ensure server worker receives the GSM entity
 	Constraint.EntityIdConstraint = SpatialConstants::INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID;
 
 	Query Query;
