@@ -110,12 +110,6 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	}
 
 	Receiver->FlushRetryRPCs();
-
-	// Check every channel for net ownership changes (determines ACL and component interest)
-	for (auto& EntityChannelPair : NetDriver->GetEntityToActorChannelMap())
-	{
-		EntityChannelPair.Value->ProcessOwnershipChange();
-	}
 }
 
 bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) const

@@ -30,6 +30,7 @@
 #include "EngineClasses/SpatialPendingNetGame.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/ActorGroupManager.h"
 #include "Utils/EngineVersionCheck.h"
 #include "Utils/EntityPool.h"
 #include "Utils/SpatialMetrics.h"
@@ -98,13 +99,22 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
+	// Initialize ActorGroupManager as it is a depdency of ClassInfoManager (see below)
+	ActorGroupManager = NewObject<UActorGroupManager>();
+	ActorGroupManager->Init();
+
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
 	// from OnConnectedToSpatialOS callback which could be executed with the async
 	// loading thread suspended (e.g. when resuming rendering thread), in which
 	// case we'll crash upon trying to load SchemaDatabase.
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
-	ClassInfoManager->Init(this);
+
+	// If it fails to load, don't attempt to connect to spatial.
+	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
+	{
+		return false;
+	}
 
 	InitiateConnectionToSpatialOS(URL);
 
@@ -582,6 +592,11 @@ void USpatialNetDriver::Shutdown()
 
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 {
+	if (!IsServer())
+	{
+		return;
+	}
+
 	// If PackageMap doesn't exist, we haven't connected yet, which means
 	// we don't need to update the interest at this point
 	if (PackageMap == nullptr)
@@ -602,6 +617,8 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 	}
 
 	Channel->MarkInterestDirty();
+
+	Channel->ServerProcessOwnershipChange();
 }
 
 //SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.

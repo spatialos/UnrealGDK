@@ -1,6 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#if WITH_EDITOR
+#include "Interop/Connection/EditorWorkerController.h"
+#endif
 
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -15,17 +18,9 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
-#if WITH_EDITOR
-#include "EditorWorkerController.h"
-#endif
-
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
-
-#if WITH_EDITOR
-static EditorWorkerController WorkerController;
-#endif
 
 void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
@@ -187,17 +182,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	}
 
 #if WITH_EDITOR
-	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
-	const int32 FirstServerEditorID = 1;
-	if (bSingleThreadedServer)
-	{
-		if (GPlayInEditorID == FirstServerEditorID)
-		{
-			WorkerController.InitWorkers(ReceptionistConfig.WorkerType);
-		}
-
-		ReceptionistConfig.WorkerId = WorkerController.WorkerIds[GPlayInEditorID - 1];
-	}
+	SpatialGDKServices::InitWorkers(ReceptionistConfig.WorkerType, bConnectAsClient, ReceptionistConfig.WorkerId);
 #endif
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
@@ -233,13 +218,6 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 
 	ConnectionParams.enable_dynamic_components = true;
 	// end TODO
-
-#if WITH_EDITOR
-	if (bSingleThreadedServer)
-	{
-		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);
-	}
-#endif
 
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
 		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,

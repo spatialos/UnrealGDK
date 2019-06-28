@@ -73,8 +73,12 @@ struct FClassInfo
 
 	// Only for Subobject classes
 	TArray<TSharedRef<FClassInfo>> DynamicSubobjectInfo;
+
+	FName ActorGroup;
+	FName WorkerType;
 };
 
+class UActorGroupManager;
 class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialClassInfoManager, Log, All)
@@ -85,7 +89,8 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver);
+
+	bool TryInit(USpatialNetDriver* NetDriver, UActorGroupManager* ActorGroupManager);
 
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
 	// In PIE, PathName must be NetworkRemapped (bReading = false)
@@ -111,9 +116,14 @@ private:
 	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
 
+	void QuitGame();
+
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
+
+	UPROPERTY()
+	UActorGroupManager* ActorGroupManager;
 
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;

@@ -118,13 +118,14 @@ struct FWorkerTypeLaunchSection
 		, LoginRateLimit()
 		, Columns(1)
 		, Rows(1)
+		, NumEditorInstances(1)
 		, bManualWorkerConnectionOnly(true)
 	{
 	}
 
 	/** The name of the worker type, defined in the filename of its spatialos.<worker_type>.worker.json file. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
-	FString WorkerTypeName;
+	FName WorkerTypeName;
 
 	/** Defines the worker instance's permissions. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
@@ -150,6 +151,10 @@ struct FWorkerTypeLaunchSection
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Rectangle grid row count", ClampMin = "1", UIMin = "1"))
 	int32 Rows;
 
+	/** Number of instances to launch when playing in editor. */
+	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Instances to launch in editor", ClampMin = "0", UIMin = "0"))
+	int32 NumEditorInstances;
+
 	/** Flags defined for a worker instance. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false, DisplayName = "Flags"))
 	TMap<FString, FString> Flags;
@@ -169,12 +174,12 @@ struct FSpatialLaunchConfigDescription
 		, World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-		UnrealWorkerDefaultSetting.WorkerTypeName = SpatialConstants::ServerWorkerType;
+		UnrealWorkerDefaultSetting.WorkerTypeName = FName(*SpatialConstants::ServerWorkerType);
 		UnrealWorkerDefaultSetting.Rows = 1;
 		UnrealWorkerDefaultSetting.Columns = 1;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
 
-		Workers.Add(UnrealWorkerDefaultSetting);
+		ServerWorkers.Add(UnrealWorkerDefaultSetting);
 	}
 
 	/** Deployment template. */
@@ -187,7 +192,7 @@ struct FSpatialLaunchConfigDescription
 
 	/** Worker-specific configuration parameters. */
 	UPROPERTY(Category = "SpatialGDK", EditAnywhere, config, meta = (ConfigRestartRequired = false))
-	TArray<FWorkerTypeLaunchSection> Workers;
+	TArray<FWorkerTypeLaunchSection> ServerWorkers;
 };
 
 UCLASS(config = SpatialGDKEditorSettings, defaultconfig)
@@ -202,7 +207,11 @@ public:
 	virtual void PostInitProperties() override;
 
 private:
-	/** Check if the Editor Settings contains valid directory paths or not */
+
+	/** Set WorkerTypes in runtime settings. */
+	void SetRuntimeWorkerTypes();
+
+	/** Check if the Editor Settings contains valid directory paths or not. */
 	void SafetyCheckSpatialOSDirectoryPaths();
 
 	/** Path to the directory containing the SpatialOS-related files. */
@@ -259,6 +268,20 @@ public:
 		return SpatialOSDirectory.Path.IsEmpty()
 			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")))
 			: SpatialOSDirectory.Path;
+	}
+
+	FORCEINLINE FString GetGDKPluginDirectory() const
+	{
+		// Get the correct plugin directory.
+		FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
+
+		if (!FPaths::DirectoryExists(PluginDir))
+		{
+			// If the Project Plugin doesn't exist then use the Engine Plugin.
+			PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
+		}
+
+		return PluginDir;
 	}
 
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const

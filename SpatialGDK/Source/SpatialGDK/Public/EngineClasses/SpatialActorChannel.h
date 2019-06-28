@@ -133,7 +133,6 @@ public:
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
-	void ProcessOwnershipChange();
 	FObjectReplicator& PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
 
@@ -146,6 +145,9 @@ public:
 	void UpdateShadowData();
 	void UpdateSpatialPositionWithFrequencyCheck();
 	void UpdateSpatialPosition();
+
+	void ServerProcessOwnershipChange();
+	void ClientProcessOwnershipChange(bool bNewNetOwned);
 
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
@@ -185,7 +187,6 @@ public:
 
 private:
 	Worker_EntityId EntityId;
-	bool bFirstTick;
 	bool bInterestDirty;
 
 	// Used on the client to track gaining/losing ownership.
