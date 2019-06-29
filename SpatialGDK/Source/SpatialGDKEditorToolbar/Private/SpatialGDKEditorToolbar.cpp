@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKEditorToolbar.h"
+
 #include "Async/Async.h"
 #include "Editor.h"
 #include "EditorStyleSet.h"
@@ -18,6 +19,8 @@
 #include "SpatialGDKEditor.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+
+#include "Interop/Connection/EditorWorkerController.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -246,30 +249,12 @@ void FSpatialGDKEditorToolbarModule::CreateSnapshotButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateButtonClicked()
 {
-	ShowTaskStartNotification("Generating Schema (Incremental)");
-
-	if (SpatialGDKEditorInstance->GenerateSchema(false))
-	{
-		ShowSuccessNotification("Incremental Schema Generation Completed!");
-	}
-	else
-	{
-		ShowFailedNotification("Incremental Schema Generation Failed");
-	}
+	GenerateSchema(false);
 }
 
 void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 {
-	ShowTaskStartNotification("Generating Schema (Full)");
-
-	if (SpatialGDKEditorInstance->GenerateSchema(true))
-	{
-		ShowSuccessNotification("Full Schema Generation Completed!");
-	}
-	else
-	{
-		ShowFailedNotification("Full Schema Generation Failed");
-	}
+	GenerateSchema(true);
 }
 		
 
@@ -344,7 +329,7 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	{
 		if (SpatialGDKRuntimeSettings->bUsingQBI && (*EnableChunkInterest == TEXT("true")))
 		{
-			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. This flag needs to be set to false when QBI is enabled.\n\nDo you want to configure your launch config settings now?"))));
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to true in the generated launch configuration. This flag needs to be set to false when QBI is enabled.\n\nDo you want to configure your launch config settings now?")));
 
 			if (Result == EAppReturnType::Yes)
 			{
@@ -355,7 +340,7 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 		}
 		else if (!SpatialGDKRuntimeSettings->bUsingQBI && (*EnableChunkInterest == TEXT("false")))
 		{
-			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("The legacy flag \"enable_chunk_interest\" is set to false in the generated launch configuration. This flag needs to be set to true when QBI is disabled.\n\nDo you want to configure your launch config settings now?"))));
+			const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is set to false in the generated launch configuration. This flag needs to be set to true when QBI is disabled.\n\nDo you want to configure your launch config settings now?")));
 
 			if (Result == EAppReturnType::Yes)
 			{
@@ -367,11 +352,24 @@ bool FSpatialGDKEditorToolbarModule::ValidateGeneratedLaunchConfig() const
 	}
 	else
 	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(FString::Printf(TEXT("The legacy flag \"enable_chunk_interest\" is not specified in the generated launch configuration.\n\nDo you want to configure your launch config settings now?"))));
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("The legacy flag \"enable_chunk_interest\" is not specified in the generated launch configuration.\n\nDo you want to configure your launch config settings now?")));
 
 		if (Result == EAppReturnType::Yes)
 		{
 			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
+		}
+
+		return false;
+	}
+
+	const ULevelEditorPlaySettings* LevelEditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
+	if (!SpatialGDKRuntimeSettings->bEnableHandover && LevelEditorPlaySettings->GetTotalPIEServerWorkerCount() > 1)
+	{
+		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo, FText::FromString(TEXT("Property handover is disabled and multiple launch servers are specified.\nThis is not supported.\n\nDo you want to configure your project settings now?")));
+
+		if (Result == EAppReturnType::Yes)
+		{
+			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Runtime Settings");
 		}
 
 		return false;
@@ -404,7 +402,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialOSButtonClicked()
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	const FString SpatialCmdArgument = FString::Printf(
-		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch \"%s\" %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
+		TEXT("/c cmd.exe /c spatial.exe worker build build-config ^& spatial.exe local launch --enable_pre_run_check=false \"%s\" %s ^& pause"), *LaunchConfig, *SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags());
 
 	UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Starting cmd.exe with `%s` arguments."), *SpatialCmdArgument);
 	// Temporary workaround: To get spatial.exe to properly show a window we have to call cmd.exe to
@@ -505,7 +503,7 @@ void FSpatialGDKEditorToolbarModule::CleanupSpatialProcess()
 	FPlatformProcess::CloseProc(SpatialOSStackProcHandle);
 	SpatialOSStackProcessID = 0;
 
-	OnSpatialShutdown.Broadcast();
+	SpatialGDKServices::OnSpatialShutdown();
 }
 
 /**
@@ -565,20 +563,20 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 		Writer->WriteObjectEnd(); // World section end
 		Writer->WriteObjectStart(TEXT("load_balancing")); // Load balancing section begin
 			Writer->WriteArrayStart("layer_configurations");
-			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.Workers)
+			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
 			{
 				WriteLoadbalancingSection(Writer, Worker.WorkerTypeName, Worker.Columns, Worker.Rows, Worker.bManualWorkerConnectionOnly);
 			}
 			Writer->WriteArrayEnd();
 			Writer->WriteObjectEnd(); // Load balancing section end
 			Writer->WriteArrayStart(TEXT("workers")); // Workers section begin
-			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.Workers)
+			for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
 			{
 				WriteWorkerSection(Writer, Worker);
 			}
 			// Write the client worker section
 			FWorkerTypeLaunchSection ClientWorker;
-			ClientWorker.WorkerTypeName = SpatialConstants::ClientWorkerType;
+			ClientWorker.WorkerTypeName = SpatialConstants::DefaultClientWorkerType;
 			ClientWorker.WorkerPermissions.bAllPermissions = true;
 			ClientWorker.bLoginRateLimitEnabled = false;
 			WriteWorkerSection(Writer, ClientWorker);
@@ -599,6 +597,49 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 	return false;
 }
 
+void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
+{
+	if (SpatialGDKEditorInstance->FullScanRequired())
+	{
+		ShowTaskStartNotification("Initial Schema Generation");
+
+		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		{
+			ShowSuccessNotification("Initial Schema Generation completed!");
+		}
+		else
+		{
+			ShowFailedNotification("Initial Schema Generation failed");
+		}
+	}
+	else if (bFullScan)
+	{
+		ShowTaskStartNotification("Generating Schema (Full)");
+
+		if (SpatialGDKEditorInstance->GenerateSchema(true))
+		{
+			ShowSuccessNotification("Full Schema Generation completed!");
+		}
+		else
+		{
+			ShowFailedNotification("Full Schema Generation failed");
+		}
+	}
+	else
+	{
+		ShowTaskStartNotification("Generating Schema (Incremental)");
+
+		if (SpatialGDKEditorInstance->GenerateSchema(false))
+		{
+			ShowSuccessNotification("Incremental Schema Generation completed!");
+		}
+		else
+		{
+			ShowFailedNotification("Incremental Schema Generation failed");
+		}
+	}
+}
+
 bool FSpatialGDKEditorToolbarModule::WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const
 {
 	Writer->WriteObjectStart();
@@ -612,7 +653,7 @@ bool FSpatialGDKEditorToolbarModule::WriteFlagSection(TSharedRef< TJsonWriter<> 
 bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLaunchSection& Worker) const
 {
 	Writer->WriteObjectStart();
-		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerTypeName);
+		Writer->WriteValue(TEXT("worker_type"), *Worker.WorkerTypeName.ToString());
 		Writer->WriteArrayStart(TEXT("flags"));
 		for (const auto& Flag : Worker.Flags)
 		{
@@ -664,10 +705,10 @@ bool FSpatialGDKEditorToolbarModule::WriteWorkerSection(TSharedRef< TJsonWriter<
 	return true;
 }
 
-bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FString& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly) const
+bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FName& WorkerType, const int32 Columns, const int32 Rows, const bool ManualWorkerConnectionOnly) const
 {
 	Writer->WriteObjectStart();
-	Writer->WriteValue(TEXT("layer"), WorkerType);
+	Writer->WriteValue(TEXT("layer"), *WorkerType.ToString());
 		Writer->WriteObjectStart("rectangle_grid");
 			Writer->WriteValue(TEXT("cols"), Columns);
 			Writer->WriteValue(TEXT("rows"), Rows);

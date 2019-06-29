@@ -7,6 +7,7 @@
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
 #if WITH_EDITOR
@@ -15,29 +16,38 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Utils/ActorGroupManager.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGroupManager* InActorGroupManager)
 {
 	NetDriver = InNetDriver;
+	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase"));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 
 	if (SchemaDatabase == nullptr)
 	{
-		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication.")));
-		return;
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("SchemaDatabase not found! Please generate schema or turn off SpatialOS networking."));
+		QuitGame();
+		return false;
 	}
+
+	return true;
 }
 
 FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 {
 	FSoftClassPath SoftClassPath(ClassPath);
 	UClass* Class = SoftClassPath.ResolveClass();
-	checkf(Class, TEXT("Failed to load class at path %s"), *ClassPath);
+	if (Class == nullptr)
+	{
+		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Failed to find class at path %s! Attempting to load it."), *ClassPath);
+		Class = SoftClassPath.TryLoadClass<UObject>();
+	}
 	return Class;
 }
 
@@ -91,13 +101,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is explicitly referenced from the starting scene and schema has been generated."), *ClassPath);
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *ClassPath);
-#if WITH_EDITOR
-		// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
-		// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
-		UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit);
-#else
-		FGenericPlatformMisc::RequestExit(false);
-#endif
+		QuitGame();
 		return;
 	}
 
@@ -107,7 +111,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	{
 		ESchemaComponentType RPCType = GetRPCType(RemoteFunction);
 		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
-		
+
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
 
@@ -118,11 +122,13 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
+	const bool bEnableHandover = GetDefault<USpatialGDKSettings>()->bEnableHandover;
+
 	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
 		UProperty* Property = *PropertyIt;
 
-		if (Property->PropertyFlags & CPF_Handover)
+		if (bEnableHandover && (Property->PropertyFlags & CPF_Handover))
 		{
 			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
 			{
@@ -151,6 +157,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
+		if (!bEnableHandover && Type == SCHEMA_Handover)
+		{
+			return;
+		}
+
 		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[ClassPath].SchemaComponents[Type];
 		if (ComponentId != 0)
 		{
@@ -167,6 +178,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
 
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
+		if (SubobjectClass == nullptr)
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to resolve the class for subobject %s (class path: %s) on actor class %s! This subobject will not be able to replicate in Spatial!"), *SubobjectSchemaData.Name.ToString(), *SubobjectSchemaData.ClassPath, *Class->GetPathName());
+			continue;
+		}
 
 		const FClassInfo& SubobjectInfo = GetOrCreateClassInfoByClass(SubobjectClass);
 
@@ -176,6 +192,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
+			if (!bEnableHandover && Type == SCHEMA_Handover)
+			{
+				return;
+			}
+
 			Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
 			if (ComponentId != 0)
 			{
@@ -187,6 +208,15 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		});
 
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
+	}
+
+	if (Class->IsChildOf<AActor>())
+	{
+		Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(Class));
+		Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(Class));
+
+		UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
+			*Class->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
 	}
 }
 
@@ -286,4 +316,20 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
+}
+
+void USpatialClassInfoManager::QuitGame()
+{
+#if WITH_EDITOR
+	// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
+	// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
+#if ENGINE_MINOR_VERSION <= 20
+	UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit);
+#else
+	UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit, false);
+#endif
+
+#else
+	FGenericPlatformMisc::RequestExit(false);
+#endif
 }
