@@ -694,28 +694,24 @@ bool UGlobalStateManager::ProcessOpListForServersCanBeginPlay(const TArray<Worke
 		}
 	}
 
-	if (AddOp == nullptr && AuthOp == nullptr)
+	// verify assumption that we should never receive only the auth op here
+	check(AddOp || AuthOp == nullptr);
+
+	if (AddOp == nullptr)
 	{
 		return false;
 	}
 
-	// verify assumption that we should never receive only the auth op here
-	check(AddOp || AuthOp == nullptr);
-
-	ApplyStartupActorManagerData(AddOp->data);
-	
-	// Capture the value of CanBeginPlay we received over the wire, because the AuthorityChanged() call below will change it
-	const bool bOriginalCanBeginPlay = bCanBeginPlay;
+	// We peek at the data in the ops so we know whether to become authoritative over
+	// all actors or not.  We don't apply the ops since they will be processed later.
+	Schema_Object* ComponentObject = Schema_GetComponentDataFields(AddOp->data.schema_type);
+	const bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 
 	if (AuthOp)
 	{
 		check(AuthOp->authority == WORKER_AUTHORITY_AUTHORITATIVE);
 
-		const Worker_AuthorityChangeOp& AuthOpRef = *AuthOp;
-		NetDriver->StaticComponentView->OnAuthorityChange(AuthOpRef);
-		AuthorityChanged(AuthOpRef);
-
-		if (!bOriginalCanBeginPlay)
+		if (!bCanBeginPlayData)
 		{
 			BecomeAuthoritativeOverAllActors();
 		}
