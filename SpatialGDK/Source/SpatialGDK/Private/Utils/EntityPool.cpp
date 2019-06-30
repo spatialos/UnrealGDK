@@ -78,7 +78,6 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 		if (!bIsReady)
 		{
 			bIsReady = true;
-			NetDriver->OnEntityPoolReady();
 		}
 	});
 

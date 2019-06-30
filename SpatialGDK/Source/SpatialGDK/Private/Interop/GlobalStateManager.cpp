@@ -213,12 +213,6 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 void UGlobalStateManager::ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate)
 {
 	bCanBeginPlay = bCanBeginPlayUpdate;
-
-	// For now, this will only be called on non-authoritative workers.
-	if (bCanBeginPlay)
-	{
-		TryTriggerBeginPlay();
-	}
 }
 
 void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
@@ -419,11 +413,7 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId) const
 
 void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 {
-	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
-	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to set AcceptingPlayers on the GSM but this worker does not have authority."));
-		return;
-	}
+	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
 
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
@@ -445,11 +435,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 
 void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
 {
-	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
-	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to set CanBeginPlay on the GSM but this worker does not have authority."));
-		return;
-	}
+	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
 
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
@@ -463,42 +449,42 @@ void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::TryTriggerBeginPlay()
+void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	if (bCanBeginPlay && NetDriver->EntityPool != nullptr && NetDriver->EntityPool->IsReady())
-	{
-		TriggerBeginPlay();
+	const bool bWorkerAuthority = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
+	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id, bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
 
-		// Start accepting players only AFTER we've triggered BeginPlay
-		if (NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
+	if (bWorkerAuthority)
+	{
+		switch (AuthOp.component_id)
 		{
-			SetAcceptingPlayers(true);
+			case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+				GlobalStateManagerEntityId = AuthOp.entity_id;
+				SetAcceptingPlayers(true);
+				break;
+			case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+				SetCanBeginPlay(true);
+				break;
+			case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
+				ExecuteInitialSingletonActorReplication();
+				break;
+			default:
+				break;
 		}
 	}
 }
 
-void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID)
+bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId) const
 {
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM has changed. This worker %s authority."),  bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
-
-	if (bWorkerAuthority)
+	switch (ComponentId)
 	{
-		// Make sure we update our known entity id for the GSM when we receive authority.
-		GlobalStateManagerEntityId = CurrentEntityID;
-
-		if (!bCanBeginPlay)
-		{
-			SetCanBeginPlay(true);
-			BecomeAuthoritativeOverAllActors();
-			TryTriggerBeginPlay();
-		}
-		else
-		{
-			// This handles the case when a server shuts down without deleting entities,
-			// and a new server connects, so we don't want to call BeginPlay with authority
-			// again, but need to let the clients know they can connect.
-			SetAcceptingPlayers(true);
-		}
+		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
+		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+			return true;
+		default:
+			return false;
 	}
 }
 
@@ -682,4 +668,59 @@ void UGlobalStateManager::SetDeploymentMapURL(const FString& MapURL)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting DeploymentMapURL: %s"), *MapURL);
 	DeploymentMapURL = MapURL;
+}
+
+bool UGlobalStateManager::ProcessOpListForServersCanBeginPlay(const TArray<Worker_OpList*>& OpLists)
+{
+	const Worker_AddComponentOp* AddOp = nullptr;
+	const Worker_AuthorityChangeOp* AuthOp = nullptr;
+
+	for (Worker_OpList* OpList : OpLists)
+	{
+		for (size_t i = 0; i < OpList->op_count; ++i)
+		{
+			const Worker_Op* Op = &OpList->ops[i];
+
+			if (Op->op_type == WORKER_OP_TYPE_ADD_COMPONENT &&
+				Op->add_component.data.component_id == SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID)
+			{
+				AddOp = &Op->add_component;
+			}
+			else if (Op->op_type == WORKER_OP_TYPE_AUTHORITY_CHANGE &&
+				Op->authority_change.component_id == SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID)
+			{
+				AuthOp = &Op->authority_change;
+			}
+		}
+	}
+
+	if (AddOp == nullptr && AuthOp == nullptr)
+	{
+		return false;
+	}
+
+	// verify assumption that we should never receive only the auth op here
+	check(AddOp || AuthOp == nullptr);
+
+	ApplyStartupActorManagerData(AddOp->data);
+	
+	// Capture the value of CanBeginPlay we received over the wire, because the AuthorityChanged() call below will change it
+	const bool bOriginalCanBeginPlay = bCanBeginPlay;
+
+	if (AuthOp)
+	{
+		check(AuthOp->authority == WORKER_AUTHORITY_AUTHORITATIVE);
+
+		const Worker_AuthorityChangeOp& AuthOpRef = *AuthOp;
+		NetDriver->StaticComponentView->OnAuthorityChange(AuthOpRef);
+		AuthorityChanged(AuthOpRef);
+
+		if (!bOriginalCanBeginPlay)
+		{
+			BecomeAuthoritativeOverAllActors();
+		}
+	}
+
+	TriggerBeginPlay();
+	return true;
 }

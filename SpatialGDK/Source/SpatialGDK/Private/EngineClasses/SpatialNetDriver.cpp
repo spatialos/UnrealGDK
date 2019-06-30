@@ -64,6 +64,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	bConnectAsClient = bInitAsClient;
 	bAuthoritativeDestruction = true;
+	bQueueOpsUntilReady = !bInitAsClient;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
@@ -224,12 +225,6 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 		Sender->CreateServerWorkerEntity();
 		HandleOngoingServerTravel();
 	}
-}
-
-void USpatialNetDriver::OnEntityPoolReady()
-{
-	check(GlobalStateManager != nullptr);
-	GlobalStateManager->TryTriggerBeginPlay();
 }
 
 void USpatialNetDriver::InitializeSpatialOutputDevice()
@@ -1115,6 +1110,23 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	if (Connection != nullptr)
 	{
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
+
+		// Servers will queue ops at startup until we've extracted necessary information from the op stream
+		if (bQueueOpsUntilReady)
+		{
+			if (!GlobalStateManager->ProcessOpListForServersCanBeginPlay(OpLists))
+			{
+				QueuedStartupOpLists.Append(OpLists);
+				return;
+			}
+
+			// The current TArray of OpLists contained the Ops the GSM needed to initiate startup.
+			// We can drain the startup queue and start processing ops now.
+			OpLists.Append(QueuedStartupOpLists);
+			QueuedStartupOpLists.Empty();
+
+			bQueueOpsUntilReady = false;
+		}
 
 		for (Worker_OpList* OpList : OpLists)
 		{

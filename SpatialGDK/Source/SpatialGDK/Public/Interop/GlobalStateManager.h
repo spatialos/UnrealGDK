@@ -33,6 +33,7 @@ public:
 	void ApplyDeploymentMapData(const Worker_ComponentData& Data);
 	void ApplyStartupActorManagerData(const Worker_ComponentData& Data);
 
+	bool ProcessOpListForServersCanBeginPlay(const TArray<Worker_OpList*>& OpLists);
 	void ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update);
 	void ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update);
 	void ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update);
@@ -51,9 +52,8 @@ public:
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void SetCanBeginPlay(bool bInCanBeginPlay);
 
-	void TryTriggerBeginPlay();
-
-	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
+	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
+	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
 
 	void BeginDestroy() override;
 

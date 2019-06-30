@@ -220,16 +220,11 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 
 void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 {
-	if (Op.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
-	{
-		GlobalStateManager->AuthorityChanged(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE, Op.entity_id);
-		return;
-	}
+	StaticComponentView->OnAuthorityChange(Op);
 
-	if (Op.component_id == SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID
-		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (GlobalStateManager->HandlesComponent(Op.component_id))
 	{
-		GlobalStateManager->ExecuteInitialSingletonActorReplication();
+		GlobalStateManager->AuthorityChanged(Op);
 		return;
 	}
 
@@ -1355,11 +1350,6 @@ AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
 	if (FoundActors.Num() == 1)
 	{
 		return FoundActors[0];
-	}
-	else
-	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("Found incorrect number (%d) of singleton actors (%s)"),
-			FoundActors.Num(), *SingletonClass->GetName());
 	}
 
 	return nullptr;

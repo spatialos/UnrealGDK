@@ -73,7 +73,6 @@ public:
 	virtual void OnOwnerUpdated(AActor* Actor);
 
 	void OnConnectedToSpatialOS();
-	void OnEntityPoolReady();
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
@@ -165,6 +164,9 @@ private:
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
 
 	FTimerManager TimerManager;
+
+	TArray<Worker_OpList*> QueuedStartupOpLists;
+	bool bQueueOpsUntilReady;
 
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;

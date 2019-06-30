@@ -69,7 +69,6 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 
 		// Authority Change
 		case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-			StaticComponentView->OnAuthorityChange(Op->authority_change);
 			Receiver->OnAuthorityChange(Op->authority_change);
 			break;
 
