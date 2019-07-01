@@ -10,6 +10,7 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#include "SchemaUtils.h"
 #include "SpatialGDKSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
@@ -197,9 +198,36 @@ void USpatialMetrics::OnStopRPCMetricsCommand()
 	SpatialStopRPCMetrics();
 }
 
-void USpatialMetrics::SpatialModifySetting(const FString& ClassName)
+void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 {
-	UE_LOG(LogTemp, Log, TEXT("SpatialModifySetting: %s"), *ClassName);
+	UE_LOG(LogTemp, Log, TEXT("SpatialModifySetting: %s %f"), *Name, Value);
+
+	if (!NetDriver->IsServer())
+	{
+		FUnrealObjectRef PCObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Cast<APlayerController>(NetDriver->GetSpatialOSNetConnection()->OwningActor));
+		Worker_EntityId ControllerEntityId = PCObjectRef.Entity;
+
+		if (ControllerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+		{
+			Worker_CommandRequest Request = {};
+			Request.component_id = SpatialConstants::DEBUG_METRICS_COMPONENT_ID;
+			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
+			
+			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
+			SpatialGDK::AddStringToSchema(RequestObject, 1, Name);
+			Schema_AddFloat(RequestObject, 2, Value);
+
+			NetDriver->Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
+		}
+		else
+		{
+			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialModifySetting: Could not resolve local PlayerController entity! RPC metrics will not stop on the server."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("Actually modify setting: %s %f"), *Name, Value);
+	}
 }
 
 void USpatialMetrics::TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize)

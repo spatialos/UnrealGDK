@@ -99,7 +99,7 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 	const uint32 StatDisplayStartY = 80;
 
 	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Movement Corrections"), TEXT("Replication Limit") };
-	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80, 80 };
+	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80, 160 };
 	const uint32 StatRowOffset = 20;
 
 	const FString StatSectionTitle = TEXT("Spatial Metrics Display");

@@ -40,7 +40,7 @@ public:
 	void OnStopRPCMetricsCommand();
 
 	UFUNCTION(Exec)
-	void SpatialModifySetting(const FString& ClassName);
+	void SpatialModifySetting(const FString& Name, float Value);
 
 	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
 
