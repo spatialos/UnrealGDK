@@ -60,5 +60,5 @@ bool USpatialStatics::IsDefaultWorker(const UObject* WorldContextObject)
         return false;
     }
 
-    return World->GetGameInstance()->GetSpatialWorkerType().Compare(SpatialConstants::DefaultServerWorkerType) == 0;
+    return World->GetGameInstance()->GetSpatialWorkerType().Compare(GetDefault<USpatialGDKSettings>()->DefaultWorkerType) == 0;
 }
