@@ -452,7 +452,7 @@ int64 USpatialActorChannel::ReplicateActor()
 		for (auto& SubobjectInfoPair : GetHandoverSubobjects())
 		{
 			UObject* Subobject = SubobjectInfoPair.Key;
-			FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
+			const FClassInfo& SubobjectInfo = *SubobjectInfoPair.Value;
 
 			// Handover shadow data should already exist for this object. If it doesn't, it must have
 			// started replicating after SetChannelActor was called on the owning actor.
@@ -646,15 +646,15 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, co
 	return ReplicateSubobject(Obj, RepFlags);
 }
 
-TMap<UObject*, FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
+TMap<UObject*, const FClassInfo*> USpatialActorChannel::GetHandoverSubobjects()
 {
 	const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-	TMap<UObject*, FClassInfo*> FoundSubobjects;
+	TMap<UObject*, const FClassInfo*> FoundSubobjects;
 
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
-		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
+		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
 		if (SubobjectInfo.HandoverProperties.Num() == 0)
 		{
@@ -1000,6 +1000,6 @@ void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 	if (bNewNetOwned != bNetOwned)
 	{
 		bNetOwned = bNewNetOwned;
-		Sender->SendComponentInterest(Actor, GetEntityId(), bNetOwned);
+		Sender->SendComponentInterestForActor(this, GetEntityId(), bNetOwned);
 	}
 }

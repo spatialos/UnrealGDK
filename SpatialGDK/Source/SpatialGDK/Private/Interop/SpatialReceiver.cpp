@@ -533,7 +533,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		if (!NetDriver->IsServer())
 		{
 			// Update interest on the entity's components after receiving initial component data (so Role and RemoteRole are properly set).
-			Sender->SendComponentInterest(EntityActor, EntityId, Channel->IsOwnedByWorker());
+			Sender->SendComponentInterestForActor(Channel, EntityId, Channel->IsOwnedByWorker());
 
 			// This is a bit of a hack unfortunately, among the core classes only PlayerController implements this function and it requires
 			// a player index. For now we don't support split screen, so the number is always 0.
@@ -950,6 +950,8 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 		ApplyComponentData(Subobject, NetDriver->GetActorChannelByEntityId(EntityId), *AddComponent.Data->ComponentData);
 		PendingDynamicSubobjectComponents.Remove(EntityComponentPair);
 	});
+
+	Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsOwnedByWorker());
 }
 
 void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, Worker_ComponentData& Data)

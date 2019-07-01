@@ -66,13 +66,13 @@ struct FClassInfo
 	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 
 	// Only for Actors
-	TMap<uint32, TSharedRef<FClassInfo>> SubobjectInfo;
+	TMap<uint32, TSharedRef<const FClassInfo>> SubobjectInfo;
 
 	// Only for default Subobjects belonging to Actors
 	FName SubobjectName;
 
 	// Only for Subobject classes
-	TArray<TSharedRef<FClassInfo>> DynamicSubobjectInfo;
+	TArray<TSharedRef<const FClassInfo>> DynamicSubobjectInfo;
 
 	FName ActorGroup;
 	FName WorkerType;

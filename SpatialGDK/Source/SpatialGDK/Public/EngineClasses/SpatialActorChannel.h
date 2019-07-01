@@ -125,7 +125,7 @@ public:
 	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 
-	TMap<UObject*, FClassInfo*> GetHandoverSubobjects();
+	TMap<UObject*, const FClassInfo*> GetHandoverSubobjects();
 
 	FRepChangeState CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object);
 	FHandoverChangeState CreateInitialHandoverChangeState(const FClassInfo& ClassInfo);
