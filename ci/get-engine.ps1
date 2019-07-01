@@ -13,10 +13,11 @@ pushd "$($gdk_home)"
         }
     popd
 
-    ## Create an UnrealEngine directory if it doesn't already exist
-    New-Item -Name "UnrealEngine" -ItemType Directory -Force
 
-    pushd "UnrealEngine"
+    ## Create an UnrealEngine-Cache directory if it doesn't already exist
+    New-Item -Name "UnrealEngine-Cache" -ItemType Directory -Force
+
+    pushd "UnrealEngine-Cache"
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
         $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
@@ -50,9 +51,13 @@ pushd "$($gdk_home)"
         }
     popd
 
-    $unreal_path = "$($gdk_home)\UnrealEngine\$($unreal_version)"
+    ## Create an UnrealEngine symlink to the correct directory
+    Remove-Item "UnrealEngine" -ErrorAction ignore -Recurse -Force
+    cmd /c mklink /J "UnrealEngine" "UnrealEngine-Cache\$($unreal_version)"
 
-    $clang_path = "$($gdk_home)\UnrealEngine\$($unreal_version)\ClangToolchain"
+    $unreal_path = "$($gdk_home)\UnrealEngine\"
+
+    $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
     [Environment]::SetEnvironmentVariable("LINUX_MULTIARCH_ROOT", "$($clang_path)", "Machine")
 
