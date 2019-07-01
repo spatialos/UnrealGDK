@@ -3,13 +3,13 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
+#include "FileCache.h"
 #include "Modules/ModuleManager.h"
 #include "Serialization/JsonWriter.h"
 #include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
 #include "Widgets/Notifications/SNotificationList.h"
-#include "FileCache.h"
 
 #include "LocalDeploymentManager.h"
 
@@ -22,8 +22,6 @@ class FSpatialGDKEditor;
 struct FWorkerTypeLaunchSection;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialGDKEditorToolbar, Log, All);
-
-using namespace DirectoryWatcher;
 
 class FSpatialGDKEditorToolbarModule : public IModuleInterface, public FTickableEditorObject
 {
@@ -64,6 +62,7 @@ private:
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
 
+	bool VerifyAndStartDeployment();
 	bool StartSpatialServiceIsVisible();
 	bool StartSpatialServiceCanExecute();
 
@@ -90,7 +89,7 @@ private:
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
 
 	void GenerateSchema(bool bFullScan);
-	
+
 	bool WriteFlagSection(TSharedRef< TJsonWriter<> > Writer, const FString& Key, const FString& Value) const;
 	bool WriteWorkerSection(TSharedRef< TJsonWriter<> > Writer, const FWorkerTypeLaunchSection& FWorkerTypeLaunchSection) const;
 	bool WriteLoadbalancingSection(TSharedRef< TJsonWriter<> > Writer, const FName& WorkerType, const int32 Columns, const int32 Rows, const bool bManualWorkerConnectionOnly) const;

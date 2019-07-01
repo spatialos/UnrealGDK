@@ -11,8 +11,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialDeploymentManager, Log, All);
 
-using namespace DirectoryWatcher;
-
 class FLocalDeploymentManager
 {
 public:

@@ -53,6 +53,7 @@ public:
 
 	// Begin UObject Interface
 	virtual void PostInitProperties() override;
+	virtual void FinishDestroy() override;
 	// End UObject Interface
 
 	// Begin FExec Interface
@@ -159,8 +160,6 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
-	virtual void FinishDestroy() override;
-
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -177,7 +176,6 @@ private:
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
 	void InitializeSpatialOutputDevice();
-
 	void CreateAndInitializeCoreClasses();
 
 	void CreateServerSpatialOSNetConnection();

@@ -118,8 +118,9 @@ void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 		{
 			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
 			{
-				StartSpatialDeploymentButtonClicked();
+				return VerifyAndStartDeployment();
 			}
+			return true;
 		});
 	}
 
@@ -446,9 +447,30 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 	});
 }
 
-void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
+bool FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 {
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+	// Get the latest launch config.
+	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
+
+	FString LaunchConfig;
+	if (SpatialGDKSettings->bGenerateDefaultLaunchConfig)
+	{
+		if (!ValidateGeneratedLaunchConfig())
+		{
+			return false;
+		}
+
+		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
+		GenerateDefaultLaunchConfig(LaunchConfig);
+	}
+	else
+	{
+		LaunchConfig = SpatialGDKSettings->GetSpatialOSLaunchConfig();
+	}
+
+	const FString LaunchFlags = SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags();
+
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags]
 	{
 		// If schema has been regenerated then we need to restart spatial.
 		if (bRedeployRequired)
@@ -458,33 +480,14 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 			bRedeployRequired = false;
 		}
 
-		// Get the latest launch config.
-		const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
-		FString LaunchConfig;
-		if (SpatialGDKSettings->bGenerateDefaultLaunchConfig)
-		{
-			if (!ValidateGeneratedLaunchConfig())
-			{
-				return;
-			}
-
-			LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
-			GenerateDefaultLaunchConfig(LaunchConfig);
-		}
-		else
-		{
-			LaunchConfig = SpatialGDKSettings->GetSpatialOSLaunchConfig();
-		}
-
 		// If the last local deployment is still stopping then wait until it's finished.
-		while(LocalDeploymentManager->IsDeploymentStopping())
+		while (LocalDeploymentManager->IsDeploymentStopping())
 		{
 			FPlatformProcess::Sleep(0.1f);
 		}
 
 		ShowTaskStartNotification(TEXT("Starting local deployment..."));
-		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, SpatialGDKSettings->GetSpatialOSCommandLineLaunchFlags()))
+		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags))
 		{
 			ShowSuccessNotification(TEXT("Local deployment started!"));
 		}
@@ -493,6 +496,13 @@ void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
 			ShowFailedNotification(TEXT("Local deployment failed to start"));
 		}
 	});
+
+	return true;
+}
+
+void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
+{
+	VerifyAndStartDeployment();
 }
 
 void FSpatialGDKEditorToolbarModule::StopSpatialDeploymentButtonClicked()
