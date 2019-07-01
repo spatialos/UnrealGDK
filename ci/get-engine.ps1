@@ -43,7 +43,6 @@ pushd "$($gdk_home)"
         "-o$($unreal_version)", `
         "-aos" ` # skip existing files
         )
-
         Finish-Event "unzip-unreal-engine" "get-unreal-engine"
         if ($zip_proc.ExitCode -ne 0) {
             Write-Log "Failed to unzip Unreal Engine. Error: $($zip_proc.ExitCode)"
@@ -55,7 +54,7 @@ pushd "$($gdk_home)"
     Remove-Item "UnrealEngine" -ErrorAction ignore -Recurse -Force
     cmd /c mklink /J "UnrealEngine" "UnrealEngine-Cache\$($unreal_version)"
 
-    $unreal_path = "$($gdk_home)\UnrealEngine\"
+    $unreal_path = "$($gdk_home)\UnrealEngine"
 
     $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
