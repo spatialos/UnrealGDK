@@ -1,6 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKSettings.h"
+#include "Improbable/SpatialEngineConstants.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
 
@@ -32,6 +33,9 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableServerQBI(bUsingQBI)
 	, bPackUnreliableRPCs(true)
 	, bUseDevelopmentAuthenticationFlow(false)
+	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
+	, bEnableOffloading(false)
+	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
 {
 }
 
