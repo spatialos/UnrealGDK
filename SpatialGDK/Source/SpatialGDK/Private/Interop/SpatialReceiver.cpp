@@ -85,7 +85,7 @@ void USpatialReceiver::LeaveCriticalSection()
 	ProcessQueuedResolvedObjects();
 }
 
-void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
+void USpatialReceiver::OnAddEntity(const Worker_AddEntityOp& Op)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddEntity: %lld"), Op.entity_id);
 
@@ -94,7 +94,7 @@ void USpatialReceiver::OnAddEntity(Worker_AddEntityOp& Op)
 	PendingAddEntities.Emplace(Op.entity_id);
 }
 
-void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
+void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 {
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
@@ -147,12 +147,12 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	}
 }
 
-void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
+void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 {
 	RemoveActor(Op.entity_id);
 }
 
-void USpatialReceiver::OnRemoveComponent(Worker_RemoveComponentOp& Op)
+void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
 	// If we're in a critical section, we've received a RemoveEntityOp.
 	// Our RemoveEntityOp processing relies on component data which
@@ -197,7 +197,7 @@ void USpatialReceiver::UpdateShadowData(Worker_EntityId EntityId)
 	ActorChannel->UpdateShadowData();
 }
 
-void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
+void USpatialReceiver::OnAuthorityChange(const Worker_AuthorityChangeOp& Op)
 {
 	if (bInCriticalSection)
 	{
@@ -208,7 +208,7 @@ void USpatialReceiver::OnAuthorityChange(Worker_AuthorityChangeOp& Op)
 	HandleActorAuthority(Op);
 }
 
-void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& Op, APlayerController* PlayerController)
+void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, APlayerController* PlayerController)
 {
 	// Server initializes heartbeat logic based on its authority over the position component,
 	// client does the same for heartbeat component
@@ -240,7 +240,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 	}
 }
 
-void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
+void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 {
 	if (Op.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
 	{
@@ -831,7 +831,7 @@ FTransform USpatialReceiver::GetRelativeSpawnTransform(UClass* ActorClass, FTran
 	return NewTransform;
 }
 
-void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel)
+void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel* Channel)
 {
 	uint32 Offset = 0;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Data.component_id, Offset);
@@ -857,7 +857,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	ApplyComponentData(TargetObject.Get(), Channel, Data);
 }
 
-void USpatialReceiver::HandleDynamicAddComponent(Worker_AddComponentOp& Op)
+void USpatialReceiver::HandleDynamicAddComponent(const Worker_AddComponentOp& Op)
 {
 	uint32 Offset = 0;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.data.component_id, Offset);
@@ -941,7 +941,7 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 	Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsOwnedByWorker());
 }
 
-void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, Worker_ComponentData& Data)
+void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, const Worker_ComponentData& Data)
 {
 	UClass* Class = ClassInfoManager->GetClassByComponentId(Data.component_id);
 	checkf(Class, TEXT("Component %d isn't hand-written and not present in ComponentToClassMap."), Data.component_id);
@@ -986,7 +986,7 @@ void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorCh
 	}
 }
 
-void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
+void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
 	if (StaticComponentView->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -1096,7 +1096,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 }
 
-void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
+void USpatialReceiver::HandleUnreliableRPC(const Worker_ComponentUpdateOp& Op)
 {
 	Worker_EntityId EntityId = Op.entity_id;
 
@@ -1159,7 +1159,7 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 	}
 }
 
-void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
+void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 {
 	Schema_FieldId CommandIndex = Schema_GetCommandRequestCommandIndex(Op.request.schema_type);
 
@@ -1232,7 +1232,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
 
-void USpatialReceiver::OnCommandResponse(Worker_CommandResponseOp& Op)
+void USpatialReceiver::OnCommandResponse(const Worker_CommandResponseOp& Op)
 {
 	if (Op.response.component_id == SpatialConstants::PLAYER_SPAWNER_COMPONENT_ID)
 	{
@@ -1248,7 +1248,7 @@ void USpatialReceiver::FlushRetryRPCs()
 	Sender->FlushRetryRPCs();
 }
 
-void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
+void USpatialReceiver::ReceiveCommandResponse(const Worker_CommandResponseOp& Op)
 {
 	TSharedRef<FReliableRPCForRetry>* ReliableRPCPtr = PendingReliableRPCs.Find(Op.request_id);
 	if (ReliableRPCPtr == nullptr)
@@ -1388,7 +1388,7 @@ void USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCP
 	}
 }
 
-void USpatialReceiver::OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op)
+void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
 {
 	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 	{
@@ -1409,7 +1409,7 @@ void USpatialReceiver::OnReserveEntityIdsResponse(Worker_ReserveEntityIdsRespons
 	}
 }
 
-void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
+void USpatialReceiver::OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op)
 {
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
@@ -1816,7 +1816,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 	}
 }
 
-void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
+void USpatialReceiver::OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
 	if (!NetDriver->IsServer())
 	{
