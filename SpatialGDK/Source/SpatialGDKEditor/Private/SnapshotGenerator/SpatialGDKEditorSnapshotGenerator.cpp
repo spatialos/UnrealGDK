@@ -145,7 +145,7 @@ bool CreateGlobalStateManager(Worker_SnapshotOutputStream* OutputStream)
 		ReadACL.Add(WorkerTypeAttributeSet);
 	}
 
-	Components.Add(SpatialGDK::EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
+	Components.Add(EntityAcl(ReadACL, ComponentWriteAcl).CreateEntityAclData());
 
 	GSM.component_count = Components.Num();
 	GSM.components = Components.GetData();
