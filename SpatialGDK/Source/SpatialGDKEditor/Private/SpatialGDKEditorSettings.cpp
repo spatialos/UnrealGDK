@@ -4,6 +4,7 @@
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
 #include "Settings/LevelEditorPlaySettings.h"
+#include "SpatialGDKSettings.h"
 
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
@@ -12,7 +13,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, bStopSpatialOnExit(false)
-	, bGeneratePlaceholderEntitiesInSnapshot(true)
 {
 	SpatialOSDirectory.Path = GetSpatialOSDirectory();
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
@@ -36,6 +36,11 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	{
+		SetRuntimeWorkerTypes();
+		SetLevelEditorPlaySettingsWorkerTypes();
+	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -47,7 +52,31 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
 
+	SetRuntimeWorkerTypes();
+	SetLevelEditorPlaySettingsWorkerTypes();
 	SafetyCheckSpatialOSDirectoryPaths();
+}
+
+void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
+{
+	TSet<FName> WorkerTypes;
+
+	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
+	{
+		if (WorkerLaunch.WorkerTypeName != NAME_None)
+		{
+			WorkerTypes.Add(WorkerLaunch.WorkerTypeName);
+		}
+	}
+
+	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	if (RuntimeSettings != nullptr)
+	{
+		RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
+		RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
+		RuntimeSettings->PostEditChange();
+		RuntimeSettings->SaveConfig(CPF_Config, *RuntimeSettings->GetDefaultConfigFilename());
+	}
 }
 
 void USpatialGDKEditorSettings::SafetyCheckSpatialOSDirectoryPaths()
@@ -87,5 +116,16 @@ void USpatialGDKEditorSettings::SafetyCheckSpatialOSDirectoryPaths()
 
 		PostEditChange();
 		SaveConfig(CPF_Config, *GetDefaultConfigFilename());
+	}
+}
+
+void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
+{
+	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+
+	PlayInSettings->WorkerTypesToLaunch.Empty(LaunchConfigDesc.ServerWorkers.Num());
+	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
+	{
+		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
 	}
 }

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/EngineTypes.h"
 #include "Misc/Paths.h"
+#include "Utils/ActorGroupManager.h"
 
 #include "SpatialGDKSettings.generated.h"
 
@@ -17,9 +18,9 @@ public:
 	USpatialGDKSettings(const FObjectInitializer& ObjectInitializer);
 
 #if WITH_EDITOR
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
-
+	
 	virtual void PostInitProperties() override;
 
 	/** The number of entity IDs to be reserved when the entity pool is first created */
@@ -108,7 +109,7 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bPackUnreliableRPCs;
 
-  /** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
+	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
 	bool bUseDevelopmentAuthenticationFlow;
 
@@ -119,5 +120,20 @@ public:
 	/** The deployment to connect to when using the Development Authentication Flow. If left empty, it uses the first available one (order not guaranteed when there are multiple items). The deployment needs to be tagged with 'dev_login'. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
 	FString DevelopmentDeploymentToConnect;
-};
 
+	/** Single server worker type to launch when offloading is disabled, fallback server worker type when offloading is enabled (owns all actor classes by default). */
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	FWorkerType DefaultWorkerType;
+
+	/** Enable running different server worker types to split the simulation by Actor Groups. */
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading")
+	bool bEnableOffloading;
+
+	/** Actor Group configuration. */
+	UPROPERTY(EditAnywhere, Config, Category = "Offloading", meta = (EditCondition = "bEnableOffloading"))
+	TMap<FName, FActorGroupInfo> ActorGroups;
+
+	/** Available server worker types. */
+	UPROPERTY(Config)
+	TSet<FName> ServerWorkerTypes;
+};
