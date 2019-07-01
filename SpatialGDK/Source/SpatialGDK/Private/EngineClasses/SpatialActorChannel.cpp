@@ -531,7 +531,7 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 	}
 	else
 	{
-		// If we don't, modify the entity ACL and to gain authority
+		// If we don't, modify the entity ACL to gain authority.
 		PendingDynamicSubobjects.Add(TWeakObjectPtr<UObject>(Object));
 		Sender->GainAuthorityThenAddComponent(this, Object, Info);
 	}

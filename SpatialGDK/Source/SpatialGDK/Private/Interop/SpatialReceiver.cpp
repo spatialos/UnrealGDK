@@ -99,11 +99,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("AddComponent component ID: %u entity ID: %lld"),
 		Op.data.component_id, Op.entity_id);
 
-	if (bInCriticalSection)
-	{
-		StaticComponentView->OnAddComponent(Op);
-	}
-
 	switch (Op.data.component_id)
 	{
 	case SpatialConstants::ENTITY_ACL_COMPONENT_ID:
@@ -149,7 +144,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 	else
 	{
 		HandleDynamicAddComponent(Op);
-		StaticComponentView->OnAddComponent(Op);
 	}
 }
 
@@ -865,19 +859,12 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 
 void USpatialReceiver::HandleDynamicAddComponent(Worker_AddComponentOp& Op)
 {
-	// If we are delegated a component that exists, we will receive an AddComponentOp.
-	// This will be a duplicate of the AddComponentOp we've already recieved in the AddEntity payload
-	// So it can be safely ignored.
-	//if (StaticComponentView->HasComponent(Op.entity_id, Op.data.component_id))
-	//{
-	//	return;
-	//}
-
 	uint32 Offset = 0;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.data.component_id, Offset);
 	if (!bFoundOffset)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id when receiving dynamic AddComponent."), Op.entity_id, Op.data.component_id);
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("EntityId %lld, ComponentId %d - Could not find offset for component id "
+			"when receiving dynamic AddComponent."), Op.entity_id, Op.data.component_id);
 		return;
 	}
 
