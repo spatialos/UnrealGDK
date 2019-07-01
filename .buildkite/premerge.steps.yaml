@@ -16,6 +16,9 @@ common: &common
     automatic:
       - <<: *agent_transients
   timeout_in_minutes: 60
+  plugins:
+    - git-clean#v0.0.1:
+        flags: "-fdqx --exclude=UnrealEngine"
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
