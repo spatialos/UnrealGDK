@@ -7,10 +7,13 @@ agent_transients: &agent_transients
 
 common: &common
   agents:
+    - "agent_count=1"
     - "capable_of_building=gdk-for-unreal"
     - "environment=production"
+    - "machine_type=tetracosa-high-cpu"  # the name matches to SpatialOS node-size names
     - "platform=windows"
     - "permission_set=builder"
+    - "scaler_version=2"
     - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1561706051-8f9faecd50cdf29d-------z}"
   retry:
     automatic:
