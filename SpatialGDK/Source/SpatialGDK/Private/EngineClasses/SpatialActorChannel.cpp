@@ -473,7 +473,11 @@ int64 USpatialActorChannel::ReplicateActor()
 		// Look for deleted subobjects
 		for (auto RepComp = ReplicationMap.CreateIterator(); RepComp; ++RepComp)
 		{
+#if ENGINE_MINOR_VERSION <= 20
+			if (!RepComp.Key().IsValid())
+#else
 			if (!RepComp.Value()->GetWeakObjectPtr().IsValid())
+#endif
 			{
 				FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromNetGUID(RepComp.Value().Get().ObjectNetGUID);
 				if (ObjectRef.IsValid())
@@ -572,7 +576,13 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelReplicateSubobject);
 
 	bool bCreatedReplicator = false;
+
+#if ENGINE_MINOR_VERSION <= 20
+	bCreatedReplicator = ReplicationMap.Contains(Object);
+	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
+#else
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
+#endif
 
 	// If we're creating an entity, don't try replicating 
 	if (bCreatingNewEntity)
@@ -588,7 +598,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 		return false;
 	}
 
-	if (PendingDynamicSubobjects.Contains(Replicator.GetWeakObjectPtr()))
+	if (PendingDynamicSubobjects.Contains(Object))
 	{
 		// Still waiting on subobject to be attached so don't replicate
 		return false;
