@@ -17,6 +17,10 @@ struct FWorkerType
 	FWorkerType() : WorkerTypeName(NAME_None)
 	{
 	}
+
+	FWorkerType(FName InWorkerTypeName) : WorkerTypeName(InWorkerTypeName)
+	{
+	}
 };
 
 USTRUCT()
