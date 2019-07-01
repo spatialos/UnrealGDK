@@ -309,7 +309,7 @@ public:
 <br/>
 
 <br/>------------<br/>
-2019-06-28 Page updated with draft content: code generator, setting up, manual (de)serialzation added
+_2019-06-28 Page updated with draft content: code generator, setting up, manual (de)serialzation added_
 
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1189)
 
