@@ -174,7 +174,7 @@ struct FSpatialLaunchConfigDescription
 		, World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-		UnrealWorkerDefaultSetting.WorkerTypeName = FName(*SpatialConstants::ServerWorkerType);
+		UnrealWorkerDefaultSetting.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 		UnrealWorkerDefaultSetting.Rows = 1;
 		UnrealWorkerDefaultSetting.Columns = 1;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
@@ -210,6 +210,9 @@ private:
 
 	/** Set WorkerTypes in runtime settings. */
 	void SetRuntimeWorkerTypes();
+
+	/** Set WorkerTypesToLaunch in level editor play settings. */
+	void SetLevelEditorPlaySettingsWorkerTypes();
 
 	/** Check if the Editor Settings contains valid directory paths or not. */
 	void SafetyCheckSpatialOSDirectoryPaths();
@@ -258,10 +261,6 @@ public:
 	/** Auto-generated launch configuration file description. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration file description"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
-
-	/** If checked, placeholder entities are added to the snapshot on generation. */
-	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Generate placeholder entities in snapshot"))
-	bool bGeneratePlaceholderEntitiesInSnapshot;
 
 	FORCEINLINE FString GetSpatialOSDirectory() const
 	{
