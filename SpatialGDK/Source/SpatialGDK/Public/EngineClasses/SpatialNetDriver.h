@@ -26,6 +26,7 @@ class USpatialWorkerConnection;
 class USpatialDispatcher;
 class USpatialSender;
 class USpatialReceiver;
+class UActorGroupManager;
 class USpatialClassInfoManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
@@ -66,6 +67,7 @@ public:
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
+	virtual void Shutdown() override;
 	// End UNetDriver interface.
 
 	virtual void OnOwnerUpdated(AActor* Actor);
@@ -110,6 +112,8 @@ public:
 	USpatialSender* Sender;
 	UPROPERTY()
 	USpatialReceiver* Receiver;
+	UPROPERTY()
+	UActorGroupManager* ActorGroupManager;
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()
@@ -170,7 +174,6 @@ private:
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
 
-
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
 
@@ -205,4 +208,9 @@ private:
 	int NextRPCIndex;
 
 	float TimeWhenPositionLastUpdated;
+
+	// Counter for giving each connected client a unique IP address to satisfy Unreal's requirement of
+	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
+	// The GDK does not use this address for any networked purpose, only bookkeeping.
+	uint32 UniqueClientIpAddressCounter = 0;
 };

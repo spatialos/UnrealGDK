@@ -23,6 +23,7 @@ public:
 	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
+	bool FullScanRequired();
 
 private:
 	bool bSchemaGeneratorRunning;
