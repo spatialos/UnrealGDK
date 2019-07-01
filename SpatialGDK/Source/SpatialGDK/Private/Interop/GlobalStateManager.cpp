@@ -669,9 +669,12 @@ void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
 
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
 	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(RetryTimer, [this, bRetryUntilAcceptingPlayers]()
+	TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), bRetryUntilAcceptingPlayers]()
 	{
-		QueryGSM(bRetryUntilAcceptingPlayers);
+		if (UGlobalStateManager* GSM = WeakThis.Get())
+		{
+			GSM->QueryGSM(bRetryUntilAcceptingPlayers);
+		}
 	}, RetryTimerDelay, false);
 }
 
