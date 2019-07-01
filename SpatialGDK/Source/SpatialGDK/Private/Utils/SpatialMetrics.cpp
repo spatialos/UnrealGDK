@@ -197,6 +197,11 @@ void USpatialMetrics::OnStopRPCMetricsCommand()
 	SpatialStopRPCMetrics();
 }
 
+void USpatialMetrics::SpatialModifySetting(const FString& ClassName)
+{
+	UE_LOG(LogTemp, Log, TEXT("SpatialModifySetting: %s"), *ClassName);
+}
+
 void USpatialMetrics::TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize)
 {
 	if (!bRPCTrackingEnabled)

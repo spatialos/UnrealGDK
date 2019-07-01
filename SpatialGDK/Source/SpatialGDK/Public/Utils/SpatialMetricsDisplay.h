@@ -19,6 +19,10 @@ struct FWorkerStats
 	float AverageFPS;
 	UPROPERTY()
 	float ServerMovementCorrections; // per second
+	UPROPERTY()
+	int32 ServerConsiderListSize;
+	UPROPERTY()
+	uint32 ServerReplicationLimit;
 
 	bool operator==(const FWorkerStats& other) const
 	{

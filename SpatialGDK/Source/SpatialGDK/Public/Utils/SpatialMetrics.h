@@ -39,6 +39,9 @@ public:
 	void SpatialStopRPCMetrics();
 	void OnStopRPCMetricsCommand();
 
+	UFUNCTION(Exec)
+	void SpatialModifySetting(const FString& ClassName);
+
 	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
 
 private:

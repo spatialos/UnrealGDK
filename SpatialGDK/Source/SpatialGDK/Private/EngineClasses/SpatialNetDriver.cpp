@@ -1101,6 +1101,10 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		DebugRelevantActors = false;
 	}
 
+#if !UE_BUILD_SHIPPING
+	ConsiderListSize = FinalSortedCount;
+#endif
+
 	return Updated;
 #else
 	return 0;

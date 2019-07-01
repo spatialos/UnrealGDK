@@ -139,6 +139,10 @@ public:
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
+#if !UE_BUILD_SHIPPING
+	int32 GetConsiderListSize() const { return ConsiderListSize; }
+#endif
+
 	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
 	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
 	void OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType);
@@ -213,4 +217,8 @@ private:
 	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
 	// The GDK does not use this address for any networked purpose, only bookkeeping.
 	uint32 UniqueClientIpAddressCounter = 0;
+
+#if !UE_BUILD_SHIPPING
+	int32 ConsiderListSize = 0;
+#endif
 };
