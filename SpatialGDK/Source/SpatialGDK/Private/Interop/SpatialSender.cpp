@@ -95,9 +95,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
-	WorkerAttributeSet ServerAttribute = { SpatialConstants::DefaultServerWorkerType.ToString() };
-	WorkerAttributeSet ClientAttribute = { SpatialConstants::DefaultClientWorkerType.ToString() };
-	WorkerAttributeSet OwningClientAttribute = { ClientWorkerAttribute };
+	WorkerRequirementSet AnyServerRequirementSet;
+	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
 
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
 
@@ -152,7 +151,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	if (Actor->IsA<APlayerController>())
 	{
 #if !UE_BUILD_SHIPPING
-		ComponentWriteAcl.Add(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, AnyServerRequirementSet);
+		ComponentWriteAcl.Add(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
 #endif // !UE_BUILD_SHIPPING
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	}
