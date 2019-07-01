@@ -20,8 +20,6 @@ void USpatialDispatcher::Init(USpatialNetDriver* InNetDriver)
 
 void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 {
-	TArray<Worker_Op*> QueuedComponentUpdateOps;
-
 	for (size_t i = 0; i < OpList->op_count; ++i)
 	{
 		Worker_Op* Op = &OpList->ops[i];
@@ -55,8 +53,8 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 			Receiver->OnRemoveComponent(Op->remove_component);
 			break;
 		case WORKER_OP_TYPE_COMPONENT_UPDATE:
-			QueuedComponentUpdateOps.Add(Op);
 			StaticComponentView->OnComponentUpdate(Op->component_update);
+			Receiver->OnComponentUpdate(Op->component_update);
 			break;
 
 		// Commands
@@ -102,11 +100,6 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 		default:
 			break;
 		}
-	}
-
-	for (Worker_Op* Op : QueuedComponentUpdateOps)
-	{
-		Receiver->OnComponentUpdate(Op->component_update);
 	}
 
 	Receiver->FlushRetryRPCs();

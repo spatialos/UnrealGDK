@@ -868,10 +868,10 @@ void USpatialReceiver::HandleDynamicAddComponent(Worker_AddComponentOp& Op)
 	// If we are delegated a component that exists, we will receive an AddComponentOp.
 	// This will be a duplicate of the AddComponentOp we've already recieved in the AddEntity payload
 	// So it can be safely ignored.
-	if (StaticComponentView->HasComponent(Op.entity_id, Op.data.component_id))
-	{
-		return;
-	}
+	//if (StaticComponentView->HasComponent(Op.entity_id, Op.data.component_id))
+	//{
+	//	return;
+	//}
 
 	uint32 Offset = 0;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.data.component_id, Offset);
