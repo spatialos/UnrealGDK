@@ -24,6 +24,7 @@ pushd "$($gdk_home)"
 
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
             "cp", `
+            "-n", ` # noclobber
             "$($engine_gcs_path)", `
             "$($unreal_version).zip" `
         )
@@ -37,8 +38,11 @@ pushd "$($gdk_home)"
         Write-Log "Unzipping Unreal Engine"
         $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
         "x", `
-        "$($unreal_version).zip" `
+        "$($unreal_version).zip", `
+        "-o$($unreal_version)", `
+        "-aos" ` # skip existing files
         )
+
         Finish-Event "unzip-unreal-engine" "get-unreal-engine"
         if ($zip_proc.ExitCode -ne 0) {
             Write-Log "Failed to unzip Unreal Engine. Error: $($zip_proc.ExitCode)"
@@ -46,9 +50,9 @@ pushd "$($gdk_home)"
         }
     popd
 
-    $unreal_path = "$($gdk_home)\UnrealEngine"
+    $unreal_path = "$($gdk_home)\UnrealEngine\$($unreal_version)"
 
-    $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
+    $clang_path = "$($gdk_home)\UnrealEngine\$($unreal_version)\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
     [Environment]::SetEnvironmentVariable("LINUX_MULTIARCH_ROOT", "$($clang_path)", "Machine")
 
