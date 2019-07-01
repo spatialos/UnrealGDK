@@ -101,11 +101,11 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 Console.WriteLine("Engine Association: " + engineAssociation);
 
                 string unrealEngineBuildKey = "HKEY_CURRENT_USER\\Software\\Epic Games\\Unreal Engine\\Builds";
-                var unrealEngineKey = Registry.GetValue(unrealEngineBuildKey, engineAssociation, "");
+                var unrealEngineValue = Registry.GetValue(unrealEngineBuildKey, engineAssociation, "");
 
-                if (unrealEngineKey != null)
+                if (unrealEngineValue != null)
                 {
-                    unrealEngine = unrealEngineKey.ToString();
+                    unrealEngine = unrealEngineValue.ToString();
                 }
                 else
                 {
