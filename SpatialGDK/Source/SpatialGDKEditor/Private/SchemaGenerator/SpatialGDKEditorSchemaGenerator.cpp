@@ -621,9 +621,6 @@ void RunSchemaCompiler()
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
-	FProcHandle SchemaCompilerProcHandle;
-	uint32 SchemaCompilerProcessID;
-
 	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
 
 	// Get the schema_compiler path and arguments
@@ -645,17 +642,18 @@ void RunSchemaCompiler()
 
 	UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("Starting '%s' with `%s` arguments."), *SchemaCompilerExe, *SchemaCompilerArgs);
 
-	SchemaCompilerProcHandle = FPlatformProcess::CreateProc(
-		*(SchemaCompilerExe), *SchemaCompilerArgs, true, false, false, &SchemaCompilerProcessID, 0,
-		nullptr, nullptr, nullptr);
+	int32 ExitCode = 1;
+	FString SchemaCompilerOut;
+	FString SchemaCompilerErr;
+	FPlatformProcess::ExecProcess(*SchemaCompilerExe, *SchemaCompilerArgs, &ExitCode, &SchemaCompilerOut, &SchemaCompilerErr);
 
-	if (!SchemaCompilerProcHandle.IsValid())
+	if (ExitCode == 0)
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("schema_compiler failed to generate schema descriptor."));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated schema descriptor: %s"), *SchemaCompilerOut);
 	}
 	else
 	{
-		UE_LOG(LogSpatialGDKSchemaGenerator, Log, TEXT("schema_compiler successfully generated schema descriptor."));
+		UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("schema_compiler failed to generate schema descriptor: %s"), *SchemaCompilerErr);
 	}
 }
 

@@ -474,7 +474,7 @@ FActorSpecificSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& W
 		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
-		Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, ComponentClass));
+		Writer.Printf("data unreal.generated.{0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
 		SubobjectData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
@@ -499,7 +499,7 @@ FActorSpecificSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& W
 		Writer.Printf("component {0} {", *(PropertyName + TEXT("Handover")));
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
-		Writer.Printf("data {0};", *SchemaHandoverDataName(ComponentClass));
+		Writer.Printf("data unreal.generated.{0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
 		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = ComponentId;

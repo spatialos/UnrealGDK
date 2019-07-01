@@ -12,7 +12,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, bStopSpatialOnExit(false)
-	, bGeneratePlaceholderEntitiesInSnapshot(true)
 {
 	SpatialOSDirectory.Path = GetSpatialOSDirectory();
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
@@ -39,6 +38,7 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
 	{
 		SetRuntimeWorkerTypes();
+		SetLevelEditorPlaySettingsWorkerTypes();
 	}
 }
 
@@ -52,6 +52,7 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->SaveConfig();
 
 	SetRuntimeWorkerTypes();
+	SetLevelEditorPlaySettingsWorkerTypes();
 	SafetyCheckSpatialOSDirectoryPaths();
 }
 
@@ -114,5 +115,16 @@ void USpatialGDKEditorSettings::SafetyCheckSpatialOSDirectoryPaths()
 
 		PostEditChange();
 		SaveConfig(CPF_Config, *GetDefaultConfigFilename());
+	}
+}
+
+void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
+{
+	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+
+	PlayInSettings->WorkerTypesToLaunch.Empty(LaunchConfigDesc.ServerWorkers.Num());
+	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
+	{
+		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
 	}
 }
