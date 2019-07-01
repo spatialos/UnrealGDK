@@ -24,8 +24,6 @@ struct EditorWorkerController
 
 	void InitWorkers()
 	{
-		ReplaceProcesses.Empty();
-
 		// Only issue the worker replace request if there's a chance the load balancer hasn't acknowledged
 		// that the previous session's workers have disconnected. There's no hard `heartbeat` time for this as
 		// it's dependent on multiple factors (fabric load etc.), so this value was landed on after significant

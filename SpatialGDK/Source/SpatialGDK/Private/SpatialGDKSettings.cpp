@@ -5,6 +5,10 @@
 #include "Misc/CommandLine.h"
 #include "Settings/LevelEditorPlaySettings.h"
 
+#if WITH_EDITOR
+#include "Settings/LevelEditorPlaySettings.h"
+#endif
+
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, EntityPoolInitialReservationCount(3000)
@@ -39,11 +43,14 @@ void USpatialGDKSettings::PostInitProperties()
 	const TCHAR* CommandLine = FCommandLine::Get();
 	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
 
+#if WITH_EDITOR
 	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
 	PlayInSettings->bEnableOffloading = bEnableOffloading;
 	PlayInSettings->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
+#endif
 }
 
+#if WITH_EDITOR
 void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
@@ -60,3 +67,4 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 		GetMutableDefault<ULevelEditorPlaySettings>()->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
 	}
 }
+#endif

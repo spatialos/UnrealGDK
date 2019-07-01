@@ -95,8 +95,9 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 	FString ClientWorkerAttribute = GetOwnerWorkerAttribute(Actor);
 
-	WorkerRequirementSet AnyServerRequirementSet;
-	WorkerRequirementSet AnyServerOrClientRequirementSet = { SpatialConstants::UnrealClientAttributeSet };
+	WorkerAttributeSet ServerAttribute = { SpatialConstants::DefaultServerWorkerType.ToString() };
+	WorkerAttributeSet ClientAttribute = { SpatialConstants::DefaultClientWorkerType.ToString() };
+	WorkerAttributeSet OwningClientAttribute = { ClientWorkerAttribute };
 
 	WorkerAttributeSet OwningClientAttributeSet = { ClientWorkerAttribute };
 
