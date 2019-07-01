@@ -197,6 +197,10 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 		{
 			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
 			{
+				if (NetDriver->IsServer())
+				{
+					AuthorityPlayerControllerConnectionMap.Add(Op.entity_id, Connection);
+				}
 				Connection->InitHeartbeat(TimerManager, Op.entity_id);
 			}
 		}
@@ -204,7 +208,7 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& 
 		{
 			if (NetDriver->IsServer())
 			{
-				HeartbeatDelegates.Remove(Op.entity_id);
+				AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 			}
 			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
 			{
@@ -316,11 +320,18 @@ void USpatialReceiver::HandleActorAuthority(Worker_AuthorityChangeOp& Op)
 	}
 	else
 	{
-		// Check to see if we became authoritative over the UnrealClientRPCEndpoint component over this entity
-		// If we did, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
-		if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+		if (Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
 		{
-			Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+			if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+			{
+				ActorChannel->ClientProcessOwnershipChange(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE);
+			}
+
+			// If we are a Pawn or PlayerController, our local role should be ROLE_AutonomousProxy. Otherwise ROLE_SimulatedProxy
+			if ((Actor->IsA<APawn>() || Actor->IsA<APlayerController>()) && Op.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
+			{
+				Actor->Role = (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE) ? ROLE_AutonomousProxy : ROLE_SimulatedProxy;
+			}
 		}
 	}
 
@@ -597,7 +608,7 @@ void USpatialReceiver::QueryForStartupActor(AActor* Actor, Worker_EntityId Entit
 
 	EntityQueryDelegate StartupActorDelegate;
 	TWeakObjectPtr<AActor> WeakActor(Actor);
-	StartupActorDelegate.BindLambda([this, WeakActor, EntityId](Worker_EntityQueryResponseOp& Op)
+	StartupActorDelegate.BindLambda([this, WeakActor, EntityId](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -858,10 +869,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 #endif // WITH_EDITOR
 		return;
 	case SpatialConstants::HEARTBEAT_COMPONENT_ID:
-		if (HeartbeatDelegate* UpdateDelegate = HeartbeatDelegates.Find(Op.entity_id))
-		{
-			UpdateDelegate->ExecuteIfBound(Op);
-		}
+		OnHeartbeatComponentUpdate(Op);
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplySingletonManagerUpdate(Op.update);
@@ -1106,7 +1114,21 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 	PendingReliableRPCs.Remove(Op.request_id);
 	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		if (ReliableRPC->Attempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+		bool bCanRetry = false;
+
+		// Only attempt to retry if the error code indicates it makes sense too
+		if ((Op.status_code == WORKER_STATUS_CODE_TIMEOUT || Op.status_code == WORKER_STATUS_CODE_NOT_FOUND)
+			&& (ReliableRPC->Attempts < SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS))
+		{
+			bCanRetry = true;
+		}
+		// Don't apply the retry limit on auth lost, as it should eventually succeed
+		else if (Op.status_code == WORKER_STATUS_CODE_AUTHORITY_LOST)
+		{
+			bCanRetry = true;
+		}
+
+		if (bCanRetry)
 		{
 			float WaitTime = SpatialConstants::GetCommandRetryWaitTimeSeconds(ReliableRPC->Attempts);
 			UE_LOG(LogSpatialReceiver, Log, TEXT("%s: retrying in %f seconds. Error code: %d Message: %s"),
@@ -1121,9 +1143,12 @@ void USpatialReceiver::ReceiveCommandResponse(Worker_CommandResponseOp& Op)
 
 			// Queue retry
 			FTimerHandle RetryTimer;
-			TimerManager->SetTimer(RetryTimer, [this, ReliableRPC]()
+			TimerManager->SetTimer(RetryTimer, [WeakSender = TWeakObjectPtr<USpatialSender>(Sender), ReliableRPC]()
 			{
-				Sender->EnqueueRetryRPC(ReliableRPC);
+				if (USpatialSender* SpatialSender = WeakSender.Get())
+				{
+					SpatialSender->EnqueueRetryRPC(ReliableRPC);
+				}
 			}, WaitTime, false);
 		}
 		else
@@ -1248,6 +1273,11 @@ void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Create entity request succeeded: request id: %d, entity id: %lld, message: %s"), Op.request_id, Op.entity_id, UTF8_TO_TCHAR(Op.message));
 	}
 
+	if (CreateEntityDelegate* Delegate = CreateEntityDelegates.Find(Op.request_id))
+	{
+		Delegate->ExecuteIfBound(Op);
+	}
+
 	TWeakObjectPtr<USpatialActorChannel> Channel = PopPendingActorRequest(Op.request_id);
 
 	// It's possible for the ActorChannel to have been closed by the time we receive a response. Actor validity is checked within the channel.
@@ -1261,24 +1291,21 @@ void USpatialReceiver::OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op)
 	}
 }
 
-void USpatialReceiver::OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op)
+void USpatialReceiver::OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
-	if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
+	if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 	{
-		auto RequestDelegate = EntityQueryDelegates.Find(Op.request_id);
-		if (RequestDelegate)
-		{
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Executing EntityQueryResponse with delegate, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
-			RequestDelegate->ExecuteIfBound(Op);
-		}
-		else
-		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
-		}
+		UE_LOG(LogSpatialReceiver, Error, TEXT("EntityQuery failed: request id: %d, message: %s"), Op.request_id, UTF8_TO_TCHAR(Op.message));
+	}
+
+	if (EntityQueryDelegate* RequestDelegate = EntityQueryDelegates.Find(Op.request_id))
+	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Executing EntityQueryResponse with delegate, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
+		RequestDelegate->ExecuteIfBound(Op);
 	}
 	else
 	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("EntityQuery failed: request id: %d, message: %s"), Op.request_id, UTF8_TO_TCHAR(Op.message));
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Recieved EntityQueryResponse but with no delegate set, request id: %d, number of entities: %d, message: %s"), Op.request_id, Op.result_count, UTF8_TO_TCHAR(Op.message));
 	}
 }
 
@@ -1302,9 +1329,9 @@ void USpatialReceiver::AddReserveEntityIdsDelegate(Worker_RequestId RequestId, R
 	ReserveEntityIDsDelegates.Add(RequestId, Delegate);
 }
 
-void USpatialReceiver::AddHeartbeatDelegate(Worker_EntityId EntityId, HeartbeatDelegate Delegate)
+void USpatialReceiver::AddCreateEntityDelegate(Worker_RequestId RequestId, const CreateEntityDelegate& Delegate)
 {
-	HeartbeatDelegates.Add(EntityId, Delegate);
+	CreateEntityDelegates.Add(RequestId, Delegate);
 }
 
 TWeakObjectPtr<USpatialActorChannel> USpatialReceiver::PopPendingActorRequest(Worker_RequestId RequestId)
@@ -1639,5 +1666,52 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 		{
 			It.RemoveCurrent();
 		}
+	}
+}
+
+void USpatialReceiver::OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op)
+{
+	if (!NetDriver->IsServer())
+	{
+		// Clients can ignore Heartbeat component updates.
+		return;
+	}
+
+	TWeakObjectPtr<USpatialNetConnection>* ConnectionPtr = AuthorityPlayerControllerConnectionMap.Find(Op.entity_id);
+	if (ConnectionPtr == nullptr)
+	{
+		// Heartbeat component update on a PlayerController that this server does not have authority over.
+		// TODO: Disable component interest for Heartbeat components this server doesn't care about - UNR-986
+		return;
+	}
+
+	if (!ConnectionPtr->IsValid())
+	{
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Received heartbeat component update after NetConnection has been cleaned up. PlayerController entity: %lld"), Op.entity_id);
+		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
+		return;
+	}
+
+	USpatialNetConnection* NetConnection = ConnectionPtr->Get();
+
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
+	uint32 EventCount = Schema_GetObjectCount(EventsObject, SpatialConstants::HEARTBEAT_EVENT_ID);
+	if (EventCount > 0)
+	{
+		if (EventCount > 1)
+		{
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received multiple heartbeat events in a single component update, entity %lld."), Op.entity_id);
+		}
+
+		NetConnection->OnHeartbeat();
+	}
+
+	Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
+	if (Schema_GetBoolCount(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID) > 0 &&
+		GetBoolFromSchema(FieldsObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID))
+	{
+		// Client has disconnected, let's clean up their connection.
+		NetConnection->CleanUp();
+		AuthorityPlayerControllerConnectionMap.Remove(Op.entity_id);
 	}
 }

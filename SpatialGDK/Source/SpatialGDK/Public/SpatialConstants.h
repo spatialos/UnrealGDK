@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "UObject/Script.h"
-
+#include "Improbable/SpatialEngineConstants.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
+#include "UObject/Script.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -87,8 +87,7 @@ namespace SpatialConstants
 		INVALID_ENTITY_ID = 0,
 		INITIAL_SPAWNER_ENTITY_ID = 1,
 		INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
-		PLACEHOLDER_ENTITY_ID_FIRST = 3,
-		PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
+		FIRST_AVAILABLE_ENTITY_ID = 3,
 	};
 
 	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
@@ -128,6 +127,7 @@ namespace SpatialConstants
 	const Schema_FieldId ACTOR_TEAROFF_ID									= 3;
 
 	const Schema_FieldId HEARTBEAT_EVENT_ID                                 = 1;
+	const Schema_FieldId HEARTBEAT_CLIENT_HAS_QUIT_ID						= 1;
 
 	const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID					= 1;
 	const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
@@ -158,11 +158,10 @@ namespace SpatialConstants
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
-	static const FString ServerWorkerType = TEXT("UnrealWorker");
-	static const FString ClientWorkerType = TEXT("UnrealClient");
+	static const FName DefaultActorGroup = FName(TEXT("Default"));
 
-	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ServerWorkerType};
-	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ClientWorkerType};
+	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
+	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};
 
 	const WorkerRequirementSet UnrealServerPermission{ {UnrealServerAttributeSet} };
 	const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };

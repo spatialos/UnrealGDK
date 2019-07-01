@@ -1,6 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "Interop/Connection/SpatialWorkerConnection.h"
+#if WITH_EDITOR
+#include "Interop/Connection/EditorWorkerController.h"
+#endif
 
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetDriver.h"
@@ -15,17 +18,9 @@
 #include "SpatialGDKSettings.h"
 #include "Utils/ErrorCodeRemapping.h"
 
-#if WITH_EDITOR
-#include "EditorWorkerController.h"
-#endif
-
 DEFINE_LOG_CATEGORY(LogSpatialWorkerConnection);
 
 using namespace SpatialGDK;
-
-#if WITH_EDITOR
-static EditorWorkerController WorkerController;
-#endif
 
 void USpatialWorkerConnection::Init(USpatialGameInstance* InGameInstance)
 {
@@ -84,7 +79,7 @@ void USpatialWorkerConnection::Connect(bool bInitAsClient)
 	const USpatialGDKSettings* SpatialGDKSettings = GetDefault<USpatialGDKSettings>();
 	if (SpatialGDKSettings->bUseDevelopmentAuthenticationFlow && bInitAsClient)
 	{
-		LocatorConfig.WorkerType = SpatialConstants::ClientWorkerType;
+		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 		LocatorConfig.UseExternalIp = true;
 		StartDevelopmentAuth(SpatialGDKSettings->DevelopmentAuthenticationToken);
 		return;
@@ -182,22 +177,12 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 {
 	if (ReceptionistConfig.WorkerType.IsEmpty())
 	{
-		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::ClientWorkerType : SpatialConstants::ServerWorkerType;
+		ReceptionistConfig.WorkerType = bConnectAsClient ? SpatialConstants::DefaultClientWorkerType.ToString() : SpatialConstants::DefaultServerWorkerType.ToString();
 		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *ReceptionistConfig.WorkerType);
 	}
 
 #if WITH_EDITOR
-	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
-	const int32 FirstServerEditorID = 1;
-	if (bSingleThreadedServer)
-	{
-		if (GPlayInEditorID == FirstServerEditorID)
-		{
-			WorkerController.InitWorkers(ReceptionistConfig.WorkerType);
-		}
-
-		ReceptionistConfig.WorkerId = WorkerController.WorkerIds[GPlayInEditorID - 1];
-	}
+	SpatialGDKServices::InitWorkers(bConnectAsClient, ReceptionistConfig.WorkerId);
 #endif
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
@@ -232,13 +217,6 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	ConnectionParams.network.tcp.multiplex_level = ReceptionistConfig.TcpMultiplexLevel;
 	// end TODO
 
-#if WITH_EDITOR
-	if (bSingleThreadedServer)
-	{
-		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);
-	}
-#endif
-
 	Worker_ConnectionFuture* ConnectionFuture = Worker_ConnectAsync(
 		TCHAR_TO_UTF8(*ReceptionistConfig.ReceptionistHost), ReceptionistConfig.ReceptionistPort,
 		TCHAR_TO_UTF8(*ReceptionistConfig.WorkerId), &ConnectionParams);
@@ -250,7 +228,7 @@ void USpatialWorkerConnection::ConnectToLocator()
 {
 	if (LocatorConfig.WorkerType.IsEmpty())
 	{
-		LocatorConfig.WorkerType = SpatialConstants::ClientWorkerType;
+		LocatorConfig.WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 		UE_LOG(LogSpatialWorkerConnection, Warning, TEXT("No worker type specified through commandline, defaulting to %s"), *LocatorConfig.WorkerType);
 	}
 

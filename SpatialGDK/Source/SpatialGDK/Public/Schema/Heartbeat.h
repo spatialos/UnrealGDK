@@ -26,6 +26,9 @@ struct Heartbeat : Component
 		Worker_ComponentData Data = {};
 		Data.component_id = ComponentId;
 		Data.schema_type = Schema_CreateComponentData(ComponentId);
+		Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
+
+		Schema_AddBool(ComponentObject, SpatialConstants::HEARTBEAT_CLIENT_HAS_QUIT_ID, false);
 
 		return Data;
 	}

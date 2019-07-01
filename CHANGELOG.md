@@ -4,7 +4,18 @@ All notable changes to the SpatialOS Game Development Kit for Unreal will be doc
 The format of this Changelog is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased-`0.5.0`] - 2019-xx-xx
+## [Unreleased-`x.y.z`] - 2019-xx-xx
+
+### Breaking Changes:
+
+### New Known Issues:
+
+### Features:
+
+### Bug fixes:
+- Disconnected players no longer remain on the server until they time out if the client was shut down manually.
+
+## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
 - Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
 
 ### Breaking Changes:
@@ -20,8 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added runtime option to disable property handover when running in non-zoned deployments - bEnableHandover.
 - Added runtime option to auto spawn the ASpatialMetricsDisplay for remote debugging of server metrics - bEnableMetricsDisplay.
 - Added runtime option to batch spatial position updates to runtime.
+- Started using the [schema_compiler tool](https://docs.improbable.io/reference/13.8/shared/schema/introduction#using-the-schema-compiler-directly) to generate [schema descriptors](https://docs.improbable.io/reference/13.8/shared/flexible-project-layout/build-process/schema-descriptor-build-process#schema-descriptor-introduction) rather than relying on 'spatial local launch' to do this.
 - Added runtime option to pack unreliable RPCs from the same frame in a single component update to save bandwidth - bPackUnreliableRPCs.
-- Enabled new Development Authentication Flow
+- Enabled new Development Authentication Flow.
+- Added new "worker" entities which are created for each server worker in a deployment so they correctly receive interest in the global state manager.
+- Added support for spawning actors with ACLs configured for offloading using actor groups.
+- Removed the references to the `Number of servers` slider in the Play in editor drop-down menu. The number of each server worker type to launch in PIE is now specified within the launch configuration in the `Spatial GDK Editor Settings` settings tab.
+- Added `SpatialWorkerId` which is set to the worker ID when the worker associated to the `UGameInstance` connects.
 
 ### Bug fixes:
 - BeginPlay is not called with authority when checking out entities from Spatial.
@@ -36,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed assert/crash in SpatialMetricsDisplay that occurred when reloading a snapshot.
 - Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
 - Fixed a crash when failing to NetSerialize a struct in spatial. Now print a warning instead which matches native Unreal behavior.
+- Query response delegates now execute even if response status shows failure. This allows handlers to implement custom retry logic such as clients querying for the GSM.
 
 ### External contributors:
 
