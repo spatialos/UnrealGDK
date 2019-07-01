@@ -17,8 +17,7 @@ common: &common
       - <<: *agent_transients
   timeout_in_minutes: 60
   plugins:
-    - ca-johnson/taskkill#v3.1:
-        processes: AutomationToolLauncher.exe,UnrealHeaderTool.exe
+    - ca-johnson/taskkill#kill-everything: ~
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
