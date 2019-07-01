@@ -36,16 +36,16 @@ bool USpatialStatics::IsAuthoritativeWorkerType(const AActor* Actor)
     UWorld* World = Actor->GetWorld();
     if (!World)
     {
-        UE_LOG(LogSpatialStatics, Warning, TEXT("World was nullptr in USpatialStatics::IsAuthoritativeWorkerType for actor: %s", *Actor->GetName()));
+        UE_LOG(LogSpatialStatics, Warning, TEXT("World was nullptr in USpatialStatics::IsAuthoritativeWorkerType for actor: %s"), *Actor->GetName());
         return false;
     }
 
-	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-	if (!SpatialNetDriver)
-	{
-		UE_LOG(LogSpatialStatics, Warning, TEXT("SpatialNetDriver was nullptr in USpatialStatics::IsAuthoritativeWorkerType for actor: %s", *Actor->GetName()));
-		return false;
-	}
+    USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+    if (!SpatialNetDriver)
+    {
+        UE_LOG(LogSpatialStatics, Warning, TEXT("SpatialNetDriver was nullptr in USpatialStatics::IsAuthoritativeWorkerType for actor: %s"), *Actor->GetName());
+        return false;
+    }
 
     UActorGroupManager* ActorGroupManager = SpatialNetDriver->ActorGroupManager;
     return ActorGroupManager->GetWorkerTypeForClass(Actor->GetClass()).Compare(World->GetGameInstance()->GetSpatialWorkerType()) == 0;
