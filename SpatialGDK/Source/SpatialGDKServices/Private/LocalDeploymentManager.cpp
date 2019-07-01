@@ -135,6 +135,8 @@ bool FLocalDeploymentManager::ParseJson(FString RawJsonString, TSharedPtr<FJsonO
 	return FJsonSerializer::Deserialize(JsonReader, JsonParsed);
 }
 
+// ExecuteAndReadOutput exists so that a spatial command window does not spawn when using 'spatial.exe'. It does not however allow reading from StdErr.
+// For other processes which do not spawn cmd windows, use ExecProcess instead.
 void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult, int32& ExitCode)
 {
 	UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Executing '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
@@ -154,6 +156,7 @@ void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString A
 			OutResult = OutResult.Append(FPlatformProcess::ReadPipe(ReadPipe));
 			FPlatformProcess::Sleep(0.01f);
 		}
+
 		ProcHandle.Reset();
 	}
 	else
@@ -219,13 +222,14 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	FDateTime SpotCreateStart = FDateTime::Now();
 
 	FString SpotCreateResult;
+	FString StdErr;
 	int32 ExitCode;
-	ExecuteAndReadOutput(*SpotExe, *SpotCreateArgs, *SpatialDirectory, SpotCreateResult, ExitCode);
+	FPlatformProcess::ExecProcess(*SpotExe, *SpotCreateArgs, &ExitCode, &SpotCreateResult, &StdErr, *SpatialDirectory);
 	bStartingDeployment = false;
 
 	if (ExitCode != ExitCodeSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. %s"), *SpotCreateResult);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. %s"), *StdErr);
 		return false;
 	}
 
@@ -271,7 +275,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
 	}
-	
+
 	return bSuccess;
 }
 
@@ -289,14 +293,16 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	FString SpotDeleteArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *LocalRunningDeploymentID);
 	const FString SpatialDirectory = GetSpatialOSDirectory();
 
+
 	FString SpotDeleteResult;
+	FString StdErr;
 	int32 ExitCode;
-	ExecuteAndReadOutput(*SpotExe, *SpotDeleteArgs, *SpatialDirectory, SpotDeleteResult, ExitCode);
+	FPlatformProcess::ExecProcess(*SpotExe, *SpotDeleteArgs, &ExitCode, &SpotDeleteResult, &StdErr, *SpatialDirectory);
 	bStoppingDeployment = false;
 
 	if (ExitCode != ExitCodeSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local deployment! %s"), *SpotDeleteResult);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local deployment! %s"), *StdErr);
 	}
 
 	bool bSuccess = false;
@@ -316,7 +322,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	}
 
 	FString DeploymentStatus;
-	if(bPasingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
+	if (bPasingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
 	{
 		if (DeploymentStatus == TEXT("STOPPED"))
 		{
@@ -334,7 +340,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'status' does not exist in Json result from 'spot delete': %s"), *SpotDeleteResult);
 	}
-	
+
 	return bSuccess;
 }
 
@@ -425,12 +431,13 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 	const FString SpatialDirectory = GetSpatialOSDirectory();
 
 	FString SpotListResult;
+	FString StdErr;
 	int32 ExitCode;
-	ExecuteAndReadOutput(*SpotExe, *SpotListArgs, *SpatialDirectory, SpotListResult, ExitCode);
+	FPlatformProcess::ExecProcess(*SpotExe, *SpotListArgs, &ExitCode, &SpotListResult, &StdErr, *SpatialDirectory);
 
 	if (ExitCode != ExitCodeSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to check local deployment status."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to check local deployment status: %s"), *StdErr);
 		return false;
 	}
 
@@ -445,7 +452,7 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 	if (bPasingSuccess && SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
 	{
 		const TArray<TSharedPtr<FJsonValue>>* JsonDeployments;
-		if(!SpotJsonContent->Get()->TryGetArrayField(TEXT("deployments"), JsonDeployments))
+		if (!SpotJsonContent->Get()->TryGetArrayField(TEXT("deployments"), JsonDeployments))
 		{
 			UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("No local deployments running."));
 			return false;
@@ -454,7 +461,7 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 		for (TSharedPtr<FJsonValue> JsonDeployment : *JsonDeployments)
 		{
 			FString DeploymentStatus;
-			if(JsonDeployment->AsObject()->TryGetStringField(TEXT("status"), DeploymentStatus))
+			if (JsonDeployment->AsObject()->TryGetStringField(TEXT("status"), DeploymentStatus))
 			{
 				if (DeploymentStatus == TEXT("RUNNING"))
 				{
@@ -478,6 +485,7 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 	bLocalDeploymentRunning = false;
 	return false;
 }
+
 
 bool FLocalDeploymentManager::GetServiceStatus()
 {
