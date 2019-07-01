@@ -367,13 +367,13 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([WeakThis = TWeakObjectPtr<USpatialSender>(this), AttemptCounter](const Worker_CreateEntityResponseOp& Op)
+	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), AttemptCounter](const Worker_CreateEntityResponseOp& Op)
 	{
-		if (!WeakThis.IsValid())
+		if (!WeakSender.IsValid())
 		{
 			return;
 		}
-		USpatialSender* Sender = WeakThis.Get();
+		USpatialSender* Sender = WeakSender.Get();
 
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -397,9 +397,9 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 
 		UE_LOG(LogSpatialSender, Warning, TEXT("Worker entity creation request timed out and will retry."));
 		FTimerHandle RetryTimer;
-		Sender->TimerManager->SetTimer(RetryTimer, [WeakThis, AttemptCounter]()
+		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, AttemptCounter]()
 		{
-			if (USpatialSender* Sender = WeakThis.Get())
+			if (USpatialSender* Sender = WeakSender.Get())
 			{
 				Sender->CreateServerWorkerEntity(AttemptCounter + 1);
 			}
