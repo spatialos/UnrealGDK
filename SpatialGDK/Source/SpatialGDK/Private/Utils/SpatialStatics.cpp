@@ -40,7 +40,14 @@ bool USpatialStatics::IsAuthoritativeWorkerType(const AActor* Actor)
         return false;
     }
 
-    UActorGroupManager* ActorGroupManager = Cast<USpatialNetDriver>(World->GetNetDriver())->ActorGroupManager;
+	USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
+	if (!SpatialNetDriver)
+	{
+		UE_LOG(LogSpatialStatics, Warning, TEXT("SpatialNetDriver was nullptr in USpatialStatics::IsAuthoritativeWorkerType for actor: %s", *Actor->GetName()));
+		return false;
+	}
+
+    UActorGroupManager* ActorGroupManager = SpatialNetDriver->ActorGroupManager;
     return ActorGroupManager->GetWorkerTypeForClass(Actor->GetClass()).Compare(World->GetGameInstance()->GetSpatialWorkerType()) == 0;
 }
 
