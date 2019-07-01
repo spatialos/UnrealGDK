@@ -291,12 +291,6 @@ public:
 		return PluginDir;
 	}
 
-	FORCEINLINE FString GetSpotPath() const
-	{
-		FString PluginDir = GetGDKPluginDirectory();
-		return  FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe")));
-	}
-
 	FORCEINLINE FString GetSpatialOSLaunchConfig() const
 	{
 		return SpatialOSLaunchConfig.FilePath.IsEmpty()
