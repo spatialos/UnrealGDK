@@ -3,7 +3,6 @@
 #include "SpatialGDKSettings.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
-#include "Settings/LevelEditorPlaySettings.h"
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"

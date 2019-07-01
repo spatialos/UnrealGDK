@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added new "worker" entities which are created for each server worker in a deployment so they correctly receive interest in the global state manager.
 - Added support for spawning actors with ACLs configured for offloading using actor groups.
 - Removed the references to the `Number of servers` slider in the Play in editor drop-down menu. The number of each server worker type to launch in PIE is now specified within the launch configuration in the `Spatial GDK Editor Settings` settings tab.
+- Added `SpatialWorkerId` which is set to the worker ID when the worker associated to the `UGameInstance` connects.
 
 ### Bug fixes:
 - BeginPlay is not called with authority when checking out entities from Spatial.
