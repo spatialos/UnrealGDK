@@ -91,7 +91,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
             string uproject = File.ReadAllText(projectFile, Encoding.UTF8);
 
             dynamic projectJson = JObject.Parse(uproject);
-            string engineAssociation = engineAssociation = projectJson.EngineAssociation;
+            string engineAssociation = projectJson.EngineAssociation;
 
             Console.WriteLine("Engine Association: " + engineAssociation);
 
