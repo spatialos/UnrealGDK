@@ -446,7 +446,9 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 			// For each valid ComponentId, we need to wait for its authority delegation before
 			// adding the subobject.
 			PendingSubobjectAttachment->PendingAuthorityDelegations.Add(ComponentId);
-			Receiver->PendingEntitySubobjectDelegations.Add(MakeTuple(Channel->GetEntityId(), ComponentId), PendingSubobjectAttachment);
+			Receiver->PendingEntitySubobjectDelegations.Add(
+				MakeTuple(static_cast<Worker_EntityId_Key>(Channel->GetEntityId()), ComponentId),
+				PendingSubobjectAttachment);
 
 			EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
 		}
