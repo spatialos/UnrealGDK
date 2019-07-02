@@ -98,14 +98,14 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
 
             Console.WriteLine("Engine Association: " + engineAssociation);
 
-            // If the engine association is empty then climb the parent directories of the project looking for the "Engine" and Build.version.
+            // If the engine association is empty then climb the parent directories of the project looking for the Unreal Engine root directory.
             if (string.IsNullOrEmpty(engineAssociation))
             {
                 DirectoryInfo currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
                 while (currentDir.Parent != null && string.IsNullOrEmpty(unrealEngine))
                 {
                     currentDir = currentDir.Parent;
-                    // This is how Unreal asserts we have a valid root directory for the Unreal Engine. Must contain 'Engine/Binaries' and 'Engine/Build'.
+                    // This is how Unreal asserts we have a valid root directory for the Unreal Engine. Must contain 'Engine/Binaries' and 'Engine/Build'. (FDesktopPlatformBase::IsValidRootDirectory)
                     if (Directory.Exists(Path.Combine(currentDir.FullName, "Engine", "Binaries")) && Directory.Exists(Path.Combine(currentDir.FullName, "Engine", "Build")))
                     {
                         unrealEngine = currentDir.FullName;
