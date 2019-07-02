@@ -107,19 +107,19 @@ static EditorWorkerController WorkerController;
 
 namespace SpatialGDKServices
 {
-void InitWorkers(bool bConnectAsClient, FString& OutWorkerId)
+void InitWorkers(bool bConnectAsClient, int32 PlayInEditorID, FString& OutWorkerId)
 {
-	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
+	const bool bSingleThreadedServer = !bConnectAsClient && (PlayInEditorID > 0);
 	const int32 FirstServerEditorID = 1;
 	if (bSingleThreadedServer)
 	{
-		if (GPlayInEditorID == FirstServerEditorID)
+		if (PlayInEditorID == FirstServerEditorID)
 		{
 			WorkerController.InitWorkers();
 		}
 
-		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);
-		OutWorkerId = WorkerController.WorkerIds[GPlayInEditorID - 1];
+		WorkerController.BlockUntilWorkerReady(PlayInEditorID - 1);
+		OutWorkerId = WorkerController.WorkerIds[PlayInEditorID - 1];
 	}
 }
 

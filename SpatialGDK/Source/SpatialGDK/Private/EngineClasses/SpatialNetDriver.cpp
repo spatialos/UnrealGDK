@@ -147,6 +147,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 		return true;
 	}
+
+	PlayInEditorID = GPlayInEditorID;
 #endif
 
 	InitiateConnectionToSpatialOS(URL);
