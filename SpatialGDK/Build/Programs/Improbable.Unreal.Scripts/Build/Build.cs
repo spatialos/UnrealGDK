@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using Newtonsoft.Json.Linq;
 
 namespace Improbable
 {
@@ -89,17 +89,33 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
             // Locate the Unreal Engine.
             Console.WriteLine("Finding Unreal Engine build.");
             string uproject = File.ReadAllText(projectFile, Encoding.UTF8);
-            string engineAssociationRegex = "..{8}-.{4}-.{4}-.{4}-.{12}.";
-            Match engineAssociationMatch = Regex.Match(uproject, engineAssociationRegex);
 
             string unrealEngine = "";
+            string engineAssociation = "";
 
-            // If we found an engine association within the .uproject, query the registry for the engine directory.
-            if (engineAssociationMatch.Success)
+            dynamic projectJson = JObject.Parse(uproject);
+            dynamic assocation = projectJson.EngineAssociation;
+            engineAssociation = assocation;
+
+            Console.WriteLine("Engine Association: " + engineAssociation);
+
+            // If the engine association is empty then climb the parent directories of the project looking for the "Engine" and Build.version.
+            if (string.IsNullOrEmpty(engineAssociation))
             {
-                string engineAssociation = engineAssociationMatch.Value;
-                Console.WriteLine("Engine Association: " + engineAssociation);
-
+                DirectoryInfo currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                while (currentDir.Parent != null && string.IsNullOrEmpty(unrealEngine))
+                {
+                    currentDir = currentDir.Parent;
+                    unrealEngine = currentDir.GetDirectories().Where(d => d.Name == "Engine" && File.Exists(Path.Combine(d.FullName, @"Build\Build.version"))).Select(d => d.Parent.FullName).FirstOrDefault();
+                }
+            }
+            else if (Directory.Exists(Path.Combine(Path.GetDirectoryName(projectFile), engineAssociation))) // If the engine association is a path then use that.
+            {
+                unrealEngine = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), engineAssociation));
+            }
+            else
+            {
+                // Finally check the registry for the path using the engine association as the key.
                 string unrealEngineBuildKey = "HKEY_CURRENT_USER\\Software\\Epic Games\\Unreal Engine\\Builds";
                 var unrealEngineValue = Registry.GetValue(unrealEngineBuildKey, engineAssociation, "");
 
@@ -113,16 +129,6 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 }
             }
 
-            if(string.IsNullOrEmpty(unrealEngine)) // If we couldn't find the UnrealEngine via engine association. Climb the parent directories of the project looking for the "Engine" and Build.version.
-            {
-                DirectoryInfo currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                while (currentDir.Parent != null && string.IsNullOrEmpty(unrealEngine))
-                {
-                    currentDir = currentDir.Parent;
-                    unrealEngine = currentDir.GetDirectories().Where(d => d.Name == "Engine" && File.Exists(Path.Combine(d.FullName, @"Build\Build.version"))).Select(d => d.Parent.FullName).FirstOrDefault();
-                }
-            }
-
             if (string.IsNullOrEmpty(unrealEngine))
             {
                 Console.Error.WriteLine("Could not find the Unreal Engine. Please associate your '.uproject' with an engine version or ensure this game project is nested within an engine build.");
@@ -132,6 +138,8 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
             {
                 Console.WriteLine("Engine is at: " + unrealEngine);
             }
+
+            return;
 
             string runUATBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\RunUAT.bat");
             string buildBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\Build.bat");
