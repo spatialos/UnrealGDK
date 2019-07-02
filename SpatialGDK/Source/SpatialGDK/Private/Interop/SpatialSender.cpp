@@ -367,33 +367,39 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 	Worker_RequestId RequestId = Connection->SendCreateEntityRequest(MoveTemp(Components), nullptr);
 
 	CreateEntityDelegate OnCreateWorkerEntityResponse;
-	OnCreateWorkerEntityResponse.BindLambda([this, AttemptCounter](const Worker_CreateEntityResponseOp& Op)
+	OnCreateWorkerEntityResponse.BindLambda([WeakSender = TWeakObjectPtr<USpatialSender>(this), AttemptCounter](const Worker_CreateEntityResponseOp& Op)
 	{
+		if (!WeakSender.IsValid())
+		{
+			return;
+		}
+		USpatialSender* Sender = WeakSender.Get();
+
 		if (Op.status_code == WORKER_STATUS_CODE_SUCCESS)
 		{
+			Sender->NetDriver->WorkerEntityId = Op.entity_id;
 			return;
 		}
 
 		if (Op.status_code != WORKER_STATUS_CODE_TIMEOUT)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request failed: \"%s\""),
+			UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request failed: \"%s\""),
 				UTF8_TO_TCHAR(Op.message));
 			return;
 		}
 
 		if (AttemptCounter == SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
 		{
-			UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
+			UE_LOG(LogSpatialSender, Error, TEXT("Worker entity creation request timed out too many times. (%u attempts)"),
 				SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
 			return;
 		}
 
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Worker entity creation request timed out and will retry."));
+		UE_LOG(LogSpatialSender, Warning, TEXT("Worker entity creation request timed out and will retry."));
 		FTimerHandle RetryTimer;
-		TWeakObjectPtr<USpatialSender> WeakThis(this);
-		TimerManager->SetTimer(RetryTimer, [WeakThis, AttemptCounter]()
+		Sender->TimerManager->SetTimer(RetryTimer, [WeakSender, AttemptCounter]()
 		{
-			if (USpatialSender* Sender = WeakThis.Get())
+			if (USpatialSender* Sender = WeakSender.Get())
 			{
 				Sender->CreateServerWorkerEntity(AttemptCounter + 1);
 			}
