@@ -54,7 +54,6 @@ public:
 	// Begin UObject Interface
 	virtual void BeginDestroy() override;
 	virtual void PostInitProperties() override;
-	virtual void FinishDestroy() override;
 	// End UObject Interface
 
 	// Begin FExec Interface

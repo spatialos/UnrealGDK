@@ -154,27 +154,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	return true;
 }
 
-void USpatialNetDriver::PostInitProperties()
-{
-	Super::PostInitProperties();
-
-	if (!HasAnyFlags(RF_ClassDefaultObject))
-	{
-		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
-		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
-	}
-}
-
-void USpatialNetDriver::FinishDestroy()
-{
-	// Ensure our deployment started delegate is removed when the net driver is shut down.
-#if WITH_EDITOR
-	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
-#endif
-	Super::FinishDestroy();
-}
-
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 {
 	USpatialGameInstance* GameInstance = nullptr;
@@ -578,6 +557,12 @@ void USpatialNetDriver::BeginDestroy()
 	{
 		Connection->SendDeleteEntityRequest(WorkerEntityId);
 	}
+
+	// Ensure our deployment started delegate is removed when the net driver is shut down.
+#if WITH_EDITOR
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+#endif
 }
 
 void USpatialNetDriver::PostInitProperties()
