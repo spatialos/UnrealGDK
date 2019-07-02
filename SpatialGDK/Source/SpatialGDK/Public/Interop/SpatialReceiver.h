@@ -243,5 +243,5 @@ private:
 	// lifecycle logic (Heartbeat component updates, disconnection logic).
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 
-	TMap<TPair<Worker_EntityId, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
+	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
 };
