@@ -6,16 +6,27 @@
 
 You must generate schema when you add or change any [replicated properties (Unreal documentation)](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties) or [RPCs (Unreal documentation)](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/RPCs) that you want to deploy to SpatialOS.
 
-> Whenever you generate schema, the GDK creates schema for you, for classes with replicated properties or RPCs. It stores shema in your project's [`SchemaDatabase`]({{urlRoot}}/content/glossary#schemadatabase) file. If a class does not have replicated properties or RPCs, then the GDK does not generate schema for it.
-
 ## How to generate schema
 
-There are three ways to generate schema for your project: two [within the Unreal Editor](#generating-schema-within-the-unreal-editor), and one [from the command line](#generating-schema-via-the-command-line).
+There are three ways to generate schema for your project: two that use a full scan (one within the Unreal Editor, and one via the command line) and one that is iterative (within the Unreal Editor).
+
+For large projects, the full scan methods are significantly slower than the iterative method.
+
+See the table below for when to use each method.
+
+| Situation | Method to use |
+|---|---|
+| Either: <ul><li>you haven't generated any schema for your project, or</li><li>you've added or edited a class with replicated properties or RPCs that is not currently loaded by the Editor</li></ul> | Full scan within the Unreal Editor or via the command line |
+| You've added or edited a class with replicated properties or RPCs that is currently loaded by the Editor | Iterative within the Unreal Editor |
+
+> **Note:** Whenever you generate schema, the GDK creates schema for you, for classes with replicated properties or RPCs. It stores shema in your project's [`SchemaDatabase`]({{urlRoot}}/content/glossary#schemadatabase) file. 
+> <br><br>
+> If a class does not have replicated properties or RPCs, then the GDK does not generate schema for it.
 
 ### Generating schema within the Unreal Editor
-Within the Unreal Editor, you can generate schema using a full scan, or generate schema iteratively. For information on when to use each method, see [Which method to use](#which-method-to-use).
+Within the Unreal Editor, you can generate schema using a full scan, or generate schema iteratively. For information on when to use each method, see [How to generate schema](#how-to-generate-schema).
 
-* **Full Scan** 
+* **Full scan** 
 
     To generate schema for all classes in your project that have replicated properties or RPCs:<br/>
 
@@ -35,7 +46,7 @@ Within the Unreal Editor, you can generate schema using a full scan, or generate
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/>
 
 ### Generating schema via the command line
-You can generate schema via the command line using an Unreal commandlet. This method uses a full scan (see [Which method to use](#which-method-to-use)). It's useful as part of an automated build system.
+You can generate schema via the command line using an Unreal commandlet. This method uses a full scan (see [How to generate schema](#how-to-generate-schema)). It's useful as part of an automated build system.
 
 To generate schema via the command line, run the following command:
 
@@ -46,17 +57,6 @@ To generate schema via the command line, run the following command:
 This command generates schema using a full scan for all classes that have replicated properties or RPCs, and generates individual [snapshots]({{urlRoot}}/content/glossary#snapshot) (`<MapName>.snapshot`) for each map. Any specified map paths that end in `/` are interpreted as a directory, and snapshots are generated for each .umap found under these paths.
 
 As the GDK automatically generates all the schema you need, you do not have to write or edit schema manually when using the GDK.
-
-## Which method to use
-
-Select **Schema (Full Scan)** or generate schema via the command line if you have: 
-
-* not generated any schema for your project.
-* added or edited a class with replicated properties or RPCs that is not currently loaded by the Editor.
-
-Select **Schema** (this is the iterative method) if you have:
-
-* added or edited a class with replicated properties or RPCs that is currently loaded by the Editor.
 
 ## How to delete schema
 
@@ -75,4 +75,4 @@ This means that if you have a class that only exists on one user's machine (for 
 To prevent this, commit newly created or modified classes to source control alongside the `SchemaDatabase`.
 
 <br/>------------<br/>
-_2019-05-31 Page updated with editorial review_
+_2019-07-02 Page updated with editorial review_
