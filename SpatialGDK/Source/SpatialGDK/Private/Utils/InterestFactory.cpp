@@ -134,15 +134,15 @@ Interest InterestFactory::CreateActorInterest() const
 {
 	Interest NewInterest;
 
-	QueryConstraint DefinedConstraints = CreateSystemDefinedConstraints();
+	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
 
-	if (!DefinedConstraints.IsValid())
+	if (!SystemConstraints.IsValid())
 	{
 		return NewInterest;
 	}
 
 	Query NewQuery;
-	NewQuery.Constraint = DefinedConstraints;
+	NewQuery.Constraint = SystemConstraints;
 	// TODO: Make result type handle components certain workers shouldn't see
 	// e.g. Handover, OwnerOnly, etc.
 	NewQuery.FullSnapshotResult = true;
@@ -158,11 +158,11 @@ Interest InterestFactory::CreateActorInterest() const
 
 Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 {
-	QueryConstraint DefinedConstraints = CreateSystemDefinedConstraints();
+	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
 
 	// Servers only need the defined constraints
 	Query ServerQuery;
-	ServerQuery.Constraint = DefinedConstraints;
+	ServerQuery.Constraint = SystemConstraints;
 	ServerQuery.FullSnapshotResult = true;
 
 	ComponentInterest ServerComponentInterest;
@@ -173,9 +173,9 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 
 	QueryConstraint ClientConstraint;
 
-	if (DefinedConstraints.IsValid())
+	if (SystemConstraints.IsValid())
 	{
-		ClientConstraint.AndConstraint.Add(DefinedConstraints);
+		ClientConstraint.AndConstraint.Add(SystemConstraints);
 	}
 
 	if (LevelConstraints.IsValid())
@@ -194,7 +194,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 
 	Interest NewInterest;
 	// Server Interest
-	if (DefinedConstraints.IsValid() && GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
+	if (SystemConstraints.IsValid() && GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
 	{
 		NewInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, ServerComponentInterest);
 	}
