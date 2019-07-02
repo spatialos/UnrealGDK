@@ -576,6 +576,23 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
+	// Cleanup pending add components if any exist.
+	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
+	{
+		// If we have any pending subobjects on the channel
+		if (ActorChannel->PendingDynamicSubobjects.Num() > 0)
+		{
+			// Then iterate through all pending subobjects and remove entries relating to this entity.
+			for (const auto& Pair : PendingDynamicSubobjectComponents)
+			{
+				if (Pair.Key.Key == EntityId)
+				{
+					PendingDynamicSubobjectComponents.Remove(Pair.Key);
+				}
+			}
+		}
+	}
+
 	// Actor already deleted (this worker was most likely authoritative over it and deleted it earlier).
 	if (Actor == nullptr || Actor->IsPendingKill())
 	{
