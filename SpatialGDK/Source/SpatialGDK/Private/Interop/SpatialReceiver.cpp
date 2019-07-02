@@ -948,7 +948,7 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 			return;
 		}
 
-		TPair<Worker_EntityId_Key, Worker_ComponentId> EntityComponentPair = MakeTuple(EntityId, ComponentId);
+		TPair<Worker_EntityId_Key, Worker_ComponentId> EntityComponentPair = MakeTuple(static_cast<Worker_EntityId_Key>(EntityId), ComponentId);
 
 		PendingAddComponentWrapper& AddComponent = PendingDynamicSubobjectComponents[EntityComponentPair];
 		ApplyComponentData(Subobject, NetDriver->GetActorChannelByEntityId(EntityId), *AddComponent.Data->ComponentData);
