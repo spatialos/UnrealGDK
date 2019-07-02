@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Started using the [schema_compiler tool](https://docs.improbable.io/reference/13.8/shared/schema/introduction#using-the-schema-compiler-directly) to generate [schema descriptors](https://docs.improbable.io/reference/13.8/shared/flexible-project-layout/build-process/schema-descriptor-build-process#schema-descriptor-introduction) rather than relying on 'spatial local launch' to do this.
 - Added runtime option to pack unreliable RPCs from the same frame in a single component update to save bandwidth - bPackUnreliableRPCs.
 - Changed Interest so that NetCullDistanceSquared is used to define the distance from a player that the actor type is *interesting to* the player. This replaces CheckoutRadius which defined the distance that an actor is *interested in* other types. Requires engine update to remove the CheckoutRadius property which is no longer used.
+- Added ActorInterestQueryComponent that can be used to define interest queries that are more complex than a radius around the player position.
 - Enabled new Development Authentication Flow
 - Added new "worker" entities which are created for each server worker in a deployment so they correctly receive interest in the global state manager.
 - Added support for spawning actors with ACLs configured for offloading using actor groups.
