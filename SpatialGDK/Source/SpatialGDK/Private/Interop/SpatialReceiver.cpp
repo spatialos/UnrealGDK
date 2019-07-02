@@ -1054,9 +1054,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		case SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID:
 		{
 			Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
-			FString Name = GetStringFromSchema(Payload, 1);
-			float Value = Schema_GetFloat(Payload, 2);
-			NetDriver->SpatialMetrics->SpatialModifySetting(Name, Value);
+			NetDriver->SpatialMetrics->OnModifySettingCommand(Payload);
 			break;
 		}
 		default:

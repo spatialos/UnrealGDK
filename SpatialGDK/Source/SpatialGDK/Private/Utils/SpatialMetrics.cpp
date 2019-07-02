@@ -200,8 +200,6 @@ void USpatialMetrics::OnStopRPCMetricsCommand()
 
 void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 {
-	UE_LOG(LogTemp, Log, TEXT("SpatialModifySetting: %s %f"), *Name, Value);
-
 	if (!NetDriver->IsServer())
 	{
 		FUnrealObjectRef PCObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Cast<APlayerController>(NetDriver->GetSpatialOSNetConnection()->OwningActor));
@@ -226,8 +224,45 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("Actually modify setting: %s %f"), *Name, Value);
+		bool bKnowSetting = true;
+		if (Name == TEXT("ActorReplicationRateLimit"))
+		{
+			GetMutableDefault<USpatialGDKSettings>()->ActorReplicationRateLimit = static_cast<uint32>(Value);
+		}
+		else if (Name == TEXT("EntityCreationRateLimit"))
+		{
+			GetMutableDefault<USpatialGDKSettings>()->EntityCreationRateLimit = static_cast<uint32>(Value);
+		}
+		else if (Name == TEXT("PositionUpdateFrequency"))
+		{
+			GetMutableDefault<USpatialGDKSettings>()->PositionUpdateFrequency = Value;
+		}
+		else if (Name == TEXT("PositionDistanceThreshold"))
+		{
+			GetMutableDefault<USpatialGDKSettings>()->PositionDistanceThreshold = Value;
+		}
+		else
+		{
+			bKnowSetting = false;
+		}
+
+		if (bKnowSetting)
+		{
+			UE_LOG(LogSpatialMetrics, Log, TEXT("SpatialModifySetting: Spatial GDK setting %s set to %f"), *Name, Value);
+		}
+		else
+		{
+			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialModifySetting: Invalid setting %s"), *Name);
+		}
 	}
+}
+
+void USpatialMetrics::OnModifySettingCommand(Schema_Object* CommandPayload)
+{
+	FString Name = SpatialGDK::GetStringFromSchema(CommandPayload, SpatialConstants::MODIFY_SETTING_PAYLOAD_NAME_ID);
+	float Value = Schema_GetFloat(CommandPayload, SpatialConstants::MODIFY_SETTING_PAYLOAD_VALUE_ID);
+
+	SpatialModifySetting(Name, Value);
 }
 
 void USpatialMetrics::TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize)
