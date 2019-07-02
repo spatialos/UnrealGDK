@@ -76,5 +76,6 @@ To work around the issue:
 
     Once you’ve finished debugging your game and want to deploy it locally or in the cloud, make sure you set these values back to their defaults so that failing worker instances are correctly disconnected from the SpatialOS Runtime.
 
+<br/>
 <br/>------------<br/>
-_2019-06-10 Page updated with limited editorial review: added Visual Studio setup guidance, local debugging guidance_
+_2019-07-02 Page updated with limited editorial review: added debug workaround_
