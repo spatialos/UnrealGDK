@@ -51,6 +51,9 @@ To launch a local deployment:
 3. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Your game is ready to play when you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
    ![Start]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Start**_</br>
+
+    <%(#Expandable title="Debugging using breakpoints?")%>Due to a [known issue](https://github.com/spatialos/UnrealGDK/issues/940) with the GDK, you need to follow [these steps]({{urlRoot}}/content/troubleshooting#q-my-worker-instances-are-being-disconnected-from-the-spatialos-runtime-unexpectedly-while-debugging-locally) before debugging your game using C++ or Blueprint breakpoints.<%(/Expandable)%>
+
 4. On the Editor toolbar, open the **Play** drop-down menu.
 5. Under **Multiplayer Options**, set the number of players to **2** and ensure that checkboxes next to **Run Dedicated Server** and **Spatial Networking** are checked. Checking **Spatial Networking** makes deployments run using SpatialOS networking as opposed to native Unreal networking. If a checkbox is unchecked, select the checkbox to enable it.<br/>
    ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>
@@ -67,7 +70,5 @@ To launch a local deployment:
 **> Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment) 
 
 <br/>
-
 <br/>------------<br/>
-_2019-06-27 Page updated with full editorial review_
-<br/>
+_2019-07-02 Page updated with limited editorial review: added debug workaround_

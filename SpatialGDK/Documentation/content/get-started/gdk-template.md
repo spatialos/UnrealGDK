@@ -107,11 +107,15 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
 
 <%(/Expandable)%>
 
-To launch a local deployment: 
+To launch a local deployment:
 
 1. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
     _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
+
+    > **Want to debug your project?**
+    > 
+    > There is a [known issue](https://github.com/spatialos/UnrealGDK/issues/940) debugging local deployments using C++ or Blueprint breakpoints. For a workaround, follow [these steps]({{urlRoot}}/content/troubleshooting#q-my-worker-instances-are-being-disconnected-from-the-spatialos-runtime-unexpectedly-while-debugging-locally).
 
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
 
@@ -177,8 +181,8 @@ Use the [SpatialOS CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool
 For example:
  
  * `Editor` to build server-workers to run on local machine for testing.
- *  `Linux` to build server-workers to run on SpatialOS cloud servers.
- <!--TODO: Add link to doc on this when it's done  here: https://improbableio.atlassian.net/browse/DOC-361 --!>
+ * `Linux` to build server-workers to run on SpatialOS cloud servers.
+ <!--TODO: Add link to doc on this when it's done here: https://improbableio.atlassian.net/browse/DOC-361 -->
 
 <%(#Expandable title="Build your workers using `BuildProject.bat`")%>
 To build your workers using the BuildProject.bat script: 
@@ -296,7 +300,5 @@ You've successfully set up and launched the Starter Template and the GDK! You ar
 If you have an existing Unreal multiplayer project, follow the detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
 
 <br/>
-
- <br/>------------<br/>
-_2019-06-27 Page updated with limited editorial review_
-<br/>
+<br/>------------<br/>
+_2019-07-02 Page updated with limited editorial review: added debug workaround_
