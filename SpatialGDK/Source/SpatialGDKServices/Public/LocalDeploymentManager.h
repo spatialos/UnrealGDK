@@ -3,13 +3,13 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
+#include "FileCache.h"
 #include "Modules/ModuleManager.h"
 #include "Templates/SharedPointer.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialDeploymentManager, Log, All);
 
-struct FFileChangeData;
-struct FJsonObject;
+class FJsonObject;
 
 class FLocalDeploymentManager
 {
