@@ -22,10 +22,8 @@ struct EditorWorkerController
 		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
 	}
 
-	void InitWorkers(const FString& WorkerType)
+	void InitWorkers()
 	{
-		ReplaceProcesses.Empty();
-
 		// Only issue the worker replace request if there's a chance the load balancer hasn't acknowledged
 		// that the previous session's workers have disconnected. There's no hard `heartbeat` time for this as
 		// it's dependent on multiple factors (fabric load etc.), so this value was landed on after significant
@@ -37,20 +35,26 @@ struct EditorWorkerController
 
 		PIEEndHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &EditorWorkerController::OnPrePIEEnded);
 
-		int32 PlayNumberOfServers;
-		GetDefault<ULevelEditorPlaySettings>()->GetPlayNumberOfServers(PlayNumberOfServers);
+		const ULevelEditorPlaySettings* LevelEditorPlaySettings = GetDefault<ULevelEditorPlaySettings>();
+		const int32 WorkerCount = LevelEditorPlaySettings->GetTotalPIEServerWorkerCount();
+		WorkerIds.SetNum(WorkerCount);
+		ReplaceProcesses.SetNum(WorkerCount);
 
-		WorkerIds.SetNum(PlayNumberOfServers);
-		for (int i = 0; i < PlayNumberOfServers; ++i)
+		int32 WorkerIdIndex = 0;
+		for (const TPair<FName, int32>& WorkerType : LevelEditorPlaySettings->GetPIEServerWorkers())
 		{
-			FString NewWorkerId = WorkerType + FGuid::NewGuid().ToString();
-
-			if (!WorkerIds[i].IsEmpty() && SecondsSinceLastSession < WorkerReplaceThresholdSeconds)
+			for (int i = 0; i < WorkerType.Value; ++i)
 			{
-				ReplaceProcesses.Add(ReplaceWorker(WorkerIds[i], NewWorkerId));
-			}
+				const FString NewWorkerId = WorkerType.Key.ToString() + FGuid::NewGuid().ToString();
 
-			WorkerIds[i] = NewWorkerId;
+				if (!WorkerIds[WorkerIdIndex].IsEmpty() && SecondsSinceLastSession < WorkerReplaceThresholdSeconds)
+				{
+					ReplaceProcesses.Add(ReplaceWorker(WorkerIds[WorkerIdIndex], NewWorkerId));
+				}
+
+				WorkerIds[WorkerIdIndex] = NewWorkerId;
+				WorkerIdIndex++;
+			}
 		}
 	}
 
@@ -93,7 +97,7 @@ static EditorWorkerController WorkerController;
 
 namespace SpatialGDKServices
 {
-void InitWorkers(const FString& WorkerType, bool bConnectAsClient, FString& OutWorkerId)
+void InitWorkers(bool bConnectAsClient, FString& OutWorkerId)
 {
 	const bool bSingleThreadedServer = !bConnectAsClient && (GPlayInEditorID > 0);
 	const int32 FirstServerEditorID = 1;
@@ -101,7 +105,7 @@ void InitWorkers(const FString& WorkerType, bool bConnectAsClient, FString& OutW
 	{
 		if (GPlayInEditorID == FirstServerEditorID)
 		{
-			WorkerController.InitWorkers(WorkerType);
+			WorkerController.InitWorkers();
 		}
 
 		WorkerController.BlockUntilWorkerReady(GPlayInEditorID - 1);
