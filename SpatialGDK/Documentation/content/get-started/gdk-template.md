@@ -88,7 +88,8 @@ _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 <%(#Expandable title="What is Schema?")%>
 
-Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
+Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang by the GDK.</br>
+Select **Schema** from the GDK toolbar and the GDK generates schema files and their contents for you, so you do not have to write or edit schema files manually.
 
 You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
@@ -166,7 +167,9 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 #### Step 2: Build your workers
 
-Note: You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+**Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+
+**Note:** Unreal GDK projects default to using Spatial for networking. However, if the `bSpatialNetworking` option is present in your `DefaultGame.ini` configuration file (located in `<ProjectRoot>\Game\Config` directory), ensure that it is set to `True` (as in, `bSpatialNetworking=True`) to enable networking with Spatial for your cloud deployment.
 
 There are two ways to build your worker assemblies (known as “building workers”):
 
@@ -174,7 +177,12 @@ There are two ways to build your worker assemblies (known as “building workers
 This script automatically builds both the server-workers and client-workers required to run your game in the cloud. It then compresses your workers and saves them as .zip files to the `<ProjectRoot>\spatial\build\assembly\worker` directory. Use this script if you want to build server-workers and client-workers at the same time. <br/><br/>
 
 * Build your workers manually using the command line. </br>
-Use the command line when you want to build your server-workers and client-workers separately, or, if you want to build different worker configurations, for example? Editor, Test, Shipping or Linux. 
+Use the [SpatialOS CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli) command line to build server-workers and client-workers separately, or to use command-line arguments to build different worker configurations for different purposes.</br>
+For example:
+ 
+ * `Editor` to build server-workers to run on local machine for testing.
+ *  `Linux` to build server-workers to run on SpatialOS cloud servers.
+ <!--TODO: Add link to doc on this when it's done  here: https://improbableio.atlassian.net/browse/DOC-361 --!>
 
 <%(#Expandable title="Build your workers using `BuildProject.bat`")%>
 To build your workers using the BuildProject.bat script: 
@@ -208,7 +216,7 @@ If you receive the error `The system cannot find the path specified. Builds fail
 Before launching a cloud deployment, you must upload your sever-worker and client-worker assemblies to the cloud. To do this: 
 
 1. In a terminal window, navigate to your `<ProjectRoot>\spatial\` directory 
-1. Run the following command:  `spatial cloud upload <assembly_name>`
+2. Run the following command:  `spatial cloud upload <assembly_name>`
 
 You must replace `<assembly_name>` with a name for your assembly (for example: `gdktemplateassembly`). 
 
@@ -289,7 +297,10 @@ _Image: The SpatialOS console launch window_
 
 You've successfully set up and launched the Starter Template and the GDK! You are now ready to start developing a game with SpatialOS.
 
-If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
+If you have an existing Unreal multiplayer project, follow the detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
 
-<br/>------<br/>
-_2019-06-10 Page updated with editorial review: added debug workaround_
+<br/>
+
+<br/>------------<br/>
+_2019-07-02 Page updated with limited editorial review_
+<br/>

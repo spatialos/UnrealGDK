@@ -240,7 +240,5 @@ If you haven't already, check out:
 Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/actor-handover) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
 
-
-
 <br/>------</br>
-_2019-04-11 Added Shooter Game as a reference project with limited editorial review._
+_2019-06-27 Added Shooter Game as a reference project with limited editorial review._

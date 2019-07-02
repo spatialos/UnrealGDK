@@ -44,12 +44,17 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 <%(/Expandable)%>
 
-1. In File Explorer, navigate to the `UnrealGDKExampleProject\Game\spatial` directory and open the `spatialos.json` file in a text editor of your choice.
+1. In File Explorer, navigate to the `UnrealGDKExampleProject\spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 1. In the file, replace the `name` field with the project name shown in the Console. This associates your SpatialOS cloud project with your Unreal game, telling SpatialOS which cloud project you are uploading your prepared workers to..
 
 ### Step 2: Build your workers
 
 **Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+
+**Note:** You might need to reset [Spatial networking]({{urlRoot}}/content/toolbars##switching-between-native-unreal-networking-and-spatialos-networking).</br>
+By default, Spatial networking is enabled for Unreal GDK projects, including the Example Project. However, if you have changed the default networking option for this project, you need to reset it to Spatial networking before building workers.</br>
+To check which networking your project is using, look in its `DefaultGame.ini` configuration file (located in the `<ProjectRoot>\Game\Config` directory). If there is a `bSpatialNetworking` option in the file, set it to `True` to enable Spatial networking. 
+If there is no `SpatialNetworking` option, you do not have to do anything, as the project will default to using Spatial networking.
 
 There are two ways to build your worker assemblies (known as “building workers”):
 
@@ -63,7 +68,7 @@ There are two ways to build your worker assemblies (known as “building workers
   Double click BuildProject.bat. This opens a command line window and automatically creates your client and server workers. 
   <%(/Expandable)%>
   
-    <%(#Expandable title="Build your workers  manually using the command line")%>
+  <%(#Expandable title="Build your workers  manually using the command line")%>
   In a terminal window, navigate to the UnrealGDKExampleProject directory.
   Build a server-worker assembly by running the following command: <br/>
 `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject`
@@ -143,4 +148,4 @@ When your deployment has launched, SpatialOS automatically opens the Console in 
 
 
 <br/>------<br/>
-_2019-05-21 Page added with editorial review_
+_2019-06-27 Page edited with editorial review_

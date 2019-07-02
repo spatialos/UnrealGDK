@@ -372,18 +372,23 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td>Xbox One</td>
-    <td class="indev"></td>
+    <td class="roadmap"></td>
     <td>SpatialOS has Xbox One support (<a href="https://improbable.io/blog/spatialos-now-supports-xbox-one-and-playstation-4-development">announcement</a>), but GDK workflows are not yet optimised for development on it.</td>
   </tr>
   <tr>
     <td>PS4</td>
-    <td class="indev"></td>
+    <td class="roadmap"></td>
     <td>SpatialOS has PS4 support (<a href="https://improbable.io/blog/spatialos-now-supports-xbox-one-and-playstation-4-development">announcement</a>), but GDK workflows are not yet optimised for development on it.</td></tr>
   <tr>
-    <td>Mobile</td>
-    <td class="indev"></td>
-    <td></td>
-</tr>
+    <td>iOS</td>
+    <td class="roadmap"></td>
+    <td>iOS support is experimental, with insufficient testing and documentation for stable development.</td>
+  </tr>
+  <tr>
+    <td>Android</td>
+    <td class=""></td>
+    <td>Android support is currently unplanned.</td>
+  </tr>
 
 </table>
 
@@ -394,4 +399,4 @@ The table for multiserver support is coming soon.
 
 
 <br/>------<br/>
-_2019-04-25 Page added with editorial review_
+_2019-06-17 Platform support status updated with editorial review_

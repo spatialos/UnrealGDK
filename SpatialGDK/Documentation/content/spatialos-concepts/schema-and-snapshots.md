@@ -3,11 +3,10 @@
 
 ## Schema
 
-Schema is a set of definitions which represent your game's Actors and subobjects in SpatialOS. Schema is defined in `.schema` files and written in schemalang.
+Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang by the GDK.</br>
+Select **Schema** from the GDK toolbar and the GDK generates schema files and their contents for you, so you do not have to write or edit schema files manually.
 
-When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
-
-SpatialOS uses schema to generate APIs specific to the SpatialOS entity components in your project. You can then use these APIs in your game's [worker types]({{urlRoot}}//content/glossary#spatialos-component) so their instances can interact with [SpatialOS entity components]({{urlRoot}}/content/glossary#spatialos-component).
+SpatialOS uses schema to generate APIs specific to the SpatialOS entity components in your project. You can then use these APIs in your game's [worker types]({{urlRoot}}/content/glossary#worker-types) so their instances can interact with [SpatialOS entity components]({{urlRoot}}/content/glossary#spatialos-component).
 
 You can find out how to use schema in the [schema reference documentation]({{urlRoot}}/content/how-to-use-schema)
 
@@ -17,5 +16,8 @@ A snapshot is a representation of the state of a [SpatialOS world]({{urlRoot}}/c
 
 You can find out how to use snapshots in the [snapshot reference documentation]({{urlRoot}}/content/how-to-use-snapshots).
 
-</br>------</br>
-_2019-05-21 Page added with editorial review_
+<br/>
+
+<br/>------------<br/>
+_2019-06-27 Page updated with limited editorial review_
+<br/>	<br/>
