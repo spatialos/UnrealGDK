@@ -190,7 +190,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	ComponentInterest ClientComponentInterest;
 	ClientComponentInterest.Queries.Add(ClientQuery);
 
-	AddUserDefinedQueries(ClientComponentInterest.Queries);
+	AddUserDefinedQueries(LevelConstraints, ClientComponentInterest.Queries);
 
 	Interest NewInterest;
 	// Server Interest
@@ -207,7 +207,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 	return NewInterest;
 }
 
-void InterestFactory::AddUserDefinedQueries(TArray<SpatialGDK::Query>& OutQueries) const
+void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
 	check(Actor);
 	check(NetDriver && NetDriver->ClassInfoManager && NetDriver->ClassInfoManager->SchemaDatabase);
@@ -217,7 +217,7 @@ void InterestFactory::AddUserDefinedQueries(TArray<SpatialGDK::Query>& OutQuerie
 	Actor->GetComponents<UActorInterestQueryComponent>(ActorInterestComponents);
 	for (const auto* ActorInterestComponent : ActorInterestComponents)
 	{
-		Query ActorInterestQuery = ActorInterestComponent->CreateQuery(*SchemaDatabase);
+		Query ActorInterestQuery = ActorInterestComponent->CreateQuery(*SchemaDatabase, LevelConstraints);
 		OutQueries.Add(ActorInterestQuery);
 	}
 }

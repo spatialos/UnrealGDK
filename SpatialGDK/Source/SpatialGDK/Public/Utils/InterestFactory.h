@@ -34,7 +34,7 @@ private:
 	// Defined Constraint AND Level Constraint
 	Interest CreatePlayerOwnedActorInterest() const;
 
-	void AddUserDefinedQueries(TArray<SpatialGDK::Query>& OutQueries) const;
+	void AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
 
 	// Checkout Constraint OR AlwaysInterested Constraint
 	QueryConstraint CreateSystemDefinedConstraints() const;
