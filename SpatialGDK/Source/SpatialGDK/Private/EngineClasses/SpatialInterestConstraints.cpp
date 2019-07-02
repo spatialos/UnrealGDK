@@ -74,12 +74,12 @@ void UAndConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, Spa
 
 void USphereConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	OutConstraint.SphereConstraint = SpatialGDK::SphereConstraint{ SpatialGDK::Coordinates::FromFVector(Center), Radius };
+	OutConstraint.SphereConstraint = SpatialGDK::SphereConstraint{ SpatialGDK::Coordinates::FromFVector(Center), static_cast<double>(Radius) / 100.0 };
 }
 
 void UCylinderConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	OutConstraint.CylinderConstraint = SpatialGDK::CylinderConstraint{ SpatialGDK::Coordinates::FromFVector(Center), Radius };
+	OutConstraint.CylinderConstraint = SpatialGDK::CylinderConstraint{ SpatialGDK::Coordinates::FromFVector(Center), static_cast<double>(Radius) / 100.0 };
 }
 
 void UBoxConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
@@ -89,12 +89,12 @@ void UBoxConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, Spa
 
 void URelativeSphereConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	OutConstraint.RelativeSphereConstraint = SpatialGDK::RelativeSphereConstraint{ Radius };
+	OutConstraint.RelativeSphereConstraint = SpatialGDK::RelativeSphereConstraint{ static_cast<double>(Radius) / 100.0 };
 }
 
 void URelativeCylinderConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	OutConstraint.RelativeCylinderConstraint = SpatialGDK::RelativeCylinderConstraint{ Radius };
+	OutConstraint.RelativeCylinderConstraint = SpatialGDK::RelativeCylinderConstraint{ static_cast<double>(Radius) / 100.0 };
 }
 
 void URelativeBoxConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
@@ -104,9 +104,8 @@ void URelativeBoxConstraint::CreateConstraint(const USchemaDatabase& SchemaDatab
 
 void UCheckoutRadiusConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	const double RadiusMeters = static_cast<double>(Radius) / 100.0;
 	SpatialGDK::QueryConstraint RadiusConstraint;
-	RadiusConstraint.RelativeCylinderConstraint = SpatialGDK::RelativeCylinderConstraint{ RadiusMeters };
+	RadiusConstraint.RelativeCylinderConstraint = SpatialGDK::RelativeCylinderConstraint{ static_cast<double>(Radius) / 100.0 };
 
 	SpatialGDK::QueryConstraint ActorClassConstraints;
 	constexpr bool bIncludeDerivedTypes = true;
