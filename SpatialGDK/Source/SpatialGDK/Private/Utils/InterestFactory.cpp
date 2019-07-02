@@ -5,7 +5,9 @@
 #include "Engine/World.h"
 #include "Engine/Classes/GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
+#include "UObject/UObjectIterator.h"
 
+#include "EngineClasses/Components/ActorInterestQueryComponent.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -87,17 +89,17 @@ InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpa
 {
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData()
+Worker_ComponentData InterestFactory::CreateInterestData() const
 {
 	return CreateInterest().CreateInterestData();
 }
 
-Worker_ComponentUpdate InterestFactory::CreateInterestUpdate()
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 {
 	return CreateInterest().CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateInterest()
+Interest InterestFactory::CreateInterest() const
 {
 	if (!GetDefault<USpatialGDKSettings>()->bUsingQBI)
 	{
@@ -128,7 +130,7 @@ Interest InterestFactory::CreateInterest()
 	}
 }
 
-Interest InterestFactory::CreateActorInterest()
+Interest InterestFactory::CreateActorInterest() const
 {
 	Interest NewInterest;
 
@@ -154,7 +156,7 @@ Interest InterestFactory::CreateActorInterest()
 	return NewInterest;
 }
 
-Interest InterestFactory::CreatePlayerOwnedActorInterest()
+Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 {
 	QueryConstraint DefinedConstraints = CreateSystemDefinedConstraints();
 
@@ -188,6 +190,8 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 	ComponentInterest ClientComponentInterest;
 	ClientComponentInterest.Queries.Add(ClientQuery);
 
+	AddUserDefinedQueries(ClientComponentInterest.Queries);
+
 	Interest NewInterest;
 	// Server Interest
 	if (DefinedConstraints.IsValid() && GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
@@ -203,7 +207,22 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 	return NewInterest;
 }
 
-QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
+void InterestFactory::AddUserDefinedQueries(TArray<SpatialGDK::Query>& OutQueries) const
+{
+	check(Actor);
+	check(NetDriver && NetDriver->ClassInfoManager && NetDriver->ClassInfoManager->SchemaDatabase);
+	const USchemaDatabase* SchemaDatabase = NetDriver->ClassInfoManager->SchemaDatabase;
+
+	TArray<UActorInterestQueryComponent*> ActorInterestComponents;
+	Actor->GetComponents<UActorInterestQueryComponent>(ActorInterestComponents);
+	for (const auto* ActorInterestComponent : ActorInterestComponents)
+	{
+		Query ActorInterestQuery = ActorInterestComponent->CreateQuery(*SchemaDatabase);
+		OutQueries.Add(ActorInterestQuery);
+	}
+}
+
+QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const
 {
 	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraints();
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint();
@@ -229,7 +248,7 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 	return SystemDefinedConstraints;
 }
 
-QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
+QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 {
 	// Checkout Radius constraints are defined by the ClientInterestDistance property on actors.
 	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
@@ -271,7 +290,7 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 	return CheckoutRadiusConstraints;
 }
 
-QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint()
+QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint() const
 {
 	QueryConstraint AlwaysInterestedConstraint;
 
@@ -300,7 +319,7 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint()
 }
 
 
-QueryConstraint InterestFactory::CreateSingletonConstraint()
+QueryConstraint InterestFactory::CreateSingletonConstraint() const
 {
 	QueryConstraint SingletonConstraint;
 
@@ -318,7 +337,7 @@ QueryConstraint InterestFactory::CreateSingletonConstraint()
 	return SingletonConstraint;
 }
 
-void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint)
+void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const
 {
 	UObject* ObjectOfInterest = Property->GetObjectPropertyValue(Data);
 
@@ -339,7 +358,7 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 	OutConstraint.OrConstraint.Add(EntityIdConstraint);
 }
 
-void InterestFactory::AddTypeHierarchyToConstraint(const UClass* BaseType, QueryConstraint& OutConstraint)
+void InterestFactory::AddTypeHierarchyToConstraint(const UClass* BaseType, QueryConstraint& OutConstraint) const
 {
 	const UClass* AuthoritativeBaseType = BaseType->GetAuthoritativeClass();
 
@@ -363,7 +382,7 @@ void InterestFactory::AddTypeHierarchyToConstraint(const UClass* BaseType, Query
 	check(OutConstraint.IsValid());
 }
 
-QueryConstraint InterestFactory::CreateLevelConstraints()
+QueryConstraint InterestFactory::CreateLevelConstraints() const
 {
 	QueryConstraint LevelConstraint;
 
