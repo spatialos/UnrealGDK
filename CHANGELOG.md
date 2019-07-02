@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### New Known Issues:
 
 ### Features:
-- Sahil's vision has been implemented.
+- Automatic local deployment starting. Local deployments are now started automatically for you when pressing the 'Play' button. Local deployment start time has been reduced to around 5.5s~. If your schema has changed during a deployment, the next time you press play the local deployment will be automatically restarted.
 
 ### Bug fixes:
 - Disconnected players no longer remain on the server until they time out if the client was shut down manually.
