@@ -90,13 +90,12 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
             Console.WriteLine("Finding Unreal Engine build.");
             string uproject = File.ReadAllText(projectFile, Encoding.UTF8);
 
-            string unrealEngine = "";
-            string engineAssociation = "";
-
             dynamic projectJson = JObject.Parse(uproject);
-            engineAssociation = projectJson.EngineAssociation;
+            string engineAssociation = engineAssociation = projectJson.EngineAssociation;
 
             Console.WriteLine("Engine Association: " + engineAssociation);
+
+            string unrealEngine = "";
 
             // If the engine association is empty then climb the parent directories of the project looking for the Unreal Engine root directory.
             if (string.IsNullOrEmpty(engineAssociation))
