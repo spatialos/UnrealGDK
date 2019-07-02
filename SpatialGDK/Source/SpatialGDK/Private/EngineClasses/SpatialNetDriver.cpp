@@ -128,7 +128,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 
-	// Just connect if a deployment is running.
+	// Wait for a running local deployment before connecting. If the deployment has already started then just connect.
 	if (!LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping() || LocalDeploymentManager->IsDeploymentStarting())
 	{
 		UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Waiting for local SpatialOS deployment to start before connecting..."));

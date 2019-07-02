@@ -4,12 +4,12 @@
 #include "Async/Future.h"
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
-#include "Serialization/JsonWriter.h"
 #include "Templates/SharedPointer.h"
-#include "Widgets/Notifications/SNotificationList.h"
-#include "FileCache.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialDeploymentManager, Log, All);
+
+struct FFileChangeData;
+struct FJsonObject;
 
 class FLocalDeploymentManager
 {
@@ -59,8 +59,6 @@ private:
 
 	bool bStartingSpatialService;
 	bool bStoppingSpatialService;
-
-	TWeakPtr<SNotificationItem> TaskNotificationPtr;
 
 	FDateTime LastSpatialServiceCheck;
 	FDateTime LastDeploymentCheck;

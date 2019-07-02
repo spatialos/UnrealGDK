@@ -568,7 +568,14 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible()
 {
-	return (LocalDeploymentManager->IsSpatialServiceRunning() && !LocalDeploymentManager->IsLocalDeploymentRunning()) || !LocalDeploymentManager->IsSpatialServiceRunning();
+	if (LocalDeploymentManager->IsSpatialServiceRunning())
+	{
+		return !LocalDeploymentManager->IsLocalDeploymentRunning();
+	}
+	else
+	{
+		return true;
+	}
 }
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute()

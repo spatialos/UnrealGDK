@@ -15,8 +15,8 @@ public class SpatialGDKServices : ModuleRules
 				"CoreUObject",
 				"EngineSettings",
 				"UnrealEd",
-                "Json",
-                "JsonUtilities"
+				"Json",
+				"JsonUtilities"
             });
 	}
 }
