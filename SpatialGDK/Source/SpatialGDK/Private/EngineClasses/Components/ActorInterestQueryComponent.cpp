@@ -10,23 +10,34 @@ UActorInterestQueryComponent::UActorInterestQueryComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-SpatialGDK::Query UActorInterestQueryComponent::CreateQuery(const USchemaDatabase& SchemaDatabase, const SpatialGDK::QueryConstraint& AdditionalConstraints) const
+void UActorInterestQueryComponent::CreateQueries(const USchemaDatabase& SchemaDatabase, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
-	SpatialGDK::Query InterestQuery{};
-	if (AdditionalConstraints.IsValid())
+	for (const auto& QueryData : Queries)
 	{
-		SpatialGDK::QueryConstraint ComponentConstraints;
-		Constraint->CreateConstraint(SchemaDatabase, ComponentConstraints);
+		if (!QueryData.Constraint)
+		{
+			continue;
+		}
+
+		SpatialGDK::Query NewQuery{};
+		if (AdditionalConstraints.IsValid())
+		{
+			SpatialGDK::QueryConstraint ComponentConstraints;
+			QueryData.Constraint->CreateConstraint(SchemaDatabase, ComponentConstraints);
 		
-		InterestQuery.Constraint.AndConstraint.Add(ComponentConstraints);
-		InterestQuery.Constraint.AndConstraint.Add(AdditionalConstraints);
-	}
-	else
-	{
-		Constraint->CreateConstraint(SchemaDatabase, InterestQuery.Constraint);
+			NewQuery.Constraint.AndConstraint.Add(ComponentConstraints);
+			NewQuery.Constraint.AndConstraint.Add(AdditionalConstraints);
+		}
+		else
+		{
+			QueryData.Constraint->CreateConstraint(SchemaDatabase, NewQuery.Constraint);
+		}
+		NewQuery.Frequency = QueryData.Frequency;
+
+		if (NewQuery.Constraint.IsValid())
+		{
+			OutQueries.Push(NewQuery);
+		}
 	}
 
-	InterestQuery.Frequency = Frequency;
-
-	return InterestQuery;
 }

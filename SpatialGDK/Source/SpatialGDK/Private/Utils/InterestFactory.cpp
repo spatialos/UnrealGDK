@@ -35,8 +35,13 @@ void GatherClientInterestDistances()
 	TMap<UClass*, float> DiscoveredInterestDistancesSquared;
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly | SPATIALCLASS_NotSpatialType))
 		{
+			continue;
+		}
+		if (It->HasAnyClassFlags(CLASS_NewerVersionExists))
+		{
+			// This skips classes generated for hot reload etc (i.e. REINST_, SKEL_, TRASHCLASS_) that could crash GetAuthoritativeClass later.
 			continue;
 		}
 		if (!It->IsChildOf<AActor>())
@@ -215,10 +220,13 @@ void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstrai
 
 	TArray<UActorInterestQueryComponent*> ActorInterestComponents;
 	Actor->GetComponents<UActorInterestQueryComponent>(ActorInterestComponents);
-	for (const auto* ActorInterestComponent : ActorInterestComponents)
+	if (ActorInterestComponents.Num() == 1)
 	{
-		Query ActorInterestQuery = ActorInterestComponent->CreateQuery(*SchemaDatabase, LevelConstraints);
-		OutQueries.Add(ActorInterestQuery);
+		ActorInterestComponents[0]->CreateQueries(*SchemaDatabase, LevelConstraints, OutQueries);
+	}
+	else if (ActorInterestComponents.Num() > 1)
+	{
+		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestQueryComponent"), *Actor->GetPathName());
 	}
 }
 
@@ -250,10 +258,25 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const
 
 QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 {
-	// Checkout Radius constraints are defined by the ClientInterestDistance property on actors.
+	// If the actor has a component to specify interest and that indicates that we shouldn't generate
+	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
+	// there is at most one ActorInterestQueryComponent.
+	TArray<UActorInterestQueryComponent*> ActorInterestComponents;
+	Actor->GetComponents<UActorInterestQueryComponent>(ActorInterestComponents);
+	if (ActorInterestComponents.Num() == 1)
+	{
+		const UActorInterestQueryComponent* ActorInterest = ActorInterestComponents[0];
+		check(ActorInterest);
+		if (!ActorInterest->bUseNetCullDistanceForCheckoutRadius)
+		{
+			return QueryConstraint{};
+		}
+	}
+
+	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
 	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
-	//   - ClientInterestDistance on AActor is used to define the default checkout radius with no other constraints.
-	//   - ClientInterestDistance on other actor types is used to define additional constraints if needed.
+	//   - NetCullDistanceSquared on AActor is used to define the default checkout radius with no other constraints.
+	//   - NetCullDistanceSquared on other actor types is used to define additional constraints if needed.
 	//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
 	//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
 	//   - Other than the default from AActor, all radius constraints also include Component constraints to
@@ -282,9 +305,11 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 
 		QueryConstraint ActorTypeConstraint;
 		AddTypeHierarchyToConstraint(InterestDistanceSquared.Key, ActorTypeConstraint);
-		CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
-
-		CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
+		if (ActorTypeConstraint.IsValid())
+		{
+			CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
+			CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
+		}
 	}
 
 	return CheckoutRadiusConstraints;
@@ -379,7 +404,6 @@ void InterestFactory::AddTypeHierarchyToConstraint(const UClass* BaseType, Query
 			}
 		}
 	}
-	check(OutConstraint.IsValid());
 }
 
 QueryConstraint InterestFactory::CreateLevelConstraints() const
