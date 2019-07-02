@@ -101,7 +101,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
             if (string.IsNullOrEmpty(engineAssociation))
             {
                 DirectoryInfo currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                while (currentDir.Parent != null && string.IsNullOrEmpty(unrealEngine))
+                while (currentDir.Parent != null)
                 {
                     currentDir = currentDir.Parent;
                     // This is how Unreal asserts we have a valid root directory for the Unreal Engine. Must contain 'Engine/Binaries' and 'Engine/Build'. (FDesktopPlatformBase::IsValidRootDirectory)
