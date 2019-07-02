@@ -20,7 +20,7 @@ bool USpatialStatics::SpatialOffloadingEnabled()
     return SpatialNetworkingEnabled() && GetDefault<USpatialGDKSettings>()->bEnableOffloading;
 }
 
-bool USpatialStatics::IsAuthoritativeWorkerType(const AActor* Actor)
+bool USpatialStatics::IsActorGroupOwner(const AActor* Actor)
 {
     if (Actor == nullptr)
     {
@@ -49,16 +49,4 @@ bool USpatialStatics::IsAuthoritativeWorkerType(const AActor* Actor)
 
     UActorGroupManager* ActorGroupManager = SpatialNetDriver->ActorGroupManager;
     return ActorGroupManager->GetWorkerTypeForClass(Actor->GetClass()).Compare(World->GetGameInstance()->GetSpatialWorkerType()) == 0;
-}
-
-bool USpatialStatics::IsDefaultWorker(const UObject* WorldContextObject)
-{
-    UWorld* World = WorldContextObject->GetWorld();
-    if (!World)
-    {
-        UE_LOG(LogSpatialStatics, Warning, TEXT("World was nullptr in USpatialStatics::IsDefaultWorker"));
-        return false;
-    }
-
-    return World->GetGameInstance()->GetSpatialWorkerType().Compare(GetDefault<USpatialGDKSettings>()->DefaultWorkerType.WorkerTypeName) == 0;
 }

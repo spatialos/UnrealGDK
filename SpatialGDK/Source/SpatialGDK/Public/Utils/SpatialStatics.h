@@ -31,11 +31,5 @@ public:
      * returns true iff actor group worker association matches the current worker type.
      */
     UFUNCTION(BlueprintPure, Category = "SpatialOS")
-    static bool IsAuthoritativeWorkerType(const AActor* Actor);
-
-    /**
-     * Returns whether the game instance has the default worker type (UnrealWorker).
-     */
-    UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
-    static bool IsDefaultWorker(const UObject* WorldContextObject);
+    static bool IsActorGroupOwner(const AActor* Actor);
 };
