@@ -170,7 +170,7 @@ struct FSpatialLaunchConfigDescription
 	GENERATED_BODY()
 
 	FSpatialLaunchConfigDescription()
-		: Template(TEXT("small"))
+		: Template(TEXT("w2_r0500_e5"))
 		, World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
