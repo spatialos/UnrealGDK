@@ -94,8 +94,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
             string engineAssociation = "";
 
             dynamic projectJson = JObject.Parse(uproject);
-            dynamic assocation = projectJson.EngineAssociation;
-            engineAssociation = assocation;
+            engineAssociation = projectJson.EngineAssociation;
 
             Console.WriteLine("Engine Association: " + engineAssociation);
 
@@ -106,7 +105,12 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 while (currentDir.Parent != null && string.IsNullOrEmpty(unrealEngine))
                 {
                     currentDir = currentDir.Parent;
-                    unrealEngine = currentDir.GetDirectories().Where(d => d.Name == "Engine" && File.Exists(Path.Combine(d.FullName, @"Build\Build.version"))).Select(d => d.Parent.FullName).FirstOrDefault();
+                    // This is how Unreal asserts we have a valid root directory for the Unreal Engine. Must contain 'Engine/Binaries' and 'Engine/Build'.
+                    if (Directory.Exists(Path.Combine(currentDir.FullName, "Engine", "Binaries")) && Directory.Exists(Path.Combine(currentDir.FullName, "Engine", "Build")))
+                    {
+                        unrealEngine = currentDir.FullName;
+                        break;
+                    }
                 }
             }
             else if (Directory.Exists(Path.Combine(Path.GetDirectoryName(projectFile), engineAssociation))) // If the engine association is a path then use that.
@@ -138,8 +142,6 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
             {
                 Console.WriteLine("Engine is at: " + unrealEngine);
             }
-
-            return;
 
             string runUATBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\RunUAT.bat");
             string buildBat = Path.Combine(unrealEngine, @"Engine\Build\BatchFiles\Build.bat");
