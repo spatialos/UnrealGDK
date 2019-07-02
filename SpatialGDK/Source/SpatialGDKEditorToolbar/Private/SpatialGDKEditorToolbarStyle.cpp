@@ -39,7 +39,7 @@ namespace
 const FVector2D Icon16x16(16.0f, 16.0f);
 const FVector2D Icon20x20(20.0f, 20.0f);
 const FVector2D Icon40x40(40.0f, 40.0f);
-const FVector2D Icon100x22(100, 22.0f);
+const FVector2D Icon100x22(100.0f, 22.0f);
 }
 
 TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()

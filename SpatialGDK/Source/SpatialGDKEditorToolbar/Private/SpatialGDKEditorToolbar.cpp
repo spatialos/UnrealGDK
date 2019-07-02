@@ -6,19 +6,20 @@
 #include "Editor.h"
 #include "EditorStyleSet.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "Framework/Notifications/NotificationManager.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
 #include "Misc/MessageDialog.h"
-#include "Framework/Notifications/NotificationManager.h"
-#include "Widgets/Notifications/SNotificationList.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 #include "SpatialConstants.h"
 #include "SpatialGDKEditor.h"
-#include "SpatialGDKSettings.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesModule.h"
+#include "SpatialGDKSettings.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -28,7 +29,6 @@
 #include "GeneralProjectSettings.h"
 #include "LevelEditor.h"
 #include "Misc/FileHelper.h"
-#include "SpatialGDKServicesModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKEditorToolbar);
 
@@ -566,7 +566,7 @@ void FSpatialGDKEditorToolbarModule::LaunchInspectorWebpageButtonClicked()
 	}
 }
 
-bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible()
+bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible() const
 {
 	if (LocalDeploymentManager->IsSpatialServiceRunning())
 	{
@@ -578,41 +578,41 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible()
 	}
 }
 
-bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute()
+bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute() const
 {
 	return !LocalDeploymentManager->IsDeploymentStarting();
 }
 
-bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible()
+bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const
 {
 	return LocalDeploymentManager->IsSpatialServiceRunning() && LocalDeploymentManager->IsLocalDeploymentRunning();
 }
 
-bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute()
+bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentCanExecute() const
 {
 	return !LocalDeploymentManager->IsDeploymentStopping();
 }
 
-bool FSpatialGDKEditorToolbarModule::StartSpatialServiceIsVisible()
+bool FSpatialGDKEditorToolbarModule::StartSpatialServiceIsVisible() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	return SpatialGDKSettings->bShowSpatialServiceButton && !LocalDeploymentManager->IsSpatialServiceRunning();
 }
 
-bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute()
+bool FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute() const
 {
 	return !LocalDeploymentManager->IsServiceStarting();
 }
 
-bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible()
+bool FSpatialGDKEditorToolbarModule::StopSpatialServiceIsVisible() const
 {
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	return SpatialGDKSettings->bShowSpatialServiceButton && LocalDeploymentManager->IsSpatialServiceRunning();
 }
 
-bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute()
+bool FSpatialGDKEditorToolbarModule::StopSpatialServiceCanExecute() const
 {
 	return !LocalDeploymentManager->IsServiceStopping();
 }

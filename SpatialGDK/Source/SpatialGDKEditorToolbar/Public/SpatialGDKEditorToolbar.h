@@ -3,14 +3,13 @@
 
 #include "Async/Future.h"
 #include "CoreMinimal.h"
+#include "LocalDeploymentManager.h"
 #include "Modules/ModuleManager.h"
 #include "Serialization/JsonWriter.h"
 #include "Templates/SharedPointer.h"
 #include "TickableEditorObject.h"
 #include "UObject/UnrealType.h"
 #include "Widgets/Notifications/SNotificationList.h"
-
-#include "LocalDeploymentManager.h"
 
 class FToolBarBuilder;
 class FMenuBuilder;
@@ -49,24 +48,25 @@ private:
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void AddMenuExtension(FMenuBuilder& Builder);
 
+	bool VerifyAndStartDeployment();
+
 	void StartSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
-
-	bool StartSpatialDeploymentIsVisible();
-	bool StartSpatialDeploymentCanExecute();
-
-	bool StopSpatialDeploymentIsVisible();
-	bool StopSpatialDeploymentCanExecute();
 
 	void StartSpatialServiceButtonClicked();
 	void StopSpatialServiceButtonClicked();
 
-	bool VerifyAndStartDeployment();
-	bool StartSpatialServiceIsVisible();
-	bool StartSpatialServiceCanExecute();
+	bool StartSpatialDeploymentIsVisible() const;
+	bool StartSpatialDeploymentCanExecute() const;
 
-	bool StopSpatialServiceIsVisible();
-	bool StopSpatialServiceCanExecute();
+	bool StopSpatialDeploymentIsVisible() const;
+	bool StopSpatialDeploymentCanExecute() const;
+
+	bool StartSpatialServiceIsVisible() const;
+	bool StartSpatialServiceCanExecute() const;
+
+	bool StopSpatialServiceIsVisible() const;
+	bool StopSpatialServiceCanExecute() const;
 
 	void LaunchInspectorWebpageButtonClicked();
 	void CreateSnapshotButtonClicked();
