@@ -112,7 +112,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
 	}
 
-
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
@@ -296,7 +295,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 				{
 					if (SubobjectInfo->SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
 					{
-						ComponentWriteAcl.Add(SubobjectInfo->SchemaComponents[Type], ServersOnly);
+						ComponentWriteAcl.Add(SubobjectInfo->SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
 					}
 				});
 			}
@@ -360,7 +359,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		Worker_ComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges);
 		ComponentDatas.Add(SubobjectHandoverData);
 
-		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], ServersOnly);
+		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
 
 		for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
 		{
@@ -428,8 +427,9 @@ void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Su
 
 void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info)
 {
-	WorkerAttributeSet ServerAttribute = { SpatialConstants::DefaultServerWorkerType.ToString() };
-	WorkerRequirementSet ServersOnly = { ServerAttribute };
+	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
+	const WorkerAttributeSet WorkerAttribute{ ActorInfo.WorkerType.ToString() };
+	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
 
 	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
 
@@ -448,7 +448,7 @@ void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel
 			PendingSubobjectAttachment->PendingAuthorityDelegations.Add(ComponentId);
 			Receiver->PendingEntitySubobjectDelegations.Add(MakeTuple(Channel->GetEntityId(), ComponentId), PendingSubobjectAttachment);
 
-			EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[Type], ServersOnly);
+			EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
 		}
 	});
 

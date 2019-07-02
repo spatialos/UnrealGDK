@@ -81,7 +81,7 @@ public:
 	uint32 GetComponentIdForClass(const UClass& Class) const
 	{
 		const FString ClassPath = Class.GetPathName();
-		if (const FSchemaData* SchemaData = ClassPathToSchema.Find(ClassPath))
+		if (const FActorSchemaData* SchemaData = ActorClassPathToSchema.Find(ClassPath))
 		{
 			return SchemaData->SchemaComponents[SCHEMA_Data];
 		}
