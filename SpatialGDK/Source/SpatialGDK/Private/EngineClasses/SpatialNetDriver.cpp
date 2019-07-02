@@ -127,17 +127,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	return true;
 }
 
-void USpatialNetDriver::PostInitProperties()
-{
-	Super::PostInitProperties();
-
-	if (!HasAnyFlags(RF_ClassDefaultObject))
-	{
-		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
-		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
-	}
-}
-
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 {
 	USpatialGameInstance* GameInstance = nullptr;
@@ -530,6 +519,28 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Wiping the world"), *NewURL);
 	NetDriver->WipeWorld(FinishServerTravel);
 #endif // WITH_SERVER_CODE
+}
+
+void USpatialNetDriver::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+	// If we are still connected, cleanup our corresponding worker entity if it exists.
+	if (Connection != nullptr && WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		Connection->SendDeleteEntityRequest(WorkerEntityId);
+	}
+}
+
+void USpatialNetDriver::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	if (!HasAnyFlags(RF_ClassDefaultObject))
+	{
+		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
+		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
+	}
 }
 
 bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const
