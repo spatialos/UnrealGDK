@@ -893,7 +893,8 @@ void USpatialReceiver::HandleDynamicAddComponent(const Worker_AddComponentOp& Op
 	}
 
 	// Otherwise this is a dynamically attached component. We need to make sure we have all related components before creation.
-	PendingDynamicSubobjectComponents.Add(MakeTuple(Op.entity_id, Op.data.component_id), PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
+	PendingDynamicSubobjectComponents.Add(MakeTuple(static_cast<Worker_EntityId_Key>(Op.entity_id), Op.data.component_id),
+		PendingAddComponentWrapper(Op.entity_id, Op.data.component_id, MakeUnique<DynamicComponent>(Op.data)));
 
 	const FClassInfo& Info = ClassInfoManager->GetClassInfoByComponentId(Op.data.component_id);
 
@@ -907,7 +908,7 @@ void USpatialReceiver::HandleDynamicAddComponent(const Worker_AddComponentOp& Op
 			return;
 		}
 
-		if (!PendingDynamicSubobjectComponents.Contains(MakeTuple(Op.entity_id, ComponentId)))
+		if (!PendingDynamicSubobjectComponents.Contains(MakeTuple(static_cast<Worker_EntityId_Key>(Op.entity_id), ComponentId)))
 		{
 			bReadyToCreate = false;
 		}
