@@ -44,12 +44,14 @@ public:
 
 	void QueryGSM(bool bRetryUntilAcceptingPlayers);
 	void RetryQueryGSM(bool bRetryUntilAcceptingPlayers);
-	bool GetAcceptingPlayersFromQueryResponse(Worker_EntityQueryResponseOp& Op);
-	void ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQueryResponseOp& Op);
+	bool GetAcceptingPlayersFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
+	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SetDeploymentMapURL(const FString& MapURL);
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
 	void SetCanBeginPlay(bool bInCanBeginPlay);
+
+	void TryTriggerBeginPlay();
 
 	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
 
@@ -58,6 +60,7 @@ public:
 	bool HasAuthority();
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
+	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
 
 	Worker_EntityId GlobalStateManagerEntityId;
 

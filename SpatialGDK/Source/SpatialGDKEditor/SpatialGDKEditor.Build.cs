@@ -13,9 +13,13 @@ public class SpatialGDKEditor : ModuleRules
 			new string[] {
 				"Core",
 				"CoreUObject",
+				"EditorStyle",
 				"Engine",
  				"EngineSettings",
 				"Json",
+				"PropertyEditor",
+				"Slate",
+				"SlateCore",
 				"SpatialGDK",
 				"UnrealEd",
 				"GameplayAbilities"

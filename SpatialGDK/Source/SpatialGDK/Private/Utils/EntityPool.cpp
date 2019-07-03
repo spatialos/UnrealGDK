@@ -64,20 +64,22 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 
 		ReservedEntityIDRanges.Add(NewEntityRange);
 
-		TWeakObjectPtr<UEntityPool> WeakEntityPoolPtr = this;
 		FTimerHandle ExpirationTimer;
-		TimerManager->SetTimer(ExpirationTimer, [WeakEntityPoolPtr, ExpiringEntityRangeId = NewEntityRange.EntityRangeId]()
+		TWeakObjectPtr<UEntityPool> WeakThis(this);
+		TimerManager->SetTimer(ExpirationTimer, [WeakThis, ExpiringEntityRangeId = NewEntityRange.EntityRangeId]()
 		{
-			if (!WeakEntityPoolPtr.IsValid())
+			if (UEntityPool* Pool = WeakThis.Get())
 			{
-				return;
+				Pool->OnEntityRangeExpired(ExpiringEntityRangeId);
 			}
-
-			WeakEntityPoolPtr->OnEntityRangeExpired(ExpiringEntityRangeId);
 		}, SpatialConstants::ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS, false);
 
-		bIsReady = true;
 		bIsAwaitingResponse = false;
+		if (!bIsReady)
+		{
+			bIsReady = true;
+			NetDriver->OnEntityPoolReady();
+		}
 	});
 
 	// Reserve the Entity IDs

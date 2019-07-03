@@ -23,6 +23,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
+#include "Utils/EntityPool.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
@@ -216,7 +217,7 @@ void UGlobalStateManager::ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate)
 	// For now, this will only be called on non-authoritative workers.
 	if (bCanBeginPlay)
 	{
-		TriggerBeginPlay();
+		TryTriggerBeginPlay();
 	}
 }
 
@@ -363,6 +364,17 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	return Channel;
 }
 
+void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel)
+{
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActor->GetClass());
+
+	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
+	check(ActorChannelPair.Value == nullptr || ActorChannelPair.Value == SingletonChannel);
+
+	ActorChannelPair.Key = SingletonActor;
+	ActorChannelPair.Value = SingletonChannel;
+}
+
 void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
 {
 	for (auto& ClassToActorChannel : NetDriver->SingletonActorChannels)
@@ -451,6 +463,20 @@ void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
+void UGlobalStateManager::TryTriggerBeginPlay()
+{
+	if (bCanBeginPlay && NetDriver->EntityPool != nullptr && NetDriver->EntityPool->IsReady())
+	{
+		TriggerBeginPlay();
+
+		// Start accepting players only AFTER we've triggered BeginPlay
+		if (NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
+		{
+			SetAcceptingPlayers(true);
+		}
+	}
+}
+
 void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID)
 {
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM has changed. This worker %s authority."),  bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
@@ -464,11 +490,15 @@ void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityI
 		{
 			SetCanBeginPlay(true);
 			BecomeAuthoritativeOverAllActors();
-			TriggerBeginPlay();
+			TryTriggerBeginPlay();
 		}
-
-		// Start accepting players only AFTER we've triggered BeginPlay
-		SetAcceptingPlayers(true);
+		else
+		{
+			// This handles the case when a server shuts down without deleting entities,
+			// and a new server connects, so we don't want to call BeginPlay with authority
+			// again, but need to let the clients know they can connect.
+			SetAcceptingPlayers(true);
+		}
 	}
 }
 
@@ -551,7 +581,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
 	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, bRetryUntilAcceptingPlayers](Worker_EntityQueryResponseOp& Op)
+	GSMQueryDelegate.BindLambda([this, bRetryUntilAcceptingPlayers](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -587,7 +617,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
 }
 
-void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQueryResponseOp& Op)
+void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
 	{
@@ -599,7 +629,7 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQ
 	}
 }
 
-bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(Worker_EntityQueryResponseOp& Op)
+bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
 	checkf(Op.result_count == 1, TEXT("There should never be more than one GSM"));
 
@@ -639,9 +669,12 @@ void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
 
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
 	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(RetryTimer, [this, bRetryUntilAcceptingPlayers]()
+	TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), bRetryUntilAcceptingPlayers]()
 	{
-		QueryGSM(bRetryUntilAcceptingPlayers);
+		if (UGlobalStateManager* GSM = WeakThis.Get())
+		{
+			GSM->QueryGSM(bRetryUntilAcceptingPlayers);
+		}
 	}, RetryTimerDelay, false);
 }
 

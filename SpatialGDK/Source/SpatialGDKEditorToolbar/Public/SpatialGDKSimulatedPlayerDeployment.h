@@ -6,7 +6,7 @@
 #include "Input/Reply.h"
 #include "Layout/Visibility.h"
 #include "SpatialGDKEditor.h"
-#include "SpatialGDKEditorCloudLauncherSettings.h"
+#include "SpatialGDKEditorSettings.h"
 #include "Templates/SharedPointer.h"
 #include "Widgets/DeclarativeSyntaxSupport.h"
 #include "Widgets/Input/SEditableTextBox.h"

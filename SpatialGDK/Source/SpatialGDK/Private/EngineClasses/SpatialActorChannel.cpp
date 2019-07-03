@@ -76,7 +76,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bCreatedEntity(false)
 	, bCreatingNewEntity(false)
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
-	, bFirstTick(true)
 	, bInterestDirty(false)
 	, bNetOwned(false)
 	, NetDriver(nullptr)
@@ -215,6 +214,15 @@ void USpatialActorChannel::UpdateShadowData()
 	}
 }
 
+void USpatialActorChannel::UpdateSpatialPositionWithFrequencyCheck()
+{
+	// Check that there has been a sufficient amount of time since the last update.
+	if ((NetDriver->Time - TimeWhenPositionLastUpdated) >= (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
+	{
+		UpdateSpatialPosition();
+	}
+}
+
 FRepChangeState USpatialActorChannel::CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object)
 {
 	checkf(Object != nullptr, TEXT("Attempted to create initial rep change state on an object which is null."));
@@ -343,7 +351,14 @@ int64 USpatialActorChannel::ReplicateActor()
 	// Update SpatialOS position.
 	if (!bCreatingNewEntity)
 	{
-		UpdateSpatialPosition();
+		if (GetDefault<USpatialGDKSettings>()->bBatchSpatialPositionUpdates)
+		{
+			Sender->RegisterChannelForPositionUpdate(this);
+		}
+		else
+		{
+			UpdateSpatialPositionWithFrequencyCheck();
+		}
 	}
 	
 	// Update the replicated property change list.
@@ -661,6 +676,8 @@ void USpatialActorChannel::SetChannelActor(AActor* InActor)
 		check(!HandoverShadowDataMap.Contains(Subobject));
 		InitializeHandoverShadowData(HandoverShadowDataMap.Add(Subobject, MakeShared<TArray<uint8>>()).Get(), Subobject);
 	}
+
+	SavedOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(InActor);
 }
 
 bool USpatialActorChannel::TryResolveActor()
@@ -752,17 +769,17 @@ void USpatialActorChannel::UpdateSpatialPosition()
 {
 	SCOPE_CYCLE_COUNTER(STAT_SpatialActorChannelUpdateSpatialPosition);
 
+	// Additional check to validate Actor is still present
+	if (Actor == nullptr || Actor->IsPendingKill())
+	{
+		return;
+	}
+
 	// When we update an Actor's position, we want to update the position of all the children of this Actor.
 	// If this Actor is a PlayerController, we want to update all of its children and its possessed Pawn.
 	// That means if this Actor has an Owner or has a NetConnection and is NOT a PlayerController
 	// we want to defer updating position until we reach the highest parent.
 	if ((Actor->GetOwner() != nullptr || Actor->GetNetConnection() != nullptr) && !Actor->IsA<APlayerController>())
-	{
-		return;
-	}
-
-	// Check that there has been a sufficient amount of time since the last update.
-	if ((NetDriver->Time - TimeWhenPositionLastUpdated) < (1.0f / GetDefault<USpatialGDKSettings>()->PositionUpdateFrequency))
 	{
 		return;
 	}
@@ -864,41 +881,22 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 
-	if (bFirstTick || SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
+	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{
-		bool bSuccess = Sender->UpdateEntityACLs(GetEntityId(), NewOwnerWorkerAttribute);
+		bool bSuccess = Sender->UpdateEntityACLs(EntityId, NewOwnerWorkerAttribute);
 
 		if (bSuccess)
 		{
-			bFirstTick = false;
 			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		}
 	}
 }
 
-void USpatialActorChannel::ClientProcessOwnershipChange()
+void USpatialActorChannel::ClientProcessOwnershipChange(bool bNewNetOwned)
 {
-	bool bOldNetOwned = bNetOwned;
-	bNetOwned = IsOwnedByWorker();
-
-	if (bFirstTick || bOldNetOwned != bNetOwned)
+	if (bNewNetOwned != bNetOwned)
 	{
+		bNetOwned = bNewNetOwned;
 		Sender->SendComponentInterest(Actor, GetEntityId(), bNetOwned);
-		bFirstTick = false;
-	}
-}
-
-void USpatialActorChannel::ProcessOwnershipChange()
-{
-	if (Actor != nullptr && !Actor->IsPendingKill())
-	{
-		if (NetDriver->IsServer())
-		{
-			ServerProcessOwnershipChange();
-		}
-		else
-		{
-			ClientProcessOwnershipChange();
-		}
 	}
 }

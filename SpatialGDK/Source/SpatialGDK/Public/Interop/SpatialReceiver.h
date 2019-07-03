@@ -9,6 +9,7 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/DynamicComponent.h"
+#include "Schema/RPCPayload.h"
 #include "Schema/SpawnData.h"
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
@@ -21,6 +22,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 
+class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
 
@@ -79,22 +81,21 @@ struct FObjectReferences
 
 struct FPendingIncomingRPC
 {
-	FPendingIncomingRPC(const TSet<FUnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const TArray<uint8>& InPayloadData, int64 InCountBits)
-		: UnresolvedRefs(InUnresolvedRefs), TargetObject(InTargetObject), Function(InFunction), PayloadData(InPayloadData), CountBits(InCountBits) {}
+	FPendingIncomingRPC(const TSet<FUnrealObjectRef>& InUnresolvedRefs, UObject* InTargetObject, UFunction* InFunction, const SpatialGDK::RPCPayload& InPayload)
+		: UnresolvedRefs(InUnresolvedRefs), TargetObject(InTargetObject), Function(InFunction), Payload(InPayload) {}
 
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;
-	TArray<uint8> PayloadData;
-	int64 CountBits;
+	SpatialGDK::RPCPayload Payload;
 	FString SenderWorkerId;
 };
 
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
-DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
+DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
-DECLARE_DELEGATE_OneParam(HeartbeatDelegate, Worker_ComponentUpdateOp&);
+DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
 
 UCLASS()
 class USpatialReceiver : public UObject
@@ -120,14 +121,13 @@ public:
 	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
 
 	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
-	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FPendingRPCParams> Params);
+	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC);
 
 	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
 	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
+	void AddCreateEntityDelegate(Worker_RequestId RequestId, const CreateEntityDelegate& Delegate);
 
-	void AddHeartbeatDelegate(Worker_EntityId EntityId, HeartbeatDelegate Delegate);
-
-	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
+	void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
@@ -157,14 +157,12 @@ private:
 	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
-	void ReceiveRPCCommandRequest(const Worker_CommandRequest& CommandRequest, UObject* TargetObject, UFunction* Function, const FString& SenderWorkerId);
-	void ReceiveMulticastUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, const TArray<UFunction*>& RPCArray);
-	void ApplyRPC(UObject* TargetObject, UFunction* Function, TArray<uint8>& PayloadData, int64 CountBits, const FString& SenderWorkerId);
+	void ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
 
 	void ReceiveCommandResponse(Worker_CommandResponseOp& Op);
 
 	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs);
-	void QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, const TArray<uint8>& PayloadData, int64 CountBits, const FString& SenderWorkerId);
+	void QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
 
 	void ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
@@ -172,16 +170,18 @@ private:
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
 
 	void ProcessQueuedResolvedObjects();
+	void ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, SpatialGDK::RPCsOnEntityCreation& QueuedRPCs);
 	void UpdateShadowData(Worker_EntityId EntityId);
 	TWeakObjectPtr<USpatialActorChannel> PopPendingActorRequest(Worker_RequestId RequestId);
+
+	AActor* FindSingletonActor(UClass* SingletonClass);
+
+	void OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op);
 
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
 private:
-	template <typename T>
-	friend T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId);
-
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
@@ -218,6 +218,10 @@ private:
 
 	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
 	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
+	TMap<Worker_RequestId, CreateEntityDelegate> CreateEntityDelegates;
 
-	TMap<Worker_EntityId_Key, HeartbeatDelegate> HeartbeatDelegates;
+	// This will map PlayerController entities to the corresponding SpatialNetConnection
+	// for PlayerControllers that this server has authority over. This is used for player
+	// lifecycle logic (Heartbeat component updates, disconnection logic).
+	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 };

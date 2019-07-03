@@ -129,7 +129,6 @@ public:
 	// For an object that is replicated by this channel (i.e. this channel's actor or its component), find out whether a given handle is an array.
 	bool IsDynamicArrayHandle(UObject* Object, uint16 Handle);
 
-	void ProcessOwnershipChange();
 	FObjectReplicator& PreReceiveSpatialUpdate(UObject* TargetObject);
 	void PostReceiveSpatialUpdate(UObject* TargetObject, const TArray<UProperty*>& RepNotifies);
 
@@ -140,6 +139,11 @@ public:
 	void RemoveRepNotifiesWithUnresolvedObjs(TArray<UProperty*>& RepNotifies, const FRepLayout& RepLayout, const FObjectReferencesMap& RefMap, UObject* Object);
 	
 	void UpdateShadowData();
+	void UpdateSpatialPositionWithFrequencyCheck();
+	void UpdateSpatialPosition();
+
+	void ServerProcessOwnershipChange();
+	void ClientProcessOwnershipChange(bool bNewNetOwned);
 
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
@@ -159,13 +163,9 @@ protected:
 #endif
 
 private:
-	void ServerProcessOwnershipChange();
-	void ClientProcessOwnershipChange();
-
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
 
-	void UpdateSpatialPosition();
 	void SendPositionUpdate(AActor* InActor, Worker_EntityId InEntityId, const FVector& NewPosition);
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
@@ -173,7 +173,6 @@ private:
 
 private:
 	Worker_EntityId EntityId;
-	bool bFirstTick;
 	bool bInterestDirty;
 
 	// Used on the client to track gaining/losing ownership.

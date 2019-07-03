@@ -3,48 +3,45 @@
 #include "SpatialGDKEditorCloudLauncher.h"
 
 #include "Interfaces/IPluginManager.h"
-#include "SpatialGDKEditorCloudLauncherSettings.h"
 #include "SpatialGDKEditorSettings.h"
 
 bool SpatialGDKCloudLaunch()
 {
-	const USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetDefault<USpatialGDKEditorCloudLauncherSettings>();
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	FString LauncherCmdArguments = FString::Printf(
 		TEXT("/c DeploymentLauncher.exe create %s %s %s %s %s %s"),
-		*SpatialGDKCloudLauncherSettings->GetProjectName(),
-		*SpatialGDKCloudLauncherSettings->GetAssemblyName(),
-		*SpatialGDKCloudLauncherSettings->GetPrimaryDeploymentName(),
-		*SpatialGDKCloudLauncherSettings->GetPrimaryLanchConfigPath(),
-		*SpatialGDKCloudLauncherSettings->GetSnapshotPath(),
-		*SpatialGDKCloudLauncherSettings->GetPrimaryRegionCode().ToString()
+		*SpatialGDKSettings->GetProjectName(),
+		*SpatialGDKSettings->GetAssemblyName(),
+		*SpatialGDKSettings->GetPrimaryDeploymentName(),
+		*SpatialGDKSettings->GetPrimaryLanchConfigPath(),
+		*SpatialGDKSettings->GetSnapshotPath(),
+		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
 	);
 
-	if (SpatialGDKCloudLauncherSettings->IsSimulatedPlayersEnabled())
+	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 	{
 		LauncherCmdArguments = FString::Printf(
 			TEXT("%s %s %s %s %s"),
 			*LauncherCmdArguments,
-			*SpatialGDKCloudLauncherSettings->GetSimulatedPlayerDeploymentName(),
-			*SpatialGDKCloudLauncherSettings->GetSimulatedPlayerLaunchConfigPath(),
-			*SpatialGDKCloudLauncherSettings->GetSimulatedPlayerRegionCode().ToString(),
-			*FString::FromInt(SpatialGDKCloudLauncherSettings->GetNumberOfSimulatedPlayer())
+			*SpatialGDKSettings->GetSimulatedPlayerDeploymentName(),
+			*SpatialGDKSettings->GetSimulatedPlayerLaunchConfigPath(),
+			*SpatialGDKSettings->GetSimulatedPlayerRegionCode().ToString(),
+			*FString::FromInt(SpatialGDKSettings->GetNumberOfSimulatedPlayer())
 		);
 	}
 
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
 		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
-		*DeploymentLauncherAbsolutePath, nullptr, nullptr);
+		*SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
 
 	return DeploymentLauncherProcHandle.IsValid();
 }
  
 bool SpatialGDKCloudStop()
 {
-	const USpatialGDKEditorCloudLauncherSettings* SpatialGDKCloudLauncherSettings = GetDefault<USpatialGDKEditorCloudLauncherSettings>();
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
 	const FString CmdExecutable = TEXT("cmd.exe");
@@ -52,7 +49,7 @@ bool SpatialGDKCloudStop()
 
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
 		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
-		*DeploymentLauncherAbsolutePath, nullptr, nullptr);
+		*SpatialGDKSettings->GetDeploymentLauncherPath(), nullptr, nullptr);
 
 	return DeploymentLauncherProcHandle.IsValid();
 }

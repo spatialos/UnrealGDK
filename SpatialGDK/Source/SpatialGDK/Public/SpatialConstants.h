@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include "UObject/Script.h"
-
+#include "Improbable/SpatialEngineConstants.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
+#include "UObject/Script.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -63,9 +63,13 @@ FORCEINLINE FString RPCSchemaTypeToString(ESchemaComponentType RPCType)
 	switch (RPCType)
 	{
 	case SCHEMA_ClientReliableRPC:
-		return TEXT("Client");
+		return TEXT("Client, Reliable");
+	case SCHEMA_ClientUnreliableRPC:
+		return TEXT("Client, Unreliable");
 	case SCHEMA_ServerReliableRPC:
-		return TEXT("Server");
+		return TEXT("Server, Reliable");
+	case SCHEMA_ServerUnreliableRPC:
+		return TEXT("Server, Unreliable");
 	case SCHEMA_NetMulticastRPC:
 		return TEXT("Multicast");
 	case SCHEMA_CrossServerRPC:
@@ -83,8 +87,7 @@ namespace SpatialConstants
 		INVALID_ENTITY_ID = 0,
 		INITIAL_SPAWNER_ENTITY_ID = 1,
 		INITIAL_GLOBAL_STATE_MANAGER_ENTITY_ID = 2,
-		PLACEHOLDER_ENTITY_ID_FIRST = 3,
-		PLACEHOLDER_ENTITY_ID_LAST = PLACEHOLDER_ENTITY_ID_FIRST + 35, // 36 placeholder entities.
+		FIRST_AVAILABLE_ENTITY_ID = 3,
 	};
 
 	const Worker_ComponentId INVALID_COMPONENT_ID							= 0;
@@ -108,6 +111,8 @@ namespace SpatialConstants
 	const Worker_ComponentId SERVER_RPC_ENDPOINT_COMPONENT_ID				= 9989;
 	const Worker_ComponentId NETMULTICAST_RPCS_COMPONENT_ID					= 9987;
 	const Worker_ComponentId NOT_STREAMED_COMPONENT_ID						= 9986;
+	const Worker_ComponentId RPCS_ON_ENTITY_CREATION_ID						= 9985;
+	const Worker_ComponentId DEBUG_METRICS_COMPONENT_ID						= 9984;
 
 	const Worker_ComponentId STARTING_GENERATED_COMPONENT_ID				= 10000;
 
@@ -122,18 +127,30 @@ namespace SpatialConstants
 	const Schema_FieldId ACTOR_TEAROFF_ID									= 3;
 
 	const Schema_FieldId HEARTBEAT_EVENT_ID                                 = 1;
+	const Schema_FieldId HEARTBEAT_CLIENT_HAS_QUIT_ID						= 1;
 
 	const Schema_FieldId SHUTDOWN_MULTI_PROCESS_REQUEST_ID					= 1;
 	const Schema_FieldId SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID				= 1;
+
+	const Schema_FieldId CLEAR_RPCS_ON_ENTITY_CREATION						= 1;
+
+	// DebugMetrics command IDs
+	const Schema_FieldId DEBUG_METRICS_START_RPC_METRICS_ID					= 1;
+	const Schema_FieldId DEBUG_METRICS_STOP_RPC_METRICS_ID					= 2;
 
 	// UnrealRPCPayload Field IDs
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_OFFSET_ID = 1;
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID = 2;
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID = 3;
+	// UnrealPackedRPCPayload additional Field ID
+	const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID = 4;
 
 	// Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID = 1;
+	const Schema_FieldId UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID = 2;
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID = 1;
+
+	const Schema_FieldId PLAYER_SPAWNER_SPAWN_PLAYER_COMMAND_ID = 1;
 
 	// Reserved entity IDs expire in 5 minutes, we will refresh them every 3 minutes to be safe.
 	const float ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS = 180.0f;
@@ -141,11 +158,10 @@ namespace SpatialConstants
 	const float FIRST_COMMAND_RETRY_WAIT_SECONDS = 0.2f;
 	const uint32 MAX_NUMBER_COMMAND_ATTEMPTS = 5u;
 
-	static const FString ServerWorkerType = TEXT("UnrealWorker");
-	static const FString ClientWorkerType = TEXT("UnrealClient");
+	static const FName DefaultActorGroup = FName(TEXT("Default"));
 
-	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{ServerWorkerType};
-	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{ClientWorkerType};
+	const WorkerAttributeSet UnrealServerAttributeSet = TArray<FString>{DefaultServerWorkerType.ToString()};
+	const WorkerAttributeSet UnrealClientAttributeSet = TArray<FString>{DefaultClientWorkerType.ToString()};
 
 	const WorkerRequirementSet UnrealServerPermission{ {UnrealServerAttributeSet} };
 	const WorkerRequirementSet UnrealClientPermission{ {UnrealClientAttributeSet} };
@@ -174,4 +190,9 @@ namespace SpatialConstants
 	const Worker_ComponentId MAX_EXTERNAL_SCHEMA_ID = 2000;
 
 	const FString SPATIALOS_METRICS_DYNAMIC_FPS = TEXT("Dynamic.FPS");
+
+	const FString LOCATOR_HOST = TEXT("locator.improbable.io");
+	const uint16 LOCATOR_PORT = 444;
+
+	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
 }
