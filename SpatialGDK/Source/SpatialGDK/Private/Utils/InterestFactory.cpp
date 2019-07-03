@@ -41,7 +41,7 @@ void GatherClientInterestDistances()
 		}
 		if (It->HasAnyClassFlags(CLASS_NewerVersionExists))
 		{
-			// This skips classes generated for hot reload etc (i.e. REINST_, SKEL_, TRASHCLASS_) that could crash GetAuthoritativeClass later.
+			// This skips classes generated for hot reload etc (i.e. REINST_, SKEL_, TRASHCLASS_)
 			continue;
 		}
 		if (!It->IsChildOf<AActor>())
@@ -215,14 +215,13 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
 	check(Actor);
-	check(NetDriver && NetDriver->ClassInfoManager && NetDriver->ClassInfoManager->SchemaDatabase);
-	const USchemaDatabase* SchemaDatabase = NetDriver->ClassInfoManager->SchemaDatabase;
+	check(NetDriver && NetDriver->ClassInfoManager);
 
 	TArray<UActorInterestQueryComponent*> ActorInterestComponents;
 	Actor->GetComponents<UActorInterestQueryComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
-		ActorInterestComponents[0]->CreateQueries(*SchemaDatabase, LevelConstraints, OutQueries);
+		ActorInterestComponents[0]->CreateQueries(*NetDriver->ClassInfoManager, LevelConstraints, OutQueries);
 	}
 	else if (ActorInterestComponents.Num() > 1)
 	{
@@ -304,7 +303,8 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 
 		QueryConstraint ActorTypeConstraint;
-		AddTypeHierarchyToConstraint(InterestDistanceSquared.Key, ActorTypeConstraint);
+		check(InterestDistanceSquared.Key);
+		AddTypeHierarchyToConstraint(*InterestDistanceSquared.Key, ActorTypeConstraint);
 		if (ActorTypeConstraint.IsValid())
 		{
 			CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
@@ -383,26 +383,15 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 	OutConstraint.OrConstraint.Add(EntityIdConstraint);
 }
 
-void InterestFactory::AddTypeHierarchyToConstraint(const UClass* BaseType, QueryConstraint& OutConstraint) const
+void InterestFactory::AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint) const
 {
-	const UClass* AuthoritativeBaseType = BaseType->GetAuthoritativeClass();
-
-	check(NetDriver && NetDriver->ClassInfoManager && NetDriver->ClassInfoManager->SchemaDatabase);
-	const USchemaDatabase* SchemaDatabase = NetDriver->ClassInfoManager->SchemaDatabase;
-	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	check(NetDriver && NetDriver->ClassInfoManager);
+	TArray<Worker_ComponentId> ComponentIds = NetDriver->ClassInfoManager->GetComponentIdsForClass(BaseType);
+	for (Worker_ComponentId ComponentId : ComponentIds)
 	{
-		UClass* Class = *ClassIt;
-		check(Class);
-		if (Class->IsChildOf(AuthoritativeBaseType))
-		{
-			const uint32 ComponentId = SchemaDatabase->GetComponentIdForClass(*Class);
-			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-			{
-				QueryConstraint ComponentTypeConstraint;
-				ComponentTypeConstraint.ComponentConstraint = ComponentId;
-				OutConstraint.OrConstraint.Add(ComponentTypeConstraint);
-			}
-		}
+		QueryConstraint ComponentTypeConstraint;
+		ComponentTypeConstraint.ComponentConstraint = ComponentId;
+		OutConstraint.OrConstraint.Add(ComponentTypeConstraint);
 	}
 }
 

@@ -3,14 +3,14 @@
 #include "ActorInterestQueryComponent.h"
 
 #include "Schema/Interest.h"
-#include "Utils/SchemaDatabase.h"
+#include "Interop/SpatialClassInfoManager.h"
 
 UActorInterestQueryComponent::UActorInterestQueryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UActorInterestQueryComponent::CreateQueries(const USchemaDatabase& SchemaDatabase, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const
+void UActorInterestQueryComponent::CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
 	for (const auto& QueryData : Queries)
 	{
@@ -23,14 +23,14 @@ void UActorInterestQueryComponent::CreateQueries(const USchemaDatabase& SchemaDa
 		if (AdditionalConstraints.IsValid())
 		{
 			SpatialGDK::QueryConstraint ComponentConstraints;
-			QueryData.Constraint->CreateConstraint(SchemaDatabase, ComponentConstraints);
+			QueryData.Constraint->CreateConstraint(ClassInfoManager, ComponentConstraints);
 		
 			NewQuery.Constraint.AndConstraint.Add(ComponentConstraints);
 			NewQuery.Constraint.AndConstraint.Add(AdditionalConstraints);
 		}
 		else
 		{
-			QueryData.Constraint->CreateConstraint(SchemaDatabase, NewQuery.Constraint);
+			QueryData.Constraint->CreateConstraint(ClassInfoManager, NewQuery.Constraint);
 		}
 		NewQuery.Frequency = QueryData.Frequency;
 

@@ -5,50 +5,17 @@
 #include "Schema/Interest.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialConstants.h"
-#include "Utils/SchemaDatabase.h"
+#include "Interop/SpatialClassInfoManager.h"
 #include "UObject/UObjectIterator.h"
 
-namespace
-{
-void AddTypeHierarchyToConstraint(const UClass* BaseType, const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint, const bool bIncludeDerivedTypes = true)
-{
-	if (bIncludeDerivedTypes)
-	{
-		for (TObjectIterator<UClass> It; It; ++It)
-		{
-			const UClass* Class = *It;
-			check(Class);
-			if (Class->IsChildOf(BaseType))
-			{
-				const uint32 ComponentId = SchemaDatabase.GetComponentIdForClass(*Class);
-				if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-				{
-					SpatialGDK::QueryConstraint ClassComponentConstraint;
-					ClassComponentConstraint.ComponentConstraint = ComponentId;
-					OutConstraint.OrConstraint.Add(ClassComponentConstraint);
-				}
-			}
-		}
-	}
-	else
-	{
-		const uint32 ComponentId = SchemaDatabase.GetComponentIdForClass(*BaseType);
-		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-		{
-			OutConstraint.ComponentConstraint = ComponentId;
-		}
-	}
-}
-}
-
-void UOrConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void UOrConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	for (const UAbstractQueryConstraint* ConstraintData : Constraints)
 	{
 		if (ConstraintData)
 		{
 			SpatialGDK::QueryConstraint NewConstraint;
-			ConstraintData->CreateConstraint(SchemaDatabase, NewConstraint);
+			ConstraintData->CreateConstraint(ClassInfoManager, NewConstraint);
 			if (NewConstraint.IsValid())
 			{
 				OutConstraint.OrConstraint.Add(NewConstraint);
@@ -57,13 +24,13 @@ void UOrConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, Spat
 	}
 }
 
-void UAndConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void UAndConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	for (const UAbstractQueryConstraint* ConstraintData : Constraints)
 	{
 		if (ConstraintData)
 		{
-			SpatialGDK::QueryConstraint NewConstraint; ConstraintData->CreateConstraint(SchemaDatabase, NewConstraint);
+			SpatialGDK::QueryConstraint NewConstraint; ConstraintData->CreateConstraint(ClassInfoManager, NewConstraint);
 			if (NewConstraint.IsValid())
 			{
 				OutConstraint.AndConstraint.Add(NewConstraint);
@@ -72,44 +39,54 @@ void UAndConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, Spa
 	}
 }
 
-void USphereConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void USphereConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	OutConstraint.SphereConstraint = SpatialGDK::SphereConstraint{ SpatialGDK::Coordinates::FromFVector(Center), static_cast<double>(Radius) / 100.0 };
 }
 
-void UCylinderConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void UCylinderConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	OutConstraint.CylinderConstraint = SpatialGDK::CylinderConstraint{ SpatialGDK::Coordinates::FromFVector(Center), static_cast<double>(Radius) / 100.0 };
 }
 
-void UBoxConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void UBoxConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	OutConstraint.BoxConstraint = SpatialGDK::BoxConstraint{ SpatialGDK::Coordinates::FromFVector(Center), SpatialGDK::Coordinates::FromFVector(EdgeLengths) };
 }
 
-void URelativeSphereConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void URelativeSphereConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	OutConstraint.RelativeSphereConstraint = SpatialGDK::RelativeSphereConstraint{ static_cast<double>(Radius) / 100.0 };
 }
 
-void URelativeCylinderConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void URelativeCylinderConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	OutConstraint.RelativeCylinderConstraint = SpatialGDK::RelativeCylinderConstraint{ static_cast<double>(Radius) / 100.0 };
 }
 
-void URelativeBoxConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void URelativeBoxConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
 	OutConstraint.RelativeBoxConstraint = SpatialGDK::RelativeBoxConstraint{ SpatialGDK::Coordinates::FromFVector(EdgeLengths) };
 }
 
-void UCheckoutRadiusConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void UCheckoutRadiusConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
+	if (!ActorClass.Get())
+	{
+		return;
+	}
+
 	SpatialGDK::QueryConstraint RadiusConstraint;
 	RadiusConstraint.RelativeCylinderConstraint = SpatialGDK::RelativeCylinderConstraint{ static_cast<double>(Radius) / 100.0 };
 
+	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForClass(*ActorClass.Get());
 	SpatialGDK::QueryConstraint ActorClassConstraints;
-	constexpr bool bIncludeDerivedTypes = true;
-	AddTypeHierarchyToConstraint(ActorClass, SchemaDatabase, ActorClassConstraints, bIncludeDerivedTypes);
+	for (Worker_ComponentId ComponentId : ComponentIds)
+	{
+		SpatialGDK::QueryConstraint ComponentTypeConstraint;
+		ComponentTypeConstraint.ComponentConstraint = ComponentId;
+		ActorClassConstraints.OrConstraint.Add(ComponentTypeConstraint);
+	}
 
 	if (RadiusConstraint.IsValid() && ActorClassConstraints.IsValid())
 	{
@@ -118,12 +95,34 @@ void UCheckoutRadiusConstraint::CreateConstraint(const USchemaDatabase& SchemaDa
 	}
 }
 
-void UActorClassConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void UActorClassConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	AddTypeHierarchyToConstraint(ActorClass, SchemaDatabase, OutConstraint, bIncludeDerivedClasses);
+	if (!ActorClass.Get())
+	{
+		return;
+	}
+
+	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForClass(*ActorClass.Get(), bIncludeDerivedClasses);
+	for (Worker_ComponentId ComponentId : ComponentIds)
+	{
+		SpatialGDK::QueryConstraint ComponentTypeConstraint;
+		ComponentTypeConstraint.ComponentConstraint = ComponentId;
+		OutConstraint.OrConstraint.Add(ComponentTypeConstraint);
+	}
 }
 
-void UComponentClassConstraint::CreateConstraint(const USchemaDatabase& SchemaDatabase, SpatialGDK::QueryConstraint& OutConstraint) const
+void UComponentClassConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const
 {
-	AddTypeHierarchyToConstraint(ComponentClass, SchemaDatabase, OutConstraint, bIncludeDerivedClasses);
+	if (!ComponentClass.Get())
+	{
+		return;
+	}
+
+	TArray<Worker_ComponentId> ComponentIds = ClassInfoManager.GetComponentIdsForClass(*ComponentClass.Get(), bIncludeDerivedClasses);
+	for (Worker_ComponentId ComponentId : ComponentIds)
+	{
+		SpatialGDK::QueryConstraint ComponentTypeConstraint;
+		ComponentTypeConstraint.ComponentConstraint = ComponentId;
+		OutConstraint.OrConstraint.Add(ComponentTypeConstraint);
+	}
 }

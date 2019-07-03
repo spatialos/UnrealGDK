@@ -12,7 +12,7 @@ namespace SpatialGDK
 {
 struct Query;
 }
-class USchemaDatabase;
+class USpatialClassInfoManager;
 
 /**
  * Creates a set of SpatialOS Queries for describing interest that this actor has in other entities.
@@ -26,7 +26,7 @@ public:
 	UActorInterestQueryComponent();
 	~UActorInterestQueryComponent() = default;
 
-	void CreateQueries(const USchemaDatabase& SchemaDatabase, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
+	void CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
 
 	/**
 	 * Whether to use NetCullDistanceSquared to generate constraints relative to the Actor that this component is attached to.

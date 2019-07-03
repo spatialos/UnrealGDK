@@ -48,7 +48,7 @@ private:
 	QueryConstraint CreateLevelConstraints() const;
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
-	void AddTypeHierarchyToConstraint(const UClass* BaseType, QueryConstraint& OutConstraint) const;
+	void AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint) const;
 
 	AActor* Actor;
 	const FClassInfo& Info;
