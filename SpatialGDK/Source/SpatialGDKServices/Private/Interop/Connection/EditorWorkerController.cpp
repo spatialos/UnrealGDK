@@ -81,13 +81,10 @@ struct EditorWorkerController
 	{
 		if (WorkerIdx < ReplaceProcesses.Num())
 		{
-			// Record a start time for timeout.
-			FDateTime BlockingStartTime =  FDateTime::Now();
-
 			while (FPlatformProcess::IsProcRunning(ReplaceProcesses[WorkerIdx]))
 			{
 				// Only block until the worker connection will have timed out.
-				if ((FDateTime::Now() - BlockingStartTime).GetTotalSeconds() < WorkerReplaceThresholdSeconds)
+				if ((FDateTime::Now().ToUnixTimestamp() - LastPIEEndTime) < WorkerReplaceThresholdSeconds)
 				{
 					FPlatformProcess::Sleep(0.1f);
 				}
