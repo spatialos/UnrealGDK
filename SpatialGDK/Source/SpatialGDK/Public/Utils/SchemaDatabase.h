@@ -56,6 +56,16 @@ public:
 		return SpatialConstants::INVALID_COMPONENT_ID;
 	}
 
+	uint32 GetComponentIdForClass(const UClass& Class) const
+	{
+		const FString ClassPath = Class.GetPathName();
+		if (const FSchemaData* SchemaData = ClassPathToSchema.Find(ClassPath))
+		{
+			return SchemaData->SchemaComponents[SCHEMA_Data];
+		}
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
+
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<FString, FSchemaData> ClassPathToSchema;
 

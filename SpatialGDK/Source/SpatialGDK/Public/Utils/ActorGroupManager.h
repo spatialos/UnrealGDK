@@ -11,10 +11,14 @@ struct FWorkerType
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "SpatialGDK")
 	FName WorkerTypeName;
 
 	FWorkerType() : WorkerTypeName(NAME_None)
+	{
+	}
+
+	FWorkerType(FName InWorkerTypeName) : WorkerTypeName(InWorkerTypeName)
 	{
 	}
 };
@@ -28,12 +32,12 @@ struct FActorGroupInfo
 	FName Name;
 
 	/** The server worker type that has authority of all classes in this actor group. */
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "SpatialGDK")
 	FWorkerType OwningWorkerType;
 
 	// Using TSoftClassPtr here to prevent eagerly loading all classes.
 	/** The Actor classes contained within this group. Children of these classes will also be included. */	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "SpatialGDK")
 	TSet<TSoftClassPtr<AActor>> ActorClasses;
 	
 	FActorGroupInfo() : Name(NAME_None), OwningWorkerType()
