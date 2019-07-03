@@ -995,6 +995,9 @@ void USpatialReceiver::HandleUnreliableRPC(Worker_ComponentUpdateOp& Op)
 			{
 				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
 
+
+				// In a zoned multiworker scenario we might not have gained authority over the current entity in this bundle in time
+				// before processing so don't ApplyRPCs to an entity that we don't have authority over.
 				if (StaticComponentView->GetAuthority(ObjectRef.Entity, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
 				{
 					continue;
