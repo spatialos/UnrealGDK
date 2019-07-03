@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "ActorInterestQueryComponent.h"
+#include "EngineClasses/Components/ActorInterestQueryComponent.h"
 
 #include "Schema/Interest.h"
 #include "Interop/SpatialClassInfoManager.h"

@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "Templates/SubclassOf.h"
 
 #include "SpatialInterestConstraints.generated.h"
 
