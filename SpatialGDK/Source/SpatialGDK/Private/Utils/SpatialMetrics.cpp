@@ -224,7 +224,7 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 	}
 	else
 	{
-		bool bKnowSetting = true;
+		bool bKnownSetting = true;
 		if (Name == TEXT("ActorReplicationRateLimit"))
 		{
 			GetMutableDefault<USpatialGDKSettings>()->ActorReplicationRateLimit = static_cast<uint32>(Value);
@@ -243,10 +243,10 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 		}
 		else
 		{
-			bKnowSetting = false;
+			bKnownSetting = false;
 		}
 
-		if (bKnowSetting)
+		if (bKnownSetting)
 		{
 			UE_LOG(LogSpatialMetrics, Log, TEXT("SpatialModifySetting: Spatial GDK setting %s set to %f"), *Name, Value);
 		}
