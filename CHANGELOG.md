@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Bug fixes:
 - Disconnected players no longer remain on the server until they time out if the client was shut down manually.
+- Fixed support for relative paths as the engine association in your games .uproject file.
+- RPCs on `NotSpatial` types are no longer queued forever and are now dropped instead.
 
 ## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
 - Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
@@ -33,7 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added runtime option to batch spatial position updates to runtime.
 - Started using the [schema_compiler tool](https://docs.improbable.io/reference/13.8/shared/schema/introduction#using-the-schema-compiler-directly) to generate [schema descriptors](https://docs.improbable.io/reference/13.8/shared/flexible-project-layout/build-process/schema-descriptor-build-process#schema-descriptor-introduction) rather than relying on 'spatial local launch' to do this.
 - Added runtime option to pack unreliable RPCs from the same frame in a single component update to save bandwidth - bPackUnreliableRPCs.
+- Changed Interest so that NetCullDistanceSquared is used to define the distance from a player that the actor type is *interesting to* the player. This replaces CheckoutRadius which defined the distance that an actor is *interested in* other types. Requires engine update to remove the CheckoutRadius property which is no longer used.
 - Enabled new Development Authentication Flow
+- Added new "worker" entities which are created for each server worker in a deployment so they correctly receive interest in the global state manager.
+- Added support for spawning actors with ACLs configured for offloading using actor groups.
+- Removed the references to the `Number of servers` slider in the Play in editor drop-down menu. The number of each server worker type to launch in PIE is now specified within the launch configuration in the `Spatial GDK Editor Settings` settings tab.
+- Added `SpatialWorkerId` which is set to the worker ID when the worker associated to the `UGameInstance` connects.
+
 
 ### Bug fixes:
 - BeginPlay is not called with authority when checking out entities from Spatial.
@@ -103,7 +111,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 
 ## [`0.3.0`](https://github.com/spatialos/UnrealGDK/releases/tag/0.3.0) - 2019-04-04
 
-### New Known Issues: 
+### New Known Issues:
 - Enabling Query Based Interest is needed for level streaming support, but this might affect performance in certain scenarios and is currently being investigated.
 - Replicated `TimelineComponents` are not supported.
 
@@ -158,7 +166,7 @@ In addition to all of the updates from Improbable, this release includes 2 impro
 
 Startup actors revamp is merged! Snapshots are now simpler. Many bugfixes.
 
-### New Known Issues: 
+### New Known Issues:
 - A warning about an out of date net driver is printed at startup of clients and server.
 
 For current known issues, please visit [this](https://docs.improbable.io/unreal/alpha/known-issues) docs page
@@ -178,7 +186,7 @@ For current known issues, please visit [this](https://docs.improbable.io/unreal/
 	3. The paths passed in via -MapPaths are flexible
 
 ### Bug fixes:
-- StartPlayInEditorGameInstance() now correctly call OnStart() on PIE_Client - (@DW-Sebastien) 
+- StartPlayInEditorGameInstance() now correctly call OnStart() on PIE_Client - (@DW-Sebastien)
 - Redirect logging in the cloud to output to the correct file
 - Changed type of key in `TMap` so Linux build will not give errors
 - Disabled loopback of component updates
@@ -202,7 +210,7 @@ For current known issues, please visit [this](https://docs.improbable.io/unreal/
 - Fixed up default connection flows
 - Fixed issue will stale shadow data when crossing worker boundaries.
 - Removed actors from replication consider list if Unreal server-worker is not authoritative over said actor
-- Remove legacy flag "qos_max_unacked_pings_rate" in generated default config - (@DW-Sebastien) 
+- Remove legacy flag "qos_max_unacked_pings_rate" in generated default config - (@DW-Sebastien)
 
 ### External contributors:
 @DW-Sebastien
@@ -213,12 +221,12 @@ For current known issues, please visit [this](https://docs.improbable.io/unreal/
 
 Support for the new Player Auth APIs has been added and general stability improvements.
 
-### New Known Issues: 
+### New Known Issues:
 Level streaming is currently not supported.
 For other current known issues, please visit [this docs page](https://docs.improbable.io/unreal/alpha/known-issues).
 
 ### Features:
-* Support for the new Player Auth APIs 
+* Support for the new Player Auth APIs
 * FUniqueNetId support
 * Support for the new network protocol KCP
 * Lazy loading of FClassInfo

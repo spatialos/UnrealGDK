@@ -16,13 +16,15 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Utils/ActorGroupManager.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-bool USpatialClassInfoManager::TryLoadSchemaDatabase(USpatialNetDriver* InNetDriver)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGroupManager* InActorGroupManager)
 {
 	NetDriver = InNetDriver;
+	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase"));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
@@ -109,7 +111,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	{
 		ESchemaComponentType RPCType = GetRPCType(RemoteFunction);
 		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
-		
+
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
 
@@ -206,6 +208,15 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		});
 
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
+	}
+
+	if (Class->IsChildOf<AActor>())
+	{
+		Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(Class));
+		Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(Class));
+
+		UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
+			*Class->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
 	}
 }
 

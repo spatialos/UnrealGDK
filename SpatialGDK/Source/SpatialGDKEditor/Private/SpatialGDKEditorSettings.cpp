@@ -4,6 +4,7 @@
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
 #include "Settings/LevelEditorPlaySettings.h"
+#include "SpatialGDKSettings.h"
 
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
@@ -11,7 +12,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, bStopSpatialOnExit(false)
-	, bGeneratePlaceholderEntitiesInSnapshot(true)
 {
 	SpatialOSDirectory.Path = GetSpatialOSDirectory();
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
@@ -35,6 +35,11 @@ void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEv
 		PlayInSettings->PostEditChange();
 		PlayInSettings->SaveConfig();
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKEditorSettings, LaunchConfigDesc))
+	{
+		SetRuntimeWorkerTypes();
+		SetLevelEditorPlaySettingsWorkerTypes();
+	}
 }
 
 void USpatialGDKEditorSettings::PostInitProperties()
@@ -46,45 +51,39 @@ void USpatialGDKEditorSettings::PostInitProperties()
 	PlayInSettings->PostEditChange();
 	PlayInSettings->SaveConfig();
 
-	SafetyCheckSpatialOSDirectoryPaths();
+	SetRuntimeWorkerTypes();
+	SetLevelEditorPlaySettingsWorkerTypes();
 }
 
-void USpatialGDKEditorSettings::SafetyCheckSpatialOSDirectoryPaths()
+void USpatialGDKEditorSettings::SetRuntimeWorkerTypes()
 {
-	const FString Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
+	TSet<FName> WorkerTypes;
 
-	FString DisplayMessage = TEXT("The following directory paths are invalid in SpatialOS GDK for Unreal - Editor Settings:\n\n");
-
-	bool bFoundInvalidPath = false;
-
-	if (!FPaths::DirectoryExists(SpatialOSDirectory.Path))
+	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
 	{
-		SpatialOSDirectory.Path = Path;
-		DisplayMessage += TEXT("SpatialOS directory\n");
-		bFoundInvalidPath = true;
+		if (WorkerLaunch.WorkerTypeName != NAME_None)
+		{
+			WorkerTypes.Add(WorkerLaunch.WorkerTypeName);
+		}
 	}
 
-	if (!FPaths::DirectoryExists(SpatialOSSnapshotPath.Path))
+	USpatialGDKSettings* RuntimeSettings = GetMutableDefault<USpatialGDKSettings>();
+	if (RuntimeSettings != nullptr)
 	{
-		SpatialOSSnapshotPath.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(Path, TEXT("snapshots/")));
-		DisplayMessage += TEXT("Snapshot path\n");
-		bFoundInvalidPath = true;
+		RuntimeSettings->ServerWorkerTypes.Empty(WorkerTypes.Num());
+		RuntimeSettings->ServerWorkerTypes.Append(WorkerTypes);
+		RuntimeSettings->PostEditChange();
+		RuntimeSettings->SaveConfig(CPF_Config, *RuntimeSettings->GetDefaultConfigFilename());
 	}
+}
 
-	if (!FPaths::DirectoryExists(GeneratedSchemaOutputFolder.Path))
+void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
+{
+	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+
+	PlayInSettings->WorkerTypesToLaunch.Empty(LaunchConfigDesc.ServerWorkers.Num());
+	for (const FWorkerTypeLaunchSection& WorkerLaunch : LaunchConfigDesc.ServerWorkers)
 	{
-		GeneratedSchemaOutputFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(Path, TEXT("schema/unreal/generated/")));
-		DisplayMessage += TEXT("Output path for the generated schemas\n");
-		bFoundInvalidPath = true;
-	}
-
-	if (bFoundInvalidPath)
-	{
-		DisplayMessage += TEXT("\nDefaults for these will now be set\n");
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(DisplayMessage));
-		FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
-
-		PostEditChange();
-		SaveConfig(CPF_Config, *GetDefaultConfigFilename());
+		PlayInSettings->WorkerTypesToLaunch.Add(WorkerLaunch.WorkerTypeName, WorkerLaunch.NumEditorInstances);
 	}
 }
