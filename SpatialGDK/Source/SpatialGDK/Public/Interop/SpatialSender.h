@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
+#include "TimerManager.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -85,7 +86,7 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
@@ -117,6 +118,9 @@ public:
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
 	void FlushPackedUnreliableRPCs();
+
+	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
+	void CreateServerWorkerEntity(int AttemptCounter = 1);
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
@@ -132,8 +136,8 @@ private:
 
 	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, TArray<uint8>& OutPayload, int ReliableRPCIndex);
 	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
-	Worker_ComponentUpdate CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
-	void AddPendingUnreliableRPC(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject);
+	Worker_ComponentUpdate CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int& OutRPCPayloadSize);
+	void AddPendingUnreliableRPC(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject, int& OutRPCPayloadSize);
 
 	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
 
@@ -157,6 +161,8 @@ private:
 
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
+
+	FTimerManager* TimerManager;
 
 	FChannelToHandleToUnresolved RepPropertyToUnresolved;
 	FOutgoingRepUpdates RepObjectToUnresolved;

@@ -26,6 +26,7 @@ class USpatialWorkerConnection;
 class USpatialDispatcher;
 class USpatialSender;
 class USpatialReceiver;
+class UActorGroupManager;
 class USpatialClassInfoManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
@@ -51,6 +52,7 @@ public:
 	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
 
 	// Begin UObject Interface
+	virtual void BeginDestroy() override;
 	virtual void PostInitProperties() override;
 	// End UObject Interface
 
@@ -66,6 +68,7 @@ public:
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
+	virtual void Shutdown() override;
 	// End UNetDriver interface.
 
 	virtual void OnOwnerUpdated(AActor* Actor);
@@ -111,6 +114,8 @@ public:
 	UPROPERTY()
 	USpatialReceiver* Receiver;
 	UPROPERTY()
+	UActorGroupManager* ActorGroupManager;
+	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
@@ -128,6 +133,8 @@ public:
 	USpatialMetrics* SpatialMetrics;
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
+
+	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
@@ -169,7 +176,6 @@ private:
 	FString SnapshotToLoad;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
-
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
