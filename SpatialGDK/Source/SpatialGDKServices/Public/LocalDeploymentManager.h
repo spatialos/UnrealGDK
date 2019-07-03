@@ -48,7 +48,6 @@ public:
 	bool ParseJson(FString RawJsonString, TSharedPtr<FJsonObject>& JsonParsed);
 	void ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult, int32& ExitCode);
 	FString GetSpotExe();
-	FString GetSpatialOSDirectory();
 
 private:
 	bool bLocalDeploymentRunning;

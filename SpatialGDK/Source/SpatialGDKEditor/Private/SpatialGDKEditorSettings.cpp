@@ -1,5 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialGDKEditorSettings.h"
+
 #include "ISettingsModule.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
@@ -14,11 +16,9 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bGenerateDefaultLaunchConfig(true)
 	, bStopSpatialOnExit(false)
 {
-	SpatialOSDirectory.Path = GetSpatialOSDirectory();
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotFolderPath();
 	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
-	GeneratedSchemaOutputFolder.Path = GetGeneratedSchemaOutputFolder();
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -87,24 +87,10 @@ void USpatialGDKEditorSettings::SafetyCheckSpatialOSDirectoryPaths()
 
 	bool bFoundInvalidPath = false;
 
-	if (!FPaths::DirectoryExists(SpatialOSDirectory.Path))
-	{
-		SpatialOSDirectory.Path = Path;
-		DisplayMessage += TEXT("SpatialOS directory\n");
-		bFoundInvalidPath = true;
-	}
-
 	if (!FPaths::DirectoryExists(SpatialOSSnapshotPath.Path))
 	{
 		SpatialOSSnapshotPath.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(Path, TEXT("snapshots/")));
 		DisplayMessage += TEXT("Snapshot path\n");
-		bFoundInvalidPath = true;
-	}
-
-	if (!FPaths::DirectoryExists(GeneratedSchemaOutputFolder.Path))
-	{
-		GeneratedSchemaOutputFolder.Path = FPaths::ConvertRelativePathToFull(FPaths::Combine(Path, TEXT("schema/unreal/generated/")));
-		DisplayMessage += TEXT("Output path for the generated schemas\n");
 		bFoundInvalidPath = true;
 	}
 

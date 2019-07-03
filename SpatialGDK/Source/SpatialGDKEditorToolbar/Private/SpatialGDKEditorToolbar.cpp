@@ -64,6 +64,19 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+
+	// Bind the play button delegate to starting a local spatial deployment.
+	if (!UEditorEngine::TryStartSpatialDeployment.IsBound())
+	{
+		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
+		{
+			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+			{
+				return VerifyAndStartDeployment();
+			}
+			return true;
+		});
+	}
 }
 
 void FSpatialGDKEditorToolbarModule::ShutdownModule()
@@ -111,19 +124,6 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 
 void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 {
-	// Bind the play button delegate to starting a local spatial deployment.
-	if (!GEditor->TryStartSpatialDeployment.IsBound())
-	{
-		GEditor->TryStartSpatialDeployment.BindLambda([this]
-		{
-			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
-			{
-				return VerifyAndStartDeployment();
-			}
-			return true;
-		});
-	}
-
 	LocalDeploymentManager->RefreshServiceStatus();
 }
 
@@ -447,8 +447,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 			return;
 		}
 
-		FDateTime EndTime = FDateTime::Now();
-		FTimespan Span = EndTime - StartTime;
+		FTimespan Span = FDateTime::Now() - StartTime;
 
 		ShowSuccessNotification(TEXT("Spatial service started!"));
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service started in %f secoonds."), Span.GetTotalSeconds());
@@ -469,8 +468,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 			return;
 		}
 
-		FDateTime EndTime = FDateTime::Now();
-		FTimespan Span = EndTime - StartTime;
+		FTimespan Span = FDateTime::Now() - StartTime;
 
 		ShowSuccessNotification(TEXT("Spatial service stopped!"));
 		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service stopped in %f secoonds."), Span.GetTotalSeconds());

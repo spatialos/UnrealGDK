@@ -1,8 +1,9 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+#pragma once
 
+#include "LocalDeploymentManager.h"
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
-#include "LocalDeploymentManager.h"
 
 class SPATIALGDKSERVICES_API FSpatialGDKServicesModule : public IModuleInterface
 {
@@ -16,6 +17,8 @@ public:
 	}
 
 	FLocalDeploymentManager* GetLocalDeploymentManager();
+
+	static FString GetSpatialOSDirectory();
 
 private:
 	FLocalDeploymentManager LocalDeploymentManager;
