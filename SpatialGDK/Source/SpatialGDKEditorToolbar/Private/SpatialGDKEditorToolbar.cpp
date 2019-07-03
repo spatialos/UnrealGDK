@@ -507,6 +507,11 @@ bool FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			LocalDeploymentManager->TryStopLocalDeployment();
 			bRedeployRequired = false;
 		}
+		else if (LocalDeploymentManager->IsLocalDeploymentRunning())
+		{
+			// A good local deployment is already running.
+			return;
+		}
 
 		// If the last local deployment is still stopping then wait until it's finished.
 		while (LocalDeploymentManager->IsDeploymentStopping())
