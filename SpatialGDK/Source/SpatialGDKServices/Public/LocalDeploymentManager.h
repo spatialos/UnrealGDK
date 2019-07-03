@@ -16,12 +16,6 @@ class FLocalDeploymentManager
 public:
 	FLocalDeploymentManager();
 
-	FSimpleMulticastDelegate OnSpatialShutdown;
-	FSimpleMulticastDelegate OnDeploymentStart;
-
-	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
-	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
-
 	void SPATIALGDKSERVICES_API RefreshServiceStatus();
 
 	bool SPATIALGDKSERVICES_API IsLocalDeploymentRunning();
@@ -48,6 +42,12 @@ public:
 	bool ParseJson(FString RawJsonString, TSharedPtr<FJsonObject>& JsonParsed);
 	void ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult, int32& ExitCode);
 	FString GetSpotExe();
+
+	FSimpleMulticastDelegate OnSpatialShutdown;
+	FSimpleMulticastDelegate OnDeploymentStart;
+
+	FDelegateHandle WorkerConfigDirectoryChangedDelegateHandle;
+	IDirectoryWatcher::FDirectoryChanged WorkerConfigDirectoryChangedDelegate;
 
 private:
 	bool bLocalDeploymentRunning;

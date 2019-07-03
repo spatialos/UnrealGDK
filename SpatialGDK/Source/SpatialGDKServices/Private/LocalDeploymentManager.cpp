@@ -153,7 +153,7 @@ void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString A
 			FPlatformProcess::Sleep(0.01f);
 		}
 
-		ProcHandle.Reset();
+		FPlatformProcess::CloseProc(ProcHandle);
 	}
 	else
 	{
