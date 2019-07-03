@@ -1,59 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Newtonsoft.Json;
 
 namespace Improbable.CodeGen.Base
 {
-    [DebuggerDisplay("{" + nameof(QualifiedName) + "}")]
-    public class Identifier : IEquatable<Identifier>
-    {
-        // These properties are explicitly tagged with [JsonProperty] so that JSON.Net can deserialize into them as readonly fields.
-        [JsonProperty] public readonly string Name;
-        [JsonProperty] public readonly IReadOnlyList<string> Path;
-        [JsonProperty] public readonly string QualifiedName;
-
-        public bool Equals(Identifier other)
-        {
-            if (ReferenceEquals(null, other))
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            return string.Equals(QualifiedName, other.QualifiedName);
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (ReferenceEquals(null, obj))
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            if (obj.GetType() != GetType())
-            {
-                return false;
-            }
-
-            return Equals((Identifier) obj);
-        }
-
-        public override int GetHashCode()
-        {
-            var hashCode = QualifiedName != null ? QualifiedName.GetHashCode() : 0;
-            return hashCode;
-        }
-    }
 
     public enum PrimitiveType
     {
@@ -73,27 +23,8 @@ namespace Improbable.CodeGen.Base
         Double = 13,
         String = 14,
         EntityId = 15,
-        Bytes = 16
-    }
-
-    public class TypeReference
-    {
-        public string QualifiedName;
-    }
-
-    public class EnumReference
-    {
-        public string QualifiedName;
-    }
-
-    public class EnumValueReference
-    {
-        public string QualifiedName;
-    }
-
-    public class FieldReference
-    {
-        public string QualifiedName;
+        Bytes = 16,
+        Entity = 17
     }
 
     public enum ValueType
@@ -103,11 +34,11 @@ namespace Improbable.CodeGen.Base
         Type
     }
 
-    public class ValueTypeReference
+    public class TypeReference
     {
-        public EnumReference Enum;
+        public string Enum;
         public PrimitiveType Primitive;
-        public TypeReference Type;
+        public string Type;
 
         public ValueType ValueTypeSelector
         {
@@ -128,15 +59,17 @@ namespace Improbable.CodeGen.Base
                     return ValueType.Enum;
                 }
 
-                throw new InvalidOperationException("ValueTypeReference doesn't have any type set.");
+                throw new InvalidOperationException("TypeReference doesn't have any type set.");
             }
         }
     }
 
     public class Value
     {
+        public SourceReference SourceReference;
+
         public bool BoolValue;
-        public byte[] BytesValue;
+        public string BytesValue;
         public double DoubleValue;
         public long EntityIdValue;
         public float FloatValue;
@@ -145,7 +78,7 @@ namespace Improbable.CodeGen.Base
         public ListValueHolder ListValue;
         public MapValueHolder MapValue;
         public OptionValueHolder OptionValue;
-        public SchemaEnumValue SchemaEnumValue;
+        public SchemaEnumValue EnumValue;
         public string StringValue;
         public TypeValue TypeValue;
         public uint Uint32Value;
@@ -175,47 +108,51 @@ namespace Improbable.CodeGen.Base
 
     public class SchemaEnumValue
     {
-        public EnumReference Enum;
-        public EnumValueReference EnumValue;
+        public string Enum;
+        public string EnumValue;
 
         public string Name;
-        public uint Value;
+        public string Value;
     }
 
     public class TypeValue
     {
         public IReadOnlyList<FieldValue> Fields;
 
-        public TypeReference Type;
+        public string Type;
 
         public class FieldValue
         {
-            public FieldReference Field;
+            public SourceReference SourceReference;
             public string Name;
-            public uint Number;
             public Value Value;
         }
     }
 
     public class Annotation
     {
+        public SourceReference SourceReference;
         public TypeValue TypeValue;
     }
 
     public class EnumValueDefinition
     {
+        public SourceReference SourceReference;
         public IReadOnlyList<Annotation> Annotations;
-        public Identifier Identifier;
+        public string Name;
 
         public uint Value;
     }
 
-    [DebuggerDisplay("{" + nameof(Identifier) + "}")]
+    [DebuggerDisplay("{" + nameof(QualifiedName) + "}")]
     public class EnumDefinition
     {
+        public SourceReference SourceReference;
         public IReadOnlyList<Annotation> Annotations;
-        public Identifier Identifier;
-        public IReadOnlyList<EnumValueDefinition> ValueDefinitions;
+        public string QualifiedName;
+        public string Name;
+        public string OuterType;
+        public IReadOnlyList<EnumValueDefinition> Values;
     }
 
     public enum FieldType
@@ -226,14 +163,17 @@ namespace Improbable.CodeGen.Base
         Singular
     }
 
-    [DebuggerDisplay("{" + nameof(Identifier) + "}" + " {" + nameof(FieldId) + "}")]
+    [DebuggerDisplay("{" + nameof(Name) + "}" + " ({" + nameof(FieldId) + "})")]
     public class FieldDefinition
     {
+        public SourceReference SourceReference;
+
         public IReadOnlyList<Annotation> Annotations;
 
         public uint FieldId;
 
-        public Identifier Identifier;
+        public string Name;
+
         public ListTypeRef ListType;
         public MapTypeRef MapType;
         public OptionTypeRef OptionType;
@@ -241,6 +181,7 @@ namespace Improbable.CodeGen.Base
         public SingularTypeRef SingularType;
 
         public bool Transient;
+
         public FieldType TypeSelector
         {
             get
@@ -271,92 +212,110 @@ namespace Improbable.CodeGen.Base
 
         public class SingularTypeRef
         {
-            public ValueTypeReference Type;
+            public TypeReference Type;
         }
 
         public class OptionTypeRef
         {
-            public ValueTypeReference InnerType;
+            public TypeReference InnerType;
         }
 
         public class ListTypeRef
         {
-            public ValueTypeReference InnerType;
+            public TypeReference InnerType;
         }
 
         public class MapTypeRef
         {
-            public ValueTypeReference KeyType;
-            public ValueTypeReference ValueType;
+            public TypeReference KeyType;
+            public TypeReference ValueType;
         }
     }
 
-    [DebuggerDisplay("{" + nameof(Identifier) + "}")]
+    [DebuggerDisplay("{" + nameof(QualifiedName) + "}")]
     public class TypeDefinition
     {
+        public SourceReference SourceReference;
+
         public IReadOnlyList<Annotation> Annotations;
-        public IReadOnlyList<FieldDefinition> FieldDefinitions;
-        public Identifier Identifier;
+        public IReadOnlyList<FieldDefinition> Fields;
+        public string QualifiedName;
+        public string Name;
+        public string OuterType;
     }
 
-    [DebuggerDisplay("{" + nameof(Identifier) + "} {" + nameof(ComponentId) + "}")]
+    [DebuggerDisplay("{" + nameof(QualifiedName) + "} {" + nameof(ComponentId) + "}")]
     public class ComponentDefinition
     {
+        public SourceReference SourceReference;
+
         public IReadOnlyList<Annotation> Annotations;
-        public IReadOnlyList<CommandDefinition> CommandDefinitions;
+        public IReadOnlyList<CommandDefinition> Commands;
         public uint ComponentId;
 
-        public TypeReference DataDefinition;
-        public IReadOnlyList<EventDefinition> EventDefinitions;
+        public string DataDefinition;
+        public IReadOnlyList<EventDefinition> Events;
 
-        public IReadOnlyList<FieldDefinition> FieldDefinitions;
+        public IReadOnlyList<FieldDefinition> Fields;
 
-        public Identifier Identifier;
+        public string QualifiedName;
+        public string Name;
 
-        [DebuggerDisplay("{" + nameof(Identifier) + "}")]
+        [DebuggerDisplay("{" + nameof(QualifiedName) + "}")]
         public class EventDefinition
         {
+            public SourceReference SourceReference;
+
             public IReadOnlyList<Annotation> Annotations;
             public uint EventIndex;
-            public Identifier Identifier;
-            public ValueTypeReference Type;
+            public string Name;
+            public string Type;
         }
 
-        [DebuggerDisplay("{" + nameof(Identifier) + "}" + " {" + nameof(CommandIndex) + "}")]
+        [DebuggerDisplay("{" + nameof(QualifiedName) + "}" + " {" + nameof(CommandIndex) + "}")]
         public class CommandDefinition
         {
+            public SourceReference SourceReference;
+
             public IReadOnlyList<Annotation> Annotations;
             public uint CommandIndex;
 
-            public Identifier Identifier;
-            public ValueTypeReference RequestType;
-            public ValueTypeReference ResponseType;
+            public string Name;
+            public string RequestType;
+            public string ResponseType;
         }
-    }
-
-    public class SchemaBundleV1
-    {
-        public IReadOnlyList<ComponentDefinition> ComponentDefinitions;
-
-        public IReadOnlyList<EnumDefinition> EnumDefinitions;
-        public IReadOnlyList<TypeDefinition> TypeDefinitions;
     }
 
     public class SourceReference
     {
         public uint Column;
-        public string FilePath;
         public uint Line;
-    }
-
-    public class SchemaSourceMapV1
-    {
-        public Dictionary<string, SourceReference> SourceReferences;
     }
 
     public class SchemaBundle
     {
-        public SchemaSourceMapV1 SourceMapV1;
-        public SchemaBundleV1 V1;
+        public IReadOnlyList<SchemaFile> SchemaFiles;
     }
-}   
+
+    public class Package
+    {
+        public SourceReference SourceReference;
+        public string Name;
+    }
+
+    public class Import
+    {
+        public SourceReference SourceReference;
+        public string Path;
+    }
+
+    public class SchemaFile
+    {
+        public string CanonicalPath;
+        public Package Package;
+        public IReadOnlyList<Import> Imports;
+        public IReadOnlyList<EnumDefinition> Enums;
+        public IReadOnlyList<TypeDefinition> Types;
+        public IReadOnlyList<ComponentDefinition> Components;
+    }
+}

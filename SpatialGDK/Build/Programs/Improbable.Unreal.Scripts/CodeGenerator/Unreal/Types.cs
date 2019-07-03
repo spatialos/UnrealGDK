@@ -81,18 +81,18 @@ namespace Improbable.CodeGen.Unreal
             return $"{fieldName} == {otherObjName}.{fieldName}";
         }
 
-        public static string GetFieldDefinitionHash(string name, ValueTypeReference valueTypeReference, Bundle bundle)
+        public static string GetFieldDefinitionHash(string name, TypeReference typeReference, Bundle bundle)
         {
-            switch (valueTypeReference.ValueTypeSelector)
+            switch (typeReference.ValueTypeSelector)
             {
                 case ValueType.Enum:
                     return $"::GetTypeHash({name})";
                 case ValueType.Primitive:
                     return $"::GetTypeHash({name})";
                 case ValueType.Type:
-                    return $"{GetNamespaceFromQualifiedName(valueTypeReference.Type.QualifiedName, bundle)}::GetTypeHash({name})";
+                    return $"{GetNamespaceFromQualifiedName(typeReference.Type, bundle)}::GetTypeHash({name})";
                 default:
-                    throw new InvalidOperationException("Trying to hash invalid ValueTypeReference");
+                    throw new InvalidOperationException("Trying to hash invalid TypeReference");
             }
         }
 
@@ -114,26 +114,26 @@ namespace Improbable.CodeGen.Unreal
             }
 
             // Get all possible includes required by events (if type is a component)
-            if (type.IsComponent)
+            if (type.ComponentId.HasValue)
             {
                 foreach (var _event in type.Events)
                 {
-                    AddRequiredTypeQualifiedNames(_event.Type, ref includeTypeQualifiedNames);
+                    includeTypeQualifiedNames.Add(_event.Type);
                 }
-                foreach (var command in bundle.Components[type.QualifiedName].CommandDefinitions)
+                foreach (var command in bundle.Components[type.QualifiedName].Commands)
                 {
-                    AddRequiredTypeQualifiedNames(command.RequestType, ref includeTypeQualifiedNames);
-                    AddRequiredTypeQualifiedNames(command.ResponseType, ref includeTypeQualifiedNames);
+                    includeTypeQualifiedNames.Add(command.RequestType);
+                    includeTypeQualifiedNames.Add(command.ResponseType);
                 }
             }
 
             // Filter out #includes for types nested in our type (those are defined in the same file)
-            var nestedDefinitionNames = type.NestedTypes.Select(t => t.QualifiedName).Concat(type.NestedEnums.Select(e => e.Identifier.QualifiedName));
+            var nestedDefinitionNames = type.NestedTypes.Select(t => t.QualifiedName).Concat(type.NestedEnums.Select(e => e.QualifiedName));
 
             includeTypeQualifiedNames = includeTypeQualifiedNames.Where(name => !nestedDefinitionNames.Contains($"{name}.")).ToList();
 
             // Map any nested type dependencies to their include file
-            includeTypeQualifiedNames = includeTypeQualifiedNames.Select(t => bundle.GetOutermostTypeWrapperForType(t)).ToList();
+            includeTypeQualifiedNames = includeTypeQualifiedNames.Select(t => GetOutermostType(t, bundle)).ToList();
 
             return includeTypeQualifiedNames.Select(name => $"{name.Replace(".", "/")}.h").Distinct().ToList();
         }
@@ -167,21 +167,48 @@ namespace Improbable.CodeGen.Unreal
             }
         }
 
-        public static string GetTypeDisplayName(ValueTypeReference typeRef, Bundle bundle, TypeDescription parentType)
+        public static string GetTypeDisplayName(TypeReference typeRef, Bundle bundle, TypeDescription parentType)
         {
             switch (typeRef.ValueTypeSelector)
             {
                 case ValueType.Enum:
-                    return bundle.IsNestedEnum(typeRef.Enum.QualifiedName) ? GetTypeClassDefinitionQualifiedName(typeRef.Enum.QualifiedName, bundle, IsLocallyDefined(typeRef.Enum.QualifiedName, parentType))
-                        : GetTypeDisplayName(typeRef.Enum.QualifiedName, IsLocallyDefined(typeRef.Enum.QualifiedName, parentType));
+                    return IsNested(typeRef, bundle) ? GetTypeClassDefinitionQualifiedName(typeRef.Enum, bundle, IsLocallyDefined(typeRef.Enum, parentType))
+                        : GetTypeDisplayName(typeRef.Enum, IsLocallyDefined(typeRef.Enum, parentType));
                 case ValueType.Primitive:
                     return SchemaToCppTypes[typeRef.Primitive];
                 case ValueType.Type:
-                    return bundle.IsNestedType(typeRef.Type.QualifiedName) ? GetTypeClassDefinitionQualifiedName(typeRef.Type.QualifiedName, bundle, IsLocallyDefined(typeRef.Type.QualifiedName, parentType))
-                        : GetTypeDisplayName(typeRef.Type.QualifiedName, IsLocallyDefined(typeRef.Type.QualifiedName, parentType)); ;
+                    return IsNested(typeRef, bundle) ? GetTypeClassDefinitionQualifiedName(typeRef.Type, bundle, IsLocallyDefined(typeRef.Type, parentType))
+                        : GetTypeDisplayName(typeRef.Type, IsLocallyDefined(typeRef.Type, parentType)); ;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+        }
+
+
+
+        public static bool IsNested(TypeReference typeRef, Bundle bundle)
+        {
+            switch (typeRef.ValueTypeSelector)
+            {
+                case ValueType.Enum:
+                    return !bundle.Enums[typeRef.Enum].OuterType.Equals("");
+                case ValueType.Type:
+                    return !bundle.Types[typeRef.Type].OuterType.Equals("");
+                case ValueType.Primitive:
+                    return false;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public static string GetOutermostType(string typeRef, Bundle bundle)
+        {
+            var outermostType = typeRef;
+            while (!outermostType.Equals(""))
+            {
+                outermostType = bundle.Types[outermostType].OuterType;
+            }
+            return outermostType;
         }
 
         /** If a type is being used within the same file namespace in which it is defined, the compiler complains.
@@ -223,7 +250,7 @@ namespace Improbable.CodeGen.Unreal
 
         public static bool IsLocallyDefined(string qualifiedType, TypeDescription parentType)
         {
-            return parentType.NestedTypes.Select(t => t.QualifiedName).Concat(parentType.NestedEnums.Select(e => e.Identifier.QualifiedName)).Contains(qualifiedType);
+            return parentType.NestedTypes.Select(t => t.QualifiedName).Concat(parentType.NestedEnums.Select(e => e.QualifiedName)).Contains(qualifiedType);
         }
 
         public static string GetTypeClassDefinitionName(string qualifiedName, Bundle bundle)
@@ -237,9 +264,17 @@ namespace Improbable.CodeGen.Unreal
         // E.g. improbable::ComponentInterest::Query becomes improbable::ComponentInterest_Query
         public static string GetTypeClassDefinitionQualifiedName(string qualifiedName, Bundle bundle, bool isLocallyDefined = false)
         {
-            var outermostType = bundle.GetOutermostTypeWrapperForType(qualifiedName);
+            if (isLocallyDefined)
+            {
+                return GetNameFromQualifiedName(qualifiedName);
+            }
+            var outermostType = GetOutermostType(qualifiedName, bundle);
             var typeName = string.Join("_", qualifiedName.Split('.').Skip(outermostType.Count(c => c == '.')));
-            return isLocallyDefined ? typeName : $"{Text.ReplacesDotsWithDoubleColons(outermostType.Substring(0, outermostType.LastIndexOf(".")))}::{typeName}";
+            if (outermostType.Equals(""))
+            {
+                Console.WriteLine();
+            }
+            return $"{Text.ReplacesDotsWithDoubleColons(outermostType.Substring(0, outermostType.LastIndexOf(".")))}::{typeName}";
         }
 
         public static List<TypeDescription> GetRecursivelyNestedTypes(TypeDescription type)
@@ -253,7 +288,7 @@ namespace Improbable.CodeGen.Unreal
         public static List<EnumDefinition> GetRecursivelyNestedEnums(TypeDescription type)
         {
             return type.NestedEnums.Concat(type.NestedTypes.SelectMany(nestedType => GetRecursivelyNestedEnums(nestedType)))
-                .GroupBy(e => e.Identifier.QualifiedName)
+                .GroupBy(e => e.QualifiedName)
                 .Select(e => e.First())
                 .ToList();
         }
@@ -282,7 +317,7 @@ namespace Improbable.CodeGen.Unreal
 
         private static string GetNamespaceFromQualifiedName(string qualifiedName, Bundle bundle)
         {
-            var outermostTypeWrapper = bundle.GetOutermostTypeWrapperForType(qualifiedName);
+            var outermostTypeWrapper = GetOutermostType(qualifiedName, bundle);
             return outermostTypeWrapper.Substring(0, outermostTypeWrapper.LastIndexOf(".")).Replace(".", "::");
         }
 
@@ -291,6 +326,8 @@ namespace Improbable.CodeGen.Unreal
             var path = qualifiedName.Split('.');
             return $"{string.Join("/", path)}{extension}";
         }
+
+
 
         // For a field definition inside a type, get all the necessary includes for the type (from collection inner types, etc)
         private static void AddRequiredTypeQualifiedNames(FieldDefinition field, ref List<string> requiredTypeQualifiedNames)
@@ -313,15 +350,15 @@ namespace Improbable.CodeGen.Unreal
             }
         }
 
-        private static void AddRequiredTypeQualifiedNames(ValueTypeReference valueType, ref List<string> requiredTypeQualifiedNames)
+        private static void AddRequiredTypeQualifiedNames(TypeReference valueType, ref List<string> requiredTypeQualifiedNames)
         {
             switch (valueType.ValueTypeSelector)
             {
                 case ValueType.Enum:
-                    requiredTypeQualifiedNames.Add(valueType.Enum.QualifiedName);
+                    requiredTypeQualifiedNames.Add(valueType.Enum);
                     break;
                 case ValueType.Type:
-                    requiredTypeQualifiedNames.Add(valueType.Type.QualifiedName);
+                    requiredTypeQualifiedNames.Add(valueType.Type);
                     break;
                 default:
                     return;
@@ -353,11 +390,11 @@ namespace Improbable.CodeGen.Unreal
                 // This only occurs for singular type or map keys
                 if (field.TypeSelector == FieldType.Singular && field.SingularType.Type.ValueTypeSelector == ValueType.Type)
                 {
-                    Visit(topLevelTypes.Find(t => t.QualifiedName == field.SingularType.Type.Type.QualifiedName).QualifiedName, topLevelTypes, ref nestedTypeNameToVisitedMap, ref graphIsCyclic, ref sortedTypes, types, bundle);
+                    Visit(topLevelTypes.Find(t => t.QualifiedName == field.SingularType.Type.Type).QualifiedName, topLevelTypes, ref nestedTypeNameToVisitedMap, ref graphIsCyclic, ref sortedTypes, types, bundle);
                 }
                 else if (field.TypeSelector == FieldType.Map && field.MapType.KeyType.ValueTypeSelector == ValueType.Type)
                 {
-                    Visit(topLevelTypes.Find(t => t.QualifiedName == field.MapType.KeyType.Type.QualifiedName).QualifiedName, topLevelTypes, ref nestedTypeNameToVisitedMap, ref graphIsCyclic, ref sortedTypes, types, bundle);
+                    Visit(topLevelTypes.Find(t => t.QualifiedName == field.MapType.KeyType.Type).QualifiedName, topLevelTypes, ref nestedTypeNameToVisitedMap, ref graphIsCyclic, ref sortedTypes, types, bundle);
                 }
             }
             sortedTypes.Add(type);

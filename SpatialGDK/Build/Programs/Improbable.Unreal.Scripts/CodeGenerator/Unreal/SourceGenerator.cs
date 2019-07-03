@@ -11,7 +11,6 @@ namespace Improbable.CodeGen.Unreal
     {
         public static string GenerateSource(TypeDescription type, List<TypeDescription> types, Dictionary<string, TypeGeneratedCode> allGeneratedTypeContent, Bundle bundle)
         {
-            var sourceRef = bundle.SchemaBundle.SourceMapV1.SourceReferences[type.QualifiedName];
             var allNestedTypes = Types.GetRecursivelyNestedTypes(type);
             var allNestedEnums = Types.GetRecursivelyNestedEnums(type);
             var typeNamespaces = Text.GetNamespaceFromTypeName(type.QualifiedName);
@@ -24,12 +23,12 @@ namespace Improbable.CodeGen.Unreal
 #include <set>
 #include ""{string.Concat(Enumerable.Repeat("../", type.QualifiedName.Count(c => c == '.')))}{MapEquals.HeaderName}""
 
-// Generated from {Path.GetFullPath(sourceRef.FilePath)}({sourceRef.Line},{sourceRef.Column})
+// Generated from {Path.GetFullPath(bundle.TypeToFileName[type.QualifiedName])}({type.SourceReference.Line},{type.SourceReference.Column})
 {string.Join(Environment.NewLine, typeNamespaces.Select(t => $"namespace {t} {{"))}
 
 {GenerateTypeFunctions(type.Name, type, bundle)}");
 
-            if (type.IsComponent)
+            if (type.ComponentId.HasValue)
             {
                 builder.AppendLine(GenerateComponentUpdateFunctions(type.Name, type, bundle));
             }
@@ -57,18 +56,18 @@ namespace Improbable.CodeGen.Unreal
 
         private static string GenerateTypeFunctions(string name, TypeDescription type, Bundle bundle)
         {
-            var argType = type.IsComponent ? "Schema_ComponentData" : "Schema_Object";
-            var argName = type.IsComponent ? "ComponentData" : "SchemaObject";
+            var argType = type.ComponentId.HasValue ? "Schema_ComponentData" : "Schema_Object";
+            var argName = type.ComponentId.HasValue ? "ComponentData" : "SchemaObject";
             var componentFieldsName = "FieldsObject";
-            var targetSchemaObject = type.IsComponent ? componentFieldsName : argName;
+            var targetSchemaObject = type.ComponentId.HasValue ? componentFieldsName : argName;
 
             var builder = new StringBuilder();
 
             if (type.Fields.Count > 0)
             {
                 builder.AppendLine($@"{name}::{name}(
-{Text.Indent(1, $"{string.Join($", {Environment.NewLine}", type.Fields.Select(f => $"{Types.GetConstAccessorTypeModification(f, bundle, type)} {Text.SnakeCaseToPascalCase(f.Identifier.Name)}"))})")}
-: {string.Join($"{Environment.NewLine}, ", type.Fields.Select(f => $"_{Text.SnakeCaseToPascalCase(f.Identifier.Name)}{{ {Text.SnakeCaseToPascalCase(f.Identifier.Name)} }}"))} {{}}
+{Text.Indent(1, $"{string.Join($", {Environment.NewLine}", type.Fields.Select(f => $"{Types.GetConstAccessorTypeModification(f, bundle, type)} {Text.SnakeCaseToPascalCase(f.Name)}"))})")}
+: {string.Join($"{Environment.NewLine}, ", type.Fields.Select(f => $"_{Text.SnakeCaseToPascalCase(f.Name)}{{ {Text.SnakeCaseToPascalCase(f.Name)} }}"))} {{}}
 ");
             }
 
@@ -78,7 +77,7 @@ bool {name}::operator==(const {name}& Value) const
 {{
 {Text.Indent(1, type.Fields.Count == 0
 ? "return true;"
-: $"return {string.Join($@" && {Environment.NewLine}", type.Fields.Select(f => Types.GetFieldDefinitionEquals(f, $"_{Text.SnakeCaseToPascalCase(f.Identifier.Name)}", "Value")))};")}
+: $"return {string.Join($@" && {Environment.NewLine}", type.Fields.Select(f => Types.GetFieldDefinitionEquals(f, $"_{Text.SnakeCaseToPascalCase(f.Name)}", "Value")))};")}
 }}
 
 bool {name}::operator!=(const {name}& Value) const
@@ -88,19 +87,19 @@ bool {name}::operator!=(const {name}& Value) const
 ");
             if (type.Fields.Count() > 0)
             {
-                builder.AppendLine($@"{string.Join(Environment.NewLine, type.Fields.Select(field => $@"{Types.GetConstAccessorTypeModification(field, bundle, type)} {name}::Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}() const
+                builder.AppendLine($@"{string.Join(Environment.NewLine, type.Fields.Select(field => $@"{Types.GetConstAccessorTypeModification(field, bundle, type)} {name}::Get{Text.SnakeCaseToPascalCase(field.Name)}() const
 {{
-{Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(field.Identifier.Name)};")}
+{Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(field.Name)};")}
 }}
 
-{Types.GetFieldTypeAsCpp(field, bundle, type)}& {name}::Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}()
+{Types.GetFieldTypeAsCpp(field, bundle, type)}& {name}::Get{Text.SnakeCaseToPascalCase(field.Name)}()
 {{
-{Text.Indent(1, $"return _{ Text.SnakeCaseToPascalCase(field.Identifier.Name)}; ")}
+{Text.Indent(1, $"return _{ Text.SnakeCaseToPascalCase(field.Name)}; ")}
 }}
 
-{name}& {name}::Set{Text.SnakeCaseToPascalCase(field.Identifier.Name)}({Types.GetConstAccessorTypeModification(field, bundle, type)} Value)
+{name}& {name}::Set{Text.SnakeCaseToPascalCase(field.Name)}({Types.GetConstAccessorTypeModification(field, bundle, type)} Value)
 {{
-{Text.Indent(1, $@"_{ Text.SnakeCaseToPascalCase(field.Identifier.Name)} = Value;
+{Text.Indent(1, $@"_{ Text.SnakeCaseToPascalCase(field.Name)} = Value;
 return *this;")}
 }}
 "))}");
@@ -119,28 +118,28 @@ return *this;")}
             {
                 builder.AppendLine($@"void {name}::Serialize({argType}* {argName}) const
 {{");
-                if (type.IsComponent)
+                if (type.ComponentId.HasValue)
                 {
                     builder.AppendLine(Text.Indent(1, $"Schema_Object* {componentFieldsName} = Schema_GetComponentDataFields({argName});"));
                     builder.AppendLine();
                 }
 
-                builder.AppendLine($@"{Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $@"// serializing field {Text.SnakeCaseToPascalCase(field.Identifier.Name)} = {field.FieldId}
-{Serialization.GetFieldSerialization(field, targetSchemaObject, $"_{Text.SnakeCaseToPascalCase(field.Identifier.Name)}", type, bundle)}")))}
+                builder.AppendLine($@"{Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $@"// serializing field {Text.SnakeCaseToPascalCase(field.Name)} = {field.FieldId}
+{Serialization.GetFieldSerialization(field, targetSchemaObject, $"_{Text.SnakeCaseToPascalCase(field.Name)}", type, bundle)}")))}
 }}
 
 {name} {name}::Deserialize({argType}* {argName})
 {{");
 
-                if (type.IsComponent)
+                if (type.ComponentId.HasValue)
                 {
                     builder.AppendLine(Text.Indent(1, $"Schema_Object * {componentFieldsName} = Schema_GetComponentDataFields({argName});"));
                 }
 
                 builder.AppendLine($@"{Text.Indent(1, $@"{name} Data;
 
-{string.Join(Environment.NewLine, type.Fields.Select(field => $@"// deserializing field {Text.SnakeCaseToPascalCase(field.Identifier.Name)} = {field.FieldId}
-{Serialization.GetFieldDeserialization(field, targetSchemaObject, $"Data._{Text.SnakeCaseToPascalCase(field.Identifier.Name)}", type, bundle, true)}
+{string.Join(Environment.NewLine, type.Fields.Select(field => $@"// deserializing field {Text.SnakeCaseToPascalCase(field.Name)} = {field.FieldId}
+{Serialization.GetFieldDeserialization(field, targetSchemaObject, $"Data._{Text.SnakeCaseToPascalCase(field.Name)}", type, bundle, true)}
 "))}
 return Data;")}
 }}");
@@ -161,7 +160,7 @@ return Data;")}
             builder.AppendLine($@"bool {name}::Update::operator==(const {name}::Update& Value) const
 {{
 {Text.Indent(1, type.Fields.Count == 0 ? "return true;"
-: $"return {string.Join($@" && {Environment.NewLine}", type.Fields.Select(f => Types.GetFieldDefinitionEquals(f, $"_{Text.SnakeCaseToPascalCase(f.Identifier.Name)}", "Value")))};")}
+: $"return {string.Join($@" && {Environment.NewLine}", type.Fields.Select(f => Types.GetFieldDefinitionEquals(f, $"_{Text.SnakeCaseToPascalCase(f.Name)}", "Value")))};")}
 }}
 
 bool {name}::Update::operator!=(const {name}::Update& Value) const
@@ -172,39 +171,39 @@ bool {name}::Update::operator!=(const {name}::Update& Value) const
 {name}::Update {name}::Update::FromInitialData(const {name}& Data)
 {{ 
 {Text.Indent(1, $@"{name}::Update Update;
-{string.Join(Environment.NewLine, type.Fields.Select(f => $"Update._{Text.SnakeCaseToPascalCase(f.Identifier.Name)} = Data.Get{Text.SnakeCaseToPascalCase(f.Identifier.Name)}();"))}
+{string.Join(Environment.NewLine, type.Fields.Select(f => $"Update._{Text.SnakeCaseToPascalCase(f.Name)} = Data.Get{Text.SnakeCaseToPascalCase(f.Name)}();"))}
 return Update;")}
 }}
 
 {name} {name}::Update::ToInitialData() const
 {{
 {Text.Indent(1, $@"return {name} (
-{string.Join($",{Environment.NewLine}", type.Fields.Select(f => Text.Indent(1, $"*_{Text.SnakeCaseToPascalCase(f.Identifier.Name)}")))});")}
+{string.Join($",{Environment.NewLine}", type.Fields.Select(f => Text.Indent(1, $"*_{Text.SnakeCaseToPascalCase(f.Name)}")))});")}
 }}         
 
 void {name}::Update::ApplyTo({name}& Data) const
 {{
-{Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $@"if (_{Text.SnakeCaseToPascalCase(field.Identifier.Name)})
+{Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $@"if (_{Text.SnakeCaseToPascalCase(field.Name)})
 {{
-{Text.Indent(1, $@"Data.Set{Text.SnakeCaseToPascalCase(field.Identifier.Name)}(*_{Text.SnakeCaseToPascalCase(field.Identifier.Name)});")}
+{Text.Indent(1, $@"Data.Set{Text.SnakeCaseToPascalCase(field.Name)}(*_{Text.SnakeCaseToPascalCase(field.Name)});")}
 }}")))}
 }}
 ");
             if (type.Fields.Count() > 0)
             {
-                builder.AppendLine(string.Join(Environment.NewLine, type.Fields.Select(field => $@"const {Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetFieldTypeAsCpp(field, bundle, type)}>& {name}::Update::Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}() const
+                builder.AppendLine(string.Join(Environment.NewLine, type.Fields.Select(field => $@"const {Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetFieldTypeAsCpp(field, bundle, type)}>& {name}::Update::Get{Text.SnakeCaseToPascalCase(field.Name)}() const
 {{
-{Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(field.Identifier.Name)};")}
+{Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(field.Name)};")}
 }}
 
-{Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetFieldTypeAsCpp(field, bundle, type)}>& {name}::Update::Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}()
+{Types.CollectionTypesToQualifiedTypes[Types.Collection.Option]}<{Types.GetFieldTypeAsCpp(field, bundle, type)}>& {name}::Update::Get{Text.SnakeCaseToPascalCase(field.Name)}()
 {{
-{Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(field.Identifier.Name)};")}
+{Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(field.Name)};")}
 }}
 
-{name}::Update& {name}::Update::Set{Text.SnakeCaseToPascalCase(field.Identifier.Name)}({Types.GetConstAccessorTypeModification(field, bundle, type)} value)
+{name}::Update& {name}::Update::Set{Text.SnakeCaseToPascalCase(field.Name)}({Types.GetConstAccessorTypeModification(field, bundle, type)} value)
 {{
-{Text.Indent(1, $@"_{ Text.SnakeCaseToPascalCase(field.Identifier.Name)} = value;
+{Text.Indent(1, $@"_{ Text.SnakeCaseToPascalCase(field.Name)} = value;
 return *this;")}
 }}
 ")));
@@ -212,19 +211,19 @@ return *this;")}
 
             if (type.Events.Count() > 0)
             {
-                builder.AppendLine(string.Join(Environment.NewLine, type.Events.Select(_event => $@"const {Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}< {Types.GetTypeDisplayName(_event.Type.Type.QualifiedName)} >& {name}::Update::Get{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}List() const
+                builder.AppendLine(string.Join(Environment.NewLine, type.Events.Select(_event => $@"const {Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}< {Types.GetTypeDisplayName(_event.Type)} >& {name}::Update::Get{Text.SnakeCaseToPascalCase(_event.Name)}List() const
 {{
-{Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}List;")}
+{Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(_event.Name)}List;")}
 }}
 
-{Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}< {Types.GetTypeDisplayName(_event.Type.Type.QualifiedName)} >& {name}::Update::Get{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}List()
+{Types.CollectionTypesToQualifiedTypes[Types.Collection.List]}< {Types.GetTypeDisplayName(_event.Type)} >& {name}::Update::Get{Text.SnakeCaseToPascalCase(_event.Name)}List()
 {{
-{Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}List;")}
+{Text.Indent(1, $"return _{Text.SnakeCaseToPascalCase(_event.Name)}List;")}
 }}
 
-{ name}::Update& {name}::Update::Add{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}(const {Types.GetTypeDisplayName(_event.Type.Type.QualifiedName)}& Value)
+{ name}::Update& {name}::Update::Add{Text.SnakeCaseToPascalCase(_event.Name)}(const {Types.GetTypeDisplayName(_event.Type)}& Value)
 {{
-{Text.Indent(1, $@"_{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}List.Add(Value);
+{Text.Indent(1, $@"_{Text.SnakeCaseToPascalCase(_event.Name)}List.Add(Value);
 return *this;")}
 }}
 ")));
@@ -255,8 +254,8 @@ return *this;")}
 
             if (type.Fields.Count > 0)
             {
-                builder.AppendLine(Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $@"// serializing field {Text.SnakeCaseToPascalCase(field.Identifier.Name)} = {field.FieldId}
-if (_{Text.SnakeCaseToPascalCase(field.Identifier.Name)}.IsSet())
+                builder.AppendLine(Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $@"// serializing field {Text.SnakeCaseToPascalCase(field.Name)} = {field.FieldId}
+if (_{Text.SnakeCaseToPascalCase(field.Name)}.IsSet())
 {{
 {Text.Indent(1, field.TypeSelector != FieldType.Singular ? $@"if ({Serialization.GetFieldClearingCheck(field)})
 {{
@@ -264,17 +263,17 @@ if (_{Text.SnakeCaseToPascalCase(field.Identifier.Name)}.IsSet())
 }}
 else
 {{
-{Text.Indent(1, Serialization.GetFieldSerialization(field, updatesObjectName, $"(*_{Text.SnakeCaseToPascalCase(field.Identifier.Name)})", type, bundle))}
+{Text.Indent(1, Serialization.GetFieldSerialization(field, updatesObjectName, $"(*_{Text.SnakeCaseToPascalCase(field.Name)})", type, bundle))}
 }}"
 :
-Serialization.GetFieldSerialization(field, updatesObjectName, $"(*_{Text.SnakeCaseToPascalCase(field.Identifier.Name)})", type, bundle))}
+Serialization.GetFieldSerialization(field, updatesObjectName, $"(*_{Text.SnakeCaseToPascalCase(field.Name)})", type, bundle))}
 }}"))));
             }
 
             if (type.Events.Count > 0)
             {
-                builder.AppendLine(Text.Indent(1, $@"{Text.Indent(1, string.Join(Environment.NewLine, type.Events.Select(_event => $@"// serializing event {Text.SnakeCaseToPascalCase(_event.Identifier.Name)} = {_event.EventIndex}
-for (const {Types.GetTypeDisplayName(_event.Type.Type.QualifiedName)}& Element : _{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}List)
+                builder.AppendLine(Text.Indent(1, $@"{Text.Indent(1, string.Join(Environment.NewLine, type.Events.Select(_event => $@"// serializing event {Text.SnakeCaseToPascalCase(_event.Name)} = {_event.EventIndex}
+for (const {Types.GetTypeDisplayName(_event.Type)}& Element : _{Text.SnakeCaseToPascalCase(_event.Name)}List)
 {{
 {Text.Indent(1, $"Element.Serialize(Schema_AddObject({eventsObjectName}, {_event.EventIndex}));")}
 }}")))}"));
@@ -305,21 +304,21 @@ std::set<Schema_FieldId> FieldsToClearSet(FieldsToClear, FieldsToClear + sizeof(
 
             if (type.Fields.Count > 0)
             {
-                builder.AppendLine(Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $@"// deserializing field {Text.SnakeCaseToPascalCase(field.Identifier.Name)} = {field.FieldId}
+                builder.AppendLine(Text.Indent(1, string.Join(Environment.NewLine, type.Fields.Select(field => $@"// deserializing field {Text.SnakeCaseToPascalCase(field.Name)} = {field.FieldId}
 if ({Serialization.GetFieldTypeCount(field, updatesObjectName)} > 0)
 {{
-{Text.Indent(1, Serialization.GetFieldDeserialization(field, updatesObjectName, $"{deserializingTargetObjectName}._{Text.SnakeCaseToPascalCase(field.Identifier.Name)}", type, bundle, false, true))}
+{Text.Indent(1, Serialization.GetFieldDeserialization(field, updatesObjectName, $"{deserializingTargetObjectName}._{Text.SnakeCaseToPascalCase(field.Name)}", type, bundle, false, true))}
 }}
 {(field.TypeSelector != FieldType.Singular ? $@"else if (FieldsToClearSet.count({field.FieldId})) // only check if lists, maps, or options should be cleared
 {{
-{Text.Indent(1, $"{deserializingTargetObjectName}._{Text.SnakeCaseToPascalCase(field.Identifier.Name)} = {{}};")}
+{Text.Indent(1, $"{deserializingTargetObjectName}._{Text.SnakeCaseToPascalCase(field.Name)} = {{}};")}
 }}
 " : string.Empty)}"))));
             }
 
             if (type.Events.Count > 0)
             {
-                builder.AppendLine(Text.Indent(1, string.Join(Environment.NewLine, type.Events.Select(_event => $@"// deserializing event {Text.SnakeCaseToPascalCase(_event.Identifier.Name)} = {_event.EventIndex}
+                builder.AppendLine(Text.Indent(1, string.Join(Environment.NewLine, type.Events.Select(_event => $@"// deserializing event {Text.SnakeCaseToPascalCase(_event.Name)} = {_event.EventIndex}
 {Serialization.GetEventDeserialization(_event, eventsObjectName, deserializingTargetObjectName)}
 "))));
             }
@@ -335,7 +334,7 @@ if ({Serialization.GetFieldTypeCount(field, updatesObjectName)} > 0)
             return $@"uint32 GetTypeHash(const {Types.GetTypeClassDefinitionQualifiedName(type.QualifiedName, bundle)}& Value)
 {{
 {Text.Indent(1, $@"uint32 Result = 1327;
-{string.Join(Environment.NewLine, type.Fields.Select(field => $"{Types.GetFieldDefinitionHash($"Value.Get{Text.SnakeCaseToPascalCase(field.Identifier.Name)}()", field, "Result", bundle)}"))}
+{string.Join(Environment.NewLine, type.Fields.Select(field => $"{Types.GetFieldDefinitionHash($"Value.Get{Text.SnakeCaseToPascalCase(field.Name)}()", field, "Result", bundle)}"))}
 return Result;")}
 }}
 ";
@@ -343,7 +342,7 @@ return Result;")}
 
         private static string GenerateHashFunction(EnumDefinition enumDef, Bundle bundle)
         {
-            return $@"uint32 GetTypeHash(const {Types.GetTypeClassDefinitionQualifiedName(enumDef.Identifier.QualifiedName, bundle)}& Value)
+            return $@"uint32 GetTypeHash(const {Types.GetTypeClassDefinitionQualifiedName(enumDef.QualifiedName, bundle)}& Value)
 {{
 {Text.Indent(1, "return static_cast<size_t>(Value);")}
 }}";

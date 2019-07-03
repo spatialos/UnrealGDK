@@ -25,7 +25,7 @@ namespace CodeGenerator
     internal class Program
     {
         static readonly uint ExternalComponentIdLowerBound = 1000;
-        static readonly uint ExternalComponentIdUpperBound = 2000;
+        static readonly uint ExternalComponentIdUpperBound = 20000000;
 
         private static void Main(string[] args)
         {
@@ -78,7 +78,7 @@ namespace CodeGenerator
                 if (component.Value.ComponentId < ExternalComponentIdLowerBound || component.Value.ComponentId > ExternalComponentIdUpperBound)
                 {
                     throw new Exception($@"External schema component IDs must be in the range {ExternalComponentIdLowerBound}-{ExternalComponentIdUpperBound}
-Component {component.Value.Identifier.QualifiedName} has ID: {component.Value.ComponentId}");
+Component {component.Value.QualifiedName} has ID: {component.Value.ComponentId}");
                 }
             }
         }

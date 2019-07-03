@@ -61,13 +61,13 @@ USpatialDispatcher::FCallbackId OnRemoveComponent(const TFunction<void(const {qu
 USpatialDispatcher::FCallbackId OnComponentUpdate(const TFunction<void(const {qualifiedType}::ComponentUpdateOp&)>& Callback);
 USpatialDispatcher::FCallbackId OnAuthorityChange(const TFunction<void(const {qualifiedType}::AuthorityChangeOp&)>& Callback);
 "));
-                if (bundle.Components[component.QualifiedName].CommandDefinitions.Count() > 0)
+                if (bundle.Components[component.QualifiedName].Commands.Count() > 0)
                 {
-                    builder.AppendLine(Text.Indent(1, string.Join(Environment.NewLine, bundle.Components[component.QualifiedName].CommandDefinitions.Select(command => $@"// command {Text.SnakeCaseToPascalCase(command.Identifier.Name)} = {component.ComponentId}
-Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Request& Request);
-void SendCommandResponse(Worker_RequestId RequestId, const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Response& Response);
-USpatialDispatcher::FCallbackId OnCommandRequest(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::RequestOp&)>& Callback);
-USpatialDispatcher::FCallbackId OnCommandResponse(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::ResponseOp&)>& Callback);
+                    builder.AppendLine(Text.Indent(1, string.Join(Environment.NewLine, bundle.Components[component.QualifiedName].Commands.Select(command => $@"// command {Text.SnakeCaseToPascalCase(command.Name)} = {component.ComponentId}
+Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::Request& Request);
+void SendCommandResponse(Worker_RequestId RequestId, const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::Response& Response);
+USpatialDispatcher::FCallbackId OnCommandRequest(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::RequestOp&)>& Callback);
+USpatialDispatcher::FCallbackId OnCommandResponse(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::ResponseOp&)>& Callback);
 "))));
                 }
             }
@@ -165,31 +165,31 @@ USpatialDispatcher::FCallbackId {ClassName}::OnAuthorityChange(const TFunction<v
 }});")}
 }}
 
-{string.Join(Environment.NewLine, bundle.Components[component.QualifiedName].CommandDefinitions.Select(command => $@"Worker_RequestId {ClassName}::SendCommandRequest(Worker_EntityId EntityId, const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Request& Request)
+{string.Join(Environment.NewLine, bundle.Components[component.QualifiedName].Commands.Select(command => $@"Worker_RequestId {ClassName}::SendCommandRequest(Worker_EntityId EntityId, const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Name)}::Request& Request)
 {{
 {Text.Indent(1, $"return SerializeAndSendCommandRequest(EntityId, {component.ComponentId}, {command.CommandIndex}, Request.Data);")}
 }}
 
-void {ClassName}::SendCommandResponse(Worker_RequestId RequestId, const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Response& Response)
+void {ClassName}::SendCommandResponse(Worker_RequestId RequestId, const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::Response& Response)
 {{
 {Text.Indent(1, $"SerializeAndSendCommandResponse(RequestId, {component.ComponentId}, {command.CommandIndex}, Response.Data);")}
 }}
 
-USpatialDispatcher::FCallbackId {ClassName}::OnCommandRequest(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Identifier.Name)}::RequestOp&)>& Callback)
+USpatialDispatcher::FCallbackId {ClassName}::OnCommandRequest(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Name)}::RequestOp&)>& Callback)
 {{
 {Text.Indent(1, $@"return SpatialDispatcher->OnCommandRequest({component.ComponentId}, [Callback](const Worker_CommandRequestOp& Op)
 {{
-{Text.Indent(1, $@"auto Request = {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Request({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Request::Type::Deserialize(Schema_GetCommandRequestObject(Op.request.schema_type)));
-Callback({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::RequestOp(Op.entity_id, Op.request_id, Op.timeout_millis, Op.caller_worker_id, Op.caller_attribute_set, Request));")}
+{Text.Indent(1, $@"auto Request = {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::Request({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Name)}::Request::Type::Deserialize(Schema_GetCommandRequestObject(Op.request.schema_type)));
+Callback({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::RequestOp(Op.entity_id, Op.request_id, Op.timeout_millis, Op.caller_worker_id, Op.caller_attribute_set, Request));")}
 }});")}
 }}
 
-USpatialDispatcher::FCallbackId {ClassName}::OnCommandResponse(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::ResponseOp&)>& Callback)
+USpatialDispatcher::FCallbackId {ClassName}::OnCommandResponse(const TFunction<void(const {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::ResponseOp&)>& Callback)
 {{
 {Text.Indent(1, $@"return SpatialDispatcher->OnCommandResponse({component.ComponentId}, [Callback](const Worker_CommandResponseOp& Op)
 {{
-{Text.Indent(1, $@"auto Response = {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Response({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Identifier.Name)}::Response::Type::Deserialize(Schema_GetCommandResponseObject(Op.response.schema_type)));
-Callback({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Identifier.Name)}::ResponseOp(Op.entity_id, Op.request_id, Op.status_code, Op.message, Op.command_id, Response));")}
+{Text.Indent(1, $@"auto Response = {Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::Response({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{ Text.SnakeCaseToPascalCase(command.Name)}::Response::Type::Deserialize(Schema_GetCommandResponseObject(Op.response.schema_type)));
+Callback({Types.GetTypeDisplayName(component.QualifiedName)}::Commands::{Text.SnakeCaseToPascalCase(command.Name)}::ResponseOp(Op.entity_id, Op.request_id, Op.status_code, Op.message, Op.command_id, Response));")}
 }});")}
 }}
 "))}"))}";

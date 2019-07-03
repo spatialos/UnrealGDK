@@ -21,7 +21,8 @@ namespace Improbable.CodeGen.Base
 
             var settings = new JsonSerializerSettings
             {
-                ContractResolver = contractResolver
+                ContractResolver = contractResolver,
+                MissingMemberHandling = MissingMemberHandling.Error
             };
 
             var bundleFile = JsonConvert.DeserializeObject<SchemaBundle>(File.ReadAllText(filename, Encoding.UTF8), settings);

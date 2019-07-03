@@ -1,19 +1,22 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Improbable.CodeGen.Base;
+using ValueType = Improbable.CodeGen.Base.ValueType;
 
 namespace Improbable.CodeGen.Base
 {
-    [DebuggerDisplay("{QualifiedName.QualifiedName}")]
+    [DebuggerDisplay("{" + nameof(QualifiedName) + "}")]
     public readonly struct TypeDescription
     {
-        private readonly Bundle bundle;
-
         public readonly string Namespace;
 
         public readonly string Name;
 
         public readonly string QualifiedName;
+
+        public readonly SourceReference SourceReference;
 
         public readonly IReadOnlyList<TypeDescription> NestedTypes;
 
@@ -25,15 +28,12 @@ namespace Improbable.CodeGen.Base
 
         public readonly IReadOnlyList<ComponentDefinition.EventDefinition> Events;
 
-        public readonly bool IsNestedType;
-
-        public readonly bool IsComponent;
         public readonly uint? ComponentId;
-        
+
+        public readonly string OuterType;
+
         public TypeDescription(string qualifiedName, Bundle bundle)
         {
-            this.bundle = bundle;
-
             Name = Text.SnakeCaseToPascalCase(qualifiedName).Split('.').Last();
             Namespace = $"{Text.GetNamespaceFromTypeName(qualifiedName)}";
             QualifiedName = qualifiedName;
@@ -44,30 +44,78 @@ namespace Improbable.CodeGen.Base
             NestedTypes = directNestedTypes.Select(id =>
             {
                 var t = bundle.Types[id];
-                return new TypeDescription(t.Identifier.QualifiedName, bundle);
+                return new TypeDescription(t.QualifiedName, bundle);
             }).ToList();
 
             NestedEnums = directNestedEnums.Select(id => bundle.Enums[id]).ToList();
 
-            IsNestedType = bundle.IsNestedType(qualifiedName);
-
-            IsComponent = bundle.Components.TryGetValue(qualifiedName, out var component);
+            bundle.Components.TryGetValue(qualifiedName, out var component);
             ComponentId = component?.ComponentId;
 
-            Fields = component?.FieldDefinitions;
-            if (component?.DataDefinition != null)
+            if (ComponentId.HasValue)
+            {
+                SourceReference = bundle.Components[qualifiedName].SourceReference;
+            }
+            else
+            {
+                SourceReference = bundle.Types[qualifiedName].SourceReference;
+            }
+
+            Fields = component?.Fields;
+
+            if (!string.IsNullOrEmpty(component?.DataDefinition))
             {
                 // Inline fields into the component.
-                Fields = bundle.Types[component.DataDefinition.QualifiedName].FieldDefinitions;
+                Fields = bundle.Types[component.DataDefinition].Fields;
             }
 
             if (Fields == null)
             {
-                Fields = bundle.Types[qualifiedName].FieldDefinitions;
+                if (ComponentId.HasValue)
+                {
+                    Fields = bundle.Components[qualifiedName].Fields;
+                }
+                else
+                {
+                    Fields = bundle.Types[qualifiedName].Fields;
+                }
             }
 
+            if (Fields == null)
+            {
+                throw new Exception("Internal error: no fields found");
+            }
+
+            Fields = Fields.Where(f =>
+            {
+                switch (f.TypeSelector)
+                {
+                    case FieldType.Option:
+                        return f.OptionType.InnerType.ValueTypeSelector == ValueType.Primitive && f.OptionType.InnerType.Primitive == PrimitiveType.Entity;
+                    case FieldType.List:
+                        return f.ListType.InnerType.ValueTypeSelector == ValueType.Primitive && f.ListType.InnerType.Primitive == PrimitiveType.Entity;
+                    case FieldType.Map:
+                        return f.MapType.KeyType.ValueTypeSelector == ValueType.Primitive && f.MapType.KeyType.Primitive == PrimitiveType.Entity || f.MapType.ValueType.ValueTypeSelector == ValueType.Primitive && f.MapType.ValueType.Primitive == PrimitiveType.Entity;
+                    case FieldType.Singular:
+                        return f.SingularType.Type.ValueTypeSelector == ValueType.Primitive && f.SingularType.Type.Primitive == PrimitiveType.Entity;
+                    default:
+                        return false;
+                }
+            }).ToList();
+
             Annotations = component != null ? component.Annotations : bundle.Types[qualifiedName].Annotations;
-            Events = component?.EventDefinitions;
+            Events = component?.Events;
+            OuterType = component != null ? "" : bundle.Types[qualifiedName].OuterType;
+            //try
+            //{
+            //    OuterType = bundle.Types[qualifiedName].OuterType;
+
+            //}
+            //catch (Exception exception)
+            //{
+            //    Console.Error.WriteLine(exception);
+            //    Environment.ExitCode = 1;
+            //}
         }
     }
 }

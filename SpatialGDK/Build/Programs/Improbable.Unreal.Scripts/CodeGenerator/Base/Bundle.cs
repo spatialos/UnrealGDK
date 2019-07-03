@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,62 +10,66 @@ namespace Improbable.CodeGen.Base
         public IReadOnlyDictionary<string, EnumDefinition> Enums { get; }
         public IReadOnlyDictionary<string, ComponentDefinition> Components { get; }
 
+        public IReadOnlyDictionary<string, string> TypeToFileName { get; }
+
+        public IReadOnlyDictionary<string, SourceReference> TypeToSourceReference { get; }
+
         public Bundle(SchemaBundle bundle)
         {
             SchemaBundle = bundle;
 
-            Components = bundle.V1.ComponentDefinitions.ToDictionary(c => c.Identifier.QualifiedName, c => c);
-            Types = bundle.V1.TypeDefinitions.ToDictionary(t => t.Identifier.QualifiedName, t => t);
-            Enums = bundle.V1.EnumDefinitions.ToDictionary(t => t.Identifier.QualifiedName, t => t);
-        }
+            Components = bundle.SchemaFiles.SelectMany(f => f.Components).ToDictionary(c => c.QualifiedName, c => c);
+            Types = bundle.SchemaFiles.SelectMany(f => f.Types).ToDictionary(t => t.QualifiedName, t => t);
+            Enums = bundle.SchemaFiles.SelectMany(f => f.Enums).ToDictionary(t => t.QualifiedName, t => t);
 
-        public List<string> GetNestedTypes(string qualifiedName)
-        {
-            return Types.Where(t =>
-                    t.Key.StartsWith($"{qualifiedName}.") &&
-                    t.Key.Count(c => c == '.') == qualifiedName.Count(c => c == '.') + 1)
-                .Select(kv => kv.Key)
-                .ToList();
-        }
+            var fileNameDict = new Dictionary<string, string>(); ;
+            TypeToFileName = fileNameDict;
 
-        public List<string> GetNestedEnums(string qualifiedName)
-        {
-            return Enums.Where(t =>
-                    t.Key.StartsWith($"{qualifiedName}.") &&
-                    t.Key.Count(c => c == '.') == qualifiedName.Count(c => c == '.') + 1)
-                .Select(kv => kv.Key)
-                .ToList();
-        }
+            var sourceRefDict = new Dictionary<string, SourceReference>();
+            TypeToSourceReference = sourceRefDict;
 
-        public bool IsNestedType(string qualifiedName)
-        {
-            return Types.Any(type => type.Key.Equals(qualifiedName.Substring(0, qualifiedName.LastIndexOf("."))));
-        }
-
-        public bool IsNestedEnum(string qualifiedName)
-        {
-            return IsNestedType(qualifiedName);
-        }
-
-        public string GetOutermostTypeWrapperForType(string qualifiedName)
-        {
-            var qualifiedNameSplit = qualifiedName.Split('.');
-            for (var i = 1; i < qualifiedNameSplit.Count(); ++i)
+            foreach (var file in bundle.SchemaFiles)
             {
-                var candidateType = string.Join(".", qualifiedNameSplit.Take(i));
-                if (Types.Any(type => type.Key.Equals(candidateType))) {
-                    return candidateType;
+                foreach (var type in file.Types)
+                {
+                    fileNameDict[type.QualifiedName] = file.CanonicalPath;
+                }
+
+                foreach (var type in file.Components)
+                {
+                    fileNameDict[type.QualifiedName] = file.CanonicalPath;
+                }
+
+                foreach (var type in file.Enums)
+                {
+                    fileNameDict[type.QualifiedName] = file.CanonicalPath;
                 }
             }
-            return qualifiedName;
+        }
+
+        public List<string> GetNestedTypes(string identifier)
+        {
+            return Types.Where(t =>
+                    t.Key.StartsWith(identifier) &&
+                    t.Key.Count(c => c == '.') == identifier.Count(c => c == '.') + 1)
+                .Select(kv => kv.Key)
+                .ToList();
+        }
+
+        public List<string> GetNestedEnums(string identifier)
+        {
+            return Enums.Where(t =>
+                    t.Key.StartsWith(identifier) &&
+                    t.Key.Count(c => c == '.') == identifier.Count(c => c == '.') + 1)
+                .Select(kv => kv.Key)
+                .ToList();
         }
 
         public HashSet<string> GetCommandTypes()
         {
-            return new HashSet<string>(SchemaBundle.V1.ComponentDefinitions
-                .SelectMany(c => c.CommandDefinitions)
-                .SelectMany(cmd => new [] { cmd.RequestType, cmd.ResponseType })
-                .Select(t => t.Type.QualifiedName));
+            return new HashSet<string>(SchemaBundle.SchemaFiles.SelectMany(f => f.Components)
+                .SelectMany(c => c.Commands)
+                .SelectMany(cmd => new[] { cmd.RequestType, cmd.ResponseType }));
         }
     }
 }

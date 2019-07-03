@@ -25,7 +25,7 @@ namespace Improbable.CodeGen.Unreal
 
         public static string GetFieldDeserialization(FieldDefinition field, string schemaObjectName, string targetObjectName, TypeDescription parentType, Bundle bundle, bool wrapInBlock = false, bool targetIsOption = false)
         {
-            var fieldName = Text.SnakeCaseToPascalCase(field.Identifier.Name);
+            var fieldName = Text.SnakeCaseToPascalCase(field.Name);
             switch (field.TypeSelector)
             {
                 case FieldType.Singular:
@@ -45,13 +45,13 @@ namespace Improbable.CodeGen.Unreal
         {
             return $@"for (uint32 i = 0; i < Schema_GetObjectCount({schemaObjectName}, {_event.EventIndex}); ++i)
 {{
-{Text.Indent(1, $"{targetObjectName}.Add{Text.SnakeCaseToPascalCase(_event.Identifier.Name)}({Types.GetTypeDisplayName(_event.Type.Type.QualifiedName)}::Deserialize(Schema_IndexObject({schemaObjectName}, {_event.EventIndex}, i)));")}
+{Text.Indent(1, $"{targetObjectName}.Add{Text.SnakeCaseToPascalCase(_event.Name)}({Types.GetTypeDisplayName(_event.Type)}::Deserialize(Schema_IndexObject({schemaObjectName}, {_event.EventIndex}, i)));")}
 }}";
         }
 
         public static string GetFieldClearingCheck(FieldDefinition field)
         {
-            var fieldName = Text.SnakeCaseToPascalCase(field.Identifier.Name);
+            var fieldName = Text.SnakeCaseToPascalCase(field.Name);
             switch (field.TypeSelector)
             {
                 case FieldType.Option:
@@ -83,7 +83,7 @@ namespace Improbable.CodeGen.Unreal
             }
         }
 
-        private static string GetValueTypeSerialization(ValueTypeReference value, string schemaObjectName, string targetObjectName, string fieldId)
+        private static string GetValueTypeSerialization(TypeReference value, string schemaObjectName, string targetObjectName, string fieldId)
         {
             switch (value.ValueTypeSelector)
             {
@@ -94,7 +94,7 @@ namespace Improbable.CodeGen.Unreal
                 case ValueType.Type:
                     return $"{targetObjectName}.Serialize(Schema_AddObject({schemaObjectName}, {fieldId}));";
                 default:
-                    throw new InvalidOperationException("Trying to serialize invalid ValueTypeReference");
+                    throw new InvalidOperationException("Trying to serialize invalid TypeReference");
             }
         }
 
@@ -166,18 +166,18 @@ namespace Improbable.CodeGen.Unreal
             }
         }
 
-        private static string GetValueTypeDeserialization(ValueTypeReference type, string schemaObjectName, string fieldId, TypeDescription parentType)
+        private static string GetValueTypeDeserialization(TypeReference type, string schemaObjectName, string fieldId, TypeDescription parentType)
         {
             switch (type.ValueTypeSelector)
             {
                 case ValueType.Primitive:
                     return GetPrimitiveDeserialization(type.Primitive, schemaObjectName, fieldId);
                 case ValueType.Type:
-                    return $"{Types.GetTypeDisplayName(type.Type.QualifiedName, Types.IsLocallyDefined(type.Type.QualifiedName, parentType))}::Deserialize(Schema_GetObject({schemaObjectName}, {fieldId}))";
+                    return $"{Types.GetTypeDisplayName(type.Type, Types.IsLocallyDefined(type.Type, parentType))}::Deserialize(Schema_GetObject({schemaObjectName}, {fieldId}))";
                 case ValueType.Enum:
-                    return $"static_cast<{Types.GetTypeDisplayName(type.Enum.QualifiedName, Types.IsLocallyDefined(type.Enum.QualifiedName, parentType))}>(Schema_GetEnum({ schemaObjectName}, { fieldId}))";
+                    return $"static_cast<{Types.GetTypeDisplayName(type.Enum, Types.IsLocallyDefined(type.Enum, parentType))}>(Schema_GetEnum({ schemaObjectName}, { fieldId}))";
                 default:
-                    throw new InvalidOperationException("Trying to deserialize invalid ValueTypeReference");
+                    throw new InvalidOperationException("Trying to deserialize invalid TypeReference");
             }
         }
 
@@ -214,7 +214,7 @@ for (uint32 i = 0; i < ListLength; ++i)
 {targetObjectName} = {listName};";
                     break;
                 default:
-                    throw new InvalidOperationException("Trying to deserialize invalid ValueTypeReference");
+                    throw new InvalidOperationException("Trying to deserialize invalid TypeReference");
             }
 
             return wrapInBlock ? $"{{{Environment.NewLine}{Text.Indent(1, deserializationText)}{Environment.NewLine}}}" : deserializationText;
@@ -354,7 +354,7 @@ auto Value = {GetValueTypeDeserialization(mapType.ValueType, kvPairName, "SCHEMA
             }
         }
 
-        private static string GetValueTypeCount(ValueTypeReference type, string schemaObjectName, string fieldId)
+        private static string GetValueTypeCount(TypeReference type, string schemaObjectName, string fieldId)
         {
             switch (type.ValueTypeSelector)
             {
@@ -365,7 +365,7 @@ auto Value = {GetValueTypeDeserialization(mapType.ValueType, kvPairName, "SCHEMA
                 case ValueType.Enum:
                     return $"Schema_GetEnumCount({ schemaObjectName}, { fieldId})";
                 default:
-                    throw new InvalidOperationException("Trying to deserialize invalid ValueTypeReference");
+                    throw new InvalidOperationException("Trying to deserialize invalid TypeReference");
             }
         }
 
