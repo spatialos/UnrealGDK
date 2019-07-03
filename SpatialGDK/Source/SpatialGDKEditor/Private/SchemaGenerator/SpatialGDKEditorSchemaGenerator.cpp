@@ -597,24 +597,24 @@ void ResetUsedNames()
 	SchemaNameToClassPath.Empty();
 	PotentialSchemaNameCollisions.Empty();
 
-	//for (const TPair<FString, FActorSchemaData>& Entry : ActorClassPathToSchema)
-	//{
-	//	if (Entry.Value.GeneratedSchemaName.IsEmpty())
-	//	{
-	//		// Ignore Subobject entries with empty names.
-	//		continue;
-	//	}
-	//	ClassPathToSchemaName.Add(Entry.Key, Entry.Value.GeneratedSchemaName);
-	//	SchemaNameToClassPath.Add(Entry.Value.GeneratedSchemaName, Entry.Key);
-	//	FSoftObjectPath ObjPath = FSoftObjectPath(Entry.Key);
-	//	FString DesiredSchemaName = UnrealNameToSchemaName(ObjPath.GetAssetName());
+	for (const TPair<FString, FActorSchemaData>& Entry : ActorClassPathToSchema)
+	{
+		if (Entry.Value.GeneratedSchemaName.IsEmpty())
+		{
+			// Ignore Subobject entries with empty names.
+			continue;
+		}
+		ClassPathToSchemaName.Add(Entry.Key, Entry.Value.GeneratedSchemaName);
+		SchemaNameToClassPath.Add(Entry.Value.GeneratedSchemaName, Entry.Key);
+		FSoftObjectPath ObjPath = FSoftObjectPath(Entry.Key);
+		FString DesiredSchemaName = UnrealNameToSchemaName(ObjPath.GetAssetName());
 
-	//	if (DesiredSchemaName != Entry.Value.GeneratedSchemaName)
-	//	{
-	//		AddPotentialNameCollision(DesiredSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
-	//	}
-	//	AddPotentialNameCollision(Entry.Value.GeneratedSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
-	//}
+		if (DesiredSchemaName != Entry.Value.GeneratedSchemaName)
+		{
+			AddPotentialNameCollision(DesiredSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
+		}
+		AddPotentialNameCollision(Entry.Value.GeneratedSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
+	}
 }
 
 void RunSchemaCompiler()

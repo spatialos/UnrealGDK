@@ -175,16 +175,17 @@ void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 	{
 		if (UObject* Object = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Op.component_id)).Get())
 		{
-			USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id);
-			check(Channel != nullptr);
-			Channel->CreateSubObjects.Remove(Object);
+			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(Op.entity_id))
+			{
+				Channel->CreateSubObjects.Remove(Object);
 
-			Actor->OnSubobjectDestroyFromReplication(Object);
+				Actor->OnSubobjectDestroyFromReplication(Object);
 
-			Object->PreDestroyFromReplication();
-			Object->MarkPendingKill();
+				Object->PreDestroyFromReplication();
+				Object->MarkPendingKill();
 
-			PackageMap->RemoveSubobject(FUnrealObjectRef(Op.entity_id, Op.component_id));
+				PackageMap->RemoveSubobject(FUnrealObjectRef(Op.entity_id, Op.component_id));
+			}
 		}
 	}
 
@@ -926,7 +927,14 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 
 	if (Actor == nullptr)
 	{
-		UE_LOG(LogSpatialReceiver, Warning, TEXT("Tried to dynamically attach subobject of type %s to entity %lld but couldn't find Actor!"), *Info.Class->GetName(), EntityId);
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Tried to dynamically attach subobject of type %s to entity %lld but couldn't find Actor!"), *Info.Class->GetName(), EntityId);
+		return;
+	}
+
+	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
+	if (Channel == nullptr)
+	{
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Tried to dynamically attach subobject of type %s to entity %lld but couldn't find Channel!"), *Info.Class->GetName(), EntityId);
 		return;
 	}
 
@@ -936,8 +944,6 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 
 	PackageMap->ResolveSubobject(Subobject, FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
 
-	USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId);
-	check(Channel != nullptr);
 	Channel->CreateSubObjects.Add(Subobject);
 
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)

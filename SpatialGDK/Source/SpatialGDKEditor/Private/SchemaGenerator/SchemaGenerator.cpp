@@ -290,7 +290,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		Writer.Outdent().Print("}");
 	}
 
-	uint32 DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
+	const uint32 DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
 
 	FSubobjectSchemaData SubobjectSchemaData;
 
@@ -458,7 +458,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 
 FActorSpecificSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex)
 {
-	const FActorSpecificSubobjectSchemaData* const SubobjectSchemaData = nullptr; // SchemaData ? SchemaData->SubobjectData.Find(MapIndex) : nullptr;
+	const FActorSpecificSubobjectSchemaData* const SubobjectSchemaData = nullptr;
 	
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
