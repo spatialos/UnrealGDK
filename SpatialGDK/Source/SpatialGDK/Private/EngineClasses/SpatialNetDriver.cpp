@@ -1184,7 +1184,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (CallingObject->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 	{
-		// Trying to call an RPC on an object that isn't supported by Spatial (i.e. marked NotSpatial)
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Trying to call RPC %s on object %s (class %s) that isn't supported by Spatial. This RPC will be dropped."), *Function->GetName(), *CallingObject->GetName(), *CallingObject->GetClass()->GetName());
 		return;
 	}
 
