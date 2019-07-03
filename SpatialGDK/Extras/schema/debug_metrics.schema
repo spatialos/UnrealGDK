@@ -12,5 +12,5 @@ component DebugMetrics {
     id = 9984;
     command Void start_rpc_metrics(Void);
     command Void stop_rpc_metrics(Void);
-	command Void modify_spatial_settings(ModifySettingPayload);
+    command Void modify_spatial_settings(ModifySettingPayload);
 }
