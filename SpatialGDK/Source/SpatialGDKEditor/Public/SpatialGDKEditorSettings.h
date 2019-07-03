@@ -215,9 +215,6 @@ private:
 	/** Set WorkerTypesToLaunch in level editor play settings. */
 	void SetLevelEditorPlaySettingsWorkerTypes();
 
-	/** Check if the Editor Settings contains valid directory paths or not. */
-	void SafetyCheckSpatialOSDirectoryPaths();
-
 public:
 	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Show Spatial service button"))
