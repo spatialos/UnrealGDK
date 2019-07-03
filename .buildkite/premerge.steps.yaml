@@ -17,7 +17,7 @@ common: &common
       - <<: *agent_transients
   timeout_in_minutes: 60
   plugins:
-    - ca-johnson/taskkill#print-process-tree: ~
+    - ca-johnson/taskkill#5e4d84ff82e17ef76ebe71b12f331ce7bb010dcd: ~
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
