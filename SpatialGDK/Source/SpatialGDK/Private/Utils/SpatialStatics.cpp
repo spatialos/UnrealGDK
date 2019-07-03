@@ -7,46 +7,81 @@
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ActorGroupManager.h"
+#include "Engine/World.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialStatics);
 
-bool USpatialStatics::SpatialNetworkingEnabled()
+bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
     return GetDefault<UGeneralProjectSettings>()->bSpatialNetworking;
 }
 
-bool USpatialStatics::SpatialOffloadingEnabled()
+bool USpatialStatics::IsSpatialOffloadingEnabled()
 {
-    return SpatialNetworkingEnabled() && GetDefault<USpatialGDKSettings>()->bEnableOffloading;
+    return IsSpatialNetworkingEnabled() && GetDefault<USpatialGDKSettings>()->bEnableOffloading;
 }
 
-bool USpatialStatics::IsActorGroupOwner(const AActor* Actor)
+bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 {
-    if (Actor == nullptr)
-    {
-        UE_LOG(LogSpatialStatics, Warning, TEXT("Actor was nullptr in USpatialStatics::IsAuthoritativeWorkerType"));
-        return false;
-    }
+	if (Actor == nullptr)
+	{
+		return false;
+	}
 
-    if (!SpatialNetworkingEnabled() || !SpatialOffloadingEnabled()) 
-    {
-        return Actor->HasAuthority();
-    }
+	if (const UWorld* World = Actor->GetWorld())
+	{
+		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+		{
+			if (UActorGroupManager* ActorGroupManager = SpatialNetDriver->ActorGroupManager)
+			{
+				UClass* ActorClass = Actor->GetClass();
+				const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
+				const FName CurrentWorkerType = World->GetGameInstance()->GetSpatialWorkerType();
+				UE_LOG(LogTemp, Display, TEXT("ClassWorkerType [%s], CurrentWorkerType [%s]"), *ClassWorkerType.ToString(), *CurrentWorkerType.ToString())
+				return (ClassWorkerType == CurrentWorkerType);
+			}
+		}		
+	}
 
-    UWorld* World = Actor->GetWorld();
-    if (!World)
-    {
-        UE_LOG(LogSpatialStatics, Warning, TEXT("World was nullptr in USpatialStatics::IsAuthoritativeWorkerType for actor: %s"), *Actor->GetName());
-        return false;
-    }
+	return Actor->HasAuthority();
+}
 
-    USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver());
-    if (!SpatialNetDriver)
-    {
-        UE_LOG(LogSpatialStatics, Warning, TEXT("SpatialNetDriver was nullptr in USpatialStatics::IsAuthoritativeWorkerType for actor: %s"), *Actor->GetName());
-        return false;
-    }
+bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
+{
+	if (const UWorld* World = WorldContextObject->GetWorld())
+	{
+		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+		{
+			if (UActorGroupManager* ActorGroupManager = SpatialNetDriver->ActorGroupManager)
+			{
+				const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
+				const FName CurrentWorkerType = World->GetGameInstance()->GetSpatialWorkerType();
+				UE_LOG(LogTemp, Display, TEXT("ClassWorkerType [%s], CurrentWorkerType [%s]"), *ClassWorkerType.ToString(), *CurrentWorkerType.ToString())
+				return (ClassWorkerType == CurrentWorkerType);
+			}
+		}
+		return (World->GetNetMode() != NM_Client);
+	}
 
-    UActorGroupManager* ActorGroupManager = SpatialNetDriver->ActorGroupManager;
-    return ActorGroupManager->GetWorkerTypeForClass(Actor->GetClass()).Compare(World->GetGameInstance()->GetSpatialWorkerType()) == 0;
+	return false;
+}
+
+bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
+{
+	if (const UWorld* World = WorldContextObject->GetWorld())
+	{
+		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+		{
+			if (UActorGroupManager* ActorGroupManager = SpatialNetDriver->ActorGroupManager)
+			{
+				const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
+				const FName CurrentWorkerType = World->GetGameInstance()->GetSpatialWorkerType();
+				UE_LOG(LogTemp, Display, TEXT("ActorGroupWorkerType [%s], CurrentWorkerType [%s]"), *ActorGroupWorkerType.ToString(), *CurrentWorkerType.ToString())
+				return (ActorGroupWorkerType == CurrentWorkerType);
+			}
+		}
+		return (World->GetNetMode() != NM_Client);
+	}
+
+	return false;
 }

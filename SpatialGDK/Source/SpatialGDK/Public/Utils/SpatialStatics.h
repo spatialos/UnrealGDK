@@ -12,24 +12,36 @@ class SPATIALGDK_API USpatialStatics : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 
+private:
+	
+	static bool IsSpatialOffloadingEnabled();
+
 public:
-    /**
-     * Returns whether SpatialOS networking has been enabled or not.
-     */
-    UFUNCTION(BlueprintPure, Category = "SpatialOS")
-    static bool SpatialNetworkingEnabled();
 
-    /**
-     * Returns true iff SpatialOS networking AND offloading are both enabled.
-     */
-    UFUNCTION(BlueprintPure, Category = "SpatialOS")
-    static bool SpatialOffloadingEnabled();
+	/**
+	 * Returns true if SpatialOS Networking is enabled.
+	 */
+	UFUNCTION(BlueprintPure, Category = "SpatialOS")
+	static bool IsSpatialNetworkingEnabled();
 
-    /**
-     * If SpatialOS networking is disabled, or if SpatialOS networking is enabled but offloading is disabled,
-     * this will return Actor::HasAuthority(). If SpatialOS networking AND offloading is enabled, this will
-     * returns true iff actor group worker association matches the current worker type.
+	/**
+     * Returns true if the current Worker Type owns the Actor Group this Actor belongs to.
+	 * Equivalent to HasAuthority when Spatial Networking is disabled.
      */
     UFUNCTION(BlueprintPure, Category = "SpatialOS")
-    static bool IsActorGroupOwner(const AActor* Actor);
+    static bool IsActorGroupOwnerForActor(const AActor* Actor);
+
+	/**
+	 * Returns true if the current Worker Type owns the Actor Group this Actor Class belongs to.
+	 * Equivalent to HasAuthority when Spatial Networking is disabled.
+	 */
+	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass);
+
+	/**
+	 * Returns true if the current Worker Type owns this Actor Group.
+	 * Equivalent to HasAuthority when Spatial Networking is disabled.
+	 */
+	UFUNCTION(BlueprintPure, Category = "SpatialOS", meta = (WorldContext = "WorldContextObject"))
+	static bool IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup);
 };
