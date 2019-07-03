@@ -30,7 +30,26 @@ public:
 	class UAbstractQueryConstraint* Constraint;
 
 	/**
-	 * The frequency that entities captured by this query should be updated at. 
+	 * Not currently supported.
+	 *
+	 * Used for frequency-based rate limiting. Represents the maximum frequency
+	 * of updates for this particular query. An empty option represents no
+	 * rate-limiting (ie. updates are received as soon as possible). Frequency
+	 * is measured in Hz.
+	 *
+	 * If set, the time between consecutive updates will be at least
+	 * 1/frequency. This is determined at the time that updates are sent from
+	 * the Runtime and may not necessarily correspond to the time updates are
+	 * received by the worker.
+	 *
+	 * If after an update has been sent, multiple updates are applied to a
+	 * component, they will be merged and sent as a single update after
+	 * 1/frequency of the last sent update. When components with events are
+	 * merged, the resultant component will contain a concatenation of all the
+	 * events.
+	 *
+	 * If multiple queries match the same Entity-Component then the highest of
+	 * all frequencies is used.
 	 */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Meta=(ClampMin=0.0))
 	float Frequency;
