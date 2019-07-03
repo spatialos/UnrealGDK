@@ -1179,6 +1179,15 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		return;
 	}
 
+	// The RPC might have been called by an actor directly, or by a subobject on that actor
+	UObject* CallingObject = SubObject ? SubObject : Actor;
+
+	if (CallingObject->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+	{
+		// Trying to call an RPC on an object that isn't supported by Spatial (i.e. marked NotSpatial)
+		return;
+	}
+
 	// Copied from UNetDriver::ProcessRemoteFunctionForChannel to copy pass-by-ref
 	// parameters from OutParms into Parameters's memory.
 	if (Stack == nullptr)
@@ -1211,9 +1220,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 			}
 		}
 	}
-
-	// The RPC might have been called by an actor directly, or by a subobject on that actor
-	UObject* CallingObject = SubObject ? SubObject : Actor;
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
