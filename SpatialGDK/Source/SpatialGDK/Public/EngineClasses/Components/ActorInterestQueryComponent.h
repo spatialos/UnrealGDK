@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "EngineClasses/SpatialInterestConstraints.h"
+#include "Interop/SpatialInterestConstraints.h"
 
 #include "ActorInterestQueryComponent.generated.h"
 

@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "EngineClasses/SpatialInterestConstraints.h"
+#include "Interop/SpatialInterestConstraints.h"
 
+#include "Interop/SpatialClassInfoManager.h"
 #include "Schema/Interest.h"
 #include "Schema/StandardLibrary.h"
 #include "SpatialConstants.h"
-#include "Interop/SpatialClassInfoManager.h"
 #include "UObject/UObjectIterator.h"
 
 void UOrConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoManager, SpatialGDK::QueryConstraint& OutConstraint) const

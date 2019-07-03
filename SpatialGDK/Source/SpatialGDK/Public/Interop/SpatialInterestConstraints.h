@@ -30,7 +30,7 @@ public:
 	class UAbstractQueryConstraint* Constraint;
 
 	/**
-	 * The frequency that entities captured by this query should be updated at.
+	 * The frequency that entities captured by this query should be updated at. 
 	 */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Meta=(ClampMin=0.0))
 	float Frequency;
