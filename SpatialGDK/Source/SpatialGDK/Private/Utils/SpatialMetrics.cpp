@@ -10,8 +10,8 @@
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "Interop/Connection/SpatialWorkerConnection.h"
-#include "SchemaUtils.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/SchemaUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialMetrics);
 
@@ -212,14 +212,14 @@ void USpatialMetrics::SpatialModifySetting(const FString& Name, float Value)
 			Request.schema_type = Schema_CreateCommandRequest(SpatialConstants::DEBUG_METRICS_COMPONENT_ID, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
 			
 			Schema_Object* RequestObject = Schema_GetCommandRequestObject(Request.schema_type);
-			SpatialGDK::AddStringToSchema(RequestObject, 1, Name);
-			Schema_AddFloat(RequestObject, 2, Value);
+			SpatialGDK::AddStringToSchema(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_NAME_ID, Name);
+			Schema_AddFloat(RequestObject, SpatialConstants::MODIFY_SETTING_PAYLOAD_VALUE_ID, Value);
 
 			NetDriver->Connection->SendCommandRequest(ControllerEntityId, &Request, SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID);
 		}
 		else
 		{
-			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialModifySetting: Could not resolve local PlayerController entity! RPC metrics will not stop on the server."));
+			UE_LOG(LogSpatialMetrics, Warning, TEXT("SpatialModifySetting: Could not resolve local PlayerController entity! Setting will not be sent to server."));
 		}
 	}
 	else

@@ -164,6 +164,8 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+#if !UE_BUILD_SHIPPING
+
 	if (!GetWorld()->IsServer() || !HasActorBegunPlay())
 	{
 		return;
@@ -235,9 +237,11 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	{
 		MovementCorrectionRecords.Enqueue({ NumServerMoveCorrections, WorldTime });
 	}
-#endif
+#endif // USE_SERVER_PERF_COUNTERS
 
 	ServerUpdateWorkerStats(SpatialNetDriver->Time, Stats);
+
+#endif // !UE_BUILD_SHIPPING
 }
 
 bool ASpatialMetricsDisplay::ShouldRemoveStats(const float CurrentTime, const FWorkerStats& OneWorkerStats) const
