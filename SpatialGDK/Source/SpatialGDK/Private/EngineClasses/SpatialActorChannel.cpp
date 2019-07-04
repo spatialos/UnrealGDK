@@ -562,7 +562,7 @@ const FClassInfo* USpatialActorChannel::TryResolveNewDynamicSubobjectAndGetClass
 	if (Info == nullptr)
 	{
 		UE_LOG(LogSpatialActorChannel, Error, TEXT("Too many dynamic subobjects of type %s attached to Actor %s! Please increase"
-			" the amount of max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *Actor->GetName());
+			" the max number of dynamically attached subobjects per class in the SpatialOS runtime settings."), *Object->GetClass()->GetName(), *Actor->GetName());
 		return Info;
 	}
 

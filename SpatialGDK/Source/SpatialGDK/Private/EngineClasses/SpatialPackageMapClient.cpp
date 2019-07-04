@@ -400,10 +400,15 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 
 	SpatialGDK::UnrealMetadata* UnrealMetadata = SpatialNetDriver->StaticComponentView->GetComponentData<SpatialGDK::UnrealMetadata>(EntityId);
 
-	// There are times when the Editor is quitting out of PIE that UnrealMetadata is nullptr.
-	// Due to GetNativeEntityClass using LoadObject, if we are shutting down and garbage collecting, this will crash the editor.
-	// In this case, just return since everything will be cleaned up anyways.
-	if (UnrealMetadata == nullptr || (IsInGameThread() && IsGarbageCollecting()))
+	// If UnrealMetadata is nullptr (can happen if the editor is closing down) just return.
+	if (UnrealMetadata == nullptr)
+	{
+		return;
+	}
+
+	// Due to UnrealMetadata::GetNativeEntityClass using LoadObject, if we are shutting down and garbage collecting,
+	// calling LoadObject will crash the editor. In this case, just return since everything will be cleaned up anyways.
+	if (IsInGameThread() && IsGarbageCollecting())
 	{
 		return;
 	}
