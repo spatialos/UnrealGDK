@@ -243,8 +243,8 @@ Support of Unreal features with the GDK in a single server-worker configuration:
  <tr>
     <td rowspan="4"><b>Optimization<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Networking/ReplicationGraph">Replication Graph</a></td>
-    <td class="indev"></td>
-    <td>We will present a different system for the same purpose instead.</td>
+    <td class="roadmap"></td>
+    <td>We may present a different system for the same purpose instead.</td>
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/ReplicationFlow">Net Dormancy</a></td>
