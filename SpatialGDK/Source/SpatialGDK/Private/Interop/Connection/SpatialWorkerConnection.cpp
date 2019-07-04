@@ -182,7 +182,7 @@ void USpatialWorkerConnection::ConnectToReceptionist(bool bConnectAsClient)
 	}
 
 #if WITH_EDITOR
-	SpatialGDKServices::InitWorkers(bConnectAsClient, ReceptionistConfig.WorkerId);
+	SpatialGDKServices::InitWorkers(bConnectAsClient, GetSpatialNetDriverChecked()->PlayInEditorID, ReceptionistConfig.WorkerId);
 #endif
 
 	if (ReceptionistConfig.WorkerId.IsEmpty())
