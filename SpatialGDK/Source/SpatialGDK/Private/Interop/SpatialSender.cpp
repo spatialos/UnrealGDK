@@ -574,12 +574,13 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 
 bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 {
-	if (!Params->TargetObject.IsValid())
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
 		return false;
 	}
-	UObject* TargetObject = Params->TargetObject.Get();
+	UObject* TargetObject = TargetObjectWeakPtr.Get();
 
 	USpatialActorChannel* Channel = NetDriver->GetOrCreateSpatialActorChannel(TargetObject);
 
@@ -589,15 +590,18 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		return false;
 	}
 
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+
 	if (Channel->bCreatingNewEntity)
 	{
-		if (Params->Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		if (Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 		{
 			// TODO: UNR-1437 - Add Support for Multicast RPCs on Entity Creation
-			UE_LOG(LogSpatialSender, Warning, TEXT("NetMulticast RPC %s triggered on Object %s too close to initial creation."), *Params->Function->GetName(), *TargetObject->GetName());
+			UE_LOG(LogSpatialSender, Warning, TEXT("NetMulticast RPC %s triggered on Object %s too close to initial creation."), *Function->GetName(), *TargetObject->GetName());
 		}
 		check(NetDriver->IsServer());
-		check(Params->Function->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetMulticast));
+		check(Function->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetMulticast));
 		check(PackageMap->GetUnrealObjectRefFromObject(TargetObject) != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
 		// This is where we'll serialize this RPC and queue it to be added on entity creation
@@ -606,7 +610,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		return true;
 	}
 
-	const FRPCInfo* RPCInfoPtr = ClassInfoManager->GetRPCInfo(TargetObject, Params->Function);
+	const FRPCInfo* RPCInfoPtr = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	check(RPCInfoPtr);
 	const FRPCInfo RPCInfo = *RPCInfoPtr;
 
@@ -630,19 +634,19 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
 #if !UE_BUILD_SHIPPING
-		NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo.Type, Params->Payload.PayloadData.Num());
+		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params->Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
 
-		if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
 		{
 			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
-				EntityId, CommandRequest.component_id, *Params->Function->GetName());
-			Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Params->Function, ComponentId, RPCInfo.Index, Params->Payload.PayloadData, 0));
+				EntityId, CommandRequest.component_id, *Function->GetName());
+			Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Params->Payload.PayloadData, 0));
 		}
 		else
 		{
 			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending unreliable command request (entity: %lld, component: %d, function: %s)"),
-				EntityId, CommandRequest.component_id, *Params->Function->GetName());
+				EntityId, CommandRequest.component_id, *Function->GetName());
 		}
 
 		return true;
@@ -674,7 +678,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 			const UObject* UnresolvedObject = nullptr;
 			AddPendingUnreliableRPC(TargetObject, Params, ComponentId, RPCInfo.Index, UnresolvedObject);
 #if !UE_BUILD_SHIPPING
-			NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo.Type, Params->Payload.PayloadData.Num());
+			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params->Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
 			return true;
 		}
@@ -703,7 +707,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 #if !UE_BUILD_SHIPPING
-			NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo.Type, Params->Payload.PayloadData.Num());
+			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params->Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
 			return true;
 		}
@@ -916,16 +920,22 @@ void USpatialSender::QueueOutgoingUpdate(USpatialActorChannel* DependentChannel,
 
 void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
 {
-	if (!Params->TargetObject.IsValid())
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
 		return;
 	}
-	UObject* TargetObject = Params->TargetObject.Get();
-	const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Params->Function);
+	UObject* TargetObject = TargetObjectWeakPtr.Get();
+
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+
+	const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	check(RPCInfo);
 
-	OutgoingRPCs.QueueRPC(Params, RPCInfo->Type);
+	const FUnrealObjectRef& TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
+	OutgoingRPCs.QueueRPC(TargetObjectRef, Params, RPCInfo->Type);
 }
 
 FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const
@@ -1011,13 +1021,16 @@ void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, FPendingRPCP
 		return;
 	}
 
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	UFunction* Function = ClassInfo.RPCs[Parameters->Payload.Index];
+
 	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(TargetObjectRef.Entity).Get());
 	check(TargetActor != nullptr);
 	UNetConnection* OwningConnection = TargetActor->GetNetConnection();
 	if (OwningConnection == nullptr)
 	{
 		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingUnreliableRPC: No connection for object %s (RPC %s, actor %s, entity %lld)"),
-			*TargetObject->GetName(), *Parameters->Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity);
+			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity);
 		return;
 	}
 
@@ -1025,7 +1038,7 @@ void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, FPendingRPCP
 	if (Controller == nullptr)
 	{
 		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingUnreliableRPC: Connection's owner is not a player controller for object %s (RPC %s, actor %s, entity %lld): connection owner %s"),
-			*TargetObject->GetName(), *Parameters->Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
+			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
 		return;
 	}
 

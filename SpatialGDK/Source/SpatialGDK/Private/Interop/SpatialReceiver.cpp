@@ -1020,30 +1020,24 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
 			}
 		}
-		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 
-		// TODO(Alex): Maybe queue by ObjectRef (create jira).
-		// It may happen when:
-		// 1. Packing RPCs (so that it's sent through a different entity)
-		// 2. Object has been destroyed (to fix that we need to clean queued component udpates for removed entity in void USpatialDispatcher::ProcessOps())
-		if (!TargetObject)
+		FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
+		if(UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
-			continue;
-		}
+			const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+			UFunction* Function = ClassInfo.RPCs[Payload.Index];
 
-		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-
-		UFunction* Function = ClassInfo.RPCs[Payload.Index];
-
-		FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function, MoveTemp(Payload));
-
-		// Apply if possible, queue otherwise
-		const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Params->Function);
-		check(RPCInfo);
-		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(TargetObject, RPCInfo->Type))
-		{
-			if (!ApplyRPC(Params))
+			// Apply if possible, queue otherwise
+			const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+			check(RPCInfo);
+			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, RPCInfo->Type))
+			{
+				if (!ApplyRPC(Params))
+				{
+					QueueIncomingRPC(Params);
+				}
+			}
+			else
 			{
 				QueueIncomingRPC(Params);
 			}
@@ -1107,8 +1101,8 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	Schema_Object* RequestObject = Schema_GetCommandRequestObject(Op.request.schema_type);
 
 	RPCPayload Payload(RequestObject);
-
-	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Op.entity_id, Payload.Offset)).Get();
+	FUnrealObjectRef ObjectRef = FUnrealObjectRef(Op.entity_id, Payload.Offset);
+	UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 	if (TargetObject == nullptr)
 	{
 		UE_LOG(LogSpatialReceiver, Warning, TEXT("No target object found for EntityId %d"), Op.entity_id);
@@ -1123,7 +1117,7 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
-	FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function, MoveTemp(Payload));
+	FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
 
 	QueueIncomingRPC(Params);
 
@@ -1307,7 +1301,20 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCP
 
 bool USpatialReceiver::ApplyRPC(FPendingRPCParamsPtr Params)
 {
-	return ApplyRPC(Params->TargetObject.Get(), Params->Function, Params->Payload, FString{});
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	if (!TargetObjectWeakPtr.IsValid())
+	{
+		return false;
+	}
+
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
+	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+	if (Function == nullptr)
+	{
+		return false;
+	}
+
+	return ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params->Payload, FString{});
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op)
@@ -1490,16 +1497,27 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 
 void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 {
-	if (!Params->TargetObject.IsValid())
+	//if (!Params->TargetObject.IsValid())
+	//{
+	//	// Target object was destroyed before the RPC could be (re)sent
+	//	return;
+	//}
+	//UObject* TargetObject = Params->TargetObject.Get();
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
 		return;
 	}
-	UObject* TargetObject = Params->TargetObject.Get();
-	const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Params->Function);
+	UObject* TargetObject = TargetObjectWeakPtr.Get();
+
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+	const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	check(RPCInfo);
 
-	IncomingRPCs.QueueRPC(Params, RPCInfo->Type);
+	const FUnrealObjectRef& TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
+	IncomingRPCs.QueueRPC(TargetObjectRef, Params, RPCInfo->Type);
 }
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)

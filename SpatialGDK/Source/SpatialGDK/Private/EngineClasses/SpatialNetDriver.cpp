@@ -1035,7 +1035,9 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 
 	if (UnresolvedObjects.Num() == 0)
 	{
-		FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, MoveTemp(Payload), ReliableRPCIndex);
+		FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(CallingObject);
+
+		FPendingRPCParamsPtr RPCParams = MakeShared<FPendingRPCParams>(ObjectRef, MoveTemp(Payload), ReliableRPCIndex);
 		Sender->QueueOutgoingRPC(RPCParams);
 		// TODO(Alex): Create jira ticket to remove queueing when not needed
 		Sender->SendOutgoingRPCs();
