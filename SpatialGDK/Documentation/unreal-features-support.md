@@ -2,7 +2,9 @@
 
 The aim of the GDK is to seamlessly support all native Unreal Engine features, making it easy to create and port any Unreal game code to run on SpatialOS, both in single server and multiserver configurations.
 
-The following tables show the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of. The Unreal Engine features support for multiserver configurations of the GDK will be available in Q3 2019.
+The following tables show the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of. 
+
+<%(Callout  message="The timelines below aim to provide our latest best estimates on our feature delivery to help you plan your project. They should not be taken as commitments and are subject to change based upon feedback, changing requirements, and technical constraints.")%>
 
 <style type="text/css">
     th {
