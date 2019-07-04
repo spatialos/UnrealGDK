@@ -12,7 +12,7 @@ void UOrConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoMa
 {
 	for (const UAbstractQueryConstraint* ConstraintData : Constraints)
 	{
-		if (ConstraintData)
+		if (ConstraintData != nullptr)
 		{
 			SpatialGDK::QueryConstraint NewConstraint;
 			ConstraintData->CreateConstraint(ClassInfoManager, NewConstraint);
