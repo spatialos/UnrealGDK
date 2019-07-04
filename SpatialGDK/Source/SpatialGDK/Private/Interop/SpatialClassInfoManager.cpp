@@ -295,7 +295,7 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) const
 {
 	const FString ClassPath = Class.GetPathName();
-	if (const FSchemaData* SchemaData = SchemaDatabase->ClassPathToSchema.Find(ClassPath))
+	if (const FSchemaData* SchemaData = SchemaDatabase->ClassPathToSchema.Find(Class.GetPathName()))
 	{
 		return SchemaData->SchemaComponents[SCHEMA_Data];
 	}
