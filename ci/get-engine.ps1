@@ -50,11 +50,11 @@ pushd "$($gdk_home)"
         }
     popd
 
-    ## Create an UnrealEngine symlink to the correct directory
-    Remove-Item "UnrealEngine" -ErrorAction ignore -Recurse -Force
-    cmd /c mklink /J "UnrealEngine" "UnrealEngine-Cache\$($unreal_version)"
-
     $unreal_path = "$($gdk_home)\UnrealEngine"
+
+    ## Create an UnrealEngine symlink to the correct directory
+    Remove-Item $unreal_path -ErrorAction ignore -Recurse -Force
+    cmd /c mklink /J $unreal_path "UnrealEngine-Cache\$($unreal_version)"
 
     $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
