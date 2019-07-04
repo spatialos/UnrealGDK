@@ -16,4 +16,7 @@ public:
 
 public:
 	virtual int32 Main(const FString& Params) override;
+
+private:
+	TArray<FString> GetAllMapPaths(FString InMapsPath);
 };
