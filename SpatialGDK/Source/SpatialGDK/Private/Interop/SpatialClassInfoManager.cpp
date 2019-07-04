@@ -315,7 +315,7 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 
 const FRPCInfo* USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)
 {
-	check(Object && Function);
+	check(Object != nullptr && Function != nullptr);
 
 	if (Object == nullptr ||
 		Function == nullptr)
