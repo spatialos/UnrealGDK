@@ -31,6 +31,10 @@ public:
 
 	void Init(USpatialNetDriver* NetDriver);
 	void ProcessOps(Worker_OpList* OpList);
+	// The following 2 methods should *only* be used by the Startup OpList Queueing flow
+	// from the SpatialNetDriver, and should be temporary since an alternative solution will be available via the Worker SDK soon.
+	void MarkOpToSkip(const Worker_Op* Op);
+	int GetNumOpsToSkip();
 
 	// Each callback method returns a callback ID which is incremented for each registration.
 	// ComponentId must be in the range 1000 - 2000.
@@ -60,7 +64,6 @@ private:
 
 	bool IsExternalSchemaOp(Worker_Op* Op) const;
 	void ProcessExternalSchemaOp(Worker_Op* Op);
-	Worker_ComponentId GetComponentId(Worker_Op* Op) const;
 	FCallbackId AddGenericOpCallback(Worker_ComponentId ComponentId, Worker_OpType OpType, const TFunction<void(const Worker_Op*)>& Callback);
 	void RunCallbacks(Worker_ComponentId ComponentId, const Worker_Op* Op);
 
@@ -80,4 +83,5 @@ private:
 	FCallbackId NextCallbackId;
 	TMap<Worker_ComponentId, OpTypeToCallbacksMap> ComponentOpTypeToCallbacksMap;
 	TMap<FCallbackId, CallbackIdData> CallbackIdToDataMap;
+	TArray<const Worker_Op*> OpsToSkip;
 };

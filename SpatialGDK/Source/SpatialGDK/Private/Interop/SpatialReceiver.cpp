@@ -411,7 +411,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			// This could be nullptr if:
 			// a stably named actor could not be found
-			// the Actor is a singleton
+			// the Actor is a singleton that has arrived over the wire before it has been created on this worker
 			// the class couldn't be loaded
 			return;
 		}

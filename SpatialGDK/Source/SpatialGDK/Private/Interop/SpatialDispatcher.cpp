@@ -8,6 +8,8 @@
 #include "Interop/SpatialStaticComponentView.h"
 #include "Interop/SpatialWorkerFlags.h"
 #include "UObject/UObjectIterator.h"
+#include "Utils/OpUtils.h"
+
 
 DEFINE_LOG_CATEGORY(LogSpatialView);
 
@@ -25,6 +27,12 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	for (size_t i = 0; i < OpList->op_count; ++i)
 	{
 		Worker_Op* Op = &OpList->ops[i];
+
+		if (OpsToSkip.Contains(Op))
+		{
+			OpsToSkip.Remove(Op);
+			continue;
+		}
 
 		if (IsExternalSchemaOp(Op))
 		{
@@ -113,13 +121,13 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 
 bool USpatialDispatcher::IsExternalSchemaOp(Worker_Op* Op) const
 {
-	Worker_ComponentId ComponentId = GetComponentId(Op);
+	Worker_ComponentId ComponentId = SpatialGDK::GetComponentId(Op);
 	return SpatialConstants::MIN_EXTERNAL_SCHEMA_ID <= ComponentId && ComponentId <= SpatialConstants::MAX_EXTERNAL_SCHEMA_ID;
 }
 
 void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 {
-	Worker_ComponentId ComponentId = GetComponentId(Op);
+	Worker_ComponentId ComponentId = SpatialGDK::GetComponentId(Op);
 	check(ComponentId != SpatialConstants::INVALID_COMPONENT_ID);
 
 	switch (Op->op_type)
@@ -139,27 +147,6 @@ void USpatialDispatcher::ProcessExternalSchemaOp(Worker_Op* Op)
 		// the same explicit cases as the switch in this method
 		checkNoEntry();
 		return;
-	}
-}
-
-Worker_ComponentId USpatialDispatcher::GetComponentId(Worker_Op* Op) const
-{
-	switch (Op->op_type)
-	{
-	case WORKER_OP_TYPE_ADD_COMPONENT:
-		return Op->add_component.data.component_id;
-	case WORKER_OP_TYPE_REMOVE_COMPONENT:
-		return Op->remove_component.component_id;
-	case WORKER_OP_TYPE_COMPONENT_UPDATE:
-		return Op->component_update.update.component_id;
-	case WORKER_OP_TYPE_AUTHORITY_CHANGE:
-		return Op->authority_change.component_id;
-	case WORKER_OP_TYPE_COMMAND_REQUEST:
-		return Op->command_request.request.component_id;
-	case WORKER_OP_TYPE_COMMAND_RESPONSE:
-		return Op->command_response.response.component_id;
-	default:
-		return SpatialConstants::INVALID_COMPONENT_ID;
 	}
 }
 
@@ -282,4 +269,14 @@ void USpatialDispatcher::RunCallbacks(Worker_ComponentId ComponentId, const Work
 	{
 		CallbackData.Callback(Op);
 	}
+}
+
+void USpatialDispatcher::MarkOpToSkip(const Worker_Op* Op)
+{
+	OpsToSkip.Add(Op);
+}
+
+int USpatialDispatcher::GetNumOpsToSkip()
+{
+	return OpsToSkip.Num();
 }

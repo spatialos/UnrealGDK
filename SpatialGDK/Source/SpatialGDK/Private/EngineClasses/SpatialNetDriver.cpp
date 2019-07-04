@@ -33,6 +33,7 @@
 #include "Utils/ActorGroupManager.h"
 #include "Utils/EngineVersionCheck.h"
 #include "Utils/EntityPool.h"
+#include "Utils/OpUtils.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 
@@ -1114,18 +1115,8 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		// Servers will queue ops at startup until we've extracted necessary information from the op stream
 		if (bQueueOpsUntilReady)
 		{
-			if (!GlobalStateManager->ProcessOpListForServersCanBeginPlay(OpLists))
-			{
-				QueuedStartupOpLists.Append(OpLists);
-				return;
-			}
-
-			// The current TArray of OpLists contained the Ops the GSM needed to initiate startup.
-			// We can drain the startup queue and start processing ops now.
-			OpLists.Append(QueuedStartupOpLists);
-			QueuedStartupOpLists.Empty();
-
-			bQueueOpsUntilReady = false;
+			HandleStartupOpQueueing(OpLists);
+			return;
 		}
 
 		for (Worker_OpList* OpList : OpLists)
@@ -1740,3 +1731,107 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
 }
+
+void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists)
+{
+	if (InOpLists.Num() == 0)
+	{
+		return;
+	}
+
+	QueuedStartupOpLists.Append(InOpLists);
+	bQueueOpsUntilReady = FindAndDispatchStartupOps(InOpLists);
+
+	// We've found and dispatched all ops we need for startup, trigger BeginPlay()
+	// on the GSM and drain the queued ops.  Note that FindAndDispatchStartupOps()
+	// will have notified the Dispatcher to skip the startup ops that we've
+	// processed already.
+	if (!bQueueOpsUntilReady)
+	{
+		GlobalStateManager->TriggerBeginPlay();
+
+		for (Worker_OpList* OpList : QueuedStartupOpLists)
+		{
+			Dispatcher->ProcessOps(OpList);
+			Worker_OpList_Destroy(OpList);
+		}
+
+		// Sanity check that the dispatcher encountered, skipped, and removed
+		// all Ops we asked it to skip
+		check(Dispatcher->GetNumOpsToSkip() == 0);
+
+		QueuedStartupOpLists.Empty();
+	}
+}
+
+bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists)
+{
+	for (Worker_OpList* OpList : InOpLists)
+	{
+		TArray<Worker_Op*> FoundOps;
+
+		// Search for entity id reservation response and process it.  The entity id reservation
+		// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
+		// a new query will be sent, and we will process the new response here when it arrives.
+
+		if (!EntityPool->IsReady())
+		{
+			Worker_Op* EntityIdReservationResponseOp = nullptr;
+			FindFirstOpOfType(OpList, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE, &EntityIdReservationResponseOp);
+
+			if (EntityIdReservationResponseOp != nullptr)
+			{
+				FoundOps.Add(EntityIdReservationResponseOp);
+			}
+		}
+
+		// Search for StartupActorManager ops we need and process them
+		if (!GlobalStateManager->IsReady())
+		{
+			Worker_Op* AddComponentOp = nullptr;
+			FindFirstOpOfTypeForComponent(OpList, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AddComponentOp);
+
+			Worker_Op* AuthorityChangedOp = nullptr;
+			FindFirstOpOfTypeForComponent(OpList, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AuthorityChangedOp);
+
+			// If we are going to get both ops, we expect them in the same Worker_OpList
+			check(AddComponentOp || (AuthorityChangedOp == nullptr));
+
+			if (AddComponentOp != nullptr)
+			{
+				FoundOps.Add(AddComponentOp);
+			}
+
+			if (AuthorityChangedOp != nullptr)
+			{
+				FoundOps.Add(AuthorityChangedOp);
+			}
+		}
+
+		// For each Op we've found, make a Worker_OpList that just contains that Op,
+		// and pass it to the dispatcher for processing. This allows us to avoid copying
+		// the Ops around and dealing with memory that is / should be managed by the Worker SDK.
+		// The Op remains owned by the original OpList.  Finally, notify the dispatcher to skip
+		// these Ops when they are encountered later when we drain the queued ops.
+
+		for (Worker_Op* Op : FoundOps)
+		{
+			Worker_OpList SingleOpList;
+			SingleOpList.op_count = 1;
+			SingleOpList.ops = Op;
+
+			Dispatcher->ProcessOps(&SingleOpList);
+			Dispatcher->MarkOpToSkip(Op);
+		}
+
+		if (EntityPool->IsReady() &&
+			GlobalStateManager->IsReady())
+		{
+			// Return whether or not we should continue queueing ops
+			return false;
+		}
+	}
+
+	return true;
+}
+

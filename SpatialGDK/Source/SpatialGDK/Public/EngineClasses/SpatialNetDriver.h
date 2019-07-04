@@ -162,16 +162,16 @@ private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
+	TArray<Worker_OpList*> QueuedStartupOpLists;
 
 	FTimerManager TimerManager;
-
-	TArray<Worker_OpList*> QueuedStartupOpLists;
-	bool bQueueOpsUntilReady;
 
 	bool bAuthoritativeDestruction;
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
+	bool bQueueOpsUntilReady;
+
 	FString SnapshotToLoad;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
@@ -184,6 +184,9 @@ private:
 	void QueryGSMToLoadMap();
 
 	void HandleOngoingServerTravel();
+
+	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
+	bool FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists);
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);

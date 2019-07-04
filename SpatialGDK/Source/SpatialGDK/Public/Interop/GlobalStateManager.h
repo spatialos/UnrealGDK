@@ -33,7 +33,6 @@ public:
 	void ApplyDeploymentMapData(const Worker_ComponentData& Data);
 	void ApplyStartupActorManagerData(const Worker_ComponentData& Data);
 
-	bool ProcessOpListForServersCanBeginPlay(const TArray<Worker_OpList*>& OpLists);
 	void ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update);
 	void ApplyDeploymentMapUpdate(const Worker_ComponentUpdate& Update);
 	void ApplyStartupActorManagerUpdate(const Worker_ComponentUpdate& Update);
@@ -50,7 +49,7 @@ public:
 	void SetDeploymentMapURL(const FString& MapURL);
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
-	void SetCanBeginPlay(bool bInCanBeginPlay);
+	void SetAuthBeginPlayCalled(const bool bInAuthBeginPlayCalled);
 
 	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
 	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
@@ -58,6 +57,13 @@ public:
 	void BeginDestroy() override;
 
 	bool HasAuthority();
+
+	void TriggerBeginPlay();
+
+	FORCEINLINE bool IsReady() const
+	{
+		return bIsReady;
+	}
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
 	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
@@ -72,7 +78,7 @@ public:
 	bool bAcceptingPlayers;
 
 	// Startup Actor Manager Component
-	bool bCanBeginPlay;
+	bool bAuthBeginPlayCalled;
 
 #if WITH_EDITOR
 	void OnPrePIEEnded(bool bValue);
@@ -84,10 +90,9 @@ public:
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
-	void ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate);
+	void ApplyAuthBeginPlayCalledUpdate(const bool bAuthBeginPlayCalledUpdate);
 
 	void BecomeAuthoritativeOverAllActors();
-	void TriggerBeginPlay();
 
 #if WITH_EDITOR
 	void SendShutdownMultiProcessRequest();
@@ -109,5 +114,5 @@ private:
 
 	FTimerManager* TimerManager;
 
-	bool bTriggeredBeginPlay;
+	bool bIsReady;
 };
