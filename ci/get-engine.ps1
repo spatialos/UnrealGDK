@@ -59,6 +59,7 @@ pushd "$($gdk_home)"
     $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
     [Environment]::SetEnvironmentVariable("LINUX_MULTIARCH_ROOT", "$($clang_path)", "Machine")
+    $Env:LINUX_MULTIARCH_ROOT = "$($clang_path)"
 
     Start-Event "installing-unreal-engine-prerequisites" "get-unreal-engine"
         # This runs an opaque exe downloaded in the previous step that does *some stuff* that UE needs to occur.
