@@ -57,9 +57,6 @@ call :MarkStartOfBlock "Setup variables"
     set SCHEMA_STD_COPY_DIR=%~dp0..\..\..\spatial\build\dependencies\schema\standard_library
     set SPATIAL_DIR=%~dp0..\..\..\spatial
 
-    rem Copy worker files to the projects spatial directory.
-    set IMPROBABLE_WORKER_DIR=%ProjectDirectory%\spatial\workers\improbable
-
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
@@ -71,7 +68,6 @@ call :MarkStartOfBlock "Clean folders"
     if exist "%SPATIAL_DIR%" (
         rd /s /q "%SCHEMA_STD_COPY_DIR%"    2>nul
         rd /s /q "%SCHEMA_COPY_DIR%"        2>nul
-        rd /s /q "%IMPROBABLE_WORKER_DIR%"  2>nul
     )
 call :MarkEndOfBlock "Clean folders"
 
@@ -85,7 +81,6 @@ call :MarkStartOfBlock "Create folders"
     if exist "%SPATIAL_DIR%" (
         md "%SCHEMA_STD_COPY_DIR%"    >nul 2>nul
         md "%SCHEMA_COPY_DIR%"        >nul 2>nul
-        md "%IMPROBABLE_WORKER_DIR%"  >nul 2>nul
     )
 call :MarkEndOfBlock "Create folders"
 
@@ -127,11 +122,6 @@ if exist "%SPATIAL_DIR%" (
 call :MarkStartOfBlock "Build C# utilities"
     %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
 call :MarkEndOfBlock "Build C# utilities"
-
-call :MarkStartOfBlock "Copy worker coordinator config"
-    echo Copying worker coordinator config to "%IMPROBABLE_WORKER_DIR%"
-    xcopy /s /i /q ".\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\WorkerCoordinator\SpatialConfig\spatialos.SimulatedPlayerCoordinator.worker.json" "%IMPROBABLE_WORKER_DIR%"
-call :MarkEndOfBlock "Copy worker coordinator config"
 
 call :MarkEndOfBlock "%~0"
 
