@@ -143,7 +143,7 @@ namespace SpatialConstants
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_INDEX_ID = 2;
 	const Schema_FieldId UNREAL_RPC_PAYLOAD_RPC_PAYLOAD_ID = 3;
 	// UnrealPackedRPCPayload additional Field ID
-	const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID = 4;	
+	const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID = 4;
 
 	// Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_READY_ID = 1;

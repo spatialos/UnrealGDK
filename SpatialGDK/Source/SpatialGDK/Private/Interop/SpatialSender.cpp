@@ -519,7 +519,7 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, UFu
 {
 	const FRPCInfo RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
-	if(TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
+	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		UnresolvedObjects.Add(TargetObject);
 	}
@@ -611,7 +611,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 
 #if !UE_BUILD_SHIPPING
 		NetDriver->SpatialMetrics->TrackSentRPC(Params->Function, RPCInfo.Type, Params->Payload.PayloadData.Num());
-#endif // !UE_BUILD_SHIPPING		
+#endif // !UE_BUILD_SHIPPING
 
 		if (Params->Function->HasAnyFunctionFlags(FUNC_NetReliable))
 		{

@@ -1021,7 +1021,6 @@ void USpatialReceiver::HandleRPC(Worker_ComponentUpdateOp& Op)
 				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
 			}
 		}
-		
 		UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get();
 
 		// TODO(Alex): Maybe queue by ObjectRef (create jira).
@@ -1042,9 +1041,9 @@ void USpatialReceiver::HandleRPC(Worker_ComponentUpdateOp& Op)
 
 		// Apply if possible, queue otherwise
 		const FRPCInfo RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Params->Function);
-		if(!IncomingRPCs.ObjectHasRPCsQueuedOfType(TargetObject, RPCInfo.Type))
+		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(TargetObject, RPCInfo.Type))
 		{
-			if(!ApplyRPC(Params))
+			if (!ApplyRPC(Params))
 			{
 				QueueIncomingRPC(Params);
 			}
@@ -1239,14 +1238,14 @@ void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, 
 {
 	if (Schema_GetBoolCount(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
 	{
-		bool ready = GetBoolFromSchema(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
+		bool bReady = GetBoolFromSchema(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
 		if (ready)
 		{
 			NetDriver->RegisterListeningEntity(EntityId);
 
 			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 			{
-				if(UObject* TargetObject = Channel->GetActor())
+				if (UObject* TargetObject = Channel->GetActor())
 				{
 					Sender->SendOutgoingRPCs();
 				}
