@@ -241,6 +241,9 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
+		// Since it is possible to replicate subobjects which have no replicated properties.
+		// We need to generate a schema component for every subobject. So if we have no replicated
+		// properties, we only don't generate a schema component if we are REP_SingleClient
 		if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
 		{
 			continue;
@@ -290,6 +293,8 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 		Writer.Outdent().Print("}");
 	}
 
+	// Use the max number of dynamically attached subobjects per class to generate
+	// that many schema components for this subobject.
 	const uint32 DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
 
 	FSubobjectSchemaData SubobjectSchemaData;
@@ -300,6 +305,9 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 		{
+			// Since it is possible to replicate subobjects which have no replicated properties.
+			// We need to generate a schema component for every subobject. So if we have no replicated
+			// properties, we only don't generate a schema component if we are REP_SingleClient
 			if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
 			{
 				continue;
@@ -456,7 +464,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
 }
 
-FActorSpecificSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex)
+FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex)
 {
 	const FActorSpecificSubobjectSchemaData* const SubobjectSchemaData = nullptr;
 	
@@ -467,6 +475,9 @@ FActorSpecificSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& W
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
+		// Since it is possible to replicate subobjects which have no replicated properties.
+		// We need to generate a schema component for every subobject. So if we have no replicated
+		// properties, we only don't generate a schema component if we are REP_SingleClient
 		if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
 		{
 			continue;
@@ -550,7 +561,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 		if (SchemaGeneratedClasses.Contains(SubobjectClass))
 		{
 			bHasComponents = true;
-			SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, 0);
+			SubobjectData = GenerateSchemaForStaticallyAttachedSubobject(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, 0);
 		}
 		else
 		{

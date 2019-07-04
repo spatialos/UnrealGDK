@@ -15,9 +15,15 @@ extern TMap<FString, FActorSchemaData> ActorClassPathToSchema;
 extern TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 extern TMap<FString, uint32> LevelPathToComponentId;
 
-// Generates a schema file, given an output code writer, component ID, Unreal type and type info.
+// Generates schema for an Actor
 void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
+// Generates schema for a Subobject class - the schema type and the dynamic schema components
 void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath);
-void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath, FActorSchemaData& ActorSchemaData);
-FActorSpecificSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass);
+// Generates schema for all statically attached subobjects on an Actor.
+void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo,
+	FString SchemaPath, FActorSchemaData& ActorSchemaData);
+// Generates schema for a statically attached subobject on an Actor - called by GenerateSubobjectSchemaForActor.
+FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator,
+	FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass);
+// Output the includes required by this schema file.
 void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInfo);

@@ -45,7 +45,7 @@ struct FDynamicSubobjectSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 SchemaComponents[SCHEMA_Count] = {};
 };
 
@@ -67,16 +67,6 @@ class SPATIALGDK_API USchemaDatabase : public UDataAsset
 public:
 
 	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID) {}
-
-	uint32 GetComponentIdFromLevelPath(const FString& LevelPath) const
-	{
-		FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
-		if (const uint32* ComponentId = LevelPathToComponentId.Find(CleanLevelPath))
-		{
-			return *ComponentId;
-		}
-		return SpatialConstants::INVALID_COMPONENT_ID;
-	}
 
 	uint32 GetComponentIdForClass(const UClass& Class) const
 	{

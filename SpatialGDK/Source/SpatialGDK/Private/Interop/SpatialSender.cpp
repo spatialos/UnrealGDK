@@ -288,6 +288,7 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 
 				if (SubobjectInfo == nullptr)
 				{
+					// This is a failure but there is already a log inside TryResolveNewDynamicSubbojectAndGetClassInfo
 					continue;
 				}
 
@@ -381,7 +382,7 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	UWorld* ActorWorld = Actor->GetTypedOuter<UWorld>();
 	if (ActorWorld != NetDriver->World)
 	{
-		const uint32 ComponentId = ClassInfoManager->SchemaDatabase->GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
+		const uint32 ComponentId = ClassInfoManager->GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
 		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			return ComponentFactory::CreateEmptyComponentData(ComponentId);
@@ -644,14 +645,14 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(FPendingRPCParams& RPCPara
 
 void USpatialSender::SendComponentInterestForActor(USpatialActorChannel* Channel, Worker_EntityId EntityId, bool bNetOwned)
 {
-	check(!NetDriver->IsServer());
+	checkf(!NetDriver->IsServer(), TEXT("Tried to set ComponentInterest on a server-worker. This should never happen!"));
 
 	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterestForActor(Channel, bNetOwned));
 }
 
 void USpatialSender::SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned)
 {
-	check(!NetDriver->IsServer());
+	checkf(!NetDriver->IsServer(), TEXT("Tried to set ComponentInterest on a server-worker. This should never happen!"));
 
 	TArray<Worker_InterestOverride> ComponentInterest;
 	FillComponentInterests(Info, bNetOwned, ComponentInterest);

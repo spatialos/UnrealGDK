@@ -370,6 +370,16 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 	return ESchemaComponentType::SCHEMA_Invalid;
 }
 
+uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
+{
+	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
+	if (const uint32* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
+	{
+		return *ComponentId;
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}
+
 bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);

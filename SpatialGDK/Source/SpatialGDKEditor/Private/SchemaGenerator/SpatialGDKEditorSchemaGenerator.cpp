@@ -409,7 +409,7 @@ void SaveSchemaDatabase()
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
 	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
 	SchemaDatabase->LevelComponentIds = LevelComponentIds;
-	
+
 	FAssetRegistryModule::AssetCreated(SchemaDatabase);
 	SchemaDatabase->MarkPackageDirty();
 
@@ -445,7 +445,7 @@ TArray<UClass*> GetAllSupportedClasses()
 
 		UClass* SupportedClass = *ClassIt;
 
-		// Ensure we don't process generated classes for BP
+		// Ensure we don't process transient generated classes for BP
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
@@ -528,6 +528,7 @@ void DeleteGeneratedSchemaFiles()
 void ClearGeneratedSchema()
 {
 	ActorClassPathToSchema.Empty();
+	SubobjectClassPathToSchema.Empty();
 	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
@@ -570,9 +571,7 @@ bool TryLoadExistingSchemaDatabase()
 		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
 		{
 			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
-			ActorClassPathToSchema.Empty();
-			SubobjectClassPathToSchema.Empty();
-			DeleteGeneratedSchemaFiles();
+			ClearGeneratedSchema();
 		}
 	}
 	else
