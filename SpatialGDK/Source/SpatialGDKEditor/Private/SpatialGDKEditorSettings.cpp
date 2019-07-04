@@ -1,5 +1,7 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 #include "SpatialGDKEditorSettings.h"
+
 #include "ISettingsModule.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
@@ -9,15 +11,14 @@
 
 USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
+	, bShowSpatialServiceButton(false)
 	, bDeleteDynamicEntities(true)
 	, bGenerateDefaultLaunchConfig(true)
 	, bStopSpatialOnExit(false)
 {
-	SpatialOSDirectory.Path = GetSpatialOSDirectory();
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotFolderPath();
 	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
-	GeneratedSchemaOutputFolder.Path = GetGeneratedSchemaOutputFolder();
 }
 
 void USpatialGDKEditorSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)

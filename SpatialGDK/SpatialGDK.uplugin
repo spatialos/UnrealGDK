@@ -42,7 +42,7 @@
     {
       "Name": "SpatialGDKServices",
       "Type": "Editor",
-      "LoadingPhase": "Default",
+      "LoadingPhase": "PreDefault",
       "WhitelistPlatforms": [ "Win64" ]
     }
   ],

@@ -166,6 +166,11 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
+#if WITH_EDITOR
+	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
+	int32 PlayInEditorID;
+#endif
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -220,6 +225,8 @@ private:
 	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
 	// The GDK does not use this address for any networked purpose, only bookkeeping.
 	uint32 UniqueClientIpAddressCounter = 0;
+
+	FDelegateHandle SpatialDeploymentStartHandle;
 
 #if !UE_BUILD_SHIPPING
 	int32 ConsiderListSize = 0;

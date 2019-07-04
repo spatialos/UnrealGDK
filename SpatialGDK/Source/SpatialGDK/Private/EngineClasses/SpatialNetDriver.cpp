@@ -2,12 +2,12 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 
-#include "EngineGlobals.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/ChildConnection.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
+#include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
 #include "Net/DataReplication.h"
@@ -15,19 +15,19 @@
 #include "SocketSubsystem.h"
 #include "UObject/UObjectIterator.h"
 
-#include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/GlobalStateManager.h"
-#include "Interop/SnapshotManager.h"
-#include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialPlayerSpawner.h"
-#include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialSender.h"
-#include "Interop/SpatialDispatcher.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/GlobalStateManager.h"
+#include "Interop/SnapshotManager.h"
+#include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialDispatcher.h"
+#include "Interop/SpatialPlayerSpawner.h"
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ActorGroupManager.h"
@@ -36,6 +36,10 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
+
+#if WITH_EDITOR
+#include "SpatialGDKServicesModule.h"
+#endif
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -121,6 +125,34 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	{
 		GatherClientInterestDistances();
 	}
+
+#if WITH_EDITOR
+	PlayInEditorID = GPlayInEditorID;
+
+	// If we're launching in PIE then ensure there is a deployment running before connecting.
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+
+	// Wait for a running local deployment before connecting. If the deployment has already started then just connect.
+	if (!LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping() || LocalDeploymentManager->IsDeploymentStarting())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Waiting for local SpatialOS deployment to start before connecting..."));
+		SpatialDeploymentStartHandle = LocalDeploymentManager->OnDeploymentStart.AddLambda([WeakThis = TWeakObjectPtr<USpatialNetDriver>(this), URL]
+		{
+			if (!WeakThis.IsValid())
+			{
+				return;
+			}
+			UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
+
+			WeakThis.Get()->InitiateConnectionToSpatialOS(URL);
+			FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+			GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(WeakThis.Get()->SpatialDeploymentStartHandle);
+		});
+
+		return true;
+	}
+#endif
 
 	InitiateConnectionToSpatialOS(URL);
 
@@ -530,6 +562,12 @@ void USpatialNetDriver::BeginDestroy()
 	{
 		Connection->SendDeleteEntityRequest(WorkerEntityId);
 	}
+
+#if WITH_EDITOR
+	// Ensure our OnDeploymentStart delegate is removed when the net driver is shut down.
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+#endif
 }
 
 void USpatialNetDriver::PostInitProperties()
