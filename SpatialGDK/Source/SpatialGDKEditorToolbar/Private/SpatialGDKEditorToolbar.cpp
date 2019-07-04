@@ -70,10 +70,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	{
 		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
 		{
-			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
-			{
-				VerifyAndStartDeployment();
-			}
+			VerifyAndStartDeployment();
 		});
 	}
 }
@@ -504,6 +501,12 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, LaunchConfig, LaunchFlags]
 	{
+		// If the last local deployment is still stopping then wait until it's finished.
+		while (LocalDeploymentManager->IsDeploymentStopping())
+		{
+			FPlatformProcess::Sleep(0.1f);
+		}
+
 		// If schema has been regenerated then we need to restart spatial.
 		if (bRedeployRequired)
 		{
@@ -515,12 +518,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		{
 			// A good local deployment is already running.
 			return;
-		}
-
-		// If the last local deployment is still stopping then wait until it's finished.
-		while (LocalDeploymentManager->IsDeploymentStopping())
-		{
-			FPlatformProcess::Sleep(0.1f);
 		}
 
 		ShowTaskStartNotification(TEXT("Starting local deployment..."));

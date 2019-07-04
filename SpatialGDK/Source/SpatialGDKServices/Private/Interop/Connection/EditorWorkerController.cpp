@@ -22,6 +22,7 @@ struct EditorWorkerController
 	{
 		LastPIEEndTime = FDateTime::Now().ToUnixTimestamp();
 		FEditorDelegates::PrePIEEnded.Remove(PIEEndHandle);
+		bHasInitialized = false;
 	}
 
 	void OnSpatialShutdown()
@@ -58,6 +59,8 @@ struct EditorWorkerController
 				WorkerIdIndex++;
 			}
 		}
+
+		bHasInitialized = true;
 	}
 
 	FProcHandle ReplaceWorker(const FString& OldWorker, const FString& NewWorker)
@@ -97,6 +100,7 @@ struct EditorWorkerController
 	int64 LastPIEEndTime = 0;	// Unix epoch time in seconds
 	FDelegateHandle PIEEndHandle;
 	FDelegateHandle SpatialShutdownHandle;
+	bool bHasInitialized = false;
 };
 
 static EditorWorkerController WorkerController;
@@ -110,7 +114,7 @@ void InitWorkers(bool bConnectAsClient, int32 PlayInEditorID, FString& OutWorker
 	const int32 FirstServerEditorID = 1;
 	if (bSingleThreadedServer)
 	{
-		if (PlayInEditorID == FirstServerEditorID)
+		if (!WorkerController.bHasInitialized)
 		{
 			WorkerController.InitWorkers();
 		}
