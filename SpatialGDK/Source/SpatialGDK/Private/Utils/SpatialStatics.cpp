@@ -54,7 +54,7 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 	return IsActorGroupOwnerForClass(Actor, Actor->GetClass());
 }
 
-bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
+bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor>& ActorClass)
 {
 	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
@@ -71,7 +71,7 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 	return false;
 }
 
-bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
+bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName& ActorGroup)
 {
 	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
@@ -99,7 +99,7 @@ FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
 	return SpatialConstants::DefaultActorGroup;
 }
 
-FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, TSubclassOf<AActor> ActorClass)
+FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor>& ActorClass)
 {
 	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
