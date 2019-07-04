@@ -27,43 +27,31 @@ void FRPCContainer::QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType T
 void FRPCContainer::QueueRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params)
 {
 	check(TargetObject);
-	TSharedPtr<FQueueOfParams>& QueuePtr = QueuedRPCs.FindOrAdd(Type).FindOrAdd(TargetObject);
-	if (!QueuePtr.IsValid())
-	{
-		QueuePtr = MakeShared<FQueueOfParams>();
-	}
-	QueuePtr->Enqueue(Params);
+	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(TargetObject);
+	ArrayOfParams.Push(Params);
 }
 
-void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FQueueOfParams* RPCList)
+void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArrayOfParams& RPCList)
 {
-	check(RPCList);
-	FPendingRPCParamsPtr RPCParams = nullptr;
-	while (!RPCList->IsEmpty())
+	int NumProcessedParams = 0;
+	for (auto& Params : RPCList)
 	{
-		RPCList->Peek(RPCParams);
-		if (!RPCParams.IsValid())
-		{
-			RPCList->Empty();
-			break;
-		}
-
-		if (!RPCParams->TargetObject.IsValid())
+		if (!Params->TargetObject.IsValid())
 		{
 			// The target object was destroyed before we could send the RPC.
-			RPCList->Empty();
+			RPCList.Empty();
 			break;
 		}
-
-		if (ApplyFunction(FunctionToApply, RPCParams))
+		if (ApplyFunction(FunctionToApply, Params))
 		{
-			RPCList->Pop();
+			NumProcessedParams++;
 		}
 		else
 		{
 			break;
 		}
 	}
+	RPCList.RemoveAt(0, NumProcessedParams);
 }
 
 void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
@@ -73,9 +61,9 @@ void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
 		FRPCMap& MapOfQueues = RPCs.Value;
 		for(auto It = MapOfQueues.CreateIterator(); It; ++It)
 		{
-			TSharedPtr<FQueueOfParams> RPCList = It.Value();
-			ProcessRPCs(FunctionToApply, RPCList.Get());
-			if ((*RPCList).IsEmpty())
+			FArrayOfParams& RPCList = It.Value();
+			ProcessRPCs(FunctionToApply, RPCList);
+			if (RPCList.Num() == 0)
 			{
 				It.RemoveCurrent();
 			}
@@ -83,15 +71,15 @@ void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
 	}
 }
 
-bool FRPCContainer::ObjectHasRPCsQueuedOfType(const UObject* TargetObject, ESchemaComponentType Type)
+bool FRPCContainer::ObjectHasRPCsQueuedOfType(const UObject* TargetObject, ESchemaComponentType Type) const
 {
-	FRPCMap* MapOfQueues = QueuedRPCs.Find(Type);
+	const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type);
 	if(MapOfQueues)
 	{
-		TSharedPtr<FQueueOfParams>* RPCList = MapOfQueues->Find(TargetObject);
+		const FArrayOfParams* RPCList = MapOfQueues->Find(TargetObject);
 		if(RPCList)
 		{
-			return !(*RPCList)->IsEmpty();
+			return (RPCList->Num() > 0);
 		}
 	}
 

@@ -27,15 +27,15 @@ class FRPCContainer
 public:
 	void QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
 	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply);
-	bool ObjectHasRPCsQueuedOfType(const UObject* TargetObject, ESchemaComponentType Type);
+	bool ObjectHasRPCsQueuedOfType(const UObject* TargetObject, ESchemaComponentType Type) const;
 
 private:
-	using FQueueOfParams = TQueue<FPendingRPCParamsPtr>;
-	using FRPCMap = TMap<TWeakObjectPtr<const UObject>, TSharedPtr<FQueueOfParams>>;
+	using FArrayOfParams = TArray<FPendingRPCParamsPtr>;
+	using FRPCMap = TMap<TWeakObjectPtr<const UObject>, FArrayOfParams>;
 	using RPCContainerType = TMap<ESchemaComponentType, FRPCMap>;
 
 	void QueueRPC(const UObject* TargetObject, ESchemaComponentType Type, FPendingRPCParamsPtr Params);
-	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FQueueOfParams* RPCList);
+	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArrayOfParams& RPCList);
 	bool ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParamsPtr Params);
 
 	RPCContainerType QueuedRPCs;

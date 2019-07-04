@@ -593,7 +593,6 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 	{
 		if (Params->Function->HasAnyFunctionFlags(FUNC_NetMulticast))
 		{
-			// TODO(Alex): Should we queue and send multicast as usual instead of trying to pack into RPCOnEntityCreation?
 			// TODO: UNR-1437 - Add Support for Multicast RPCs on Entity Creation
 			UE_LOG(LogSpatialSender, Warning, TEXT("NetMulticast RPC %s triggered on Object %s too close to initial creation."), *Params->Function->GetName(), *TargetObject->GetName());
 		}
