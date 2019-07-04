@@ -974,7 +974,7 @@ void USpatialReceiver::OnComponentUpdate(Worker_ComponentUpdateOp& Op)
 	}
 }
 
-void USpatialReceiver::HandleRPC(Worker_ComponentUpdateOp& Op)
+void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 {
 	Worker_EntityId EntityId = Op.entity_id;
 
@@ -1040,8 +1040,9 @@ void USpatialReceiver::HandleRPC(Worker_ComponentUpdateOp& Op)
 		FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(TargetObject, Function, MoveTemp(Payload));
 
 		// Apply if possible, queue otherwise
-		const FRPCInfo RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Params->Function);
-		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(TargetObject, RPCInfo.Type))
+		const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Params->Function);
+		check(RPCInfo);
+		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(TargetObject, RPCInfo->Type))
 		{
 			if (!ApplyRPC(Params))
 			{
@@ -1497,9 +1498,10 @@ void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 		return;
 	}
 	UObject* TargetObject = Params->TargetObject.Get();
-	const FRPCInfo RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Params->Function);
+	const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Params->Function);
+	check(RPCInfo);
 
-	IncomingRPCs.QueueRPC(Params, RPCInfo.Type);
+	IncomingRPCs.QueueRPC(Params, RPCInfo->Type);
 }
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)

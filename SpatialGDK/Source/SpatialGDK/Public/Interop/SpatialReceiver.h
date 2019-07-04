@@ -114,7 +114,7 @@ public:
 	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
 
 	void OnComponentUpdate(Worker_ComponentUpdateOp& Op);
-	void HandleRPC(Worker_ComponentUpdateOp& Op);
+	void HandleRPC(const Worker_ComponentUpdateOp& Op);
 	void OnCommandRequest(Worker_CommandRequestOp& Op);
 	void OnCommandResponse(Worker_CommandResponseOp& Op);
 
