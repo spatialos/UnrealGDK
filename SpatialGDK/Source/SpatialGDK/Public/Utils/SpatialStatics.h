@@ -15,6 +15,7 @@ private:
 	static bool IsSpatialOffloadingEnabled();
 
 	static class UActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
+	static FName GetCurrentWorkerType(const UObject* WorldContext);
 
 public:
 
@@ -28,8 +29,8 @@ public:
      * Returns true if the current Worker Type owns the Actor Group this Actor belongs to.
 	 * Equivalent to HasAuthority when Spatial Networking is disabled.
      */
-    UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading")
-    static bool IsActorGroupOwnerForActor(const AActor* Actor);
+	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading")
+	static bool IsActorGroupOwnerForActor(const AActor* Actor);
 
 	/**
 	 * Returns true if the current Worker Type owns the Actor Group this Actor Class belongs to.

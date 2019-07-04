@@ -2,12 +2,12 @@
 
 #include "Utils/SpatialStatics.h"
 
+#include "Engine/World.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "GeneralProjectSettings.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ActorGroupManager.h"
-#include "Engine/World.h"
 
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
@@ -24,6 +24,19 @@ UActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldCo
 		}
 	}
 	return nullptr;
+}
+
+FName USpatialStatics::GetCurrentWorkerType(const UObject* WorldContext)
+{
+	if (const UWorld* World = WorldContext->GetWorld())
+	{
+		if (const UGameInstance* GameInstance = World->GetGameInstance())
+		{
+			return GameInstance->GetSpatialWorkerType();
+		}
+	}
+
+	return NAME_None;
 }
 
 bool USpatialStatics::IsSpatialOffloadingEnabled()
@@ -46,13 +59,13 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
-		const FName CurrentWorkerType = WorldContextObject->GetWorld()->GetGameInstance()->GetSpatialWorkerType();
-		return (ClassWorkerType == CurrentWorkerType);
+		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
+		return ClassWorkerType == CurrentWorkerType;
 	}
 
 	if (const UWorld* World = WorldContextObject->GetWorld())
 	{
-		return (World->GetNetMode() != NM_Client);
+		return World->GetNetMode() != NM_Client;
 	}
 
 	return false;
@@ -63,13 +76,13 @@ bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const
 	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
 		const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
-		const FName CurrentWorkerType = WorldContextObject->GetWorld()->GetGameInstance()->GetSpatialWorkerType();
-		return (ActorGroupWorkerType == CurrentWorkerType);
+		const FName CurrentWorkerType = GetCurrentWorkerType(WorldContextObject);
+		return ActorGroupWorkerType == CurrentWorkerType;
 	}
 
 	if (const UWorld* World = WorldContextObject->GetWorld())
 	{
-		return (World->GetNetMode() != NM_Client);
+		return World->GetNetMode() != NM_Client;
 	}
 
 	return false;
