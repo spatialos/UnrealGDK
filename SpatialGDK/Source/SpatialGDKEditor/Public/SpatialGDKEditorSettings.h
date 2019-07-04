@@ -287,7 +287,7 @@ public:
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
 	{
 		return SpatialOSSnapshotPath.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("../spatial/snapshots/")))
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("snapshots")))
 			: SpatialOSSnapshotPath.Path;
 	}
 

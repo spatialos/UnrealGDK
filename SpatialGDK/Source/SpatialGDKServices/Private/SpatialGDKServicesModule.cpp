@@ -12,8 +12,6 @@ IMPLEMENT_MODULE(FSpatialGDKServicesModule, SpatialGDKServices);
 
 void FSpatialGDKServicesModule::StartupModule()
 {
-	// Create an instance of the local deployment manager for tracking and controlling local deployment status.
-	LocalDeploymentManager = FLocalDeploymentManager();
 }
 
 void FSpatialGDKServicesModule::ShutdownModule()

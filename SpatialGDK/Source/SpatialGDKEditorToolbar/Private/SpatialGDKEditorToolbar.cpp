@@ -72,9 +72,8 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 		{
 			if (GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
 			{
-				return VerifyAndStartDeployment();
+				VerifyAndStartDeployment();
 			}
-			return true;
 		});
 	}
 }
@@ -124,7 +123,6 @@ void FSpatialGDKEditorToolbarModule::PreUnloadCallback()
 
 void FSpatialGDKEditorToolbarModule::Tick(float DeltaTime)
 {
-	LocalDeploymentManager->RefreshServiceStatus();
 }
 
 bool FSpatialGDKEditorToolbarModule::CanExecuteSchemaGenerator() const
@@ -475,8 +473,14 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 	});
 }
 
-bool FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
+void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 {
+	// Don't try and start a local deployment if spatial networking is disabled.
+	if (!GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
+	{
+		return;
+	}
+
 	// Get the latest launch config.
 	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
 
@@ -485,7 +489,7 @@ bool FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	{
 		if (!ValidateGeneratedLaunchConfig())
 		{
-			return false;
+			return;
 		}
 
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
@@ -529,8 +533,6 @@ bool FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			ShowFailedNotification(TEXT("Local deployment failed to start"));
 		}
 	});
-
-	return true;
 }
 
 void FSpatialGDKEditorToolbarModule::StartSpatialDeploymentButtonClicked()
@@ -583,7 +585,7 @@ bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentIsVisible() const
 
 bool FSpatialGDKEditorToolbarModule::StartSpatialDeploymentCanExecute() const
 {
-	return !LocalDeploymentManager->IsDeploymentStarting();
+	return !LocalDeploymentManager->IsDeploymentStarting() && GetDefault<UGeneralProjectSettings>()->bSpatialNetworking;
 }
 
 bool FSpatialGDKEditorToolbarModule::StopSpatialDeploymentIsVisible() const

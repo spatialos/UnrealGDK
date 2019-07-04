@@ -124,6 +124,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	}
 
 #if WITH_EDITOR
+	PlayInEditorID = GPlayInEditorID;
+
 	// If we're launching in PIE then ensure there is a deployment running before connecting.
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
@@ -147,8 +149,6 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 		return true;
 	}
-
-	PlayInEditorID = GPlayInEditorID;
 #endif
 
 	InitiateConnectionToSpatialOS(URL);
@@ -561,7 +561,7 @@ void USpatialNetDriver::BeginDestroy()
 	}
 
 #if WITH_EDITOR
-	// Ensure our deployment started delegate is removed when the net driver is shut down.
+	// Ensure our OnDeploymentStart delegate is removed when the net driver is shut down.
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
 #endif

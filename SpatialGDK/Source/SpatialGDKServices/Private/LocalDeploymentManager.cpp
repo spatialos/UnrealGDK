@@ -18,6 +18,8 @@
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 
+static const FString SpatialExe(TEXT("spatial.exe"));
+
 FLocalDeploymentManager::FLocalDeploymentManager()
 {
 	bLocalDeploymentRunning = false;
@@ -40,9 +42,12 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 
 	// Watch the worker config directory for changes.
 	StartUpWorkerConfigDirectoryWatcher();
+
+	// Ensure we have an up to date state of the spatial service and local deployment.
+	RefreshServiceStatus();
 }
 
-FString FLocalDeploymentManager::GetSpotExe()
+const FString FLocalDeploymentManager::GetSpotExe()
 {
 	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
 
@@ -59,8 +64,7 @@ FString FLocalDeploymentManager::GetSpotExe()
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 {
 	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>(TEXT("DirectoryWatcher"));
-	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
-	if (DirectoryWatcher)
+	if (IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get())
 	{
 		// Watch the worker config directory for changes.
 		const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
@@ -110,13 +114,10 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
-		FString SpatialExe = TEXT("spatial.exe");
 		FString SpatialServiceStatusArgs = TEXT("worker build build-config");
-		const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
-
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
-		ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStatusArgs, *SpatialDirectory, WorkerBuildConfigResult, ExitCode);
+		ExecuteAndReadOutput(SpatialExe, SpatialServiceStatusArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
 
 		if (ExitCode == ExitCodeSuccess)
 		{
@@ -125,7 +126,7 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 	});
 }
 
-bool FLocalDeploymentManager::ParseJson(FString RawJsonString, TSharedPtr<FJsonObject>& JsonParsed)
+bool FLocalDeploymentManager::ParseJson(const FString& RawJsonString, TSharedPtr<FJsonObject>& JsonParsed)
 {
 	TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(RawJsonString);
 	return FJsonSerializer::Deserialize(JsonReader, JsonParsed);
@@ -133,7 +134,7 @@ bool FLocalDeploymentManager::ParseJson(FString RawJsonString, TSharedPtr<FJsonO
 
 // ExecuteAndReadOutput exists so that a spatial command window does not spawn when using 'spatial.exe'. It does not however allow reading from StdErr.
 // For other processes which do not spawn cmd windows, use ExecProcess instead.
-void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString Arguments, FString DirectoryToRun, FString& OutResult, int32& ExitCode)
+void FLocalDeploymentManager::ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode)
 {
 	UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Executing '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
 
@@ -166,22 +167,21 @@ void FLocalDeploymentManager::ExecuteAndReadOutput(FString Executable, FString A
 
 void FLocalDeploymentManager::RefreshServiceStatus()
 {
-	FDateTime CurrentTime = FDateTime::Now();
-
-	FTimespan Span = CurrentTime - LastSpatialServiceCheck;
-
-	if (Span.GetSeconds() < RefreshFrequency)
-	{
-		return;
-	}
-
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		GetServiceStatus();
 		GetLocalDeploymentStatus();
-	});
 
-	LastSpatialServiceCheck = FDateTime::Now();
+		AsyncTask(ENamedThreads::GameThread, [this]
+		{
+			// Start checking for the service status.
+			FTimerHandle RefreshTimer;
+			TimerManager.SetTimer(RefreshTimer, [this]()
+			{
+				RefreshServiceStatus();
+			}, RefreshFrequency, false);
+		});
+	});
 }
 
 bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs)
@@ -211,7 +211,6 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 		TryStartSpatialService();
 	}
 
-	FString SpotExe = GetSpotExe();
 	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json %s"), *LaunchConfig, *ProjectName, *LaunchArgs);
 	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
 
@@ -220,7 +219,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	FString SpotCreateResult;
 	FString StdErr;
 	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*SpotExe, *SpotCreateArgs, &ExitCode, &SpotCreateResult, &StdErr, *SpatialDirectory);
+	FPlatformProcess::ExecProcess(*GetSpotExe(), *SpotCreateArgs, &ExitCode, &SpotCreateResult, &StdErr, *SpatialDirectory);
 	bStartingDeployment = false;
 
 	if (ExitCode != ExitCodeSuccess)
@@ -232,21 +231,21 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	bool bSuccess = false;
 
 	TSharedPtr<FJsonObject> SpotJsonResult;
-	bool bPasingSuccess = ParseJson(SpotCreateResult, SpotJsonResult);
-	if (!bPasingSuccess)
+	bool bParsingSuccess = ParseJson(SpotCreateResult, SpotJsonResult);
+	if (!bParsingSuccess)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot create result failed."));
 	}
 
 	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
-	if (bPasingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
+	if (bParsingSuccess && !SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'content' does not exist in Json result from 'spot create': %s"), *SpotCreateResult);
-		bPasingSuccess = false;
+		bParsingSuccess = false;
 	}
 
 	FString DeploymentStatus;
-	if (bPasingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
+	if (bParsingSuccess && SpotJsonContent->Get()->TryGetStringField(TEXT("status"), DeploymentStatus))
 	{
 		if (DeploymentStatus == TEXT("RUNNING"))
 		{
@@ -285,15 +284,13 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 
 	bStoppingDeployment = true;
 
-	FString SpotExe = GetSpotExe();
 	FString SpotDeleteArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *LocalRunningDeploymentID);
 	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
-
 
 	FString SpotDeleteResult;
 	FString StdErr;
 	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*SpotExe, *SpotDeleteArgs, &ExitCode, &SpotDeleteResult, &StdErr, *SpatialDirectory);
+	FPlatformProcess::ExecProcess(*GetSpotExe(), *SpotDeleteArgs, &ExitCode, &SpotDeleteResult, &StdErr, *SpatialDirectory);
 	bStoppingDeployment = false;
 
 	if (ExitCode != ExitCodeSuccess)
@@ -350,13 +347,11 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 
 	bStartingSpatialService = true;
 
-	FString SpatialExe = TEXT("spatial.exe");
 	FString SpatialServiceStartArgs = TEXT("service start");
-	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
-
 	FString ServiceStartResult;
 	int32 ExitCode;
-	ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStartArgs, *SpatialDirectory, ServiceStartResult, ExitCode);
+	ExecuteAndReadOutput(SpatialExe, SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStartResult, ExitCode);
+
 	bStartingSpatialService = false;
 
 	if (ExitCode != ExitCodeSuccess)
@@ -389,13 +384,11 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 	}
 
 	bStoppingSpatialService = true;
-	FString SpatialExe = TEXT("spatial.exe");
-	FString SpatialServiceStartArgs = TEXT("service stop");
-	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
 
+	FString SpatialServiceStartArgs = TEXT("service stop");
 	FString ServiceStopResult;
 	int32 ExitCode;
-	ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStartArgs, *SpatialDirectory, ServiceStopResult, ExitCode);
+	ExecuteAndReadOutput(SpatialExe, SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStopResult, ExitCode);
 	bStoppingSpatialService = false;
 
 	if (ExitCode == ExitCodeSuccess)
@@ -422,14 +415,13 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 		return bLocalDeploymentRunning;
 	}
 
-	FString SpotExe = GetSpotExe();
 	FString SpotListArgs = FString::Printf(TEXT("alpha deployment list --project-name=%s --json --view BASIC --status-filter NOT_STOPPED_DEPLOYMENTS"), *ProjectName);
 	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
 
 	FString SpotListResult;
 	FString StdErr;
 	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*SpotExe, *SpotListArgs, &ExitCode, &SpotListResult, &StdErr, *SpatialDirectory);
+	FPlatformProcess::ExecProcess(*GetSpotExe(), *SpotListArgs, &ExitCode, &SpotListResult, &StdErr, *SpatialDirectory);
 
 	if (ExitCode != ExitCodeSuccess)
 	{
@@ -484,13 +476,10 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 
 bool FLocalDeploymentManager::GetServiceStatus()
 {
-	FString SpatialExe = TEXT("spatial.exe");
 	FString SpatialServiceStatusArgs = TEXT("service status");
-	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
-
 	FString ServiceStatusResult;
 	int32 ExitCode;
-	ExecuteAndReadOutput(*SpatialExe, *SpatialServiceStatusArgs, *SpatialDirectory, ServiceStatusResult, ExitCode);
+	ExecuteAndReadOutput(SpatialExe, SpatialServiceStatusArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStatusResult, ExitCode);
 
 	if (ExitCode != ExitCodeSuccess)
 	{
@@ -514,32 +503,32 @@ bool FLocalDeploymentManager::GetServiceStatus()
 	return false;
 }
 
-bool FLocalDeploymentManager::IsLocalDeploymentRunning()
+bool FLocalDeploymentManager::IsLocalDeploymentRunning() const
 {
 	return bLocalDeploymentRunning;
 }
 
-bool FLocalDeploymentManager::IsSpatialServiceRunning()
+bool FLocalDeploymentManager::IsSpatialServiceRunning() const
 {
 	return bSpatialServiceRunning;
 }
 
-bool FLocalDeploymentManager::IsDeploymentStarting()
+bool FLocalDeploymentManager::IsDeploymentStarting() const
 {
 	return bStartingDeployment;
 }
 
-bool FLocalDeploymentManager::IsDeploymentStopping()
+bool FLocalDeploymentManager::IsDeploymentStopping() const
 {
 	return bStoppingDeployment;
 }
 
-bool FLocalDeploymentManager::IsServiceStarting()
+bool FLocalDeploymentManager::IsServiceStarting() const
 {
 	return bStartingSpatialService;
 }
 
-bool FLocalDeploymentManager::IsServiceStopping()
+bool FLocalDeploymentManager::IsServiceStopping() const
 {
 	return bStoppingSpatialService;
 }

@@ -48,7 +48,7 @@ private:
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 	void AddMenuExtension(FMenuBuilder& Builder);
 
-	bool VerifyAndStartDeployment();
+	void VerifyAndStartDeployment();
 
 	void StartSpatialDeploymentButtonClicked();
 	void StopSpatialDeploymentButtonClicked();
