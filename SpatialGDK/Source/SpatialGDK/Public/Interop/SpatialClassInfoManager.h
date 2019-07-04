@@ -100,7 +100,7 @@ public:
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 
 	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
-	TArray<Worker_ComponentId> GetComponentIdsForClass(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
+	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
 
 	bool IsSublevelComponent(Worker_ComponentId ComponentId);
 

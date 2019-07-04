@@ -386,7 +386,7 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 void InterestFactory::AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint) const
 {
 	check(NetDriver && NetDriver->ClassInfoManager);
-	TArray<Worker_ComponentId> ComponentIds = NetDriver->ClassInfoManager->GetComponentIdsForClass(BaseType);
+	TArray<Worker_ComponentId> ComponentIds = NetDriver->ClassInfoManager->GetComponentIdsForClassHierarchy(BaseType);
 	for (Worker_ComponentId ComponentId : ComponentIds)
 	{
 		QueryConstraint ComponentTypeConstraint;

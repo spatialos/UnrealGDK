@@ -302,7 +302,7 @@ uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) con
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
-TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClass(const UClass& BaseClass, const bool bIncludeDerivedTypes /* = true */) const
+TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes /* = true */) const
 {
 	TArray<Worker_ComponentId> OutComponentIds;
 
