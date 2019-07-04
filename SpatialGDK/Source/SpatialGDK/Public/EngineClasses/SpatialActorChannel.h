@@ -71,15 +71,19 @@ public:
 	FORCEINLINE bool IsOwnedByWorker() const
 	{
 		const TArray<FString>& WorkerAttributes = NetDriver->Connection->GetWorkerAttributes();
-		if (const WorkerRequirementSet* WorkerRequirementsSet = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId)->ComponentWriteAcl.Find(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID))
+
+		if (const SpatialGDK::EntityAcl* EntityACL = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::EntityAcl>(EntityId))
 		{
-			for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
+			if (const WorkerRequirementSet* WorkerRequirementsSet = EntityACL->ComponentWriteAcl.Find(SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID))
 			{
-				for (const FString& Attribute : AttributeSet)
+				for (const WorkerAttributeSet& AttributeSet : *WorkerRequirementsSet)
 				{
-					if (WorkerAttributes.Contains(Attribute))
+					for (const FString& Attribute : AttributeSet)
 					{
-						return true;
+						if (WorkerAttributes.Contains(Attribute))
+						{
+							return true;
+						}
 					}
 				}
 			}
@@ -118,10 +122,10 @@ public:
 
 	bool TryResolveActor();
 
-	bool ReplicateSubobject(UObject* Obj, const FClassInfo& Info, const FReplicationFlags& RepFlags);
+	bool ReplicateSubobject(UObject* Obj, const FReplicationFlags& RepFlags);
 	virtual bool ReplicateSubobject(UObject* Obj, FOutBunch& Bunch, const FReplicationFlags& RepFlags) override;
 
-	TMap<UObject*, FClassInfo*> GetHandoverSubobjects();
+	TMap<UObject*, const FClassInfo*> GetHandoverSubobjects();
 
 	FRepChangeState CreateInitialRepChangeState(TWeakObjectPtr<UObject> Object);
 	FHandoverChangeState CreateInitialHandoverChangeState(const FClassInfo& ClassInfo);
@@ -148,11 +152,7 @@ public:
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
 
-	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
-	bool bCreatedEntity;
-
-	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
-	bool bCreatingNewEntity;
+	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 protected:
 	// UChannel Interface
@@ -163,6 +163,8 @@ protected:
 #endif
 
 private:
+	void DynamicallyAttachSubobject(UObject* Object);
+
 	void DeleteEntityIfAuthoritative();
 	bool IsSingletonEntity();
 
@@ -170,6 +172,15 @@ private:
 
 	void InitializeHandoverShadowData(TArray<uint8>& ShadowData, UObject* Object);
 	FHandoverChangeState GetHandoverChangeList(TArray<uint8>& ShadowData, UObject* Object);
+
+public:
+	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
+	bool bCreatedEntity;
+
+	// If this actor channel is responsible for creating a new entity, this will be set to true during initial replication.
+	bool bCreatingNewEntity;
+
+	TSet<TWeakObjectPtr<UObject>> PendingDynamicSubobjects;
 
 private:
 	Worker_EntityId EntityId;

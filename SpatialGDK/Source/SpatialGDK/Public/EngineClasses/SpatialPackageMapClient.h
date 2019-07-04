@@ -31,7 +31,10 @@ public:
 	void RemovePendingCreationEntityId(Worker_EntityId EntityId);
 
 	FNetworkGUID ResolveEntityActor(AActor* Actor, Worker_EntityId EntityId);
+	void ResolveSubobject(UObject* Object, const FUnrealObjectRef& ObjectRef);
+
 	void RemoveEntityActor(Worker_EntityId EntityId);
+	void RemoveSubobject(const FUnrealObjectRef& ObjectRef);
 
 	// This function is ONLY used in SpatialReceiver::GetOrCreateActor to undo
 	// the unintended registering of objects when looking them up with static paths.
@@ -70,7 +73,10 @@ public:
 	FSpatialNetGUIDCache(class USpatialNetDriver* InDriver);
 		
 	FNetworkGUID AssignNewEntityActorNetGUID(AActor* Actor, Worker_EntityId EntityId);
+	void AssignNewSubobjectNetGUID(UObject* Subobject, const FUnrealObjectRef& SubobjectRef);
+
 	void RemoveEntityNetGUID(Worker_EntityId EntityId);
+	void RemoveSubobjectNetGUID(const FUnrealObjectRef& SubobjectRef);
 
 	FNetworkGUID AssignNewStablyNamedObjectNetGUID(UObject* Object);
 	
