@@ -7,7 +7,10 @@
 
 #include "CoreMinimal.h"
 
-// TODO(Alex): remove this logic when singletons can be referenced without entity IDs (UNR-1456) - deprecated???
+struct FPendingRPCParams;
+using FPendingRPCParamsPtr = TSharedPtr<FPendingRPCParams>;
+DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessRPCDelegate, FPendingRPCParamsPtr)
+
 struct FPendingRPCParams
 {
 	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, SpatialGDK::RPCPayload&& InPayload, int InReliableRPCIndex = 0);
@@ -18,10 +21,6 @@ struct FPendingRPCParams
 	int ReliableRPCIndex;
 	SpatialGDK::RPCPayload Payload;
 };
-
-using FPendingRPCParamsPtr = TSharedPtr<FPendingRPCParams>;
-
-DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessRPCDelegate, FPendingRPCParamsPtr)
 
 class FRPCContainer
 {
