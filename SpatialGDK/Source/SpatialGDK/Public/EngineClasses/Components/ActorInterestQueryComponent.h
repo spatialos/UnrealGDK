@@ -23,7 +23,7 @@ class SPATIALGDK_API UActorInterestQueryComponent final : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	UActorInterestQueryComponent();
+	UActorInterestQueryComponent() = default;
 	~UActorInterestQueryComponent() = default;
 
 	void CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const;

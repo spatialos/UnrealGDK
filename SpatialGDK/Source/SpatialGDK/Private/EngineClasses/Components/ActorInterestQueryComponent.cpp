@@ -5,11 +5,6 @@
 #include "Schema/Interest.h"
 #include "Interop/SpatialClassInfoManager.h"
 
-UActorInterestQueryComponent::UActorInterestQueryComponent()
-{
-	PrimaryComponentTick.bCanEverTick = false;
-}
-
 void UActorInterestQueryComponent::CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
 	for (const auto& QueryData : Queries)
