@@ -16,6 +16,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 namespace SpatialGDK
 {
 
+void GatherClientInterestDistances();
+
 class SPATIALGDK_API InterestFactory
 {
 public:
@@ -33,17 +35,12 @@ private:
 	Interest CreatePlayerOwnedActorInterest();
 
 private:
-	// System Constraint OR User Constraint
-	QueryConstraint CreateDefinedConstraints();
 
 	// Checkout Constraint OR AlwaysInterested Constraint
 	QueryConstraint CreateSystemDefinedConstraints();
 
-	// TODO: Will be created utilizing user defined structs
-	QueryConstraint CreateUserDefinedConstraints();
-
 	// System Defined Constraints
-	QueryConstraint CreateCheckoutRadiusConstraint();
+	QueryConstraint CreateCheckoutRadiusConstraints();
 	QueryConstraint CreateAlwaysInterestedConstraint();
 	QueryConstraint CreateSingletonConstraint();
 
@@ -51,6 +48,7 @@ private:
 	QueryConstraint CreateLevelConstraints();
 
 	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint);
+	void AddTypeHierarchyToConstraint(const UClass* BaseType, QueryConstraint& OutConstraint);
 
 	AActor* Actor;
 	const FClassInfo& Info;

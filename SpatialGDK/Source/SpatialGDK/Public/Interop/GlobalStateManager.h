@@ -84,7 +84,7 @@ public:
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
 
-	void OnShutdownComponentUpdate(Worker_ComponentUpdate& Update);
+	void OnShutdownComponentUpdate(const Worker_ComponentUpdate& Update);
 	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
 private:
