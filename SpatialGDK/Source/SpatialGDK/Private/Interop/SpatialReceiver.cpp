@@ -1239,7 +1239,7 @@ void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, 
 	if (Schema_GetBoolCount(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
 	{
 		bool bReady = GetBoolFromSchema(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
-		if (ready)
+		if (bReady)
 		{
 			NetDriver->RegisterListeningEntity(EntityId);
 
