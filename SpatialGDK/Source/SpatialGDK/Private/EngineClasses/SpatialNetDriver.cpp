@@ -29,7 +29,6 @@
 #include "Interop/SpatialReceiver.h"
 #include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
-#include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ActorGroupManager.h"
 #include "Utils/EngineVersionCheck.h"
@@ -37,6 +36,10 @@
 #include "Utils/InterestFactory.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
+
+#if WITH_EDITOR
+#include "SpatialGDKServicesModule.h"
+#endif
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 

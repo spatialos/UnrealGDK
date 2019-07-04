@@ -445,7 +445,7 @@ void FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked()
 		FTimespan Span = FDateTime::Now() - StartTime;
 
 		ShowSuccessNotification(TEXT("Spatial service started!"));
-		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service started in %f secoonds."), Span.GetTotalSeconds());
+		UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Spatial service started in %f seconds."), Span.GetTotalSeconds());
 	});
 }
 
@@ -454,7 +454,7 @@ void FSpatialGDKEditorToolbarModule::StopSpatialServiceButtonClicked()
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
 		FDateTime StartTime = FDateTime::Now();
-		ShowTaskStartNotification(TEXT("Stopping Spatial service..."));
+		ShowTaskStartNotification(TEXT("Stopping spatial service..."));
 
 		if (!LocalDeploymentManager->TryStopSpatialService())
 		{
@@ -475,6 +475,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	// Don't try and start a local deployment if spatial networking is disabled.
 	if (!GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
 	{
+		UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Attempted to start a local deployment but spatial networking is disabled."));
 		return;
 	}
 
