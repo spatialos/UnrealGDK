@@ -75,6 +75,10 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 			return false;
 		}
 	}
+	else
+	{
+		LoadDefaultGameModes();
+	}
 
 	// If running from an open editor then compile all dirty blueprints
 	TArray<UBlueprint*> ErroredBlueprints;
