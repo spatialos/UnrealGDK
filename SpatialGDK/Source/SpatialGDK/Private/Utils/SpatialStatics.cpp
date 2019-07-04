@@ -9,11 +9,21 @@
 #include "Utils/ActorGroupManager.h"
 #include "Engine/World.h"
 
-DEFINE_LOG_CATEGORY(LogSpatialStatics);
-
 bool USpatialStatics::IsSpatialNetworkingEnabled()
 {
     return GetDefault<UGeneralProjectSettings>()->bSpatialNetworking;
+}
+
+UActorGroupManager* USpatialStatics::GetActorGroupManager(const UObject* WorldContext)
+{
+	if (const UWorld* World = WorldContext->GetWorld())
+	{
+		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
+		{
+			return SpatialNetDriver->ActorGroupManager;
+		}
+	}
+	return nullptr;
 }
 
 bool USpatialStatics::IsSpatialOffloadingEnabled()
@@ -28,38 +38,20 @@ bool USpatialStatics::IsActorGroupOwnerForActor(const AActor* Actor)
 		return false;
 	}
 
-	if (const UWorld* World = Actor->GetWorld())
-	{
-		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
-		{
-			if (UActorGroupManager* ActorGroupManager = SpatialNetDriver->ActorGroupManager)
-			{
-				UClass* ActorClass = Actor->GetClass();
-				const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
-				const FName CurrentWorkerType = World->GetGameInstance()->GetSpatialWorkerType();
-				UE_LOG(LogTemp, Display, TEXT("ClassWorkerType [%s], CurrentWorkerType [%s]"), *ClassWorkerType.ToString(), *CurrentWorkerType.ToString())
-				return (ClassWorkerType == CurrentWorkerType);
-			}
-		}		
-	}
-
-	return Actor->HasAuthority();
+	return IsActorGroupOwnerForClass(Actor, Actor->GetClass());
 }
 
 bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass)
 {
+	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	{
+		const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
+		const FName CurrentWorkerType = WorldContextObject->GetWorld()->GetGameInstance()->GetSpatialWorkerType();
+		return (ClassWorkerType == CurrentWorkerType);
+	}
+
 	if (const UWorld* World = WorldContextObject->GetWorld())
 	{
-		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
-		{
-			if (UActorGroupManager* ActorGroupManager = SpatialNetDriver->ActorGroupManager)
-			{
-				const FName ClassWorkerType = ActorGroupManager->GetWorkerTypeForClass(ActorClass);
-				const FName CurrentWorkerType = World->GetGameInstance()->GetSpatialWorkerType();
-				UE_LOG(LogTemp, Display, TEXT("ClassWorkerType [%s], CurrentWorkerType [%s]"), *ClassWorkerType.ToString(), *CurrentWorkerType.ToString())
-				return (ClassWorkerType == CurrentWorkerType);
-			}
-		}
 		return (World->GetNetMode() != NM_Client);
 	}
 
@@ -68,20 +60,38 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 
 bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
 {
+	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	{
+		const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
+		const FName CurrentWorkerType = WorldContextObject->GetWorld()->GetGameInstance()->GetSpatialWorkerType();
+		return (ActorGroupWorkerType == CurrentWorkerType);
+	}
+
 	if (const UWorld* World = WorldContextObject->GetWorld())
 	{
-		if (const USpatialNetDriver* SpatialNetDriver = Cast<USpatialNetDriver>(World->GetNetDriver()))
-		{
-			if (UActorGroupManager* ActorGroupManager = SpatialNetDriver->ActorGroupManager)
-			{
-				const FName ActorGroupWorkerType = ActorGroupManager->GetWorkerTypeForActorGroup(ActorGroup);
-				const FName CurrentWorkerType = World->GetGameInstance()->GetSpatialWorkerType();
-				UE_LOG(LogTemp, Display, TEXT("ActorGroupWorkerType [%s], CurrentWorkerType [%s]"), *ActorGroupWorkerType.ToString(), *CurrentWorkerType.ToString())
-				return (ActorGroupWorkerType == CurrentWorkerType);
-			}
-		}
 		return (World->GetNetMode() != NM_Client);
 	}
 
 	return false;
+}
+
+FName USpatialStatics::GetActorGroupForActor(const AActor* Actor)
+{
+	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(Actor))
+	{
+		UClass* ActorClass = Actor->GetClass();
+		return ActorGroupManager->GetActorGroupForClass(ActorClass);
+	}
+
+	return SpatialConstants::DefaultActorGroup;
+}
+
+FName USpatialStatics::GetActorGroupForClass(const UObject* WorldContextObject, TSubclassOf<AActor> ActorClass)
+{
+	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
+	{
+		return ActorGroupManager->GetActorGroupForClass(ActorClass);
+	}
+
+	return SpatialConstants::DefaultActorGroup;
 }
