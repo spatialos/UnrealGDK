@@ -289,7 +289,7 @@ namespace Improbable
             targetDeploymentFlag.Add("value", mainDeploymentName);
 
             var numSimulatedPlayersFlag = new JObject();
-            numSimulatedPlayersFlag.Add("name", "target_num_simulated_players");
+            numSimulatedPlayersFlag.Add("name", "total_num_simulated_players");
             numSimulatedPlayersFlag.Add("value", $"{simNumPlayers}");
 
             var simWorkerConfigJson = File.ReadAllText(simDeploymentJsonPath);
