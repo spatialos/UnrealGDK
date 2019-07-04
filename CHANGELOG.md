@@ -11,10 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### New Known Issues:
 
 ### Features:
+- Automatic local deployment starting. Local deployments are now started automatically for you when pressing the 'Play' button. Local deployment start time has been reduced to around 5.5s~. If your schema has changed during a deployment, the next time you press play the local deployment will be automatically restarted. There is no longer a `spatial` cmd window for a local deployment, the Unreal output window will still contain logs. Runtime logs can be found at `spatial\logs\localdeployment\%timestamp%\runtime.log`. A new option `Show spatial service button` in the SpatialOS Settings menu allows you to turn the 'spatial service' on and off via the SpatialGDK Toolbar for debugging purposes.
 
 ### Bug fixes:
 - Disconnected players no longer remain on the server until they time out if the client was shut down manually.
 - Fixed support for relative paths as the engine association in your games .uproject file.
+- RPCs on `NotSpatial` types are no longer queued forever and are now dropped instead.
 
 ## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
 - Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
@@ -56,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
 - Fixed a crash when failing to NetSerialize a struct in spatial. Now print a warning instead which matches native Unreal behavior.
 - Query response delegates now execute even if response status shows failure. This allows handlers to implement custom retry logic such as clients querying for the GSM.
+- Fixed a crash where processing unreliable RPCs made assumption that the worker had authority over all entities in the SpatialOS op
 
 ### External contributors:
 

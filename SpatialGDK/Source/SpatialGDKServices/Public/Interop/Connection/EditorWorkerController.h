@@ -7,7 +7,7 @@
 
 namespace SpatialGDKServices
 {
-void SPATIALGDKSERVICES_API InitWorkers(bool bConnectAsClient, FString& OutWorkerId);
+void SPATIALGDKSERVICES_API InitWorkers(bool bConnectAsClient, int32 PlayInEditorID, FString& OutWorkerId);
 void SPATIALGDKSERVICES_API OnSpatialShutdown();
 } // namespace SpatialGDKServices
 
