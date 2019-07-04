@@ -215,7 +215,7 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
 	check(Actor);
-	check(NetDriver && NetDriver->ClassInfoManager);
+	check(NetDriver != nullptr && NetDriver->ClassInfoManager);
 
 	TArray<UActorInterestQueryComponent*> ActorInterestComponents;
 	Actor->GetComponents<UActorInterestQueryComponent>(ActorInterestComponents);
