@@ -70,5 +70,11 @@ void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& P
 	{
 		GetMutableDefault<ULevelEditorPlaySettings>()->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
 	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, MaxDynamicallyAttachedSubobjectsPerClass))
+	{
+		FMessageDialog::Open(EAppMsgType::Ok,
+			FText::FromString(FString::Printf(TEXT("You MUST regenerate schema using the full scan option after changing the number of max dynamic subobjects. "
+				"Failing to do will result in unintended behavior or crashes!"))));
+	}
 }
 #endif
