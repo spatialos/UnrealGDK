@@ -10,13 +10,6 @@ class SPATIALGDK_API USpatialStatics : public UBlueprintFunctionLibrary
 {
     GENERATED_BODY()
 
-private:
-	
-	static bool IsSpatialOffloadingEnabled();
-
-	static class UActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
-	static FName GetCurrentWorkerType(const UObject* WorldContext);
-
 public:
 
 	/**
@@ -27,21 +20,21 @@ public:
 
 	/**
 	 * Returns true if the current Worker Type owns the Actor Group this Actor belongs to.
-	 * Equivalent to HasAuthority when Spatial Networking is disabled.
+	 * Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading")
 	static bool IsActorGroupOwnerForActor(const AActor* Actor);
 
 	/**
 	 * Returns true if the current Worker Type owns the Actor Group this Actor Class belongs to.
-	 * Equivalent to HasAuthority when Spatial Networking is disabled.
+	 * Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "WorldContextObject"))
 	static bool IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor>& ActorClass);
 
 	/**
 	 * Returns true if the current Worker Type owns this Actor Group.
-	 * Equivalent to HasAuthority when Spatial Networking is disabled.
+	 * Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "WorldContextObject"))
 	static bool IsActorGroupOwner(const UObject* WorldContextObject, const FName& ActorGroup);
@@ -57,4 +50,10 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "WorldContextObject"))
 	static FName GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor>& ActorClass);
+
+private:
+
+	static bool IsSpatialOffloadingEnabled();
+	static class UActorGroupManager* GetActorGroupManager(const UObject* WorldContext);
+	static FName GetCurrentWorkerType(const UObject* WorldContext);
 };
