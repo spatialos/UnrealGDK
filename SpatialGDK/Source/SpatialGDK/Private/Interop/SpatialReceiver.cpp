@@ -1124,14 +1124,14 @@ void USpatialReceiver::HandleUnreliableRPC(const Worker_ComponentUpdateOp& Op)
 {
 	Worker_EntityId EntityId = Op.entity_id;
 
+	// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
+	// Ideally these events are never delivered to workers which are not able to handle them with clever interest management
+	const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
+		? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+
 	// Multicast RPCs should be executed by whoever receives them.
 	if (Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
 	{
-		// If the update is to the client rpc endpoint, then the handler should have authority over the server rpc endpoint component and vice versa
-		// Ideally these events are never delivered to workers which are not able to handle them with clever interest management
-		const Worker_ComponentId RPCEndpointComponentId = Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID
-			? SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID : SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
-
 		if (StaticComponentView->GetAuthority(Op.entity_id, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
 		{
 			return;
@@ -1165,6 +1165,14 @@ void USpatialReceiver::HandleUnreliableRPC(const Worker_ComponentUpdateOp& Op)
 				Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID)
 			{
 				ObjectRef.Entity = Schema_GetEntityId(EventData, SpatialConstants::UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID);
+
+
+				// In a zoned multiworker scenario we might not have gained authority over the current entity in this bundle in time
+				// before processing so don't ApplyRPCs to an entity that we don't have authority over.
+				if (StaticComponentView->GetAuthority(ObjectRef.Entity, RPCEndpointComponentId) != WORKER_AUTHORITY_AUTHORITATIVE)
+				{
+					continue;
+				}
 			}
 		}
 
@@ -1222,6 +1230,12 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 		case SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID:
 			NetDriver->SpatialMetrics->OnStopRPCMetricsCommand();
 			break;
+		case SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID:
+		{
+			Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
+			NetDriver->SpatialMetrics->OnModifySettingCommand(Payload);
+			break;
+		}
 		default:
 			UE_LOG(LogSpatialReceiver, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"), CommandIndex, Op.entity_id);
 			break;
