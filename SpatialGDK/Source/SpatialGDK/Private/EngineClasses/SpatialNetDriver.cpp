@@ -1015,7 +1015,10 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	if (IsServer())
 	{
 		// Creating channel to ensure that object will be resolvable
-		GetOrCreateSpatialActorChannel(CallingObject);
+		if (GetOrCreateSpatialActorChannel(CallingObject) == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Failed to get or create SpatialActorChannel for %s"), *CallingObject->GetName());
+		}
 	}
 
 	int ReliableRPCIndex = 0;
