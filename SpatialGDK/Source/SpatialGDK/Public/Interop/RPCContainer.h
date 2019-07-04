@@ -11,7 +11,6 @@
 struct FPendingRPCParams
 {
 	FPendingRPCParams(UObject* InTargetObject, UFunction* InFunction, SpatialGDK::RPCPayload&& InPayload, int InReliableRPCIndex = 0);
-	~FPendingRPCParams() = default;
 
 	TWeakObjectPtr<UObject> TargetObject;
 	UFunction* Function;

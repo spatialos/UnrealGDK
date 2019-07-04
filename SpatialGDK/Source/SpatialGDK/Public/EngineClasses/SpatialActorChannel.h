@@ -148,6 +148,9 @@ public:
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
 
+	FORCEINLINE void StartListening() { bIsListening = true; }
+	FORCEINLINE bool IsListening() { return bIsListening; }
+
 	// If this actor channel is responsible for creating a new entity, this will be set to true once the entity is created.
 	bool bCreatedEntity;
 
@@ -174,6 +177,7 @@ private:
 private:
 	Worker_EntityId EntityId;
 	bool bInterestDirty;
+	bool bIsListening;
 
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;

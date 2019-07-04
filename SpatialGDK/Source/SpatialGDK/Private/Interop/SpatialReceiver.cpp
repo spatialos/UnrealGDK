@@ -171,7 +171,6 @@ void USpatialReceiver::OnAddComponent(Worker_AddComponentOp& Op)
 
 void USpatialReceiver::OnRemoveEntity(Worker_RemoveEntityOp& Op)
 {
-	NetDriver->UnregisterListeningEntity(Op.entity_id);
 	RemoveActor(Op.entity_id);
 }
 
@@ -1242,10 +1241,9 @@ void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, 
 		bool bReady = GetBoolFromSchema(Object, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
 		if (bReady)
 		{
-			NetDriver->RegisterListeningEntity(EntityId);
-
 			if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
 			{
+				Channel->StartListening();
 				if (UObject* TargetObject = Channel->GetActor())
 				{
 					Sender->SendOutgoingRPCs();

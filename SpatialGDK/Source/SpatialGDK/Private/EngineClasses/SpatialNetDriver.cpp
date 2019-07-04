@@ -1778,18 +1778,3 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
 }
-
-bool USpatialNetDriver::IsEntityListening(Worker_EntityId EntityId) const
-{
-	return ListeningEntities.Contains(EntityId);
-}
-
-void USpatialNetDriver::RegisterListeningEntity(Worker_EntityId EntityId)
-{
-	ListeningEntities.Add(EntityId);
-}
-
-void USpatialNetDriver::UnregisterListeningEntity(Worker_EntityId EntityId)
-{
-	ListeningEntities.Remove(EntityId);
-}
