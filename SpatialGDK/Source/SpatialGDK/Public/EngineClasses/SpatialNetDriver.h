@@ -142,6 +142,10 @@ public:
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
+#if !UE_BUILD_SHIPPING
+	int32 GetConsiderListSize() const { return ConsiderListSize; }
+#endif
+
 	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
 	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
 	void OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType);
@@ -223,4 +227,8 @@ private:
 	uint32 UniqueClientIpAddressCounter = 0;
 
 	FDelegateHandle SpatialDeploymentStartHandle;
+
+#if !UE_BUILD_SHIPPING
+	int32 ConsiderListSize = 0;
+#endif
 };
