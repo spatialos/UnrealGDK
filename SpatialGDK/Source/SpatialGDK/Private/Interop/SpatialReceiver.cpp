@@ -143,7 +143,7 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	}
 	else
 	{
-		HandleDynamicAddComponent(Op);
+		HandleIndividualAddComponent(Op);
 	}
 }
 
@@ -875,7 +875,7 @@ void USpatialReceiver::ApplyComponentDataOnActorCreation(Worker_EntityId EntityI
 	ApplyComponentData(TargetObject.Get(), Channel, Data);
 }
 
-void USpatialReceiver::HandleDynamicAddComponent(const Worker_AddComponentOp& Op)
+void USpatialReceiver::HandleIndividualAddComponent(const Worker_AddComponentOp& Op)
 {
 	uint32 Offset = 0;
 	bool bFoundOffset = ClassInfoManager->GetOffsetByComponentId(Op.data.component_id, Offset);
