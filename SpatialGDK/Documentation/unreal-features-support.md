@@ -229,7 +229,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Programming/Online">Online Subsystem Abstraction</a></td>
-    <td class="indev"></td>
+    <td class="roadmap"></td>
     <td></td>
    </tr> 
   <tr>
@@ -399,4 +399,4 @@ The table for multiserver support is coming soon.
 
 
 <br/>------<br/>
-_2019-06-17 Platform support status updated with editorial review_
+_2019-07-04 Online Subsystem abstraction support pushed out._
