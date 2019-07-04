@@ -48,7 +48,7 @@ public:
 	/**
 	* Returns the ActorGroup this Actor belongs to.
 	*/
-	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "Actor"))
+	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading")
 	static FName GetActorGroupForActor(const AActor* Actor);
 
 	/**
