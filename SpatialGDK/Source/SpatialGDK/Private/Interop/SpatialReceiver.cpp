@@ -1059,6 +1059,12 @@ void USpatialReceiver::OnCommandRequest(Worker_CommandRequestOp& Op)
 		case SpatialConstants::DEBUG_METRICS_STOP_RPC_METRICS_ID:
 			NetDriver->SpatialMetrics->OnStopRPCMetricsCommand();
 			break;
+		case SpatialConstants::DEBUG_METRICS_MODIFY_SETTINGS_ID:
+		{
+			Schema_Object* Payload = Schema_GetCommandRequestObject(Op.request.schema_type);
+			NetDriver->SpatialMetrics->OnModifySettingCommand(Payload);
+			break;
+		}
 		default:
 			UE_LOG(LogSpatialReceiver, Error, TEXT("Unknown command index for DebugMetrics component: %d, entity: %lld"), CommandIndex, Op.entity_id);
 			break;
