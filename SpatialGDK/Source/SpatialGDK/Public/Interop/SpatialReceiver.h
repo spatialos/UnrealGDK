@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-#include "EngineClasses/RPCContainer.h"
+#include "RPCContainer.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"

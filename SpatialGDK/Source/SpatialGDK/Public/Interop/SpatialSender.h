@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 
-#include "EngineClasses/RPCContainer.h"
+#include "RPCContainer.h"
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
