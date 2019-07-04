@@ -170,11 +170,11 @@ struct FSpatialLaunchConfigDescription
 	GENERATED_BODY()
 
 	FSpatialLaunchConfigDescription()
-		: Template(TEXT("small"))
+		: Template(TEXT("w2_r0500_e5"))
 		, World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
-		UnrealWorkerDefaultSetting.WorkerTypeName = FName(*SpatialConstants::ServerWorkerType);
+		UnrealWorkerDefaultSetting.WorkerTypeName = SpatialConstants::DefaultServerWorkerType;
 		UnrealWorkerDefaultSetting.Rows = 1;
 		UnrealWorkerDefaultSetting.Columns = 1;
 		UnrealWorkerDefaultSetting.bManualWorkerConnectionOnly = true;
@@ -211,8 +211,8 @@ private:
 	/** Set WorkerTypes in runtime settings. */
 	void SetRuntimeWorkerTypes();
 
-	/** Check if the Editor Settings contains valid directory paths or not. */
-	void SafetyCheckSpatialOSDirectoryPaths();
+	/** Set WorkerTypesToLaunch in level editor play settings. */
+	void SetLevelEditorPlaySettingsWorkerTypes();
 
 	/** Path to the directory containing the SpatialOS-related files. */
 	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
