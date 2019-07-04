@@ -15,7 +15,7 @@ namespace Improbable.CodeGen.Unreal
             var typeNamespaces = Text.GetNamespaceFromTypeName(type.QualifiedName);
             var requiredIncludes = Types.GetRequiredTypeIncludes(type, bundle).Select(inc => $"#include \"{string.Concat(Enumerable.Repeat("../", type.QualifiedName.Count(c => c == '.')))}{inc}\"");
             var allNestedEnums = Types.GetRecursivelyNestedEnums(type);
-            var enumDefs = allNestedEnums.Select(enumDef => EnumGenerator.GenerateEnum(Types.GetTypeClassDefinitionName(enumDef.QualifiedName, bundle), enumDef, bundle).Replace($"enum {enumDef.Name}", $"class {enumDef.Name}_{enumDef.Name}"));
+            var enumDefs = allNestedEnums.Select(enumDef => EnumGenerator.GenerateEnum(Types.GetTypeClassName(enumDef.QualifiedName, bundle), enumDef, bundle).Replace($"enum {enumDef.Name}", $"class {enumDef.Name}_{enumDef.Name}"));
 
             var builder = new StringBuilder();
 
@@ -41,7 +41,7 @@ namespace Improbable.CodeGen.Unreal
 
             if (allTopLevelTypes.Count() > 1)
             {
-                builder.AppendLine(string.Join(Environment.NewLine, allTopLevelTypes.Select(topLevelType => $"class {Types.GetTypeClassDefinitionName(topLevelType.QualifiedName, bundle)};")));
+                builder.AppendLine(string.Join(Environment.NewLine, allTopLevelTypes.Select(topLevelType => $"class {Types.GetTypeClassName(topLevelType.QualifiedName, bundle)};")));
                 builder.AppendLine();
             }
 
@@ -51,8 +51,8 @@ namespace Improbable.CodeGen.Unreal
                 builder.AppendLine();
             }
 
-            builder.AppendLine($@"{string.Join(Environment.NewLine, allTopLevelTypes.Select(topLevelType => GenerateTypeClass(Types.GetTypeClassDefinitionName(topLevelType.QualifiedName, bundle), types.Find(t => t.QualifiedName == topLevelType.QualifiedName), types, bundle)))}
-{string.Join(Environment.NewLine, allTopLevelTypes.Select(nestedType => GenerateHashFunction(Types.GetTypeClassDefinitionName(nestedType.QualifiedName, bundle))))}
+            builder.AppendLine($@"{string.Join(Environment.NewLine, allTopLevelTypes.Select(topLevelType => GenerateTypeClass(Types.GetTypeClassName(topLevelType.QualifiedName, bundle), types.Find(t => t.QualifiedName == topLevelType.QualifiedName), types, bundle)))}
+{string.Join(Environment.NewLine, allTopLevelTypes.Select(nestedType => GenerateHashFunction(Types.GetTypeClassName(nestedType.QualifiedName, bundle))))}
 
 {string.Join(Environment.NewLine, typeNamespaces.Reverse().Select(t => $"}} // namespace {t}"))}
 ");
@@ -69,7 +69,7 @@ namespace Improbable.CodeGen.Unreal
             var builder = new StringBuilder();
 
             builder.AppendLine($@"// Generated from {Path.GetFullPath(bundle.TypeToFileName[type.QualifiedName])}({type.SourceReference.Line},{type.SourceReference.Column})
-class {name} : public {(type.ComponentId.HasValue ? "SpatialComponent" : "SpatialType")}
+class {name} : public improbable::{(type.ComponentId.HasValue ? "SpatialComponent" : "SpatialType")}
 {{
 public:");
 
@@ -81,13 +81,13 @@ public:");
             if (type.NestedTypes.Count > 0)
             {
                 builder.AppendLine(Text.Indent(1, $@"// Nested types
-{string.Join(Environment.NewLine, type.NestedTypes.Select(nestedType => Text.Indent(1, $"using {nestedType.Name} = {Types.GetTypeClassDefinitionName(nestedType.QualifiedName, bundle)};")))}"));
+{string.Join(Environment.NewLine, type.NestedTypes.Select(nestedType => Text.Indent(1, $"using {nestedType.Name} = {Types.GetTypeClassName(nestedType.QualifiedName, bundle)};")))}"));
             }
 
             if (type.NestedEnums.Count > 0)
             {
                 builder.AppendLine(Text.Indent(1, $@"// Nested enums
-{string.Join(Environment.NewLine, type.NestedEnums.Select(nestedEnum => $"using {nestedEnum.Name} = {Types.GetTypeClassDefinitionName(nestedEnum.QualifiedName, bundle)};"))}"));
+{string.Join(Environment.NewLine, type.NestedEnums.Select(nestedEnum => $"using {nestedEnum.Name} = {Types.GetTypeClassName(nestedEnum.QualifiedName, bundle)};"))}"));
             }
 
             if (type.Fields.Count > 0)
@@ -136,7 +136,7 @@ private:
                     builder.AppendLine();
                     builder.AppendLine("public:");
                 }
-                builder.AppendLine($@"{Text.Indent(1, $@"class Update : public SpatialComponentUpdate
+                builder.AppendLine($@"{Text.Indent(1, $@"class Update : public improbable::SpatialComponentUpdate
 {{
 public:
 {Text.Indent(1, $@"// Creates a new instance with default values for each field.

@@ -127,10 +127,9 @@ namespace Improbable.CodeGen.Unreal
                 }
             }
 
-            // Filter out #includes for types nested in our type (those are defined in the same file)
-            var nestedDefinitionNames = type.NestedTypes.Select(t => t.QualifiedName).Concat(type.NestedEnums.Select(e => e.QualifiedName));
-
-            includeTypeQualifiedNames = includeTypeQualifiedNames.Where(name => !nestedDefinitionNames.Contains($"{name}.")).ToList();
+            // Filter out #includes for types nested in our type (they are defined in the same file so we don't need to include anything)
+            var nestedTypeOrEnumNames = type.NestedTypes.Select(t => t.QualifiedName).Concat(type.NestedEnums.Select(e => e.QualifiedName));
+            includeTypeQualifiedNames = includeTypeQualifiedNames.Where(name => !nestedTypeOrEnumNames.Contains($"{name}.")).ToList();
 
             // Map any nested type dependencies to their include file
             includeTypeQualifiedNames = includeTypeQualifiedNames.Select(t => GetOutermostType(t, bundle)).ToList();
@@ -150,35 +149,35 @@ namespace Improbable.CodeGen.Unreal
             return string.Join(".", splitQualifiedName.Take(splitQualifiedName.Count() - 1)) + "_" + splitQualifiedName.Last();
         }
 
-        public static string GetFieldTypeAsCpp(FieldDefinition field, Bundle lookups, TypeDescription parentType)
+        public static string GetFieldTypeAsCpp(FieldDefinition field, Bundle lookups, TypeDescription typeContext)
         {
             switch (field.TypeSelector)
             {
                 case FieldType.Option:
-                    return $"{CollectionTypesToQualifiedTypes[Collection.Option]}<{GetTypeDisplayName(field.OptionType.InnerType, lookups, parentType)}>";
+                    return $"{CollectionTypesToQualifiedTypes[Collection.Option]}<{GetTypeDisplayName(field.OptionType.InnerType, lookups, typeContext)}>";
                 case FieldType.List:
-                    return $"{CollectionTypesToQualifiedTypes[Collection.List]}<{GetTypeDisplayName(field.ListType.InnerType, lookups, parentType)}>";
+                    return $"{CollectionTypesToQualifiedTypes[Collection.List]}<{GetTypeDisplayName(field.ListType.InnerType, lookups, typeContext)}>";
                 case FieldType.Map:
-                    return $"{CollectionTypesToQualifiedTypes[Collection.Map]}<{GetTypeDisplayName(field.MapType.KeyType, lookups, parentType)}, {GetTypeDisplayName(field.MapType.ValueType, lookups, parentType)}>";
+                    return $"{CollectionTypesToQualifiedTypes[Collection.Map]}<{GetTypeDisplayName(field.MapType.KeyType, lookups, typeContext)}, {GetTypeDisplayName(field.MapType.ValueType, lookups, typeContext)}>";
                 case FieldType.Singular:
-                    return GetTypeDisplayName(field.SingularType.Type, lookups, parentType);
+                    return GetTypeDisplayName(field.SingularType.Type, lookups, typeContext);
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        public static string GetTypeDisplayName(TypeReference typeRef, Bundle bundle, TypeDescription parentType)
+        public static string GetTypeDisplayName(TypeReference typeRef, Bundle bundle, TypeDescription typeContext)
         {
             switch (typeRef.ValueTypeSelector)
             {
                 case ValueType.Enum:
-                    return IsNested(typeRef, bundle) ? GetTypeClassDefinitionQualifiedName(typeRef.Enum, bundle, IsLocallyDefined(typeRef.Enum, parentType))
-                        : GetTypeDisplayName(typeRef.Enum, IsLocallyDefined(typeRef.Enum, parentType));
+                    return IsNested(typeRef, bundle) ? GetTypeClassQualifiedPathInContext(typeRef.Enum, bundle, typeContext)
+                        : GetTypeDisplayName(typeRef.Enum, IsTypeBeingUsedInTheContextWhereItIsDefined(typeRef.Enum, typeContext));
+                case ValueType.Type:
+                    return IsNested(typeRef, bundle) ? GetTypeClassQualifiedPathInContext(typeRef.Type, bundle, typeContext)
+                        : GetTypeDisplayName(typeRef.Type, IsTypeBeingUsedInTheContextWhereItIsDefined(typeRef.Type, typeContext)); ;
                 case ValueType.Primitive:
                     return SchemaToCppTypes[typeRef.Primitive];
-                case ValueType.Type:
-                    return IsNested(typeRef, bundle) ? GetTypeClassDefinitionQualifiedName(typeRef.Type, bundle, IsLocallyDefined(typeRef.Type, parentType))
-                        : GetTypeDisplayName(typeRef.Type, IsLocallyDefined(typeRef.Type, parentType)); ;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -203,10 +202,17 @@ namespace Improbable.CodeGen.Unreal
 
         public static string GetOutermostType(string typeRef, Bundle bundle)
         {
+            var outerTypeIterator = typeRef;
             var outermostType = typeRef;
-            while (!outermostType.Equals(""))
+            while (!outerTypeIterator.Equals(""))
             {
-                outermostType = bundle.Types[outermostType].OuterType;
+                outermostType = outerTypeIterator;
+                // Components can't be nested, so if we're a component, we know we're the outermost type
+                if (bundle.Components.ContainsKey(outerTypeIterator))
+                {
+                    return outermostType;
+                }
+                outerTypeIterator = bundle.Enums.ContainsKey(outermostType) ? bundle.Enums[outermostType].OuterType : bundle.Types[outermostType].OuterType;
             }
             return outermostType;
         }
@@ -214,9 +220,9 @@ namespace Improbable.CodeGen.Unreal
         /** If a type is being used within the same file namespace in which it is defined, the compiler complains.
          *  Instead, we just use the exact type name, ignoring the namespace.
          */
-        public static string GetTypeDisplayName(string qualifiedName, bool isLocallyDefined = false)
+        public static string GetTypeDisplayName(string qualifiedName, bool isTypeDefinedInCurrentContext = false)
         {
-            return isLocallyDefined ? qualifiedName.Substring(qualifiedName.LastIndexOf(".") + 1) : "::" + Text.ReplacesDotsWithDoubleColons(qualifiedName);
+            return isTypeDefinedInCurrentContext ? GetNameFromQualifiedName(qualifiedName) : "::" + Text.ReplacesDotsWithDoubleColons(qualifiedName);
         }
 
         public static string GetNameFromQualifiedName(string qualifiedName)
@@ -237,9 +243,9 @@ namespace Improbable.CodeGen.Unreal
         // For each const get accessor for each member field in a type, if the type is a primitive we return by value, otherwise by const ref
         // e.g. double get_my_double_memeber();
         //      const ::improbable::List<...>& get_my_list_memeber();
-        public static string GetConstAccessorTypeModification(FieldDefinition field, Bundle bundle, TypeDescription parentType)
+        public static string GetConstAccessorTypeModification(FieldDefinition field, Bundle bundle, TypeDescription typeContext)
         {
-            var qualifiedFieldType = GetFieldTypeAsCpp(field, bundle, parentType);
+            var qualifiedFieldType = GetFieldTypeAsCpp(field, bundle, typeContext);
             if (field.TypeSelector == FieldType.Singular && field.SingularType.Type.ValueTypeSelector == ValueType.Primitive &&
                 field.SingularType.Type.Primitive != PrimitiveType.Bytes && field.SingularType.Type.Primitive != PrimitiveType.String)
             {
@@ -248,33 +254,52 @@ namespace Improbable.CodeGen.Unreal
             return $"const {qualifiedFieldType}&";
         }
 
-        public static bool IsLocallyDefined(string qualifiedType, TypeDescription parentType)
+        public static bool IsTypeBeingUsedInTheContextWhereItIsDefined(string qualifiedType, TypeDescription typeContext)
         {
-            return parentType.NestedTypes.Select(t => t.QualifiedName).Concat(parentType.NestedEnums.Select(e => e.QualifiedName)).Contains(qualifiedType);
+            return typeContext.NestedTypes.Select(t => t.QualifiedName).Concat(typeContext.NestedEnums.Select(e => e.QualifiedName)).Contains(qualifiedType);
         }
 
-        public static string GetTypeClassDefinitionName(string qualifiedName, Bundle bundle)
-        {
-            var siblingQualifiedName = GetTypeClassDefinitionQualifiedName(qualifiedName, bundle);
-            return siblingQualifiedName.Substring(siblingQualifiedName.LastIndexOf("::") + 2);
-        }
 
-        // When generating header files for schema types with nested types, we declare the nested types as sibling types.
-        // To avoid naming conflicts we prefix the sibling type names with the top-level type.
-        // E.g. improbable::ComponentInterest::Query becomes improbable::ComponentInterest_Query
-        public static string GetTypeClassDefinitionQualifiedName(string qualifiedName, Bundle bundle, bool isLocallyDefined = false)
+        /**
+         *  When generating header files for schema types with nested types, we declare the nested types as sibling types.
+         *  To avoid naming conflicts we prefix the sibling type names with the top-level type:
+         *      e.g. improbable.ComponentInterest.Query becomes improbable::ComponentInterest_Query
+         */
+        public static string GetTypeClassQualifiedPathInContext(string qualifiedName, Bundle bundle, TypeDescription typeContext)
         {
-            if (isLocallyDefined)
+            if (IsTypeBeingUsedInTheContextWhereItIsDefined(qualifiedName, typeContext))
             {
-                return GetNameFromQualifiedName(qualifiedName);
+                return Text.ReplacesDotsWithDoubleColons(qualifiedName);
             }
+            return GetTypeClassQualifiedPath(qualifiedName, bundle);
+        }
+
+        public static string GetTypeClassQualifiedPath(string qualifiedName, Bundle bundle)
+        {
             var outermostType = GetOutermostType(qualifiedName, bundle);
-            var typeName = string.Join("_", qualifiedName.Split('.').Skip(outermostType.Count(c => c == '.')));
+            // Exit early if the type defined is top-level
             if (outermostType.Equals(""))
             {
-                Console.WriteLine();
+                return Text.ReplacesDotsWithDoubleColons(qualifiedName);
             }
+            var typeName = string.Join("_", qualifiedName.Split('.').Skip(outermostType.Count(c => c == '.')));
             return $"{Text.ReplacesDotsWithDoubleColons(outermostType.Substring(0, outermostType.LastIndexOf(".")))}::{typeName}";
+        }
+
+        /**    The following schema would generate class names for definitions like:
+                    class NestedTypeSameName;
+                    class NestedTypeSameName_Other;
+        
+               type NestedTypeSameName {
+                  type Other {
+                     ...
+                  }
+               }
+          */
+        public static string GetTypeClassName(string qualifiedName, Bundle bundle)
+        {
+            var qualifiedPath = GetTypeClassQualifiedPath(qualifiedName, bundle);
+            return qualifiedPath.Substring(qualifiedPath.LastIndexOf("::") + 2);
         }
 
         public static List<TypeDescription> GetRecursivelyNestedTypes(TypeDescription type)

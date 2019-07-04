@@ -86,36 +86,9 @@ namespace Improbable.CodeGen.Base
                 throw new Exception("Internal error: no fields found");
             }
 
-            Fields = Fields.Where(f =>
-            {
-                switch (f.TypeSelector)
-                {
-                    case FieldType.Option:
-                        return f.OptionType.InnerType.ValueTypeSelector == ValueType.Primitive && f.OptionType.InnerType.Primitive == PrimitiveType.Entity;
-                    case FieldType.List:
-                        return f.ListType.InnerType.ValueTypeSelector == ValueType.Primitive && f.ListType.InnerType.Primitive == PrimitiveType.Entity;
-                    case FieldType.Map:
-                        return f.MapType.KeyType.ValueTypeSelector == ValueType.Primitive && f.MapType.KeyType.Primitive == PrimitiveType.Entity || f.MapType.ValueType.ValueTypeSelector == ValueType.Primitive && f.MapType.ValueType.Primitive == PrimitiveType.Entity;
-                    case FieldType.Singular:
-                        return f.SingularType.Type.ValueTypeSelector == ValueType.Primitive && f.SingularType.Type.Primitive == PrimitiveType.Entity;
-                    default:
-                        return false;
-                }
-            }).ToList();
-
             Annotations = component != null ? component.Annotations : bundle.Types[qualifiedName].Annotations;
             Events = component?.Events;
             OuterType = component != null ? "" : bundle.Types[qualifiedName].OuterType;
-            //try
-            //{
-            //    OuterType = bundle.Types[qualifiedName].OuterType;
-
-            //}
-            //catch (Exception exception)
-            //{
-            //    Console.Error.WriteLine(exception);
-            //    Environment.ExitCode = 1;
-            //}
         }
     }
 }

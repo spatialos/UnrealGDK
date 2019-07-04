@@ -35,7 +35,7 @@ namespace Improbable.CodeGen.Unreal
 
             if (allNestedTypes.Count() > 0)
             {
-                builder.AppendLine(string.Join(Environment.NewLine, allNestedTypes.Select(topLevelType => GenerateTypeFunctions(Types.GetTypeClassDefinitionName(topLevelType.QualifiedName, bundle), types.Find(t => t.QualifiedName == topLevelType.QualifiedName), bundle))));
+                builder.AppendLine(string.Join(Environment.NewLine, allNestedTypes.Select(topLevelType => GenerateTypeFunctions(Types.GetTypeClassName(topLevelType.QualifiedName, bundle), types.Find(t => t.QualifiedName == topLevelType.QualifiedName), bundle))));
             }
 
             builder.AppendLine(GenerateHashFunction(type, bundle));
@@ -331,7 +331,7 @@ if ({Serialization.GetFieldTypeCount(field, updatesObjectName)} > 0)
 
         private static string GenerateHashFunction(TypeDescription type, Bundle bundle)
         {
-            return $@"uint32 GetTypeHash(const {Types.GetTypeClassDefinitionQualifiedName(type.QualifiedName, bundle)}& Value)
+            return $@"uint32 GetTypeHash(const {Types.GetTypeClassQualifiedPath(type.QualifiedName, bundle)}& Value)
 {{
 {Text.Indent(1, $@"uint32 Result = 1327;
 {string.Join(Environment.NewLine, type.Fields.Select(field => $"{Types.GetFieldDefinitionHash($"Value.Get{Text.SnakeCaseToPascalCase(field.Name)}()", field, "Result", bundle)}"))}
@@ -342,7 +342,7 @@ return Result;")}
 
         private static string GenerateHashFunction(EnumDefinition enumDef, Bundle bundle)
         {
-            return $@"uint32 GetTypeHash(const {Types.GetTypeClassDefinitionQualifiedName(enumDef.QualifiedName, bundle)}& Value)
+            return $@"uint32 GetTypeHash(const {Types.GetTypeClassQualifiedPath(enumDef.QualifiedName, bundle)}& Value)
 {{
 {Text.Indent(1, "return static_cast<size_t>(Value);")}
 }}";

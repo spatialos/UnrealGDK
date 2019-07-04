@@ -173,9 +173,9 @@ namespace Improbable.CodeGen.Unreal
                 case ValueType.Primitive:
                     return GetPrimitiveDeserialization(type.Primitive, schemaObjectName, fieldId);
                 case ValueType.Type:
-                    return $"{Types.GetTypeDisplayName(type.Type, Types.IsLocallyDefined(type.Type, parentType))}::Deserialize(Schema_GetObject({schemaObjectName}, {fieldId}))";
+                    return $"{Types.GetTypeDisplayName(type.Type, Types.IsTypeBeingUsedInTheContextWhereItIsDefined(type.Type, parentType))}::Deserialize(Schema_GetObject({schemaObjectName}, {fieldId}))";
                 case ValueType.Enum:
-                    return $"static_cast<{Types.GetTypeDisplayName(type.Enum, Types.IsLocallyDefined(type.Enum, parentType))}>(Schema_GetEnum({ schemaObjectName}, { fieldId}))";
+                    return $"static_cast<{Types.GetTypeDisplayName(type.Enum, Types.IsTypeBeingUsedInTheContextWhereItIsDefined(type.Enum, parentType))}>(Schema_GetEnum({ schemaObjectName}, { fieldId}))";
                 default:
                     throw new InvalidOperationException("Trying to deserialize invalid TypeReference");
             }
