@@ -60,9 +60,9 @@ public:
 
 	void TriggerBeginPlay();
 
-	FORCEINLINE bool IsReady() const
+	FORCEINLINE bool IsReadyToCallBeginPlay() const
 	{
-		return bIsReady;
+		return bIsReadyToCallBeginPlay;
 	}
 
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
@@ -114,5 +114,5 @@ private:
 
 	FTimerManager* TimerManager;
 
-	bool bIsReady;
+	bool bIsReadyToCallBeginPlay;
 };

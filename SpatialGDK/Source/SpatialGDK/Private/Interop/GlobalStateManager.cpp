@@ -56,7 +56,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
   
 	bAcceptingPlayers = false;
 	bAuthBeginPlayCalled = false;
-	bIsReady = false;
+	bIsReadyToCallBeginPlay = false;
 }
 
 void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
@@ -214,10 +214,7 @@ void UGlobalStateManager::ApplyAuthBeginPlayCalledUpdate(const bool bAuthBeginPl
 {
 	bAuthBeginPlayCalled = bAuthBeginPlayCalledUpdate;
 
-	if (!bIsReady)
-	{
-		bIsReady = true;
-	}
+	bIsReadyToCallBeginPlay = true;
 }
 
 void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
@@ -537,7 +534,7 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	check(IsReady());
+	check(IsReadyToCallBeginPlay());
 
 	if (!bAuthBeginPlayCalled &&
 		NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))

@@ -1786,7 +1786,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		}
 
 		// Search for StartupActorManager ops we need and process them
-		if (!GlobalStateManager->IsReady())
+		if (!GlobalStateManager->IsReadyToCallBeginPlay())
 		{
 			Worker_Op* AddComponentOp = nullptr;
 			FindFirstOpOfTypeForComponent(OpList, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AddComponentOp);
@@ -1812,7 +1812,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		// and pass it to the dispatcher for processing. This allows us to avoid copying
 		// the Ops around and dealing with memory that is / should be managed by the Worker SDK.
 		// The Op remains owned by the original OpList.  Finally, notify the dispatcher to skip
-		// these Ops when they are encountered later when we drain the queued ops.
+		// these Ops when they are encountered later when we process the queued ops.
 
 		for (Worker_Op* Op : FoundOps)
 		{
@@ -1825,7 +1825,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		}
 
 		if (EntityPool->IsReady() &&
-			GlobalStateManager->IsReady())
+			GlobalStateManager->IsReadyToCallBeginPlay())
 		{
 			// Return whether or not we should continue queueing ops
 			return false;
