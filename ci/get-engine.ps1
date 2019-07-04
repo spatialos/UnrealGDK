@@ -13,10 +13,11 @@ pushd "$($gdk_home)"
         }
     popd
 
-    ## Create an UnrealEngine directory if it doesn't already exist
-    New-Item -Name "UnrealEngine" -ItemType Directory -Force
 
-    pushd "UnrealEngine"
+    ## Create an UnrealEngine-Cache directory if it doesn't already exist
+    New-Item -Name "UnrealEngine-Cache" -ItemType Directory -Force
+
+    pushd "UnrealEngine-Cache"
         Start-Event "download-unreal-engine" "get-unreal-engine"
 
         $engine_gcs_path = "gs://$($gcs_publish_bucket)/$($unreal_version).zip"
@@ -24,6 +25,7 @@ pushd "$($gdk_home)"
 
         $gsu_proc = Start-Process -Wait -PassThru -NoNewWindow "gsutil" -ArgumentList @(`
             "cp", `
+            "-n", ` # noclobber
             "$($engine_gcs_path)", `
             "$($unreal_version).zip" `
         )
@@ -37,7 +39,9 @@ pushd "$($gdk_home)"
         Write-Log "Unzipping Unreal Engine"
         $zip_proc = Start-Process -Wait -PassThru -NoNewWindow "7z" -ArgumentList @(`
         "x", `
-        "$($unreal_version).zip" `
+        "$($unreal_version).zip", `
+        "-o$($unreal_version)", `
+        "-aos" ` # skip existing files
         )
         Finish-Event "unzip-unreal-engine" "get-unreal-engine"
         if ($zip_proc.ExitCode -ne 0) {
@@ -47,6 +51,10 @@ pushd "$($gdk_home)"
     popd
 
     $unreal_path = "$($gdk_home)\UnrealEngine"
+
+    ## Create an UnrealEngine symlink to the correct directory
+    Remove-Item $unreal_path -ErrorAction ignore -Recurse -Force
+    cmd /c mklink /J $unreal_path "UnrealEngine-Cache\$($unreal_version)"
 
     $clang_path = "$($gdk_home)\UnrealEngine\ClangToolchain"
     Write-Log "Setting LINUX_MULTIARCH_ROOT environment variable to $($clang_path)"
