@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SpatialStatics.generated.h"
 
@@ -33,7 +32,7 @@ public:
 	 * Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "WorldContextObject"))
-	static bool IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor>& ActorClass);
+	static bool IsActorGroupOwnerForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass);
 
 	/**
 	 * Returns true if the current Worker Type owns this Actor Group.
@@ -52,7 +51,7 @@ public:
 	 * Returns the ActorGroup this Actor Class belongs to.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "WorldContextObject"))
-	static FName GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor>& ActorClass);
+	static FName GetActorGroupForClass(const UObject* WorldContextObject, const TSubclassOf<AActor> ActorClass);
 
 private:
 
