@@ -21,6 +21,8 @@ enum class EOutgoingMessageType : int32
 	ReserveEntityIdsRequest,
 	CreateEntityRequest,
 	DeleteEntityRequest,
+	AddComponent,
+	RemoveComponent,
 	ComponentUpdate,
 	CommandRequest,
 	CommandResponse,
@@ -69,6 +71,30 @@ struct FDeleteEntityRequest : FOutgoingMessage
 	{}
 
 	Worker_EntityId EntityId;
+};
+
+struct FAddComponent : FOutgoingMessage
+{
+	FAddComponent(Worker_EntityId InEntityId, const Worker_ComponentData& InData)
+		: FOutgoingMessage(EOutgoingMessageType::AddComponent)
+		, EntityId(InEntityId)
+		, Data(InData)
+	{}
+
+	Worker_EntityId EntityId;
+	Worker_ComponentData Data;
+};
+
+struct FRemoveComponent : FOutgoingMessage
+{
+	FRemoveComponent(Worker_EntityId InEntityId, Worker_ComponentId InComponentId)
+		: FOutgoingMessage(EOutgoingMessageType::RemoveComponent)
+		, EntityId(InEntityId)
+		, ComponentId(InComponentId)
+	{}
+
+	Worker_EntityId EntityId;
+	Worker_ComponentId ComponentId;
 };
 
 struct FComponentUpdate : FOutgoingMessage
