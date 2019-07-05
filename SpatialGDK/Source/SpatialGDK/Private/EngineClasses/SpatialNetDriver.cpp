@@ -1053,10 +1053,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	if (IsServer())
 	{
 		// Creating channel to ensure that object will be resolvable
-		if (GetOrCreateSpatialActorChannel(CallingObject) == nullptr)
-		{
-			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Failed to get or create SpatialActorChannel for %s"), *CallingObject->GetName());
-		}
+		GetOrCreateSpatialActorChannel(CallingObject);
 	}
 
 	int ReliableRPCIndex = 0;
@@ -1079,7 +1076,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 	}
 	else
 	{
-		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("The object %s is unresolved, RPC %s will be dropped"), *UnresolvedObjects.CreateIterator()->Get()->GetName(), *Function->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("The object %s is unresolved because of failure to create a SpatialActorChannel; RPC %s will be dropped."), *UnresolvedObjects.CreateIterator()->Get()->GetName(), *Function->GetName());
 	}
 }
 
