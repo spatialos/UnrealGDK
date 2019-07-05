@@ -26,7 +26,8 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 	{
 		Worker_Op* Op = &OpList->ops[i];
 
-		if (OpsToSkip.Contains(Op))
+		if (OpsToSkip.Num() != 0 &&
+			OpsToSkip.Contains(Op))
 		{
 			OpsToSkip.Remove(Op);
 			continue;
@@ -270,7 +271,7 @@ void USpatialDispatcher::MarkOpToSkip(const Worker_Op* Op)
 	OpsToSkip.Add(Op);
 }
 
-int USpatialDispatcher::GetNumOpsToSkip()
+int USpatialDispatcher::GetNumOpsToSkip() const
 {
 	return OpsToSkip.Num();
 }
