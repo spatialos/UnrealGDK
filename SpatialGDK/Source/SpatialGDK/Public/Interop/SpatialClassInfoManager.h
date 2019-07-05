@@ -104,6 +104,9 @@ public:
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 
+	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
+	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
+	
 	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
 
 	uint32 GetComponentIdFromLevelPath(const FString& LevelPath);
