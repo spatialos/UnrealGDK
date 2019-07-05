@@ -21,24 +21,27 @@
 #include "Templates/SharedPointer.h"
 #include "UObject/UObjectIterator.h"
 
-#include "TypeStructure.h"
+#include "Engine/WorldComposition.h"
+#include "Interop/SpatialClassInfoManager.h"
+#include "Misc/ScopedSlowTask.h"
 #include "SchemaGenerator.h"
+#include "Settings/ProjectPackagingSettings.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesModule.h"
+#include "TypeStructure.h"
+#include "UObject/StrongObjectPtr.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
 #include "Utils/SchemaDatabase.h"
-#include "Engine/WorldComposition.h"
-#include "Misc/ScopedSlowTask.h"
-#include "UObject/StrongObjectPtr.h"
-#include "Settings/ProjectPackagingSettings.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialGDKSchemaGenerator);
 #define LOCTEXT_NAMESPACE "SpatialGDKSchemaGenerator"
 
 TArray<UClass*> SchemaGeneratedClasses;
-TMap<FString, FSchemaData> ClassPathToSchemaData;
+TMap<FString, FActorSchemaData> ActorClassPathToSchema;
+TMap<FString, FSubobjectSchemaData> SubobjectClassPathToSchema;
 uint32 NextAvailableComponentId;
 
 // LevelStreaming
@@ -74,7 +77,7 @@ void GenerateCompleteSchemaFromClass(FString SchemaPath, FComponentIdGenerator& 
 	}
 	else
 	{
-		GenerateSubobjectSchema(Class, TypeInfo, SchemaPath + TEXT("Subobjects/"));
+		GenerateSubobjectSchema(IdGenerator, Class, TypeInfo, SchemaPath + TEXT("Subobjects/"));
 	}
 }
 
@@ -262,7 +265,6 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 
 }// ::
 
-
 void GenerateSchemaFromClasses(const TArray<TSharedPtr<FUnrealType>>& TypeInfos, const FString& CombinedSchemaPath, FComponentIdGenerator& IdGenerator)
 {
 	// Generate the actual schema.
@@ -348,7 +350,7 @@ void GenerateSchemaForSublevels(const FString& SchemaPath, FComponentIdGenerator
 		}
 	}
 
-	Writer.WriteToFile(FString::Printf(TEXT("%slevel_streaming.schema"), *SchemaPath));
+	Writer.WriteToFile(FString::Printf(TEXT("%sSublevels/sublevels.schema"), *SchemaPath));
 }
 
 FString GenerateIntermediateDirectory()
@@ -360,6 +362,42 @@ FString GenerateIntermediateDirectory()
 	return AbsoluteCombinedIntermediatePath;
 }
 
+TMap<uint32, FString> CreateComponentIdToClassPathMap()
+{
+	TMap<uint32, FString> ComponentIdToClassPath;
+
+	for (const auto& ActorSchemaData : ActorClassPathToSchema)
+	{
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
+			ComponentIdToClassPath.Add(ActorSchemaData.Value.SchemaComponents[Type], ActorSchemaData.Key);
+		});
+
+		for (const auto& SubobjectSchemaData : ActorSchemaData.Value.SubobjectData)
+		{
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+			{
+				ComponentIdToClassPath.Add(SubobjectSchemaData.Value.SchemaComponents[Type], SubobjectSchemaData.Value.ClassPath);
+			});
+		}
+	}
+
+	for (const auto& SubobjectSchemaData : SubobjectClassPathToSchema)
+	{
+		for (const auto& DynamicSubobjectData : SubobjectSchemaData.Value.DynamicSubobjectComponents)
+		{
+			ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+			{
+				ComponentIdToClassPath.Add(DynamicSubobjectData.SchemaComponents[Type], SubobjectSchemaData.Key);
+			});
+		}
+	}
+
+	ComponentIdToClassPath.Remove(SpatialConstants::INVALID_COMPONENT_ID);
+
+	return ComponentIdToClassPath;
+}
+
 void SaveSchemaDatabase()
 {
 	FString PackagePath = TEXT("/Game/Spatial/SchemaDatabase");
@@ -367,8 +405,10 @@ void SaveSchemaDatabase()
 
 	USchemaDatabase* SchemaDatabase = NewObject<USchemaDatabase>(Package, USchemaDatabase::StaticClass(), FName("SchemaDatabase"), EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 	SchemaDatabase->NextAvailableComponentId = NextAvailableComponentId;
-	SchemaDatabase->ClassPathToSchema = ClassPathToSchemaData;
+	SchemaDatabase->ActorClassPathToSchema = ActorClassPathToSchema;
+	SchemaDatabase->SubobjectClassPathToSchema = SubobjectClassPathToSchema;
 	SchemaDatabase->LevelPathToComponentId = LevelPathToComponentId;
+	SchemaDatabase->ComponentIdToClassPath = CreateComponentIdToClassPathMap();
 	SchemaDatabase->LevelComponentIds = LevelComponentIds;
 
 	FAssetRegistryModule::AssetCreated(SchemaDatabase);
@@ -404,47 +444,16 @@ TArray<UClass*> GetAllSupportedClasses()
 			continue;
 		}
 
-		UClass* SupportedClass = nullptr;
-		for (TFieldIterator<UProperty> PropertyIt(*ClassIt); PropertyIt && SupportedClass == nullptr; ++PropertyIt)
-		{
-			if (PropertyIt->HasAnyPropertyFlags(CPF_Net | CPF_Handover))
-			{
-				SupportedClass = *ClassIt;
-			}
-		}
+		UClass* SupportedClass = *ClassIt;
 
-		for (TFieldIterator<UFunction> FunctionIt(*ClassIt); FunctionIt && SupportedClass == nullptr; ++FunctionIt)
-		{
-			if (FunctionIt->HasAnyFunctionFlags(FUNC_NetFuncFlags))
-			{
-				SupportedClass = *ClassIt;
-			}
-		}
-
-		// Check for replicated GameplayAbilities and print a warning if we find one. The UnrealGDK does not currently support this.
-		if (ClassIt->IsChildOf(UGameplayAbility::StaticClass()))
-		{
-			UClass* AbilityClass = *ClassIt;
-			UGameplayAbility* GameplayAbility = Cast<UGameplayAbility>(AbilityClass->GetDefaultObject());
-
-			if (GameplayAbility->GetReplicationPolicy() == EGameplayAbilityReplicationPolicy::ReplicateYes)
-			{
-				UE_LOG(LogSpatialGDKSchemaGenerator, Error, TEXT("Replicated GameplayAbility found when generating schema. This is not currently supported and will cause undefined behaviour. Please set the 'ReplicationPolicy' to 'NotReplicated'. Ability: %s"), *GameplayAbility->GetName());
-			}
-		}
-
-		// No replicated/handover properties found
-		if (SupportedClass == nullptr)
-		{
-			continue;
-		}
-
-		// Ensure we don't process skeleton, reinitialized or classes that have since been hot reloaded
+		// Ensure we don't process transient generated classes for BP
 		if (SupportedClass->GetName().StartsWith(TEXT("SKEL_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("REINST_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("TRASHCLASS_"), ESearchCase::CaseSensitive)
 			|| SupportedClass->GetName().StartsWith(TEXT("HOTRELOADED_"), ESearchCase::CaseSensitive)
-			|| SupportedClass->GetName().StartsWith(TEXT("PROTO_BP_"), ESearchCase::CaseSensitive))
+			|| SupportedClass->GetName().StartsWith(TEXT("PROTO_BP_"), ESearchCase::CaseSensitive)
+			|| SupportedClass->GetName().StartsWith(TEXT("PLACEHOLDER-CLASS_"), ESearchCase::CaseSensitive)
+			|| SupportedClass->GetName().StartsWith(TEXT("ORPHANED_DATA_ONLY_"), ESearchCase::CaseSensitive))
 		{
 			continue;
 		}
@@ -470,10 +479,10 @@ void CopyWellKnownSchemaFiles()
 	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
 
 	FString GDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Extras/schema"));
-	FString GDKSchemaCopyDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
+	FString GDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema/unreal/gdk"));
 
 	FString CoreSDKSchemaDir = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema"));
-	FString CoreSDKSchemaCopyDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
+	FString CoreSDKSchemaCopyDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
 	
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 
@@ -520,7 +529,8 @@ void DeleteGeneratedSchemaFiles()
 
 void ClearGeneratedSchema()
 {
-	ClassPathToSchemaData.Empty();
+	ActorClassPathToSchema.Empty();
+	SubobjectClassPathToSchema.Empty();
 	LevelComponentIds.Empty();
 	LevelPathToComponentId.Empty();
 	NextAvailableComponentId = SpatialConstants::STARTING_GENERATED_COMPONENT_ID;
@@ -553,10 +563,18 @@ bool TryLoadExistingSchemaDatabase()
 			return false;
 		}
 
-		ClassPathToSchemaData = SchemaDatabase->ClassPathToSchema;
+		ActorClassPathToSchema = SchemaDatabase->ActorClassPathToSchema;
+		SubobjectClassPathToSchema = SchemaDatabase->SubobjectClassPathToSchema;
 		LevelComponentIds = SchemaDatabase->LevelComponentIds;
 		LevelPathToComponentId = SchemaDatabase->LevelPathToComponentId;
 		NextAvailableComponentId = SchemaDatabase->NextAvailableComponentId;
+
+		// Component Id generation was updated to be non-destructive, if we detect an old schema database, delete it.
+		if (ActorClassPathToSchema.Num() > 0 && NextAvailableComponentId == SpatialConstants::STARTING_GENERATED_COMPONENT_ID)
+		{
+			UE_LOG(LogSpatialGDKSchemaGenerator, Warning, TEXT("Detected an old schema database, it'll be reset."));
+			ClearGeneratedSchema();
+		}
 	}
 	else
 	{
@@ -580,7 +598,7 @@ void ResetUsedNames()
 	SchemaNameToClassPath.Empty();
 	PotentialSchemaNameCollisions.Empty();
 
-	for (const TPair<FString, FSchemaData>& Entry : ClassPathToSchemaData)
+	for (const TPair<FString, FActorSchemaData>& Entry : ActorClassPathToSchema)
 	{
 		if (Entry.Value.GeneratedSchemaName.IsEmpty())
 		{
@@ -602,16 +620,14 @@ void ResetUsedNames()
 
 void RunSchemaCompiler()
 {
-	const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>();
-
 	FString PluginDir = GetDefault<USpatialGDKEditorSettings>()->GetGDKPluginDirectory();
 
 	// Get the schema_compiler path and arguments
 	FString SchemaCompilerExe = FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/schema_compiler.exe"));
 
-	FString SchemaDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("schema"));
-	FString CoreSDKSchemaDir = FPaths::Combine(GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
-	FString SchemaDescriptorDir = FPaths::Combine(SpatialGDKSettings->GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
+	FString SchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("schema"));
+	FString CoreSDKSchemaDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/dependencies/schema/standard_library"));
+	FString SchemaDescriptorDir = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("build/assembly/schema"));
 	FString SchemaDescriptorOutput = FPaths::Combine(SchemaDescriptorDir, TEXT("schema.descriptor"));
 
 	// The schema_compiler cannot create folders.

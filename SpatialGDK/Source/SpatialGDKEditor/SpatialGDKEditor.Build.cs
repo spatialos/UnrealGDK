@@ -20,6 +20,7 @@ public class SpatialGDKEditor : ModuleRules
 				"Slate",
 				"SlateCore",
 				"SpatialGDK",
+				"SpatialGDKServices",
 				"UnrealEd",
 				"GameplayAbilities"
             });

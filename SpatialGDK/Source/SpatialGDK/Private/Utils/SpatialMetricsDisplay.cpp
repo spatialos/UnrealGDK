@@ -91,14 +91,15 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 		StatColumn_Worker,
 		StatColumn_AverageFrameTime,
 		StatColumn_MovementCorrections,
+		StatColumn_ReplicationLimit,
 		StatColumn_Last
 	};
 
 	const uint32 StatDisplayStartX = 25;
 	const uint32 StatDisplayStartY = 80;
 
-	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Movement Corrections") };
-	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80 };
+	const FString StatColumnTitles[StatColumn_Last] = { TEXT("Worker"), TEXT("Frame"), TEXT("Movement Corrections"), TEXT("Replication Limit") };
+	const uint32 StatColumnOffsets[StatColumn_Last] = { 0, 160, 80, 160 };
 	const uint32 StatRowOffset = 20;
 
 	const FString StatSectionTitle = TEXT("Spatial Metrics Display");
@@ -139,6 +140,9 @@ void ASpatialMetricsDisplay::DrawDebug(class UCanvas* Canvas, APlayerController*
 		DrawX += StatColumnOffsets[StatColumn_MovementCorrections];
 		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%.4f"), OneWorkerStats.ServerMovementCorrections), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
 
+		DrawX += StatColumnOffsets[StatColumn_ReplicationLimit];
+		Canvas->DrawText(RenderFont, FString::Printf(TEXT("%d:%d"), OneWorkerStats.ServerConsiderListSize, OneWorkerStats.ServerReplicationLimit), DrawX, DrawY, 1.0f, 1.0f, FontRenderInfo);
+
 		DrawY += StatRowOffset;
 	}
 }
@@ -159,6 +163,8 @@ void ASpatialMetricsDisplay::ToggleStatDisplay()
 void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+#if !UE_BUILD_SHIPPING
 
 	if (!GetWorld()->IsServer() || !HasActorBegunPlay())
 	{
@@ -200,6 +206,8 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	FWorkerStats Stats{};
 	Stats.WorkerName = SpatialNetDriver->Connection->GetWorkerId().Left(WorkerNameMaxLength).ToLower();
 	Stats.AverageFPS = Metrics.GetAverageFPS();
+	Stats.ServerConsiderListSize = SpatialNetDriver->GetConsiderListSize();
+	Stats.ServerReplicationLimit = GetDefault<USpatialGDKSettings>()->ActorReplicationRateLimit;
 
 #if USE_SERVER_PERF_COUNTERS
 	float MovementCorrectionsPerSecond = 0.f;
@@ -229,9 +237,11 @@ void ASpatialMetricsDisplay::Tick(float DeltaSeconds)
 	{
 		MovementCorrectionRecords.Enqueue({ NumServerMoveCorrections, WorldTime });
 	}
-#endif
+#endif // USE_SERVER_PERF_COUNTERS
 
 	ServerUpdateWorkerStats(SpatialNetDriver->Time, Stats);
+
+#endif // !UE_BUILD_SHIPPING
 }
 
 bool ASpatialMetricsDisplay::ShouldRemoveStats(const float CurrentTime, const FWorkerStats& OneWorkerStats) const

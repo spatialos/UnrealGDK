@@ -100,6 +100,10 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bBatchSpatialPositionUpdates;
 
+	/** Maximum number of ActorComponents/Subobjects of the same class that can be attached to an Actor.*/
+	UPROPERTY(EditAnywhere, config, Category = "Schema Generation", meta = (ConfigRestartRequired = false), DisplayName = "Maximum Dynamically Attached Subobjects Per Class")
+	uint32 MaxDynamicallyAttachedSubobjectsPerClass;
+
 	/** EXPERIMENTAL - This is a stop-gap until we can better define server interest on system entities.
 	Disabling this is not supported in any type of multi-server environment*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
@@ -107,7 +111,7 @@ public:
 
 	/** Pack unreliable RPCs sent during the same frame into a single update. */
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
-	bool bPackUnreliableRPCs;
+	bool bPackRPCs;
 
 	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))
