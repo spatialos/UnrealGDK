@@ -62,7 +62,7 @@ void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 		FString WorkerConfigDirectory = FPaths::Combine(SpatialDirectory, TEXT("workers"));
 
 		if (FPaths::DirectoryExists(WorkerConfigDirectory))
-		{		
+		{
 			WorkerConfigDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FLocalDeploymentManager::OnWorkerConfigDirectoryChanged);
 			DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
 				WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate, WorkerConfigDirectoryChangedDelegateHandle,
