@@ -23,9 +23,23 @@ FLocalDeploymentManager* FSpatialGDKServicesModule::GetLocalDeploymentManager()
 	return &LocalDeploymentManager;
 }
 
-FString FSpatialGDKServicesModule::GetSpatialOSDirectory()
+FString FSpatialGDKServicesModule::GetSpatialOSDirectory(FString RelativePath)
 {
-	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")));
+	return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/"), RelativePath));
+}
+
+FString FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(FString RelativePath)
+{
+	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
+
+	if (!FPaths::DirectoryExists(PluginDir))
+	{
+		// If the Project Plugin doesn't exist then use the Engine Plugin.
+		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
+		ensure(FPaths::DirectoryExists(PluginDir));
+	}
+
+	return FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, RelativePath));
 }
 
 #undef LOCTEXT_NAMESPACE

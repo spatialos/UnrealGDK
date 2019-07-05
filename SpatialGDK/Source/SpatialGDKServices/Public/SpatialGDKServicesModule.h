@@ -18,7 +18,8 @@ public:
 
 	FLocalDeploymentManager* GetLocalDeploymentManager();
 
-	static FString GetSpatialOSDirectory();
+	static FString GetSpatialOSDirectory(FString RelativePath = TEXT(""));
+	static FString GetSpatialGDKPluginDirectory(FString RelativePath = TEXT(""));
 
 private:
 	FLocalDeploymentManager LocalDeploymentManager;

@@ -49,16 +49,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 
 const FString FLocalDeploymentManager::GetSpotExe()
 {
-	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
-
-	if (!FPaths::DirectoryExists(PluginDir))
-	{
-		// If the Project Plugin doesn't exist then use the Engine Plugin.
-		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
-		ensure(FPaths::DirectoryExists(PluginDir));
-	}
-
-	return  FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe")));
+	return FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe"));
 }
 
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
@@ -71,9 +62,11 @@ void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 		FString WorkerConfigDirectory = FPaths::Combine(SpatialDirectory, TEXT("workers"));
 
 		if (FPaths::DirectoryExists(WorkerConfigDirectory))
-		{
+		{		
 			WorkerConfigDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FLocalDeploymentManager::OnWorkerConfigDirectoryChanged);
-			DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate, WorkerConfigDirectoryChangedDelegateHandle);
+			DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
+				WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate, WorkerConfigDirectoryChangedDelegateHandle,
+				IDirectoryWatcher::IncludeDirectoryChanges);
 		}
 		else
 		{
@@ -119,7 +112,7 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 		int32 ExitCode;
 		ExecuteAndReadOutput(SpatialExe, SpatialServiceStatusArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
 
-		if (ExitCode == ExitCodeSuccess)
+		if (ExitCode != ExitCodeSuccess)
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Building worker configurations failed. Please ensure your .worker.json files are correct."));
 		}
