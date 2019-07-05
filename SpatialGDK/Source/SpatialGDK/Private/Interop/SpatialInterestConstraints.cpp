@@ -30,7 +30,8 @@ void UAndConstraint::CreateConstraint(const USpatialClassInfoManager& ClassInfoM
 	{
 		if (ConstraintData)
 		{
-			SpatialGDK::QueryConstraint NewConstraint; ConstraintData->CreateConstraint(ClassInfoManager, NewConstraint);
+			SpatialGDK::QueryConstraint NewConstraint;
+			ConstraintData->CreateConstraint(ClassInfoManager, NewConstraint);
 			if (NewConstraint.IsValid())
 			{
 				OutConstraint.AndConstraint.Add(NewConstraint);
