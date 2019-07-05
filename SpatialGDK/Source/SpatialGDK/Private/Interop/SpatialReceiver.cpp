@@ -979,7 +979,11 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 		PendingDynamicSubobjectComponents.Remove(EntityComponentPair);
 	});
 
-	Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsOwnedByWorker());
+	// If on a client, we need to set up the proper component interest for the new subobject.
+	if (!NetDriver->IsServer())
+	{
+		Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsOwnedByWorker());
+	}
 }
 
 void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, const Worker_ComponentData& Data)
