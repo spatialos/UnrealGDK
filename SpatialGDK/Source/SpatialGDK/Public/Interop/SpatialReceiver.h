@@ -92,10 +92,19 @@ struct FPendingIncomingRPC
 	FString SenderWorkerId;
 };
 
+struct FPendingSubobjectAttachment
+{
+	USpatialActorChannel* Channel;
+	const FClassInfo* Info;
+	TWeakObjectPtr<UObject> Subobject;
+
+	TSet<Worker_ComponentId> PendingAuthorityDelegations;
+};
+
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
 DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
-DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
+DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, const Worker_ReserveEntityIdsResponseOp&);
 DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
 
 UCLASS()
@@ -108,18 +117,19 @@ public:
 
 	// Dispatcher Calls
 	void OnCriticalSection(bool InCriticalSection);
-	void OnAddEntity(Worker_AddEntityOp& Op);
-	void OnAddComponent(Worker_AddComponentOp& Op);
-	void OnRemoveEntity(Worker_RemoveEntityOp& Op);
-	void OnAuthorityChange(Worker_AuthorityChangeOp& Op);
+	void OnAddEntity(const Worker_AddEntityOp& Op);
+	void OnAddComponent(const Worker_AddComponentOp& Op);
+	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
+	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
+	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
-	void OnComponentUpdate(Worker_ComponentUpdateOp& Op);
+	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void HandleRPC(const Worker_ComponentUpdateOp& Op);
-	void OnCommandRequest(Worker_CommandRequestOp& Op);
-	void OnCommandResponse(Worker_CommandResponseOp& Op);
+	void OnCommandRequest(const Worker_CommandRequestOp& Op);
+	void OnCommandResponse(const Worker_CommandResponseOp& Op);
 
-	void OnReserveEntityIdsResponse(Worker_ReserveEntityIdsResponseOp& Op);
-	void OnCreateEntityResponse(Worker_CreateEntityResponseOp& Op);
+	void OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op);
+	void OnCreateEntityResponse(const Worker_CreateEntityResponseOp& Op);
 
 	void AddPendingActorRequest(Worker_RequestId RequestId, USpatialActorChannel* Channel);
 	void AddPendingReliableRPC(Worker_RequestId RequestId, TSharedRef<struct FReliableRPCForRetry> ReliableRPC);
@@ -152,10 +162,15 @@ private:
 
 	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
 
-	void HandlePlayerLifecycleAuthority(Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
-	void HandleActorAuthority(Worker_AuthorityChangeOp& Op);
+	void HandlePlayerLifecycleAuthority(const Worker_AuthorityChangeOp& Op, class APlayerController* PlayerController);
+	void HandleActorAuthority(const Worker_AuthorityChangeOp& Op);
 
-	void ApplyComponentData(Worker_EntityId EntityId, Worker_ComponentData& Data, USpatialActorChannel* Channel);
+	void ApplyComponentDataOnActorCreation(Worker_EntityId EntityId, const Worker_ComponentData& Data, USpatialActorChannel* Channel);
+	void ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, const Worker_ComponentData& Data);
+	// This is called for AddComponentOps not in a critical section, which means they are not a part of the initial entity creation.
+	void HandleIndividualAddComponent(const Worker_AddComponentOp& Op);
+	void AttachDynamicSubobject(Worker_EntityId EntityId, const FClassInfo& Info);
+
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
 	void RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object);
@@ -164,7 +179,9 @@ private:
 	bool ApplyRPC(FPendingRPCParamsPtr Params);
 	bool ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);	
 
-	void ReceiveCommandResponse(Worker_CommandResponseOp& Op);
+	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
+
+	bool IsReceivedEntityTornOff(Worker_EntityId EntityId);
 
 	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs);
 
@@ -184,10 +201,12 @@ private:
 
 	AActor* FindSingletonActor(UClass* SingletonClass);
 
-	void OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op);
+	void OnHeartbeatComponentUpdate(const Worker_ComponentUpdateOp& Op);
 
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
+
+	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, TSharedRef<FPendingSubobjectAttachment>> PendingEntitySubobjectDelegations;
 
 private:
 	UPROPERTY()
@@ -233,4 +252,6 @@ private:
 	// for PlayerControllers that this server has authority over. This is used for player
 	// lifecycle logic (Heartbeat component updates, disconnection logic).
 	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
+
+	TMap<TPair<Worker_EntityId_Key, Worker_ComponentId>, PendingAddComponentWrapper> PendingDynamicSubobjectComponents;
 };

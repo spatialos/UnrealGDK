@@ -75,11 +75,14 @@ public:
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
-	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId, bool bNetOwned);
+	void SendComponentInterestForActor(USpatialActorChannel* Channel, Worker_EntityId EntityId, bool bNetOwned);
+	void SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	bool SendRPC(FPendingRPCParamsPtr Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId);
+	void SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info);
+	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
@@ -109,7 +112,11 @@ public:
 	void FlushPackedUnreliableRPCs();
 
 	RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, UFunction* Function, int ReliableRPCIndex, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects);
+	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info);
+
+	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
 	void CreateServerWorkerEntity(int AttemptCounter = 1);
+
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
@@ -127,7 +134,7 @@ private:
 	Worker_ComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, const UObject*& OutUnresolvedObject);
 	void AddPendingUnreliableRPC(UObject* TargetObject, FPendingRPCParamsPtr Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject);
 
-	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
+	TArray<Worker_InterestOverride> CreateComponentInterestForActor(USpatialActorChannel* Channel, bool bIsNetOwned);
 
 private:
 	UPROPERTY()

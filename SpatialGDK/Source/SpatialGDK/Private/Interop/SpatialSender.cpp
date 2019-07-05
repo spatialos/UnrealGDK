@@ -91,7 +91,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		AnyServerOrOwningClientRequirementSet.Add(ServerWorkerAttributeSet);
 	}
 
-
 	WorkerRequirementSet ReadAcl;
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
 	{
@@ -196,7 +195,6 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	TArray<Worker_ComponentData> ComponentDatas;
 	ComponentDatas.Add(Position(Coordinates::FromFVector(Channel->GetActorSpatialPosition(Actor))).CreatePositionData());
 	ComponentDatas.Add(Metadata(Class->GetName()).CreateMetadataData());
-	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 	ComponentDatas.Add(Persistence().CreatePersistenceData());
 	ComponentDatas.Add(SpawnData(Actor).CreateSpawnDataData());
 	ComponentDatas.Add(UnrealMetadata(StablyNamedObjectRef, ClientWorkerAttribute, Class->GetPathName(), bNetStartup).CreateUnrealMetadataData());
@@ -253,37 +251,103 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	ComponentDatas.Add(ServerRPCEndpoint().CreateRPCEndpointData());
 	ComponentDatas.Add(ComponentFactory::CreateEmptyComponentData(SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID));
 
+	// Only add subobjects which are replicating
+	for (auto RepSubobject = Channel->ReplicationMap.CreateIterator(); RepSubobject; ++RepSubobject)
+	{
+#if ENGINE_MINOR_VERSION <= 20
+		if (UObject* Subobject = RepSubobject.Key().Get())
+#else
+		if (UObject* Subobject = RepSubobject.Value()->GetWeakObjectPtr().Get())
+#endif
+		{
+			// If this object is not in the PackageMap, it has been dynamically created.
+			if (!PackageMap->GetUnrealObjectRefFromObject(Subobject).IsValid())
+			{
+				const FClassInfo* SubobjectInfo = Channel->TryResolveNewDynamicSubobjectAndGetClassInfo(Subobject);
+
+				if (SubobjectInfo == nullptr)
+				{
+					// This is a failure but there is already a log inside TryResolveNewDynamicSubbojectAndGetClassInfo
+					continue;
+				}
+
+				ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+				{
+					if (SubobjectInfo->SchemaComponents[Type] != SpatialConstants::INVALID_COMPONENT_ID)
+					{
+						ComponentWriteAcl.Add(SubobjectInfo->SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
+					}
+				});
+			}
+
+			const FClassInfo& SubobjectInfo = ClassInfoManager->GetOrCreateClassInfoByObject(Subobject);
+
+			FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
+			FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+
+			// Reset unresolved objects so they can be filled again by DataFactory
+			UnresolvedObjectsMap.Empty();
+			HandoverUnresolvedObjectsMap.Empty();
+
+			TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+			ComponentDatas.Append(ActorSubobjectDatas);
+
+			for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
+			{
+				QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
+			}
+
+			for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
+			{
+				QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
+			}
+		}
+	}
+
+	// Or if the subobject has handover properties, add it as well.
+	// NOTE: this is only for subobjects that are a part of the CDO.
+	// NOT dynamic subobjects which have been added before entity creation.
 	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 	{
-		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
+		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
 
-		TWeakObjectPtr<UObject> Subobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
-		if (!Subobject.IsValid())
+		// Static subobjects aren't guaranteed to exist on actor instances, check they are present before adding write acls
+		TWeakObjectPtr<UObject> WeakSubobject = PackageMap->GetObjectFromUnrealObjectRef(FUnrealObjectRef(Channel->GetEntityId(), SubobjectInfoPair.Key));
+		if (!WeakSubobject.IsValid())
 		{
-			UE_LOG(LogSpatialSender, Warning, TEXT("Tried to generate initial replication state for an invalid sub-object (class %s, sub-object %s, actor %s). Object may have been deleted or is PendingKill."), *SubobjectInfo.Class->GetName(), *SubobjectInfo.SubobjectName.ToString(), *Actor->GetName());
 			continue;
 		}
 
-		FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
+		UObject* Subobject = WeakSubobject.Get();
+
+		if (SubobjectInfo.SchemaComponents[SCHEMA_Handover] == SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			continue;
+		}
+
+		// If it contains it, we've already created handover data for it.
+		if (Channel->ReplicationMap.Contains(Subobject))
+		{
+			continue;
+		}
+
 		FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
 
 		// Reset unresolved objects so they can be filled again by DataFactory
-		UnresolvedObjectsMap.Empty();
 		HandoverUnresolvedObjectsMap.Empty();
 
-		TArray<Worker_ComponentData> ActorSubobjectDatas = DataFactory.CreateComponentDatas(Subobject.Get(), SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
-		ComponentDatas.Append(ActorSubobjectDatas);
+		Worker_ComponentData SubobjectHandoverData = DataFactory.CreateHandoverComponentData(SubobjectInfo.SchemaComponents[SCHEMA_Handover], Subobject, SubobjectInfo, SubobjectHandoverChanges);
+		ComponentDatas.Add(SubobjectHandoverData);
 
-		for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
-		{
-			QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
-		}
+		ComponentWriteAcl.Add(SubobjectInfo.SchemaComponents[SCHEMA_Handover], AuthoritativeWorkerRequirementSet);
 
 		for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
 		{
-			QueueOutgoingUpdate(Channel, Subobject.Get(), HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
+			QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
 		}
 	}
+
+	ComponentDatas.Add(EntityAcl(ReadAcl, ComponentWriteAcl).CreateEntityAclData());
 
 	Worker_EntityId EntityId = Channel->GetEntityId();
 	Worker_RequestId CreateEntityRequestId = Connection->SendCreateEntityRequest(MoveTemp(ComponentDatas), &EntityId);
@@ -297,7 +361,7 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	UWorld* ActorWorld = Actor->GetTypedOuter<UWorld>();
 	if (ActorWorld != NetDriver->World)
 	{
-		const uint32 ComponentId = ClassInfoManager->SchemaDatabase->GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
+		const uint32 ComponentId = ClassInfoManager->GetComponentIdFromLevelPath(ActorWorld->GetOuter()->GetPathName());
 		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			return ComponentFactory::CreateEmptyComponentData(ComponentId);
@@ -310,6 +374,81 @@ Worker_ComponentData USpatialSender::CreateLevelComponentData(AActor* Actor)
 	}
 
 	return ComponentFactory::CreateEmptyComponentData(SpatialConstants::NOT_STREAMED_COMPONENT_ID);
+}
+
+void USpatialSender::SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& SubobjectInfo)
+{
+	FRepChangeState SubobjectRepChanges = Channel->CreateInitialRepChangeState(Subobject);
+	FHandoverChangeState SubobjectHandoverChanges = Channel->CreateInitialHandoverChangeState(SubobjectInfo);
+
+	FUnresolvedObjectsMap UnresolvedObjectsMap;
+	FUnresolvedObjectsMap HandoverUnresolvedObjectsMap;
+	ComponentFactory DataFactory(UnresolvedObjectsMap, HandoverUnresolvedObjectsMap, false, NetDriver);
+
+	TArray<Worker_ComponentData> SubobjectDatas = DataFactory.CreateComponentDatas(Subobject, SubobjectInfo, SubobjectRepChanges, SubobjectHandoverChanges);
+
+	for (auto& HandleUnresolvedObjectsPair : UnresolvedObjectsMap)
+	{
+		QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ false);
+	}
+
+	for (auto& HandleUnresolvedObjectsPair : HandoverUnresolvedObjectsMap)
+	{
+		QueueOutgoingUpdate(Channel, Subobject, HandleUnresolvedObjectsPair.Key, HandleUnresolvedObjectsPair.Value, /* bIsHandover */ true);
+	}
+
+	for (Worker_ComponentData& ComponentData : SubobjectDatas)
+	{
+		Connection->SendAddComponent(Channel->GetEntityId(), &ComponentData);
+	}
+
+	Channel->PendingDynamicSubobjects.Remove(TWeakObjectPtr<UObject>(Subobject));
+}
+
+void USpatialSender::GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info)
+{
+	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
+	const WorkerAttributeSet WorkerAttribute{ ActorInfo.WorkerType.ToString() };
+	const WorkerRequirementSet AuthoritativeWorkerRequirementSet = { WorkerAttribute };
+
+	EntityAcl* EntityACL = StaticComponentView->GetComponentData<EntityAcl>(Channel->GetEntityId());
+
+	TSharedRef<FPendingSubobjectAttachment> PendingSubobjectAttachment = MakeShared<FPendingSubobjectAttachment>();
+	PendingSubobjectAttachment->Subobject = Object;
+	PendingSubobjectAttachment->Channel = Channel;
+	PendingSubobjectAttachment->Info = Info;
+
+	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+	{
+		Worker_ComponentId ComponentId = Info->SchemaComponents[Type];
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			// For each valid ComponentId, we need to wait for its authority delegation before
+			// adding the subobject.
+			PendingSubobjectAttachment->PendingAuthorityDelegations.Add(ComponentId);
+			Receiver->PendingEntitySubobjectDelegations.Add(
+				MakeTuple(static_cast<Worker_EntityId_Key>(Channel->GetEntityId()), ComponentId),
+				PendingSubobjectAttachment);
+
+			EntityACL->ComponentWriteAcl.Add(Info->SchemaComponents[Type], AuthoritativeWorkerRequirementSet);
+		}
+	});
+
+	Worker_ComponentUpdate Update = EntityACL->CreateEntityAclUpdate();
+	Connection->SendComponentUpdate(Channel->GetEntityId(), &Update);
+}
+
+void USpatialSender::SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info)
+{
+	for (Worker_ComponentId SubobjectComponentId : Info.SchemaComponents)
+	{
+		if (SubobjectComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			NetDriver->Connection->SendRemoveComponent(EntityId, SubobjectComponentId);
+		}
+	}
+
+	PackageMap->RemoveSubobject(FUnrealObjectRef(EntityId, Info.SchemaComponents[SCHEMA_Data]));
 }
 
 // Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
@@ -384,6 +523,7 @@ void USpatialSender::CreateServerWorkerEntity(int AttemptCounter)
 			}
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(AttemptCounter), false);
 	});
+
 	Receiver->AddCreateEntityDelegate(RequestId, OnCreateWorkerEntityResponse);
 }
 
@@ -512,16 +652,24 @@ void FillComponentInterests(const FClassInfo& Info, bool bNetOwned, TArray<Worke
 	}
 }
 
-TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterest(AActor* Actor, bool bIsNetOwned)
+TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterestForActor(USpatialActorChannel* Channel, bool bIsNetOwned)
 {
 	TArray<Worker_InterestOverride> ComponentInterest;
 
-	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+	const FClassInfo& ActorInfo = ClassInfoManager->GetOrCreateClassInfoByClass(Channel->Actor->GetClass());
 	FillComponentInterests(ActorInfo, bIsNetOwned, ComponentInterest);
 
+	// Statically attached subobjects
 	for (auto& SubobjectInfoPair : ActorInfo.SubobjectInfo)
 	{
-		FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
+		const FClassInfo& SubobjectInfo = SubobjectInfoPair.Value.Get();
+		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
+	}
+
+	// Subobjects dynamically created through replication
+	for (const auto& Subobject : Channel->CreateSubObjects)
+	{
+		const FClassInfo& SubobjectInfo = ClassInfoManager->GetOrCreateClassInfoByObject(Subobject);
 		FillComponentInterests(SubobjectInfo, bIsNetOwned, ComponentInterest);
 	}
 
@@ -551,11 +699,20 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, UFu
 	return RPCPayload(TargetObjectRef.Offset, RPCInfo->Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 }
 
-void USpatialSender::SendComponentInterest(AActor* Actor, Worker_EntityId EntityId, bool bNetOwned)
+void USpatialSender::SendComponentInterestForActor(USpatialActorChannel* Channel, Worker_EntityId EntityId, bool bNetOwned)
 {
-	check(!NetDriver->IsServer());
+	checkf(!NetDriver->IsServer(), TEXT("Tried to set ComponentInterest on a server-worker. This should never happen!"));
 
-	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterest(Actor, bNetOwned));
+	NetDriver->Connection->SendComponentInterest(EntityId, CreateComponentInterestForActor(Channel, bNetOwned));
+}
+
+void USpatialSender::SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned)
+{
+	checkf(!NetDriver->IsServer(), TEXT("Tried to set ComponentInterest on a server-worker. This should never happen!"));
+
+	TArray<Worker_InterestOverride> ComponentInterest;
+	FillComponentInterests(Info, bNetOwned, ComponentInterest);
+	NetDriver->Connection->SendComponentInterest(EntityId, MoveTemp(ComponentInterest));
 }
 
 void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location)
@@ -781,8 +938,6 @@ void USpatialSender::ProcessPositionUpdates()
 void USpatialSender::SendCreateEntityRequest(USpatialActorChannel* Channel)
 {
 	UE_LOG(LogSpatialSender, Log, TEXT("Sending create entity request for %s"), *Channel->Actor->GetName());
-
-	FSoftClassPath ActorClassPath(Channel->Actor->GetClass());
 
 	Worker_RequestId RequestId = CreateEntity(Channel);
 	Receiver->AddPendingActorRequest(RequestId, Channel);

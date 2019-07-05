@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Containers/UnrealString.h"
+#include "Templates/TypeHash.h"
 
 #include "Utils/SchemaOption.h"
 

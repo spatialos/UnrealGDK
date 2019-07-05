@@ -46,6 +46,7 @@ call :MarkEndOfBlock "Check dependencies"
 
 call :MarkStartOfBlock "Setup variables"
     set /p PINNED_CORE_SDK_VERSION=<.\SpatialGDK\Extras\core-sdk.version
+    set /p PINNED_SPOT_VERSION=<.\SpatialGDK\Extras\spot.version
     set BUILD_DIR=%~dp0SpatialGDK\Build
     set CORE_SDK_DIR=%BUILD_DIR%\core_sdk
     set WORKER_SDK_DIR=%~dp0SpatialGDK\Source\SpatialGDK\Public\WorkerSDK
@@ -91,6 +92,7 @@ call :MarkStartOfBlock "Retrieve dependencies"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-msvc_md-win32             %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-msvc_md-win32.zip"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux       %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-dynamic-x86_64-gcc_libstdcpp-linux.zip"
     spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang_libcpp-ios  %PINNED_CORE_SDK_VERSION%   "%CORE_SDK_DIR%\worker_sdk\c-static-fullylinked-arm-clang_libcpp-ios.zip"
+    spatial package retrieve spot            spot-win64                                 %PINNED_SPOT_VERSION%       "%BINARIES_DIR%\Programs\spot.exe"
 call :MarkEndOfBlock "Retrieve dependencies"
 
 call :MarkStartOfBlock "Unpack dependencies"

@@ -28,7 +28,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
-	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](Worker_ReserveEntityIdsResponseOp& Op)
+	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](const Worker_ReserveEntityIdsResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
