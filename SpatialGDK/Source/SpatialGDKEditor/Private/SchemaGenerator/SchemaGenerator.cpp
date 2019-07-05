@@ -8,6 +8,7 @@
 #include "UObject/TextProperty.h"
 
 #include "Interop/SpatialClassInfoManager.h"
+#include "SpatialGDKSettings.h"
 #include "Utils/CodeWriter.h"
 #include "Utils/ComponentIdGenerator.h"
 #include "Utils/DataTypeUtilities.h"
@@ -199,7 +200,7 @@ bool IsReplicatedSubobject(TSharedPtr<FUnrealType> TypeInfo)
 	return false;
 }
 
-void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
+void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
 	FCodeWriter Writer;
 
@@ -240,7 +241,10 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
-		if (RepData[Group].Num() == 0)
+		// Since it is possible to replicate subobjects which have no replicated properties.
+		// We need to generate a schema component for every subobject. So if we have no replicated
+		// properties, we only don't generate a schema component if we are REP_SingleClient
+		if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
 		{
 			continue;
 		}
@@ -255,20 +259,6 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 			{
 				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find ActorComponent->bReplicates at field %d for class %s. Modifying the base Actor Component class is currently not supported."),
 					SpatialConstants::ACTOR_COMPONENT_REPLICATES_ID,
-					*Class->GetName());
-			}
-		}
-
-		// If this class is an Actor, it MUST have bTearOff at field ID 3.
-		if (Group == REP_MultiClient && Class->IsChildOf<AActor>())
-		{
-			TSharedPtr<FUnrealProperty> ExpectedReplicatesPropData = RepData[Group].FindRef(SpatialConstants::ACTOR_TEAROFF_ID);
-			const UProperty* ReplicatesProp = AActor::StaticClass()->FindPropertyByName("bTearOff");
-
-			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
-			{
-				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find Actor->bTearOff at field %d for class %s. Modifying the base Actor class is currently not supported."),
-					SpatialConstants::ACTOR_TEAROFF_ID,
 					*Class->GetName());
 			}
 		}
@@ -303,12 +293,67 @@ void GenerateSubobjectSchema(UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FS
 		Writer.Outdent().Print("}");
 	}
 
+	// Use the max number of dynamically attached subobjects per class to generate
+	// that many schema components for this subobject.
+	const uint32 DynamicComponentsPerClass = GetDefault<USpatialGDKSettings>()->MaxDynamicallyAttachedSubobjectsPerClass;
+
+	FSubobjectSchemaData SubobjectSchemaData;
+
+	for (uint32 i = 1; i <= DynamicComponentsPerClass; i++)
+	{
+		FDynamicSubobjectSchemaData DynamicSubobjectComponents;
+
+		for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
+		{
+			// Since it is possible to replicate subobjects which have no replicated properties.
+			// We need to generate a schema component for every subobject. So if we have no replicated
+			// properties, we only don't generate a schema component if we are REP_SingleClient
+			if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
+			{
+				continue;
+			}
+
+			Writer.PrintNewLine();
+
+			Worker_ComponentId ComponentId = IdGenerator.Next();
+			FString ComponentName = SchemaReplicatedDataName(Group, Class) + TEXT("Dynamic") + FString::FromInt(i);
+
+			Writer.Printf("component {0} {", *ComponentName);
+			Writer.Indent();
+			Writer.Printf("id = {0};", ComponentId);
+			Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, Class));
+			Writer.Outdent().Print("}");
+
+			DynamicSubobjectComponents.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
+		}
+
+		if (HandoverData.Num() > 0)
+		{
+			Writer.PrintNewLine();
+
+			Worker_ComponentId ComponentId = IdGenerator.Next();
+			FString ComponentName = SchemaHandoverDataName(Class) + TEXT("Dynamic") + FString::FromInt(i);
+
+			Writer.Printf("component {0} {", *ComponentName);
+			Writer.Indent();
+			Writer.Printf("id = {0};", ComponentId);
+			Writer.Printf("data {0};", *SchemaHandoverDataName(Class));
+			Writer.Outdent().Print("}");
+
+			DynamicSubobjectComponents.SchemaComponents[SCHEMA_Handover] = ComponentId;
+		}
+
+		SubobjectSchemaData.DynamicSubobjectComponents.Add(MoveTemp(DynamicSubobjectComponents));
+	}
+
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
+
+	SubobjectClassPathToSchema.Add(Class->GetPathName(), SubobjectSchemaData);
 }
 
 void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath)
 {
-	const FSchemaData* const SchemaData = ClassPathToSchemaData.Find(Class->GetPathName());
+	const FActorSchemaData* const SchemaData = ActorClassPathToSchema.Find(Class->GetPathName());
 
 	FCodeWriter Writer;
 
@@ -322,7 +367,7 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 	Writer.PrintNewLine();
 	Writer.Printf("import \"unreal/gdk/core_types.schema\";");
 
-	FSchemaData ActorSchemaData;
+	FActorSchemaData ActorSchemaData;
 	ActorSchemaData.GeneratedSchemaName = ClassPathToSchemaName[Class->GetPathName()];
 
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
@@ -333,6 +378,20 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 		if (RepData[Group].Num() == 0)
 		{
 			continue;
+		}
+
+		// If this class is an Actor, it MUST have bTearOff at field ID 3.	
+		if (Group == REP_MultiClient && Class->IsChildOf<AActor>())
+		{
+			TSharedPtr<FUnrealProperty> ExpectedReplicatesPropData = RepData[Group].FindRef(SpatialConstants::ACTOR_TEAROFF_ID);
+			const UProperty* ReplicatesProp = AActor::StaticClass()->FindPropertyByName("bTearOff");
+
+			if (!(ExpectedReplicatesPropData.IsValid() && ExpectedReplicatesPropData->Property == ReplicatesProp))
+			{
+				UE_LOG(LogSchemaGenerator, Error, TEXT("Did not find Actor->bTearOff at field %d for class %s. Modifying the base Actor class is currently not supported."),
+					SpatialConstants::ACTOR_TEAROFF_ID,
+					*Class->GetName());
+			}
 		}
 
 		Worker_ComponentId ComponentId = 0;
@@ -400,24 +459,26 @@ void GenerateActorSchema(FComponentIdGenerator& IdGenerator, UClass* Class, TSha
 
 	GenerateSubobjectSchemaForActor(IdGenerator, Class, TypeInfo, SchemaPath, ActorSchemaData);
 
-	ClassPathToSchemaData.Add(Class->GetPathName(), ActorSchemaData);
+	ActorClassPathToSchema.Add(Class->GetPathName(), ActorSchemaData);
 
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
 }
 
-FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex)
+FActorSpecificSubobjectSchemaData GenerateSchemaForStaticallyAttachedSubobject(FCodeWriter& Writer, FComponentIdGenerator& IdGenerator, FString PropertyName, TSharedPtr<FUnrealType>& TypeInfo, UClass* ComponentClass, UClass* ActorClass, int MapIndex)
 {
-	const FSchemaData* const SchemaData = ClassPathToSchemaData.Find(ActorClass->GetPathName());
-	const FSubobjectSchemaData* const SubobjectSchemaData = SchemaData ? SchemaData->SubobjectData.Find(MapIndex) : nullptr;
+	const FActorSpecificSubobjectSchemaData* const SubobjectSchemaData = nullptr;
 	
 	FUnrealFlatRepData RepData = GetFlatRepData(TypeInfo);
 
-	FSubobjectSchemaData SubobjectData;
+	FActorSpecificSubobjectSchemaData SubobjectData;
 	SubobjectData.ClassPath = ComponentClass->GetPathName();
 
 	for (EReplicatedPropertyGroup Group : GetAllReplicatedPropertyGroups())
 	{
-		if (RepData[Group].Num() == 0)
+		// Since it is possible to replicate subobjects which have no replicated properties.
+		// We need to generate a schema component for every subobject. So if we have no replicated
+		// properties, we only don't generate a schema component if we are REP_SingleClient
+		if (RepData[Group].Num() == 0 && Group == REP_SingleClient)
 		{
 			continue;
 		}
@@ -438,7 +499,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		Writer.Printf("component {0} {", *ComponentName);
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
-		Writer.Printf("data {0};", *SchemaReplicatedDataName(Group, ComponentClass));
+		Writer.Printf("data unreal.generated.{0};", *SchemaReplicatedDataName(Group, ComponentClass));
 		Writer.Outdent().Print("}");
 
 		SubobjectData.SchemaComponents[PropertyGroupToSchemaComponentType(Group)] = ComponentId;
@@ -463,7 +524,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 		Writer.Printf("component {0} {", *(PropertyName + TEXT("Handover")));
 		Writer.Indent();
 		Writer.Printf("id = {0};", ComponentId);
-		Writer.Printf("data {0};", *SchemaHandoverDataName(ComponentClass));
+		Writer.Printf("data unreal.generated.{0};", *SchemaHandoverDataName(ComponentClass));
 		Writer.Outdent().Print("}");
 
 		SubobjectData.SchemaComponents[ESchemaComponentType::SCHEMA_Handover] = ComponentId;
@@ -472,7 +533,7 @@ FSubobjectSchemaData GenerateSubobjectSpecificSchema(FCodeWriter& Writer, FCompo
 	return SubobjectData;
 }
 
-void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath, FSchemaData& ActorSchemaData)
+void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass* ActorClass, TSharedPtr<FUnrealType> TypeInfo, FString SchemaPath, FActorSchemaData& ActorSchemaData)
 {
 	FCodeWriter Writer;
 
@@ -484,7 +545,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 	Writer.PrintNewLine();
 
-	GenerateActorIncludes(Writer, TypeInfo);
+	GenerateSubobjectSchemaForActorIncludes(Writer, TypeInfo);
 
 	FSubobjectMap Subobjects = GetAllSubobjects(TypeInfo);
 
@@ -492,16 +553,15 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 
 	for (auto& It : Subobjects)
 	{
-		uint32 Offset = It.Key;
 		TSharedPtr<FUnrealType>& SubobjectTypeInfo = It.Value;
 		UClass* SubobjectClass = Cast<UClass>(SubobjectTypeInfo->Type);
 
-		FSubobjectSchemaData SubobjectData;
+		FActorSpecificSubobjectSchemaData SubobjectData;
 
-		if (IsReplicatedSubobject(SubobjectTypeInfo) && SchemaGeneratedClasses.Contains(SubobjectClass))
+		if (SchemaGeneratedClasses.Contains(SubobjectClass))
 		{
 			bHasComponents = true;
-			SubobjectData = GenerateSubobjectSpecificSchema(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, Offset);
+			SubobjectData = GenerateSchemaForStaticallyAttachedSubobject(Writer, IdGenerator, UnrealNameToSchemaComponentName(SubobjectTypeInfo->Name.ToString()), SubobjectTypeInfo, SubobjectClass, ActorClass, 0);
 		}
 		else
 		{
@@ -509,8 +569,9 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 		}
 
 		SubobjectData.Name = SubobjectTypeInfo->Name;
-		ActorSchemaData.SubobjectData.Add(Offset, SubobjectData);
-		ClassPathToSchemaData.Add(SubobjectClass->GetPathName(), FSchemaData());
+		uint32 SubobjectOffset = SubobjectData.SchemaComponents[SCHEMA_Data];
+		check(SubobjectOffset != 0);
+		ActorSchemaData.SubobjectData.Add(SubobjectOffset, SubobjectData);
 	}
 
 	if (bHasComponents)
@@ -519,11 +580,9 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 	}
 }
 
-void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInfo)
+void GenerateSubobjectSchemaForActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInfo)
 {
 	TSet<UStruct*> AlreadyImported;
-
-	bool bImportCoreTypes = false;
 
 	for (auto& PropertyPair : TypeInfo->Properties)
 	{
@@ -536,11 +595,8 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 		{
 			UObject* Value = PropertyTypeInfo->Object;
 
-			if (Value != nullptr && !Value->IsEditorOnly() && IsReplicatedSubobject(PropertyTypeInfo))
+			if (Value != nullptr && !Value->IsEditorOnly())
 			{
-				// Only include core types if a subobject has any RPCs
-				bImportCoreTypes |= PropertyTypeInfo->RPCs.Num() > 0;
-
 				UClass* Class = Value->GetClass();
 				if (!AlreadyImported.Contains(Class) && SchemaGeneratedClasses.Contains(Class))
 				{
@@ -549,10 +605,5 @@ void GenerateActorIncludes(FCodeWriter& Writer, TSharedPtr<FUnrealType>& TypeInf
 				}
 			}
 		}
-	}
-
-	if (bImportCoreTypes)
-	{
-		Writer.Printf("import \"unreal/gdk/core_types.schema\";");
 	}
 }

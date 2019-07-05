@@ -28,7 +28,7 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate CacheEntityIDsDelegate;
-	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](Worker_ReserveEntityIdsResponseOp& Op)
+	CacheEntityIDsDelegate.BindLambda([EntitiesToReserve, this](const Worker_ReserveEntityIdsResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -64,16 +64,14 @@ void UEntityPool::ReserveEntityIDs(int32 EntitiesToReserve)
 
 		ReservedEntityIDRanges.Add(NewEntityRange);
 
-		TWeakObjectPtr<UEntityPool> WeakEntityPoolPtr = this;
 		FTimerHandle ExpirationTimer;
-		TimerManager->SetTimer(ExpirationTimer, [WeakEntityPoolPtr, ExpiringEntityRangeId = NewEntityRange.EntityRangeId]()
+		TWeakObjectPtr<UEntityPool> WeakThis(this);
+		TimerManager->SetTimer(ExpirationTimer, [WeakThis, ExpiringEntityRangeId = NewEntityRange.EntityRangeId]()
 		{
-			if (!WeakEntityPoolPtr.IsValid())
+			if (UEntityPool* Pool = WeakThis.Get())
 			{
-				return;
+				Pool->OnEntityRangeExpired(ExpiringEntityRangeId);
 			}
-
-			WeakEntityPoolPtr->OnEntityRangeExpired(ExpiringEntityRangeId);
 		}, SpatialConstants::ENTITY_RANGE_EXPIRATION_INTERVAL_SECONDS, false);
 
 		bIsAwaitingResponse = false;

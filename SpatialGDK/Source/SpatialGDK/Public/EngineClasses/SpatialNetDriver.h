@@ -26,6 +26,7 @@ class USpatialWorkerConnection;
 class USpatialDispatcher;
 class USpatialSender;
 class USpatialReceiver;
+class UActorGroupManager;
 class USpatialClassInfoManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
@@ -51,6 +52,7 @@ public:
 	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
 
 	// Begin UObject Interface
+	virtual void BeginDestroy() override;
 	virtual void PostInitProperties() override;
 	// End UObject Interface
 
@@ -66,6 +68,7 @@ public:
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
+	virtual void Shutdown() override;
 	// End UNetDriver interface.
 
 	virtual void OnOwnerUpdated(AActor* Actor);
@@ -111,6 +114,8 @@ public:
 	UPROPERTY()
 	USpatialReceiver* Receiver;
 	UPROPERTY()
+	UActorGroupManager* ActorGroupManager;
+	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()
 	UGlobalStateManager* GlobalStateManager;
@@ -129,11 +134,17 @@ public:
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 
+	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
+
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
+
+#if !UE_BUILD_SHIPPING
+	int32 GetConsiderListSize() const { return ConsiderListSize; }
+#endif
 
 	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
 	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
@@ -155,6 +166,11 @@ public:
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
 
+#if WITH_EDITOR
+	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
+	int32 PlayInEditorID;
+#endif
+
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
@@ -169,7 +185,6 @@ private:
 	FString SnapshotToLoad;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
-
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
@@ -205,4 +220,15 @@ private:
 	int NextRPCIndex;
 
 	float TimeWhenPositionLastUpdated;
+
+	// Counter for giving each connected client a unique IP address to satisfy Unreal's requirement of
+	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
+	// The GDK does not use this address for any networked purpose, only bookkeeping.
+	uint32 UniqueClientIpAddressCounter = 0;
+
+	FDelegateHandle SpatialDeploymentStartHandle;
+
+#if !UE_BUILD_SHIPPING
+	int32 ConsiderListSize = 0;
+#endif
 };

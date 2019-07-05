@@ -2,12 +2,12 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 
-#include "EngineGlobals.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/ChildConnection.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
+#include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
 #include "Net/DataReplication.h"
@@ -15,25 +15,31 @@
 #include "SocketSubsystem.h"
 #include "UObject/UObjectIterator.h"
 
-#include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/GlobalStateManager.h"
-#include "Interop/SnapshotManager.h"
-#include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialPlayerSpawner.h"
-#include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialSender.h"
-#include "Interop/SpatialDispatcher.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/GlobalStateManager.h"
+#include "Interop/SnapshotManager.h"
+#include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialDispatcher.h"
+#include "Interop/SpatialPlayerSpawner.h"
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
+#include "Utils/ActorGroupManager.h"
 #include "Utils/EngineVersionCheck.h"
 #include "Utils/EntityPool.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
+
+#if WITH_EDITOR
+#include "SpatialGDKServicesModule.h"
+#endif
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -98,28 +104,59 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		bPersistSpatialConnection = true;
 	}
 
+	// Initialize ActorGroupManager as it is a depdency of ClassInfoManager (see below)
+	ActorGroupManager = NewObject<UActorGroupManager>();
+	ActorGroupManager->Init();
+
 	// Initialize ClassInfoManager here because it needs to load SchemaDatabase.
 	// We shouldn't do that in CreateAndInitializeCoreClasses because it is called
 	// from OnConnectedToSpatialOS callback which could be executed with the async
 	// loading thread suspended (e.g. when resuming rendering thread), in which
 	// case we'll crash upon trying to load SchemaDatabase.
 	ClassInfoManager = NewObject<USpatialClassInfoManager>();
-	ClassInfoManager->Init(this);
+
+	// If it fails to load, don't attempt to connect to spatial.
+	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
+	{
+		return false;
+	}
+
+	if (!bInitAsClient)
+	{
+		GatherClientInterestDistances();
+	}
+
+#if WITH_EDITOR
+	PlayInEditorID = GPlayInEditorID;
+
+	// If we're launching in PIE then ensure there is a deployment running before connecting.
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+
+	// Wait for a running local deployment before connecting. If the deployment has already started then just connect.
+	if (!LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping() || LocalDeploymentManager->IsDeploymentStarting())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Waiting for local SpatialOS deployment to start before connecting..."));
+		SpatialDeploymentStartHandle = LocalDeploymentManager->OnDeploymentStart.AddLambda([WeakThis = TWeakObjectPtr<USpatialNetDriver>(this), URL]
+		{
+			if (!WeakThis.IsValid())
+			{
+				return;
+			}
+			UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
+
+			WeakThis.Get()->InitiateConnectionToSpatialOS(URL);
+			FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+			GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(WeakThis.Get()->SpatialDeploymentStartHandle);
+		});
+
+		return true;
+	}
+#endif
 
 	InitiateConnectionToSpatialOS(URL);
 
 	return true;
-}
-
-void USpatialNetDriver::PostInitProperties()
-{
-	Super::PostInitProperties();
-
-	if (!HasAnyFlags(RF_ClassDefaultObject))
-	{
-		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
-		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
-	}
 }
 
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
@@ -161,11 +198,11 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 		Connection->LocatorConfig.PlayerIdentityToken = URL.GetOption(TEXT("playeridentity="), TEXT(""));
 		Connection->LocatorConfig.LoginToken = URL.GetOption(TEXT("login="), TEXT(""));
 		Connection->LocatorConfig.UseExternalIp = true;
-		Connection->LocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType();
+		Connection->LocatorConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
 	}
 	else // Using Receptionist
 	{
-		Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType();
+		Connection->ReceptionistConfig.WorkerType = GameInstance->GetSpatialWorkerType().ToString();
 
 		// Check for overrides in the travel URL.
 		if (!URL.Host.IsEmpty() && URL.Host.Compare(SpatialConstants::LOCAL_HOST) != 0)
@@ -211,6 +248,7 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 
 	if (IsServer())
 	{
+		Sender->CreateServerWorkerEntity();
 		HandleOngoingServerTravel();
 	}
 }
@@ -261,7 +299,7 @@ void USpatialNetDriver::CreateAndInitializeCoreClasses()
 	PackageMap = Cast<USpatialPackageMapClient>(GetSpatialOSNetConnection()->PackageMap);
 	PackageMap->Init(this);
 	Dispatcher->Init(this);
-	Sender->Init(this);
+	Sender->Init(this, &TimerManager);
 	Receiver->Init(this, &TimerManager);
 	GlobalStateManager->Init(this, &TimerManager);
 	SnapshotManager->Init(this);
@@ -515,6 +553,34 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 #endif // WITH_SERVER_CODE
 }
 
+void USpatialNetDriver::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+	// If we are still connected, cleanup our corresponding worker entity if it exists.
+	if (Connection != nullptr && WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		Connection->SendDeleteEntityRequest(WorkerEntityId);
+	}
+
+#if WITH_EDITOR
+	// Ensure our OnDeploymentStart delegate is removed when the net driver is shut down.
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+#endif
+}
+
+void USpatialNetDriver::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	if (!HasAnyFlags(RF_ClassDefaultObject))
+	{
+		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
+		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
+	}
+}
+
 bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const
 {
 	//In our case, the connection is not specific to a client. Thus, it's not relevant whether the level is initialized.
@@ -566,8 +632,27 @@ void USpatialNetDriver::NotifyActorDestroyed(AActor* ThisActor, bool IsSeamlessT
 	RenamedStartupActors.Remove(ThisActor->GetFName());
 }
 
+void USpatialNetDriver::Shutdown()
+{
+	if (!IsServer())
+	{
+		// Notify the server that we're disconnecting so it can clean up our actors.
+		if (USpatialNetConnection* SpatialNetConnection = Cast<USpatialNetConnection>(ServerConnection))
+		{
+			SpatialNetConnection->ClientNotifyClientHasQuit();
+		}
+	}
+
+	Super::Shutdown();
+}
+
 void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 {
+	if (!IsServer())
+	{
+		return;
+	}
+
 	// If PackageMap doesn't exist, we haven't connected yet, which means
 	// we don't need to update the interest at this point
 	if (PackageMap == nullptr)
@@ -588,6 +673,8 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 	}
 
 	Channel->MarkInterestDirty();
+
+	Channel->ServerProcessOwnershipChange();
 }
 
 //SpatialGDK: Functions in the ifdef block below are modified versions of the UNetDriver:: implementations.
@@ -884,7 +971,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						continue;
 					}
 
-					Channel = CreateSpatialActorChannel(Actor, Cast<USpatialNetConnection>(InConnection)); 
+					Channel = CreateSpatialActorChannel(Actor, Cast<USpatialNetConnection>(InConnection));
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
 						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
@@ -1069,6 +1156,10 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		DebugRelevantActors = false;
 	}
 
+#if !UE_BUILD_SHIPPING
+	ConsiderListSize = FinalSortedCount;
+#endif
+
 	return Updated;
 #else
 	return 0;
@@ -1112,10 +1203,10 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		return;
 	}
 
-	USpatialNetConnection* NetConnection = ServerConnection ? Cast<USpatialNetConnection>(ServerConnection) : GetSpatialOSNetConnection();
+	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
 	if (NetConnection == nullptr)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction before connection was established"));
+		UE_LOG(LogSpatialOSNetDriver, Error, TEXT("Attempted to call ProcessRemoteFunction but no SpatialOSNetConnection existed. Has this worker established a connection?"));
 		return;
 	}
 
@@ -1127,6 +1218,15 @@ void USpatialNetDriver::ProcessRemoteFunction(
 	if (!Actor->GetNetConnection() && !(Function->FunctionFlags & (FUNC_NetCrossServer | FUNC_NetMulticast) && IsServer()))
 	{
 		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("No owning connection for actor %s. Function %s will not be processed."), *Actor->GetName(), *Function->GetName());
+		return;
+	}
+
+	// The RPC might have been called by an actor directly, or by a subobject on that actor
+	UObject* CallingObject = SubObject ? SubObject : Actor;
+
+	if (CallingObject->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Trying to call RPC %s on object %s (class %s) that isn't supported by Spatial. This RPC will be dropped."), *Function->GetName(), *CallingObject->GetName(), *CallingObject->GetClass()->GetName());
 		return;
 	}
 
@@ -1162,9 +1262,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 			}
 		}
 	}
-
-	// The RPC might have been called by an actor directly, or by a subobject on that actor
-	UObject* CallingObject = SubObject ? SubObject : Actor;
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
@@ -1229,6 +1326,11 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
+	if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs && Sender != nullptr)
+	{
+		Sender->FlushPackedUnreliableRPCs();
+	}
+
 	// Tick the timer manager
 	{
 		TimerManager.Tick(DeltaTime);
@@ -1243,9 +1345,13 @@ USpatialNetConnection * USpatialNetDriver::GetSpatialOSNetConnection() const
 	{
 		return Cast<USpatialNetConnection>(ServerConnection);
 	}
-	else
+	else if (ClientConnections.Num() > 0)
 	{
 		return Cast<USpatialNetConnection>(ClientConnections[0]);
+	}
+	else
+	{
+		return nullptr;
 	}
 }
 
@@ -1258,8 +1364,10 @@ USpatialNetConnection* USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, FUn
 
 	// We create a "dummy" connection that corresponds to this player. This connection won't transmit any data.
 	// We may not need to keep it in the future, but for now it looks like path of least resistance is to have one UPlayer (UConnection) per player.
+	// We use an internal counter to give each client a unique IP address for Unreal's internal bookkeeping.
 	ISocketSubsystem* SocketSubsystem = GetSocketSubsystem();
-	TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr();
+	TSharedRef<FInternetAddr> FromAddr = SocketSubsystem->CreateInternetAddr(UniqueClientIpAddressCounter);
+	UniqueClientIpAddressCounter++;
 
 	SpatialConnection->InitRemoteConnection(this, nullptr, InUrl, *FromAddr, USOCK_Open);
 	Notify->NotifyAcceptedConnection(SpatialConnection);
@@ -1538,6 +1646,11 @@ USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_Entity
 
 USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection)
 {
+	if (InConnection == nullptr)
+	{
+		return nullptr;
+	}
+
 	USpatialActorChannel* Channel = nullptr;
 
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))

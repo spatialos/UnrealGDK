@@ -11,18 +11,81 @@
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "SpatialGDKSettings.h"
 #include "SpatialConstants.h"
+#include "UObject/UObjectIterator.h"
 
 DEFINE_LOG_CATEGORY(LogInterestFactory);
 
+namespace
+{
+static TMap<UClass*, float> ClientInterestDistancesSquared;
+}
+
 namespace SpatialGDK
 {
+void GatherClientInterestDistances()
+{
+	ClientInterestDistancesSquared.Empty();
+
+	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
+	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
+
+	// Gather ClientInterestDistance settings, and add any larger than the default radius to a list for processing.
+	TMap<UClass*, float> DiscoveredInterestDistancesSquared;
+	for (TObjectIterator<UClass> It; It; ++It)
+	{
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		{
+			continue;
+		}
+		if (!It->IsChildOf<AActor>())
+		{
+			continue;
+		}
+
+		const AActor* IteratedDefaultActor = Cast<AActor>(It->GetDefaultObject());
+		if (IteratedDefaultActor->NetCullDistanceSquared > DefaultDistanceSquared)
+		{
+			DiscoveredInterestDistancesSquared.Add(*It, IteratedDefaultActor->NetCullDistanceSquared);
+		}
+	}
+
+	// Sort the map for iteration so that parent classes are seen before derived classes. This lets us skip
+	// derived classes that have a smaller interest distance than a parent class.
+	DiscoveredInterestDistancesSquared.KeySort([](const UClass& LHS, const UClass& RHS) {
+		return
+			LHS.IsChildOf(&RHS) ? -1 :
+			RHS.IsChildOf(&LHS) ? 1 :
+			0;
+	});
+
+	// If an actor's interest distance is smaller than that of a parent class, there's no need to add interest for that actor.
+	// Can't do inline removal since the sorted order is only guaranteed when the map isn't changed.
+	for (const auto& ActorInterestDistance : DiscoveredInterestDistancesSquared)
+	{
+		bool bShouldAdd = true;
+		for (auto& OptimizedInterestDistance : ClientInterestDistancesSquared)
+		{
+			if (ActorInterestDistance.Key->IsChildOf(OptimizedInterestDistance.Key) && ActorInterestDistance.Value <= OptimizedInterestDistance.Value)
+			{
+				// No need to add this interest distance since it's captured in the optimized map already.
+				bShouldAdd = false;
+				break;
+			}
+		}
+		if (bShouldAdd)
+		{
+			ClientInterestDistancesSquared.Add(ActorInterestDistance.Key, ActorInterestDistance.Value);
+		}
+	}
+}
 
 InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialNetDriver* InNetDriver)
 	: Actor(InActor)
 	, Info(InInfo)
 	, NetDriver(InNetDriver)
 	, PackageMap(InNetDriver->PackageMap)
-{}
+{
+}
 
 Worker_ComponentData InterestFactory::CreateInterestData()
 {
@@ -69,7 +132,7 @@ Interest InterestFactory::CreateActorInterest()
 {
 	Interest NewInterest;
 
-	QueryConstraint DefinedConstraints = CreateDefinedConstraints();
+	QueryConstraint DefinedConstraints = CreateSystemDefinedConstraints();
 
 	if (!DefinedConstraints.IsValid())
 	{
@@ -93,7 +156,7 @@ Interest InterestFactory::CreateActorInterest()
 
 Interest InterestFactory::CreatePlayerOwnedActorInterest()
 {
-	QueryConstraint DefinedConstraints = CreateDefinedConstraints();
+	QueryConstraint DefinedConstraints = CreateSystemDefinedConstraints();
 
 	// Servers only need the defined constraints
 	Query ServerQuery;
@@ -140,29 +203,9 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 	return NewInterest;
 }
 
-QueryConstraint InterestFactory::CreateDefinedConstraints()
-{
-	QueryConstraint SystemDefinedConstraints = CreateSystemDefinedConstraints();
-	QueryConstraint UserDefinedConstraints = CreateUserDefinedConstraints();
-
-	QueryConstraint DefinedConstraints;
-
-	if (SystemDefinedConstraints.IsValid())
-	{
-		DefinedConstraints.OrConstraint.Add(SystemDefinedConstraints);
-	}
-
-	if (UserDefinedConstraints.IsValid())
-	{
-		DefinedConstraints.OrConstraint.Add(UserDefinedConstraints);
-	}
-
-	return DefinedConstraints;
-}
-
 QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 {
-	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraint();
+	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraints();
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint();
 	QueryConstraint SingletonConstraint = CreateSingletonConstraint();
 
@@ -186,19 +229,46 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 	return SystemDefinedConstraints;
 }
 
-QueryConstraint InterestFactory::CreateUserDefinedConstraints()
+QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 {
-	return QueryConstraint{};
-}
+	// Checkout Radius constraints are defined by the ClientInterestDistance property on actors.
+	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
+	//   - ClientInterestDistance on AActor is used to define the default checkout radius with no other constraints.
+	//   - ClientInterestDistance on other actor types is used to define additional constraints if needed.
+	//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
+	//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
+	//   - Other than the default from AActor, all radius constraints also include Component constraints to
+	//     capture specific types, including all derived types of that actor.
 
-QueryConstraint InterestFactory::CreateCheckoutRadiusConstraint()
-{
-	QueryConstraint CheckoutRadiusConstraint;
+	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
+	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
 
-	float CheckoutRadius = Actor->CheckoutRadius / 100.0f; // Convert to meters
-	CheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadius };
+	QueryConstraint CheckoutRadiusConstraints;
 
-	return CheckoutRadiusConstraint;
+	// Use AActor's ClientInterestDistance for the default radius (all actors in that radius will be checked out)
+	const float DefaultCheckoutRadiusMeters = FMath::Sqrt(DefaultDistanceSquared / (100.0f * 100.0f));
+	QueryConstraint DefaultCheckoutRadiusConstraint;
+	DefaultCheckoutRadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ DefaultCheckoutRadiusMeters };
+	CheckoutRadiusConstraints.OrConstraint.Add(DefaultCheckoutRadiusConstraint);
+
+	// For every interest distance that we still want, add a constraint with the distance for the actor type and all of its derived types.
+	for (const auto& InterestDistanceSquared: ClientInterestDistancesSquared)
+	{
+		QueryConstraint CheckoutRadiusConstraint;
+
+		QueryConstraint RadiusConstraint;
+		const float CheckoutRadiusMeters = FMath::Sqrt(InterestDistanceSquared.Value / (100.0f * 100.0f));
+		RadiusConstraint.RelativeCylinderConstraint = RelativeCylinderConstraint{ CheckoutRadiusMeters };
+		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
+
+		QueryConstraint ActorTypeConstraint;
+		AddTypeHierarchyToConstraint(InterestDistanceSquared.Key, ActorTypeConstraint);
+		CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
+
+		CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
+	}
+
+	return CheckoutRadiusConstraints;
 }
 
 QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint()
@@ -269,6 +339,30 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 	OutConstraint.OrConstraint.Add(EntityIdConstraint);
 }
 
+void InterestFactory::AddTypeHierarchyToConstraint(const UClass* BaseType, QueryConstraint& OutConstraint)
+{
+	const UClass* AuthoritativeBaseType = BaseType->GetAuthoritativeClass();
+
+	check(NetDriver && NetDriver->ClassInfoManager && NetDriver->ClassInfoManager->SchemaDatabase);
+	const USchemaDatabase* SchemaDatabase = NetDriver->ClassInfoManager->SchemaDatabase;
+	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	{
+		UClass* Class = *ClassIt;
+		check(Class);
+		if (Class->IsChildOf(AuthoritativeBaseType))
+		{
+			const uint32 ComponentId = SchemaDatabase->GetComponentIdForClass(*Class);
+			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+			{
+				QueryConstraint ComponentTypeConstraint;
+				ComponentTypeConstraint.ComponentConstraint = ComponentId;
+				OutConstraint.OrConstraint.Add(ComponentTypeConstraint);
+			}
+		}
+	}
+	check(OutConstraint.IsValid());
+}
+
 QueryConstraint InterestFactory::CreateLevelConstraints()
 {
 	QueryConstraint LevelConstraint;
@@ -287,7 +381,7 @@ QueryConstraint InterestFactory::CreateLevelConstraints()
 	// Create component constraints for every loaded sublevel
 	for (const auto& LevelPath : LoadedLevels)
 	{
-		const uint32 ComponentId = NetDriver->ClassInfoManager->SchemaDatabase->GetComponentIdFromLevelPath(LevelPath.ToString());
+		const uint32 ComponentId = NetDriver->ClassInfoManager->GetComponentIdFromLevelPath(LevelPath.ToString());
 		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			QueryConstraint SpecificLevelConstraint;

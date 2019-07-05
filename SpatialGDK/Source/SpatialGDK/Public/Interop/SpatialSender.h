@@ -7,6 +7,7 @@
 #include "EngineClasses/SpatialNetBitWriter.h"
 #include "Interop/SpatialClassInfoManager.h"
 #include "Schema/RPCPayload.h"
+#include "TimerManager.h"
 #include "Utils/RepDataUtils.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -56,6 +57,17 @@ struct FReliableRPCForRetry
 	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
 };
 
+struct FPendingUnreliableRPC
+{
+	FPendingUnreliableRPC() = default;
+	FPendingUnreliableRPC(FPendingUnreliableRPC&& Other);
+
+	uint32 Offset;
+	Schema_FieldId Index;
+	TArray<uint8> Data;
+	Schema_EntityId Entity;
+};
+
 // TODO: Clear TMap entries when USpatialActorChannel gets deleted - UNR:100
 // care for actor getting deleted before actor channel
 using FChannelObjectPair = TPair<TWeakObjectPtr<USpatialActorChannel>, TWeakObjectPtr<UObject>>;
@@ -74,14 +86,18 @@ class SPATIALGDK_API USpatialSender : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* InNetDriver);
+	void Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimerManager);
 
 	// Actor Updates
 	void SendComponentUpdates(UObject* Object, const FClassInfo& Info, USpatialActorChannel* Channel, const FRepChangeState* RepChanges, const FHandoverChangeState* HandoverChanges);
-	void SendComponentInterest(AActor* Actor, Worker_EntityId EntityId, bool bNetOwned);
+	void SendComponentInterestForActor(USpatialActorChannel* Channel, Worker_EntityId EntityId, bool bNetOwned);
+	void SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	void SendRPC(TSharedRef<FPendingRPCParams> Params);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
+	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId);
+	void SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info);
+	void SendRemoveComponent(Worker_EntityId EntityId, const FClassInfo& Info);
 
 	void SendCreateEntityRequest(USpatialActorChannel* Channel);
 	void SendDeleteEntityRequest(Worker_EntityId EntityId);
@@ -103,6 +119,14 @@ public:
 	void UpdateInterestComponent(AActor* Actor);
 
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
+
+	void FlushPackedUnreliableRPCs();
+
+	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info);
+
+	// Creates an entity authoritative on this server worker, ensuring it will be able to receive updates for the GSM.
+	void CreateServerWorkerEntity(int AttemptCounter = 1);
+
 private:
 	// Actor Lifecycle
 	Worker_RequestId CreateEntity(USpatialActorChannel* Channel);
@@ -118,9 +142,10 @@ private:
 
 	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, TArray<uint8>& OutPayload, int ReliableRPCIndex);
 	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
-	Worker_ComponentUpdate CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
+	Worker_ComponentUpdate CreateUnreliableRPCUpdate(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject, int& OutRPCPayloadSize);
+	void AddPendingUnreliableRPC(UObject* TargetObject, UFunction* Function, void* Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject, int& OutRPCPayloadSize);
 
-	TArray<Worker_InterestOverride> CreateComponentInterest(AActor* Actor, bool bIsNetOwned);
+	TArray<Worker_InterestOverride> CreateComponentInterestForActor(USpatialActorChannel* Channel, bool bIsNetOwned);
 
 	RPCPayload CreateRPCPayloadFromParams(FPendingRPCParams& RPCParams);
 
@@ -143,6 +168,8 @@ private:
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 
+	FTimerManager* TimerManager;
+
 	FChannelToHandleToUnresolved RepPropertyToUnresolved;
 	FOutgoingRepUpdates RepObjectToUnresolved;
 
@@ -159,4 +186,6 @@ private:
 	FUpdatesQueuedUntilAuthority UpdatesQueuedUntilAuthorityMap;
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
+
+	TMap<Worker_EntityId_Key, TArray<FPendingUnreliableRPC>> UnreliableRPCs;
 };

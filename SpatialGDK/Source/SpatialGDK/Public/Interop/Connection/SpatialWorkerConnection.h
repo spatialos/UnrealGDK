@@ -7,6 +7,7 @@
 
 #include "Interop/Connection/ConnectionConfig.h"
 #include "Interop/Connection/OutgoingMessages.h"
+#include "SpatialGDKSettings.h"
 #include "UObject/WeakObjectPtr.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
@@ -46,6 +47,8 @@ public:
 	Worker_RequestId SendReserveEntityIdsRequest(uint32_t NumOfEntities);
 	Worker_RequestId SendCreateEntityRequest(TArray<Worker_ComponentData>&& Components, const Worker_EntityId* EntityId);
 	Worker_RequestId SendDeleteEntityRequest(Worker_EntityId EntityId);
+	void SendAddComponent(Worker_EntityId EntityId, Worker_ComponentData* ComponentData);
+	void SendRemoveComponent(Worker_EntityId EntityId, Worker_ComponentId ComponentId);
 	void SendComponentUpdate(Worker_EntityId EntityId, const Worker_ComponentUpdate* ComponentUpdate);
 	Worker_RequestId SendCommandRequest(Worker_EntityId EntityId, const Worker_CommandRequest* Request, uint32_t CommandId);
 	void SendCommandResponse(Worker_RequestId RequestId, const Worker_CommandResponse* Response);
@@ -85,6 +88,10 @@ private:
 	void InitializeOpsProcessingThread();
 	void QueueLatestOpList();
 	void ProcessOutgoingMessages();
+
+	void StartDevelopmentAuth(FString DevAuthToken);
+	static void OnPlayerIdentityToken(void* UserData, const Worker_Alpha_PlayerIdentityTokenResponse* PIToken);
+	static void OnLoginTokens(void* UserData, const Worker_Alpha_LoginTokensResponse* LoginTokens);
 
 	template <typename T, typename... ArgsType>
 	void QueueOutgoingMessage(ArgsType&&... Args);
