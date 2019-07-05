@@ -1026,26 +1026,20 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 		{
 			const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 			UFunction* Function = ClassInfo.RPCs[Payload.Index];
-
-			// Apply if possible, queue otherwise
 			const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 			check(RPCInfo);
+
 			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, RPCInfo->Type))
 			{
-				if (!ApplyRPC(Params))
+				// Apply if possible, queue otherwise
+				if (ApplyRPC(Params))
 				{
-					QueueIncomingRPC(Params);
+					continue;
 				}
 			}
-			else
-			{
-				QueueIncomingRPC(Params);
-			}
 		}
-		else
-		{
-			QueueIncomingRPC(Params);
-		}
+
+		QueueIncomingRPC(Params);
 	}
 }
 
@@ -1497,12 +1491,6 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 
 void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 {
-	//if (!Params->TargetObject.IsValid())
-	//{
-	//	// Target object was destroyed before the RPC could be (re)sent
-	//	return;
-	//}
-	//UObject* TargetObject = Params->TargetObject.Get();
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{

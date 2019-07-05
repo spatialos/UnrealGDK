@@ -7,7 +7,6 @@
 using namespace SpatialGDK;
 
 FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload, int InReliableRPCIndex /* = 0 */)
-	//: Function(InFunction)
 	: ReliableRPCIndex(InReliableRPCIndex)
 	, ObjectRef(InTargetObjectRef)
 	, Payload(MoveTemp(InPayload))
