@@ -58,7 +58,7 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 					{
 						FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
 
-						if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct))
+						if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct) || bIsInitialData)
 						{
 							AddBytesToSchema(ComponentObject, HandleIterator.Handle, ValueDataWriter);
 						}
