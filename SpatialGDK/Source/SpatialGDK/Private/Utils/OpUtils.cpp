@@ -6,31 +6,37 @@
 namespace SpatialGDK
 {
 
-	void FindFirstOpOfType(const Worker_OpList* InOpList, const Worker_OpType InOpType, Worker_Op** OutOp)
+	void FindFirstOpOfType(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType InOpType, Worker_Op** OutOp)
 	{
-		for (size_t i = 0; i < InOpList->op_count; ++i)
+		for (const Worker_OpList* OpList : InOpLists)
 		{
-			Worker_Op* Op = &InOpList->ops[i];
-
-			if (Op->op_type == InOpType)
+			for (size_t i = 0; i < OpList->op_count; ++i)
 			{
-				*OutOp = Op;
-				return;
+				Worker_Op* Op = &OpList->ops[i];
+
+				if (Op->op_type == InOpType)
+				{
+					*OutOp = Op;
+					return;
+				}
 			}
 		}
 	}
 
-	void FindFirstOpOfTypeForComponent(const Worker_OpList* InOpList, const Worker_OpType InOpType, const Worker_ComponentId InComponentId, Worker_Op** OutOp)
+	void FindFirstOpOfTypeForComponent(const TArray<Worker_OpList*>& InOpLists, const Worker_OpType InOpType, const Worker_ComponentId InComponentId, Worker_Op** OutOp)
 	{
-		for (size_t i = 0; i < InOpList->op_count; ++i)
+		for (const Worker_OpList* OpList : InOpLists)
 		{
-			Worker_Op* Op = &InOpList->ops[i];
-
-			if ((Op->op_type == InOpType) &&
-				GetComponentId(Op) == InComponentId)
+			for (size_t i = 0; i < OpList->op_count; ++i)
 			{
-				*OutOp = Op;
-				return;
+				Worker_Op* Op = &OpList->ops[i];
+
+				if ((Op->op_type == InOpType) &&
+					GetComponentId(Op) == InComponentId)
+				{
+					*OutOp = Op;
+					return;
+				}
 			}
 		}
 	}
