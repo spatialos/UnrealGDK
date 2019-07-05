@@ -161,7 +161,7 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	}
 }
 
-void UGlobalStateManager::OnShutdownComponentUpdate(Worker_ComponentUpdate& Update)
+void UGlobalStateManager::OnShutdownComponentUpdate(const Worker_ComponentUpdate& Update)
 {
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update.schema_type);
 	if (Schema_GetObjectCount(EventsObject, SpatialConstants::SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID) > 0)

@@ -13,8 +13,11 @@ public class SpatialGDKServices : ModuleRules
 			new string[] {
 				"Core",
 				"CoreUObject",
+				"Engine",
 				"EngineSettings",
-				"UnrealEd"
-			});
+				"UnrealEd",
+				"Json",
+				"JsonUtilities"
+            });
 	}
 }

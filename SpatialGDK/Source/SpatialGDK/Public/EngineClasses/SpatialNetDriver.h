@@ -52,6 +52,7 @@ public:
 	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
 
 	// Begin UObject Interface
+	virtual void BeginDestroy() override;
 	virtual void PostInitProperties() override;
 	// End UObject Interface
 
@@ -133,11 +134,17 @@ public:
 	UPROPERTY()
 	ASpatialMetricsDisplay* SpatialMetricsDisplay;
 
+	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
+
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
 	bool IsAuthoritativeDestructionAllowed() const { return bAuthoritativeDestruction; }
 	void StartIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = false; }
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
+
+#if !UE_BUILD_SHIPPING
+	int32 GetConsiderListSize() const { return ConsiderListSize; }
+#endif
 
 	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
 	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
@@ -158,6 +165,11 @@ public:
 	TMap<TWeakObjectPtr<AActor>, FRPCTypeToReliableRPCIdMap> ReliableRPCIdMap;
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
+
+#if WITH_EDITOR
+	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
+	int32 PlayInEditorID;
+#endif
 
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
@@ -213,4 +225,10 @@ private:
 	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
 	// The GDK does not use this address for any networked purpose, only bookkeeping.
 	uint32 UniqueClientIpAddressCounter = 0;
+
+	FDelegateHandle SpatialDeploymentStartHandle;
+
+#if !UE_BUILD_SHIPPING
+	int32 ConsiderListSize = 0;
+#endif
 };
