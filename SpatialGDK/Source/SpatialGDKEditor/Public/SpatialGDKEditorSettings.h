@@ -284,6 +284,8 @@ private:
 	UPROPERTY(EditAnywhere, config, Category = "Cloud", meta = (ConfigRestartRequired = false, DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> PrimaryDeploymentRegionCode;
 
+	const FString SimulatedPlayerLaunchConfigPath;
+
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Region"))
 		TEnumAsByte<ERegionCode::Type> SimulatedPlayerDeploymentRegionCode;
 
@@ -292,8 +294,6 @@ private:
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Deployment mame"))
 		FString SimulatedPlayerDeploymentName;
-
-	const FString SimulatedPlayerLaunchConfigPath;
 
 	UPROPERTY(EditAnywhere, config, Category = "Simulated Players", meta = (EditCondition = "bSimulatedPlayersIsEnabled", ConfigRestartRequired = false, DisplayName = "Number of simulated players"))
 		uint32 NumberOfSimulatedPlayers;
