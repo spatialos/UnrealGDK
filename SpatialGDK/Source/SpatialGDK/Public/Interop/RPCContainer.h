@@ -6,6 +6,7 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 
+#include "UObject/WeakObjectPtr.h"
 #include "CoreMinimal.h"
 
 struct FUnrealObjectRef;
