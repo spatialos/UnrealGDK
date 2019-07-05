@@ -898,7 +898,7 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	{
 		// If this Actor's owner is not replicated (eg. parent = AI Controller), the actor will not have it's spatial
 		// position updated as this code will never be run for the parent. 
-		if (ActorOwner != nullptr && ActorOwner->GetIsReplicated())
+		if (!(ActorOwner != nullptr && !ActorOwner->GetIsReplicated()))
 		{
 			return;
 		}
