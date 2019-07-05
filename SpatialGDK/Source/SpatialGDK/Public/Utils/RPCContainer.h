@@ -6,10 +6,8 @@
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialConstants.h"
 
-#include "UObject/WeakObjectPtr.h"
 #include "CoreMinimal.h"
 
-struct FUnrealObjectRef;
 struct FPendingRPCParams;
 using FPendingRPCParamsPtr = TUniquePtr<FPendingRPCParams>;
 DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessRPCDelegate, const FPendingRPCParams&)
