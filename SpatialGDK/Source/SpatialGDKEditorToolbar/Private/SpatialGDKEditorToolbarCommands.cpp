@@ -12,7 +12,7 @@ void FSpatialGDKEditorToolbarCommands::RegisterCommands()
 	UI_COMMAND(StartSpatialDeployment, "Start", "Starts a local instance of SpatialOS.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StopSpatialDeployment, "Stop", "Stops SpatialOS.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(LaunchInspectorWebPageAction, "Inspector", "Launches default web browser to SpatialOS Inspector.", EUserInterfaceActionType::Button, FInputGesture());
-	UI_COMMAND(OpenSimulatedPlayerConfigurationWindowAction, "Cloud", "Opens a configuration menu for cloud deployments.", EUserInterfaceActionType::Button, FInputGesture());
+	UI_COMMAND(OpenSimulatedPlayerConfigurationWindowAction, "Upload", "Opens a configuration menu for cloud deployments.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StartSpatialService, "Start Service", "Starts the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
 	UI_COMMAND(StopSpatialService, "Stop Service", "Stops the Spatial service daemon.", EUserInterfaceActionType::Button, FInputGesture());
 }

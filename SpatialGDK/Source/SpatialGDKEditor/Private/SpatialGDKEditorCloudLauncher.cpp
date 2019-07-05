@@ -21,6 +21,7 @@ bool SpatialGDKCloudLaunch()
 		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
 	);
 
+
 	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 	{
 		LauncherCmdArguments = FString::Printf(
