@@ -578,7 +578,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	AActor* Actor = Cast<AActor>(WeakActor.Get());
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Cleanup pending add components if any exist.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
@@ -1677,7 +1677,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		{
 			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, *UnresolvedRefs, ReplicatingObject);
 
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
 			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies);
 		}
 
@@ -1786,7 +1786,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
 				check(Object);
 
-				UE_LOG(LogSpatialReceiver, Log, TEXT("ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
+				UE_LOG(LogSpatialReceiver, Verbose, TEXT("ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
 
 				UnresolvedIt.RemoveCurrent();
 				bResolvedSomeRefs = true;
