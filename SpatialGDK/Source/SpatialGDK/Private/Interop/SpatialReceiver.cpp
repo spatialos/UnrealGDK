@@ -159,18 +159,27 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
-	// If we're in a critical section, we've received a RemoveEntityOp.
-	// Our RemoveEntityOp processing relies on component data which
-	// SpatialOS has told us to remove.
-	// Because of this, we skip over RemoveComponentOps in critical sections
-	// and let the RemoveEntityOp handle cleanup.
-	if (bInCriticalSection)
+	// We are queuing here because if an Actor is removed from your view, remove component ops will be
+	// generated and sent first, and then the RemoveEntityOp will be sent. In this case, we only want
+	// to delete the Actor and not delete the subobjects that the RemoveComponent relate to.
+	// So we queue RemoveComponentOps then process the RemoveEntityOps normally, and then apply the
+	// RemoveComponentOps in ProcessRemoveComponent. Any RemoveComponentOps that relate to delete entities
+	// will be dropped in ProcessRemoveComponent.
+	QueuedRemoveComponentOps.Add(Op);
+}
+
+void USpatialReceiver::FlushRemoveComponentOps()
+{
+	for (const auto& Op : QueuedRemoveComponentOps)
 	{
-		return;
+		ProcessRemoveComponent(Op);
 	}
 
-	// If we are delegated authority over a component that does not exist, we will receive
-	// a RemoveComponentOp. We should only remove local data if this component does exist.
+	QueuedRemoveComponentOps.Empty();
+}
+
+void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op)
+{
 	if (!StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
 	{
 		return;
@@ -757,8 +766,6 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	NetDriver->StopIgnoringAuthoritativeDestruction();
 
 	CleanupDeletedEntity(EntityId);
-
-	StaticComponentView->OnRemoveEntity(EntityId);
 }
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
