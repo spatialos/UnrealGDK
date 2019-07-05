@@ -154,6 +154,12 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
+	// We are queuing here because if an Actor is removed from your view, remove component ops will be
+	// generated sent first, and then the RemoveEntityOp will be sent. In this case, we only want
+	// to delete the Actor and not delete the subobjects that the RemoveComponent relate to.
+	// So we queue RemoveComponentOps then process the RemoveEntityOps normally, and then apply the
+	// RemoveComponentOps in ProcessRemoveComponent. Any RemoveComponentOps that relate to delete entities
+	// will be dropped in ProcessRemoveComponent.
 	QueuedRemoveComponentOps.Add(Op);
 }
 
