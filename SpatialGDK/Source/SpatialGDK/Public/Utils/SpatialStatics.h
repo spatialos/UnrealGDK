@@ -2,8 +2,11 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "SpatialStatics.generated.h"
+
+class AActor;
 
 UCLASS()
 class SPATIALGDK_API USpatialStatics : public UBlueprintFunctionLibrary
