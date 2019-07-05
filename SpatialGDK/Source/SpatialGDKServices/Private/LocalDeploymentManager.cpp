@@ -64,9 +64,7 @@ void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
 		if (FPaths::DirectoryExists(WorkerConfigDirectory))
 		{
 			WorkerConfigDirectoryChangedDelegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FLocalDeploymentManager::OnWorkerConfigDirectoryChanged);
-			DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(
-				WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate, WorkerConfigDirectoryChangedDelegateHandle,
-				IDirectoryWatcher::IncludeDirectoryChanges);
+			DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(WorkerConfigDirectory, WorkerConfigDirectoryChangedDelegate, WorkerConfigDirectoryChangedDelegateHandle);
 		}
 		else
 		{
