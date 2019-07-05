@@ -39,7 +39,7 @@ public:
 	 * Equivalent to World->GetNetMode() != NM_Client when Spatial Networking is disabled.
 	 */
 	UFUNCTION(BlueprintPure, Category = "SpatialOS|Offloading", meta = (WorldContext = "WorldContextObject"))
-	static bool IsActorGroupOwner(const UObject* WorldContextObject, const FName& ActorGroup);
+	static bool IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup);
 
 	/**
 	 * Returns the ActorGroup this Actor belongs to.

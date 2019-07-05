@@ -71,7 +71,7 @@ bool USpatialStatics::IsActorGroupOwnerForClass(const UObject* WorldContextObjec
 	return false;
 }
 
-bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName& ActorGroup)
+bool USpatialStatics::IsActorGroupOwner(const UObject* WorldContextObject, const FName ActorGroup)
 {
 	if (UActorGroupManager* ActorGroupManager = GetActorGroupManager(WorldContextObject))
 	{
