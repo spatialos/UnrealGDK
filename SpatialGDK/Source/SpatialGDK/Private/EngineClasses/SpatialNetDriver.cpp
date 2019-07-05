@@ -70,7 +70,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	bConnectAsClient = bInitAsClient;
 	bAuthoritativeDestruction = true;
-	bQueueOpsUntilReady = !bInitAsClient;
+	bIsReadyToStart = bInitAsClient;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
@@ -1172,7 +1172,7 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
 
 		// Servers will queue ops at startup until we've extracted necessary information from the op stream
-		if (bQueueOpsUntilReady)
+		if (!bIsReadyToStart)
 		{
 			HandleStartupOpQueueing(OpLists);
 			return;
@@ -1805,9 +1805,9 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 	}
 
 	QueuedStartupOpLists.Append(InOpLists);
-	bQueueOpsUntilReady = FindAndDispatchStartupOps(InOpLists);
+	bIsReadyToStart = FindAndDispatchStartupOps(InOpLists);
 
-	if (bQueueOpsUntilReady)
+	if (!bIsReadyToStart)
 	{
 	    return;
 	}
@@ -1890,9 +1890,9 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 	if (EntityPool->IsReady() &&
 		GlobalStateManager->IsReadyToCallBeginPlay())
 	{
-		// Return whether or not we should continue queueing ops
-		return false;
+		// Return whether or not we are ready to start
+		return true;
 	}
 
-	return true;
+	return false;
 }

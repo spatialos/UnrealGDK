@@ -182,7 +182,7 @@ private:
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
-	bool bQueueOpsUntilReady;
+	bool bIsReadyToStart;
 
 	FString SnapshotToLoad;
 
