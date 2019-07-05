@@ -112,7 +112,7 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 		int32 ExitCode;
 		ExecuteAndReadOutput(SpatialExe, BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
 
-		if (ExitCode != ExitCodeSuccess)
+		if (ExitCode == ExitCodeSuccess)
 		{
 			UE_LOG(LogSpatialDeploymentManager, Display, TEXT("Building worker configurations succeeded!"));
 		}
