@@ -21,6 +21,7 @@ void FRPCContainer::QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType T
 
 void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArrayOfParams& RPCList)
 {
+	// TODO: UNR-1651 Find a way to drop queued RPCs
 	int NumProcessedParams = 0;
 	for (auto& Params : RPCList)
 	{
