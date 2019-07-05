@@ -892,9 +892,16 @@ void USpatialActorChannel::UpdateSpatialPosition()
 	// If this Actor is a PlayerController, we want to update all of its children and its possessed Pawn.
 	// That means if this Actor has an Owner or has a NetConnection and is NOT a PlayerController
 	// we want to defer updating position until we reach the highest parent.
-	if ((Actor->GetOwner() != nullptr || Actor->GetNetConnection() != nullptr) && !Actor->IsA<APlayerController>())
+	AActor* ActorOwner = Actor->GetOwner();
+
+	if ((ActorOwner != nullptr || Actor->GetNetConnection() != nullptr) && !Actor->IsA<APlayerController>())
 	{
-		return;
+		// If this Actor's owner is not replicated (e.g. parent = AI Controller), the actor will not have it's spatial
+		// position updated as this code will never be run for the parent. 
+		if (!(Actor->GetNetConnection() == nullptr && ActorOwner != nullptr && !ActorOwner->GetIsReplicated()))
+		{
+			return;
+		}
 	}
 
 	// Check that the Actor has moved sufficiently far to be updated
