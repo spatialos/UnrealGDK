@@ -1811,7 +1811,10 @@ void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& In
 	// on the GSM and process the queued ops.  Note that FindAndDispatchStartupOps()
 	// will have notified the Dispatcher to skip the startup ops that we've
 	// processed already.
-	if (!bQueueOpsUntilReady)
+	if (bQueueOpsUntilReady)
+	{
+	    return;
+	}
 	{
 		GlobalStateManager->TriggerBeginPlay();
 
