@@ -15,6 +15,7 @@ void UActorInterestComponent::CreateQueries(const USpatialClassInfoManager& Clas
 		}
 
 		SpatialGDK::Query NewQuery{};
+		// Avoid creating an unnecessary AND constraint if there are no AdditionalConstraints to consider.
 		if (AdditionalConstraints.IsValid())
 		{
 			SpatialGDK::QueryConstraint ComponentConstraints;
