@@ -23,9 +23,9 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, bGenerateDefaultLaunchConfig(true)
 	, bStopSpatialOnExit(false)
 	, PrimaryDeploymentRegionCode(ERegionCode::US)
-	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 	, SimulatedPlayerLaunchConfigPath(FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir() /
 		TEXT("Plugins/UnrealGDK/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/cloud_launch_sim_player_deployment.json"))))
+	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
 	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotFolderPath();
@@ -104,7 +104,7 @@ void USpatialGDKEditorSettings::SetLevelEditorPlaySettingsWorkerTypes()
 FString USpatialGDKEditorSettings::GetProjectNameFromSpatial() const
 {
 	FString FileContents;
-	const FString SpatialOSFile = GetDefault<USpatialGDKEditorSettings>()->GetSpatialOSDirectory().Append(TEXT("/spatialos.json"));
+	const FString SpatialOSFile = FSpatialGDKServicesModule::GetSpatialOSDirectory().Append(TEXT("/spatialos.json"));
 
 	if (!FFileHelper::LoadFileToString(FileContents, *SpatialOSFile))
 	{
