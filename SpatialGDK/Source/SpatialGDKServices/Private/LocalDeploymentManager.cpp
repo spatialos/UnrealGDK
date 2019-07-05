@@ -212,14 +212,13 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	}
 
 	FString SpotCreateArgs = FString::Printf(TEXT("alpha deployment create --launch-config=\"%s\" --name=localdeployment --project-name=%s --json %s"), *LaunchConfig, *ProjectName, *LaunchArgs);
-	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
 
 	FDateTime SpotCreateStart = FDateTime::Now();
 
 	FString SpotCreateResult;
 	FString StdErr;
 	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*GetSpotExe(), *SpotCreateArgs, &ExitCode, &SpotCreateResult, &StdErr, *SpatialDirectory);
+	FPlatformProcess::ExecProcess(*GetSpotExe(), *SpotCreateArgs, &ExitCode, &SpotCreateResult, &StdErr);
 	bStartingDeployment = false;
 
 	if (ExitCode != ExitCodeSuccess)
@@ -285,12 +284,11 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	bStoppingDeployment = true;
 
 	FString SpotDeleteArgs = FString::Printf(TEXT("alpha deployment delete --id=%s --json"), *LocalRunningDeploymentID);
-	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
 
 	FString SpotDeleteResult;
 	FString StdErr;
 	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*GetSpotExe(), *SpotDeleteArgs, &ExitCode, &SpotDeleteResult, &StdErr, *SpatialDirectory);
+	FPlatformProcess::ExecProcess(*GetSpotExe(), *SpotDeleteArgs, &ExitCode, &SpotDeleteResult, &StdErr);
 	bStoppingDeployment = false;
 
 	if (ExitCode != ExitCodeSuccess)
@@ -416,12 +414,11 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 	}
 
 	FString SpotListArgs = FString::Printf(TEXT("alpha deployment list --project-name=%s --json --view BASIC --status-filter NOT_STOPPED_DEPLOYMENTS"), *ProjectName);
-	const FString SpatialDirectory = FSpatialGDKServicesModule::GetSpatialOSDirectory();
 
 	FString SpotListResult;
 	FString StdErr;
 	int32 ExitCode;
-	FPlatformProcess::ExecProcess(*GetSpotExe(), *SpotListArgs, &ExitCode, &SpotListResult, &StdErr, *SpatialDirectory);
+	FPlatformProcess::ExecProcess(*GetSpotExe(), *SpotListArgs, &ExitCode, &SpotListResult, &StdErr);
 
 	if (ExitCode != ExitCodeSuccess)
 	{
