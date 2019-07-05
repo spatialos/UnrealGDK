@@ -415,6 +415,31 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 	return ESchemaComponentType::SCHEMA_Invalid;
 }
 
+const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)
+{
+	check(Object != nullptr && Function != nullptr);
+
+	const FClassInfo& Info = GetOrCreateClassInfoByObject(Object);
+	const FRPCInfo* RPCInfoPtr = Info.RPCInfoMap.Find(Function);
+
+	// We potentially have a parent function and need to find the child function.
+	// This exists as it's possible in blueprints to explicitly call the parent function.
+	if (RPCInfoPtr == nullptr)
+	{
+		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
+		{
+			if (It.Key()->GetName() == Function->GetName())
+			{
+				// Matching child function found. Use this for the remote function call.
+				RPCInfoPtr = &It.Value();
+				break;
+			}
+		}
+	}
+	check(RPCInfoPtr != nullptr);
+	return *RPCInfoPtr;
+}
+
 uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
 {
 	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);

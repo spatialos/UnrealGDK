@@ -1044,6 +1044,42 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 	// SpatialGDK - Here Unreal would return the position of the last replicated actor in PriorityActors before the channel became saturated.
 	// In Spatial we use ActorReplicationRateLimit and EntityCreationRateLimit to limit replication so this return value is not relevant.
 }
+
+void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
+{
+	// The RPC might have been called by an actor directly, or by a subobject on that actor
+	UObject* CallingObject = SubObject != nullptr ? SubObject : Actor;
+
+	if (IsServer())
+	{
+		// Creating channel to ensure that object will be resolvable
+		GetOrCreateSpatialActorChannel(CallingObject);
+	}
+
+	int ReliableRPCIndex = 0;
+	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
+	{
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		{
+			ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
+		}
+	}
+
+	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, Function, ReliableRPCIndex, Parameters, UnresolvedObjects);
+
+	if (UnresolvedObjects.Num() == 0)
+	{
+		FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(CallingObject);
+		FPendingRPCParamsPtr RPCParams = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload), ReliableRPCIndex);
+		Sender->ProcessRPC(MoveTemp(RPCParams));
+	}
+	else
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("The object %s is unresolved because of failure to create a SpatialActorChannel; RPC %s will be dropped."), *UnresolvedObjects.CreateIterator()->Get()->GetName(), *Function->GetName());
+	}
+}
+
 #endif
 
 // SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
@@ -1265,17 +1301,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		TSharedRef<FPendingRPCParams> RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++);
-
-		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
-		{
-			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-			{
-				RPCParams->ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
-			}
-		}
-
-		Sender->SendRPC(RPCParams);
+		ProcessRPC(Actor, SubObject, Function, Parameters);
 	}
 }
 
@@ -1326,7 +1352,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs && Sender != nullptr)
+	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Sender != nullptr)
 	{
 		Sender->FlushPackedUnreliableRPCs();
 	}
@@ -1713,8 +1739,6 @@ uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentTy
 
 void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function)
 {
-	check(!WorkerId.IsEmpty());
-
 	if (!ReliableRPCIdMap.Contains(Actor))
 	{
 		ReliableRPCIdMap.Add(Actor);

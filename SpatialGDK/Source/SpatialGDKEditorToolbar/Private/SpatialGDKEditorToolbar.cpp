@@ -490,6 +490,11 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			return;
 		}
 
+		if (!GenerateDefaultWorkerJson())
+		{
+			return;
+		}
+
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
 		GenerateDefaultLaunchConfig(LaunchConfig);
 	}
@@ -512,6 +517,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		if (bRedeployRequired)
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Schema has changed since last session. Local deployment must restart."));
+			ShowTaskStartNotification(TEXT("Schema has changed. Local deployment restarting.")); 
 			LocalDeploymentManager->TryStopLocalDeployment();
 			bRedeployRequired = false;
 		}
@@ -642,12 +648,12 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 
 bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const
 {
-	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
+	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
 		FString Text;
 		TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
 
-		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKSettings->LaunchConfigDesc;
+		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
 		// Populate json file for launch config
 		Writer->WriteObjectStart(); // Start of json
@@ -703,6 +709,51 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '%s'. It might be that the file is read-only."), *LaunchConfigPath);
 			return false;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
+{
+	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
+	{
+		const FString WorkerJsonDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
+		const FString TemplateWorkerJsonPath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
+
+		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
+		for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
+		{
+			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.WorkerTypeName.ToString()));
+			if (!FPaths::FileExists(JsonPath))
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
+				FString Contents;
+				if (FFileHelper::LoadFileToString(Contents, *TemplateWorkerJsonPath))
+				{
+					Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *Worker.WorkerTypeName.ToString());
+					if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
+					{
+						bRedeployRequired = true;
+						UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Wrote default worker json to %s"), *JsonPath)
+					}
+					else
+					{
+						UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to write default worker json to %s"), *JsonPath)
+					}
+				}
+				else
+				{
+					UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to read default worker json template at %s"), *TemplateWorkerJsonPath)
+				}
+			}
+			else
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Found worker json at %s"), *JsonPath)
+			}
 		}
 
 		return true;
