@@ -1184,7 +1184,7 @@ void USpatialReceiver::HandleUnreliableRPC(const Worker_ComponentUpdateOp& Op)
 
 		if (!TargetObject)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
+			UE_LOG(LogSpatialReceiver, Log, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
 			continue;
 		}
 
