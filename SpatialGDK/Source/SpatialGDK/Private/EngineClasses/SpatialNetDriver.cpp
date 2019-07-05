@@ -1862,7 +1862,7 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 			FindFirstOpOfTypeForComponent(OpList, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AuthorityChangedOp);
 
 			// If we are going to get both ops, we expect them in the same Worker_OpList
-			check(AddComponentOp || (AuthorityChangedOp == nullptr));
+			check(AddComponentOp != nullptr || (AuthorityChangedOp == nullptr));
 
 			if (AddComponentOp != nullptr)
 			{
