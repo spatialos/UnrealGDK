@@ -7,7 +7,7 @@
 #include "GameFramework/PlayerController.h"
 #include "UObject/UObjectIterator.h"
 
-#include "EngineClasses/Components/ActorInterestQueryComponent.h"
+#include "EngineClasses/Components/ActorInterestComponent.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -217,8 +217,8 @@ void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstrai
 	check(Actor);
 	check(NetDriver != nullptr && NetDriver->ClassInfoManager);
 
-	TArray<UActorInterestQueryComponent*> ActorInterestComponents;
-	Actor->GetComponents<UActorInterestQueryComponent>(ActorInterestComponents);
+	TArray<UActorInterestComponent*> ActorInterestComponents;
+	Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
 		ActorInterestComponents[0]->CreateQueries(*NetDriver->ClassInfoManager, LevelConstraints, OutQueries);
@@ -260,11 +260,11 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 	// If the actor has a component to specify interest and that indicates that we shouldn't generate
 	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
 	// there is at most one ActorInterestQueryComponent.
-	TArray<UActorInterestQueryComponent*> ActorInterestComponents;
-	Actor->GetComponents<UActorInterestQueryComponent>(ActorInterestComponents);
+	TArray<UActorInterestComponent*> ActorInterestComponents;
+	Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
 	if (ActorInterestComponents.Num() == 1)
 	{
-		const UActorInterestQueryComponent* ActorInterest = ActorInterestComponents[0];
+		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
 		check(ActorInterest);
 		if (!ActorInterest->bUseNetCullDistanceForCheckoutRadius)
 		{

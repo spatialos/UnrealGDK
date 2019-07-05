@@ -6,7 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "Interop/SpatialInterestConstraints.h"
 
-#include "ActorInterestQueryComponent.generated.h"
+#include "ActorInterestComponent.generated.h"
 
 namespace SpatialGDK
 {
@@ -18,13 +18,13 @@ class USpatialClassInfoManager;
  * Creates a set of SpatialOS Queries for describing interest that this actor has in other entities.
  */
 UCLASS(ClassGroup=(SpatialGDK), NotSpatialType, Meta=(BlueprintSpawnableComponent))
-class SPATIALGDK_API UActorInterestQueryComponent final : public UActorComponent
+class SPATIALGDK_API UActorInterestComponent final : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
-	UActorInterestQueryComponent() = default;
-	~UActorInterestQueryComponent() = default;
+	UActorInterestComponent() = default;
+	~UActorInterestComponent() = default;
 
 	void CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
 

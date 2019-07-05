@@ -1,11 +1,11 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "EngineClasses/Components/ActorInterestQueryComponent.h"
+#include "EngineClasses/Components/ActorInterestComponent.h"
 
 #include "Schema/Interest.h"
 #include "Interop/SpatialClassInfoManager.h"
 
-void UActorInterestQueryComponent::CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const
+void UActorInterestComponent::CreateQueries(const USpatialClassInfoManager& ClassInfoManager, const SpatialGDK::QueryConstraint& AdditionalConstraints, TArray<SpatialGDK::Query>& OutQueries) const
 {
 	for (const auto& QueryData : Queries)
 	{
