@@ -1352,14 +1352,18 @@ void USpatialSender::ProcessRPC(FPendingRPCParamsPtr Params)
 	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject.Get(), Function);
 
+	bool bRPCProcessed = false;
 	if (!OutgoingRPCs.ObjectHasRPCsQueuedOfType(Params->ObjectRef, RPCInfo.Type))
 	{
 		if (SendRPC(*Params))
 		{
-			return;
+			bRPCProcessed = true;
 		}
 	}
-
-	QueueOutgoingRPC(MoveTemp(Params));
+	if (!bRPCProcessed)
+	{
+		QueueOutgoingRPC(MoveTemp(Params));
+	}
+	// Try to send all pending RPCs unconditionally
 	SendOutgoingRPCs();
 }
