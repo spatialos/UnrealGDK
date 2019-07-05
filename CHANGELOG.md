@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for spawning actors with ACLs configured for offloading using actor groups.
 - Removed the references to the `Number of servers` slider in the Play in editor drop-down menu. The number of each server worker type to launch in PIE is now specified within the launch configuration in the `Spatial GDK Editor Settings` settings tab.
 - Added `SpatialWorkerId` which is set to the worker ID when the worker associated to the `UGameInstance` connects.
+- Added `USpatialStatics` helper blueprint library exposing functions for checking if SpatialOS networking is enabled, whether offloading is enabled, and more SpatialOS related checks.
 
 
 ### Bug fixes:
