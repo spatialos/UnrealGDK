@@ -118,7 +118,7 @@ if exist "%SPATIAL_DIR%" (
 )
 
 call :MarkStartOfBlock "Build C# utilities"
-    %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release
+    %MSBUILD_EXE% /nologo /verbosity:minimal .\SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
 call :MarkEndOfBlock "Build C# utilities"
 
 call :MarkEndOfBlock "%~0"
