@@ -729,7 +729,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
 			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.WorkerTypeName.ToString()));
 			if (!FPaths::FileExists(JsonPath))
 			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Could not worker json at %s"), *JsonPath);
+				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
 				FString Contents;
 				if (FFileHelper::LoadFileToString(Contents, *TemplateWorkerJsonPath))
 				{
@@ -746,12 +746,12 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
 				}
 				else
 				{
-					UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to read default worker json at %s"), *TemplateWorkerJsonPath)
+					UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to read default worker json template at %s"), *TemplateWorkerJsonPath)
 				}
 			}
 			else
 			{
-				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Found worker json %s"), *JsonPath)
+				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Found worker json at %s"), *JsonPath)
 			}
 		}
 
