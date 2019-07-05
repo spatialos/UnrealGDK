@@ -96,7 +96,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
-  
+
 	// Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
 	if (!IsSupportedClass(ClassPath))
 	{
@@ -338,6 +338,51 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 
 	return nullptr;
 }
+
+uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) const
+{
+	const FString ClassPath = Class.GetPathName();
+	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
+	{
+		return ActorSchemaData->SchemaComponents[SCHEMA_Data];
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}
+
+TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes /* = true */) const
+{
+	TArray<Worker_ComponentId> OutComponentIds;
+
+	check(SchemaDatabase);
+	if (bIncludeDerivedTypes)
+	{
+		for (TObjectIterator<UClass> It; It; ++It)
+		{
+			const UClass* Class = *It;
+			check(Class);
+			if (Class->IsChildOf(&BaseClass))
+			{
+				const Worker_ComponentId ComponentId = GetComponentIdForClass(*Class);
+				if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+				{
+					OutComponentIds.Add(ComponentId);
+				}
+			}
+		}
+	}
+	else
+	{
+		const uint32 ComponentId = GetComponentIdForClass(BaseClass);
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			OutComponentIds.Add(ComponentId);
+		}
+
+	}
+
+	return OutComponentIds;
+}
+
 
 bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {
