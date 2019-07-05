@@ -68,7 +68,7 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const FUnrealObjectRef& TargetObje
 	return false;
 }
 
-bool FRPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParams& Params)
+bool FRPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, const FPendingRPCParams& Params) const
 {
 	return FunctionToApply.Execute(Params);
 }

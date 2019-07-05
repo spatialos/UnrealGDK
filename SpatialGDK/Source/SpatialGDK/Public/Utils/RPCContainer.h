@@ -36,7 +36,7 @@ private:
 	using RPCContainerType = TMap<ESchemaComponentType, FRPCMap>;
 
 	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArrayOfParams& RPCList);
-	bool ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParams& Params);
+	bool ApplyFunction(const FProcessRPCDelegate& FunctionToApply, const FPendingRPCParams& Params) const;
 
 	RPCContainerType QueuedRPCs;
 };
