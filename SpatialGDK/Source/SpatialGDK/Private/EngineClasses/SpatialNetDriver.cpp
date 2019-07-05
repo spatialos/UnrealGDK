@@ -1739,9 +1739,6 @@ uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentTy
 
 void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function)
 {
-	// Commented out since this code is out of date and will assert
-	//check(!WorkerId.IsEmpty());
-
 	if (!ReliableRPCIdMap.Contains(Actor))
 	{
 		ReliableRPCIdMap.Add(Actor);
