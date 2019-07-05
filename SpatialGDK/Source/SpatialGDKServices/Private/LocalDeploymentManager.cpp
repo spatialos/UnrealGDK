@@ -223,7 +223,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	if (ExitCode != ExitCodeSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. %s"), *StdErr);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. Result: %s - Error: %s"), *SpotCreateResult, *StdErr);
 		return false;
 	}
 
@@ -233,7 +233,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	bool bParsingSuccess = ParseJson(SpotCreateResult, SpotJsonResult);
 	if (!bParsingSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot create result failed."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot create result failed. Result: %s"), *SpotCreateResult);
 	}
 
 	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
@@ -293,7 +293,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 
 	if (ExitCode != ExitCodeSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local deployment! %s"), *StdErr);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local deployment! Result: %s - Error: %s"), *SpotDeleteResult, *StdErr);
 	}
 
 	bool bSuccess = false;
@@ -302,7 +302,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	bool bPasingSuccess = ParseJson(SpotDeleteResult, SpotJsonResult);
 	if (!bPasingSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot delete result failed."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot delete result failed. Result: %s"), *SpotDeleteResult);
 	}
 
 	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
@@ -422,7 +422,7 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 
 	if (ExitCode != ExitCodeSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to check local deployment status: %s"), *StdErr);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to check local deployment status. Result: %s - Error: %s"), *SpotListResult, *StdErr);
 		return false;
 	}
 
@@ -430,7 +430,7 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 	bool bPasingSuccess = ParseJson(SpotListResult, SpotJsonResult);
 	if (!bPasingSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot list result failed."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot list result failed. Result: %s"), *SpotListResult);
 	}
 
 	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
