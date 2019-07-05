@@ -512,6 +512,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		if (bRedeployRequired)
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Schema has changed since last session. Local deployment must restart."));
+			ShowTaskStartNotification(TEXT("Schema has changed. Local deployment restarting.")); 
 			LocalDeploymentManager->TryStopLocalDeployment();
 			bRedeployRequired = false;
 		}
