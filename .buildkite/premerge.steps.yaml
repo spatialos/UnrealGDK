@@ -10,7 +10,7 @@ common: &common
     - "agent_count=1"
     - "capable_of_building=gdk-for-unreal"
     - "environment=production"
-    - "machine_type=tetracosa-high-cpu"  # the name matches to SpatialOS node-size names
+    - "machine_type=quad"  # this name matches to SpatialOS node-size names
     - "platform=windows"
     - "permission_set=builder"
     - "scaler_version=2"
