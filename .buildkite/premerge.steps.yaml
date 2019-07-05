@@ -7,16 +7,21 @@ agent_transients: &agent_transients
 
 common: &common
   agents:
+    - "agent_count=1"
     - "capable_of_building=gdk-for-unreal"
     - "environment=production"
+    - "machine_type=quad"  # this name matches to SpatialOS node-size names
     - "platform=windows"
     - "permission_set=builder"
-    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1560265248-9d4cabb4d362b669-------z}"
+    - "scaler_version=2"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1562267374-ab36457a07f081fe-------z}"
   retry:
     automatic:
       - <<: *agent_transients
   timeout_in_minutes: 60
   plugins:
+    - git-clean#v0.0.1:
+        flags: "-ffdx --exclude=UnrealEngine --exclude=UnrealEngine-Cache"
     - ca-johnson/taskkill#v4.1: ~
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
