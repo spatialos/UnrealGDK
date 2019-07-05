@@ -24,13 +24,6 @@ void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArr
 	int NumProcessedParams = 0;
 	for (auto& Params : RPCList)
 	{
-		// TODO(Alex): Delete deprecated RPCS somehow
-		//if (!Params->TargetObject.IsValid())
-		//{
-		//	// The target object was destroyed before we could send the RPC.
-		//	RPCList.Empty();
-		//	break;
-		//}
 		if (ApplyFunction(FunctionToApply, Params))
 		{
 			NumProcessedParams++;
