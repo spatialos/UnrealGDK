@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.Win32;
+using Newtonsoft.Json.Linq;
 
 namespace Improbable
 {
@@ -99,27 +99,46 @@ mono WorkerCoordinator.exe $@ 2> /improbable/logs/CoordinatorErrors.log";
             // Locate the Unreal Engine.
             Console.WriteLine("Finding Unreal Engine build.");
             string uproject = File.ReadAllText(projectFile, Encoding.UTF8);
-            string engineAssociationRegex = "..{8}-.{4}-.{4}-.{4}-.{12}.";
-            Match engineAssociationMatch = Regex.Match(uproject, engineAssociationRegex);
+
+            dynamic projectJson = JObject.Parse(uproject);
+            string engineAssociation = projectJson.EngineAssociation;
+
+            Console.WriteLine("Engine Association: " + engineAssociation);
 
             string unrealEngine = "";
 
-            // If we found an engine association within the .uproject, query the registry for the engine directory.
-            if (engineAssociationMatch.Success)
-            {
-                string engineAssociation = engineAssociationMatch.Value;
-                Console.WriteLine("Engine Association: " + engineAssociation);
-
-                string unrealEngineBuildKey = "HKEY_CURRENT_USER\\Software\\Epic Games\\Unreal Engine\\Builds";
-                unrealEngine = Registry.GetValue(unrealEngineBuildKey, engineAssociation, "").ToString();
-            }
-            else // If we couldn't find the Engine Association. Climb the parent directories of the project looking for the "Engine" and Build.version.
+            // If the engine association is empty then climb the parent directories of the project looking for the Unreal Engine root directory.
+            if (string.IsNullOrEmpty(engineAssociation))
             {
                 DirectoryInfo currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                while (currentDir.Parent != null && string.IsNullOrEmpty(unrealEngine))
+                while (currentDir.Parent != null)
                 {
                     currentDir = currentDir.Parent;
-                    unrealEngine = currentDir.GetDirectories().Where(d => d.Name == "Engine" && File.Exists(Path.Combine(d.FullName, @"Build\Build.version"))).Select(d => d.Parent.FullName).FirstOrDefault();
+                    // This is how Unreal asserts we have a valid root directory for the Unreal Engine. Must contain 'Engine/Binaries' and 'Engine/Build'. (FDesktopPlatformBase::IsValidRootDirectory)
+                    if (Directory.Exists(Path.Combine(currentDir.FullName, "Engine", "Binaries")) && Directory.Exists(Path.Combine(currentDir.FullName, "Engine", "Build")))
+                    {
+                        unrealEngine = currentDir.FullName;
+                        break;
+                    }
+                }
+            }
+            else if (Directory.Exists(Path.Combine(Path.GetDirectoryName(projectFile), engineAssociation))) // If the engine association is a path then use that.
+            {
+                unrealEngine = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(projectFile), engineAssociation));
+            }
+            else
+            {
+                // Finally check the registry for the path using the engine association as the key.
+                string unrealEngineBuildKey = "HKEY_CURRENT_USER\\Software\\Epic Games\\Unreal Engine\\Builds";
+                var unrealEngineValue = Registry.GetValue(unrealEngineBuildKey, engineAssociation, "");
+
+                if (unrealEngineValue != null)
+                {
+                    unrealEngine = unrealEngineValue.ToString();
+                }
+                else
+                {
+                    Console.Error.WriteLine("Engine Association not found in the registry! Please run Setup.bat from within the UnrealEngine.");
                 }
             }
 

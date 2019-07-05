@@ -23,8 +23,12 @@ public:
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSchema;
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSchemaFull;
 	TSharedPtr<FUICommandInfo> CreateSpatialGDKSnapshot;
-	TSharedPtr<FUICommandInfo> StartSpatialOSStackAction;
-	TSharedPtr<FUICommandInfo> StopSpatialOSStackAction;
+	TSharedPtr<FUICommandInfo> StartSpatialDeployment;
+	TSharedPtr<FUICommandInfo> StopSpatialDeployment;
 	TSharedPtr<FUICommandInfo> LaunchInspectorWebPageAction;
+	
 	TSharedPtr<FUICommandInfo> OpenSimulatedPlayerConfigurationWindowAction;
+
+	TSharedPtr<FUICommandInfo> StartSpatialService;
+	TSharedPtr<FUICommandInfo> StopSpatialService;
 };

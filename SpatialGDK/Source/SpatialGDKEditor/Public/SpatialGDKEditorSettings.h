@@ -6,6 +6,7 @@
 #include "Misc/Paths.h"
 #include "SpatialConstants.h"
 #include "UObject/Package.h"
+#include "SpatialGDKServicesModule.h"
 
 #include "SpatialGDKEditorSettings.generated.h"
 
@@ -170,7 +171,7 @@ struct FSpatialLaunchConfigDescription
 	GENERATED_BODY()
 
 	FSpatialLaunchConfigDescription()
-		: Template(TEXT("small"))
+		: Template(TEXT("w2_r0500_e5"))
 		, World()
 	{
 		FWorkerTypeLaunchSection UnrealWorkerDefaultSetting;
@@ -228,14 +229,11 @@ private:
 	/** Set WorkerTypesToLaunch in level editor play settings. */
 	void SetLevelEditorPlaySettingsWorkerTypes();
 
-	/** Check if the Editor Settings contains valid directory paths or not. */
-	void SafetyCheckSpatialOSDirectoryPaths();
-
-	/** Path to the directory containing the SpatialOS-related files. */
-	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS directory"))
-	FDirectoryPath SpatialOSDirectory;
-
 public:
+	/** If checked, show the Spatial service button on the GDK toolbar which can be used to turn the Spatial service on and off. */
+	UPROPERTY(EditAnywhere, config, Category = "General", meta = (ConfigRestartRequired = false, DisplayName = "Show Spatial service button"))
+	bool bShowSpatialServiceButton;
+
 	/** If checked, all dynamically spawned entities will be deleted when server workers disconnect. */
 	UPROPERTY(EditAnywhere, config, Category = "Play in editor settings", meta = (ConfigRestartRequired = false, DisplayName = "Delete dynamically spawned entities"))
 	bool bDeleteDynamicEntities;
@@ -262,10 +260,6 @@ private:
 	/** Name of your SpatialOS snapshot file. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
 	FString SpatialOSSnapshotFile;
-
-	/** If checked, the GDK creates a launch configuration file by default when you launch a local deployment through the toolbar. */
-	UPROPERTY(EditAnywhere, config, Category = "Schema", meta = (ConfigRestartRequired = false, DisplayName = "Output path for the generated schemas"))
-	FDirectoryPath GeneratedSchemaOutputFolder;
 
 	/** Command line flags passed in to `spatial local launch`.*/
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Command line flags for local launch"))
@@ -314,13 +308,6 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (EditCondition = "bGenerateDefaultLaunchConfig", ConfigRestartRequired = false, DisplayName = "Launch configuration file description"))
 	FSpatialLaunchConfigDescription LaunchConfigDesc;
 
-	FORCEINLINE FString GetSpatialOSDirectory() const
-	{
-		return SpatialOSDirectory.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/")))
-			: SpatialOSDirectory.Path;
-	}
-
 	FORCEINLINE FString GetGDKPluginDirectory() const
 	{
 		// Get the correct plugin directory.
@@ -342,6 +329,13 @@ public:
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
+	FORCEINLINE FString GetSpatialOSConfig()
+	{
+		return SpatialOSLaunchConfig.FilePath.IsEmpty()
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/spatialos.json")))
+			: SpatialOSLaunchConfig.FilePath;
+	}
+
 	FORCEINLINE FString GetSpatialOSSnapshotFile() const
 	{
 		return SpatialOSSnapshotFile.IsEmpty()
@@ -352,15 +346,13 @@ public:
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
 	{
 		return SpatialOSSnapshotPath.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), TEXT("../spatial/snapshots/")))
+			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("snapshots")))
 			: SpatialOSSnapshotPath.Path;
 	}
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
 	{
-		return GeneratedSchemaOutputFolder.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))))
-			: GeneratedSchemaOutputFolder.Path;
+		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), FString(TEXT("schema/unreal/generated/"))));
 	}
 
 	FORCEINLINE FString GetSpatialOSCommandLineLaunchFlags() const
