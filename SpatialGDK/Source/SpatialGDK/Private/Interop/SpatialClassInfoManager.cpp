@@ -370,15 +370,9 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 	return ESchemaComponentType::SCHEMA_Invalid;
 }
 
-const FRPCInfo* USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)
+const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)
 {
 	check(Object != nullptr && Function != nullptr);
-
-	if (Object == nullptr ||
-		Function == nullptr)
-	{
-		return nullptr;
-	}
 
 	const FClassInfo& Info = GetOrCreateClassInfoByObject(Object);
 	const FRPCInfo* RPCInfoPtr = Info.RPCInfoMap.Find(Function);
@@ -398,7 +392,7 @@ const FRPCInfo* USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction*
 		}
 	}
 	check(RPCInfoPtr != nullptr);
-	return RPCInfoPtr;
+	return *RPCInfoPtr;
 }
 
 uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)

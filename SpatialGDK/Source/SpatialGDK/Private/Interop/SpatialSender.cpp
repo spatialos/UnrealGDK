@@ -681,8 +681,7 @@ TArray<Worker_InterestOverride> USpatialSender::CreateComponentInterestForActor(
 
 RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, UFunction* Function, int ReliableRPCIndex, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects)
 {
-	const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	check(RPCInfo);
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
@@ -696,7 +695,7 @@ RPCPayload USpatialSender::CreateRPCPayloadFromParams(UObject* TargetObject, UFu
 		UE_LOG(LogSpatialSender, Warning, TEXT("Some RPC parameters for %s were not resolved."), *Function->GetName());
 	}
 
-	return RPCPayload(TargetObjectRef.Offset, RPCInfo->Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
+	return RPCPayload(TargetObjectRef.Offset, RPCInfo.Index, TArray<uint8>(PayloadWriter.GetData(), PayloadWriter.GetNumBytes()));
 }
 
 void USpatialSender::SendComponentInterestForActor(USpatialActorChannel* Channel, Worker_EntityId EntityId, bool bNetOwned)
@@ -767,10 +766,7 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		return true;
 	}
 
-	const FRPCInfo* RPCInfoPtr = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	check(RPCInfoPtr);
-	const FRPCInfo RPCInfo = *RPCInfoPtr;
-
+	const FRPCInfo& RPCInfo= ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	switch (RPCInfo.Type)
@@ -1086,11 +1082,10 @@ void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
 
-	const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	check(RPCInfo);
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
 	const FUnrealObjectRef& TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
-	OutgoingRPCs.QueueRPC(MoveTemp(Params), RPCInfo->Type);
+	OutgoingRPCs.QueueRPC(MoveTemp(Params), RPCInfo.Type);
 }
 
 FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const
@@ -1343,4 +1338,28 @@ void USpatialSender::UpdateInterestComponent(AActor* Actor)
 
 	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	Connection->SendComponentUpdate(EntityId, &Update);
+}
+
+void USpatialSender::ProcessRPC(FPendingRPCParamsPtr Params)
+{
+	TWeakObjectPtr<UObject> TargetObject = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	if (!TargetObject.IsValid())
+	{
+		// Target object was destroyed before the RPC could be (re)sent
+		return;
+	}
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject.Get());
+	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject.Get(), Function);
+
+	if (!OutgoingRPCs.ObjectHasRPCsQueuedOfType(Params->ObjectRef, RPCInfo.Type))
+	{
+		if (SendRPC(*Params))
+		{
+			return;
+		}
+	}
+
+	QueueOutgoingRPC(MoveTemp(Params));
+	SendOutgoingRPCs();
 }

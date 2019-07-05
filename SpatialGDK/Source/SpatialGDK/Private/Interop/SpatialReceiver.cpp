@@ -1205,10 +1205,9 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 		{
 			const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 			UFunction* Function = ClassInfo.RPCs[Payload.Index];
-			const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-			check(RPCInfo);
+			const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, RPCInfo->Type)
+			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, RPCInfo.Type)
 				&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, ESchemaComponentType::SCHEMA_Invalid))
 			{
 				// Apply if possible, queue otherwise
@@ -1686,9 +1685,8 @@ void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 		UObject* TargetObject = TargetObjectWeakPtr.Get();
 		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 		UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
-		const FRPCInfo* RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-		check(RPCInfo);
-		Type = RPCInfo->Type;
+		const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+		Type = RPCInfo.Type;
 	}
 
 	IncomingRPCs.QueueRPC(MoveTemp(Params), Type);

@@ -106,6 +106,7 @@ public:
 	bool UpdateEntityACLs(Worker_EntityId EntityId, const FString& OwnerWorkerAttribute);
 	void UpdateInterestComponent(AActor* Actor);
 
+	void ProcessRPC(FPendingRPCParamsPtr Params);
 	void QueueOutgoingRPC(FPendingRPCParamsPtr Params);
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
