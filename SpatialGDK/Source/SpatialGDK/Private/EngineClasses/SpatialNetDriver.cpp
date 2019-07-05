@@ -1841,7 +1841,6 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		// Search for entity id reservation response and process it.  The entity id reservation
 		// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
 		// a new query will be sent, and we will process the new response here when it arrives.
-
 		if (!EntityPool->IsReady())
 		{
 			Worker_Op* EntityIdReservationResponseOp = nullptr;
