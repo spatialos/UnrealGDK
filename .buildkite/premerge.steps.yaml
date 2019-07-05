@@ -18,7 +18,7 @@ common: &common
   timeout_in_minutes: 60
   plugins:
     - git-clean#v0.0.1:
-        flags: "-ffdx --exclude=UnrealEngine-Cache"
+        flags: "-ffdx --exclude=UnrealEngine --exclude=UnrealEngine-Cache"
     - ca-johnson/taskkill#v4.2: ~
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
