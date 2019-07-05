@@ -138,7 +138,10 @@ void ComponentReader::ApplySchemaObject(Schema_Object* ComponentObject, UObject*
 					TSet<FUnrealObjectRef> NewUnresolvedRefs;
 					FSpatialNetBitReader ValueDataReader(PackageMap, ValueData.GetData(), CountBits, NewUnresolvedRefs);
 
-					FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct);
+					if (ValueData.Num() > 0)
+					{
+						FSpatialNetDeltaSerializeInfo::DeltaSerializeRead(NetDriver, ValueDataReader, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct);
+					}
 
 					if (NewUnresolvedRefs.Num() > 0)
 					{
