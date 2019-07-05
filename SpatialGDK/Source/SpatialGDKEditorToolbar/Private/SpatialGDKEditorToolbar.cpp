@@ -720,18 +720,18 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
 {
 	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
-		const FString WorkerJsonPath = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
-		const FString WorkerJsonTemplatePath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
+		const FString WorkerJsonDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
+		const FString TemplateWorkerJsonPath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
 
 		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 		for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
 		{
-			FString JsonPath = FPaths::Combine(WorkerJsonPath, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.WorkerTypeName.ToString()));
+			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.WorkerTypeName.ToString()));
 			if (!FPaths::FileExists(JsonPath))
 			{
 				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Could not worker json at %s"), *JsonPath);
 				FString Contents;
-				if (FFileHelper::LoadFileToString(Contents, *WorkerJsonTemplatePath))
+				if (FFileHelper::LoadFileToString(Contents, *TemplateWorkerJsonPath))
 				{
 					Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *Worker.WorkerTypeName.ToString());
 					if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
@@ -746,7 +746,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
 				}
 				else
 				{
-					UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to read default worker json at %s"), *WorkerJsonTemplatePath)
+					UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to read default worker json at %s"), *TemplateWorkerJsonPath)
 				}
 			}
 			else
