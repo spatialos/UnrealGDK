@@ -113,7 +113,7 @@ pushd "$($gdk_home)"
     $msbuild_proc = Start-Process -PassThru -NoNewWindow -FilePath "$($msbuild_exe)" -ArgumentList @(`
         "/nologo", `
         "SpatialGDK\Build\Programs\Improbable.Unreal.Scripts\Improbable.Unreal.Scripts.sln", `
-        "/property:Configuration=Release", `
+        "/property:Configuration=Release",`
         "/restore" `
     )
 

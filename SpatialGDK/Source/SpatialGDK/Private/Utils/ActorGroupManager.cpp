@@ -62,3 +62,13 @@ FName UActorGroupManager::GetWorkerTypeForClass(const TSubclassOf<AActor> Class)
 
 	return DefaultWorkerType;
 }
+
+FName UActorGroupManager::GetWorkerTypeForActorGroup(const FName& ActorGroup) const
+{
+	if (const FName* WorkerType = ActorGroupToWorkerType.Find(ActorGroup))
+	{
+		return *WorkerType;
+	}
+
+	return DefaultWorkerType;
+}

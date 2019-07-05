@@ -575,7 +575,7 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 
 	AActor* Actor = Cast<AActor>(WeakActor.Get());
 
-	UE_LOG(LogSpatialReceiver, Log, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
+	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Worker %s Remove Actor: %s %lld"), *NetDriver->Connection->GetWorkerId(), Actor && !Actor->IsPendingKill() ? *Actor->GetName() : TEXT("nullptr"), EntityId);
 
 	// Cleanup pending add components if any exist.
 	if (USpatialActorChannel* ActorChannel = NetDriver->GetActorChannelByEntityId(EntityId))
@@ -962,7 +962,11 @@ void USpatialReceiver::AttachDynamicSubobject(Worker_EntityId EntityId, const FC
 		PendingDynamicSubobjectComponents.Remove(EntityComponentPair);
 	});
 
-	Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsOwnedByWorker());
+	// If on a client, we need to set up the proper component interest for the new subobject.
+	if (!NetDriver->IsServer())
+	{
+		Sender->SendComponentInterestForSubobject(Info, EntityId, Channel->IsOwnedByWorker());
+	}
 }
 
 void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorChannel* Channel, const Worker_ComponentData& Data)
@@ -1180,7 +1184,7 @@ void USpatialReceiver::HandleUnreliableRPC(const Worker_ComponentUpdateOp& Op)
 
 		if (!TargetObject)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
+			UE_LOG(LogSpatialReceiver, Log, TEXT("HandleUnreliableRPC: Could not find target object: %s, skipping rpc at index: %d"), *ObjectRef.ToString(), Payload.Index);
 			continue;
 		}
 
@@ -1670,7 +1674,7 @@ void USpatialReceiver::ResolveIncomingOperations(UObject* Object, const FUnrealO
 		{
 			DependentChannel->RemoveRepNotifiesWithUnresolvedObjs(RepNotifies, RepLayout, *UnresolvedRefs, ReplicatingObject);
 
-			UE_LOG(LogSpatialReceiver, Log, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
+			UE_LOG(LogSpatialReceiver, Verbose, TEXT("Resolved for target object %s"), *ReplicatingObject->GetName());
 			DependentChannel->PostReceiveSpatialUpdate(ReplicatingObject, RepNotifies);
 		}
 
@@ -1779,7 +1783,7 @@ void USpatialReceiver::ResolveObjectReferences(FRepLayout& RepLayout, UObject* R
 				UObject* Object = PackageMap->GetObjectFromNetGUID(NetGUID, true);
 				check(Object);
 
-				UE_LOG(LogSpatialReceiver, Log, TEXT("ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
+				UE_LOG(LogSpatialReceiver, Verbose, TEXT("ResolveObjectReferences: Resolved object ref: Offset: %d, Object ref: %s, PropName: %s, ObjName: %s"), AbsOffset, *ObjectRef.ToString(), *Property->GetNameCPP(), *Object->GetName());
 
 				UnresolvedIt.RemoveCurrent();
 				bResolvedSomeRefs = true;
