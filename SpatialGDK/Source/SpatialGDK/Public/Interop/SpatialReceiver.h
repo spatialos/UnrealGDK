@@ -120,6 +120,7 @@ public:
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
 	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
+	void FlushRemoveComponentOps();
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
@@ -156,6 +157,8 @@ private:
 
 	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
 	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
+
+	void ProcessRemoveComponent(const Worker_RemoveComponentOp& Op);
 
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
@@ -231,6 +234,7 @@ private:
 	TArray<Worker_EntityId> PendingAddEntities;
 	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
+	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;
 
 	TMap<Worker_RequestId, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;

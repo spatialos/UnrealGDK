@@ -103,6 +103,7 @@ void USpatialDispatcher::ProcessOps(Worker_OpList* OpList)
 		}
 	}
 
+	Receiver->FlushRemoveComponentOps();
 	Receiver->FlushRetryRPCs();
 }
 

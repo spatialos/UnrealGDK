@@ -154,18 +154,21 @@ void USpatialReceiver::OnRemoveEntity(const Worker_RemoveEntityOp& Op)
 
 void USpatialReceiver::OnRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
-	// If we're in a critical section, we've received a RemoveEntityOp.
-	// Our RemoveEntityOp processing relies on component data which
-	// SpatialOS has told us to remove.
-	// Because of this, we skip over RemoveComponentOps in critical sections
-	// and let the RemoveEntityOp handle cleanup.
-	if (bInCriticalSection)
+	QueuedRemoveComponentOps.Add(Op);
+}
+
+void USpatialReceiver::FlushRemoveComponentOps()
+{
+	for (const auto& Op : QueuedRemoveComponentOps)
 	{
-		return;
+		ProcessRemoveComponent(Op);
 	}
 
-	// If we are delegated authority over a component that does not exist, we will receive
-	// a RemoveComponentOp. We should only remove local data if this component does exist.
+	QueuedRemoveComponentOps.Empty();
+}
+
+void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op)
+{
 	if (!StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
 	{
 		return;
