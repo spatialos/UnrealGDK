@@ -11,8 +11,8 @@
 
 struct FUnrealObjectRef;
 struct FPendingRPCParams;
-using FPendingRPCParamsPtr = TSharedPtr<FPendingRPCParams>;
-DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessRPCDelegate, FPendingRPCParamsPtr)
+using FPendingRPCParamsPtr = TUniquePtr<FPendingRPCParams>;
+DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessRPCDelegate, const FPendingRPCParams&)
 
 struct FPendingRPCParams
 {
@@ -26,7 +26,7 @@ struct FPendingRPCParams
 class FRPCContainer
 {
 public:
-	void QueueRPC(const FUnrealObjectRef& TargetObjectRef, FPendingRPCParamsPtr Params, ESchemaComponentType Type);
+	void QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
 	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply);
 	bool ObjectHasRPCsQueuedOfType(const FUnrealObjectRef& TargetObjectRef, ESchemaComponentType Type) const;
 
@@ -36,7 +36,7 @@ private:
 	using RPCContainerType = TMap<ESchemaComponentType, FRPCMap>;
 
 	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArrayOfParams& RPCList);
-	bool ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParamsPtr Params);
+	bool ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParams& Params);
 
 	RPCContainerType QueuedRPCs;
 };

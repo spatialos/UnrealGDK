@@ -176,8 +176,8 @@ private:
 	void RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object);
 
 	// TODO(Alex): unreliableRPC are also queued. Should this be changed?
-	bool ApplyRPC(FPendingRPCParamsPtr Params);
-	bool ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);	
+	bool ApplyRPC(const FPendingRPCParams& Params);
+	bool ApplyRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);	
 
 	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
 

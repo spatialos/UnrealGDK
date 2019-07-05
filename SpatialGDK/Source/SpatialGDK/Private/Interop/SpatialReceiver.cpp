@@ -1200,7 +1200,7 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 			}
 		}
 
-		FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
+		FPendingRPCParamsPtr Params = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
 		if(UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
 			const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
@@ -1212,14 +1212,14 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 				&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, ESchemaComponentType::SCHEMA_Invalid))
 			{
 				// Apply if possible, queue otherwise
-				if (ApplyRPC(Params))
+				if (ApplyRPC(*Params))
 				{
 					continue;
 				}
 			}
 		}
 
-		QueueIncomingRPC(Params);
+		QueueIncomingRPC(MoveTemp(Params));
 	}
 }
 
@@ -1297,9 +1297,9 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
-	FPendingRPCParamsPtr Params = MakeShared<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
+	FPendingRPCParamsPtr Params = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
 
-	QueueIncomingRPC(Params);
+	QueueIncomingRPC(MoveTemp(Params));
 
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
@@ -1427,7 +1427,7 @@ void USpatialReceiver::RegisterListeningEntityIfReady(Worker_EntityId EntityId, 
 	}
 }
 
-bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCPayload& Payload, const FString& SenderWorkerId)
+bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, const FString& SenderWorkerId)
 {
 	bool bApplied = false;
 
@@ -1436,7 +1436,8 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCP
 
 	TSet<FUnrealObjectRef> UnresolvedRefs;
 
-	FSpatialNetBitReader PayloadReader(PackageMap, Payload.PayloadData.GetData(), Payload.CountDataBits(), UnresolvedRefs);
+	RPCPayload PayloadCopy = Payload;
+	FSpatialNetBitReader PayloadReader(PackageMap, PayloadCopy.PayloadData.GetData(), PayloadCopy.CountDataBits(), UnresolvedRefs);
 
 	int ReliableRPCId = 0;
 	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
@@ -1479,22 +1480,22 @@ bool USpatialReceiver::ApplyRPC(UObject* TargetObject, UFunction* Function, RPCP
 	return bApplied;
 }
 
-bool USpatialReceiver::ApplyRPC(FPendingRPCParamsPtr Params)
+bool USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 {
-	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		return false;
 	}
 
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObjectWeakPtr.Get());
-	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 	if (Function == nullptr)
 	{
 		return false;
 	}
 
-	return ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params->Payload, FString{});
+	return ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params.Payload, FString{});
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
@@ -1690,7 +1691,7 @@ void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 		Type = RPCInfo->Type;
 	}
 
-	IncomingRPCs.QueueRPC(Params->ObjectRef, Params, Type);
+	IncomingRPCs.QueueRPC(MoveTemp(Params), Type);
 }
 
 void USpatialReceiver::ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef)

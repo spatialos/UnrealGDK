@@ -13,10 +13,10 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 {
 }
 
-void FRPCContainer::QueueRPC(const FUnrealObjectRef& TargetObjectRef, FPendingRPCParamsPtr Params, ESchemaComponentType Type)
+void FRPCContainer::QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type)
 {
-	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(TargetObjectRef);
-	ArrayOfParams.Push(Params);
+	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(Params->ObjectRef);
+	ArrayOfParams.Push(MoveTemp(Params));
 }
 
 void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArrayOfParams& RPCList)
@@ -24,7 +24,7 @@ void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArr
 	int NumProcessedParams = 0;
 	for (auto& Params : RPCList)
 	{
-		if (ApplyFunction(FunctionToApply, Params))
+		if (ApplyFunction(FunctionToApply, *Params))
 		{
 			NumProcessedParams++;
 		}
@@ -68,7 +68,7 @@ bool FRPCContainer::ObjectHasRPCsQueuedOfType(const FUnrealObjectRef& TargetObje
 	return false;
 }
 
-bool FRPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParamsPtr Params)
+bool FRPCContainer::ApplyFunction(const FProcessRPCDelegate& FunctionToApply, FPendingRPCParams& Params)
 {
 	return FunctionToApply.Execute(Params);
 }

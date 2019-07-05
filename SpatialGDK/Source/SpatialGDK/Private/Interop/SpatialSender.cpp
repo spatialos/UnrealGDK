@@ -729,9 +729,9 @@ void USpatialSender::SendPositionUpdate(Worker_EntityId EntityId, const FVector&
 	Connection->SendComponentUpdate(EntityId, &Update);
 }
 
-bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
+bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 {
-	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
+	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params.ObjectRef);
 	if (!TargetObjectWeakPtr.IsValid())
 	{
 		// Target object was destroyed before the RPC could be (re)sent
@@ -748,7 +748,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 	}
 
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 
 	if (Channel->bCreatingNewEntity)
 	{
@@ -763,7 +763,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 
 		// This is where we'll serialize this RPC and queue it to be added on entity creation
 		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-		OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Params->Payload);
+		OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Params.Payload);
 		return true;
 	}
 
@@ -780,7 +780,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo.Type);
 
 		const UObject* UnresolvedObject = nullptr;
-		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params->Payload, ComponentId, RPCInfo.Index, EntityId, UnresolvedObject);
+		Worker_CommandRequest CommandRequest = CreateRPCCommandRequest(TargetObject, Params.Payload, ComponentId, RPCInfo.Index, EntityId, UnresolvedObject);
 
 		if (UnresolvedObject)
 		{
@@ -791,14 +791,14 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 		Worker_RequestId RequestId = Connection->SendCommandRequest(EntityId, &CommandRequest, SpatialConstants::UNREAL_RPC_ENDPOINT_COMMAND_ID);
 
 #if !UE_BUILD_SHIPPING
-		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params->Payload.PayloadData.Num());
+		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params.Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
 
 		if (Function->HasAnyFunctionFlags(FUNC_NetReliable))
 		{
 			UE_LOG(LogSpatialSender, Verbose, TEXT("Sending reliable command request (entity: %lld, component: %d, function: %s, attempt: 1)"),
 				EntityId, CommandRequest.component_id, *Function->GetName());
-			Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Params->Payload.PayloadData, 0));
+			Receiver->AddPendingReliableRPC(RequestId, MakeShared<FReliableRPCForRetry>(TargetObject, Function, ComponentId, RPCInfo.Index, Params.Payload.PayloadData, 0));
 		}
 		else
 		{
@@ -835,7 +835,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 			const UObject* UnresolvedObject = nullptr;
 			AddPendingUnreliableRPC(TargetObject, Params, ComponentId, RPCInfo.Index, UnresolvedObject);
 #if !UE_BUILD_SHIPPING
-			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params->Payload.PayloadData.Num());
+			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params.Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
 			return true;
 		}
@@ -855,7 +855,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 			}
 
 			const UObject* UnresolvedParameter = nullptr;
-			Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params->Payload, ComponentId, RPCInfo.Index, UnresolvedParameter);
+			Worker_ComponentUpdate ComponentUpdate = CreateRPCEventUpdate(TargetObject, Params.Payload, ComponentId, RPCInfo.Index, UnresolvedParameter);
 
 			if (UnresolvedParameter)
 			{
@@ -864,7 +864,7 @@ bool USpatialSender::SendRPC(FPendingRPCParamsPtr Params)
 
 			Connection->SendComponentUpdate(EntityId, &ComponentUpdate);
 #if !UE_BUILD_SHIPPING
-			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params->Payload.PayloadData.Num());
+			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params.Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
 			return true;
 		}
@@ -1090,7 +1090,7 @@ void USpatialSender::QueueOutgoingRPC(FPendingRPCParamsPtr Params)
 	check(RPCInfo);
 
 	const FUnrealObjectRef& TargetObjectRef = PackageMap->GetUnrealObjectRefFromObject(TargetObject);
-	OutgoingRPCs.QueueRPC(TargetObjectRef, Params, RPCInfo->Type);
+	OutgoingRPCs.QueueRPC(MoveTemp(Params), RPCInfo->Type);
 }
 
 FSpatialNetBitWriter USpatialSender::PackRPCDataToSpatialNetBitWriter(UFunction* Function, void* Parameters, int ReliableRPCId, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects) const
@@ -1167,7 +1167,7 @@ Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	return ComponentUpdate;
 }
 
-void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, FPendingRPCParamsPtr Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject)
+void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, const FPendingRPCParams& Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject)
 {
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
@@ -1177,7 +1177,7 @@ void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, FPendingRPCP
 	}
 
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-	UFunction* Function = ClassInfo.RPCs[Parameters->Payload.Index];
+	UFunction* Function = ClassInfo.RPCs[Parameters.Payload.Index];
 
 	AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(TargetObjectRef.Entity).Get());
 	check(TargetActor != nullptr);
@@ -1209,8 +1209,8 @@ void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, FPendingRPCP
 	FPendingUnreliableRPC RPC;
 	RPC.Offset = TargetObjectRef.Offset;
 	RPC.Index = RPCIndex;
-	RPC.Data.SetNumUninitialized(Parameters->Payload.PayloadData.Num());
-	FMemory::Memcpy(RPC.Data.GetData(), Parameters->Payload.PayloadData.GetData(), Parameters->Payload.PayloadData.Num());
+	RPC.Data.SetNumUninitialized(Parameters.Payload.PayloadData.Num());
+	FMemory::Memcpy(RPC.Data.GetData(), Parameters.Payload.PayloadData.GetData(), Parameters.Payload.PayloadData.Num());
 	RPC.Entity = TargetObjectRef.Entity;
 	UnreliableRPCs.FindOrAdd(ControllerObjectRef.Entity).Emplace(MoveTemp(RPC));
 }
