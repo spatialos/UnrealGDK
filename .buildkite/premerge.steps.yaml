@@ -19,7 +19,7 @@ common: &common
   plugins:
     - git-clean#v0.0.1:
         flags: "-ffdx --exclude=UnrealEngine --exclude=UnrealEngine-Cache"
-    - ca-johnson/taskkill#v4.2: ~
+    - ca-johnson/taskkill#v4.1: ~
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.
