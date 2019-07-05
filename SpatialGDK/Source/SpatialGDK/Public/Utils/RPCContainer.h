@@ -18,6 +18,7 @@ struct FPendingRPCParams
 {
 	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload, int InReliableRPCIndex = 0);
 
+	// TODO: UNR-1653 Redesign bCheckRPCOrder Tests functionality
 	int ReliableRPCIndex;
 	FUnrealObjectRef ObjectRef;
 	SpatialGDK::RPCPayload Payload;
