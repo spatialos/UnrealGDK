@@ -162,7 +162,7 @@ void USnapshotManager::LoadSnapshot(const FString& SnapshotName)
 
 	// Set up reserve IDs delegate
 	ReserveEntityIDsDelegate SpawnEntitiesDelegate;
-	SpawnEntitiesDelegate.BindLambda([EntitiesToSpawn, this](Worker_ReserveEntityIdsResponseOp& Op)
+	SpawnEntitiesDelegate.BindLambda([EntitiesToSpawn, this](const Worker_ReserveEntityIdsResponseOp& Op)
 	{
 		UE_LOG(LogSnapshotManager, Log, TEXT("Creating entities in snapshot, number of entities to spawn: %i"), Op.number_of_entity_ids);
 

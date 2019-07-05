@@ -68,4 +68,7 @@ public:
 	// that contains this class (or parent class). Returns DefaultWorkerType
 	// if no mapping is found.
 	FName GetWorkerTypeForClass(TSubclassOf<AActor> Class);
+
+	// Returns the Server worker type that is authoritative over this ActorGroup.
+	FName GetWorkerTypeForActorGroup(const FName& ActorGroup) const;
 };

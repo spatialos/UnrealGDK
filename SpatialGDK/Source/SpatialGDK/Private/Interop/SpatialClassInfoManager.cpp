@@ -10,6 +10,7 @@
 #include "Runtime/Launch/Resources/Version.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
+
 #if WITH_EDITOR
 #include "Kismet/KismetSystemLibrary.h"
 #endif
@@ -155,15 +156,28 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	}
 
+	if (Class->IsChildOf<AActor>())
+	{
+		FinishConstructingActorClassInfo(ClassPath, Info);
+	}
+	else
+	{
+		FinishConstructingSubobjectClassInfo(ClassPath, Info);
+	}
+}
+
+void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
+{
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		if (!bEnableHandover && Type == SCHEMA_Handover)
+		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
+
+		if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
 		{
 			return;
 		}
 
-		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[ClassPath].SchemaComponents[Type];
-		if (ComponentId != 0)
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			Info->SchemaComponents[Type] = ComponentId;
 			ComponentToClassInfoMap.Add(ComponentId, Info);
@@ -172,15 +186,15 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	});
 
-	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[ClassPath].SubobjectData)
+	for (auto& SubobjectClassDataPair : SchemaDatabase->ActorClassPathToSchema[ClassPath].SubobjectData)
 	{
 		int32 Offset = SubobjectClassDataPair.Key;
-		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
+		FActorSpecificSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
 
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
 		if (SubobjectClass == nullptr)
 		{
-			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to resolve the class for subobject %s (class path: %s) on actor class %s! This subobject will not be able to replicate in Spatial!"), *SubobjectSchemaData.Name.ToString(), *SubobjectSchemaData.ClassPath, *Class->GetPathName());
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to resolve the class for subobject %s (class path: %s) on actor class %s! This subobject will not be able to replicate in Spatial!"), *SubobjectSchemaData.Name.ToString(), *SubobjectSchemaData.ClassPath, *ClassPath);
 			continue;
 		}
 
@@ -192,7 +206,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
-			if (!bEnableHandover && Type == SCHEMA_Handover)
+			if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
 			{
 				return;
 			}
@@ -210,42 +224,70 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
 
-	if (Class->IsChildOf<AActor>())
+	if (UClass* ActorClass = Info->Class.Get())
 	{
-		Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(Class));
-		Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(Class));
+		if (ActorClass->IsChildOf<AActor>())
+		{
+			Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
+			Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
 
-		UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
-			*Class->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
+			UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
+				*ActorClass->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
+		}
+	}
+}
+
+void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
+{
+	for (const auto& DynamicSubobjectData : SchemaDatabase->SubobjectClassPathToSchema[ClassPath].DynamicSubobjectComponents)
+	{
+		// Make a copy of the already made FClassInfo for this dynamic subobject
+		TSharedRef<FClassInfo> SpecificDynamicSubobjectInfo = MakeShared<FClassInfo>(Info.Get());
+
+		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
+		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
+
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
+			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
+
+			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+			{
+				SpecificDynamicSubobjectInfo->SchemaComponents[Type] = ComponentId;
+				ComponentToClassInfoMap.Add(ComponentId, SpecificDynamicSubobjectInfo);
+				ComponentToOffsetMap.Add(ComponentId, Offset);
+				ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
+			}
+		});
+
+		Info->DynamicSubobjectInfo.Add(SpecificDynamicSubobjectInfo);
+	}
+}
+
+void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
+{
+	if (FString* ClassPath = SchemaDatabase->ComponentIdToClassPath.Find(ComponentId))
+	{
+		if (UClass* Class = LoadObject<UClass>(nullptr, **ClassPath))
+		{
+			CreateClassInfoForClass(Class);
+		}
 	}
 }
 
 bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const
 {
-	return SchemaDatabase->ClassPathToSchema.Contains(PathName);
+	return SchemaDatabase->ActorClassPathToSchema.Contains(PathName) || SchemaDatabase->SubobjectClassPathToSchema.Contains(PathName);
 }
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* Class)
 {
-	if (ClassInfoMap.Find(Class) == nullptr)
+	if (!ClassInfoMap.Contains(Class))
 	{
 		CreateClassInfoForClass(Class);
 	}
-
+	
 	return ClassInfoMap[Class].Get();
-}
-
-const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset)
-{
-	const FClassInfo& Info = GetOrCreateClassInfoByClass(Class);
-
-	if (Offset == 0)
-	{
-		return Info;
-	}
-
-	TSharedRef<FClassInfo> SubobjectInfo = Info.SubobjectInfo.FindChecked(Offset);
-	return SubobjectInfo.Get();
 }
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject* Object)
@@ -260,14 +302,19 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject
 
 		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
 
-		check(ObjectRef.IsValid())
+		check(ObjectRef.IsValid());
 
-		return GetOrCreateClassInfoByClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
+		return ComponentToClassInfoMap[ObjectRef.Offset].Get();
 	}
 }
 
-const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_ComponentId ComponentId) const
+const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_ComponentId ComponentId)
 {
+	if (!ComponentToClassInfoMap.Contains(ComponentId))
+	{
+		TryCreateClassInfoForComponentId(ComponentId);
+	}
+
 	TSharedRef<FClassInfo> Info = ComponentToClassInfoMap.FindChecked(ComponentId);
 	return Info.Get();
 }
@@ -295,9 +342,9 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) const
 {
 	const FString ClassPath = Class.GetPathName();
-	if (const FSchemaData* SchemaData = SchemaDatabase->ClassPathToSchema.Find(Class.GetPathName()))
+	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
 	{
-		return SchemaData->SchemaComponents[SCHEMA_Data];
+		return ActorSchemaData->SchemaComponents[SCHEMA_Data];
 	}
 	return SpatialConstants::INVALID_COMPONENT_ID;
 }
@@ -339,6 +386,11 @@ TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHier
 
 bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {
+	if (!ComponentToOffsetMap.Contains(ComponentId))
+	{
+		TryCreateClassInfoForComponentId(ComponentId);
+	}
+
 	if (uint32* Offset = ComponentToOffsetMap.Find(ComponentId))
 	{
 		OutOffset = *Offset;
@@ -350,12 +402,27 @@ bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId Compone
 
 ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_ComponentId ComponentId)
 {
+	if (!ComponentToCategoryMap.Contains(ComponentId))
+	{
+		TryCreateClassInfoForComponentId(ComponentId);
+	}
+
 	if (ESchemaComponentType* Category = ComponentToCategoryMap.Find(ComponentId))
 	{
 		return *Category;
 	}
 
 	return ESchemaComponentType::SCHEMA_Invalid;
+}
+
+uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
+{
+	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
+	if (const uint32* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
+	{
+		return *ComponentId;
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
 }
 
 bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)

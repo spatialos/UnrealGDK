@@ -39,6 +39,7 @@ namespace
 const FVector2D Icon16x16(16.0f, 16.0f);
 const FVector2D Icon20x20(20.0f, 20.0f);
 const FVector2D Icon40x40(40.0f, 40.0f);
+const FVector2D Icon100x22(100.0f, 22.0f);
 }
 
 TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
@@ -60,16 +61,16 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	Style->Set("SpatialGDKEditorToolbar.CreateSpatialGDKSchema.Small",
 		new IMAGE_BRUSH(TEXT("Schema@0.5x"), Icon20x20));
 
-	Style->Set("SpatialGDKEditorToolbar.StartSpatialOSStackAction",
+	Style->Set("SpatialGDKEditorToolbar.StartSpatialDeployment",
 		new IMAGE_BRUSH(TEXT("Launch"), Icon40x40));
 
-	Style->Set("SpatialGDKEditorToolbar.StartSpatialOSStackAction.Small",
+	Style->Set("SpatialGDKEditorToolbar.StartSpatialDeployment.Small",
 		new IMAGE_BRUSH(TEXT("Launch@0.5x"), Icon20x20));
 	
-	Style->Set("SpatialGDKEditorToolbar.StopSpatialOSStackAction",
+	Style->Set("SpatialGDKEditorToolbar.StopSpatialDeployment",
 		new IMAGE_BRUSH(TEXT("Stop"), Icon40x40));
 
-	Style->Set("SpatialGDKEditorToolbar.StopSpatialOSStackAction.Small",
+	Style->Set("SpatialGDKEditorToolbar.StopSpatialDeployment.Small",
 		new IMAGE_BRUSH(TEXT("Stop@0.5x"), Icon20x20));
 	
 	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction",
@@ -77,6 +78,21 @@ TSharedRef<FSlateStyleSet> FSpatialGDKEditorToolbarStyle::Create()
 	
 	Style->Set("SpatialGDKEditorToolbar.LaunchInspectorWebPageAction.Small",
 		new IMAGE_BRUSH(TEXT("Inspector@0.5x"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.StartSpatialService",
+		new IMAGE_BRUSH(TEXT("Launch"), Icon40x40));
+
+	Style->Set("SpatialGDKEditorToolbar.StartSpatialService.Small",
+		new IMAGE_BRUSH(TEXT("Launch@0.5x"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.StopSpatialService",
+		new IMAGE_BRUSH(TEXT("Stop"), Icon40x40));
+
+	Style->Set("SpatialGDKEditorToolbar.StopSpatialService.Small",
+		new IMAGE_BRUSH(TEXT("Stop@0.5x"), Icon20x20));
+
+	Style->Set("SpatialGDKEditorToolbar.SpatialOSLogo",
+		new IMAGE_BRUSH(TEXT("SPATIALOS_LOGO_WHITE"), Icon100x22));
 
 	return Style;
 }

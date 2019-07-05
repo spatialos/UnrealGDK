@@ -56,17 +56,23 @@ struct FClassInfo
 
 	TWeakObjectPtr<UClass> Class;
 
+	// Exists for all classes
 	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
-
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 	TArray<FInterestPropertyInfo> InterestProperties;
 
+	// For Actors and default Subobjects belonging to Actors
 	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 
+	// Only for Actors
+	TMap<uint32, TSharedRef<const FClassInfo>> SubobjectInfo;
+
+	// Only for default Subobjects belonging to Actors
 	FName SubobjectName;
 
-	TMap<uint32, TSharedRef<FClassInfo>> SubobjectInfo;
+	// Only for Subobject classes
+	TArray<TSharedRef<const FClassInfo>> DynamicSubobjectInfo;
 
 	FName ActorGroup;
 	FName WorkerType;
@@ -91,9 +97,8 @@ public:
 	bool IsSupportedClass(const FString& PathName) const;
 
 	const FClassInfo& GetOrCreateClassInfoByClass(UClass* Class);
-	const FClassInfo& GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset);
 	const FClassInfo& GetOrCreateClassInfoByObject(UObject* Object);
-	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId) const;
+	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId);
 
 	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
@@ -102,6 +107,7 @@ public:
 	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
 	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
 
+	uint32 GetComponentIdFromLevelPath(const FString& LevelPath);
 	bool IsSublevelComponent(Worker_ComponentId ComponentId);
 
 	UPROPERTY()
@@ -109,6 +115,11 @@ public:
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
+	void TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId);
+
+	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
+	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
+
 	void QuitGame();
 
 private:
