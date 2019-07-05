@@ -22,7 +22,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialReceiver, Log, All);
 
-class APlayerController;
+class USpatialNetConnection;
 class USpatialSender;
 class UGlobalStateManager;
 
@@ -93,11 +93,11 @@ struct FPendingIncomingRPC
 
 using FIncomingRPCArray = TArray<TSharedPtr<FPendingIncomingRPC>>;
 
-DECLARE_DELEGATE_OneParam(EntityQueryDelegate, Worker_EntityQueryResponseOp&);
+DECLARE_DELEGATE_OneParam(EntityQueryDelegate, const Worker_EntityQueryResponseOp&);
 DECLARE_DELEGATE_OneParam(ReserveEntityIDsDelegate, Worker_ReserveEntityIdsResponseOp&);
-DECLARE_DELEGATE_OneParam(HeartbeatDelegate, Worker_ComponentUpdateOp&);
 DECLARE_DELEGATE_OneParam(ServerPingDelegate, Worker_ComponentUpdateOp&);
 DECLARE_DELEGATE_OneParam(ClientPongDelegate, Worker_ComponentUpdateOp&);
+DECLARE_DELEGATE_OneParam(CreateEntityDelegate, const Worker_CreateEntityResponseOp&);
 
 UCLASS()
 class USpatialReceiver : public UObject
@@ -127,12 +127,12 @@ public:
 
 	void AddEntityQueryDelegate(Worker_RequestId RequestId, EntityQueryDelegate Delegate);
 	void AddReserveEntityIdsDelegate(Worker_RequestId RequestId, ReserveEntityIDsDelegate Delegate);
+	void AddCreateEntityDelegate(Worker_RequestId RequestId, const CreateEntityDelegate& Delegate);
 
-	void AddHeartbeatDelegate(Worker_EntityId EntityId, HeartbeatDelegate Delegate);
 	void AddServerPingDelegate(Worker_EntityId EntityId, ServerPingDelegate Delegate);
 	void AddClientPongDelegate(Worker_EntityId EntityId, ClientPongDelegate Delegate);
 
-	void OnEntityQueryResponse(Worker_EntityQueryResponseOp& Op);
+	void OnEntityQueryResponse(const Worker_EntityQueryResponseOp& Op);
 
 	void CleanupDeletedEntity(Worker_EntityId EntityId);
 
@@ -181,13 +181,12 @@ private:
 
 	AActor* FindSingletonActor(UClass* SingletonClass);
 
+	void OnHeartbeatComponentUpdate(Worker_ComponentUpdateOp& Op);
+
 public:
 	TMap<FUnrealObjectRef, TSet<FChannelObjectPair>> IncomingRefsMap;
 
 private:
-	template <typename T>
-	friend T* GetComponentData(USpatialReceiver& Receiver, Worker_EntityId EntityId);
-
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
 
@@ -224,8 +223,12 @@ private:
 
 	TMap<Worker_RequestId, EntityQueryDelegate> EntityQueryDelegates;
 	TMap<Worker_RequestId, ReserveEntityIDsDelegate> ReserveEntityIDsDelegates;
-
-	TMap<Worker_EntityId_Key, HeartbeatDelegate> HeartbeatDelegates;
+	TMap<Worker_RequestId, CreateEntityDelegate> CreateEntityDelegates;
 	TMap<Worker_EntityId_Key, ServerPingDelegate> ServerPingDelegates;
 	TMap<Worker_EntityId_Key, ClientPongDelegate> ClientPongDelegates;
+
+	// This will map PlayerController entities to the corresponding SpatialNetConnection
+	// for PlayerControllers that this server has authority over. This is used for player
+	// lifecycle logic (Heartbeat component updates, disconnection logic).
+	TMap<Worker_EntityId_Key, TWeakObjectPtr<USpatialNetConnection>> AuthorityPlayerControllerConnectionMap;
 };

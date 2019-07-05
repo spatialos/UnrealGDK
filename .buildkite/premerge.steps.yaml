@@ -11,11 +11,13 @@ common: &common
     - "environment=production"
     - "platform=windows"
     - "permission_set=builder"
-    - "queue=v2-1551960839-2fc9bbe6e15deffd-------z"
+    - "queue=${CI_WINDOWS_BUILDER_QUEUE:-v3-1560265248-9d4cabb4d362b669-------z}"
   retry:
     automatic:
       - <<: *agent_transients
   timeout_in_minutes: 60
+  plugins:
+    - ca-johnson/taskkill#v4.1: ~
 
 # NOTE: step labels turn into commit-status names like {org}/{repo}/{pipeline}/{step-label}, lower-case and hyphenated.
 # These are then relied on to have stable names by other things, so once named, please beware renaming has consequences.

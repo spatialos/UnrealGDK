@@ -1,12 +1,12 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
 #include "SpatialGDKSettings.h"
+#include "Improbable/SpatialEngineConstants.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
 
 #if WITH_EDITOR
-#include "Modules/ModuleManager.h"
-#include "ISettingsModule.h"
+#include "Settings/LevelEditorPlaySettings.h"
 #endif
 
 USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitializer)
@@ -29,6 +29,12 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bUseFrameTimeAsLoad(false)
 	, bCheckRPCOrder(false)
 	, bBatchSpatialPositionUpdates(true)
+	, bEnableServerQBI(bUsingQBI)
+	, bPackUnreliableRPCs(true)
+	, bUseDevelopmentAuthenticationFlow(false)
+	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
+	, bEnableOffloading(false)
+	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
 {
 }
 
@@ -39,29 +45,29 @@ void USpatialGDKSettings::PostInitProperties()
 	// Check any command line overrides for using QBI (after reading the config value):
 	const TCHAR* CommandLine = FCommandLine::Get();
 	FParse::Bool(CommandLine, TEXT("useQBI"), bUsingQBI);
+
+#if WITH_EDITOR
+	ULevelEditorPlaySettings* PlayInSettings = GetMutableDefault<ULevelEditorPlaySettings>();
+	PlayInSettings->bEnableOffloading = bEnableOffloading;
+	PlayInSettings->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
+#endif
 }
 
 #if WITH_EDITOR
-// Add a pop-up to warn users to update their config upon changing the using QBI property.
-void USpatialGDKSettings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+void USpatialGDKSettings::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
-	if (PropertyChangedEvent.Property == nullptr)
-	{
-		return;
-	}
-	const FName PropertyName = PropertyChangedEvent.Property->GetFName();
-
-	if (PropertyName == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bUsingQBI))
-	{
-		const EAppReturnType::Type Result = FMessageDialog::Open(EAppMsgType::YesNo,
-			FText::FromString(FString::Printf(TEXT("You must set the value of the \"enable_chunk_interest\" Legacy flag to \"%s\" in your launch configuration file for this to work.\n\nIf you are using an auto-generated launch config, you can set this value from within Unreal Editor by going to Edit > Project Settings > SpatialOS GDK for Unreal > Settings.\n\nDo you want to configure your launch config settings now?"),
-				bUsingQBI ? TEXT("false") : TEXT("true"))));
-
-		if (Result == EAppReturnType::Yes)
-		{
-			FModuleManager::LoadModuleChecked<ISettingsModule>("Settings").ShowViewer("Project", "SpatialGDKEditor", "Editor Settings");
-		}
-	}
 	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	// Use MemberProperty here so we report the correct member name for nested changes
+	const FName Name = (PropertyChangedEvent.MemberProperty != nullptr) ? PropertyChangedEvent.MemberProperty->GetFName() : NAME_None;
+
+	if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, bEnableOffloading))
+	{
+		GetMutableDefault<ULevelEditorPlaySettings>()->bEnableOffloading = bEnableOffloading;
+	}
+	else if (Name == GET_MEMBER_NAME_CHECKED(USpatialGDKSettings, DefaultWorkerType))
+	{
+		GetMutableDefault<ULevelEditorPlaySettings>()->DefaultWorkerType = DefaultWorkerType.WorkerTypeName;
+	}
 }
 #endif

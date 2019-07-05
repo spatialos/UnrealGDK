@@ -5,11 +5,11 @@ type PingEvent {
 }
 
 component ServerPing {
-    id = 9984;
+    id = 9983;
     event PingEvent server_ping;
 }
 
 component ClientPong {
-    id = 9983;
+    id = 9982;
     event PingEvent client_pong;
 }
