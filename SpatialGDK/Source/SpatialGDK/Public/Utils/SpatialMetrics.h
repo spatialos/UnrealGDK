@@ -11,6 +11,7 @@
 
 #include "SpatialMetrics.generated.h"
 
+struct Schema_Object;
 class USpatialNetDriver;
 class USpatialWorkerConnection;
 
@@ -38,6 +39,10 @@ public:
 	UFUNCTION(Exec)
 	void SpatialStopRPCMetrics();
 	void OnStopRPCMetricsCommand();
+
+	UFUNCTION(Exec)
+	void SpatialModifySetting(const FString& Name, float Value);
+	void OnModifySettingCommand(Schema_Object* CommandPayload);
 
 	void TrackSentRPC(UFunction* Function, ESchemaComponentType RPCType, int PayloadSize);
 

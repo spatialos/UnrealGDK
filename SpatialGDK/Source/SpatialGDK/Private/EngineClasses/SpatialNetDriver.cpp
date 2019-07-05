@@ -2,12 +2,12 @@
 
 #include "EngineClasses/SpatialNetDriver.h"
 
-#include "EngineGlobals.h"
 #include "Engine/ActorChannel.h"
 #include "Engine/ChildConnection.h"
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/NetworkObjectList.h"
+#include "EngineGlobals.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/GameNetworkManager.h"
 #include "Net/DataReplication.h"
@@ -15,26 +15,31 @@
 #include "SocketSubsystem.h"
 #include "UObject/UObjectIterator.h"
 
-#include "Interop/Connection/SpatialWorkerConnection.h"
-#include "Interop/GlobalStateManager.h"
-#include "Interop/SnapshotManager.h"
-#include "Interop/SpatialClassInfoManager.h"
-#include "Interop/SpatialPlayerSpawner.h"
-#include "Interop/SpatialReceiver.h"
-#include "Interop/SpatialSender.h"
-#include "Interop/SpatialDispatcher.h"
 #include "EngineClasses/SpatialActorChannel.h"
 #include "EngineClasses/SpatialGameInstance.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
 #include "EngineClasses/SpatialPendingNetGame.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "Interop/GlobalStateManager.h"
+#include "Interop/SnapshotManager.h"
+#include "Interop/SpatialClassInfoManager.h"
+#include "Interop/SpatialDispatcher.h"
+#include "Interop/SpatialPlayerSpawner.h"
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/ActorGroupManager.h"
 #include "Utils/EngineVersionCheck.h"
 #include "Utils/EntityPool.h"
+#include "Utils/InterestFactory.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
+
+#if WITH_EDITOR
+#include "SpatialGDKServicesModule.h"
+#endif
 
 DEFINE_LOG_CATEGORY(LogSpatialOSNetDriver);
 
@@ -116,20 +121,42 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		return false;
 	}
 
+	if (!bInitAsClient)
+	{
+		GatherClientInterestDistances();
+	}
+
+#if WITH_EDITOR
+	PlayInEditorID = GPlayInEditorID;
+
+	// If we're launching in PIE then ensure there is a deployment running before connecting.
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+
+	// Wait for a running local deployment before connecting. If the deployment has already started then just connect.
+	if (!LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping() || LocalDeploymentManager->IsDeploymentStarting())
+	{
+		UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Waiting for local SpatialOS deployment to start before connecting..."));
+		SpatialDeploymentStartHandle = LocalDeploymentManager->OnDeploymentStart.AddLambda([WeakThis = TWeakObjectPtr<USpatialNetDriver>(this), URL]
+		{
+			if (!WeakThis.IsValid())
+			{
+				return;
+			}
+			UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
+
+			WeakThis.Get()->InitiateConnectionToSpatialOS(URL);
+			FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+			GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(WeakThis.Get()->SpatialDeploymentStartHandle);
+		});
+
+		return true;
+	}
+#endif
+
 	InitiateConnectionToSpatialOS(URL);
 
 	return true;
-}
-
-void USpatialNetDriver::PostInitProperties()
-{
-	Super::PostInitProperties();
-
-	if (!HasAnyFlags(RF_ClassDefaultObject))
-	{
-		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
-		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
-	}
 }
 
 void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
@@ -524,6 +551,34 @@ void USpatialNetDriver::SpatialProcessServerTravel(const FString& URL, bool bAbs
 	UE_LOG(LogGameMode, Log, TEXT("SpatialServerTravel - Wiping the world"), *NewURL);
 	NetDriver->WipeWorld(FinishServerTravel);
 #endif // WITH_SERVER_CODE
+}
+
+void USpatialNetDriver::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+	// If we are still connected, cleanup our corresponding worker entity if it exists.
+	if (Connection != nullptr && WorkerEntityId != SpatialConstants::INVALID_ENTITY_ID)
+	{
+		Connection->SendDeleteEntityRequest(WorkerEntityId);
+	}
+
+#if WITH_EDITOR
+	// Ensure our OnDeploymentStart delegate is removed when the net driver is shut down.
+	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
+	GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+#endif
+}
+
+void USpatialNetDriver::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	if (!HasAnyFlags(RF_ClassDefaultObject))
+	{
+		// GuidCache will be allocated as an FNetGUIDCache above. To avoid an engine code change, we re-do it with the Spatial equivalent.
+		GuidCache = MakeShareable(new FSpatialNetGUIDCache(this));
+	}
 }
 
 bool USpatialNetDriver::IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const
@@ -1101,6 +1156,10 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 		DebugRelevantActors = false;
 	}
 
+#if !UE_BUILD_SHIPPING
+	ConsiderListSize = FinalSortedCount;
+#endif
+
 	return Updated;
 #else
 	return 0;
@@ -1162,6 +1221,15 @@ void USpatialNetDriver::ProcessRemoteFunction(
 		return;
 	}
 
+	// The RPC might have been called by an actor directly, or by a subobject on that actor
+	UObject* CallingObject = SubObject ? SubObject : Actor;
+
+	if (CallingObject->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
+	{
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("Trying to call RPC %s on object %s (class %s) that isn't supported by Spatial. This RPC will be dropped."), *Function->GetName(), *CallingObject->GetName(), *CallingObject->GetClass()->GetName());
+		return;
+	}
+
 	// Copied from UNetDriver::ProcessRemoteFunctionForChannel to copy pass-by-ref
 	// parameters from OutParms into Parameters's memory.
 	if (Stack == nullptr)
@@ -1194,9 +1262,6 @@ void USpatialNetDriver::ProcessRemoteFunction(
 			}
 		}
 	}
-
-	// The RPC might have been called by an actor directly, or by a subobject on that actor
-	UObject* CallingObject = SubObject ? SubObject : Actor;
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
