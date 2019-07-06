@@ -5,7 +5,9 @@
 #include "Engine/World.h"
 #include "Engine/Classes/GameFramework/Actor.h"
 #include "GameFramework/PlayerController.h"
+#include "UObject/UObjectIterator.h"
 
+#include "EngineClasses/Components/ActorInterestComponent.h"
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
@@ -33,8 +35,13 @@ void GatherClientInterestDistances()
 	TMap<UClass*, float> DiscoveredInterestDistancesSquared;
 	for (TObjectIterator<UClass> It; It; ++It)
 	{
-		if (It->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly))
+		if (It->HasAnySpatialClassFlags(SPATIALCLASS_ServerOnly | SPATIALCLASS_NotSpatialType))
 		{
+			continue;
+		}
+		if (It->HasAnyClassFlags(CLASS_NewerVersionExists))
+		{
+			// This skips classes generated for hot reload etc (i.e. REINST_, SKEL_, TRASHCLASS_)
 			continue;
 		}
 		if (!It->IsChildOf<AActor>())
@@ -87,17 +94,17 @@ InterestFactory::InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpa
 {
 }
 
-Worker_ComponentData InterestFactory::CreateInterestData()
+Worker_ComponentData InterestFactory::CreateInterestData() const
 {
 	return CreateInterest().CreateInterestData();
 }
 
-Worker_ComponentUpdate InterestFactory::CreateInterestUpdate()
+Worker_ComponentUpdate InterestFactory::CreateInterestUpdate() const
 {
 	return CreateInterest().CreateInterestUpdate();
 }
 
-Interest InterestFactory::CreateInterest()
+Interest InterestFactory::CreateInterest() const
 {
 	if (!GetDefault<USpatialGDKSettings>()->bUsingQBI)
 	{
@@ -128,19 +135,19 @@ Interest InterestFactory::CreateInterest()
 	}
 }
 
-Interest InterestFactory::CreateActorInterest()
+Interest InterestFactory::CreateActorInterest() const
 {
 	Interest NewInterest;
 
-	QueryConstraint DefinedConstraints = CreateSystemDefinedConstraints();
+	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
 
-	if (!DefinedConstraints.IsValid())
+	if (!SystemConstraints.IsValid())
 	{
 		return NewInterest;
 	}
 
 	Query NewQuery;
-	NewQuery.Constraint = DefinedConstraints;
+	NewQuery.Constraint = SystemConstraints;
 	// TODO: Make result type handle components certain workers shouldn't see
 	// e.g. Handover, OwnerOnly, etc.
 	NewQuery.FullSnapshotResult = true;
@@ -154,13 +161,13 @@ Interest InterestFactory::CreateActorInterest()
 	return NewInterest;
 }
 
-Interest InterestFactory::CreatePlayerOwnedActorInterest()
+Interest InterestFactory::CreatePlayerOwnedActorInterest() const
 {
-	QueryConstraint DefinedConstraints = CreateSystemDefinedConstraints();
+	QueryConstraint SystemConstraints = CreateSystemDefinedConstraints();
 
 	// Servers only need the defined constraints
 	Query ServerQuery;
-	ServerQuery.Constraint = DefinedConstraints;
+	ServerQuery.Constraint = SystemConstraints;
 	ServerQuery.FullSnapshotResult = true;
 
 	ComponentInterest ServerComponentInterest;
@@ -171,9 +178,9 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 
 	QueryConstraint ClientConstraint;
 
-	if (DefinedConstraints.IsValid())
+	if (SystemConstraints.IsValid())
 	{
-		ClientConstraint.AndConstraint.Add(DefinedConstraints);
+		ClientConstraint.AndConstraint.Add(SystemConstraints);
 	}
 
 	if (LevelConstraints.IsValid())
@@ -188,9 +195,11 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 	ComponentInterest ClientComponentInterest;
 	ClientComponentInterest.Queries.Add(ClientQuery);
 
+	AddUserDefinedQueries(LevelConstraints, ClientComponentInterest.Queries);
+
 	Interest NewInterest;
 	// Server Interest
-	if (DefinedConstraints.IsValid() && GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
+	if (SystemConstraints.IsValid() && GetDefault<USpatialGDKSettings>()->bEnableServerQBI)
 	{
 		NewInterest.ComponentInterestMap.Add(SpatialConstants::POSITION_COMPONENT_ID, ServerComponentInterest);
 	}
@@ -203,7 +212,24 @@ Interest InterestFactory::CreatePlayerOwnedActorInterest()
 	return NewInterest;
 }
 
-QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
+void InterestFactory::AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const
+{
+	check(Actor);
+	check(NetDriver != nullptr && NetDriver->ClassInfoManager);
+
+	TArray<UActorInterestComponent*> ActorInterestComponents;
+	Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
+	if (ActorInterestComponents.Num() == 1)
+	{
+		ActorInterestComponents[0]->CreateQueries(*NetDriver->ClassInfoManager, LevelConstraints, OutQueries);
+	}
+	else if (ActorInterestComponents.Num() > 1)
+	{
+		UE_LOG(LogInterestFactory, Error, TEXT("%s has more than one ActorInterestQueryComponent"), *Actor->GetPathName());
+	}
+}
+
+QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const
 {
 	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraints();
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint();
@@ -229,12 +255,27 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints()
 	return SystemDefinedConstraints;
 }
 
-QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
+QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 {
-	// Checkout Radius constraints are defined by the ClientInterestDistance property on actors.
+	// If the actor has a component to specify interest and that indicates that we shouldn't generate
+	// constraints based on NetCullDistanceSquared, abort. There is a check elsewhere to ensure that
+	// there is at most one ActorInterestQueryComponent.
+	TArray<UActorInterestComponent*> ActorInterestComponents;
+	Actor->GetComponents<UActorInterestComponent>(ActorInterestComponents);
+	if (ActorInterestComponents.Num() == 1)
+	{
+		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
+		check(ActorInterest);
+		if (!ActorInterest->bUseNetCullDistanceForCheckoutRadius)
+		{
+			return QueryConstraint{};
+		}
+	}
+
+	// Checkout Radius constraints are defined by the NetCullDistanceSquared property on actors.
 	//   - Checkout radius is a RelativeCylinder constraint on the player controller.
-	//   - ClientInterestDistance on AActor is used to define the default checkout radius with no other constraints.
-	//   - ClientInterestDistance on other actor types is used to define additional constraints if needed.
+	//   - NetCullDistanceSquared on AActor is used to define the default checkout radius with no other constraints.
+	//   - NetCullDistanceSquared on other actor types is used to define additional constraints if needed.
 	//   - If a subtype defines a radius smaller than a parent type, then its requirements are already captured.
 	//   - If a subtype defines a radius larger than all parent types, then it needs an additional constraint.
 	//   - Other than the default from AActor, all radius constraints also include Component constraints to
@@ -262,16 +303,19 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints()
 		CheckoutRadiusConstraint.AndConstraint.Add(RadiusConstraint);
 
 		QueryConstraint ActorTypeConstraint;
-		AddTypeHierarchyToConstraint(InterestDistanceSquared.Key, ActorTypeConstraint);
-		CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
-
-		CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
+		check(InterestDistanceSquared.Key);
+		AddTypeHierarchyToConstraint(*InterestDistanceSquared.Key, ActorTypeConstraint);
+		if (ActorTypeConstraint.IsValid())
+		{
+			CheckoutRadiusConstraint.AndConstraint.Add(ActorTypeConstraint);
+			CheckoutRadiusConstraints.OrConstraint.Add(CheckoutRadiusConstraint);
+		}
 	}
 
 	return CheckoutRadiusConstraints;
 }
 
-QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint()
+QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint() const
 {
 	QueryConstraint AlwaysInterestedConstraint;
 
@@ -300,7 +344,7 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint()
 }
 
 
-QueryConstraint InterestFactory::CreateSingletonConstraint()
+QueryConstraint InterestFactory::CreateSingletonConstraint() const
 {
 	QueryConstraint SingletonConstraint;
 
@@ -318,7 +362,7 @@ QueryConstraint InterestFactory::CreateSingletonConstraint()
 	return SingletonConstraint;
 }
 
-void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint)
+void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const
 {
 	UObject* ObjectOfInterest = Property->GetObjectPropertyValue(Data);
 
@@ -339,31 +383,19 @@ void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8
 	OutConstraint.OrConstraint.Add(EntityIdConstraint);
 }
 
-void InterestFactory::AddTypeHierarchyToConstraint(const UClass* BaseType, QueryConstraint& OutConstraint)
+void InterestFactory::AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint) const
 {
-	const UClass* AuthoritativeBaseType = BaseType->GetAuthoritativeClass();
-
-	check(NetDriver && NetDriver->ClassInfoManager && NetDriver->ClassInfoManager->SchemaDatabase);
-	const USchemaDatabase* SchemaDatabase = NetDriver->ClassInfoManager->SchemaDatabase;
-	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
+	check(NetDriver && NetDriver->ClassInfoManager);
+	TArray<Worker_ComponentId> ComponentIds = NetDriver->ClassInfoManager->GetComponentIdsForClassHierarchy(BaseType);
+	for (Worker_ComponentId ComponentId : ComponentIds)
 	{
-		UClass* Class = *ClassIt;
-		check(Class);
-		if (Class->IsChildOf(AuthoritativeBaseType))
-		{
-			const uint32 ComponentId = SchemaDatabase->GetComponentIdForClass(*Class);
-			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
-			{
-				QueryConstraint ComponentTypeConstraint;
-				ComponentTypeConstraint.ComponentConstraint = ComponentId;
-				OutConstraint.OrConstraint.Add(ComponentTypeConstraint);
-			}
-		}
+		QueryConstraint ComponentTypeConstraint;
+		ComponentTypeConstraint.ComponentConstraint = ComponentId;
+		OutConstraint.OrConstraint.Add(ComponentTypeConstraint);
 	}
-	check(OutConstraint.IsValid());
 }
 
-QueryConstraint InterestFactory::CreateLevelConstraints()
+QueryConstraint InterestFactory::CreateLevelConstraints() const
 {
 	QueryConstraint LevelConstraint;
 
