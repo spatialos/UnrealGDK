@@ -103,13 +103,14 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 DirectoryInfo currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
                 while (currentDir.Parent != null)
                 {
-                    currentDir = currentDir.Parent;
+                    Console.WriteLine("CurrentDir: " + currentDir);
                     // This is how Unreal asserts we have a valid root directory for the Unreal Engine. Must contain 'Engine/Binaries' and 'Engine/Build'. (FDesktopPlatformBase::IsValidRootDirectory)
                     if (Directory.Exists(Path.Combine(currentDir.FullName, "Engine", "Binaries")) && Directory.Exists(Path.Combine(currentDir.FullName, "Engine", "Build")))
                     {
                         unrealEngine = currentDir.FullName;
                         break;
                     }
+                    currentDir = currentDir.Parent;
                 }
             }
             else if (Directory.Exists(Path.Combine(Path.GetDirectoryName(projectFile), engineAssociation))) // If the engine association is a path then use that.

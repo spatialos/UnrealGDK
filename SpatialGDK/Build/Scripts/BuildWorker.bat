@@ -1,77 +1,53 @@
 @echo off
 
-rem Input args: BuildName : Platform : 
+rem Input args: BuildName, Platform, BuildConfiguration, uproject 
 
 set IsProjectPlugin=""
 
 rem If we are running as a project plugin then this will be the path to the spatial directory.
 if exist "%~dp0..\..\..\..\..\..\spatial" (
-	goto BuildAsProjectPlugin
+	echo Building as project plugin
+	set SpatialDir="%~dp0..\..\..\..\..\..\spatial"
+	set BUILD_EXE_PATH="Plugins\UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Build.exe"
+	goto Build
 )
 
-rem If we are running as an Engine plugin then this is more complicated....
+
 :BuildAsEnginePlugin
+rem If we are running as an Engine plugin then find the project path and spatial path.
 echo Building as engine plugin
 
-rem We need to get the spatial directory somehow from this location.
-rem Use the path of the uproject to find the spatial directory.
-rem Or we can use an input variable and update the docs.
-
-echo 0: %0
-echo 1: %1
-echo 2: %2
-echo 3: %3
-echo 4: %4
-echo 5: %5
-echo 6: %6
-
-echo dir: %~dp0
-echo dir1: %~dp1
-echo dir2: %~dp2
-echo cd: !cd!
-
-rem TODO: Get the filepath of the project with this little hacky code, then use this to get the spatial directory and whatever else we need.
+rem Grab the project path from the .uproject file.
 set uproject=%4
 for %%i IN (%uproject%) DO (
-rem ECHO filedrive=%%~di
-rem ECHO filepath=%%~pi
-set ProjectDir=%%~pi
-rem ECHO filename=%%~ni
-rem ECHO fileextension=%%~xi
+	set ProjectDir=%%~pi
 )
-
-echo Project Directory is: %ProjectDir%
 
 set SpatialDir=%ProjectDir%spatial
 
-echo %SpatialDir%
+echo Using project directory: %ProjectDir%
+echo Using spatial directory: %SpatialDir%
 
+rem We have found the spatial directory for the project!
+if not exist %SpatialDir% (
+	goto: SpatialNotExist
+)
+
+rem Path to the SpatialGDK build tool.
+set BUILD_EXE_PATH="%~dp0..\..\Binaries\ThirdParty\Improbable\Programs\Build.exe"
+
+
+:Build
+
+rem Build the spatial worker configs
 pushd "%SpatialDir%"
 spatial worker build build-config
 popd
 
+rem Build Unreal project using the SpatialGDK build tool
 
-rem TODO: Final thing is get this working with Engine Build Exe path.
-set BUILD_EXE_PATH=""
-
-goto Build
-
-
-:BuildAsProjectPlugin
-echo Building as project plugin
-
-pushd "%~dp0..\..\..\..\..\..\spatial"
-spatial worker build build-config
-popd
-
-rem Build Unreal project
+rem This little bit allows using a relative path to the .uproject but only for project plugins.........
 pushd "%~dp0..\..\..\..\..\"
-
-set BUILD_EXE_PATH="Plugins\UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Build.exe"
-
-goto Build
-
-:Build
 
 if not exist %BUILD_EXE_PATH% (
 	echo Error: Build executable not found! Please run Setup.bat in your UnrealGDK root to generate it.
@@ -79,7 +55,11 @@ if not exist %BUILD_EXE_PATH% (
 )
 
 %BUILD_EXE_PATH% %*
-
 popd
-
 exit /b %ERRORLEVEL%
+
+
+:SpatialNotExist
+
+echo Could not find the projects 'spatial' directory! Please ensure your input arguments are correct.
+exit /b 1
