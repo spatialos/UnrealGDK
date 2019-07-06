@@ -61,6 +61,7 @@ private:
 
 	bool bLocalDeploymentRunning;
 	bool bSpatialServiceRunning;
+	bool bSpatialServiceInProjectDirectory;
 
 	bool bStartingDeployment;
 	bool bStoppingDeployment;
@@ -68,11 +69,6 @@ private:
 	bool bStartingSpatialService;
 	bool bStoppingSpatialService;
 
-	FDateTime LastSpatialServiceCheck;
-	FDateTime LastDeploymentCheck;
-
 	FString LocalRunningDeploymentID;
 	FString ProjectName;
-
-	FTimerManager TimerManager;
 };
