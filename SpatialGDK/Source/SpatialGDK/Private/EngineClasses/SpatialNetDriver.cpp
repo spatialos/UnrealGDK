@@ -130,7 +130,8 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	PlayInEditorID = GPlayInEditorID;
 
 	// If we're launching in PIE then ensure there is a deployment running before connecting.
-	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices")) {
+	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
+	{
 		FLocalDeploymentManager* LocalDeploymentManager = GDKServices->GetLocalDeploymentManager();
 
 		// Wait for a running local deployment before connecting. If the deployment has already started then just connect.
@@ -138,21 +139,24 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 		{
 			UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Waiting for local SpatialOS deployment to start before connecting..."));
 			SpatialDeploymentStartHandle = LocalDeploymentManager->OnDeploymentStart.AddLambda([WeakThis = TWeakObjectPtr<USpatialNetDriver>(this), URL]
-			{
-				if (!WeakThis.IsValid())
 				{
-					return;
-				}
-				UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
+					if (!WeakThis.IsValid())
+					{
+						return;
+					}
+					UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
 
-				WeakThis.Get()->InitiateConnectionToSpatialOS(URL);
-				FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-				GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(WeakThis.Get()->SpatialDeploymentStartHandle);
-			});
+					WeakThis.Get()->InitiateConnectionToSpatialOS(URL);
+					if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
+					{
+						GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(WeakThis.Get()->SpatialDeploymentStartHandle);
+					}
+				});
 
 			return true;
 		}
 	}
+
 #endif
 
 	InitiateConnectionToSpatialOS(URL);
@@ -569,7 +573,8 @@ void USpatialNetDriver::BeginDestroy()
 
 #if WITH_EDITOR
 	// Ensure our OnDeploymentStart delegate is removed when the net driver is shut down.
-	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices")) {
+	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
+	{
 		GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
 	}
 #endif
