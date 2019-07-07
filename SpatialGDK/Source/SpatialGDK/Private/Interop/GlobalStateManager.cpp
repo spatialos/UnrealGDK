@@ -452,23 +452,25 @@ void UGlobalStateManager::SetAuthBeginPlayCalled(const bool bInAuthBeginPlayCall
 
 void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	const bool bWorkerAuthority = AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE;
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id, bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
+	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id,
+		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT ("does not have"));
 
-	if (bWorkerAuthority)
+	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		switch (AuthOp.component_id)
-		{
-			case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
-				GlobalStateManagerEntityId = AuthOp.entity_id;
-				SetAcceptingPlayers(true);
-				break;
-			case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
-				ExecuteInitialSingletonActorReplication();
-				break;
-			default:
-				break;
-		}
+		return;
+	}
+
+	switch (AuthOp.component_id)
+	{
+		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+			GlobalStateManagerEntityId = AuthOp.entity_id;
+			SetAcceptingPlayers(true);
+			break;
+		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
+			ExecuteInitialSingletonActorReplication();
+			break;
+		default:
+			break;
 	}
 }
 
