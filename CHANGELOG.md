@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed support for relative paths as the engine association in your games .uproject file.
 - RPCs on `NotSpatial` types are no longer queued forever and are now dropped instead.
 - Fixed issue where an Actor's Spatial position was not updated if it had an owner that was not replicated.
+- Fixed null pointer dereference crash when trying to initiate a Spatial connection without an existing one.
 
 ## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
 - Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
