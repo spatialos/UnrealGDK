@@ -111,6 +111,11 @@ namespace Improbable
             {
                 var deploymentServiceClient = DeploymentServiceClient.Create();
 
+                if (DeploymentExists(deploymentServiceClient, projectName, mainDeploymentName))
+                {
+                    StopDeploymentByName(deploymentServiceClient, projectName, mainDeploymentName);
+                }
+
                 var createMainDeploymentOp = CreateMainDeploymentAsync(deploymentServiceClient, launchSimPlayerDeployment, projectName, assemblyName, mainDeploymentName, mainDeploymentJsonPath, mainDeploymentSnapshotPath, mainDeploymentRegion);
 
                 if (!launchSimPlayerDeployment)
@@ -126,6 +131,11 @@ namespace Improbable
 
                     Console.WriteLine("Successfully created the main deployment");
                     return 0;
+                }
+
+                if (DeploymentExists(deploymentServiceClient, projectName, simDeploymentName))
+                {
+                    StopDeploymentByName(deploymentServiceClient, projectName, simDeploymentName);
                 }
 
                 var createSimDeploymentOp = CreateSimPlayerDeploymentAsync(deploymentServiceClient, projectName, assemblyName, mainDeploymentName, simDeploymentName, simDeploymentJson, simDeploymentRegion, simNumPlayers);
@@ -174,6 +184,37 @@ namespace Improbable
             }
 
             return 0;
+        }
+
+        private static bool DeploymentExists(DeploymentServiceClient deploymentServiceClient, string projectName,
+            string deploymentName)
+        {
+            var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
+
+            return activeDeployments.FirstOrDefault(d => d.Name == deploymentName) != null;
+        }
+
+
+        private static void StopDeploymentByName(DeploymentServiceClient deploymentServiceClient, string projectName,
+            string deploymentName)
+        {
+            var activeDeployments = ListLaunchedActiveDeployments(deploymentServiceClient, projectName);
+
+            var deployment = activeDeployments.FirstOrDefault(d => d.Name == deploymentName);
+
+            if (deployment == null)
+            {
+                Console.WriteLine($"Unable to stop the deployment {deployment.Name} because it can't be found or isn't running.");
+                return;
+            }
+
+            Console.WriteLine($"Stopping active deployment by name: {deployment.Name}");
+
+            deploymentServiceClient.StopDeployment(new StopDeploymentRequest
+            {
+                Id = deployment.Id,
+                ProjectName = projectName
+            });
         }
 
         private static Operation<Deployment, CreateDeploymentMetadata> CreateMainDeploymentAsync(DeploymentServiceClient deploymentServiceClient,
@@ -322,7 +363,7 @@ namespace Improbable
             {
                 // Stop only the specified deployment.
                 var deploymentId = args[2];
-                StopDeployment(deploymentServiceClient, projectName, deploymentId);
+                StopDeploymentById(deploymentServiceClient, projectName, deploymentId);
 
                 return 0;
             }
@@ -333,13 +374,13 @@ namespace Improbable
             foreach (var deployment in activeDeployments)
             {
                 var deploymentId = deployment.Id;
-                StopDeployment(deploymentServiceClient, projectName, deploymentId);
+                StopDeploymentById(deploymentServiceClient, projectName, deploymentId);
             }
 
             return 0;
         }
 
-        private static void StopDeployment(DeploymentServiceClient client, string projectName, string deploymentId)
+        private static void StopDeploymentById(DeploymentServiceClient client, string projectName, string deploymentId)
         {
             try
             {
@@ -394,6 +435,7 @@ namespace Improbable
             {
                 View = ViewType.Basic,
                 ProjectName = projectName,
+                DeploymentStoppedStatusFilter = ListDeploymentsRequest.Types.DeploymentStoppedStatusFilter.NotStoppedDeployments,
                 PageSize = 50
             });
 
