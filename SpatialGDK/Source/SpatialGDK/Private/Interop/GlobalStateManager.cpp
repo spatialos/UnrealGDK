@@ -55,8 +55,8 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 #endif // WITH_EDITOR
   
 	bAcceptingPlayers = false;
-	bCanBeginPlay = false;
-	bTriggeredBeginPlay = false;
+	bAuthBeginPlayCalled = false;
+	bIsReadyToCallBeginPlay = false;
 }
 
 void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
@@ -81,8 +81,8 @@ void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentDat
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-	bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
-	ApplyCanBeginPlayUpdate(bCanBeginPlayData);
+	const bool bAuthBeginPlayCalledData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID);
+	ApplyAuthBeginPlayCalledUpdate(bAuthBeginPlayCalledData);
 }
 
 void UGlobalStateManager::ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update)
@@ -203,22 +203,18 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID) == 1)
+	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID) == 1)
 	{
-		bool bCanBeginPlayUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
-		ApplyCanBeginPlayUpdate(bCanBeginPlayUpdate);
+		const bool bAuthBeginPlayCalledUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID);
+		ApplyAuthBeginPlayCalledUpdate(bAuthBeginPlayCalledUpdate);
 	}
 }
 
-void UGlobalStateManager::ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate)
+void UGlobalStateManager::ApplyAuthBeginPlayCalledUpdate(const bool bAuthBeginPlayCalledUpdate)
 {
-	bCanBeginPlay = bCanBeginPlayUpdate;
+	bAuthBeginPlayCalled = bAuthBeginPlayCalledUpdate;
 
-	// For now, this will only be called on non-authoritative workers.
-	if (bCanBeginPlay)
-	{
-		TryTriggerBeginPlay();
-	}
+	bIsReadyToCallBeginPlay = true;
 }
 
 void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
@@ -419,11 +415,7 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId) const
 
 void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 {
-	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
-	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to set AcceptingPlayers on the GSM but this worker does not have authority."));
-		return;
-	}
+	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
 
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
@@ -443,62 +435,56 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
+void UGlobalStateManager::SetAuthBeginPlayCalled(const bool bInAuthBeginPlayCalled)
 {
-	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
-	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to set CanBeginPlay on the GSM but this worker does not have authority."));
-		return;
-	}
+	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
 
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	// Set CanBeginPlay on GSM
-	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
+	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID, static_cast<uint8_t>(bInAuthBeginPlayCalled));
 
-	bCanBeginPlay = bInCanBeginPlay;
+	bAuthBeginPlayCalled = bInAuthBeginPlayCalled;
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::TryTriggerBeginPlay()
+void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	if (bCanBeginPlay && NetDriver->EntityPool != nullptr && NetDriver->EntityPool->IsReady())
-	{
-		TriggerBeginPlay();
+	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id,
+		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT ("does not have"));
 
-		// Start accepting players only AFTER we've triggered BeginPlay
-		if (NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
-		{
+	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
+	{
+		return;
+	}
+
+	switch (AuthOp.component_id)
+	{
+		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+			GlobalStateManagerEntityId = AuthOp.entity_id;
 			SetAcceptingPlayers(true);
-		}
+			break;
+		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
+			ExecuteInitialSingletonActorReplication();
+			break;
+		default:
+			break;
 	}
 }
 
-void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID)
+bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId) const
 {
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM has changed. This worker %s authority."),  bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
-
-	if (bWorkerAuthority)
+	switch (ComponentId)
 	{
-		// Make sure we update our known entity id for the GSM when we receive authority.
-		GlobalStateManagerEntityId = CurrentEntityID;
-
-		if (!bCanBeginPlay)
-		{
-			SetCanBeginPlay(true);
-			BecomeAuthoritativeOverAllActors();
-			TryTriggerBeginPlay();
-		}
-		else
-		{
-			// This handles the case when a server shuts down without deleting entities,
-			// and a new server connects, so we don't want to call BeginPlay with authority
-			// again, but need to let the clients know they can connect.
-			SetAcceptingPlayers(true);
-		}
+		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
+		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+			return true;
+		default:
+			return false;
 	}
 }
 
@@ -513,7 +499,7 @@ void UGlobalStateManager::BeginDestroy()
 		if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
 		{
 			// Reset the BeginPlay flag so Startup Actors are properly managed.
-			SetCanBeginPlay(false);
+			SetAuthBeginPlayCalled(false);
 
 			// Reset the Singleton map so Singletons are recreated.
 			Worker_ComponentUpdate Update = {};
@@ -550,16 +536,17 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	if (bTriggeredBeginPlay)
+	check(IsReadyToCallBeginPlay());
+
+	if (!bAuthBeginPlayCalled &&
+		NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
 	{
-		UE_LOG(LogGlobalStateManager, Error, TEXT("Tried to trigger BeginPlay twice! This should never happen"));
-		return;
+		BecomeAuthoritativeOverAllActors();
+		SetAuthBeginPlayCalled(true);
 	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
-
-	bTriggeredBeginPlay = true;
 }
 
 // Queries for the GlobalStateManager in the deployment.
