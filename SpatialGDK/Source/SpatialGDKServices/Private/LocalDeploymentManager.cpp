@@ -49,16 +49,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 
 const FString FLocalDeploymentManager::GetSpotExe()
 {
-	FString PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectPluginsDir(), TEXT("UnrealGDK")));
-
-	if (!FPaths::DirectoryExists(PluginDir))
-	{
-		// If the Project Plugin doesn't exist then use the Engine Plugin.
-		PluginDir = FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::EnginePluginsDir(), TEXT("UnrealGDK")));
-		ensure(FPaths::DirectoryExists(PluginDir));
-	}
-
-	return  FPaths::ConvertRelativePathToFull(FPaths::Combine(PluginDir, TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe")));
+	return FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/spot.exe"));
 }
 
 void FLocalDeploymentManager::StartUpWorkerConfigDirectoryWatcher()
@@ -114,14 +105,18 @@ void FLocalDeploymentManager::WorkerBuildConfigAsync()
 {
 	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
 	{
-		FString SpatialServiceStatusArgs = TEXT("worker build build-config");
+		FString BuildConfigArgs = TEXT("worker build build-config");
 		FString WorkerBuildConfigResult;
 		int32 ExitCode;
-		ExecuteAndReadOutput(SpatialExe, SpatialServiceStatusArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
+		ExecuteAndReadOutput(SpatialExe, BuildConfigArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), WorkerBuildConfigResult, ExitCode);
 
 		if (ExitCode == ExitCodeSuccess)
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Building worker configurations failed. Please ensure your .worker.json files are correct."));
+			UE_LOG(LogSpatialDeploymentManager, Display, TEXT("Building worker configurations succeeded!"));
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Building worker configurations failed. Please ensure your .worker.json files are correct. Result: %s"), *WorkerBuildConfigResult);
 		}
 	});
 }
@@ -223,7 +218,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	if (ExitCode != ExitCodeSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. %s"), *StdErr);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Creation of local deployment failed. Result: %s - Error: %s"), *SpotCreateResult, *StdErr);
 		return false;
 	}
 
@@ -233,7 +228,7 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 	bool bParsingSuccess = ParseJson(SpotCreateResult, SpotJsonResult);
 	if (!bParsingSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot create result failed."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot create result failed. Result: %s"), *SpotCreateResult);
 	}
 
 	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
@@ -293,7 +288,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 
 	if (ExitCode != ExitCodeSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local deployment! %s"), *StdErr);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to stop local deployment! Result: %s - Error: %s"), *SpotDeleteResult, *StdErr);
 	}
 
 	bool bSuccess = false;
@@ -302,7 +297,7 @@ bool FLocalDeploymentManager::TryStopLocalDeployment()
 	bool bPasingSuccess = ParseJson(SpotDeleteResult, SpotJsonResult);
 	if (!bPasingSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot delete result failed."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot delete result failed. Result: %s"), *SpotDeleteResult);
 	}
 
 	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
@@ -422,7 +417,7 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 
 	if (ExitCode != ExitCodeSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to check local deployment status: %s"), *StdErr);
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Failed to check local deployment status. Result: %s - Error: %s"), *SpotListResult, *StdErr);
 		return false;
 	}
 
@@ -430,7 +425,7 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 	bool bPasingSuccess = ParseJson(SpotListResult, SpotJsonResult);
 	if (!bPasingSuccess)
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot list result failed."));
+		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot list result failed. Result: %s"), *SpotListResult);
 	}
 
 	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;

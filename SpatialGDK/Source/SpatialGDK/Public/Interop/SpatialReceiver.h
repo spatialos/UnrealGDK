@@ -14,6 +14,7 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealObjectRef.h"
 #include "SpatialCommonTypes.h"
+#include "Utils/RPCContainer.h"
 
 #include <WorkerSDK/improbable/c_schema.h>
 #include <WorkerSDK/improbable/c_worker.h>
@@ -122,10 +123,11 @@ public:
 	void OnAddComponent(const Worker_AddComponentOp& Op);
 	void OnRemoveEntity(const Worker_RemoveEntityOp& Op);
 	void OnRemoveComponent(const Worker_RemoveComponentOp& Op);
+	void FlushRemoveComponentOps();
 	void OnAuthorityChange(const Worker_AuthorityChangeOp& Op);
 
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
-	void HandleUnreliableRPC(const Worker_ComponentUpdateOp& Op);
+	void HandleRPC(const Worker_ComponentUpdateOp& Op);
 	void OnCommandRequest(const Worker_CommandRequestOp& Op);
 	void OnCommandResponse(const Worker_CommandResponseOp& Op);
 
@@ -162,6 +164,8 @@ private:
 	AActor* TryGetOrCreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
 	AActor* CreateActor(SpatialGDK::UnrealMetadata* UnrealMetadata, SpatialGDK::SpawnData* SpawnData);
 
+	void ProcessRemoveComponent(const Worker_RemoveComponentOp& Op);
+
 	static FTransform GetRelativeSpawnTransform(UClass* ActorClass, FTransform SpawnTransform);
 
 	void QueryForStartupActor(AActor* Actor, Worker_EntityId EntityId);
@@ -177,18 +181,24 @@ private:
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& ComponentUpdate, UObject* TargetObject, USpatialActorChannel* Channel, bool bIsHandover);
 
-	void ApplyRPC(UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
+	void RegisterListeningEntityIfReady(Worker_EntityId EntityId, Schema_Object* Object);
+
+	bool ApplyRPC(const FPendingRPCParams& Params);
+	bool ApplyRPC(UObject* TargetObject, UFunction* Function, const SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);	
 
 	void ReceiveCommandResponse(const Worker_CommandResponseOp& Op);
 
 	bool IsReceivedEntityTornOff(Worker_EntityId EntityId);
 
 	void QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectPair, const FObjectReferencesMap& ObjectReferencesMap, const TSet<FUnrealObjectRef>& UnresolvedRefs);
-	void QueueIncomingRPC(const TSet<FUnrealObjectRef>& UnresolvedRefs, UObject* TargetObject, UFunction* Function, SpatialGDK::RPCPayload& Payload, const FString& SenderWorkerId);
+
+	void QueueIncomingRPC(FPendingRPCParamsPtr Params);
 
 	void ResolvePendingOperations_Internal(UObject* Object, const FUnrealObjectRef& ObjectRef);
 	void ResolveIncomingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef);
-	void ResolveIncomingRPCs(UObject* Object, const FUnrealObjectRef& ObjectRef);
+
+	void ResolveIncomingRPCs();
+
 	void ResolveObjectReferences(FRepLayout& RepLayout, UObject* ReplicatedObject, FObjectReferencesMap& ObjectReferencesMap, uint8* RESTRICT StoredData, uint8* RESTRICT Data, int32 MaxAbsOffset, TArray<UProperty*>& RepNotifies, bool& bOutSomeObjectsWereMapped, bool& bOutStillHasUnresolved);
 
 	void ProcessQueuedResolvedObjects();
@@ -231,11 +241,13 @@ private:
 	TArray<TPair<UObject*, FUnrealObjectRef>> ResolvedObjectQueue;
 
 	TMap<FUnrealObjectRef, FIncomingRPCArray> IncomingRPCMap;
+	FRPCContainer IncomingRPCs;
 
 	bool bInCriticalSection;
 	TArray<Worker_EntityId> PendingAddEntities;
 	TArray<Worker_AuthorityChangeOp> PendingAuthorityChanges;
 	TArray<PendingAddComponentWrapper> PendingAddComponents;
+	TArray<Worker_RemoveComponentOp> QueuedRemoveComponentOps;
 
 	TMap<Worker_RequestId, TWeakObjectPtr<USpatialActorChannel>> PendingActorRequests;
 	FReliableRPCMap PendingReliableRPCs;

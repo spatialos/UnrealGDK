@@ -96,7 +96,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
-  
+
 	// Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
 	if (!IsSupportedClass(ClassPath))
 	{
@@ -339,6 +339,51 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 	return nullptr;
 }
 
+uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) const
+{
+	const FString ClassPath = Class.GetPathName();
+	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
+	{
+		return ActorSchemaData->SchemaComponents[SCHEMA_Data];
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}
+
+TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes /* = true */) const
+{
+	TArray<Worker_ComponentId> OutComponentIds;
+
+	check(SchemaDatabase);
+	if (bIncludeDerivedTypes)
+	{
+		for (TObjectIterator<UClass> It; It; ++It)
+		{
+			const UClass* Class = *It;
+			check(Class);
+			if (Class->IsChildOf(&BaseClass))
+			{
+				const Worker_ComponentId ComponentId = GetComponentIdForClass(*Class);
+				if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+				{
+					OutComponentIds.Add(ComponentId);
+				}
+			}
+		}
+	}
+	else
+	{
+		const uint32 ComponentId = GetComponentIdForClass(BaseClass);
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			OutComponentIds.Add(ComponentId);
+		}
+
+	}
+
+	return OutComponentIds;
+}
+
+
 bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {
 	if (!ComponentToOffsetMap.Contains(ComponentId))
@@ -368,6 +413,31 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 	}
 
 	return ESchemaComponentType::SCHEMA_Invalid;
+}
+
+const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)
+{
+	check(Object != nullptr && Function != nullptr);
+
+	const FClassInfo& Info = GetOrCreateClassInfoByObject(Object);
+	const FRPCInfo* RPCInfoPtr = Info.RPCInfoMap.Find(Function);
+
+	// We potentially have a parent function and need to find the child function.
+	// This exists as it's possible in blueprints to explicitly call the parent function.
+	if (RPCInfoPtr == nullptr)
+	{
+		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
+		{
+			if (It.Key()->GetName() == Function->GetName())
+			{
+				// Matching child function found. Use this for the remote function call.
+				RPCInfoPtr = &It.Value();
+				break;
+			}
+		}
+	}
+	check(RPCInfoPtr != nullptr);
+	return *RPCInfoPtr;
 }
 
 uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
