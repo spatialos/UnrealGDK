@@ -20,8 +20,6 @@ goto :Build
 
 :BuildAsEnginePlugin
 rem If we are running as an Engine plugin then we need a full path to the .uproject file!
-
-rem Grab the project path from the .uproject file.
 set UPROJECT=%4
 
 if not exist %UPROJECT% (
@@ -29,15 +27,15 @@ if not exist %UPROJECT% (
 	exit /b 1
 )
 
+rem Grab the project path from the .uproject file.
 for %%i in (%UPROJECT%) do (
 	rem file drive + file directory
 	set UnrealProjectDir="%%~di%%~pi"
 )
 
-set SpatialDir=%UnrealProjectDir%..\spatial\
-
 rem Path to the SpatialGDK build tool as an Engine plugin.
 set BUILD_EXE_PATH="%~dp0..\..\Binaries\ThirdParty\Improbable\Programs\Build.exe"
+set SpatialDir=%UnrealProjectDir%..\spatial\
 
 
 :Build
