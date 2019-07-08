@@ -13,9 +13,9 @@
 #include "SpatialConstants.h"
 
 LatencyManager::LatencyManager(const USpatialNetConnection& InConnection, const USpatialNetDriver& InDriver)
-	: NetConnection(InConnection)
+	: PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
+	, NetConnection(InConnection)
 	, NetDriver(InDriver)
-	, PlayerControllerEntity(SpatialConstants::INVALID_ENTITY_ID)
 {
 }
 
