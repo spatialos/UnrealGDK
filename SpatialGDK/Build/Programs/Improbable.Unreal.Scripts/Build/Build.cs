@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
@@ -292,7 +293,10 @@ mono WorkerCoordinator.exe $@ 2> /improbable/logs/CoordinatorErrors.log";
                 File.WriteAllText(Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"), string.Format(SimulatedPlayerWorkerShellScript, baseGameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
                 File.WriteAllText(Path.Combine(linuxSimulatedPlayerPath, "StartCoordinator.sh"), string.Format(SimulatedPlayerCoordinatorShellScript, baseGameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
 
-                var workerCoordinatorPath = Path.GetFullPath(Path.Combine("Plugins", "UnrealGDK", "SpatialGDK", "Binaries", "ThirdParty", "Improbable", "Programs", "WorkerCoordinator"));
+                // Coordinator files are located in      ./UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/WorkerCoordinator/.
+                // Executable of this build script is in ./UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/Build.exe
+                // Assembly.GetEntryAssembly().Location gives the location of the Build.exe executable.
+                var workerCoordinatorPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "./WorkerCoordinator"));
                 if (Directory.Exists(workerCoordinatorPath))
                 {
                     Common.RunRedirected("xcopy", new[]
