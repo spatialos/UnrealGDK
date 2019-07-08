@@ -49,7 +49,7 @@ The following tables show the state of support of Unreal Engine features on the 
         <td>Q2 - Q3 2019</td>
         <td class="indev"></td>
     </tr>
-        <td>Planned for post Q3 2019</td>
+        <td>Currently unplanned</td>
         <td class="roadmap"></td>
     </tr>
     <!-- </tr>
@@ -361,7 +361,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <tr>
     <td>UE4 4.22 Support</td>
     <td class="indev"></td>
-    <td>Expected before the end of June 2019.</td>
+    <td><a href="https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview">Preview available</a>, full support in July-August 2019.</td>
 </tr>
 
 <!-- ------ Platforms ------ -->
