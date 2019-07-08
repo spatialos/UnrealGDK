@@ -12,7 +12,7 @@ bool SpatialGDKCloudLaunch()
 	const FString CmdExecutable = TEXT("cmd.exe");
 
 	FString LauncherCmdArguments = FString::Printf(
-		TEXT("/c DeploymentLauncher.exe create %s %s %s %s %s %s"),
+		TEXT("/c cmd.exe /c DeploymentLauncher.exe create %s %s %s \"%s\" \"%s\" %s"),
 		*SpatialGDKSettings->GetProjectName(),
 		*SpatialGDKSettings->GetAssemblyName(),
 		*SpatialGDKSettings->GetPrimaryDeploymentName(),
@@ -21,11 +21,10 @@ bool SpatialGDKCloudLaunch()
 		*SpatialGDKSettings->GetPrimaryRegionCode().ToString()
 	);
 
-
 	if (SpatialGDKSettings->IsSimulatedPlayersEnabled())
 	{
 		LauncherCmdArguments = FString::Printf(
-			TEXT("%s %s %s %s %s"),
+			TEXT("%s %s \"%s\" %s %s"),
 			*LauncherCmdArguments,
 			*SpatialGDKSettings->GetSimulatedPlayerDeploymentName(),
 			*SpatialGDKSettings->GetSimulatedPlayerLaunchConfigPath(),
@@ -33,6 +32,11 @@ bool SpatialGDKCloudLaunch()
 			*FString::FromInt(SpatialGDKSettings->GetNumberOfSimulatedPlayer())
 		);
 	}
+
+	LauncherCmdArguments = FString::Printf(
+		TEXT("%s ^& pause"),
+		*LauncherCmdArguments
+	);
 
 	FProcHandle DeploymentLauncherProcHandle = FPlatformProcess::CreateProc(
 		*CmdExecutable, *LauncherCmdArguments, true, false, false, nullptr, 0,
