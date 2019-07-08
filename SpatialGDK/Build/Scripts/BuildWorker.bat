@@ -5,9 +5,11 @@ rem Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <A
 rem Try and build as a project plugin first, check for a project plugin structure.
 set UnrealProjectDir="%~dp0..\..\..\..\..\"
 
-for /f "delims=" %%A in (' powershell -Command "(Get-ChildItem -Path "%UnrealProjectDir%" *.uproject).FullName" ') do set UPROJECT="%%A"
+for /f "delims=" %%A in (' powershell -Command "(Get-ChildItem -Path "%UnrealProjectDir%" *.uproject).FullName" ') do set FoundUproject="%%A"
 
-if %UPROJECT%=="" (
+echo Found uproject: %FoundUproject%
+
+if "%FoundUproject%"=="" (
 	goto :BuildAsEnginePlugin
 )
 
