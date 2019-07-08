@@ -7,8 +7,6 @@ set UnrealProjectDir="%~dp0..\..\..\..\..\"
 
 for /f "delims=" %%A in (' powershell -Command "(Get-ChildItem -Path "%UnrealProjectDir%" *.uproject).FullName" ') do set FoundUproject="%%A"
 
-echo Found uproject: %FoundUproject%
-
 if "%FoundUproject%"=="" (
 	goto :BuildAsEnginePlugin
 )
