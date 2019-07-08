@@ -31,13 +31,13 @@ public:
 	/**
 	 * Whether to use NetCullDistanceSquared to generate constraints relative to the Actor that this component is attached to.
 	 */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "SpatialGDK")
 	bool bUseNetCullDistanceForCheckoutRadius = true;
 
 	/**
 	 * The Queries associated with this component.
 	 */
-	UPROPERTY(BlueprintReadonly, EditDefaultsOnly)
+	UPROPERTY(BlueprintReadonly, EditDefaultsOnly, Category = "SpatialGDK")
 	TArray<FQueryData> Queries;
 
 };
