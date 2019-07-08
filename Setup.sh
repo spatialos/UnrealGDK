@@ -67,7 +67,6 @@ markStartOfBlock "Setup variables"
     BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
     SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
     SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
-    IMPROBABLE_WORKER_DIR="$(dirname "$0")/../../../spatial/workers/improbable"
 markEndOfBlock "Setup variables"
 
 markStartOfBlock "Clean folders"
@@ -75,7 +74,6 @@ markStartOfBlock "Clean folders"
     rm -rf $WORKER_SDK_DIR         2>/dev/null
     rm -rf $BINARIES_DIR           2>/dev/null
     rm -rf $SCHEMA_STD_COPY_DIR    2>/dev/null
-    rm -rf $IMPROBABLE_WORKER_DIR  2>/dev/null
 markEndOfBlock "Clean folders"
 
 markStartOfBlock "Create folders"
@@ -85,7 +83,6 @@ markStartOfBlock "Create folders"
     mkdir -p $CORE_SDK_DIR/worker_sdk >/dev/null 2>/dev/null
     mkdir -p $BINARIES_DIR            >/dev/null 2>/dev/null
     mkdir -p $SCHEMA_STD_COPY_DIR     >/dev/null 2>/dev/null
-    mkdir -p $IMPROBABLE_WORKER_DIR   >/dev/null 2>/dev/null
 markEndOfBlock "Create folders"
 
 markStartOfBlock "Retrieve dependencies"
@@ -130,11 +127,6 @@ markEndOfBlock "Copy GDK schema"
 markStartOfBlock "Build C# utilities"
     msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
 markEndOfBlock "Build C# utilities"
-
-markStartOfBlock "Copy worker coordinator config"
-    echo "Copying worker coordinator config to $IMPROBABLE_WORKER_DIR"
-    cp -R $(dirname %0)/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/spatialos.SimulatedPlayerCoordinator.worker.json $IMPROBABLE_WORKER_DIR
-markEndOfBlock "Copy worker coordinator config"
 
 markEndOfBlock "$0"
 
