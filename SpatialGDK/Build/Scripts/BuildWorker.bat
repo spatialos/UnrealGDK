@@ -5,7 +5,7 @@ rem Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <A
 rem Try and build as a project plugin first, check for a project plugin structure.
 set UnrealProjectDir="%~dp0..\..\..\..\..\"
 
-for /f "delims=" %%A in (' powershell -Command "(Get-ChildItem -Path %UnrealProjectDir% *.uproject).FullName" ') do set UPROJECT="%%A"
+for /f "delims=" %%A in (' powershell -Command "(Get-ChildItem -Path "%UnrealProjectDir%" *.uproject).FullName" ') do set UPROJECT="%%A"
 
 if %UPROJECT%=="" (
 	goto :BuildAsEnginePlugin
@@ -49,7 +49,7 @@ if not exist %SpatialDir% (
 
 echo Building using project directory: 	%UnrealProjectDir%
 echo Building using spatial directory: 	%SpatialDir%
-echo Building using project file:		%uproject%
+echo Building using uproject file:		%4
 
 rem First build the spatial worker configs
 pushd "%SpatialDir%"
