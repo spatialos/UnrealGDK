@@ -2,45 +2,51 @@
 
 rem Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>
 
-rem If we are running as a project plugin then this will be the path to the spatial directory.
-:BuildAsProjectPlugin
-if exist "%~dp0..\..\..\..\..\..\spatial" (
-	echo Building as project plugin
-	set SpatialDir="%~dp0..\..\..\..\..\..\spatial"
-	set UnrealProjectDir="%~dp0..\..\..\..\..\"
-	set BUILD_EXE_PATH="Plugins\UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Build.exe"
-	goto Build
+rem Try and build as a project plugin first, check for a project plugin structure.
+set UnrealProjectDir="%~dp0..\..\..\..\..\"
+
+for /f "delims=" %%A in (' powershell -Command "(Get-ChildItem -Path %UnrealProjectDir% *.uproject).FullName" ') do set UPROJECT="%%A"
+
+if %UPROJECT%=="" (
+	goto :BuildAsEnginePlugin
 )
+
+rem If we are running as a project plugin then this will be the path to the spatial directory.
+echo Building as project plugin
+set SpatialDir="%~dp0..\..\..\..\..\..\spatial"
+set BUILD_EXE_PATH="Plugins\UnrealGDK\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\Build.exe"
+goto :Build
 
 
 :BuildAsEnginePlugin
 rem If we are running as an Engine plugin then we need a full path to the .uproject file!
 
 rem Grab the project path from the .uproject file.
-set uproject=%4
+set UPROJECT=%4
 
-if not exist %uproject% (
-	echo To use BuildWorker.bat with an Engine plugin installation you must provide a full path to your .project file.
+if not exist %UPROJECT% (
+	echo To use BuildWorker.bat with an Engine plugin installation you must provide a full path to your .uproject file.
 	exit /b 1
 )
 
-for %%i in (%uproject%) do (
+for %%i in (%UPROJECT%) do (
 	rem file drive + file directory
 	set UnrealProjectDir="%%~di%%~pi"
 )
 
 set SpatialDir=%UnrealProjectDir%..\spatial\
 
-if not exist %SpatialDir% (
-	echo Could not find the projects 'spatial' directory! Please ensure your input arguments are correct and your GDK is correctly installed.
-	exit /b 1
-)
-
 rem Path to the SpatialGDK build tool as an Engine plugin.
 set BUILD_EXE_PATH="%~dp0..\..\Binaries\ThirdParty\Improbable\Programs\Build.exe"
 
 
 :Build
+
+if not exist %SpatialDir% (
+	echo Could not find the projects 'spatial' directory! Please ensure your input arguments are correct and your GDK is correctly installed.
+	exit /b 1
+)
+
 echo Building using project directory: 	%UnrealProjectDir%
 echo Building using spatial directory: 	%SpatialDir%
 echo Building using project file:		%uproject%
