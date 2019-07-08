@@ -1,6 +1,6 @@
 @echo off
 
-rem Input args: BuildName, Platform, BuildConfiguration, uproject 
+rem Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>
 
 rem If we are running as a project plugin then this will be the path to the spatial directory.
 :BuildAsProjectPlugin
@@ -14,20 +14,26 @@ if exist "%~dp0..\..\..\..\..\..\spatial" (
 
 
 :BuildAsEnginePlugin
-rem If we are running as an Engine plugin then find the project path and spatial path.
+rem If we are running as an Engine plugin then we need a full path to the .uproject file!
 
 rem Grab the project path from the .uproject file.
 set uproject=%4
-for %%i in (%uproject%) do (
-	rem file drive + file directory
-	set ProjectDir=%%~di%%~pi
+
+if not exist %uproject% (
+	echo To use BuildWorker.bat with an Engine plugin installation you must provide a full path to your .project file.
+	exit /b 1
 )
 
-set SpatialDir=%ProjectDir%spatial\
-set UnrealProjectDir=%ProjectDir%%PROJECT_PATH%\
+for %%i in (%uproject%) do (
+	rem file drive + file directory
+	set UnrealProjectDir="%%~di%%~pi"
+)
+
+set SpatialDir=%UnrealProjectDir%..\spatial\
 
 if not exist %SpatialDir% (
-	goto: SpatialNotExist
+	echo Could not find the projects 'spatial' directory! Please ensure your input arguments are correct and your GDK is correctly installed.
+	exit /b 1
 )
 
 rem Path to the SpatialGDK build tool as an Engine plugin.
@@ -44,7 +50,7 @@ pushd "%SpatialDir%"
 spatial worker build build-config
 popd
 
-rem We pushd to the location of the project file to allow specifying just the .uproject name and not the full path (both are allowed).
+rem We pushd to the location of the project file to allow specifying just the .uproject name and not the full path (both are allowed for project plugins).
 pushd %UnrealProjectDir%
 
 if not exist %BUILD_EXE_PATH% (
@@ -56,8 +62,3 @@ rem Build Unreal project using the SpatialGDK build tool
 %BUILD_EXE_PATH% %*
 popd
 exit /b %ERRORLEVEL%
-
-
-:SpatialNotExist
-echo Could not find the projects 'spatial' directory! Please ensure your input arguments are correct and your GDK is correctly installed.
-exit /b 1
