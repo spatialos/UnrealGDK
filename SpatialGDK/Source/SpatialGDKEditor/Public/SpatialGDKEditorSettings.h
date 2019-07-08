@@ -329,13 +329,6 @@ public:
 			: SpatialOSLaunchConfig.FilePath;
 	}
 
-	FORCEINLINE FString GetSpatialOSConfig()
-	{
-		return SpatialOSLaunchConfig.FilePath.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir(), TEXT("/../spatial/spatialos.json")))
-			: SpatialOSLaunchConfig.FilePath;
-	}
-
 	FORCEINLINE FString GetSpatialOSSnapshotFile() const
 	{
 		return SpatialOSSnapshotFile.IsEmpty()
