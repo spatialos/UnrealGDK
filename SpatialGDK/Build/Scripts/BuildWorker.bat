@@ -1,6 +1,6 @@
 @echo off
 
-rem Usage: <GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>
+if [%4] == [] goto :MissingParams
 
 rem Try and build as a project plugin first, check for a project plugin structure.
 set UnrealProjectDir="%~dp0..\..\..\..\..\"
@@ -67,3 +67,7 @@ rem Build Unreal project using the SpatialGDK build tool
 %BUILD_EXE_PATH% %*
 popd
 exit /b %ERRORLEVEL%
+
+:MissingParams
+echo Missing input arguments! Usage: "<GameName> <Platform> <Configuration> <game.uproject> [-nocompile] <Additional UAT args>"
+exit /b 1
