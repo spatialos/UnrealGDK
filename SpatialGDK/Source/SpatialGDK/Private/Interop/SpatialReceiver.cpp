@@ -257,16 +257,11 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 
 void USpatialReceiver::HandleActorAuthority(const Worker_AuthorityChangeOp& Op)
 {
-	if (Op.component_id == SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID)
-	{
-		GlobalStateManager->AuthorityChanged(Op.authority == WORKER_AUTHORITY_AUTHORITATIVE, Op.entity_id);
-		return;
-	}
+	StaticComponentView->OnAuthorityChange(Op);
 
-	if (Op.component_id == SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID
-		&& Op.authority == WORKER_AUTHORITY_AUTHORITATIVE)
+	if (GlobalStateManager->HandlesComponent(Op.component_id))
 	{
-		GlobalStateManager->ExecuteInitialSingletonActorReplication();
+		GlobalStateManager->AuthorityChanged(Op);
 		return;
 	}
 
@@ -495,7 +490,7 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		{
 			// This could be nullptr if:
 			// a stably named actor could not be found
-			// the Actor is a singleton
+			// the Actor is a singleton that has arrived over the wire before it has been created on this worker
 			// the class couldn't be loaded
 			return;
 		}
@@ -1622,11 +1617,6 @@ AActor* USpatialReceiver::FindSingletonActor(UClass* SingletonClass)
 	if (FoundActors.Num() == 1)
 	{
 		return FoundActors[0];
-	}
-	else
-	{
-		UE_LOG(LogSpatialReceiver, Error, TEXT("Found incorrect number (%d) of singleton actors (%s)"),
-			FoundActors.Num(), *SingletonClass->GetName());
 	}
 
 	return nullptr;
