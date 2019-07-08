@@ -457,7 +457,7 @@ public:
 
 	FORCEINLINE FString GetDeploymentLauncherPath() const
 	{
-		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FPaths::ProjectDir() / TEXT("Plugins/UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher")));
+		return FPaths::ConvertRelativePathToFull(FPaths::Combine(GetGDKPluginDirectory() / TEXT("SpatialGDK/Binaries/ThirdParty/Improbable/Programs/DeploymentLauncher")));
 	}
 
 	bool IsDeploymentConfigurationValid() const;
