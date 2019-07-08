@@ -502,7 +502,7 @@ bool FLocalDeploymentManager::GetServiceStatus()
 	return false;
 }
 
-bool FLocalDeploymentManager::IsServiceInCorrectDirectory(FString ServiceStatusResult)
+bool FLocalDeploymentManager::IsServiceInCorrectDirectory(const FString& ServiceStatusResult)
 {
 	// Get the project file path and ensure it matches the one for the currently running project.
 	FString SpatialServicePath;
