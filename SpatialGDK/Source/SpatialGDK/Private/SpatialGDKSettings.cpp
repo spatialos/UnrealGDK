@@ -31,7 +31,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bBatchSpatialPositionUpdates(true)
 	, MaxDynamicallyAttachedSubobjectsPerClass(3)
 	, bEnableServerQBI(bUsingQBI)
-	, bPackUnreliableRPCs(true)
+	, bPackRPCs(true)
 	, bUseDevelopmentAuthenticationFlow(false)
 	, DefaultWorkerType(FWorkerType(SpatialConstants::DefaultServerWorkerType))
 	, bEnableOffloading(false)

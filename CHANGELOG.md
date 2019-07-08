@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Factored out writing of Linux worker start scripts into a library, and added a standalone `WriteLinuxScript.exe` to _just_ write the launch script (for use in custom build pipelines).
 
 ### Breaking Changes:
 
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed support for relative paths as the engine association in your games .uproject file.
 - RPCs on `NotSpatial` types are no longer queued forever and are now dropped instead.
 - Fixed issue where an Actor's Spatial position was not updated if it had an owner that was not replicated.
+- Fixed null pointer dereference crash when trying to initiate a Spatial connection without an existing one.
 
 ## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
 - Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
@@ -39,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Started using the [schema_compiler tool](https://docs.improbable.io/reference/13.8/shared/schema/introduction#using-the-schema-compiler-directly) to generate [schema descriptors](https://docs.improbable.io/reference/13.8/shared/flexible-project-layout/build-process/schema-descriptor-build-process#schema-descriptor-introduction) rather than relying on 'spatial local launch' to do this.
 - Added runtime option to pack unreliable RPCs from the same frame in a single component update to save bandwidth - bPackUnreliableRPCs.
 - Changed Interest so that NetCullDistanceSquared is used to define the distance from a player that the actor type is *interesting to* the player. This replaces CheckoutRadius which defined the distance that an actor is *interested in* other types. Requires engine update to remove the CheckoutRadius property which is no longer used.
+- Added ActorInterestComponent that can be used to define interest queries that are more complex than a radius around the player position.
 - Enabled new Development Authentication Flow
 - Added new "worker" entities which are created for each server worker in a deployment so they correctly receive interest in the global state manager.
 - Added support for spawning actors with ACLs configured for offloading using actor groups.
@@ -62,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a crash when failing to NetSerialize a struct in spatial. Now print a warning instead which matches native Unreal behavior.
 - Query response delegates now execute even if response status shows failure. This allows handlers to implement custom retry logic such as clients querying for the GSM.
 - Fixed a crash where processing unreliable RPCs made assumption that the worker had authority over all entities in the SpatialOS op
+- Ordering and reliability for single server RPCs on the same Actor are now guaranteed.
 
 ### External contributors:
 

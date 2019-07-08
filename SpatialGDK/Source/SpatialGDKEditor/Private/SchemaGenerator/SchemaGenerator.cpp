@@ -565,7 +565,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 		}
 		else
 		{
-			SubobjectData.ClassPath = SubobjectClass->GetPathName();
+			continue;
 		}
 
 		SubobjectData.Name = SubobjectTypeInfo->Name;

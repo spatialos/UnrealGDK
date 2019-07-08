@@ -90,6 +90,7 @@ private:
 
 	bool ValidateGeneratedLaunchConfig() const;
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
+	bool GenerateDefaultWorkerJson();
 
 	void GenerateSchema(bool bFullScan);
 
