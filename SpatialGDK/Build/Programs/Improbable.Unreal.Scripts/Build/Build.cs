@@ -1,61 +1,17 @@
+// Copyright (c) Improbable Worlds Ltd, All Rights Reserved
+
 using System;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
+using LinuxScripts = Improbable.Unreal.Build.Common.LinuxScripts;
 
 namespace Improbable
 {
     public static class Build
     {
-        private const string UnrealWorkerShellScript =
-@"#!/bin/bash
-NEW_USER=unrealworker
-WORKER_ID=$1
-LOG_FILE=$2
-shift 2
-
-# 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
-useradd $NEW_USER -m -d /improbable/logs/UnrealWorker/Logs 2>/dev/null
-chown -R $NEW_USER:$NEW_USER $(pwd) 2>/dev/null
-chmod -R o+rw /improbable/logs 2>/dev/null
-
-# Create log file in case it doesn't exist and redirect stdout and stderr to the file.
-touch ""${{LOG_FILE}}""
-exec 1>>""${{LOG_FILE}}""
-exec 2>&1
-
-SCRIPT=""$(pwd)/{0}Server.sh""
-
-if [ ! -f $SCRIPT ]; then
-    echo ""Expected to run ${{SCRIPT}} but file not found!""
-    exit 1
-fi
-
-chmod +x $SCRIPT
-echo ""Running ${{SCRIPT}} to start worker...""
-gosu $NEW_USER ""${{SCRIPT}}"" ""$@""";
-
-
-        // This is for internal use only. We do not support Linux clients.
-        private const string SimulatedPlayerWorkerShellScript =
-@"#!/bin/bash
-NEW_USER=unrealworker
-WORKER_ID=$1
-WORKER_NAME=$2
-shift 2
-
-# 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
-useradd $NEW_USER -m -d /improbable/logs/ >> ""/improbable/logs/${WORKER_ID}.log"" 2>&1
-chown -R $NEW_USER:$NEW_USER $(pwd) >> ""/improbable/logs/${WORKER_ID}.log"" 2>&1
-chmod -R o+rw /improbable/logs >> ""/improbable/logs/${WORKER_ID}.log"" 2>&1
-SCRIPT=""$(pwd)/${WORKER_NAME}.sh""
-chmod +x $SCRIPT >> ""/improbable/logs/${WORKER_ID}.log"" 2>&1
-
-echo ""Trying to launch worker ${WORKER_NAME} with id ${WORKER_ID}"" > ""/improbable/logs/${WORKER_ID}.log""
-gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&1";
-
         public static void Main(string[] args)
         {
             var help = args.Count(arg => arg == "/?" || arg.ToLowerInvariant() == "--help") > 0;
@@ -279,7 +235,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 });
 
                 var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
-                File.WriteAllText(Path.Combine(linuxSimulatedPlayerPath, "StartWorker.sh"), SimulatedPlayerWorkerShellScript.Replace("\r\n", "\n"), new UTF8Encoding(false));
+                LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.SimulatedPlayerWorkerShellScript, Path.Combine(linuxSimulatedPlayerPath, "StartWorker.sh"));
 
                 var workerCoordinatorPath = Path.GetFullPath(Path.Combine("../spatial", "build", "dependencies", "WorkerCoordinator"));
                 if (Directory.Exists(workerCoordinatorPath))
@@ -343,7 +299,7 @@ gosu $NEW_USER ""${SCRIPT}"" ""$@"" >> ""/improbable/logs/${WORKER_ID}.log"" 2>&
                 {
                     // Write out the wrapper shell script to work around issues between UnrealEngine and our cloud Linux environments.
                     // Also ensure script uses Linux line endings
-                    File.WriteAllText(Path.Combine(serverPath, "StartWorker.sh"), string.Format(UnrealWorkerShellScript, baseGameName).Replace("\r\n", "\n"), new UTF8Encoding(false));
+                    LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.GetUnrealWorkerShellScript(baseGameName), Path.Combine(serverPath, "StartWorker.sh"));
                 }
 
                 Common.RunRedirected(runUATBat, new[]
