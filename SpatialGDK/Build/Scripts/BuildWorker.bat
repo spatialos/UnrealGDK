@@ -4,11 +4,11 @@ if [%4] == [] goto :MissingParams
 
 rem Try and build as a project plugin first, check for a project plugin structure.
 set UnrealProjectDir="%~dp0..\..\..\..\..\"
-set FoundUproject=""
+set FoundUProject=""
 
-for /f "delims=" %%A in (' powershell -Command "(Get-ChildItem -Path "%UnrealProjectDir%" *.uproject).FullName" ') do set FoundUproject="%%A"
+for /f "delims=" %%A in (' powershell -Command "(Get-ChildItem -Path "%UnrealProjectDir%" *.uproject).FullName" ') do set FoundUProject="%%A"
 
-if %FoundUproject%=="" (
+if %FoundUProject%=="" (
 	goto :BuildAsEnginePlugin
 )
 
