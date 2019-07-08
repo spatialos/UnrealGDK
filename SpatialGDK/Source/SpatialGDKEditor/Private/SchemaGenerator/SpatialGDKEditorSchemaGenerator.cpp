@@ -438,12 +438,6 @@ TArray<UClass*> GetAllSupportedClasses()
 
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
-		// User told us to ignore this class
-		if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
-		{
-			continue;
-		}
-
 		UClass* SupportedClass = *ClassIt;
 
 		// Ensure we don't process transient generated classes for BP
