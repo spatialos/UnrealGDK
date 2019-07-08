@@ -26,7 +26,7 @@ void LatencyManager::Enable(Worker_EntityId InPlayerControllerEntity)
 
 	LastPingSent = NetConnection.GetWorld()->RealTimeSeconds;
 
-	auto Delegate = TBaseDelegate<void, Worker_ComponentUpdateOp &>::CreateLambda([this](const Worker_ComponentUpdateOp& Op)
+	auto Delegate = TBaseDelegate<void, const Worker_ComponentUpdateOp &>::CreateLambda([this](const Worker_ComponentUpdateOp& Op)
 	{
 		float ReceivedTimestamp = NetConnection.GetWorld()->RealTimeSeconds;
 
