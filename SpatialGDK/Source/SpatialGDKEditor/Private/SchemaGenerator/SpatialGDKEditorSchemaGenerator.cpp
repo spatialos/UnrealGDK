@@ -438,7 +438,7 @@ TArray<UClass*> GetAllSupportedClasses()
 
 	for (TObjectIterator<UClass> ClassIt; ClassIt; ++ClassIt)
 	{
-		// User told us to ignore this class	
+		// User told us to ignore this class
 		if (ClassIt->HasAnySpatialClassFlags(SPATIALCLASS_NotSpatialType))
 		{
 			continue;
