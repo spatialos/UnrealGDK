@@ -189,7 +189,10 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
-		GameInstance->GetSpatialWorkerConnection()->DestroyConnection();
+		if (USpatialWorkerConnection* OldConnection = GameInstance->GetSpatialWorkerConnection())
+		{
+			OldConnection->DestroyConnection();
+		}
 
 		// Create a new SpatialWorkerConnection in the SpatialGameInstance.
 		GameInstance->CreateNewSpatialWorkerConnection();
