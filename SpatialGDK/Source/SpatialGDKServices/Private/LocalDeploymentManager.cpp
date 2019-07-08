@@ -25,6 +25,7 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 {
 	bLocalDeploymentRunning = false;
 	bSpatialServiceRunning = false;
+	bSpatialServiceInProjectDirectory = false;
 
 	bStartingDeployment = false;
 	bStoppingDeployment = false;
@@ -393,6 +394,7 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service stopped!"));
 		bSpatialServiceRunning = false;
+		bSpatialServiceInProjectDirectory = false;
 		bLocalDeploymentRunning = false;
 		return true;
 	}
@@ -492,30 +494,38 @@ bool FLocalDeploymentManager::GetServiceStatus()
 	}
 	else if (ServiceStatusResult.Contains(TEXT("Local API service is running")))
 	{
-		// Get the project file path and ensure it matches the one for the currently running project.
-		FString SpatialServicePath;
-		if (ServiceStatusResult.Split(TEXT("project file path: "), nullptr, &SpatialServicePath))
+		bSpatialServiceInProjectDirectory = IsServiceInCorrectDirectory(ServiceStatusResult);
+		bSpatialServiceRunning = true;
+		return true;
+	}
+
+	return false;
+}
+
+bool FLocalDeploymentManager::IsServiceInCorrectDirectory(FString ServiceStatusResult)
+{
+	// Get the project file path and ensure it matches the one for the currently running project.
+	FString SpatialServicePath;
+	if (ServiceStatusResult.Split(TEXT("project file path: "), nullptr, &SpatialServicePath))
+	{
+		// Remove the trailing '" cli-version' that comes with non-interactive 'spatial' calls.
+		SpatialServicePath.Split(TEXT("\" cli-version"), &SpatialServicePath, nullptr);
+
+		FString CurrentProjectSpatialPath = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("spatialos.json"));
+		FPaths::NormalizeDirectoryName(SpatialServicePath);
+		FPaths::RemoveDuplicateSlashes(SpatialServicePath);
+
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service running at path: %s "), *SpatialServicePath);
+
+		if (CurrentProjectSpatialPath.Equals(SpatialServicePath, ESearchCase::IgnoreCase))
 		{
-			// Remove the trailing '" cli-version' that comes with non-interactive 'spatial' calls.
-			SpatialServicePath.Split(TEXT("\" cli-version"), &SpatialServicePath, nullptr);
-
-			FString CurrentProjectSpatialPath = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("spatialos.json"));
-			FPaths::NormalizeDirectoryName(SpatialServicePath);
-			FPaths::RemoveDuplicateSlashes(SpatialServicePath);
-			if (CurrentProjectSpatialPath == SpatialServicePath)
-			{
-				bSpatialServiceInProjectDirectory = true;
-			}
-			else
-			{
-				UE_LOG(LogSpatialDeploymentManager, Error,
-					TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServicePath);
-				bSpatialServiceInProjectDirectory = false;
-			}
-
-			UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service running at path: %s "), *SpatialServicePath);
-			bSpatialServiceRunning = true;
 			return true;
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error,
+				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServicePath);
+			return false;
 		}
 	}
 
