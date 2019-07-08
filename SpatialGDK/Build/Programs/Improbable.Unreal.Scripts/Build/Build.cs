@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
@@ -235,9 +236,13 @@ namespace Improbable
                 });
 
                 var linuxSimulatedPlayerPath = Path.Combine(stagingDir, "LinuxNoEditor");
-                LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.SimulatedPlayerWorkerShellScript, Path.Combine(linuxSimulatedPlayerPath, "StartWorker.sh"));
+                LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.SimulatedPlayerWorkerShellScript, Path.Combine(linuxSimulatedPlayerPath, "StartSimulatedClient.sh"));
+                LinuxScripts.WriteWithLinuxLineEndings(LinuxScripts.SimulatedPlayerCoordinatorShellScript, Path.Combine(linuxSimulatedPlayerPath, "StartCoordinator.sh"));
 
-                var workerCoordinatorPath = Path.GetFullPath(Path.Combine("../spatial", "build", "dependencies", "WorkerCoordinator"));
+                // Coordinator files are located in      ./UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/WorkerCoordinator/.
+                // Executable of this build script is in ./UnrealGDK/SpatialGDK/Binaries/ThirdParty/Improbable/Programs/Build.exe
+                // Assembly.GetEntryAssembly().Location gives the location of the Build.exe executable.
+                var workerCoordinatorPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "./WorkerCoordinator"));
                 if (Directory.Exists(workerCoordinatorPath))
                 {
                     Common.RunRedirected("xcopy", new[]
@@ -247,9 +252,10 @@ namespace Improbable
                         workerCoordinatorPath,
                         linuxSimulatedPlayerPath
                     });
-                } else
+                }
+                else
                 {
-                    Console.WriteLine("worker coordinator path did not exist");
+                    Common.WriteWarning($"Worker coordinator binary not found at {workerCoordinatorPath}. Please run Setup.bat to build the worker coordinator.");
                 }
 
                 var archiveFileName = "UnrealSimulatedPlayer@Linux.zip";
