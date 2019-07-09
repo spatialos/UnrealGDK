@@ -815,8 +815,12 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		{
 			return false;
 		}
-		if (!Channel->IsListening())
+
+		if (RPCInfo.Type != SCHEMA_NetMulticastRPC && !Channel->IsListening())
 		{
+			// If the Entity endpoint is not yet ready to receive RPCs -
+			// treat the corresponding object as unresolved and queue RPC
+			// However, it doesn't matter in case of Multicast
 			return false;
 		}
 
@@ -839,14 +843,6 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		{
 			if (!NetDriver->StaticComponentView->HasAuthority(EntityId, ComponentId))
 			{
-				return false;
-			}
-
-			if (RPCInfo.Type != SCHEMA_NetMulticastRPC)
-			{
-				// If the Entity endpoint is not yet ready to receive RPCs -
-				// treat the corresponding object as unresolved and queue RPC
-				// However, it doesn't matter in case of Multicast
 				return false;
 			}
 
