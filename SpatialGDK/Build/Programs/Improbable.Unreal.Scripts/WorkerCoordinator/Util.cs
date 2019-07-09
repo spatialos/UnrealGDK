@@ -39,7 +39,7 @@ namespace Improbable.WorkerCoordinator
                 throw new ArgumentException($"Cannot parse value for argument \"{argumentName}\". Expected format \"{argumentName}=<integer>\", found \"{argWithName}\".");
             }
 
-            var valueString = argsWithName[0].Split(new[] { '=' }, 2, StringSplitOptions.None)[1];
+            var valueString = split[1];
             if (int.TryParse(valueString, out int value))
             {
                 return value;
