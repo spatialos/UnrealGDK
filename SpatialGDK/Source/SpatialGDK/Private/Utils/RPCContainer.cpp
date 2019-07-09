@@ -15,7 +15,7 @@ FPendingRPCParams::FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, 
 
 void FRPCContainer::QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type)
 {
-	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(Params->ObjectRef);
+	FArrayOfParams& ArrayOfParams = QueuedRPCs.FindOrAdd(Type).FindOrAdd(Params->ObjectRef.Entity);
 	ArrayOfParams.Push(MoveTemp(Params));
 }
 
@@ -54,12 +54,12 @@ void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
 	}
 }
 
-bool FRPCContainer::ObjectHasRPCsQueuedOfType(const FUnrealObjectRef& TargetObjectRef, ESchemaComponentType Type) const
+bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const
 {
 	const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type);
 	if(MapOfQueues)
 	{
-		const FArrayOfParams* RPCList = MapOfQueues->Find(TargetObjectRef);
+		const FArrayOfParams* RPCList = MapOfQueues->Find(EntityId);
 		if(RPCList)
 		{
 			return (RPCList->Num() > 0);
