@@ -238,14 +238,11 @@ void USpatialReceiver::HandlePlayerLifecycleAuthority(const Worker_AuthorityChan
 	{
 		if (Op.authority == WORKER_AUTHORITY_AUTHORITATIVE && Connection != nullptr)
 		{
-			if (USpatialNetConnection* Connection = Cast<USpatialNetConnection>(PlayerController->GetNetConnection()))
+			if (bIsServer)
 			{
-				if (NetDriver->IsServer())
-				{
-					AuthorityPlayerControllerConnectionMap.Add(Op.entity_id, Connection);
-				}
-				Connection->InitHeartbeat(TimerManager, Op.entity_id);
+				AuthorityPlayerControllerConnectionMap.Add(Op.entity_id, Connection);
 			}
+			Connection->InitHeartbeat(TimerManager, Op.entity_id);
 		}
 		else if (Op.authority == WORKER_AUTHORITY_NOT_AUTHORITATIVE)
 		{
