@@ -833,11 +833,17 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 			&& RPCInfo.Type != SCHEMA_NetMulticastRPC)
 		{
 			const UObject* UnresolvedObject = nullptr;
-			AddPendingUnreliableRPC(TargetObject, Params, ComponentId, RPCInfo.Index, UnresolvedObject);
+			if (AddPendingUnreliableRPC(TargetObject, Params, ComponentId, RPCInfo.Index, UnresolvedObject))
+			{
 #if !UE_BUILD_SHIPPING
-			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params.Payload.PayloadData.Num());
+				NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params.Payload.PayloadData.Num());
 #endif // !UE_BUILD_SHIPPING
-			return true;
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 		else
 		{
@@ -1158,13 +1164,13 @@ Worker_ComponentUpdate USpatialSender::CreateRPCEventUpdate(UObject* TargetObjec
 	return ComponentUpdate;
 }
 
-void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, const FPendingRPCParams& Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject)
+bool USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, const FPendingRPCParams& Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject)
 {
 	FUnrealObjectRef TargetObjectRef(PackageMap->GetUnrealObjectRefFromNetGUID(PackageMap->GetNetGUIDFromObject(TargetObject)));
 	if (TargetObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = TargetObject;
-		return;
+		return false;
 	}
 
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
@@ -1177,7 +1183,7 @@ void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, const FPendi
 	{
 		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingUnreliableRPC: No connection for object %s (RPC %s, actor %s, entity %lld)"),
 			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity);
-		return;
+		return false;
 	}
 
 	APlayerController* Controller = Cast<APlayerController>(OwningConnection->OwningActor);
@@ -1185,14 +1191,20 @@ void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, const FPendi
 	{
 		UE_LOG(LogSpatialSender, Warning, TEXT("AddPendingUnreliableRPC: Connection's owner is not a player controller for object %s (RPC %s, actor %s, entity %lld): connection owner %s"),
 			*TargetObject->GetName(), *Function->GetName(), *TargetActor->GetName(), TargetObjectRef.Entity, *OwningConnection->OwningActor->GetName());
-		return;
+		return false;
+	}
+
+	USpatialActorChannel* ControllerChannel = NetDriver->GetOrCreateSpatialActorChannel(Controller);
+	if (ControllerChannel == nullptr || !ControllerChannel->IsListening())
+	{
+		return false;
 	}
 
 	FUnrealObjectRef ControllerObjectRef = PackageMap->GetUnrealObjectRefFromObject(Controller);
 	if (ControllerObjectRef == FUnrealObjectRef::UNRESOLVED_OBJECT_REF)
 	{
 		OutUnresolvedObject = Controller;
-		return;
+		return false;
 	}
 
 	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
@@ -1204,6 +1216,7 @@ void USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, const FPendi
 	FMemory::Memcpy(RPC.Data.GetData(), Parameters.Payload.PayloadData.GetData(), Parameters.Payload.PayloadData.Num());
 	RPC.Entity = TargetObjectRef.Entity;
 	UnreliableRPCs.FindOrAdd(ControllerObjectRef.Entity).Emplace(MoveTemp(RPC));
+	return true;
 }
 
 void USpatialSender::SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response)
