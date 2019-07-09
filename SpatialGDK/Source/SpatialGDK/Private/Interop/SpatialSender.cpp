@@ -1362,7 +1362,7 @@ void USpatialSender::ProcessRPC(FPendingRPCParamsPtr Params)
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject.Get(), Function);
 
 	bool bRPCProcessed = false;
-	if (!OutgoingRPCs.ObjectHasRPCsQueuedOfType(Params->ObjectRef, RPCInfo.Type))
+	if (!OutgoingRPCs.ObjectHasRPCsQueuedOfType(Params->ObjectRef.Entity, RPCInfo.Type))
 	{
 		if (SendRPC(*Params))
 		{
