@@ -34,7 +34,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Improbable.WorkerCoordinator.WorkerCoordinator</StartupObject>
+    <StartupObject>Improbable.WorkerCoordinator.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -57,7 +57,11 @@
     <Compile Include="Authentication.cs" />
     <Compile Include="CoordinatorConnection.cs" />
     <Compile Include="Logger.cs" />
-    <Compile Include="WorkerCoordinator.cs" />
+    <Compile Include="Util.cs" />
+    <Compile Include="RegisseurWorkerCoordinator.cs" />
+    <Compile Include="AbstractWorkerCoordinator.cs" />
+    <Compile Include="ManagedWorkerCoordinator.cs" />
+    <Compile Include="Program.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

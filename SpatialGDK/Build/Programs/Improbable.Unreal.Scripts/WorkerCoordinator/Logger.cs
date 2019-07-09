@@ -1,48 +1,65 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-using System;
 using System.IO;
+using Improbable.Worker;
 
 namespace Improbable.WorkerCoordinator
 {
-	public class Logger
-	{
-		private string LogPath;
+    public class Logger
+    {
+        private readonly string LogPath;
+        private readonly string LoggerName;
+        private Connection Connection = null;
 
-		public Logger(string logPath)
-		{
-			LogPath = logPath;
-		}
+        public Logger(string logPath, string loggerName)
+        {
+            LogPath = logPath;
+            LoggerName = loggerName;
+        }
 
-		public void ClearLog()
-		{
-			File.WriteAllText(LogPath, string.Empty);
-		}
+        public void EnableSpatialOSLogging(Connection connection)
+        {
+            Connection = connection;
+        }
 
-		public void WriteLog(string logMessage = "", bool logToConsole = false)
-		{
-			using (StreamWriter file = new StreamWriter(LogPath, true))
-			{
-				file.WriteLine(logMessage);
-			}
-			if (logToConsole)
-			{
-				Console.WriteLine(logMessage);
-			}
-		}
+        public void ClearLog()
+        {
+            File.WriteAllText(LogPath, string.Empty);
+        }
 
-		public void WriteWarning(string logMessage, bool logToConsole = false)
-		{
-			WriteLog("Warning: " + logMessage, logToConsole);
-		}
+        public void WriteLog(string logMessage, bool logToConnectionIfExists = true)
+        {
+            WriteLogToFile(logMessage);
+            if (logToConnectionIfExists && Connection != null)
+            {
+                Connection.SendLogMessage(LogLevel.Info, LoggerName, logMessage);
+            }
+        }
 
-		public void WriteError(string logMessage, bool logToConsole = false)
-		{
-			if (logToConsole)
-			{
-				Console.Error.WriteLine(logMessage);
-			}
-			WriteLog("Error: " + logMessage);
-		}
-	}
+        public void WriteWarning(string logMessage, bool logToConnectionIfExists = true)
+        {
+            WriteLogToFile("Warning: " + logMessage);
+            if (logToConnectionIfExists && Connection != null)
+            {
+                Connection.SendLogMessage(LogLevel.Warn, LoggerName, logMessage);
+            }
+        }
+
+        public void WriteError(string logMessage, bool logToConnectionIfExists = true)
+        {
+            WriteLogToFile("Error: " + logMessage);
+            if (logToConnectionIfExists && Connection != null)
+            {
+                Connection.SendLogMessage(LogLevel.Error, LoggerName, logMessage);
+            }
+        }
+
+        private void WriteLogToFile(string logMessage)
+        {
+            using (StreamWriter file = new StreamWriter(LogPath, true))
+            {
+                file.WriteLine(logMessage);
+            }
+        }
+    }
 }

@@ -29,16 +29,20 @@ namespace Improbable.WorkerCoordinator
                 connection = future.Get();
             }
 
+            // Start sending logs to SpatialOS.
+            logger.EnableSpatialOSLogging(connection);
+
             KeepConnectionAlive(connection, logger);
 
             return connection;
         }
 
-        // We do not use the connection to the simulated player deployment,
-        // but we must ensure it is kept open to prevent the coordinator worker
-        // from being killed.
-        // This keeps the connection open in a separate thread by repeatedly calling
-        // GetOpList on the connection.
+        /// <summary>
+        /// Starts a new background thread that will keep the connection to SpatialOS alive.
+        /// We do not use the connection to the simulated player deployment,
+        /// but we must ensure it is kept open to prevent the coordinator worker
+        /// from being killed.
+        /// </summary>
         private static void KeepConnectionAlive(Connection connection, Logger logger)
         {
             var thread = new Thread(() =>
@@ -49,7 +53,7 @@ namespace Improbable.WorkerCoordinator
 
                     dispatcher.OnDisconnect(op =>
                     {
-                        logger.WriteError("[disconnect] " + op.Reason);
+                        logger.WriteError("[disconnect] " + op.Reason, logToConnectionIfExists: false);
                         isConnected = false;
                     });
 
@@ -58,7 +62,7 @@ namespace Improbable.WorkerCoordinator
                         connection.SendLogMessage(op.Level, LoggerName, op.Message);
                         if (op.Level == LogLevel.Fatal)
                         {
-                            logger.WriteError("Fatal error: " + op.Message);
+                            logger.WriteError("Fatal error: " + op.Message, logToConnectionIfExists: false);
                             Environment.Exit(1);
                         }
                     });
