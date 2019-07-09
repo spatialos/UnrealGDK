@@ -1195,7 +1195,7 @@ bool USpatialSender::AddPendingUnreliableRPC(UObject* TargetObject, const FPendi
 	}
 
 	USpatialActorChannel* ControllerChannel = NetDriver->GetOrCreateSpatialActorChannel(Controller);
-	if (!(ControllerChannel && ControllerChannel->IsListening()))
+	if (ControllerChannel == nullptr || !ControllerChannel->IsListening())
 	{
 		return false;
 	}
