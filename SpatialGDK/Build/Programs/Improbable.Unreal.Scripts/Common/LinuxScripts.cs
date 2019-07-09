@@ -69,6 +69,20 @@ mono WorkerCoordinator.exe $@ 2> /improbable/logs/CoordinatorErrors.log";
             return string.Format(UnrealWorkerShellScript, baseGameName);
         }
 
+        // Returns a version of SimulatedPlayerWorkerShellScript with baseGameName templated into the right places.
+        // baseGameName should be the base name of your Unreal game.
+        public static string GetSimulatedPlayerWorkerShellScript(string baseGameName)
+        {
+            return string.Format(SimulatedPlayerWorkerShellScript, baseGameName);
+        }
+
+        // Returns a version of SimulatedPlayerCoordinatorShellScript with baseGameName templated into the right places.
+        // baseGameName should be the base name of your Unreal game.
+        public static string GetSimulatedPlayerCoordinatorShellScript(string baseGameName)
+        {
+            return string.Format(SimulatedPlayerCoordinatorShellScript, baseGameName);
+        }
+
         // Writes out fileContents to fileName, ensuring that the resulting file has Linux line endings.
         public static void WriteWithLinuxLineEndings(string fileContents, string fileName)
         {
