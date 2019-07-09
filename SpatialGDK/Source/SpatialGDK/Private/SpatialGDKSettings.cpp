@@ -4,6 +4,7 @@
 #include "Improbable/SpatialEngineConstants.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/CommandLine.h"
+#include "SpatialConstants.h"
 
 #if WITH_EDITOR
 #include "Settings/LevelEditorPlaySettings.h"
@@ -37,6 +38,7 @@ USpatialGDKSettings::USpatialGDKSettings(const FObjectInitializer& ObjectInitial
 	, bEnableOffloading(false)
 	, ServerWorkerTypes({ SpatialConstants::DefaultServerWorkerType })
 {
+	DefaultReceptionistHost = SpatialConstants::LOCAL_HOST;
 }
 
 void USpatialGDKSettings::PostInitProperties()
