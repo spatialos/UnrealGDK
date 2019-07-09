@@ -53,7 +53,7 @@ public:
 	 * If multiple queries match the same Entity-Component then the highest of
 	 * all frequencies is used.
 	 */
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Meta=(ClampMin=0.0), Category = "SpatialGDK")
+	UPROPERTY()
 	float Frequency;
 };
 
