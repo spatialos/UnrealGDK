@@ -12,7 +12,7 @@ namespace Improbable.WorkerCoordinator
     /// <seealso cref="ManagedWorkerCoordinator"/>
     ///
     /// RegisseurWorkerCoordinator
-    /// Starts as a standalone process, used internally in Improbable for running as part of a Regisseur scenario.
+    /// Starts as a standalone process, only for internal use at Improbable for running as part of a Regisseur scenario.
     /// <seealso cref="RegisseurWorkerCoordinator"/>
     ///
     /// To start a ManagedWorkerCoordinator, the first command line argument must be `receptionist`.
