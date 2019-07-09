@@ -27,11 +27,11 @@ class FRPCContainer
 public:
 	void QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
 	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply);
-	bool ObjectHasRPCsQueuedOfType(Worker_EntityId EntityId, ESchemaComponentType Type) const;
+	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
 
 private:
 	using FArrayOfParams = TArray<FPendingRPCParamsPtr>;
-	using FRPCMap = TMap<Worker_EntityId, FArrayOfParams>;
+	using FRPCMap = TMap<Worker_EntityId_Key, FArrayOfParams>;
 	using RPCContainerType = TMap<ESchemaComponentType, FRPCMap>;
 
 	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply, FArrayOfParams& RPCList);
