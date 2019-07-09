@@ -1640,7 +1640,7 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 		UFunction* Function = Info.RPCs[RPC.Index];
 		const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(Actor, Function);
 		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
-check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
+		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
 		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, RPCInfo.Type)
 			&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, ESchemaComponentType::SCHEMA_Invalid))
