@@ -91,7 +91,6 @@ public:
 	/** Change 'Load' value in inspector to represent worker Frame Time instead of a fraction of target FPS.*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bUseFrameTimeAsLoad;
-
 	/** Include an order index with reliable RPCs and warn if they are executed out of order.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bCheckRPCOrder;
@@ -112,6 +111,10 @@ public:
 	/** Pack unreliable RPCs sent during the same frame into a single update. */
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bPackRPCs;
+
+	/** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
+	UPROPERTY(EditAnywhere, config, Category = "Local Connection", meta = (ConfigRestartRequired = false))
+	FString DefaultReceptionistHost;
 
 	/** If the Development Authentication Flow is used, the client will try to connect to the cloud rather than local deployment. */
 	UPROPERTY(EditAnywhere, config, Category = "Cloud Connection", meta = (ConfigRestartRequired = false))

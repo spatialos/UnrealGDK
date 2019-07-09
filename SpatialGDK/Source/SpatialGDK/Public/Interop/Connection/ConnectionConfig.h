@@ -7,6 +7,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -76,7 +77,11 @@ struct FReceptionistConfig : public FConnectionConfig
 			if (!IpV4RegexMatcher.FindNext())
 			{
 				// If an IP is not specified then use default.
-				ReceptionistHost = SpatialConstants::LOCAL_HOST;
+				ReceptionistHost = GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost;
+				if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+				{
+					UseExternalIp = true;
+				}
 			}
 		}
 
