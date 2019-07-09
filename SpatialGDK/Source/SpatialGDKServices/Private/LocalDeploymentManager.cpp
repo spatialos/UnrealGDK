@@ -169,12 +169,16 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 		// Timers must be started on the game thread.
 		AsyncTask(ENamedThreads::GameThread, [this]
 		{
-			// Start checking for the service status.
-			FTimerHandle RefreshTimer;
-			GEditor->GetTimerManager()->SetTimer(RefreshTimer, [this]()
+			// It's possible that GEditor won't exist when shutting down.
+			if (GEditor != nullptr)
 			{
-				RefreshServiceStatus();
-			}, RefreshFrequency, false);
+				// Start checking for the service status.
+				FTimerHandle RefreshTimer;
+				GEditor->GetTimerManager()->SetTimer(RefreshTimer, [this]()
+				{
+					RefreshServiceStatus();
+				}, RefreshFrequency, false);
+			}
 		});
 	});
 }
@@ -394,7 +398,7 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 	{
 		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Spatial service stopped!"));
 		bSpatialServiceRunning = false;
-		bSpatialServiceInProjectDirectory = false;
+		bSpatialServiceInProjectDirectory = true;
 		bLocalDeploymentRunning = false;
 		return true;
 	}
@@ -488,6 +492,7 @@ bool FLocalDeploymentManager::GetServiceStatus()
 	if (ServiceStatusResult.Contains(TEXT("Local API service is not running.")))
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service not running."));
+		bSpatialServiceInProjectDirectory = true;
 		bSpatialServiceRunning = false;
 		bLocalDeploymentRunning = false;
 		return false;
