@@ -1633,13 +1633,26 @@ void USpatialReceiver::ProcessQueuedResolvedObjects()
 
 void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPCsOnEntityCreation& QueuedRPCs)
 {
-	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
+    const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByClass(Actor->GetClass());
 
-	for (auto& RPC : QueuedRPCs.RPCs)
-	{
-		UFunction* Function = Info.RPCs[RPC.Index];
-		ApplyRPC(Actor, Function, RPC, FString());
-	}
+    for (auto& RPC : QueuedRPCs.RPCs)
+    {
+        UFunction* Function = Info.RPCs[RPC.Index];
+        const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(Actor, Function);
+        const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
+		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
+
+        if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, RPCInfo.Type)
+            && !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, ESchemaComponentType::SCHEMA_Invalid))
+        {
+            if (ApplyRPC(Actor, Function, RPC, FString()))
+            {
+                continue;
+            }
+        }
+
+        QueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(RPC)));
+    }
 }
 
 void USpatialReceiver::ResolvePendingOperations(UObject* Object, const FUnrealObjectRef& ObjectRef)
