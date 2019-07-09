@@ -57,10 +57,10 @@ void FRPCContainer::ProcessRPCs(const FProcessRPCDelegate& FunctionToApply)
 bool FRPCContainer::ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const
 {
 	const FRPCMap* MapOfQueues = QueuedRPCs.Find(Type);
-	if(MapOfQueues)
+	if (MapOfQueues)
 	{
 		const FArrayOfParams* RPCList = MapOfQueues->Find(EntityId);
-		if(RPCList)
+		if (RPCList)
 		{
 			return (RPCList->Num() > 0);
 		}
