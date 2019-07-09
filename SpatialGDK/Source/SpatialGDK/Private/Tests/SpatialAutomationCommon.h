@@ -25,8 +25,8 @@ namespace SpatialAutomationCommon
 		void* WritePipe;
 	};
 
-	const float kDefaultSpatialStartDelay = 90.0f;
-	const float kDefaultPlayerJoinDelay = 15.0f;
+	const float kDefaultSpatialStartDelay = 5.0f;
+	const float kDefaultPlayerJoinDelay = 5.0f;
 
 	/**
 	 * Start spatial.exe

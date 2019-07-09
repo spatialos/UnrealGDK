@@ -3,7 +3,6 @@
 #include "Editor/UnrealEd/Public/Tests/AutomationEditorCommon.h"
 #include "Kismet/GameplayStatics.h"
 #include "CoreMinimal.h"
-//#include "NWX/StarterProjectPlayerController.h"
 #include "SpatialAutomationCommon.h"
 
 #if WITH_DEV_AUTOMATION_TESTS

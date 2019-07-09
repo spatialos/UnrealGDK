@@ -32,7 +32,6 @@ namespace
 	}
 }
 
-// TODO(Alex): Change filters?
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFRPCContainerTestOneQueuedRPC, "SpatialGDK.EngineClasses.FRPCContainerOneQueuedRPC", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter)
 bool FFRPCContainerTestOneQueuedRPC::RunTest(const FString& Parameters)
 {
