@@ -33,6 +33,7 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. Using `git log`, take note of the latest commit hash.
 1. `git checkout -b 4.xx-SpatialOSUnrealGDK-x.y.z-rc` in order to create release candidate branch.
 1. `git push --set-upstream origin 4.xx-SpatialOSUnrealGDK-x.y.z-rc` to push the branch.
+1. Repeat the above steps for all supported `4.xx` engine versions.
 1. Announce the branch and the commit hash it uses in the `#unreal-gdk-release` channel.
 
 ### Create the `UnrealGDKThirdPersonShooter` release candidate
