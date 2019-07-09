@@ -3,6 +3,7 @@
 #include "SpatialGDKEditor.h"
 
 #include "Async/Async.h"
+#include "SpatialGDKEditorCloudLauncher.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
 
@@ -13,6 +14,7 @@
 #include "AssetDataTagMap.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/ScopedSlowTask.h"
+#include "SpatialGDKEditorSettings.h"
 #include "UObject/StrongObjectPtr.h"
 #include "Settings/ProjectPackagingSettings.h"
 
@@ -210,6 +212,38 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	{
 		FailureCallback.ExecuteIfBound();
 	}
+}
+
+void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
+{
+	LaunchCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
+		[this, SuccessCallback, FailureCallback]
+		{
+			if (!LaunchCloudResult.IsReady() || LaunchCloudResult.Get() != true)
+			{
+				FailureCallback.ExecuteIfBound();
+			}
+			else
+			{
+				SuccessCallback.ExecuteIfBound();
+			}
+		});
+}
+
+void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
+{
+	StopCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudStop,
+		[this, SuccessCallback, FailureCallback]
+		{
+			if (!StopCloudResult.IsReady() || StopCloudResult.Get() != true)
+			{
+				FailureCallback.ExecuteIfBound();
+			}
+			else
+			{
+				SuccessCallback.ExecuteIfBound();
+			}
+		});
 }
 
 bool FSpatialGDKEditor::FullScanRequired()

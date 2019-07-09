@@ -123,7 +123,7 @@ namespace SpatialConstants
 	const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 	const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
 
-	const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
+	const Schema_FieldId STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID	= 1;
 
 	const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID                      = 1;
 	const Schema_FieldId ACTOR_TEAROFF_ID									= 3;
@@ -179,6 +179,10 @@ namespace SpatialConstants
 
 	static const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 	static const FString SnapshotURLOption = TEXT("snapshot=");
+
+	static const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+	static const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
+	static const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
 
 	inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	{
