@@ -110,7 +110,7 @@ public:
 
 	/** Pack unreliable RPCs sent during the same frame into a single update. */
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
-	bool bPackUnreliableRPCs;
+	bool bPackRPCs;
 
 	/** The receptionist host to use if no 'receptionistHost' argument is passed to the command line. */
 	UPROPERTY(EditAnywhere, config, Category = "Local Connection", meta = (ConfigRestartRequired = false))

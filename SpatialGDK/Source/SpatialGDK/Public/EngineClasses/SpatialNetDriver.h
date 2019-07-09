@@ -74,7 +74,6 @@ public:
 	virtual void OnOwnerUpdated(AActor* Actor);
 
 	void OnConnectedToSpatialOS();
-	void OnEntityPoolReady();
 
 #if !UE_BUILD_SHIPPING
 	bool HandleNetDumpCrossServerRPCCommand(const TCHAR* Cmd, FOutputDevice& Ar);
@@ -175,6 +174,7 @@ private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
+	TArray<Worker_OpList*> QueuedStartupOpLists;
 
 	FTimerManager TimerManager;
 
@@ -182,6 +182,8 @@ private:
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
+	bool bIsReadyToStart;
+
 	FString SnapshotToLoad;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
@@ -194,6 +196,9 @@ private:
 	void QueryGSMToLoadMap();
 
 	void HandleOngoingServerTravel();
+
+	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
+	bool FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists);
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
@@ -210,6 +215,8 @@ private:
 	int32 ServerReplicateActors_PrioritizeActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors);
 	void ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
 #endif
+
+	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
 
 	friend USpatialNetConnection;
 	friend USpatialWorkerConnection;

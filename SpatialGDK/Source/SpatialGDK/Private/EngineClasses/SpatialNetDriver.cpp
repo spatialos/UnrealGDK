@@ -34,6 +34,7 @@
 #include "Utils/EngineVersionCheck.h"
 #include "Utils/EntityPool.h"
 #include "Utils/InterestFactory.h"
+#include "Utils/OpUtils.h"
 #include "Utils/SpatialMetrics.h"
 #include "Utils/SpatialMetricsDisplay.h"
 
@@ -69,6 +70,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 
 	bConnectAsClient = bInitAsClient;
 	bAuthoritativeDestruction = true;
+	bIsReadyToStart = bInitAsClient;
 
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USpatialNetDriver::OnMapLoaded);
 
@@ -130,28 +132,33 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	PlayInEditorID = GPlayInEditorID;
 
 	// If we're launching in PIE then ensure there is a deployment running before connecting.
-	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	FLocalDeploymentManager* LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
-
-	// Wait for a running local deployment before connecting. If the deployment has already started then just connect.
-	if (!LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping() || LocalDeploymentManager->IsDeploymentStarting())
+	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
 	{
-		UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Waiting for local SpatialOS deployment to start before connecting..."));
-		SpatialDeploymentStartHandle = LocalDeploymentManager->OnDeploymentStart.AddLambda([WeakThis = TWeakObjectPtr<USpatialNetDriver>(this), URL]
+		FLocalDeploymentManager* LocalDeploymentManager = GDKServices->GetLocalDeploymentManager();
+
+		// Wait for a running local deployment before connecting. If the deployment has already started then just connect.
+		if (!LocalDeploymentManager->IsLocalDeploymentRunning() || LocalDeploymentManager->IsDeploymentStopping() || LocalDeploymentManager->IsDeploymentStarting())
 		{
-			if (!WeakThis.IsValid())
-			{
-				return;
-			}
-			UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
+			UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Waiting for local SpatialOS deployment to start before connecting..."));
+			SpatialDeploymentStartHandle = LocalDeploymentManager->OnDeploymentStart.AddLambda([WeakThis = TWeakObjectPtr<USpatialNetDriver>(this), URL]
+				{
+					if (!WeakThis.IsValid())
+					{
+						return;
+					}
+					UE_LOG(LogSpatialOSNetDriver, Display, TEXT("Local deployment started, connecting with URL: %s"), *URL.ToString());
 
-			WeakThis.Get()->InitiateConnectionToSpatialOS(URL);
-			FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-			GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(WeakThis.Get()->SpatialDeploymentStartHandle);
-		});
+					WeakThis.Get()->InitiateConnectionToSpatialOS(URL);
+					if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
+					{
+						GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(WeakThis.Get()->SpatialDeploymentStartHandle);
+					}
+				});
 
-		return true;
+			return true;
+		}
 	}
+
 #endif
 
 	InitiateConnectionToSpatialOS(URL);
@@ -184,7 +191,10 @@ void USpatialNetDriver::InitiateConnectionToSpatialOS(const FURL& URL)
 	if (!bPersistSpatialConnection)
 	{
 		// Destroy the old connection
-		GameInstance->GetSpatialWorkerConnection()->DestroyConnection();
+		if (USpatialWorkerConnection* OldConnection = GameInstance->GetSpatialWorkerConnection())
+		{
+			OldConnection->DestroyConnection();
+		}
 
 		// Create a new SpatialWorkerConnection in the SpatialGameInstance.
 		GameInstance->CreateNewSpatialWorkerConnection();
@@ -251,12 +261,6 @@ void USpatialNetDriver::OnConnectedToSpatialOS()
 		Sender->CreateServerWorkerEntity();
 		HandleOngoingServerTravel();
 	}
-}
-
-void USpatialNetDriver::OnEntityPoolReady()
-{
-	check(GlobalStateManager != nullptr);
-	GlobalStateManager->TryTriggerBeginPlay();
 }
 
 void USpatialNetDriver::InitializeSpatialOutputDevice()
@@ -565,8 +569,10 @@ void USpatialNetDriver::BeginDestroy()
 
 #if WITH_EDITOR
 	// Ensure our OnDeploymentStart delegate is removed when the net driver is shut down.
-	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
-	GDKServices.GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+	if (FSpatialGDKServicesModule* GDKServices = FModuleManager::GetModulePtr<FSpatialGDKServicesModule>("SpatialGDKServices"))
+	{
+		GDKServices->GetLocalDeploymentManager()->OnDeploymentStart.Remove(SpatialDeploymentStartHandle);
+	}
 #endif
 }
 
@@ -1044,6 +1050,42 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 	// SpatialGDK - Here Unreal would return the position of the last replicated actor in PriorityActors before the channel became saturated.
 	// In Spatial we use ActorReplicationRateLimit and EntityCreationRateLimit to limit replication so this return value is not relevant.
 }
+
+void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters)
+{
+	// The RPC might have been called by an actor directly, or by a subobject on that actor
+	UObject* CallingObject = SubObject != nullptr ? SubObject : Actor;
+
+	if (IsServer())
+	{
+		// Creating channel to ensure that object will be resolvable
+		GetOrCreateSpatialActorChannel(CallingObject);
+	}
+
+	int ReliableRPCIndex = 0;
+	if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
+	{
+		if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		{
+			ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
+		}
+	}
+
+	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
+	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, Function, ReliableRPCIndex, Parameters, UnresolvedObjects);
+
+	if (UnresolvedObjects.Num() == 0)
+	{
+		FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(CallingObject);
+		FPendingRPCParamsPtr RPCParams = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload), ReliableRPCIndex);
+		Sender->ProcessRPC(MoveTemp(RPCParams));
+	}
+	else
+	{
+		UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("The object %s is unresolved because of failure to create a SpatialActorChannel; RPC %s will be dropped."), *UnresolvedObjects.CreateIterator()->Get()->GetName(), *Function->GetName());
+	}
+}
+
 #endif
 
 // SpatialGDK: This is a modified and simplified version of UNetDriver::ServerReplicateActors.
@@ -1175,6 +1217,13 @@ void USpatialNetDriver::TickDispatch(float DeltaTime)
 	{
 		TArray<Worker_OpList*> OpLists = Connection->GetOpList();
 
+		// Servers will queue ops at startup until we've extracted necessary information from the op stream
+		if (!bIsReadyToStart)
+		{
+			HandleStartupOpQueueing(OpLists);
+			return;
+		}
+
 		for (Worker_OpList* OpList : OpLists)
 		{
 			Dispatcher->ProcessOps(OpList);
@@ -1265,17 +1314,7 @@ void USpatialNetDriver::ProcessRemoteFunction(
 
 	if (Function->FunctionFlags & FUNC_Net)
 	{
-		TSharedRef<FPendingRPCParams> RPCParams = MakeShared<FPendingRPCParams>(CallingObject, Function, Parameters, NextRPCIndex++);
-
-		if (GetDefault<USpatialGDKSettings>()->bCheckRPCOrder)
-		{
-			if (Function->HasAnyFunctionFlags(FUNC_NetReliable) && !Function->HasAnyFunctionFlags(FUNC_NetMulticast))
-			{
-				RPCParams->ReliableRPCIndex = GetNextReliableRPCId(Actor, FunctionFlagsToRPCSchemaType(Function->FunctionFlags), CallingObject);
-			}
-		}
-
-		Sender->SendRPC(RPCParams);
+		ProcessRPC(Actor, SubObject, Function, Parameters);
 	}
 }
 
@@ -1326,7 +1365,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 #endif // WITH_SERVER_CODE
 	}
 
-	if (GetDefault<USpatialGDKSettings>()->bPackUnreliableRPCs && Sender != nullptr)
+	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Sender != nullptr)
 	{
 		Sender->FlushPackedUnreliableRPCs();
 	}
@@ -1713,8 +1752,6 @@ uint32 USpatialNetDriver::GetNextReliableRPCId(AActor* Actor, ESchemaComponentTy
 
 void USpatialNetDriver::OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function)
 {
-	check(!WorkerId.IsEmpty());
-
 	if (!ReliableRPCIdMap.Contains(Actor))
 	{
 		ReliableRPCIdMap.Add(Actor);
@@ -1792,4 +1829,104 @@ void USpatialNetDriver::DelayedSendDeleteEntityRequest(Worker_EntityId EntityId,
 	{
 		Sender->SendDeleteEntityRequest(EntityId);
 	}, Delay, false);
+}
+
+void USpatialNetDriver::HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists)
+{
+	if (InOpLists.Num() == 0)
+	{
+		return;
+	}
+
+	QueuedStartupOpLists.Append(InOpLists);
+	bIsReadyToStart = FindAndDispatchStartupOps(InOpLists);
+
+	if (!bIsReadyToStart)
+	{
+	    return;
+	}
+
+	// We've found and dispatched all ops we need for startup, trigger BeginPlay()
+	// on the GSM and process the queued ops.  Note that FindAndDispatchStartupOps()
+	// will have notified the Dispatcher to skip the startup ops that we've
+	// processed already.
+	GlobalStateManager->TriggerBeginPlay();
+
+	for (Worker_OpList* OpList : QueuedStartupOpLists)
+	{
+		Dispatcher->ProcessOps(OpList);
+		Worker_OpList_Destroy(OpList);
+	}
+
+	// Sanity check that the dispatcher encountered, skipped, and removed
+	// all Ops we asked it to skip
+	check(Dispatcher->GetNumOpsToSkip() == 0);
+
+	QueuedStartupOpLists.Empty();
+}
+
+bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists)
+{
+	TArray<Worker_Op*> FoundOps;
+
+	// Search for entity id reservation response and process it.  The entity id reservation
+	// can fail to reserve entity ids.  In that case, the EntityPool will not be marked ready,
+	// a new query will be sent, and we will process the new response here when it arrives.
+	if (!EntityPool->IsReady())
+	{
+		Worker_Op* EntityIdReservationResponseOp = nullptr;
+		FindFirstOpOfType(InOpLists, WORKER_OP_TYPE_RESERVE_ENTITY_IDS_RESPONSE, &EntityIdReservationResponseOp);
+
+		if (EntityIdReservationResponseOp != nullptr)
+		{
+			FoundOps.Add(EntityIdReservationResponseOp);
+		}
+	}
+
+	// Search for StartupActorManager ops we need and process them
+	if (!GlobalStateManager->IsReadyToCallBeginPlay())
+	{
+		Worker_Op* AddComponentOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_ADD_COMPONENT, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AddComponentOp);
+
+		Worker_Op* AuthorityChangedOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AuthorityChangedOp);
+
+		// If we are going to get both ops, we expect them in the same Worker_OpList
+		check(AddComponentOp != nullptr || (AuthorityChangedOp == nullptr));
+
+		if (AddComponentOp != nullptr)
+		{
+			FoundOps.Add(AddComponentOp);
+		}
+
+		if (AuthorityChangedOp != nullptr)
+		{
+			FoundOps.Add(AuthorityChangedOp);
+		}
+	}
+
+	// For each Op we've found, make a Worker_OpList that just contains that Op,
+	// and pass it to the dispatcher for processing. This allows us to avoid copying
+	// the Ops around and dealing with memory that is / should be managed by the Worker SDK.
+	// The Op remains owned by the original OpList.  Finally, notify the dispatcher to skip
+	// these Ops when they are encountered later when we process the queued ops.
+	for (Worker_Op* Op : FoundOps)
+	{
+		Worker_OpList SingleOpList;
+		SingleOpList.op_count = 1;
+		SingleOpList.ops = Op;
+
+		Dispatcher->ProcessOps(&SingleOpList);
+		Dispatcher->MarkOpToSkip(Op);
+	}
+
+	if (EntityPool->IsReady() &&
+		GlobalStateManager->IsReadyToCallBeginPlay())
+	{
+		// Return whether or not we are ready to start
+		return true;
+	}
+
+	return false;
 }

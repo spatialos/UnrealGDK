@@ -53,6 +53,7 @@ public:
 private:
 	void StartUpWorkerConfigDirectoryWatcher();
 	void OnWorkerConfigDirectoryChanged(const TArray<FFileChangeData>& FileChanges);
+	bool IsServiceInCorrectDirectory(const FString& ServiceStatusResult);
 
 	static const int32 ExitCodeSuccess = 0;
 
@@ -61,6 +62,7 @@ private:
 
 	bool bLocalDeploymentRunning;
 	bool bSpatialServiceRunning;
+	bool bSpatialServiceInProjectDirectory;
 
 	bool bStartingDeployment;
 	bool bStoppingDeployment;
@@ -68,11 +70,6 @@ private:
 	bool bStartingSpatialService;
 	bool bStoppingSpatialService;
 
-	FDateTime LastSpatialServiceCheck;
-	FDateTime LastDeploymentCheck;
-
 	FString LocalRunningDeploymentID;
 	FString ProjectName;
-
-	FTimerManager TimerManager;
 };

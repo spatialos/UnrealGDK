@@ -68,16 +68,6 @@ public:
 
 	USchemaDatabase() : NextAvailableComponentId(SpatialConstants::STARTING_GENERATED_COMPONENT_ID) {}
 
-	uint32 GetComponentIdForClass(const UClass& Class) const
-	{
-		const FString ClassPath = Class.GetPathName();
-		if (const FActorSchemaData* SchemaData = ActorClassPathToSchema.Find(ClassPath))
-		{
-			return SchemaData->SchemaComponents[SCHEMA_Data];
-		}
-		return SpatialConstants::INVALID_COMPONENT_ID;
-	}
-
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TMap<FString, FActorSchemaData> ActorClassPathToSchema;
 

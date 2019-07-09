@@ -4,15 +4,22 @@
 
 #include "Async/Async.h"
 #include "Editor.h"
+#include "Editor/EditorEngine.h"
 #include "EditorStyleSet.h"
+#include "Framework/Application/SlateApplication.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "ISettingsContainer.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
+#include "LevelEditor.h"
+#include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
+#include "Serialization/JsonWriter.h"
 #include "SpatialGDKEditorToolbarCommands.h"
 #include "SpatialGDKEditorToolbarStyle.h"
+#include "Widgets/DeclarativeSyntaxSupport.h"
+#include "Widgets/Layout/SBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
 #include "SpatialConstants.h"
@@ -20,6 +27,7 @@
 #include "SpatialGDKEditorSettings.h"
 #include "SpatialGDKServicesModule.h"
 #include "SpatialGDKSettings.h"
+#include "SpatialGDKSimulatedPlayerDeployment.h"
 
 #include "Editor/EditorEngine.h"
 #include "HAL/FileManager.h"
@@ -169,6 +177,11 @@ void FSpatialGDKEditorToolbarModule::MapActions(TSharedPtr<class FUICommandList>
 		FCanExecuteAction());
 
 	InPluginCommands->MapAction(
+		FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction,
+		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog),
+		FCanExecuteAction());
+	
+	InPluginCommands->MapAction(
 		FSpatialGDKEditorToolbarCommands::Get().StartSpatialService,
 		FExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceButtonClicked),
 		FCanExecuteAction::CreateRaw(this, &FSpatialGDKEditorToolbarModule::StartSpatialServiceCanExecute),
@@ -216,6 +229,7 @@ void FSpatialGDKEditorToolbarModule::AddMenuExtension(FMenuBuilder& Builder)
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 		Builder.AddMenuEntry(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 	}
@@ -238,6 +252,7 @@ void FSpatialGDKEditorToolbarModule::AddToolbarExtension(FToolBarBuilder& Builde
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialDeployment);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().LaunchInspectorWebPageAction);
+	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().OpenSimulatedPlayerConfigurationWindowAction);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StartSpatialService);
 	Builder.AddToolBarButton(FSpatialGDKEditorToolbarCommands::Get().StopSpatialService);
 }
@@ -490,6 +505,11 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			return;
 		}
 
+		if (!GenerateDefaultWorkerJson())
+		{
+			return;
+		}
+
 		LaunchConfig = FPaths::Combine(FPaths::ConvertRelativePathToFull(FPaths::ProjectIntermediateDir()), TEXT("Improbable/DefaultLaunchConfig.json"));
 		GenerateDefaultLaunchConfig(LaunchConfig);
 	}
@@ -512,6 +532,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		if (bRedeployRequired)
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Schema has changed since last session. Local deployment must restart."));
+			ShowTaskStartNotification(TEXT("Schema has changed. Local deployment restarting.")); 
 			LocalDeploymentManager->TryStopLocalDeployment();
 			bRedeployRequired = false;
 		}
@@ -640,14 +661,39 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 	}
 }
 
+void FSpatialGDKEditorToolbarModule::ShowSimulatedPlayerDeploymentDialog()
+{
+	// Create and open the cloud configuration dialog
+	SimulatedPlayerDeploymentWindowPtr = SNew(SWindow)
+		.Title(LOCTEXT("SimulatedPlayerConfigurationTitle", "Cloud Deployment"))
+		.HasCloseButton(true)
+		.SupportsMaximize(false)
+		.SupportsMinimize(false)
+		.SizingRule(ESizingRule::Autosized);
+
+	SimulatedPlayerDeploymentWindowPtr->SetContent(
+		SNew(SBox)
+		.WidthOverride(700.0f)
+		[
+			SAssignNew(SimulatedPlayerDeploymentConfigPtr, SSpatialGDKSimulatedPlayerDeployment)
+			.SpatialGDKEditor(SpatialGDKEditorInstance)
+			.ParentWindow(SimulatedPlayerDeploymentWindowPtr)
+		]
+	);
+
+	TSharedPtr<SWindow> RootWindow = FGlobalTabmanager::Get()->GetRootWindow();
+
+	FSlateApplication::Get().AddModalWindow(SimulatedPlayerDeploymentWindowPtr.ToSharedRef(), RootWindow);
+}
+
 bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const
 {
-	if (const USpatialGDKEditorSettings* SpatialGDKSettings = GetDefault<USpatialGDKEditorSettings>())
+	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
 	{
 		FString Text;
 		TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&Text);
 
-		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKSettings->LaunchConfigDesc;
+		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
 
 		// Populate json file for launch config
 		Writer->WriteObjectStart(); // Start of json
@@ -703,6 +749,51 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultLaunchConfig(const FString& 
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Log, TEXT("Failed to write output file '%s'. It might be that the file is read-only."), *LaunchConfigPath);
 			return false;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
+{
+	if (const USpatialGDKEditorSettings* SpatialGDKEditorSettings = GetDefault<USpatialGDKEditorSettings>())
+	{
+		const FString WorkerJsonDir = FSpatialGDKServicesModule::GetSpatialOSDirectory(TEXT("workers/unreal"));
+		const FString TemplateWorkerJsonPath = FSpatialGDKServicesModule::GetSpatialGDKPluginDirectory(TEXT("SpatialGDK/Extras/templates/WorkerJsonTemplate.json"));
+
+		const FSpatialLaunchConfigDescription& LaunchConfigDescription = SpatialGDKEditorSettings->LaunchConfigDesc;
+		for (const FWorkerTypeLaunchSection& Worker : LaunchConfigDescription.ServerWorkers)
+		{
+			FString JsonPath = FPaths::Combine(WorkerJsonDir, FString::Printf(TEXT("spatialos.%s.worker.json"), *Worker.WorkerTypeName.ToString()));
+			if (!FPaths::FileExists(JsonPath))
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Could not find worker json at %s"), *JsonPath);
+				FString Contents;
+				if (FFileHelper::LoadFileToString(Contents, *TemplateWorkerJsonPath))
+				{
+					Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *Worker.WorkerTypeName.ToString());
+					if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
+					{
+						bRedeployRequired = true;
+						UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Wrote default worker json to %s"), *JsonPath)
+					}
+					else
+					{
+						UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to write default worker json to %s"), *JsonPath)
+					}
+				}
+				else
+				{
+					UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Failed to read default worker json template at %s"), *TemplateWorkerJsonPath)
+				}
+			}
+			else
+			{
+				UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Found worker json at %s"), *JsonPath)
+			}
 		}
 
 		return true;

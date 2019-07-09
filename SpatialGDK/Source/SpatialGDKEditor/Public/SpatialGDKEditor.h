@@ -19,6 +19,8 @@ public:
 
 	bool GenerateSchema(bool bFullScan);
 	void GenerateSnapshot(UWorld* World, FString SnapshotFilename, FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback, FSpatialGDKEditorErrorHandler ErrorCallback);
+	void LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
+	void StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback);
 
 	bool IsSchemaGeneratorRunning() { return bSchemaGeneratorRunning; }
 	bool FullScanRequired();
@@ -26,6 +28,8 @@ public:
 private:
 	bool bSchemaGeneratorRunning;
 	TFuture<bool> SchemaGeneratorResult;
+	TFuture<bool> LaunchCloudResult;
+	TFuture<bool> StopCloudResult;
 
 	bool LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets);
 

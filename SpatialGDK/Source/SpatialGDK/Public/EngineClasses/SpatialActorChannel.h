@@ -152,6 +152,8 @@ public:
 	FORCEINLINE void MarkInterestDirty() { bInterestDirty = true; }
 	FORCEINLINE bool GetInterestDirty() const { return bInterestDirty; }
 
+	FORCEINLINE void StartListening() { bIsListening = true; }
+	FORCEINLINE bool IsListening() { return bIsListening; }
 	const FClassInfo* TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object);
 
 protected:
@@ -185,6 +187,7 @@ public:
 private:
 	Worker_EntityId EntityId;
 	bool bInterestDirty;
+	bool bIsListening;
 
 	// Used on the client to track gaining/losing ownership.
 	bool bNetOwned;

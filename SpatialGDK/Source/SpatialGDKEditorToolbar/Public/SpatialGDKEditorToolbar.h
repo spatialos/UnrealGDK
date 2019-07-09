@@ -11,11 +11,13 @@
 #include "UObject/UnrealType.h"
 #include "Widgets/Notifications/SNotificationList.h"
 
-class FToolBarBuilder;
 class FMenuBuilder;
-class FUICommandList;
-class USoundBase;
 class FSpatialGDKEditor;
+class FToolBarBuilder;
+class FUICommandList;
+class SSpatialGDKSimulatedPlayerDeployment;
+class SWindow;
+class USoundBase;
 
 struct FWorkerTypeLaunchSection;
 
@@ -74,6 +76,8 @@ private:
 	void SchemaGenerateFullButtonClicked();
 	void OnPropertyChanged(UObject* ObjectBeingModified, FPropertyChangedEvent& PropertyChangedEvent);
 
+	void ShowSimulatedPlayerDeploymentDialog();
+
 private:
 	bool CanExecuteSchemaGenerator() const;
 	bool CanExecuteSnapshotGenerator() const;
@@ -86,6 +90,7 @@ private:
 
 	bool ValidateGeneratedLaunchConfig() const;
 	bool GenerateDefaultLaunchConfig(const FString& LaunchConfigPath) const;
+	bool GenerateDefaultWorkerJson();
 
 	void GenerateSchema(bool bFullScan);
 
@@ -109,6 +114,9 @@ private:
 	TFuture<bool> SchemaGeneratorResult;
 	TSharedPtr<FSpatialGDKEditor> SpatialGDKEditorInstance;
 
+	TSharedPtr<SWindow> SimulatedPlayerDeploymentWindowPtr;
+	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
+	
 	FLocalDeploymentManager* LocalDeploymentManager;
 	bool bRedeployRequired = false;
 };

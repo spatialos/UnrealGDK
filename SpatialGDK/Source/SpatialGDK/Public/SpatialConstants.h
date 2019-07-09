@@ -121,7 +121,7 @@ namespace SpatialConstants
 	const Schema_FieldId DEPLOYMENT_MAP_MAP_URL_ID							= 1;
 	const Schema_FieldId DEPLOYMENT_MAP_ACCEPTING_PLAYERS_ID				= 2;
 
-	const Schema_FieldId STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID			= 1;
+	const Schema_FieldId STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID	= 1;
 
 	const Schema_FieldId ACTOR_COMPONENT_REPLICATES_ID                      = 1;
 	const Schema_FieldId ACTOR_TEAROFF_ID									= 3;
@@ -151,6 +151,7 @@ namespace SpatialConstants
 	const Schema_FieldId UNREAL_PACKED_RPC_PAYLOAD_ENTITY_ID				= 4;
 
 	// Unreal(Client|Server|Multicast)RPCEndpoint Field IDs
+	const Schema_FieldId UNREAL_RPC_ENDPOINT_READY_ID 						= 1;
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_EVENT_ID						= 1;
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID				= 2;
 	const Schema_FieldId UNREAL_RPC_ENDPOINT_COMMAND_ID						= 1;
@@ -175,6 +176,10 @@ namespace SpatialConstants
 	static const FString ClientsStayConnectedURLOption = TEXT("clientsStayConnected");
 	static const FString SnapshotURLOption = TEXT("snapshot=");
 
+	static const FString AssemblyPattern = TEXT("^[a-zA-Z0-9_.-]{5,64}$");
+	static const FString ProjectPattern = TEXT("^[a-z0-9_]{3,32}$");
+	static const FString DeploymentPattern = TEXT("^[a-z0-9_]{2,32}$");
+
 	inline float GetCommandRetryWaitTimeSeconds(uint32 NumAttempts)
 	{
 		// Double the time to wait on each failure.
@@ -196,4 +201,32 @@ namespace SpatialConstants
 	const uint16 LOCATOR_PORT = 444;
 
 	const FString DEVELOPMENT_AUTH_PLAYER_ID = TEXT("Player Id");
+}
+
+FORCEINLINE Worker_ComponentId SchemaComponentTypeToWorkerComponentId(ESchemaComponentType SchemaType)
+{
+	switch (SchemaType)
+	{
+	case SCHEMA_CrossServerRPC:
+	{
+		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+	}
+	case SCHEMA_NetMulticastRPC:
+	{
+		return SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID;
+	}
+	case SCHEMA_ClientReliableRPC:
+	case SCHEMA_ClientUnreliableRPC:
+	{
+		return SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID;
+	}
+	case SCHEMA_ServerReliableRPC:
+	case SCHEMA_ServerUnreliableRPC:
+	{
+		return SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID;
+	}
+	default:
+		checkNoEntry();
+		return SpatialConstants::INVALID_COMPONENT_ID;
+	}
 }

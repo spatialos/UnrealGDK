@@ -5,6 +5,7 @@ type SpawnPlayerRequest {
     string url = 1;
     bytes unique_id = 2;
     string online_platform_name = 3;
+    bool simulated = 4;
 }
 
 type SpawnPlayerResponse { }

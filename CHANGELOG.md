@@ -5,6 +5,7 @@ The format of this Changelog is based on [Keep a Changelog](https://keepachangel
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
+- Factored out writing of Linux worker start scripts into a library, and added a standalone `WriteLinuxScript.exe` to _just_ write the launch script (for use in custom build pipelines).
 
 ### Breaking Changes:
 
@@ -12,11 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - Automatic local deployment starting. Local deployments are now started automatically for you when pressing the 'Play' button. Local deployment start time has been reduced to around 5.5s~. If your schema has changed during a deployment, the next time you press play the local deployment will be automatically restarted. There is no longer a `spatial` cmd window for a local deployment, the Unreal output window will still contain logs. Runtime logs can be found at `spatial\logs\localdeployment\%timestamp%\runtime.log`. A new option `Show spatial service button` in the SpatialOS Settings menu allows you to turn the 'spatial service' on and off via the SpatialGDK Toolbar for debugging purposes.
+- Added external schema code-generation tool for [non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types). If you create non-Unreal server-worker types using the [SpatialOS Worker SDK](https://docs.improbable.io/reference/13.8/shared/sdks-and-data-overview) outside of the GDK and your Unreal Engine, you manually create [schema]({{urlRoot}/content/glossary#schema). Use the new [helper-script]({{urlRoot}}/content/helper-scripts) to generate Unreal code from manually-created schema; it enables your Unreal game code to interoperate with non-Unreal server-worker types.
 
 ### Bug fixes:
 - Disconnected players no longer remain on the server until they time out if the client was shut down manually.
 - Fixed support for relative paths as the engine association in your games .uproject file.
 - RPCs on `NotSpatial` types are no longer queued forever and are now dropped instead.
+- Fixed issue where an Actor's Spatial position was not updated if it had an owner that was not replicated.
+- BeginPlay is only called once with authority per deployment for startup actors
+- Fixed null pointer dereference crash when trying to initiate a Spatial connection without an existing one.
 
 ## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
 - Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
@@ -37,11 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Started using the [schema_compiler tool](https://docs.improbable.io/reference/13.8/shared/schema/introduction#using-the-schema-compiler-directly) to generate [schema descriptors](https://docs.improbable.io/reference/13.8/shared/flexible-project-layout/build-process/schema-descriptor-build-process#schema-descriptor-introduction) rather than relying on 'spatial local launch' to do this.
 - Added runtime option to pack unreliable RPCs from the same frame in a single component update to save bandwidth - bPackUnreliableRPCs.
 - Changed Interest so that NetCullDistanceSquared is used to define the distance from a player that the actor type is *interesting to* the player. This replaces CheckoutRadius which defined the distance that an actor is *interested in* other types. Requires engine update to remove the CheckoutRadius property which is no longer used.
+- Added ActorInterestComponent that can be used to define interest queries that are more complex than a radius around the player position.
 - Enabled new Development Authentication Flow
 - Added new "worker" entities which are created for each server worker in a deployment so they correctly receive interest in the global state manager.
 - Added support for spawning actors with ACLs configured for offloading using actor groups.
 - Removed the references to the `Number of servers` slider in the Play in editor drop-down menu. The number of each server worker type to launch in PIE is now specified within the launch configuration in the `Spatial GDK Editor Settings` settings tab.
 - Added `SpatialWorkerId` which is set to the worker ID when the worker associated to the `UGameInstance` connects.
+- Added `USpatialStatics` helper blueprint library exposing functions for checking if SpatialOS networking is enabled, whether offloading is enabled, and more SpatialOS related checks.
 
 
 ### Bug fixes:
@@ -59,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a crash when failing to NetSerialize a struct in spatial. Now print a warning instead which matches native Unreal behavior.
 - Query response delegates now execute even if response status shows failure. This allows handlers to implement custom retry logic such as clients querying for the GSM.
 - Fixed a crash where processing unreliable RPCs made assumption that the worker had authority over all entities in the SpatialOS op
+- Ordering and reliability for single server RPCs on the same Actor are now guaranteed.
 
 ### External contributors:
 

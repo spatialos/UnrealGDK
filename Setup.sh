@@ -93,6 +93,8 @@ markStartOfBlock "Retrieve dependencies"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux       $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc_libstdcpp-linux.zip
     spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_libcpp-macos        $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang_libcpp-macos.zip
     spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang_libcpp-ios  $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang_libcpp-ios.zip
+    spatial package retrieve worker_sdk      core-dynamic-x86_64-linux                  $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/core-dynamic-x86_64-linux.zip
+    spatial package retrieve worker_sdk      csharp                                     $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/csharp.zip
 markEndOfBlock "Retrieve dependencies"
 
 markStartOfBlock "Unpack dependencies"
@@ -101,6 +103,8 @@ markStartOfBlock "Unpack dependencies"
     unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc_libstdcpp-linux.zip        -d $BINARIES_DIR/Linux/
     unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang_libcpp-macos.zip         -d $BINARIES_DIR/Mac/
     unzip -oq $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang_libcpp-ios.zip   -d $BINARIES_DIR/IOS/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/core-dynamic-x86_64-linux.zip                   -d $BINARIES_DIR/Programs/worker_sdk/core/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/csharp.zip                                      -d $BINARIES_DIR/Programs/worker_sdk/csharp/
     unzip -oq $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip                     -d $BINARIES_DIR/Programs/
     unzip -oq $CORE_SDK_DIR/schema/standard_library.zip                                -d $BINARIES_DIR/Programs/schema/
 
@@ -121,7 +125,7 @@ markStartOfBlock "Copy GDK schema"
 markEndOfBlock "Copy GDK schema"
 
 markStartOfBlock "Build C# utilities"
-    msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln /property:Configuration=Release
+    msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
 markEndOfBlock "Build C# utilities"
 
 markEndOfBlock "$0"
