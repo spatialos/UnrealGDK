@@ -524,26 +524,31 @@ bool FLocalDeploymentManager::GetServiceStatus()
 bool FLocalDeploymentManager::IsServiceInCorrectDirectory(const FString& ServiceStatusResult)
 {
 	// Get the project file path and ensure it matches the one for the currently running project.
-	FString SpatialServicePath;
-	if (ServiceStatusResult.Split(TEXT("project file path: "), nullptr, &SpatialServicePath))
+	FString SpatialServiceProjectPath;
+	if (ServiceStatusResult.Split(TEXT("project file path: "), nullptr, &SpatialServiceProjectPath))
 	{
 		// Remove the trailing '" cli-version' that comes with non-interactive 'spatial' calls.
-		SpatialServicePath.Split(TEXT("\" cli-version"), &SpatialServicePath, nullptr);
+		SpatialServiceProjectPath.Split(TEXT("\" cli-version"), &SpatialServiceProjectPath, nullptr);
 
 		FString CurrentProjectSpatialPath = FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("spatialos.json"));
-		FPaths::NormalizeDirectoryName(SpatialServicePath);
-		FPaths::RemoveDuplicateSlashes(SpatialServicePath);
+		FPaths::NormalizeDirectoryName(SpatialServiceProjectPath);
+		FPaths::RemoveDuplicateSlashes(SpatialServiceProjectPath);
 
-		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service running at path: %s "), *SpatialServicePath);
+		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Spatial service running at path: %s "), *SpatialServiceProjectPath);
 
-		if (CurrentProjectSpatialPath.Equals(SpatialServicePath, ESearchCase::IgnoreCase))
+		if (CurrentProjectSpatialPath.Equals(SpatialServiceProjectPath, ESearchCase::IgnoreCase))
 		{
 			return true;
+		}
+		else if (SpatialServiceProjectPath.Contains(TEXT("not available")))
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service has hit an erroneous state! Please run 'spatial service stop'."));
+			return false;
 		}
 		else
 		{
 			UE_LOG(LogSpatialDeploymentManager, Error,
-				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServicePath);
+				TEXT("Spatial service running in a different project! Please run 'spatial service stop' if you wish to launch deployments in the current project. Service at: %s"), *SpatialServiceProjectPath);
 			return false;
 		}
 	}
