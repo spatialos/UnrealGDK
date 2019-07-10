@@ -8,6 +8,12 @@
 
 #include "Core.h"
 
+#if WITH_DEV_AUTOMATION_TESTS
+
+#define TEST(TestName) \
+	IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestName, "SpatialGDK.EngineClasses."#TestName, EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter) \
+	bool TestName::RunTest(const FString& Parameters)
+
 using namespace SpatialGDK;
 
 namespace
@@ -31,9 +37,20 @@ namespace
 		return MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload), ReliableRPCIndex);
 	}
 }
+/*
+// TODO(Alex): 
+// Create modules
+// have to expose more
+// add automation macro
+TEST(GIVEN_an_empty_container_WHEN_an_RPC_is_added_THEN_blah)
+{
+	// Setup
+	TestTrue();
+	return true;
+}
+*/
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFRPCContainerTestOneQueuedRPC, "SpatialGDK.EngineClasses.FRPCContainerOneQueuedRPC", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter)
-bool FFRPCContainerTestOneQueuedRPC::RunTest(const FString& Parameters)
+TEST(FFRPCContainerTestOneQueuedRPC)
 {
 	UMockObject* TargetObject = NewObject<UMockObject>();
 
@@ -56,8 +73,7 @@ bool FFRPCContainerTestOneQueuedRPC::RunTest(const FString& Parameters)
     return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFRPCContainerTwoQueuedRPCSameType, "SpatialGDK.EngineClasses.FRPCContainerTwoQueuedRPCSameType", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter)
-bool FFRPCContainerTwoQueuedRPCSameType::RunTest(const FString& Parameters)
+TEST(FFRPCContainerTwoQueuedRPCSameType)
 {
 	UMockObject* TargetObject = NewObject<UMockObject>();
 	FPendingRPCParamsPtr Params1 = CreateMockParameters(TargetObject);
@@ -86,8 +102,7 @@ bool FFRPCContainerTwoQueuedRPCSameType::RunTest(const FString& Parameters)
     return true;
 }
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FFRPCContainerTwoQueuedRPCDifferentType, "SpatialGDK.EngineClasses.FFRPCContainerTwoQueuedRPCDifferentType", EAutomationTestFlags::ApplicationContextMask | EAutomationTestFlags::EngineFilter)
-bool FFRPCContainerTwoQueuedRPCDifferentType::RunTest(const FString& Parameters)
+TEST(FFRPCContainerTwoQueuedRPCDifferentType)
 {
 	UMockObject* TargetObject = NewObject<UMockObject>();
 
@@ -117,3 +132,5 @@ bool FFRPCContainerTwoQueuedRPCDifferentType::RunTest(const FString& Parameters)
 
     return true;
 }
+
+#endif // WITH_DEV_AUTOMATION_TESTS
