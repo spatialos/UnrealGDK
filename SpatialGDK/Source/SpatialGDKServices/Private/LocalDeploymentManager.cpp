@@ -42,8 +42,15 @@ FLocalDeploymentManager::FLocalDeploymentManager()
 	// Watch the worker config directory for changes.
 	StartUpWorkerConfigDirectoryWatcher();
 
-	// Ensure we have an up to date state of the spatial service and local deployment.
-	RefreshServiceStatus();
+	// Restart the spatial service so it is guaranteed to be running in the current project.
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+	{
+		TryStopSpatialService();
+		TryStartSpatialService();
+
+		// Ensure we have an up to date state of the spatial service and local deployment.
+		RefreshServiceStatus();
+	});
 }
 
 const FString FLocalDeploymentManager::GetSpotExe()
@@ -87,16 +94,23 @@ FString FLocalDeploymentManager::GetProjectName()
 	FFileHelper::LoadFileToString(SpatialFileResult, *FPaths::Combine(SpatialDirectory, SpatialFileName));
 
 	TSharedPtr<FJsonObject> JsonParsedSpatialFile;
-	if (!ParseJson(SpatialFileResult, JsonParsedSpatialFile))
+	if (ParseJson(SpatialFileResult, JsonParsedSpatialFile))
+	{
+		if (JsonParsedSpatialFile->TryGetStringField(TEXT("name"), ProjectName))
+		{
+			return ProjectName;
+		}
+		else
+		{
+			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'name' does not exist in spatialos.json. Can't read project name."));
+		}
+	}
+	else
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spatialos.json failed. Can't get project name."));
 	}
 
-	if (!JsonParsedSpatialFile->TryGetStringField(TEXT("name"), ProjectName))
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'name' does not exist in spatialos.json. Can't read project name."));
-	}
-
+	ProjectName.Empty();
 	return ProjectName;
 }
 
