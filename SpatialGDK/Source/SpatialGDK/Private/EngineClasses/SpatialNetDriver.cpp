@@ -448,11 +448,12 @@ void USpatialNetDriver::OnAcceptingPlayersChanged(bool bAcceptingPlayers)
 
 			// Extract map name and options
 			FWorldContext& WorldContext = GEngine->GetWorldContextFromPendingNetGameNetDriverChecked(this);
+			FURL LastURL = WorldContext.PendingNetGame->URL;
 
-			FURL RedirectURL = FURL(&WorldContext.LastURL, *GlobalStateManager->DeploymentMapURL, (ETravelType)WorldContext.TravelType);
-			RedirectURL.Host = WorldContext.LastURL.Host;
-			RedirectURL.Port = WorldContext.LastURL.Port;
-			RedirectURL.Op.Append(WorldContext.LastURL.Op);
+			FURL RedirectURL = FURL(&LastURL, *GlobalStateManager->DeploymentMapURL, (ETravelType)WorldContext.TravelType);
+			RedirectURL.Host = LastURL.Host;
+			RedirectURL.Port = LastURL.Port;
+			RedirectURL.Op.Append(LastURL.Op);
 			RedirectURL.AddOption(*SpatialConstants::ClientsStayConnectedURLOption);
 
 			WorldContext.PendingNetGame->bSuccessfullyConnected = true;

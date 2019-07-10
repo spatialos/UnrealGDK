@@ -171,9 +171,10 @@ void USpatialPlayerSpawner::ObtainPlayerParams(FURL& LoginURL, FUniqueNetIdRepl&
 
 		// Send any game-specific url options for this player
 		FString GameUrlOptions = LocalPlayer->GetGameLoginOptions();
-		if (GameUrlOptions.Len() > 0)
+		auto LastURLOptions = WorldContext->LastURL.Op;
+		for (const FString& Op : LastURLOptions)
 		{
-			LoginURL.AddOption(*FString::Printf(TEXT("%s"), *GameUrlOptions));
+			LoginURL.AddOption(*Op);
 		}
 
 		// Send the player unique Id at login
