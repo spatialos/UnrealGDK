@@ -1711,7 +1711,7 @@ void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-	ESchemaComponentType Type = Type = RPCInfo.Type;
+	ESchemaComponentType Type = RPCInfo.Type;
 
 	IncomingRPCs.QueueRPC(MoveTemp(Params), Type);
 }
