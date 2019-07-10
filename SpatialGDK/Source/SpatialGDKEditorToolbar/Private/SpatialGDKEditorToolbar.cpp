@@ -1,5 +1,5 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
-#pragma optimize("",off)
+
 #include "SpatialGDKEditorToolbar.h"
 
 #include "Async/Async.h"
@@ -966,4 +966,3 @@ bool FSpatialGDKEditorToolbarModule::WriteLoadbalancingSection(TSharedRef< TJson
 #undef LOCTEXT_NAMESPACE
 
 IMPLEMENT_MODULE(FSpatialGDKEditorToolbarModule, SpatialGDKEditorToolbar)
-#pragma optimize("",on)
