@@ -388,12 +388,6 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 
 bool FLocalDeploymentManager::TryStopSpatialService()
 {
-	if (!bSpatialServiceRunning)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Log, TEXT("Tried to stop spatial service but it's not running."));
-		return false;
-	}
-
 	bStoppingSpatialService = true;
 
 	FString SpatialServiceStartArgs = TEXT("service stop");
@@ -415,7 +409,6 @@ bool FLocalDeploymentManager::TryStopSpatialService()
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service failed to stop! %s"), *ServiceStopResult);
 	}
 
-	IsSpatialServiceRunning();
 	return false;
 }
 
