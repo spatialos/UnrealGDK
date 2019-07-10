@@ -1,7 +1,9 @@
 <%(TOC)%>
 
-# Glossary
+#  Glossary
 This glossary covers:
+
+
 
 * Terms used in this documentation
 * Terms relevant to the GDK for Unreal
