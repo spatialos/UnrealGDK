@@ -218,12 +218,6 @@ bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FStr
 
 	bStartingDeployment = true;
 
-	if (!bSpatialServiceInProjectDirectory)
-	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Spatial service is running in a different project directory! Cannot start local deployment."));
-		return false;
-	}
-
 	// If the service is not running then start it.
 	if (!bSpatialServiceRunning)
 	{
