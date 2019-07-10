@@ -1213,8 +1213,7 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 			UFunction* Function = ClassInfo.RPCs[Payload.Index];
 			const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type)
-				&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, ESchemaComponentType::SCHEMA_Invalid))
+			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
 			{
 				// Apply if possible, queue otherwise
 				if (ApplyRPC(*Params))
@@ -1296,15 +1295,25 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 	}
 
 	const FClassInfo& Info = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-
 	UFunction* Function = Info.RPCs[Payload.Index];
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Received command request (entity: %lld, component: %d, function: %s)"),
 		Op.entity_id, Op.request.component_id, *Function->GetName());
 
-	FPendingRPCParamsPtr Params = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
+	bool bAppliedRPC = false;
+	if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
+	{
+		if (ApplyRPC(TargetObject, Function, Payload, FString()))
+		{
+			bAppliedRPC = true;
+		}
+	}
 
-	QueueIncomingRPC(MoveTemp(Params));
+	if (!bAppliedRPC)
+	{
+		QueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload)));
+	}
 
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
 }
@@ -1642,8 +1651,7 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type)
-			&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, ESchemaComponentType::SCHEMA_Invalid))
+		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type))
 		{
 			if (ApplyRPC(Actor, Function, RPC, FString()))
 			{
@@ -1691,17 +1699,18 @@ void USpatialReceiver::QueueIncomingRepUpdates(FChannelObjectPair ChannelObjectP
 
 void USpatialReceiver::QueueIncomingRPC(FPendingRPCParamsPtr Params)
 {
-	ESchemaComponentType Type = ESchemaComponentType::SCHEMA_Invalid;
-
 	TWeakObjectPtr<UObject> TargetObjectWeakPtr = PackageMap->GetObjectFromUnrealObjectRef(Params->ObjectRef);
-	if (TargetObjectWeakPtr.IsValid())
+	if (!TargetObjectWeakPtr.IsValid())
 	{
-		UObject* TargetObject = TargetObjectWeakPtr.Get();
-		const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
-		UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
-		const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
-		Type = RPCInfo.Type;
+		UE_LOG(LogSpatialReceiver, Verbose, TEXT("The object has been deleted, dropping the RPC"));
+		return;
 	}
+
+	UObject* TargetObject = TargetObjectWeakPtr.Get();
+	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
+	UFunction* Function = ClassInfo.RPCs[Params->Payload.Index];
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+	ESchemaComponentType Type = RPCInfo.Type;
 
 	IncomingRPCs.QueueRPC(MoveTemp(Params), Type);
 }
