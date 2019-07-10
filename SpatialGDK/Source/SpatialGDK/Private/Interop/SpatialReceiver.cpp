@@ -1312,8 +1312,7 @@ void USpatialReceiver::OnCommandRequest(const Worker_CommandRequestOp& Op)
 
 	if (!bAppliedRPC)
 	{
-		FPendingRPCParamsPtr Params = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
-		QueueIncomingRPC(MoveTemp(Params));
+		QueueIncomingRPC(MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload)));
 	}
 
 	Sender->SendEmptyCommandResponse(Op.request.component_id, CommandIndex, Op.request_id);
