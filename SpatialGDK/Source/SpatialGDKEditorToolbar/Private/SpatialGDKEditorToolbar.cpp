@@ -294,7 +294,9 @@ void FSpatialGDKEditorToolbarModule::SchemaGenerateFullButtonClicked()
 
 void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::GameThread, [this, NotificationText] {
+	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]
+	{
+		// If a task notification already exists then expire it.
 		if (TaskNotificationPtr.IsValid())
 		{
 			TaskNotificationPtr.Pin()->ExpireAndFadeout();
@@ -321,35 +323,54 @@ void FSpatialGDKEditorToolbarModule::ShowTaskStartNotification(const FString& No
 
 void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]{
-		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
-		Notification->SetFadeInDuration(0.1f);
-		Notification->SetFadeOutDuration(0.5f);
-		Notification->SetExpireDuration(7.5f);
-		Notification->SetText(FText::AsCultureInvariant(NotificationText));
-		Notification->SetCompletionState(SNotificationItem::CS_Success);
-		Notification->ExpireAndFadeout();
-
-		if (GEditor && ExecutionSuccessSound)
+	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]
+	{
+		if (TaskNotificationPtr.IsValid())
 		{
-			GEditor->PlayEditorSound(ExecutionSuccessSound);
+			TaskNotificationPtr.Pin()->ExpireAndFadeout();
 		}
+
+		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+		if (Notification.IsValid())
+		{
+			Notification->SetFadeInDuration(0.1f);
+			Notification->SetFadeOutDuration(0.5f);
+			Notification->SetExpireDuration(5.0f);
+			Notification->SetText(FText::AsCultureInvariant(NotificationText));
+			Notification->SetCompletionState(SNotificationItem::CS_Success);
+			Notification->ExpireAndFadeout();
+
+			if (GEditor && ExecutionSuccessSound)
+			{
+				GEditor->PlayEditorSound(ExecutionSuccessSound);
+			}
+		}		
 	});
 }
 
 void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& NotificationText)
 {
-	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]{
-		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
-		Notification->SetText(FText::AsCultureInvariant(NotificationText));
-		Notification->SetCompletionState(SNotificationItem::CS_Fail);
-		Notification->SetExpireDuration(5.0f);
-
-		Notification->ExpireAndFadeout();
-
-		if (GEditor && ExecutionFailSound)
+	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]
+	{
+		if (TaskNotificationPtr.IsValid())
 		{
-			GEditor->PlayEditorSound(ExecutionFailSound);
+			TaskNotificationPtr.Pin()->ExpireAndFadeout();
+		}
+
+		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
+		if (Notification.IsValid())
+		{
+			Notification->SetFadeInDuration(0.1f);
+			Notification->SetFadeOutDuration(0.5f);
+			Notification->SetText(FText::AsCultureInvariant(NotificationText));
+			Notification->SetCompletionState(SNotificationItem::CS_Fail);
+			Notification->SetExpireDuration(5.0);
+			Notification->ExpireAndFadeout();
+
+			if (GEditor && ExecutionFailSound)
+			{
+				GEditor->PlayEditorSound(ExecutionFailSound);
+			}
 		}
 	});
 }
@@ -529,7 +550,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		// If schema has been regenerated then we need to restart spatial.
-		if (bRedeployRequired)
+		if (bRedeployRequired && LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Schema has changed since last session. Local deployment must restart."));
 			ShowTaskStartNotification(TEXT("Schema has changed. Local deployment restarting.")); 
