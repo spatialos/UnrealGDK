@@ -325,11 +325,6 @@ void FSpatialGDKEditorToolbarModule::ShowSuccessNotification(const FString& Noti
 {
 	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]
 	{
-		if (TaskNotificationPtr.IsValid())
-		{
-			TaskNotificationPtr.Pin()->ExpireAndFadeout();
-		}
-
 		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
 		if (Notification.IsValid())
 		{
@@ -352,19 +347,14 @@ void FSpatialGDKEditorToolbarModule::ShowFailedNotification(const FString& Notif
 {
 	AsyncTask(ENamedThreads::GameThread, [this, NotificationText]
 	{
-		if (TaskNotificationPtr.IsValid())
-		{
-			TaskNotificationPtr.Pin()->ExpireAndFadeout();
-		}
-
 		TSharedPtr<SNotificationItem> Notification = TaskNotificationPtr.Pin();
 		if (Notification.IsValid())
 		{
 			Notification->SetFadeInDuration(0.1f);
 			Notification->SetFadeOutDuration(0.5f);
+			Notification->SetExpireDuration(5.0);
 			Notification->SetText(FText::AsCultureInvariant(NotificationText));
 			Notification->SetCompletionState(SNotificationItem::CS_Fail);
-			Notification->SetExpireDuration(5.0);
 			Notification->ExpireAndFadeout();
 
 			if (GEditor && ExecutionFailSound)
