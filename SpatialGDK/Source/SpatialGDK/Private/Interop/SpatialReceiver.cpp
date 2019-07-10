@@ -1213,8 +1213,8 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 			UFunction* Function = ClassInfo.RPCs[Payload.Index];
 			const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 
-			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, RPCInfo.Type)
-				&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, ESchemaComponentType::SCHEMA_Invalid))
+			if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type)
+				&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, ESchemaComponentType::SCHEMA_Invalid))
 			{
 				// Apply if possible, queue otherwise
 				if (ApplyRPC(*Params))
@@ -1642,8 +1642,8 @@ void USpatialReceiver::ProcessQueuedActorRPCsOnEntityCreation(AActor* Actor, RPC
 		const FUnrealObjectRef ObjectRef = PackageMap->GetUnrealObjectRefFromObject(Actor);
 		check(ObjectRef != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
 
-		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, RPCInfo.Type)
-			&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef, ESchemaComponentType::SCHEMA_Invalid))
+		if (!IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, RPCInfo.Type)
+			&& !IncomingRPCs.ObjectHasRPCsQueuedOfType(ObjectRef.Entity, ESchemaComponentType::SCHEMA_Invalid))
 		{
 			if (ApplyRPC(Actor, Function, RPC, FString()))
 			{
