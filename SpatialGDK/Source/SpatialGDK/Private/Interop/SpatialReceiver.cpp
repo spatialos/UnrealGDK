@@ -1178,7 +1178,7 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 	}
 }
 
-void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId, bool bPacked)
+void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp& Op, Worker_ComponentId RPCEndpointComponentId, bool bPacked)
 {
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
 	const Schema_FieldId EventId = bPacked ? SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID : SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
