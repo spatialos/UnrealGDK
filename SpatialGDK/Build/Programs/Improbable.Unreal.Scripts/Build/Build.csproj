@@ -64,9 +64,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(SolutionDir)\$(ProjectName)\$(OutDir)\$(ProjectName).exe" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\" /Y
+    <PostBuildEvent>cp "$(SolutionDir)\$(ProjectName)\$(OutDir)\$(ProjectName).exe" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\"
 
-copy "$(SolutionDir)\$(ProjectName)\$(OutDir)\Newtonsoft.Json.dll" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\" /Y</PostBuildEvent>
+cp "$(SolutionDir)\$(ProjectName)\$(OutDir)\Newtonsoft.Json.dll" "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
