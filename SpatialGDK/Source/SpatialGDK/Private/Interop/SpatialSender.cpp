@@ -849,8 +849,8 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 						{
 							UE_LOG(LogSpatialSender, Verbose, TEXT("RPC %s Cannot be packed as TargetActor (%s) and Connection Owner (%s) are on different worker types."),
 								*Function->GetName(),
-								*TargetActor->GetFName().ToString(),
-								*ConnectionOwner->GetFName().ToString()
+								*TargetActor->GetName(),
+								*ConnectionOwner->GetName()
 							)
 							bCanPackRPC = false;
 						}
