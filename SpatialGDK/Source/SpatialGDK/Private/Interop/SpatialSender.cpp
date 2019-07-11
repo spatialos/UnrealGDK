@@ -829,8 +829,34 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 
 		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo.Type);
 
-		if (GetDefault<USpatialGDKSettings>()->bPackRPCs
-			&& RPCInfo.Type != SCHEMA_NetMulticastRPC)
+		bool bCanPackRPC = true;
+		if (RPCInfo.Type == SCHEMA_NetMulticastRPC)
+		{
+			bCanPackRPC = false;
+		}
+
+		if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
+		{
+			if (const AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(TargetObjectRef.Entity).Get()))
+			{
+				if (const UNetConnection* OwningConnection = TargetActor->GetNetConnection())
+				{
+					if (const AActor* ConnectionOwner = OwningConnection->OwningActor)
+					{
+						if (!NetDriver->ActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
+						{
+							UE_LOG(LogTemp, Display, TEXT("%s and %s not on same worker type, so cannot be packed."),
+								*GetPathNameSafe(TargetActor),
+								*GetPathNameSafe(ConnectionOwner)
+							)
+							bCanPackRPC = false;
+						}
+					}
+				}
+			}
+		}
+
+		if (GetDefault<USpatialGDKSettings>()->bPackRPCs && bCanPackRPC)
 		{
 			const UObject* UnresolvedObject = nullptr;
 			if (AddPendingUnreliableRPC(TargetObject, Params, ComponentId, RPCInfo.Index, UnresolvedObject))

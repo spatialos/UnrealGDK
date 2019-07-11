@@ -1168,15 +1168,17 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 		}
 	}
 
-	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
-
-	Schema_FieldId EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
-	// Client and Server Unreliable RPCs can be packed, in which case they're sent using a different event ID.
-	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Op.update.component_id != SpatialConstants::NETMULTICAST_RPCS_COMPONENT_ID)
+	ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId, false);
+	if (GetDefault<USpatialGDKSettings>()->bPackRPCs)
 	{
-		EventId = SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID;
+		ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId, true);
 	}
+}
 
+void USpatialReceiver::ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId, bool bPacked)
+{
+	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Op.update.schema_type);
+	const Schema_FieldId EventId = bPacked ? SpatialConstants::UNREAL_RPC_ENDPOINT_PACKED_EVENT_ID : SpatialConstants::UNREAL_RPC_ENDPOINT_EVENT_ID;
 	uint32 EventCount = Schema_GetObjectCount(EventsObject, EventId);
 
 	for (uint32 i = 0; i < EventCount; i++)
@@ -1187,7 +1189,7 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 
 		FUnrealObjectRef ObjectRef(EntityId, Payload.Offset);
 
-		if (GetDefault<USpatialGDKSettings>()->bPackRPCs)
+		if (bPacked)
 		{
 			// When packing unreliable RPCs into one update, they also always go through the PlayerController.
 			// This means we need to retrieve the actual target Entity ID from the payload.
@@ -1207,7 +1209,7 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 		}
 
 		FPendingRPCParamsPtr Params = MakeUnique<FPendingRPCParams>(ObjectRef, MoveTemp(Payload));
-		if(UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
+		if (UObject* TargetObject = PackageMap->GetObjectFromUnrealObjectRef(ObjectRef).Get())
 		{
 			const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 			UFunction* Function = ClassInfo.RPCs[Payload.Index];

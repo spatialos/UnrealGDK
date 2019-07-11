@@ -71,4 +71,8 @@ public:
 
 	// Returns the Server worker type that is authoritative over this ActorGroup.
 	FName GetWorkerTypeForActorGroup(const FName& ActorGroup) const;
+
+	// Returns true if ActorA and ActorB are contained in ActorGroups that are
+	// on the same Server worker type.
+	bool IsSameWorkerType(const AActor* ActorA, const AActor* ActorB);
 };
