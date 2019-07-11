@@ -135,17 +135,22 @@ The workflow for this is:
 
 All of the above tests **must** have passed and there must be no outstanding blocking issues before you start this, the release phase.
 
-If you want to soak test this release in `staging-` before releasing to `master`, only execute the `staging-` steps.
+If you want to soak test this release on the `preview` branch before promoting it to the `release` branch, only execute the steps that merge into `preview` and `master`.
 
 When merging the following PRs, you need to enable `Allow merge commits` option on the repos and choose `Create a merge commit` from the dropdown in the pull request UI to merge the branch, then disable `Allow merge commits` option on the repos once the release process is complete. You need to be an admin to perform this.
 
-1. In `UnrealGDK`, create `staging-x.y.z-rc` from `x.y.z-rc` (select `x.y.z-rc` in the branch dropdown, then type the name of the new branch to create. If there's already a branch with that name, delete it first).
-1. In `UnrealGDK`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
-1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.<br/>
+1. In `UnrealGDK`, merge `x.y.z-rc` into `master`.
+1. In `UnrealGDK`, merge `x.y.z-rc` into `preview`.
+1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDK/releases) to tag the commit you just made to `preview` as `x.y.z-preview`.
+
+Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
+1. In `UnrealGDK`, merge `x.y.z-rc` into `release`.
+1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDK/releases) to tag the commit you just made to `release` as `x.y.z`.
+
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
 1. In `improbableio/UnrealEngine`, create `staging-4.xx-SpatialOSUnrealGDK-x.y.z-rc` from `4.xx-SpatialOSUnrealGDK-x.y.z-rc`.
 1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-release` using GitHub PR (use `Update branch` button to merge `4.xx-SpatialOSUnrealGDK-release` into `4.xx-SpatialOSUnrealGDK-x.y.z-rc`).
-1. Use the GitHub Release UI to tag the commit you just made as `4.xx-SpatialOSUnrealGDK-x.y.z`.<br/>
+1. Use the GitHub Release UI to tag the commit you just made as `4.xx-SpatialOSUnrealGDK-x.y.z`.
 1. In `UnrealGDKThirdPersonShooter`, create `staging-x.y.z-rc` from `x.y.z-rc`.
 1. In `UnrealGDKThirdPersonShooter`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
 1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
