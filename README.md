@@ -1,8 +1,8 @@
 # The SpatialOS Game Development Kit for Unreal Plugin (alpha)
 
-The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine plugin which gives you the features of SpatialOS, within the familiar workflows and APIs of Unreal.
+![](SpatialGDK/Documentation/spatialos-gdkforunreal-header.png)
 
-<img src="SpatialGDK/Documentation/unrealgdk-headline-image.png" style="margin: auto; display: block; width: 50%; padding: 20px 20px"/>
+The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine plugin which gives you the features of SpatialOS, within the familiar workflows and APIs of Unreal.
 
 SpatialOS provides:
 
