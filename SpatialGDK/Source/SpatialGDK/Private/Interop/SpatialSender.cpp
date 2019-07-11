@@ -751,19 +751,18 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 
 	if (Channel->bCreatingNewEntity)
 	{
-		if (Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+		if (Function->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetMulticast))
 		{
-			// TODO: UNR-1437 - Add Support for Multicast RPCs on Entity Creation
-			UE_LOG(LogSpatialSender, Warning, TEXT("NetMulticast RPC %s triggered on Object %s too close to initial creation."), *Function->GetName(), *TargetObject->GetName());
-		}
-		check(NetDriver->IsServer());
-		check(Function->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetMulticast));
-		check(PackageMap->GetUnrealObjectRefFromObject(TargetObject) != FUnrealObjectRef::UNRESOLVED_OBJECT_REF);
+			if (Function->HasAnyFunctionFlags(FUNC_NetMulticast))
+			{
+				// TODO: UNR-1437 - Add Support for Multicast RPCs on Entity Creation
+				UE_LOG(LogSpatialSender, Warning, TEXT("NetMulticast RPC %s triggered on Object %s too close to initial creation."), *Function->GetName(), *TargetObject->GetName());
+			}
+			check(NetDriver->IsServer());
 
-		// This is where we'll serialize this RPC and queue it to be added on entity creation
-		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
-		OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Params.Payload);
-		return true;
+			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Params.Payload);
+			return true;
+		}
 	}
 
 	const FRPCInfo& RPCInfo= ClassInfoManager->GetRPCInfo(TargetObject, Function);
