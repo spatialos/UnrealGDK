@@ -9,10 +9,15 @@
 
 using namespace SpatialGDK;
 
+TArray<uint8> TypeToArray(ESchemaComponentType Type);
+ESchemaComponentType ArrayToType(const TArray<uint8>& Array);
+
 UCLASS()
 class SPATIALGDK_API UMockObject : public UObject
 {
 	GENERATED_BODY()
 public:
 	bool ProcessRPC(const FPendingRPCParams& Params);
+
+	TMap<ESchemaComponentType, TArray<uint32>> ProcessedRPCIndices;
 };
