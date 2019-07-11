@@ -1,4 +1,4 @@
-# The SpatialOS Game Development Kit for Unreal Plugin (alpha)
+# The SpatialOS GDK for Unreal Plugin
 
 ![](SpatialGDK/Documentation/spatialos-gdkforunreal-header.png)
 
