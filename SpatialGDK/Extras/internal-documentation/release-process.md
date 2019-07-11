@@ -36,15 +36,6 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. Repeat the above steps for all supported `4.xx` engine versions.
 1. Announce the branch and the commit hash it uses in the `#unreal-gdk-release` channel.
 
-### Create the `UnrealGDKThirdPersonShooter` release candidate
-1. `git clone` the [UnrealGDKThirdPersonShooter](https://github.com/spatialos/UnrealGDKThirdPersonShooter).
-1. `git checkout master`
-1. `git pull`
-1. Using `git log`, take note of the latest commit hash.
-1. `git checkout -b x.y.z-rc` in order to create release candidate branch.
-1. `git push --set-upstream origin x.y.z-rc` to push the branch.
-1. Announce the branch and the commit hash it uses in the #unreal-gdk-release channel.
-
 ### Create the `UnrealGDKExampleProject` release candidate
 1. `git clone` the [UnrealGDKExampleProject](https://github.com/spatialos/UnrealGDKExampleProject).
 1. `git checkout master`
@@ -83,20 +74,13 @@ The workflow for this is:
 1. Notify #unreal-gdk-release that the release candidate has been updated.
 1. **Judgment call**: If the fix was isolated, continue the validation steps from where you left off. If the fix was significant, restart testing from scratch. Consult the rest of the team if you are unsure which to choose.
 
-## Validation (Multiserver Shooter tutorial)
-1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/tutorial, bearing in mind the following caveats:
-* When you clone `UnrealGDKThirdPersonShooter`, be sure to checkout the release candidate branch, so you're working with the release version.
+## Validation (GDK Starter Template)
+1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/gdk-template, bearing in mind the following caveat:
 * When you clone the GDK into the `Plugins` folder, be sure to checkout the release candidate branch, so you're working with the release version.
-* Your release candidate is cut from `master` so all steps in the tutorial that require you to make code changes to the project **do not need to be executed**, as cross-server RPCs are already implemented on `master`. Later in this release process you will `git rebase` into `tutorial`, so that users can still follow the tutorial on that branch. The steps that you should skip are:
-  * [Replicate health changes](http://localhost:8080/reference/1.0/content/get-started/tutorial#replicate-health-changes)
-  * [Deploy the project locally (again)](http://localhost:8080/reference/1.0/content/get-started/tutorial#deploy-the-project-locally-again)
-  * [Enable cross server RPCs](http://localhost:8080/reference/1.0/content/get-started/tutorial#enable-cross-server-rpcs)
-  * [Deploy the project locally (last time)](http://localhost:8080/reference/1.0/content/get-started/tutorial#deploy-the-project-locally-last-time)
-
 2. Launch a local SpatialOS deployment, then a standalone server-worker, and then connect two standalone clients to it. To do this:
-* In your file browser, click `UnrealGDKThirdPersonShooter\LaunchSpatial.bat` in order to run it.
-* In your file browser, click `UnrealGDKThirdPersonShooter\LaunchServer.bat` in order to run it.
-* In your file browser, click `UnrealGDKThirdPersonShooter\LaunchClient.bat` in order to run it.
+* In your file browser, click `LaunchSpatial.bat` in order to run it.
+* In your file browser, click `LaunchServer.bat` in order to run it.
+* In your file browser, click `LaunchClient.bat` in order to run it.
 * Run the same script again in order to launch the second client
 * Run and shoot eachother with the clients as a smoke test.
 * Open the `UE4 Console` and enter the command `open 127.0.0.1`. The desired effect is that the client disconnect and then re-connects to the map. If you can continue to play after executing the command then you've succesfully tested client travel.
@@ -105,20 +89,16 @@ The workflow for this is:
 * Ensure that both machines are on the same network.
 * On your own machine, in your terminal, `cd` to `<ProjectRoot>`.
 * Build out a windows client by running:
-`Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooter Win64 Development ThirdPersonShooter.uproject`
+`Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat YourProject Win64 Development YourProject.uproject`
 * Send the client you just built to the other machine you'll be using to connect. You can find it at: `\spatial\build\assembly\worker\UnrealClient@Windows.zip`
 * Still on your server machine, discover your local IP address by runing `ipconfig`. It's the one entitled `IPv4 Address`.
 * Still in your server machine, in a terminal window, `cd` to `<ProjectRoot>\spatial\` and run the following command: `spatial local launch default_launch.json --runtime_ip=<your local IP address>`
-* Still on your server machine, run `UnrealGDKThirdPersonShooter\LaunchServer.bat`.
+* Still on your server machine, run `LaunchServer.bat`.
 * On the machine you're going to run your clients on, unzip `UnrealClient@Windows.zip`.
-* On the machine you're going to run your clients on, in a terminal window, `cd` to the unzipped `UnrealClient@Windows` direcory and run the following command: `_ThirdPersonShooter.exe <local IP address of server machine> -workerType UnrealClient -useExternalIpForBridge true`
+* On the machine you're going to run your clients on, in a terminal window, `cd` to the unzipped `UnrealClient@Windows` direcory and run the following command: `_YourProject.exe <local IP address of server machine> -workerType UnrealClient -useExternalIpForBridge true`
 * Repeat the above step in order to launch the second client
 * Run and shoot eachother with the clients as a smoke test.
 * You can now turn off the machine that's running the client, and return to your own machine.
-
-## Validation (GDK Starter Template)
-1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/gdk-template, bearing in mind the following caveat:
-* When you clone the GDK into the `Plugins` folder, be sure to checkout the release candidate branch, so you're working with the release version.
 
 ## Validation (UnrealGDKExampleProject)
 1. Follow these steps: http://localhost:8080/reference/1.0/content/get-started/example-project/exampleproject-intro. All tests must pass.
@@ -139,28 +119,40 @@ If you want to soak test this release on the `preview` branch before promoting i
 
 When merging the following PRs, you need to enable `Allow merge commits` option on the repos and choose `Create a merge commit` from the dropdown in the pull request UI to merge the branch, then disable `Allow merge commits` option on the repos once the release process is complete. You need to be an admin to perform this.
 
+**UnrealGDK**
 1. In `UnrealGDK`, merge `x.y.z-rc` into `master`.
 1. In `UnrealGDK`, merge `x.y.z-rc` into `preview`.
-1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDK/releases) to tag the commit you just made to `preview` as `x.y.z-preview`.
-
+1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDK/releases) to tag the commit you just made to `preview` as `x.y.z-preview`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
 1. In `UnrealGDK`, merge `x.y.z-rc` into `release`.
-1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDK/releases) to tag the commit you just made to `release` as `x.y.z`.
-
+1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDK/releases) to tag the commit you just made to `release` as `x.y.z`.<br/>
 Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
-1. In `improbableio/UnrealEngine`, create `staging-4.xx-SpatialOSUnrealGDK-x.y.z-rc` from `4.xx-SpatialOSUnrealGDK-x.y.z-rc`.
-1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-release` using GitHub PR (use `Update branch` button to merge `4.xx-SpatialOSUnrealGDK-release` into `4.xx-SpatialOSUnrealGDK-x.y.z-rc`).
-1. Use the GitHub Release UI to tag the commit you just made as `4.xx-SpatialOSUnrealGDK-x.y.z`.
-1. In `UnrealGDKThirdPersonShooter`, create `staging-x.y.z-rc` from `x.y.z-rc`.
-1. In `UnrealGDKThirdPersonShooter`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
-1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
-1. In `UnrealGDKThirdPersonShooter`, `git rebase` `release` into `tutorial`.
-1. In `UnrealGDKThirdPersonShooter`, `git rebase` `release` into `tutorial-complete`.
-1. In `UnrealGDKExampleProject`, create `staging-x.y.z-rc` from `x.y.z-rc`.
-1. In `UnrealGDKExampleProject`, merge `x.y.z-rc` into `release` using GitHub PR (use `Update branch` button to merge `release` into `x.y.z-rc`).
-1. Use the GitHub Release UI to tag the commit you just made to as `x.y.z`.
+
+**improbableio/UnrealEngine**
+1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`.
+1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-preview`.
+1. Use the [GitHub Release UI](https://github.com/improbableio/UnrealEngine/releases) to tag the commit you just made to `4.xx-SpatialOSUnrealGDK-preview` as `4.xx-SpatialOSUnrealGDK-x.y.z-preview`.<br/>
+Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
+1. In `improbableio/UnrealEngine`, merge `4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK-release`.
+1. Use the [GitHub Release UI](https://github.com/improbableio/UnrealEngine/releases) to tag the commit you just made to `release` as `4.xx-SpatialOSUnrealGDK-x.y`.<br/>
+Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
+
+**UnrealGDKExampleProject**
+1. In `UnrealGDKExampleProject`, merge `x.y.z-rc` into `master`.
+1. In `UnrealGDKExampleProject`, merge `x.y.z-rc` into `preview`.
+1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDKExampleProject/releases) to tag the commit you just made to `preview` as `x.y.z-preview`.<br/>
+Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
+1. In `UnrealGDK`, merge `x.y.z-rc` into `release`.
+1. Use the [GitHub Release UI](https://github.com/spatialos/UnrealGDKExampleProject/releases) to tag the commit you just made to `release` as `x.y.z`.<br/>
+Copy the latest release notes from `CHANGELOG.md` and paste them into the release description field.
+
+**Documentation**
 1. Publish the docs to live using Improbadoc commands listed [here](https://improbableio.atlassian.net/wiki/spaces/GBU/pages/327485360/Publishing+GDK+Docs).
 1. Update the [roadmap](https://github.com/spatialos/UnrealGDK/projects/1), moving the release from **Planned** to **Released**, and linking to the release.
+
+**Announce**
+Only announce full releases, not `preview` ones.
+
 1. Announce the release in:
 
 * Forums
@@ -172,20 +164,7 @@ Congratulations, you've done the release!
 
 ## Clean up
 
-There are potentially changes that were merged into the release candidate branches that aren't merged into the corresponding development (master) branches yet. Because there are some race conditions involved, a GDK engineer should be in charge of doing this.
-
-Indirect-merge from `A` into `B` (`staging-x.y.z-rc` into `master`, except `improbableio/UnrealEngine` repo where this is `staging-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`) is defined as:
-1. Make sure there is no `merge-A-into-B` branch created already, and delete it if it exists.
-1. Create branch `merge-A-into-B` from `B` (`git checkout B`, `git checkout -b merge-A-into-B`).
-1. Merge `A` into `merge-A-into-B` (`git merge A`, `git push origin merge-A-into-B`).
-1. Merge `merge-A-into-B` into `B` using GitHub PR. Make sure you use `Create a merge commit` option.
-
-Use the above definition to perform the following:
-1. `UnrealGDK` repo: indirect-merge `staging-x.y.z-rc` into `master`.
-1. `improbableio/UnrealEngine` repo: indirect-merge `staging-4.xx-SpatialOSUnrealGDK-x.y.z-rc` into `4.xx-SpatialOSUnrealGDK`.
-1. `UnrealGDKThirdPersonShooter` repo: (skip this step if `staging-x.y.z-rc` has no new commits compared to `master`) indirect-merge `staging-x.y.z-rc` into `master`.
-1. `UnrealGDKExampleProject` repo: (skip this step if `staging-x.y.z-rc` has no new commits compared to `master`) indirect-merge `staging-x.y.z-rc` into `master`.
-1. Delete the `staging-` branches.
+1. Delete all `rc` branches.
 
 ## Appendix
 
@@ -198,6 +177,6 @@ Please see the full release notes on GitHub:
 
 Unreal GDK - https://github.com/spatialos/UnrealGDK/releases/tag/x.y.z<br/>
 Corresponding fork of Unreal Engine - https://github.com/improbableio/UnrealEngine/releases/tag/4.xx-SpatialOSUnrealGDK-x.y.z<br/>
-Corresponding version of the Third Person Shooter Project - https://github.com/spatialos/UnrealGDKThirdPersonShooter/releases/tag/x.y.z <br/>
+Corresponding version of the Example Project - https://github.com/spatialos/UnrealGDKExampleProject/releases/tag/x.y.z <br/>
 
 </details>
