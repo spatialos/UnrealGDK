@@ -23,6 +23,7 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
+#include "Utils/ActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
@@ -64,6 +65,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
+	ActorGroupManager = InNetDriver->ActorGroupManager;
 	TimerManager = InTimerManager;
 }
 
@@ -843,11 +845,12 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 				{
 					if (const AActor* ConnectionOwner = OwningConnection->OwningActor)
 					{
-						if (!NetDriver->ActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
+						if (!ActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
 						{
-							UE_LOG(LogTemp, Display, TEXT("%s and %s not on same worker type, so cannot be packed."),
-								*GetPathNameSafe(TargetActor),
-								*GetPathNameSafe(ConnectionOwner)
+							UE_LOG(LogSpatialSender, Verbose, TEXT("RPC %s Cannot be packed as TargetActor (%s) and Connection Owner (%s) are on different worker types."),
+								*Function->GetName(),
+								*TargetActor->GetFName().ToString(),
+								*ConnectionOwner->GetFName().ToString()
 							)
 							bCanPackRPC = false;
 						}

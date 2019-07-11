@@ -27,6 +27,7 @@ class USpatialPackageMapClient;
 class USpatialReceiver;
 class USpatialStaticComponentView;
 class USpatialClassInfoManager;
+class UActorGroupManager;
 class USpatialWorkerConnection;
 
 struct FReliableRPCForRetry
@@ -155,6 +156,9 @@ private:
 
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
+
+	UPROPERTY()
+	UActorGroupManager* ActorGroupManager;
 
 	FTimerManager* TimerManager;
 

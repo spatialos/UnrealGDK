@@ -127,7 +127,7 @@ public:
 	void OnComponentUpdate(const Worker_ComponentUpdateOp& Op);
 	void HandleRPC(const Worker_ComponentUpdateOp& Op);
 
-	void ProcessRPCEventField(bool bPacked, Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId);
+	void ProcessRPCEventField(Worker_EntityId EntityId, const Worker_ComponentUpdateOp &Op, const Worker_ComponentId RPCEndpointComponentId, bool bPacked);
 
 	void OnCommandRequest(const Worker_CommandRequestOp& Op);
 	void OnCommandResponse(const Worker_CommandResponseOp& Op);
