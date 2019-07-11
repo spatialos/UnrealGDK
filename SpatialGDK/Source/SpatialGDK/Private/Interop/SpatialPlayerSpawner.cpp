@@ -176,7 +176,7 @@ void USpatialPlayerSpawner::ObtainPlayerParams(FURL& LoginURL, FUniqueNetIdRepl&
 			LoginURL.AddOption(*FString::Printf(TEXT("%s"), *GameUrlOptions));
 		}
 		// Pull in options from the current world URL (to preserve options added to a travel URL)
-		auto LastURLOptions = WorldContext->LastURL.Op;
+		const TArray<FString>& LastURLOptions = WorldContext->LastURL.Op;
 		for (const FString& Op : LastURLOptions)
 		{
 			LoginURL.AddOption(*Op);
