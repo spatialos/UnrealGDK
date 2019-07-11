@@ -23,6 +23,7 @@
 #include "Schema/StandardLibrary.h"
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
+#include "Utils/ActorGroupManager.h"
 #include "Utils/ComponentFactory.h"
 #include "Utils/InterestFactory.h"
 #include "Utils/RepLayoutUtils.h"
@@ -64,6 +65,7 @@ void USpatialSender::Init(USpatialNetDriver* InNetDriver, FTimerManager* InTimer
 	Receiver = InNetDriver->Receiver;
 	PackageMap = InNetDriver->PackageMap;
 	ClassInfoManager = InNetDriver->ClassInfoManager;
+	ActorGroupManager = InNetDriver->ActorGroupManager;
 	TimerManager = InTimerManager;
 }
 
@@ -829,8 +831,35 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 
 		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo.Type);
 
-		if (GetDefault<USpatialGDKSettings>()->bPackRPCs
-			&& RPCInfo.Type != SCHEMA_NetMulticastRPC)
+		bool bCanPackRPC = GetDefault<USpatialGDKSettings>()->bPackRPCs;
+		if (bCanPackRPC && RPCInfo.Type == SCHEMA_NetMulticastRPC)
+		{
+			bCanPackRPC = false;
+		}
+
+		if (bCanPackRPC && GetDefault<USpatialGDKSettings>()->bEnableOffloading)
+		{
+			if (const AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(TargetObjectRef.Entity).Get()))
+			{
+				if (const UNetConnection* OwningConnection = TargetActor->GetNetConnection())
+				{
+					if (const AActor* ConnectionOwner = OwningConnection->OwningActor)
+					{
+						if (!ActorGroupManager->IsSameWorkerType(TargetActor, ConnectionOwner))
+						{
+							UE_LOG(LogSpatialSender, Verbose, TEXT("RPC %s Cannot be packed as TargetActor (%s) and Connection Owner (%s) are on different worker types."),
+								*Function->GetName(),
+								*TargetActor->GetName(),
+								*ConnectionOwner->GetName()
+							)
+							bCanPackRPC = false;
+						}
+					}
+				}
+			}
+		}
+
+		if (bCanPackRPC)
 		{
 			const UObject* UnresolvedObject = nullptr;
 			if (AddPendingUnreliableRPC(TargetObject, Params, ComponentId, RPCInfo.Index, UnresolvedObject))
