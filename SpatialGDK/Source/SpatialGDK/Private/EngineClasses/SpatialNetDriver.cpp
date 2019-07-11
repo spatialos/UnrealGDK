@@ -1070,6 +1070,12 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 		}
 	}
 
+	if (Actor->bTearOff)
+	{
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("The object %s is torn off; RPC %s will be dropped."), *Actor->GetName(), *Function->GetName());
+		return;
+	}
+
 	TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 	RPCPayload Payload = Sender->CreateRPCPayloadFromParams(CallingObject, Function, ReliableRPCIndex, Parameters, UnresolvedObjects);
 
@@ -1672,6 +1678,10 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 			TargetActor = Cast<AActor>(TargetObject->GetOuter());
 		}
 		check(TargetActor);
+		if (TargetActor->bTearOff)
+		{
+			return nullptr;
+		}
 		Channel = CreateSpatialActorChannel(TargetActor, GetSpatialOSNetConnection());
 	}
 	return Channel;
