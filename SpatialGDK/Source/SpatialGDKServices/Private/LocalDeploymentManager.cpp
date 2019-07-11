@@ -22,35 +22,36 @@ DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);
 static const FString SpatialExe(TEXT("spatial.exe"));
 
 FLocalDeploymentManager::FLocalDeploymentManager()
+	: bLocalDeploymentRunning(false)
+	, bSpatialServiceRunning(false)
+	, bSpatialServiceInProjectDirectory(false)
+	, bStartingDeployment(false)
+	, bStoppingDeployment(false)
+	, bStartingSpatialService(false)
+	, bStoppingSpatialService(false)
 {
-	bLocalDeploymentRunning = false;
-	bSpatialServiceRunning = false;
-	bSpatialServiceInProjectDirectory = false;
-
-	bStartingDeployment = false;
-	bStoppingDeployment = false;
-
-	bStartingSpatialService = false;
-	bStoppingSpatialService = false;
-
 	// Get the project name from the spatialos.json.
 	ProjectName = GetProjectName();
 
-	// Ensure the worker.jsons are up to date.
-	WorkerBuildConfigAsync();
-
-	// Watch the worker config directory for changes.
-	StartUpWorkerConfigDirectoryWatcher();
-
-	// Restart the spatial service so it is guaranteed to be running in the current project.
-	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+	// Don't kick off background processes when running commandlets
+	if (IsRunningCommandlet() == false)
 	{
-		TryStopSpatialService();
-		TryStartSpatialService();
+		// Ensure the worker.jsons are up to date.
+		WorkerBuildConfigAsync();
 
-		// Ensure we have an up to date state of the spatial service and local deployment.
-		RefreshServiceStatus();
-	});
+		// Watch the worker config directory for changes.
+		StartUpWorkerConfigDirectoryWatcher();
+
+		// Restart the spatial service so it is guaranteed to be running in the current project.
+		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this]
+		{
+			TryStopSpatialService();
+			TryStartSpatialService();
+
+			// Ensure we have an up to date state of the spatial service and local deployment.
+			RefreshServiceStatus();
+		});
+	}
 }
 
 const FString FLocalDeploymentManager::GetSpotExe()
