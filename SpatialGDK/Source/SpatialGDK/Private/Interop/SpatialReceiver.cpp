@@ -1168,10 +1168,13 @@ void USpatialReceiver::HandleRPC(const Worker_ComponentUpdateOp& Op)
 		}
 	}
 
-	ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId, false);
+	// Always process unpacked RPCs since some cannot be packed.
+	ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId, /* bPacked */ false);
+
 	if (GetDefault<USpatialGDKSettings>()->bPackRPCs)
 	{
-		ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId, true);
+		// Only process packed RPCs if packing is enabled
+		ProcessRPCEventField(EntityId, Op, RPCEndpointComponentId, /* bPacked */ true);
 	}
 }
 

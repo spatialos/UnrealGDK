@@ -831,13 +831,13 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 
 		Worker_ComponentId ComponentId = SchemaComponentTypeToWorkerComponentId(RPCInfo.Type);
 
-		bool bCanPackRPC = true;
-		if (RPCInfo.Type == SCHEMA_NetMulticastRPC)
+		bool bCanPackRPC = GetDefault<USpatialGDKSettings>()->bPackRPCs;
+		if (bCanPackRPC && RPCInfo.Type == SCHEMA_NetMulticastRPC)
 		{
 			bCanPackRPC = false;
 		}
 
-		if (GetDefault<USpatialGDKSettings>()->bEnableOffloading)
+		if (bCanPackRPC && GetDefault<USpatialGDKSettings>()->bEnableOffloading)
 		{
 			if (const AActor* TargetActor = Cast<AActor>(PackageMap->GetObjectFromEntityId(TargetObjectRef.Entity).Get()))
 			{
@@ -859,7 +859,7 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 			}
 		}
 
-		if (GetDefault<USpatialGDKSettings>()->bPackRPCs && bCanPackRPC)
+		if (bCanPackRPC)
 		{
 			const UObject* UnresolvedObject = nullptr;
 			if (AddPendingUnreliableRPC(TargetObject, Params, ComponentId, RPCInfo.Index, UnresolvedObject))
