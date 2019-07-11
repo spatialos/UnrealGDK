@@ -108,7 +108,7 @@ public:
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bEnableServerQBI;
 
-	/** Pack unreliable RPCs sent during the same frame into a single update. */
+	/** Pack RPCs sent during the same frame into a single update. */
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bPackRPCs;
 
