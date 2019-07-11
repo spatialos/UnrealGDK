@@ -1,22 +1,26 @@
-# The SpatialOS Game Development Kit for Unreal (alpha)
-The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine [plugin](https://docs.unrealengine.com/en-us/Programming/Plugins) which gives you the features of SpatialOS, within the familiar workflows and APIs of Unreal. 
+# The SpatialOS Game Development Kit for Unreal Plugin (alpha)
 
-* SpatialOS provides:
+The SpatialOS Game Development Kit (GDK) for Unreal is an Unreal Engine plugin which gives you the features of SpatialOS, within the familiar workflows and APIs of Unreal.
+
+<img src="SpatialGDK/Documentation/unrealgdk-headline-image.png" style="margin: auto; display: block; width: 50%; padding: 20px 20px"/>
+
+SpatialOS provides:
 
   - **Global hosting**: Scalable dedicated hosting for your game in every major gaming region.
   - **Easy playtesting**: Deploy and test your game from the start of development, and distribute it to your team and players quickly and easily.
   - **Profiling and debugging tools**: Logs and metrics out of the box to help you quickly understand any bugs and performance issues.
-  - **Multiserver networking**: Multiple dedicated servers across one seamless game world, enabling greater numbers of Actors, players and gameplay systems. **Note:** this feature is currently in preview as we work to improve its stability - we recommend you try it out using the [Multiserver Shooter Tutorial](https://docs.improbable.io/unreal/alpha/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) but avoid developing your game with it.
+  - **Multiserver networking**: Multiple dedicated servers across one seamless game world, enabling greater numbers of Actors, players and gameplay systems. **Note:** this feature is currently in preview as we work to improve its stability - we recommend you try it out using the [Multiserver Shooter Tutorial](https://docs.improbable.io/unreal/latest/content/tutorials/multiserver-shooter/tutorial-multiserver-intro) but avoid developing your game with it.
   
-If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started guide](https://docs.improbable.io/unreal/alpha/content/get-started/introduction). 
+If you’re an Unreal game developer and you’re ready to try out the GDK, follow the [Get started guide](https://docs.improbable.io/unreal/latest/content/get-started/introduction). 
 
-> The SpatialOS GDK for Unreal is in alpha. It is ready to use for development of single-server games, but not recommended for public releases. We are committed to rapid development of the GDK to provide a performant release - for information on this, see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support](https://docs.improbable.io/unreal/alpha/unreal-features-support) pages for the status and updates, and contact us via our forums, or on Discord.
+> The SpatialOS GDK for Unreal is in alpha. It is ready to use for development of single-server games, but not recommended for public releases. We are committed to rapid development of the GDK to provide a performant release - for information on this, see our [development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) and [Unreal features support](https://docs.improbable.io/unreal/latest/unreal-features-support) pages for the status and updates, and contact us via our forums, or on Discord.
 
 ----
 * [Get started](https://docs.improbable.io/unreal/latest/content/get-started/introduction) (on the SpatialOS documentation website)
 * [Documentation](https://docs.improbable.io/unreal/latest) (on the SpatialOS documentation website)
 * [Development roadmap](https://github.com/spatialos/UnrealGDK/projects/1) (Github project board)
 * Community: [Discord](https://discordapp.com/channels/311273633307951114/339471548647866368) - [Forums](https://forums.improbable.io/) -  [Mailing list](http://go.pardot.com/l/169082/2018-06-15/27ld2t)
+* [License](LICENSE.md) (MIT)
 
 ----
 ## Where to get the GDK and related projects
@@ -40,7 +44,7 @@ We recommend using the GDK in projects in the early production or prototype stag
 See the full [list of supported features](https://docs.improbable.io/unreal/latest/unreal-features-support) on the SpatialOS documentation website.
 
 ## Contributions
-We are not currently accepting public contributions - see our [contributions](https://docs.improbable.io/unreal/latest/contributing) policy. However, we are accepting issues and we do want your feedback.
+We welcome [Github issues](https://github.com/spatialos/UnrealGDK/issues) from all users, and accept public contributions subject to the signing of our Contributors License Agreement - please see our [contributions](CONTRIBUTING.md) policy for more details. 
 
 ## Run into problems?
 * [Troubleshooting](https://docs.improbable.io/unreal/latest/content/troubleshooting)
