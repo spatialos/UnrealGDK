@@ -1072,7 +1072,7 @@ void USpatialNetDriver::ProcessRPC(AActor* Actor, UObject* SubObject, UFunction*
 
 	if (Actor->bTearOff)
 	{
-		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("The object %s is being torn off; RPC %s will be dropped."), *Actor->GetName(), *Function->GetName());
+		UE_LOG(LogSpatialOSNetDriver, Verbose, TEXT("The object %s is torn off; RPC %s will be dropped."), *Actor->GetName(), *Function->GetName());
 		return;
 	}
 
