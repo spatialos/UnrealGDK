@@ -763,6 +763,10 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Params.Payload);
 			return true;
 		}
+		else
+		{
+			UE_LOG(LogSpatialSender, Warning, TEXT("CrossServer RPC %s triggered on Object %s too close to initial creation."), *Function->GetName(), *TargetObject->GetName());
+		}
 	}
 
 	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
