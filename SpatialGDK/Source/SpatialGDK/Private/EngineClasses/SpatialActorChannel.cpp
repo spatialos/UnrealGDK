@@ -579,7 +579,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	bool bCreatedReplicator = false;
 
 #if ENGINE_MINOR_VERSION <= 20
-	bCreatedReplicator = ReplicationMap.Contains(Object);
+	bCreatedReplicator = !ReplicationMap.Contains(Object);
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 #else
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
