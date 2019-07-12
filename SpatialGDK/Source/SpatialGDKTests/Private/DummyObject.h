@@ -6,13 +6,13 @@
 
 #include <Core.h>
 
-#include "MockObject.generated.h"
+#include "DummyObject.generated.h"
 
 TArray<uint8> TypeToArray(ESchemaComponentType Type);
 ESchemaComponentType ArrayToType(const TArray<uint8>& Array);
 
 UCLASS()
-class UMockObject : public UObject
+class UDummyObject : public UObject
 {
 	GENERATED_BODY()
 public:

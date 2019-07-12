@@ -5,7 +5,7 @@
 #include <Utils/RPCContainer.h>
 #include <Schema/RPCPayload.h>
 
-#include "MockObject.h"
+#include "DummyObject.h"
 
 #include <Core.h>
 
@@ -46,7 +46,7 @@ namespace
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_queued)
 {
-	UMockObject* TargetObject = NewObject<UMockObject>();
+	UDummyObject* TargetObject = NewObject<UDummyObject>();
 	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
 	FPendingRPCParamsPtr Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
@@ -58,7 +58,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_nothing_has_been_added_THEN_nothing_is_
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_queued)
 {
-	UMockObject* TargetObject = NewObject<UMockObject>();
+	UDummyObject* TargetObject = NewObject<UDummyObject>();
 	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
 	FPendingRPCParamsPtr Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
@@ -72,7 +72,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_THEN_it_is_que
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_THEN_they_are_queued)
 {
-	UMockObject* TargetObject = NewObject<UMockObject>();
+	UDummyObject* TargetObject = NewObject<UDummyObject>();
 	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
 	FPendingRPCParamsPtr Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParamsPtr Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
@@ -88,7 +88,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_and_processed_THEN_nothing_is_queued)
 {
-	UMockObject* TargetObject = NewObject<UMockObject>();
+	UDummyObject* TargetObject = NewObject<UDummyObject>();
 	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
 	FPendingRPCParamsPtr Params = CreateMockParameters(TargetObject, AnySchemaComponentType);
 	FRPCContainer RPCs;
@@ -96,7 +96,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_and_processed_
 	RPCs.QueueRPC(MoveTemp(Params), AnySchemaComponentType);
 
 	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UMockObject::ProcessRPC);
+	Delegate.BindUObject(TargetObject, &UDummyObject::ProcessRPC);
 	RPCs.ProcessRPCs(Delegate);
 
 	TestFalse("No queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnySchemaComponentType));
@@ -106,7 +106,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_and_processed_
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_and_processed_THEN_nothing_is_queued)
 {
-	UMockObject* TargetObject = NewObject<UMockObject>();
+	UDummyObject* TargetObject = NewObject<UDummyObject>();
 	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
 	FPendingRPCParamsPtr Params1 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParamsPtr Params2 = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
@@ -116,7 +116,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_
 	RPCs.QueueRPC(MoveTemp(Params2), AnyOtherSchemaComponentType);
 
 	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UMockObject::ProcessRPC);
+	Delegate.BindUObject(TargetObject, &UDummyObject::ProcessRPC);
 	RPCs.ProcessRPCs(Delegate);
 
 	TestFalse("No queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
@@ -126,7 +126,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_THEN_they_are_queued)
 {
-	UMockObject* TargetObject = NewObject<UMockObject>();
+	UDummyObject* TargetObject = NewObject<UDummyObject>();
 
 	FPendingRPCParamsPtr ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FUnrealObjectRef ObjecRefUnreliable = ParamsUnreliable->ObjectRef;
@@ -147,7 +147,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_and_processed_THEN_nothing_is_queued)
 {
-	UMockObject* TargetObject = NewObject<UMockObject>();
+	UDummyObject* TargetObject = NewObject<UDummyObject>();
 	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
 	FPendingRPCParamsPtr ParamsUnreliable = CreateMockParameters(TargetObject, AnyOtherSchemaComponentType);
 	FPendingRPCParamsPtr ParamsReliable = CreateMockParameters(TargetObject, AnySchemaComponentType);
@@ -158,7 +158,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 	RPCs.QueueRPC(MoveTemp(ParamsReliable), AnySchemaComponentType);
 
 	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UMockObject::ProcessRPC);
+	Delegate.BindUObject(TargetObject, &UDummyObject::ProcessRPC);
 	RPCs.ProcessRPCs(Delegate);
 
 	TestFalse("No queued RPCs of such type", RPCs.ObjectHasRPCsQueuedOfType(ObjecRef.Entity, AnyOtherSchemaComponentType));
@@ -169,7 +169,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_and_processed_THEN_they_have_been_processed_in_order)
 {
-	UMockObject* TargetObject = NewObject<UMockObject>();
+	UDummyObject* TargetObject = NewObject<UDummyObject>();
 	FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
 	FRPCContainer RPCs;
 
@@ -188,7 +188,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 	}
 
 	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UMockObject::ProcessRPC);
+	Delegate.BindUObject(TargetObject, &UDummyObject::ProcessRPC);
 	RPCs.ProcessRPCs(Delegate);
 
 	bool bProcessedInOrder = true;
