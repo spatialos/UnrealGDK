@@ -13,7 +13,7 @@ TArray<uint8> TypeToArray(ESchemaComponentType Type);
 ESchemaComponentType ArrayToType(const TArray<uint8>& Array);
 
 UCLASS()
-class SPATIALGDK_API UMockObject : public UObject
+class UMockObject : public UObject
 {
 	GENERATED_BODY()
 public:
