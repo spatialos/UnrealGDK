@@ -2,10 +2,11 @@
 
 #include "TestDefinitions.h"
 
+#include "DummyObject.h"
+#include "SpyObject.h"
+
 #include <Utils/RPCContainer.h>
 #include <Schema/RPCPayload.h>
-
-#include "DummyObject.h"
 
 #include <Core.h>
 
@@ -169,7 +170,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 
 RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_and_processed_THEN_they_have_been_processed_in_order)
 {
-	UDummyObject* TargetObject = NewObject<UDummyObject>();
+	USpyObject* TargetObject = NewObject<USpyObject>();
 	FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
 	FRPCContainer RPCs;
 
@@ -188,7 +189,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
 	}
 
 	FProcessRPCDelegate Delegate;
-	Delegate.BindUObject(TargetObject, &UDummyObject::ProcessRPC);
+	Delegate.BindUObject(TargetObject, &USpyObject::ProcessRPC);
 	RPCs.ProcessRPCs(Delegate);
 
 	bool bProcessedInOrder = true;
