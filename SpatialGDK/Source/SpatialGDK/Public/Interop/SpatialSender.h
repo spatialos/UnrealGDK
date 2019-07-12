@@ -44,10 +44,10 @@ struct FReliableRPCForRetry
 	int RetryIndex; // Index for ordering reliable RPCs on subsequent tries
 };
 
-struct FPendingUnreliableRPC
+struct FPendingRPC
 {
-	FPendingUnreliableRPC() = default;
-	FPendingUnreliableRPC(FPendingUnreliableRPC&& Other);
+	FPendingRPC() = default;
+	FPendingRPC(FPendingRPC&& Other);
 
 	uint32 Offset;
 	Schema_FieldId Index;
@@ -111,7 +111,7 @@ public:
 	void QueueOutgoingRPC(FPendingRPCParamsPtr Params);
 	void ProcessUpdatesQueuedUntilAuthority(Worker_EntityId EntityId);
 
-	void FlushPackedUnreliableRPCs();
+	void FlushPackedRPCs();
 
 	RPCPayload CreateRPCPayloadFromParams(UObject* TargetObject, UFunction* Function, int ReliableRPCIndex, void* Params, TSet<TWeakObjectPtr<const UObject>>& UnresolvedObjects);
 	void GainAuthorityThenAddComponent(USpatialActorChannel* Channel, UObject* Object, const FClassInfo* Info);
@@ -134,7 +134,7 @@ private:
 	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
 	Worker_ComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, const UObject*& OutUnresolvedObject);
-	bool AddPendingUnreliableRPC(UObject* TargetObject, const FPendingRPCParams& Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject);
+	bool AddPendingRPC(UObject* TargetObject, const FPendingRPCParams& Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject);
 
 	TArray<Worker_InterestOverride> CreateComponentInterestForActor(USpatialActorChannel* Channel, bool bIsNetOwned);
 
@@ -179,5 +179,5 @@ private:
 
 	FChannelsToUpdatePosition ChannelsToUpdatePosition;
 
-	TMap<Worker_EntityId_Key, TArray<FPendingUnreliableRPC>> UnreliableRPCs;
+	TMap<Worker_EntityId_Key, TArray<FPendingRPC>> RPCsToPack;
 };
