@@ -2,7 +2,7 @@
 
 #include "MockObject.h"
 
-#include "Core.h"
+#include <Core.h>
 
 using namespace SpatialGDK;
 
