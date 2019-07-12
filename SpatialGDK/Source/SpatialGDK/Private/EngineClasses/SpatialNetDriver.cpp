@@ -950,7 +950,6 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 			else if ((FinalReplicatedCount < MaxActorsToReplicate && !Actor->GetTearOff()) || (Actor->GetTearOff() && Channel != nullptr))
 			{
 				bIsRelevant = true;
-				FinalReplicatedCount++;
 			}
 
 			// If the actor is now relevant or was recently relevant.
@@ -1003,6 +1002,9 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 
 						if (Channel->ReplicateActor())
 						{
+							// Only count actors we've actually replicated against the throttling count.
+							FinalReplicatedCount++;
+
 							ActorUpdatesThisConnectionSent++;
 							if (DebugRelevantActors)
 							{
