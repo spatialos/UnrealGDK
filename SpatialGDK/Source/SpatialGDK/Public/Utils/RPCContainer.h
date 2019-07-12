@@ -12,7 +12,7 @@ struct FPendingRPCParams;
 using FPendingRPCParamsPtr = TUniquePtr<FPendingRPCParams>;
 DECLARE_DELEGATE_RetVal_OneParam(bool, FProcessRPCDelegate, const FPendingRPCParams&)
 
-struct FPendingRPCParams
+struct SPATIALGDK_API FPendingRPCParams
 {
 	FPendingRPCParams(const FUnrealObjectRef& InTargetObjectRef, SpatialGDK::RPCPayload&& InPayload, int InReliableRPCIndex = 0);
 
@@ -22,9 +22,19 @@ struct FPendingRPCParams
 	SpatialGDK::RPCPayload Payload;
 };
 
-class FRPCContainer
+class SPATIALGDK_API FRPCContainer
 {
 public:
+	FRPCContainer() = default;
+
+	FRPCContainer(const FRPCContainer&) = delete;
+	FRPCContainer& operator=(const FRPCContainer&) = delete;
+
+	FRPCContainer(FRPCContainer&&) = default;
+	FRPCContainer& operator=(FRPCContainer&&) = default;
+
+	~FRPCContainer() = default;
+
 	void QueueRPC(FPendingRPCParamsPtr Params, ESchemaComponentType Type);
 	void ProcessRPCs(const FProcessRPCDelegate& FunctionToApply);
 	bool ObjectHasRPCsQueuedOfType(const Worker_EntityId& EntityId, ESchemaComponentType Type) const;
