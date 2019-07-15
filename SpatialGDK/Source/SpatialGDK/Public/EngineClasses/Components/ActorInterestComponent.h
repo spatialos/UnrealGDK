@@ -32,7 +32,7 @@ public:
 	 * Whether to use NetCullDistanceSquared to generate constraints relative to the Actor that this component is attached to.
 	 */
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Interest")
-	bool bUseNetCullDistanceForCheckoutRadius = true;
+	bool bUseNetCullDistanceSquaredForCheckoutRadius = true;
 
 	/**
 	 * The Queries associated with this component.

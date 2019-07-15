@@ -266,7 +266,7 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 	{
 		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
 		check(ActorInterest);
-		if (!ActorInterest->bUseNetCullDistanceForCheckoutRadius)
+		if (!ActorInterest->bUseNetCullDistanceSquaredForCheckoutRadius)
 		{
 			return QueryConstraint{};
 		}
