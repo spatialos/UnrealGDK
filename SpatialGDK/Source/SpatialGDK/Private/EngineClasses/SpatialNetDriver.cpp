@@ -1373,7 +1373,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 
 	if (GetDefault<USpatialGDKSettings>()->bPackRPCs && Sender != nullptr)
 	{
-		Sender->FlushPackedUnreliableRPCs();
+		Sender->FlushPackedRPCs();
 	}
 
 	// Tick the timer manager
