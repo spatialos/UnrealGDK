@@ -1,6 +1,6 @@
 // Copyright (c) Improbable Worlds Ltd, All Rights Reserved
 
-#include "SpyObject.h"
+#include "ObjectSpy.h"
 
 #include <Core.h>
 
@@ -21,7 +21,7 @@ ESchemaComponentType ArrayToType(const TArray<uint8>& Array)
 	return ESchemaComponentType(*reinterpret_cast<const int32*>(&Array[0]));
 }
 
-bool USpyObject::ProcessRPC(const FPendingRPCParams& Params)
+bool UObjectSpy::ProcessRPC(const FPendingRPCParams& Params)
 {
 	ESchemaComponentType Type = ArrayToType(Params.Payload.PayloadData);
 	ProcessedRPCIndices.FindOrAdd(Type).Push(Params.Payload.Index);

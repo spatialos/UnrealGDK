@@ -6,10 +6,10 @@
 
 #include <CoreMinimal.h>
 
-#include "DummyObject.generated.h"
+#include "ObjectDummy.generated.h"
 
 UCLASS()
-class UDummyObject : public UObject
+class UObjectDummy : public UObject
 {
 	GENERATED_BODY()
 public:

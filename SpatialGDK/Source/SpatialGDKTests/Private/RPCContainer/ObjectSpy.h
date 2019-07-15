@@ -6,13 +6,13 @@
 
 #include <CoreMinimal.h>
 
-#include "SpyObject.generated.h"
+#include "ObjectSpy.generated.h"
 
 TArray<uint8> TypeToArray(ESchemaComponentType Type);
 ESchemaComponentType ArrayToType(const TArray<uint8>& Array);
 
 UCLASS()
-class USpyObject : public UObject
+class UObjectSpy : public UObject
 {
 	GENERATED_BODY()
 public:
