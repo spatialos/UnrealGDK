@@ -21,7 +21,7 @@ class SPATIALGDK_API USpatialNetConnection : public UIpConnection
 public:
 	USpatialNetConnection(const FObjectInitializer& ObjectInitializer);
 
-	//~ Begin NetConnection Interface
+	// Begin NetConnection Interface
 	virtual void BeginDestroy() override;
 
 	virtual void InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
@@ -43,7 +43,7 @@ public:
 	virtual FString LowLevelDescribe() override { return TEXT(""); }
 	virtual FString RemoteAddressToString() override { return TEXT(""); }
 	///////
-	//~ End NetConnection Interface
+	// End NetConnection Interface
 
 	void InitHeartbeat(class FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
 	void SetHeartbeatTimeoutTimer();
