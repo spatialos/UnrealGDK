@@ -10,8 +10,6 @@
 
 #include <Core.h>
 
-#if WITH_DEV_AUTOMATION_TESTS
-
 #define RPCCONTAINER_TEST(TestName) \
 	TEST(FRPCContainer, TestName)
 
@@ -195,24 +193,14 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	bool bProcessedInOrder = true;
 	for (const auto& processedIndicesOfType : TargetObject->ProcessedRPCIndices)
 	{
-		TArray<uint32>* storedIndicesOfType = RPCIndices.Find(processedIndicesOfType.Key);
-		if (!storedIndicesOfType)
-		{
-			bProcessedInOrder = false;
-			break;
-		}
+		TArray<uint32>& storedIndicesOfType = RPCIndices.FindChecked(processedIndicesOfType.Key);
 
-		if (processedIndicesOfType.Value.Num() != (*storedIndicesOfType).Num())
-		{
-			bProcessedInOrder = false;
-			break;
-		}
-
+		check(processedIndicesOfType.Value.Num() == storedIndicesOfType.Num());
 		const int32 numIndices = processedIndicesOfType.Value.Num();
 
 		for (int i = 0; i < numIndices; ++i)
 		{
-			if (processedIndicesOfType.Value[i] != (*storedIndicesOfType)[i])
+			if (processedIndicesOfType.Value[i] != storedIndicesOfType[i])
 			{
 				bProcessedInOrder = false;
 				break;
@@ -224,4 +212,3 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 
     return true;
 }
-#endif // WITH_DEV_AUTOMATION_TESTS
