@@ -4,7 +4,7 @@
 
 #include <Utils/RPCContainer.h>
 
-#include <Core.h>
+#include <CoreMinimal.h>
 
 #include "DummyObject.generated.h"
 

@@ -87,7 +87,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_and_processed_THEN_nothing_is_queued)
+RPCCONTAINER_TEST(GIVEN_a_container_storing_one_value_WHEN_processed_once_THEN_nothing_is_queued)
 {
 	UDummyObject* TargetObject = NewObject<UDummyObject>();
 	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
@@ -105,7 +105,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_one_value_has_been_added_and_processed_
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_same_type_have_been_added_and_processed_THEN_nothing_is_queued)
+RPCCONTAINER_TEST(GIVEN_a_container_storinng_multiple_values_of_same_type_WHEN_processed_once_THEN_nothing_is_queued)
 {
 	UDummyObject* TargetObject = NewObject<UDummyObject>();
 	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
@@ -146,7 +146,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_and_processed_THEN_nothing_is_queued)
+RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_nothing_is_queued)
 {
 	UDummyObject* TargetObject = NewObject<UDummyObject>();
 	FUnrealObjectRef ObjecRef = GenerateObjectRef(TargetObject);
@@ -168,7 +168,7 @@ RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_
     return true;
 }
 
-RPCCONTAINER_TEST(GIVEN_a_container_WHEN_multiple_values_of_different_type_have_been_added_and_processed_THEN_they_have_been_processed_in_order)
+RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WHEN_processed_once_THEN_values_have_been_processed_in_order)
 {
 	USpyObject* TargetObject = NewObject<USpyObject>();
 	FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
