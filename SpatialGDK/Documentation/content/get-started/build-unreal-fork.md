@@ -24,7 +24,7 @@ Open a terminal and run either of these commands to clone the [Unreal Engine For
 
 1. **Unreal Linux cross-platform support**</br>
 To build the server software for SpatialOS deployments correctly, you need to build the Unreal Engine Fork targeting Linux. This requires Linux cross-compilation of your SpatialOS project and the Unreal Engine Fork. To do this, you need to download and unzip the Linux cross-compilation toolchain.</br></br>
-For guidance on this, see the _Getting the toolchain_ section of Unreal's [Cross-Compiling for Linux](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html) documentation. As you follow the guidance there, select **v11 clang 5.0.0-based** to download the `v11_clang-5.0.0-centos7.zip` archive, then unzip this file into a suitable directory.
+For guidance on this, see the _Getting the toolchain_ section of Unreal's [Cross-Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation. As you follow the guidance there, select **v11 clang 5.0.0-based** to download the `v11_clang-5.0.0-centos7.zip` archive, then unzip this file into a suitable directory.
 
 ### Step 3: Add environment variables
 
