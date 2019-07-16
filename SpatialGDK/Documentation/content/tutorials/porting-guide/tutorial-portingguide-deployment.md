@@ -65,7 +65,7 @@ To launch a local deployment:
 1. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to run the game.</br>
   ![Play]({{assetRoot}}assets/screen-grabs/toolbar/play-button.png)</br>
   _Image: On the Unreal Engine toolbar, select **Play**_</br>
-1. WWhen your game is running, select **Inspector** to open the [Inspector](https://docs.improbable.io/unreal/alpha//content/glossary#inspector) in your default web browser. The Inspector is a web-based tool that you use to explore the internal state of a SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. </br>
+1. When your game is running, select **Inspector** to open the [Inspector](https://docs.improbable.io/unreal/alpha//content/glossary#inspector) in your default web browser. The Inspector is a web-based tool that you use to explore the internal state of a SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. </br>
   ![Inspector]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)</br>
   _Image: On the Unreal Engine toolbar, select **Play**_</br>
 1. When you’re done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>
