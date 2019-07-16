@@ -17,7 +17,7 @@ Alongside the standard functionality, we’ve added some extra capabilities to t
 
 1. The Unreal<->SpatialOS networking switch
 1. The “Number of Servers” multiplayer option
-1. The "SpatialOS Settings" menu item which opens the [SpatialOS settings](#settings)
+1. The "SpatialOS Settings" menu item which opens the [SpatialOS settings]({{urlRoot}}/content/unreal-editor-interface/editor-settings)
 
 ### Switching between native Unreal networking and SpatialOS networking
 
@@ -36,7 +36,7 @@ You can switch back by unchecking the boxes.
 
 You can launch multiple servers at the same time from within the Unreal Editor in [PIE (Unreal documentation)](https://docs.unrealengine.com/en-us/Engine/UI/LevelEditor/InEditorTesting#playineditor) configuration. To configure the number of servers launched, open the **Play** drop-down menu and use the slider `Number of Servers` within the `Multiplayer Options` section.
 
-If you want to connect multiple server-worker instances to SpatialOS, you need to tell SpatialOS how many instances to connect. You do this in the load balancing section of the launch configuration file (<ProjectPath>\spatial\default_launch.json`). However, by default, when you launch SpatialOS through the editor, this launch configuration file is auto-generated for you based on the settings specified in the [SpatialOS editor settings](#settings).
+If you want to connect multiple server-worker instances to SpatialOS, you need to tell SpatialOS how many instances to connect. You do this in the load balancing section of the launch configuration file (<ProjectPath>\spatial\default_launch.json`). However, by default, when you launch SpatialOS through the editor, this launch configuration file is auto-generated for you based on the settings specified in the [SpatialOS Editor Settings]({{urlRoot}}/content/unreal-editor-interface/editor-settings).
 
  This uses the [`rectangle_grid`](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancer-config-2#rectangular-grid-rectangle-grid) strategy with 1 column and 1 row. To connect 2 servers, change this to 1 column and 2 rows (or vice-versa). Read more about the different kinds of load balancing strategies [here](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancing).
 
@@ -66,7 +66,7 @@ You can also access these from the **Window** menu:
 | --- | --- |
 | Snapshot | Generates a [SpatialOS snapshot]({{urlRoot}}/content/glossary#snapshot). |
 | Schema | Creates [schema]({{urlRoot}}/content/glossary#schema) for your Unreal project. |
-| Start | Runs [`spatial worker build build-config`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)). |
+| Start | Runs [`spatial worker build build-config`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see the [SpatialOS Editor Settings]({{urlRoot}}/content/unreal-editor-interface/editor-settings) documentation). |
 | Stop | Stops `spatial local launch`. |
 | Inspector | Opens the [Inspector]({{urlRoot}}/content/glossary#inspector) in a browser. |
 
