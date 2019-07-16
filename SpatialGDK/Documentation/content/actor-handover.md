@@ -30,7 +30,7 @@ To facilitate an Actor’s property handover between server-workers, follow the 
 
 1. Tag the Actor with the `SpatialType` specifier. (See documentation on [SpatialType]({{urlRoot}}/content/spatial-type) for guidance.)
 
-1. Generate the [schema]({{urlRoot}}/content/glossary#schema-generation) for your Actor’s class. (In the Unreal Editor, from the [GDK toolbar]({{urlRoot}}/content/toolbars), select the **Schema** icon.)
+1. Generate the [schema]({{urlRoot}}/content/glossary#schema-generation) for your Actor’s class. (In the Unreal Editor, from the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars), select the **Schema** icon.)
 
 The GDK now ensures that server-workers transfer these tagged Actor’s properties between them.
 

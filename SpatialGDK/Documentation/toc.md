@@ -45,8 +45,10 @@
         - [Authority and interest]({{urlRoot}}/content/spatialos-concepts/authority-and-interest)
         - [Schema and snapshots]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots)
     - [Glossary]({{urlRoot}}/content/glossary)
-    - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
+    - Unreal Editor interface
+        - [SpatialOS Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings)
+        - [Toolbars]({{urlRoot}}/content/unreal-editor-interface/toolbars)
     - Actors and entities
         - [Schema]({{urlRoot}}/content/how-to-use-schema)
         - [Spatial Type]({{urlRoot}}/content/spatial-type)

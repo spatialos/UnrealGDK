@@ -193,13 +193,13 @@ You need to generate [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-
 
     > You can increase the number of servers that you launch by changing the **Number of servers** value. Leave this value at 1 for now. This is because there is currently no multiserver logic in your code. After you have completed this guide you can start building multiserver game logic.  
     
-1. On the [GDK toolbar]({{urlRoot}}/content/toolbars), select **Start**. This builds your [worker configuration]({{urlRoot}}/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>     
+1. On the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars), select **Start**. This builds your [worker configuration]({{urlRoot}}/content/glossary#worker-configuration) file and launches your game in a local deployment. <br/>     
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/><br/>
 Selecting **Start** opens a terminal window and runs two SpatialOS command line interface ([CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli) commands: `spatial build build-config` and `spatial local launch`. Your deployment has started when you see `SpatialOS ready` in the terminal window.<br/><br/>
 1. On the main Unreal toolbar, select **Play**. <br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/play-button.png)<br/>
 _Image: On the Unreal Engine toolbar **Play**_<br/><br/>
-1. From the SpatialOS [GDK toolbar]({{urlRoot}}/content/toolbars) select **Inspector**, which opens a local [SpatialOS Inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your default web browser. Here you can see the entities and their components present in your deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>
+1. From the SpatialOS [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars) select **Inspector**, which opens a local [SpatialOS Inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector) in your default web browser. Here you can see the entities and their components present in your deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor select **Inspector**_<br/>
 
 **For running a local deployment with managed workers or a cloud deployment take a look at the [glossary section for deployments]({{urlRoot}}/content/glossary#deployment)**
