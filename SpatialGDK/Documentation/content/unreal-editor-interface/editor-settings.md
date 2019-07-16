@@ -68,17 +68,15 @@ The following table lists all the settings in the SpatialOS Editor Settings pane
     <td>Note: These settings are only available if you have selected <strong>Auto-generate launch configuration file</strong>.Select this drop-down menu to change the options in any auto-generated launch configuration file. <br><br>For information about the definition of each option, see the Worker SDK’s flexible project layout documentation on the <a href="https://docs.improbable.io/reference/latest/shared/flexible-project-layout/reference/launch-configuration">launch configuration file</a>.</td>
   </tr>
   <tr>
-    <td><strong>Snapshots</strong></td>
+    <td rowspan="3"><strong>Snapshots</strong></td>
     <td><strong>Snapshot file name</strong></td>
     <td>The name of your project’s <a href="{{urlRoot}}/content/glossary#snapshot">snapshot</a> file.<br><br>Default: `default.snapshot`</td>
   </tr>
   <tr>
-    <td></td>
     <td><strong>Snapshot directory</strong></td>
     <td>The directory containing your project’s <a href="{{urlRoot}}/content/glossary#snapshot">snapshot</a> file. <br><br>Default: `C:/Projects/MyGame/spatial/snapshots/`</td>
   </tr>
   <tr>
-    <td></td>
     <td><strong>Auto-generate placeholder entities in snapshot</strong></td>
     <td>Select the check box for the GDK to auto-populate your project’s snapshot file with <a href="{{urlRoot}}/content/glossary#entity">entities</a>. <br><br>When you have deployed your game, you can see the entities in your game world in the <a href="{{urlRoot}}/content/glossary#inspector">Inspector</a>. You can use this to test the worker instances in your game deployment.<br><br>Default: selected</td>
   </tr>
