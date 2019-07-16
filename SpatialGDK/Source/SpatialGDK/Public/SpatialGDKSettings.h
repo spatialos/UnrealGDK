@@ -64,6 +64,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false))
 	bool bEnableHandover;
 
+	/** Maximum NetCullDistanceSquared value used in Spatial networking. This is temporary and will be removed when the runtime issue is resolved.*/
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false))
+	float MaxNetCullDistanceSquared;
+
 	/** Query Based Interest is required for level streaming and the AlwaysInterested UPROPERTY specifier to be supported when using spatial networking, however comes at a performance cost for larger-scale projects.*/
 	UPROPERTY(config, meta = (ConfigRestartRequired = false))
 	bool bUsingQBI;
