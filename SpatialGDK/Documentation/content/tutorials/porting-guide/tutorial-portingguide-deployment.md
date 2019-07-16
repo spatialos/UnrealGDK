@@ -1,3 +1,5 @@
+<%(TOC)%>
+
 # Port your project to SpatialOS
 
 ## 3. Launch a local deployment
@@ -5,17 +7,18 @@
 Now you can launch a local deployment of your game. 
 To do this: 
 
-## Step 1. Switch your game project to use SpatialOS networking
+## Step 1. Make your project use SpatialOS networking
 
-- In the Unreal Editor, from the toolbar, open the **Play** drop-down menu and check two checkboxes:
-  - Check the box for **Run Dedicated Server**
-  - Check the box for **Spatial Networking**<br/>
+In the Unreal Editor, from the toolbar, open the **Play** drop-down menu and check two checkboxes:
+
+  * Check the box for **Run Dedicated Server**
+  * Check the box for **Spatial Networking**<br/>
 
 ![Play options]({{assetRoot}}assets/screen-grabs/toolbar/toolbar-checkboxes.png)<br/>
 _Image:The Unreal Engine **Play** drop-down menu, with **Run Dedicated Server** and **Spatial Networking** highlighted_
 
 ## Step 2. Launch a local deployment
-Before you launch a local deployment, you have to:
+Before you launch a local deployment, you must:
 
 * generate schema (which creates SpatialOS entities)
 * generate a snapshot
@@ -49,7 +52,7 @@ To launch a local deployment:
 1. Select [**Snapshot**]({{UrlRoot}}/content/spatialos-concepts/generating-a-snapshot) to generate a snapshot.<br/>
    ![Snapshot]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
    _Image: On the GDK toolbar in the Editor, select **Snapshot**_</br>
-1. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Your game is ready to play when you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
+1. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Your game is ready to play when you see the output `SpatialOS ready` in your terminal window.</br>
    ![Start]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
    _Image: On the GDK toolbar in the Editor, select **Start**_</br>
 1. On the Editor toolbar, open the **Play** drop-down menu.
@@ -62,7 +65,7 @@ To launch a local deployment:
 1. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to run the game.</br>
   ![Play]({{assetRoot}}assets/screen-grabs/toolbar/play-button.png)</br>
   _Image: On the Unreal Engine toolbar, select **Play**_</br>
-1. When your game is running, select *Inspector* to open the Inspector in your default web browser. The Inspector lets you <inspect things></br>
+1. WWhen your game is running, select **Inspector** to open the [Inspector](https://docs.improbable.io/unreal/alpha//content/glossary#inspector) in your default web browser. The Inspector is a web-based tool that you use to explore the internal state of a SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. </br>
   ![Inspector]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)</br>
   _Image: On the Unreal Engine toolbar, select **Play**_</br>
 1. When you’re done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>
@@ -78,4 +81,6 @@ If you have encountered any problems please check out our [troubleshooting]({{ur
 
 **> Next:** [Logs and modifications]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-logs)
 
-</br>
+<br/>
+
+<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>

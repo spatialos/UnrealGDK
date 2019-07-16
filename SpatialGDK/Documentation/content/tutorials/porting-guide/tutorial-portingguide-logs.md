@@ -1,3 +1,5 @@
+<%(TOC)%>
+
 # Port your project to SpatialOS
 
 ### Logs
@@ -27,5 +29,4 @@ If you haven't already, check out:
 
 Also check out the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs), [handover]({{urlRoot}}/content/actor-handover) and [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
-<br/>------</br>
-_2019-04-11 Added Shooter Game as a reference project with limited editorial review._
+<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>

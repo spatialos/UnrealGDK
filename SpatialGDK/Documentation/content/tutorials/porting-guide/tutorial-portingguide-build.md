@@ -1,8 +1,11 @@
+<%(TOC)%>
+
 # Port your project to SpatialOS
 
 ## 2. Modify and build your project
 
 Before you open your project in the Editor you need to: 
+
 * Add the SpatialGDK module to your project
 * Build your project using Visual Studio
 
@@ -10,10 +13,11 @@ Before you open your project in the Editor you need to:
 
 ## Step 1: Add the SpatialGDK module to your project
 
-The SpatialGDK module is a <what?>
+To use the GDK and SpatialOS networking, you must add the SpatialGDK [module](https://docs.unrealengine.com/en-US/Programming/UnrealBuildSystem/ModuleFiles/index.html) to your project.
 
 1. In **File Explorer**, navigate to `\<ProjectRoot>\<GameRoot>\Source\<YourProject>\`.
 1. Open the `<YourProject>.build.cs` file in a code editor and add add `"SpatialGDK"` to `PublicDependencyModuleNames`.
+
 For example:  
 
 ```
@@ -34,7 +38,9 @@ For example:
 
 ## Step 2: Build your project
 
-Set up your Unreal project to work with the GDK Unreal Engine Fork, which you cloned and installed in the [Before you start]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-intro#before-you-start) section. To do this:
+Set up your Unreal project to work with the GDK Unreal Engine Fork, which you cloned and installed in the [Before you start]({{urlRoot}}/content/tutorials/tutorial-porting-guide#before-you-start) section. 
+
+To do this:
 
 1. In **File Explorer**, navigate to `<ProjectRoot>\<GameRoot>`.
 1. Right-click your `<YourProject>.uproject` file and select **Switch Unreal Engine version**.
@@ -49,11 +55,11 @@ Set up your Unreal project to work with the GDK Unreal Engine Fork, which you cl
 
 You must modify your `GameInstance` class to work with the GDK.  
 
-1. Make your `GameInstance` inherit from `SpatialGameInstance`.  <br/>
+Make your `GameInstance` inherit from `SpatialGameInstance`.  <br/>
 
-   > If you have not made a `GameInstance` for your game and are still using the default `GameInstance`, you must either create a Blueprint or a native `GameInstance` class now. Remember to configure your `Project Settings` to use this new `GameInstance` by default, under **Project Settings > Project Maps and Modes > Game Instance > Game Instance Class**. <br/>
+* If you have not made a `GameInstance` for your game and are still using the default `GameInstance`, you must either create a Blueprint or a native `GameInstance` class now. Remember to configure your `Project Settings` to use this new `GameInstance` by default, under **Project Settings > Project Maps and Modes > Game Instance > Game Instance Class**. <br/>
 
-- If your game's `GameInstance` is a C++ class, locate its header file and add the following `#include`:
+* If your game's `GameInstance` is a C++ class, locate its header file and add the following `#include`:
   `"SpatialGameInstance.h"`
 
   For example:
@@ -82,7 +88,21 @@ You must modify your `GameInstance` class to work with the GDK.
 
   ![spatial game instance reparent]({{assetRoot}}assets/porting-guide/spatial-game-instance-reparent.png)<br/>
     _Image: The Blueprint class settings screen_<br/>
+    
+## Step 4: Modify your project to support SpatialOS cloud deployments
+Before you launch a cloud deployment, you need to make sure that `spatial` directory gets [cooked](https://docs.unrealengine.com/en-US/Engine/Deployment/Cooking) when you build your workers. To do this, open DefaultGame.ini (located in <ProjectRoot>\<GameRoot>\Config\DefaultGame.ini) configuration file in a text editor, and add the following two lines at the end of the file:
+
+```
+[/Script/UnrealEd.ProjectPackagingSettings]
++DirectoriesToAlwaysCook=(Path="Spatial")
+```
+
   
  **> Next:** [3. Launch a local deployment]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-deployment)
+ 
   
+<br/>
+
+<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>
+
 

@@ -33,7 +33,9 @@ Before porting your project you _**must**_ follow:
 
 **> Next:** [1. Set up your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-setup)
 
+<br/>
 
+<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>
 
 
 
