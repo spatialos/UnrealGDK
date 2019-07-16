@@ -28,14 +28,9 @@ start _{0}.exe 127.0.0.1 -log -OverrideSpatialNetworking=false";
             @"{{
   ""launcherCommand"": ""_Scavenger.exe"",
   ""launcherArguments"": [
-    ""Cascade"",
-    ""+projectName"", ""${{IMPROBABLE_PROJECT_NAME}}"",
-    ""+deploymentName"", ""${{IMPROBABLE_DEPLOYMENT_NAME}}"",
-    ""+loginToken"", ""${{IMPROBABLE_LOGIN_TOKEN}}"",
-    ""+playerIdentityToken"", ""${{IMPROBABLE_PLAYER_IDENTITY_TOKEN}}"",
-    ""+locatorHost"", ""${{IMPROBABLE_LOCATOR_HOSTNAME}}"",
-    ""+useExternalIpForBridge"", ""true"",
-    ""-OverrideSpatialNetworking=true"",
+    ""GameLaunchLevel"",
+    ""-workerType UnrealClient"",
+    ""-OverrideSpatialNetworking"",
     ""-NoLogToSpatial""
   ]
 }}";
