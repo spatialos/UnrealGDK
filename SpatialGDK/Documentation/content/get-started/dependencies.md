@@ -47,7 +47,7 @@ To build the GDK for Unreal you need the following software installed on your ma
     - **Universal Windows Platform development**<br>
     - **.NET desktop development**<br>
     - **Desktop development with C++**<br>
-    - **Game development with C++**, including the optional **Unreal Engine installer** component.
+    - **Game development with C++**
 
 </br>
 </br>

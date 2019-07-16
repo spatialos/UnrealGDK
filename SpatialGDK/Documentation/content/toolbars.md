@@ -86,7 +86,7 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 
 | Setting | Description |
 | --- | --- |
-| Delete dynamically spawned entities | If checked, the GDK deletes any dynamically spawned entities from your SpatialOS deployment when you end the PIE session. |
+| Delete dynamically spawned entities | If checked, the GDK deletes any dynamically spawned entities from your local SpatialOS deployment when you end the PIE session. |
 
 ##### Launch
 
@@ -111,3 +111,9 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 | Setting | Description |
 | --- | --- |
 | Output path for the generated schemas | Use this to specify the path of the generated [schema]({{urlRoot}}/content/glossary#schema) files.  If you leave this empty, it defaults to `<GameRoot>/../spatial/schema/improbable/unreal/generated/`. |
+
+<br/>
+
+<br/>------------<br/>
+_2019-06-27 Page updated with limited editorial review_
+<br/>	<br/>

@@ -6,8 +6,9 @@ To use the SpatialOS GDK for Unreal, you need to get the SpatialOS-compatible ve
 
 ### Step 1: Unreal Engine EULA
 
-To get access to the SpatialOS fork, you need to link your GitHub account to a verified Epic Games account, agree to the Unreal Engine End User License Agreement (EULA) and accept the invite to join the [EpicGames organisation on GitHub](https://github.com/EpicGames). You cannot use the GDK without doing this first. </br>
-To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/en-US/ue4-on-github).
+To get access to the SpatialOS fork, you need to link your GitHub account to a verified Epic Games account, agree to the Unreal Engine End User License Agreement (EULA) and accept the invite to join the [EpicGames organisation on GitHub](https://github.com/EpicGames). To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/en-US/ue4-on-github).</br>
+
+<%(Callout type="warn" message="This step is required to use the GDK: without joining the EpicGames organisation on Github, the [Unreal Engine Fork link](https://github.com/improbableio/UnrealEngine) will return a 404 and you will not be able to download it.")%>
 
 ### Step 2: Get the Unreal Engine Fork source code and Unreal Linux cross-platform support
 
@@ -21,9 +22,9 @@ Open a terminal and run either of these commands to clone the [Unreal Engine For
     | HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |
     | SSH |`git clone git@github.com:improbableio/UnrealEngine.git`
 
-2. **Unreal Linux cross-platform support**</br>
+1. **Unreal Linux cross-platform support**</br>
 To build the server software for SpatialOS deployments correctly, you need to build the Unreal Engine Fork targeting Linux. This requires Linux cross-compilation of your SpatialOS project and the Unreal Engine Fork. To do this, you need to download and unzip the Linux cross-compilation toolchain.</br></br>
-For guidance on this, see the _Getting the toolchain_ section of Unreal's [Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation. As you follow the guidance there, select **v11 clang 5.0.0-based** to download the `v11_clang-5.0.0-centos7.zip` archive, then unzip this file into a suitable directory.
+For guidance on this, see the _Getting the toolchain_ section of Unreal's [Cross-Compiling for Linux](https://wiki.unrealengine.com/Compiling_For_Linux) documentation. As you follow the guidance there, select **v11 clang 5.0.0-based** to download the `v11_clang-5.0.0-centos7.zip` archive, then unzip this file into a suitable directory.
 
 ### Step 3: Add environment variables
 
