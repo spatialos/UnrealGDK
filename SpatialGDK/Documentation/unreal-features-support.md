@@ -2,7 +2,9 @@
 
 The aim of the GDK is to seamlessly support all native Unreal Engine features, making it easy to create and port any Unreal game code to run on SpatialOS, both in single server and multiserver configurations.
 
-The following tables show the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of. The Unreal Engine features support for multiserver configurations of the GDK will be available in Q3 2019.
+The following tables show the state of support of Unreal Engine features on the GDK, along with any caveats or workaround you should be aware of. 
+
+<%(Callout  message="The timelines below aim to provide our latest best estimates on our feature delivery to help you plan your project. They should not be taken as commitments and are subject to change based upon feedback, changing requirements, and technical constraints.")%>
 
 <style type="text/css">
     th {
@@ -47,7 +49,7 @@ The following tables show the state of support of Unreal Engine features on the 
         <td>Q2 - Q3 2019</td>
         <td class="indev"></td>
     </tr>
-        <td>Planned for post Q3 2019</td>
+        <td>Currently unplanned</td>
         <td class="roadmap"></td>
     </tr>
     <!-- </tr>
@@ -229,7 +231,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-us/Programming/Online">Online Subsystem Abstraction</a></td>
-    <td class="indev"></td>
+    <td class="roadmap"></td>
     <td></td>
    </tr> 
   <tr>
@@ -243,8 +245,8 @@ Support of Unreal features with the GDK in a single server-worker configuration:
  <tr>
     <td rowspan="4"><b>Optimization<b></td>
     <td><a href="https://docs.unrealengine.com/en-us/Engine/Networking/ReplicationGraph">Replication Graph</a></td>
-    <td class="indev"></td>
-    <td>We will present a different system for the same purpose instead.</td>
+    <td class="roadmap"></td>
+    <td>We may present a different system for the same purpose instead.</td>
   </tr>
   <tr>
     <td><a href="https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/ReplicationFlow">Net Dormancy</a></td>
@@ -359,7 +361,7 @@ Support of Unreal features with the GDK in a single server-worker configuration:
   <tr>
     <td>UE4 4.22 Support</td>
     <td class="indev"></td>
-    <td>Expected before the end of June 2019.</td>
+    <td><a href="https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview">Preview available</a>, full support in July-August 2019.</td>
 </tr>
 
 <!-- ------ Platforms ------ -->
@@ -399,4 +401,4 @@ The table for multiserver support is coming soon.
 
 
 <br/>------<br/>
-_2019-06-17 Platform support status updated with editorial review_
+_2019-07-04 Online Subsystem abstraction support pushed out._

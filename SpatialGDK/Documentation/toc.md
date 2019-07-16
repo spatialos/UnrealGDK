@@ -65,15 +65,15 @@
     - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Map travel]({{urlRoot}}/content/map-travel)
+    - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
+    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Workflows</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
     - Deployment workflows
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
-    - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
-    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
-    - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Pricing and support</h3>
     - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)
     - [Support]({{urlRoot}}/content/pricing-and-support/support)
