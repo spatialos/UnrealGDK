@@ -63,17 +63,17 @@ To launch a local deployment:
    The server-worker instance is acting as an Unreal server and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
    You can switch between the two Editor windows to see and interact with each game client. 
 1. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to run the game.</br>
-  ![Play]({{assetRoot}}assets/screen-grabs/toolbar/play-button.png)</br>
-  _Image: On the Unreal Engine toolbar, select **Play**_</br>
+    ![Play]({{assetRoot}}assets/screen-grabs/toolbar/play-button.png)</br>
+    _Image: On the Unreal Engine toolbar, select **Play**_</br>
 1. When your game is running, select **Inspector** to open the [Inspector](https://docs.improbable.io/unreal/alpha//content/glossary#inspector) in your default web browser. The Inspector is a web-based tool that you use to explore the internal state of a SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. </br>
-  ![Inspector]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)</br>
-  _Image: On the Unreal Engine toolbar, select **Play**_</br>
+    ![Inspector]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)</br>
+    _Image: On the Unreal Engine toolbar, select **Play**_</br>
 1. When you’re done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>
    ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
    _Image: On the GDK toolbar in the Editor, select **Stop**_</br>
 </br>
 
-**To run a local deployment with managed workers, or a cloud deployment, take a look at the [Starter Template guide]({{urlRoot}}/content/get-started/gdk-template)**
+**To run a local deployment with managed workers, or a cloud deployment, take a look at the [Starter Template guide]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro)**
 
 You have now ported your Unreal game to GDK. 
 
