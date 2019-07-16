@@ -31,23 +31,22 @@ To build the GDK for Unreal you need the following software installed on your ma
 - **Windows 10,** with Command Prompt or PowerShell.
 
   - The GDK for Unreal is only supported on Windows 10. 
-
 - <a href="https://gitforwindows.org" data-track-link="Clicked GIT for Windows|product=Docs|platform=Win|label=Win" target="_blank">**Git for Windows**</a>
 
   - You need Git for windows to clone the GDK and Unreal Engine GitHub repositories.
-
 - <a href="https://console.improbable.io/installer/download/stable/latest/win" data-track-link="Clicked Download SpatialOS|product=Docs|platform=Win|label=Win" target="_blank">**SpatialOS**</a>
     - This installs the [SpatialOS CLI]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli), the [SpatialOS Launcher]({{urlRoot}}/content/glossary#launcher), and 32-bit and 64-bit Visual C++ Redistributables.
-
 - The [**DirectX End-User Runtimes (June 2010)**](https://www.microsoft.com/en-us/download/details.aspx?id=8109)
 
   - You need the DirectX End-User Runtime to run Unreal Engine 4 clients.
-
-- **Visual Studio** <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2015|product=Docs|platform=Win|label=Win" target="_blank">2015</a> or <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win">2017</a> (we recommend 2017). During the installation, select the following items in the Workloads tab:
+- **Visual Studio** <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win">2017</a>. During the installation, select the following items in the Workloads tab:
     - **Universal Windows Platform development**<br>
-    - **.NET desktop development**<br>
+    - **.NET desktop development** <br>
+      - You must also select the **.NET Framework 4.6.2 development tools**
     - **Desktop development with C++**<br>
     - **Game development with C++**, including the optional **Unreal Engine installer** component.
+- [**v13 clang 7.0.1 toolchain**](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html)
+    - You need the v13 clang 7.0.1 toolchain to compile your server-workers. 
 
 </br>
 </br>
