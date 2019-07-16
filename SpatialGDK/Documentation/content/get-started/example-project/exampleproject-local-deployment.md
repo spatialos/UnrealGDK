@@ -45,7 +45,7 @@ To launch a local deployment:
    ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
    _Image: On the GDK toolbar in the Editor, select **Schema (Full Scan)**_
    </br>
-2. Select [**Snapshot**]({{UrlRoot}}/content/spatialos-concepts/generating-a-snapshot) to generate a snapshot.<br/>
+2. Select [**Snapshot**]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots) to generate a snapshot.<br/>
    ![Snapshot]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Snapshot**_</br>
 3. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Your game is ready to play when you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
