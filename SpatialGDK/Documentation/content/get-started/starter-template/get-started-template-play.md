@@ -1,3 +1,4 @@
+<%(TOC)%>
 # The Starter Template
 
 ## 4. Play the game
@@ -28,5 +29,6 @@ You've successfully set up and launched the Starter Template and the GDK! You ar
 
 If you have an existing Unreal multiplayer project, follow our detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
 
-<br/>------<br/>
-_2019-04-30 Page updated with editorial review_
+<br/>
+
+<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>

@@ -1,3 +1,5 @@
+<%(TOC)%>
+
 # Get started
 
 ## 3 - Set up a project: The Starter Template
@@ -23,3 +25,6 @@ We recommend setting up the [Example Project]({{urlRoot}}/content/get-started/ex
 
  **> Next:** [1. Set up]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup)
 
+<br/>
+
+<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>

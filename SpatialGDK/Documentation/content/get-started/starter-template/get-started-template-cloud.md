@@ -1,3 +1,4 @@
+<%(TOC)%>
 # The Starter Template
 
 ## 3.  Launch a cloud deployment
@@ -121,3 +122,6 @@ spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker
 
 **> Next:** [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
 
+<br/>
+
+<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>

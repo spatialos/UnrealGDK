@@ -1,3 +1,4 @@
+<%(TOC)%>
 # The Starter Template
 
 ## 2.  Launch a local deployment with multiple clients
@@ -73,3 +74,7 @@ _Image: The Inspector showing the state of your local deployment_<br/>
 > **TIP:** Check out the [local deployment workflow page]({{urlRoot}}/content/local-deployment-workflow) for a reference diagram of this workflow.
 
 **> Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-cloud)
+
+<br/>
+
+<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>
