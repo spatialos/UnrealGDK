@@ -3,7 +3,15 @@
 ## 4: Test changes in the cloud
 ### Step 1: Build your workers
 
-When you build your workers, using `BuildWorker.bat`, the GDK creates an assembly. The assembly is a collection of `.zip` files that contain all the files that your game uses when running in the cloud.
+## Step 4: Test your changes in the cloud
+
+### Build your assemblies
+
+An assembly is what’s created when you run `BuildWorker.bat`. They’re `.zip` files that contain all the files that your game uses when running in the cloud.
+
+**Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+
+**Note:** Unreal GDK projects default to using [Spatial for networking](). However, if the `bSpatialNetworking` option is present in your `DefaultGame.ini` configuration file (located in `<ProjectRoot>\Game\Config` directory), ensure that it is set to `True` (as in, `bSpatialNetworking=True`) to enable networking with Spatial for your cloud deployment.
 
 1. In a terminal window, change directory to the root directory of the Third-Person Shooter repository.
 1. Build a server-worker assembly by running: `Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat ThirdPersonShooterServer Linux Development ThirdPersonShooter.uproject`
@@ -70,8 +78,6 @@ When you’re done shooting your friends, you can click the **Stop** button in t
 * If you want to create a new game using the GDK, you should get the [Starter Template]({{urlRoot}}/content/get-started/gdk-template). 
 * If you want to port your existing game to the GDK, follow the [Porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide).
 
-<br/>
-<br/>
 
--------------</br>
+<br/>------<br/>
 _2019-03-20 Page updated with limited editorial review_

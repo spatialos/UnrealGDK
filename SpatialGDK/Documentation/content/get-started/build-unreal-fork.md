@@ -6,8 +6,9 @@ To use the SpatialOS GDK for Unreal, you need to get the SpatialOS-compatible ve
 
 ### Step 1: Unreal Engine EULA
 
-To get access to the Unreal Engine Fork, you need to link your GitHub account to a verified Epic Games account, agree to the Unreal Engine End User License Agreement (EULA) and accept the invite to join the [EpicGames organisation on GitHub](https://github.com/EpicGames). You cannot use the GDK without doing this first. </br>
-To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/en-US/ue4-on-github).
+To get access to the SpatialOS fork, you need to link your GitHub account to a verified Epic Games account, agree to the Unreal Engine End User License Agreement (EULA) and accept the invite to join the [EpicGames organisation on GitHub](https://github.com/EpicGames). To do this, see the [Unreal Engine documentation](https://www.unrealengine.com/en-US/ue4-on-github).</br>
+
+<%(Callout type="warn" message="This step is required to use the GDK: without joining the EpicGames organisation on Github, the [Unreal Engine Fork link](https://github.com/improbableio/UnrealEngine) will return a 404 and you will not be able to download it.")%>
 
 ### Step 2: Get the Unreal Engine Fork source code
 
@@ -42,7 +43,8 @@ When the command line window closes, you can continue to **3: Set up a project..
 If you do not want to build the Engine Fork automatically, follow the instructions for [manually building the Engine Fork]({{urlRoot}}/content/manual-engine-build).
 
 </br>
-**> Next:** 3 - Set up a project...</br>
+
+**> Next:** 3 - Set up project
 
 Choose either:
 

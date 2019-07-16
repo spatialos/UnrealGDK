@@ -25,14 +25,14 @@ To generate a development authentication token:
 
 This creates a temporary authentication token that lasts for 30 days. For information about updating and refreshing development authentication tokens, refer to the [development authentication token](https://docs.improbable.io/reference/Latest/shared/auth/development-authentication) documentation. 
 
-In the terminal window, copy the string displayed after `tokenSecret` and make a note of it, you will use this token ID in the next step. This token is always 100 characters long and ends in an equals (=) sign.
+In the terminal window, copy the string displayed after `tokenSecret` and make a note of it, you will use this token secret in the next step. This token is always 100 characters long and ends in an equals (=) sign.
 
 ### Step 2: Add the token to your project
 
 Next, you must add your development authentication token to the Example Project code.
 
 1. In File Explorer, navigate to UnrealGDKExampleProject\Game\Source\GDKShooter\Private\Deployments and double click `DeploymentsPlayerController.cpp` to open it in Visual Studio.
-1. In Visual studio with the  `DeploymentsPlayerController.cpp` file open, search for `PITParams->development_authentication_token_id` and replace `“REPLACE ME"` with the `tokenSecret` string you copied in step 3. <br/>
+1. In Visual studio with the  `DeploymentsPlayerController.cpp` file open, search for `PITParams->development_authentication_token` and replace `“REPLACE ME"` with the `tokenSecret` string you copied in step 3. <br/>
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-token.png)<br/>
 _Image: The development authentication token id code as shown in Visual Studio_ <br/>
 1. Save your changes and launch a debug build of your project by pressing F5 on your keyboard or by selecting **Local Windows Debugger** on the Visual Studio toolbar. 
@@ -41,6 +41,6 @@ If your project opens without errors you have successfully added the developer a
 
 **> Next**: [3: Build and upload workers]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-workers)
 
---------<br/>
 
+<br/>------<br/>
 _2019-05-21 Page added with editorial review_

@@ -43,6 +43,6 @@ You are now on the latest GDK and the latest SpatialOS Unreal Engine fork.
 
 Be sure to join the community on our <a href="https://forums.improbable.io" data-track-link="Join Forums Clicked|product=Docs" target="_blank">forums</a> or on <a href="https://discord.gg/vAT7RSU" data-track-link="Join Discord Clicked|product=Docs|platform=Win|label=Win" target="_blank">Discord</a>. We announce GDK versions there.
 
------
 
+<br/>------<br/>
 _2019-04-15 Page added with editorial review_

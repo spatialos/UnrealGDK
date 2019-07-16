@@ -33,7 +33,11 @@
             - [3: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [4: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
         - Port your project to SpatialOS
-            - [Porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
+            - [Introduction]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
+            - [1. Set up your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-setup)
+            - [2. Modify and build your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-build)
+            - [3. Launch a local deployment]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-deployment)
+            - [Logs and modifications]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-logs)
     - [Unreal features support]({{urlRoot}}/unreal-features-support)
     - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
@@ -61,14 +65,15 @@
     - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Map travel]({{urlRoot}}/content/map-travel)
+    - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
+    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Workflows</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
     - Deployment workflows
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
-    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
-    - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Pricing and support</h3>
     - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)
     - [Support]({{urlRoot}}/content/pricing-and-support/support)

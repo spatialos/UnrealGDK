@@ -23,9 +23,6 @@ Follow [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleprojec
 
 _Image: Gameplay screenshot of the Example project_<br/>
 
-</br>
 
-------</br>
-<br/>
-
+<br/>------<br/>
 _2019-05-21 Page added with editorial review_
