@@ -1,11 +1,11 @@
-# 3 - Set up a project: The Starter Template
+# The Starter Template
 
 ## 4. Play the game
 
 ![]({{assetRoot}}assets/tutorial/console.png)
 _Image: The SpatialOS Console_
 
-When your deployment has launched, SpatialOS automatically opens the [Console](https://console.improbable.io) in your browser.
+When you have launched the deployment, SpatialOS automatically opens the [Console](https://console.improbable.io) in your browser.
 
 In the Console, Select **Launch** on the left of the page, and then select the **Launch** button that appears in the centre of the page to open the SpatialOS Launcher. The Launcher automatically downloads the game client for this deployment and runs it on your local machine.
 
@@ -18,8 +18,6 @@ Find out more in the [glossary](({{urlRoot}}/content/glossary#launcher).
 <br/>
 ![]({{assetRoot}}assets/tutorial/launch.png)<br/>
 _Image: The SpatialOS console launch window_
-
-**Note:** You install the SpatialOS Launcher during [Getting started: 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies).
 
 > **TIP:** Check out the [cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow) for a reference diagram of this workflow.
 

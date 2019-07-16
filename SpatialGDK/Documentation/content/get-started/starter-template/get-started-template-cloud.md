@@ -1,10 +1,8 @@
-# 3 - Set up a project: The Starter Template
+# The Starter Template
 
 ## 3.  Launch a cloud deployment
 
 To launch a cloud deployment, you need to prepare your server-worker and client-worker [assemblies](https://docs.improbable.io/reference/latest/shared/glossary), and upload them to the cloud.
-
-> **TIP:** Building the assemblies can take a while - we recommend installing <a href="https://www.incredibuild.com/" data-track-link="Incredibuild|product=Docs|platform=Win|label=Win" target="_blank">IncrediBuild</a> to speed up build times.
 
 #### Step 1: Set up your SpatialOS project name 
 
@@ -26,14 +24,14 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 #### Step 2: Build your workers
 
-Note: You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+**Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
 
 There are two ways to build your worker assemblies (known as “building workers”):
 
 - Build your workers automatically using the `BuildProject.bat` script. </br>
   This script automatically builds both the server-workers and client-workers required to run your game in the cloud. It then compresses your workers and saves them as .zip files to the `<ProjectRoot>\spatial\build\assembly\worker` directory. Use this script if you want to build server-workers and client-workers at the same time. <br/><br/>
 - Build your workers manually using the command line. </br>
-  Use the command line when you want to build your server-workers and client-workers separately, or, if you want to build different worker configurations, for example? Editor, Test, Shipping or Linux. 
+  Use the command line when you want to build your server-workers and client-workers separately. 
 
 <%(#Expandable title="Build your workers using `BuildProject.bat`")%>
 To build your workers using the BuildProject.bat script: 
@@ -42,7 +40,7 @@ Double click BuildProject.bat. This opens a command line window and automaticall
 <%(/Expandable)%>
 
 <%(#Expandable title="Build your workers  manually using the command line")%>
-In a terminal window, navigate to the `<ProjectRoot>` directory.
+In a command line window, navigate to the `<ProjectRoot>` directory.
 Build a server-worker assembly by running the following command: 
 
 ```
@@ -66,7 +64,7 @@ If you receive the error `The system cannot find the path specified. Builds fail
 
 Before launching a cloud deployment, you must upload your sever-worker and client-worker assemblies to the cloud. To do this: 
 
-1. In a terminal window, navigate to your `<ProjectRoot>\spatial\` directory 
+1. In a command line window, navigate to your `<ProjectRoot>\spatial\` directory 
 2. Run the following command:  `spatial cloud upload <assembly_name>`
 
 You must replace `<assembly_name>` with a name for your assembly (for example: `gdktemplateassembly`). 
@@ -88,9 +86,9 @@ The SpatilOS command-line tool (CLI) provides a set of commands that you use to 
 Find out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
 <%(/Expandable)%>
 
-When launching a cloud deployment you must provide four parameters:
+When launching a cloud deployment via the CLI, you must provide four parameters as part of the `spatial cloud launch` command:
 
-- **The snapshot file** -  defines the starting state of the game world
+- **The snapshot file** -  defines the starting state of the game world.
 - **The assembly name** - identifies which workers to use for your deployment.
 - **A launch configuration file** - defines the SpatialOS game world and load balancing configuration.
 - **A name for your deployment** -  labels the deployment in the Console.
@@ -102,7 +100,7 @@ Use this file to list the settings of a deployment. These include: how big the S
 You can find out more about the launch configuration file in the [glossary]({{urlRoot}}/content/glossary#launch-configuration).
 <%(/Expandable)%>
 
-1. In a  terminal window, navigate to `<ProjectRoot>\spatial\` and run the following command
+1. In a  command line window, navigate to `<ProjectRoot>\spatial\` and run the following command
 
 ```
 spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_worker_test.json <deployment_name>
@@ -111,9 +109,9 @@ spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_w
 Where:
 
 - `default.snapshot` is the snapshot file we have provided for this Example project.
-- `assembly_name` is the name you gave the assembly in the previous step. 
+- `<assembly_name>` is the name you gave the assembly in the previous step. 
 - `one_worker_test.json` is the launch configuration file we provided with the GDK Template
-- `deployment_name` is a name of your choice - you create this name when you run this command. 
+- `<deployment_name>` is a name of your choice - you create this name when you run this command. 
 
 A valid launch command looks like this: 
 

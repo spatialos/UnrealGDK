@@ -1,4 +1,4 @@
-# 3 - Set up a project: The Starter Template
+# The Starter Template
 
 ## 2.  Launch a local deployment with multiple clients
 
@@ -6,10 +6,11 @@ When you want to try out your game, you need to run a deployment.
 
 There are two types of deployment: local and cloud.
 
-- A [local deployment]({{urlRoot}}/content/glossary#deployment) launches your game with its own instance of SpatialOS, running on your development machine. 
-- [Cloud deployments]({{urlRoot}}/content/glossary#deployment) run in the cloud on [nodes]({{urlRoot}}/content/glossary#node). A node refers to a single machine used by a cloud deployment. When you have deployed your game, you can share it with other people and run your game at a scale not possible on a single machine. Once a cloud deployment is running, you can connect clients to it using the [Launcher]({{urlRoot}}/content/glossary#launcher).
+* A [local deployment]({{urlRoot}}/content/glossary#deployment) launches your game with its own instance of SpatialOS, running on your development machine. 
+* A [Cloud deployments]({{urlRoot}}/content/glossary#deployment) runs in the cloud on [nodes]({{urlRoot}}/content/glossary#node). A node refers to a single machine used by a cloud deployment. When you have deployed your game, you can share it with other people and run your game at a scale not possible on a single machine. Once a cloud deployment is running, you can connect clients to it using the [Launcher]({{urlRoot}}/content/glossary#launcher).
 
-Use local deployments for small-scale tests, to quickly test and iterate on changes to your project. For large-scale tests with several players, use a cloud deployment. 
+> * For small-scale tests, use local deployments to quickly test and iterate on changes to your project. 
+> * For large-scale tests with several players, use a cloud deployment.
 
 ### Step 1: Generate schema and a snapshot
 
@@ -45,22 +46,23 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
 
 ### Step 2: Launch a local deployment
 
-1. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Wait until you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
+This section shows you how to  start one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor. The server-worker instance acts as an Unreal server and the two client-worker instances acts as two Unreal game clients (as would be used by two game players). 
+
+1. On the GDK toolbar, Select **Start**. This opens a comamnd line window and starts a local SpatialOS deployment. Wait until you see the output `SpatialOS ready` in your command line window.<br/>
    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
    _Image: On the GDK toolbar in the Unreal Editor select **Start**_<br/>
 1. On the Unreal Editor toolbar, open the **Play** drop-down menu.
-1. Under **Multiplayer Options**, set the number of players to **2** and ensure that the check box next to **Run Dedicated Server** is checked. (If it is unchecked, select the checkbox to enable it.)<br/>
+1. Under **Multiplayer Options**, set the number of players to **2** and ensure that the check box next to **Run Dedicated Server** is selected.<br/>
    ![]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png)<br/>
    _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_<br/>
-1. Under **Modes**, select **New Editor Window (PIE)** to run the game. This starts one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor.
-   The server-worker instance is acting as an Unreal server and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
-   You can switch between the two Editor windows to see and interact with each game client. 
-1. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to run the game.
+1. Under **Modes**, select **New Editor Window (PIE)** to run the game.  You should see two clients start. You can switch between two Editor windows to see and interact with each game client.
+	If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to run the game.
    ![]({{assetRoot}}assets/set-up-template/template-two-clients.png)<br/>
    _Image: Two clients running in the Editor, with player Actors replicated by SpatialOS and the GDK_<br/>
-1. Open the Inspector using the local URL you were given above: `http://localhost:21000/inspector`.</br>  You should see that a local SpatialOS deployment is running with one server-worker instance and two client-worker instances connected. You can also find and follow around the two player entities.<br/><br/>
-   ![]({{assetRoot}}assets/set-up-template/template-two-client-inspector.png)<br/>
-   _Image: The Inspector showing the state of your local deployment_<br/>
+1. When your game is running, select **Inspector** to open the [Inspector](https://docs.improbable.io/unreal/alpha//content/glossary#inspector) in your default web browser. The Inspector is a web-based tool that you use to explore the internal state of a SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. <br/>
+    ![]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>_Image: On the Unreal Engine toolbar, select Inspector_<br/>
+    ![]({{assetRoot}}assets/set-up-template/template-two-client-inspector.png)<br/>
+_Image: The Inspector showing the state of your local deployment_<br/>
 1. When you're done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
    _Image: On the GDK toolbar in the Unreal Editor select **Stop**_<br/>
 
