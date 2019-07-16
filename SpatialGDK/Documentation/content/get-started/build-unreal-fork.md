@@ -21,7 +21,13 @@ Open a terminal and run either of these commands to clone the [Unreal Engine For
 | HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |
 | SSH |`git clone git@github.com:improbableio/UnrealEngine.git`|
 
-### Step 3: Build the Unreal Engine Fork
+### Step 3: Add a new SSH key to your GitHub account
+
+You must add an SSH key to your GitHub account to automatically download the GDK repositories as part of this setup step. 
+
+To do this, follow the GitHub tutorial on [Adding a new SSH key to your GitHub account (GitHub Documentation)](https://help.github.com/en/articles/adding-a-new-ssh-key-to-your-github-account)
+
+### Step 4: Build the Unreal Engine Fork
 
 To build the Unreal Engine Fork: 
 
