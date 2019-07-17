@@ -119,6 +119,7 @@ bool USpatialNetDriver::InitBase(bool bInitAsClient, FNetworkNotify* InNotify, c
 	// If it fails to load, don't attempt to connect to spatial.
 	if (!ClassInfoManager->TryInit(this, ActorGroupManager))
 	{
+		Error = TEXT("Failed to load Spatial SchemaDatabase! Make sure that schema has been generated for your project");
 		return false;
 	}
 
