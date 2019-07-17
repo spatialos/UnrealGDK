@@ -103,7 +103,7 @@ The next step is to launch a cloud deployment using the worker assemblies that y
 
 <%(#Expandable title="What is the CLI?")%>
 
-The SpatilOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS.
+The SpatialOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS.
 
 Find out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
 <%(/Expandable)%>
