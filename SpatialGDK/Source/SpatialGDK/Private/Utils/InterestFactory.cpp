@@ -30,6 +30,7 @@ void GatherClientInterestDistances()
 
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
 	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
+	const float MaxDistanceSquared = GetDefault<USpatialGDKSettings>()->MaxNetCullDistanceSquared;
 
 	// Gather ClientInterestDistance settings, and add any larger than the default radius to a list for processing.
 	TMap<UClass*, float> DiscoveredInterestDistancesSquared;
@@ -52,7 +53,17 @@ void GatherClientInterestDistances()
 		const AActor* IteratedDefaultActor = Cast<AActor>(It->GetDefaultObject());
 		if (IteratedDefaultActor->NetCullDistanceSquared > DefaultDistanceSquared)
 		{
-			DiscoveredInterestDistancesSquared.Add(*It, IteratedDefaultActor->NetCullDistanceSquared);
+			float ActorNetCullDistanceSquared = IteratedDefaultActor->NetCullDistanceSquared;
+
+			if (MaxDistanceSquared != 0.f && IteratedDefaultActor->NetCullDistanceSquared > MaxDistanceSquared)
+			{
+				UE_LOG(LogInterestFactory, Warning, TEXT("NetCullDistanceSquared for %s too large, clamping from %f to %f"),
+					*It->GetName(), ActorNetCullDistanceSquared, MaxDistanceSquared);
+
+				ActorNetCullDistanceSquared = MaxDistanceSquared;
+			}
+
+			DiscoveredInterestDistancesSquared.Add(*It, ActorNetCullDistanceSquared);
 		}
 	}
 
