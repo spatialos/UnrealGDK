@@ -69,19 +69,6 @@ bool USpatialNetConnection::ClientHasInitializedLevelFor(const AActor* TestActor
 	//Intentionally does not call Super::
 }
 
-void USpatialNetConnection::Tick()
-{
-	// Since we're not receiving actual Unreal packets, Unreal may time out the connection. Timeouts are handled by SpatialOS, so we're setting these values here to keep Unreal happy.
-	// Note that in the case of InternalAck (UnrealWorker) the engine does this (and more) in Super.
-	if (!InternalAck)
-	{
-		LastReceiveTime = Driver->Time;
-		LastReceiveRealtime = FPlatformTime::Seconds();
-		LastGoodPacketRealtime = FPlatformTime::Seconds();
-	}
-	Super::Tick();
-}
-
 int32 USpatialNetConnection::IsNetReady(bool Saturate)
 {
 	// TODO: UNR-664 - Currently we do not report the number of bits sent when replicating, this means channel saturation cannot be checked properly.
