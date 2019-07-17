@@ -2,14 +2,17 @@
 
 #pragma once
 
-#include <Utils/RPCContainer.h>
+#include "Utils/RPCContainer.h"
 
-#include <CoreMinimal.h>
+#include "CoreMinimal.h"
 
 #include "ObjectSpy.generated.h"
 
-TArray<uint8> TypeToArray(ESchemaComponentType Type);
-ESchemaComponentType ArrayToType(const TArray<uint8>& Array);
+namespace SpyUtils
+{
+	TArray<uint8> TypeToArray(ESchemaComponentType Type);
+	ESchemaComponentType ArrayToType(const TArray<uint8>& Array);
+}
 
 UCLASS()
 class UObjectSpy : public UObject

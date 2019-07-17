@@ -5,8 +5,8 @@
 #include "ObjectDummy.h"
 #include "ObjectSpy.h"
 
-#include <Utils/RPCContainer.h>
-#include <Schema/RPCPayload.h>
+#include "Utils/RPCContainer.h"
+#include "Schema/RPCPayload.h"
 
 #include <Core.h>
 
@@ -34,7 +34,7 @@ namespace
 	FPendingRPCParamsPtr CreateMockParameters(UObject* TargetObject, ESchemaComponentType Type)
 	{
 		// Use PayloadData as a place to store RPC type
-		RPCPayload Payload(0, GeneratePayloadFunctionIndex(), TypeToArray(Type));
+		RPCPayload Payload(0, GeneratePayloadFunctionIndex(), SpyUtils::TypeToArray(Type));
 		int ReliableRPCIndex = 0;
 
 		FUnrealObjectRef ObjectRef = GenerateObjectRef(TargetObject);
@@ -191,16 +191,16 @@ RPCCONTAINER_TEST(GIVEN_a_container_storing_multiple_values_of_different_type_WH
 	RPCs.ProcessRPCs(Delegate);
 
 	bool bProcessedInOrder = true;
-	for (const auto& processedIndicesOfType : TargetObject->ProcessedRPCIndices)
+	for (const auto& ProcessedIndicesOfType : TargetObject->ProcessedRPCIndices)
 	{
-		TArray<uint32>& storedIndicesOfType = RPCIndices.FindChecked(processedIndicesOfType.Key);
+		TArray<uint32>& storedIndicesOfType = RPCIndices.FindChecked(ProcessedIndicesOfType.Key);
 
-		check(processedIndicesOfType.Value.Num() == storedIndicesOfType.Num());
-		const int32 numIndices = processedIndicesOfType.Value.Num();
+		check(ProcessedIndicesOfType.Value.Num() == storedIndicesOfType.Num());
+		const int32 numIndices = ProcessedIndicesOfType.Value.Num();
 
 		for (int i = 0; i < numIndices; ++i)
 		{
-			if (processedIndicesOfType.Value[i] != storedIndicesOfType[i])
+			if (ProcessedIndicesOfType.Value[i] != storedIndicesOfType[i])
 			{
 				bProcessedInOrder = false;
 				break;

@@ -11,7 +11,7 @@ public class SpatialGDKTests : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
-                "SpatialGDK",
+				"SpatialGDK",
 				"Core",
 				"CoreUObject",
 				"Engine",
@@ -19,6 +19,6 @@ public class SpatialGDKTests : ModuleRules
 				"UnrealEd",
 				"Json",
 				"JsonUtilities"
-            });
+			});
 	}
 }
