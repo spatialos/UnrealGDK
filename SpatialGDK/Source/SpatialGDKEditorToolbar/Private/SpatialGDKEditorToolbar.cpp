@@ -74,7 +74,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 
 	// Bind the play button delegate to starting a local spatial deployment.
-	if (!UEditorEngine::TryStartSpatialDeployment.IsBound())
+	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && GetDefault<USpatialGDKEditorSettings>()->bAutoStartSpatialDeployment)
 	{
 		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
 		{
@@ -566,8 +566,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		// If schema has been regenerated then we need to restart spatial.
 		if (bRedeployRequired && LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
-			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Schema has changed since last session. Local deployment must restart."));
-			OnShowTaskStartNotification(TEXT("Schema has changed. Local deployment restarting.")); 
+			// If schema or worker configurations have been changed then we must restart the deployment.
+			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Local deployment must restart."));
+			OnShowTaskStartNotification(TEXT("Local deployment restarting.")); 
 			LocalDeploymentManager->TryStopLocalDeployment();
 			bRedeployRequired = false;
 		}
@@ -692,6 +693,22 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		if (PropertyName.ToString() == TEXT("bStopSpatialOnExit"))
 		{
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
+		}
+		else if (PropertyName.ToString() == TEXT("bAutoStartSpatialDeployment"))
+		{
+			if (Settings->bAutoStartSpatialDeployment)
+			{
+				// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
+				UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
+				{
+					VerifyAndStartDeployment();
+				});
+			}
+			else
+			{
+				// Unbind the TryStartSpatialDeployment if autostart is disabled.
+				UEditorEngine::TryStartSpatialDeployment.Unbind();
+			}
 		}
 	}
 }

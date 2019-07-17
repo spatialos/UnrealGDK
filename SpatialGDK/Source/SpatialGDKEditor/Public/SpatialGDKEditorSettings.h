@@ -252,6 +252,10 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Stop on exit"))
 	bool bStopSpatialOnExit;
 
+	/** Start a local SpatialOS deployment when clicking 'Play'. */
+	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Auto-start local deployment"))
+	bool bAutoStartSpatialDeployment;
+
 private:
 	/** Path to your SpatialOS snapshot. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
