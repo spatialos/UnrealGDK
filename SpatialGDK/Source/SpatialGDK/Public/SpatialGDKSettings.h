@@ -64,7 +64,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false))
 	bool bEnableHandover;
 
-	/** Maximum NetCullDistanceSquared value used in Spatial networking. This is temporary and will be removed when the runtime issue is resolved.*/
+	/** Maximum NetCullDistanceSquared value used in Spatial networking. Set to 0.0 to disable. This is temporary and will be removed when the runtime issue is resolved.*/
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false))
 	float MaxNetCullDistanceSquared;
 

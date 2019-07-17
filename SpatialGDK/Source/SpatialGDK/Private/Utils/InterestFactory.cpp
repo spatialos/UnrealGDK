@@ -53,13 +53,17 @@ void GatherClientInterestDistances()
 		const AActor* IteratedDefaultActor = Cast<AActor>(It->GetDefaultObject());
 		if (IteratedDefaultActor->NetCullDistanceSquared > DefaultDistanceSquared)
 		{
-			if (IteratedDefaultActor->NetCullDistanceSquared > MaxDistanceSquared)
+			float ActorNetCullDistanceSquared = IteratedDefaultActor->NetCullDistanceSquared;
+
+			if (MaxDistanceSquared != 0.f && IteratedDefaultActor->NetCullDistanceSquared > MaxDistanceSquared)
 			{
 				UE_LOG(LogInterestFactory, Warning, TEXT("NetCullDistanceSquared for %s too large, clamping from %f to %f"),
-					*It->GetName(), IteratedDefaultActor->NetCullDistanceSquared, MaxDistanceSquared);
+					*It->GetName(), ActorNetCullDistanceSquared, MaxDistanceSquared);
+
+				ActorNetCullDistanceSquared = MaxDistanceSquared;
 			}
 
-			DiscoveredInterestDistancesSquared.Add(*It, FMath::Min(MaxDistanceSquared, IteratedDefaultActor->NetCullDistanceSquared));
+			DiscoveredInterestDistancesSquared.Add(*It, ActorNetCullDistanceSquared);
 		}
 	}
 
