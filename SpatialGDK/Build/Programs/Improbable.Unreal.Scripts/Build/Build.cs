@@ -29,7 +29,8 @@ start _{0}.exe 127.0.0.1 -log -OverrideSpatialNetworking=false";
   ""launcherCommand"": ""_Scavenger.exe"",
   ""launcherArguments"": [
     ""GameLaunchLevel"",
-    ""-workerType UnrealClient"",
+    ""-workerType"",
+    ""UnrealClient"",
     ""-OverrideSpatialNetworking"",
     ""-NoLogToSpatial""
   ]
