@@ -127,14 +127,16 @@ namespace Improbable
                     Directory.CreateDirectory(windowsEditorPath);
                 }
 
-                var RunEditorScript = $@"setlocal ENABLEDELAYEDEXPANSION 
-                {Path.Combine(unrealEngine, @"Engine\Binaries\Win64\UE4Editor.exe")} ""{0}"" %*
-                exit /b !ERRORLEVEL!
-                ";
+                var PathToUnrealEditor = Path.Combine(unrealEngine, "Engine\\Binaries\\Win64\\UE4Editor.exe");
+
+                var StartEditorScript =
+$@"setlocal ENABLEDELAYEDEXPANSION
+{PathToUnrealEditor} {projectFile} %*
+exit /b !ERRORLEVEL!";
 
                 // Write a simple batch file to launch the Editor as a managed worker.
                 File.WriteAllText(Path.Combine(windowsEditorPath, "StartEditor.bat"),
-                    string.Format(RunEditorScript, projectFile), new UTF8Encoding(false));
+                    StartEditorScript, new UTF8Encoding(false));
 
                 // The runtime currently requires all workers to be in zip files. Zip the batch file.
                 Common.RunRedirected(runUATBat, new[]
