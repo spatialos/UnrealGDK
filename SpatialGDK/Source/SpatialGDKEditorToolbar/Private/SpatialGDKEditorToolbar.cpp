@@ -74,7 +74,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
 
 	// Bind the play button delegate to starting a local spatial deployment.
-	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && GetDefault<USpatialGDKEditorSettings>()->bAutoStartSpatialDeployment)
+	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment)
 	{
 		UEditorEngine::TryStartSpatialDeployment.BindLambda([this]
 		{
@@ -696,7 +696,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		}
 		else if (PropertyName.ToString() == TEXT("bAutoStartSpatialDeployment"))
 		{
-			if (Settings->bAutoStartSpatialDeployment)
+			if (Settings->bAutoStartLocalDeployment)
 			{
 				// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
 				UEditorEngine::TryStartSpatialDeployment.BindLambda([this]

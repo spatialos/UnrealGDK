@@ -254,7 +254,7 @@ public:
 
 	/** Start a local SpatialOS deployment when clicking 'Play'. */
 	UPROPERTY(EditAnywhere, config, Category = "Launch", meta = (ConfigRestartRequired = false, DisplayName = "Auto-start local deployment"))
-	bool bAutoStartSpatialDeployment;
+	bool bAutoStartLocalDeployment;
 
 private:
 	/** Path to your SpatialOS snapshot. */
