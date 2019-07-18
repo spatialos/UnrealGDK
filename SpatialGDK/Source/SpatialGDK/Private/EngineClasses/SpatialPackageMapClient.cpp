@@ -432,6 +432,21 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 		}
 	}
 
+	// Remove dynamically attached subobjects
+	USpatialActorChannel* Channel = SpatialNetDriver->GetActorChannelByEntityId(EntityId);
+	for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+	{
+		if (FNetworkGUID* SubobjectNetGUID = NetGUIDLookup.Find(DynamicSubobject))
+		{
+			if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*SubobjectNetGUID))
+			{
+				UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
+			}
+
+			NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
+		}
+	}
+
 	// Remove actor.
 	FNetworkGUID EntityNetGUID = GetNetGUIDFromEntityId(EntityId);
 	// TODO: Figure out why NetGUIDToUnrealObjectRef might not have this GUID. UNR-989

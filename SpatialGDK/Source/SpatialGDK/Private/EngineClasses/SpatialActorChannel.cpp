@@ -161,6 +161,9 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 	}
 #endif
 
+	// Must call cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects
+	Receiver->CleanupDeletedEntity(EntityId);
+
 #if ENGINE_MINOR_VERSION <= 20
 	return UActorChannel::CleanUp(bForDestroy);
 #else
