@@ -32,17 +32,24 @@ To do this, follow the GitHub tutorial on [Adding a new SSH key to your GitHub a
 To build the Unreal Engine Fork: 
 
 1. In File Explorer, navigate to the directory you cloned the Unreal Engine Fork repository into. 
-2. Double-click Setup.bat. This automatically opens a command line window and installs prerequisites for building Unreal Engine 4. The command line window closes when the process has finished.
+1. Double-click **Setup.bat**. This automatically opens a command line window and installs prerequisites for building Unreal Engine 4. The command line window closes when the process has finished.
+1. In the same directory, double-click **GenerateProjectFiles.bat**. This file automatically sets up the project files you require to build Unreal Engine 4.<br/>
 1. Double-click **InstallGDK.bat**
 This  automatically opens a command line window and performs the following:
 	* Sets LINUX_MULTIARCH_ROOT as an environment variable
 	* Clones the UnrealGDK into your Engine's `Plugin` directory
-	* Clones the UnrealGDKExampleProject into your Engine's `Samples directory
+	* Clones the UnrealGDKExampleProject into your Engine's `Samples` directory
 	* Runs the Unreal GDK Setup.bat script to install the GDK into the cloned UnrealGDKExampleProject directory
-	* Generates Visual Studio solution files for the UnrealGDKExampleProject
+	* Generates Visual Studio solution files for the UnrealGDKExampleProject<br/>
+This process can take a long time to complete. The command line window closes when the process has finished.    <br/>
+1. In the same directory, open **UE4.sln** in Visual Studio.
+1. In Visual Studio, on the toolbar, navigate to **Build** > **Configuration Manager**; set your active solution configuration to **Development Editor** and your active solution platform to **Win64**.
+1. In the Solution Explorer window, right-click on the **UE4** project and select **Set as StartUp Project**
+1. In the Solution Explorer window, right-click on the **UE4** project and select **Build** (you may be prompted to install some dependencies first). <br>
 
-This process can take a long time to complete. The command line window closes when the process has finished. 
-When the command line window closes, you can continue to **3: Set up a project...**
+Visual Studio then builds Unreal Engine, which can take up to a couple of hours.
+
+When the build is complete, you can continue to **3: Set up a project...**
 
 > **Note:** Once you've built Unreal Engine, *don't move it into another directory*. That will break the integration.
 
