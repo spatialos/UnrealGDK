@@ -694,7 +694,7 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		{
 			bStopSpatialOnExit = Settings->bStopSpatialOnExit;
 		}
-		else if (PropertyName.ToString() == TEXT("bAutoStartSpatialDeployment"))
+		else if (PropertyName.ToString() == TEXT("bAutoStartLocalDeployment"))
 		{
 			if (Settings->bAutoStartLocalDeployment)
 			{
