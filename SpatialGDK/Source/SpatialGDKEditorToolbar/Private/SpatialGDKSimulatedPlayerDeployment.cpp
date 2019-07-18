@@ -91,22 +91,21 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 							.AutoHeight()
 							.Padding(2.0f)
 							[
-									SNew(SHorizontalBox)
-									+ SHorizontalBox::Slot()
-									.FillWidth(1.0f)
-									[
-											SNew(STextBlock)
-											.Text(FText::FromString(FString(TEXT("Project Name"))))
-											.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
-									]
-									+ SHorizontalBox::Slot()
-									.FillWidth(1.0f)
-									[
-											SNew(SEditableTextBox)
-											.Text(FText::FromString(ProjectName))
-											.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
-											.IsEnabled(false)
-									]
+								SNew(SHorizontalBox)
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[
+									SNew(STextBlock)
+									.Text(FText::FromString(FString(TEXT("Project Name"))))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+								]
+								+ SHorizontalBox::Slot()
+								.FillWidth(1.0f)
+								[											SNew(SEditableTextBox)
+									.Text(FText::FromString(ProjectName))
+									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
+									.IsEnabled(false)
+								]
 							]
 							// Assembly Name 
 							+ SVerticalBox::Slot()
