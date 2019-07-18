@@ -3,6 +3,7 @@
 #include "SpatialGDKEditorCloudLauncher.h"
 
 #include "Interfaces/IPluginManager.h"
+#include "SpatialGDKServicesModule.h"
 #include "SpatialGDKEditorSettings.h"
 
 bool SpatialGDKCloudLaunch()
@@ -13,7 +14,7 @@ bool SpatialGDKCloudLaunch()
 
 	FString LauncherCmdArguments = FString::Printf(
 		TEXT("/c cmd.exe /c DeploymentLauncher.exe create %s %s %s \"%s\" \"%s\" %s"),
-		*SpatialGDKSettings->GetProjectName(),
+		*FSpatialGDKServicesModule::GetProjectName(),
 		*SpatialGDKSettings->GetAssemblyName(),
 		*SpatialGDKSettings->GetPrimaryDeploymentName(),
 		*SpatialGDKSettings->GetPrimaryLanchConfigPath(),
