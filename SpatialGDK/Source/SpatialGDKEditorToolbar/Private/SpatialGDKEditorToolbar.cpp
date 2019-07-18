@@ -570,7 +570,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Local deployment must restart."));
 			OnShowTaskStartNotification(TEXT("Local deployment restarting.")); 
 			LocalDeploymentManager->TryStopLocalDeployment();
-			bRedeployRequired = false;
 		}
 		else if (LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
@@ -579,6 +578,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
+		bRedeployRequired = false;
 		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags))
 		{
 			OnShowSuccessNotification(TEXT("Local deployment started!"));
