@@ -262,6 +262,12 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		if (UObject* Subobject = RepSubobject.Value()->GetWeakObjectPtr().Get())
 #endif
 		{
+			if (Subobject == Actor)
+			{
+				// Actor's replicator is also contained in ReplicationMap.
+				continue;
+			}
+
 			// If this object is not in the PackageMap, it has been dynamically created.
 			if (!PackageMap->GetUnrealObjectRefFromObject(Subobject).IsValid())
 			{
