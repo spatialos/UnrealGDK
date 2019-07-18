@@ -51,6 +51,18 @@ void TakeDamage(int Damage);
 
 For more information, see the documentation on [cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs).
 
+### Offloading
+
+Unlike zoning, which allows you to extend the size of the world, sometimes you need to pack more complexity in your game. In traditional dedicated server architectures the server is responsible for running many of the major game systems such as physics simulation, AI decision-making, navigation, processing and validating input from clients, etc. Through its use of SpatialOS the GDK allows you to execute latency-tolerant systems on a separate server-worker instance. We call this offloading - splitting up the world into layers. Each layer is simulated by one server-worker instance (or many if combined with zoning). This means that some of the CPU-intensive game systems which cannot easily take advantage of multithreading with the existing architecture of Unreal Engine are no longer limited by the processing power of a single server. It also means that not all input from clients needs to be processed by the same server.
+
+### Actor groups
+
+To facilitate offloading, we created the concept of actor groups to configure the write access of each server-worker type. In the SpatialOS settings of the GDK you can create actor groups, assign actor classes to a group, and assign each group to a type of server-worker.
+
+See the use of offloading in the Example project for a demonstration of this functionality. In order to start using offloading in your game, you should be familiar with the offloading workflows and the best practices for using offloading.
+
+To recap, offloading allows you to define areas of authority based on the type of each actor, while zoning allows you to define areas of authority based on the position of an actor.
+
 ### Actor handover
 If your game uses zoning, you need to make sure that entities can move seamlessly between areas of authority and the relevant server-worker instances can simulate them. 
 
