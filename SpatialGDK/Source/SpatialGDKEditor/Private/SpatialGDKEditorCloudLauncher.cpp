@@ -3,8 +3,8 @@
 #include "SpatialGDKEditorCloudLauncher.h"
 
 #include "Interfaces/IPluginManager.h"
-#include "SpatialGDKServicesModule.h"
 #include "SpatialGDKEditorSettings.h"
+#include "SpatialGDKServicesModule.h"
 
 bool SpatialGDKCloudLaunch()
 {
