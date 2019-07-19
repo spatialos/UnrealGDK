@@ -52,6 +52,7 @@
 - <h3>Reference</h3>
     - Unreal Editor interface
         - [SpatialOS Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings)
+        - [SpatialSO Runtime settings panel]({{urlRoot}}/content/unreal-editor-interface/runtime-settings)
         - [Toolbars]({{urlRoot}}/content/unreal-editor-interface/toolbars)
     - Actors and entities
         - [Schema]({{urlRoot}}/content/how-to-use-schema)

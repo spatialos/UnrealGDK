@@ -16,7 +16,7 @@ To access the **SpatialOS Editor Settings** panel in the Unreal Editor, use eith
 	1. Select **Play** > **SpatialOS Settings** to display the Project Settings editor. 
 	1. Scroll down to **SpatialOS GDK for Unreal** and select **Editor Settings** to display the SpatialOS Editor Settings panel.
 
-  <img src="{{assetRoot}}assets/screen-grabs/editor-settings.png"/> **!!!    NEEDS A NEW IMAGE    !!!** 
+  <img src="{{assetRoot}}assets/screen-grabs/editor-settings.png"/> TODO NEEDS A NEW IMAGE
     <br>_Image: the SpatialOS Editor Settings panel_
 
 ## Settings

@@ -45,7 +45,7 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
 
 To launch a local deployment:
 
-1. In the Editor, on the [GDK Toolbar]({{urlRoot}}/content/toolbars), open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+1. In the Editor, on the [GDK Toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars), open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
    ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
    _Image: On the GDK toolbar in the Editor, select **Schema (Full Scan)**_
    </br>
