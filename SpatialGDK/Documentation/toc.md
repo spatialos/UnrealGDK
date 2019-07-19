@@ -58,13 +58,14 @@
     - Actors and entities
         - [Schema]({{urlRoot}}/content/how-to-use-schema)
         - [Spatial Type]({{urlRoot}}/content/spatial-type)
+        - [Actor readiness]({{urlRoot}}/content/actor-readiness)
         - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
         - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
     - Authority and interest
         - [Authority]({{urlRoot}}/content/authority)
         - [Actor handover]({{urlRoot}}/content/actor-handover)
         - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
-    - Workers and load balancing
+    - Workers
         - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
     - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
