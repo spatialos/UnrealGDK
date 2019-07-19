@@ -441,9 +441,8 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 			if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*SubobjectNetGUID))
 			{
 				UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
+				NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
 			}
-
-			NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
 		}
 	}
 
