@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BeginPlay is only called once with authority per deployment for startup actors
 - Fixed null pointer dereference crash when trying to initiate a Spatial connection without an existing one.
 - URL options are now properly sent through to the server when doing a ClientTravel.
+- Fixed an issue that stopped the correct error message from being shown when the SchemaDatabase is missing.
 - Fixed an issue with `StartEditor.bat` not being generated correctly when building the server worker for local deployments outside of editor.
 
 ## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
