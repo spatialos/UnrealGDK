@@ -133,4 +133,5 @@ In the following use cases, you use the SpatialOS Editor Settings panel to confi
 
 <br/>
 <br/>------------<br/>
-_2019-07-31 Page added with editorial review._
+_2019-07-31 Page added with limited editorial review._
+<!-- Ticket: https://improbableio.atlassian.net/browse/DOC-1227 -->

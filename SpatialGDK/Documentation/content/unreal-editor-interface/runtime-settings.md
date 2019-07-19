@@ -33,7 +33,7 @@ The following table lists all the settings in the SpatialOS Runtime Settings pan
   <tr>
     <td rowspan="3"><strong>Entity pool</strong></td>
     <td><strong>Initial entity IDs reserved</strong></td>
-    <td>Enity IDs are unique identifiers for the <a href="{{urlRoot}}/content/glossary#entities">entities</a> which represent Actors in your game’s SpatialOS world.<br>Use this setting to specify the number of entity IDs the SpatialOS Runtime reserves when you first your game. <br><br>Default: <code>3,000</code>.<br><br><strong>Note:</strong> Ensure that the number of entity IDs reserved is greater than the number of Actors that you expect the <a href="{{urlRoot}}/content/glossary#workers">server-worker instances</a> to spawn at game deployment. <br><br><strong>Tip:</strong> Use native Unreal networking to establish how many Actors your game spawns.</td>
+    <td>Enity IDs are unique identifiers for the <a href="{{urlRoot}}/content/glossary#entity">entities</a> which represent Actors in your game’s SpatialOS world.<br>Use this setting to specify the number of entity IDs the SpatialOS Runtime reserves when you first your game. <br><br>Default: <code>3,000</code>.<br><br><strong>Note:</strong> Ensure that the number of entity IDs reserved is greater than the number of Actors that you expect the <a href="{{urlRoot}}/content/glossary#workers">server-worker instances</a> to spawn at game deployment. <br><br><strong>Tip:</strong> Use native Unreal networking to establish how many Actors your game spawns.</td>
   </tr>
   <tr>
     <td><strong>Pool refresh threshold</strong></td>
@@ -153,3 +153,8 @@ In the following use cases, you use the SpatialOS Runtime Settings panel to conf
 
 * You know that the number of Actors that you need the SpatialOS Runtime to reserve entity IDs for at the start of your game deployment is greater than the default 3,000: Increase the value of **Initial entity IDs reserved** to the number of Actors the game needs as it starts up.
 * The SpatialOS Runtime is not reserving a large enough batch of new entity IDs quickly enough during your game’s Runtime: Increase the value of the **Pool refresh threshold** so that the SpatialOS Runtime is triggered to reserve new batch of entity IDs sooner.
+
+<br/>
+<br/>------------<br/>
+_2019-07-31 Page added with limited editorial review._
+<!-- Ticket: https://improbableio.atlassian.net/browse/DOC-1227 -->
