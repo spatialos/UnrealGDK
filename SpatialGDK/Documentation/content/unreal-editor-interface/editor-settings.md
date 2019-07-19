@@ -87,6 +87,14 @@ The following table lists all the settings in the SpatialOS Editor Settings pane
   </tr>
 </table>
 
+## Use cases
+
+In the following use cases, you use the SpatialOS Editor Settings panel to configure your project:
+
+* To make your game world larger than the default setting of 2km by 2km, you change the values of dimensions for your game world. Alternatively, write this directly in your game project's [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file).
+* To configure the [rectangular grid](https://docs.improbable.io/reference/latest/shared/worker-configuration/load-balancing#rectangular-grid-rectangle-grid) load balancing strategy when you're testing your multiserver game, you specify a rectangle grid column and a row count. Alternatively, write this directly in your game project’s [launch configuration file]({{urlRoot}}/content/glossary#launch-configuration-file).
+
+
 <br/>
 <br/>------------<br/>
 _2019-07-31 Page added with editorial review._
