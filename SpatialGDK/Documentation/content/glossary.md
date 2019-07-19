@@ -282,7 +282,7 @@ SpatialOS uses the schema to generate code. You can use this generated code in y
 > * [Reference: schema]({{urlRoot}}/content/how-to-use-schema)
 
 ### SpatialOS command-line tool (CLI)
-The SpatialOS command-line tool (also known as the “CLI”) provides a set of commands that you use to interact with a [SpatialOS project](https://docs.improbable.io/reference/latest/shared/reference/project-structure#structure-of-a-spatialos-project). Among other things, you use it to [deploy](#deployment) your game (using [`spatial local launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-local-launch) or [`spatial cloud launch`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-cloud-launch)). You can run the CLI commands `spatial build` and `spatial local launch` from the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#spatialos-gdk-for-unreal-toolbar) in the Unreal Editor.
+The SpatialOS command-line tool (also known as the “CLI”) provides a set of commands that you use to interact with a [SpatialOS project](https://docs.improbable.io/reference/latest/shared/reference/project-structure#structure-of-a-spatialos-project). Among other things, you use it to [deploy](#deployment) [locally]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) or [in the cloud]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment).
 
 > Related:
 > 
