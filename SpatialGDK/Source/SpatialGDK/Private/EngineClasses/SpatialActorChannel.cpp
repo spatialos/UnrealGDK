@@ -125,6 +125,10 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		if (Actor->GetTearOff())
 		{
 			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
+			// Since the entity deletion is delayed, this creates a situation,
+			// when the Actor is torn off, but still replicates. 
+			// Disabling replication makes RPC calls impossible for this Actor.
+			Actor->SetReplicates(false);
 		}
 		else
 		{
