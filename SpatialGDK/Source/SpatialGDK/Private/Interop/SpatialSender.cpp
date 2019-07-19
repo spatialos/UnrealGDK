@@ -782,7 +782,6 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		}
 	}
 
-	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	switch (RPCInfo.Type)
