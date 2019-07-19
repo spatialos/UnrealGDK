@@ -359,7 +359,7 @@ bool FLocalDeploymentManager::TryStartSpatialService()
 
 	bStartingSpatialService = true;
 
-	FString SpatialServiceStartArgs = TEXT("service start");
+	FString SpatialServiceStartArgs = FString::Printf(TEXT("service start --version=%s"), *SpatialServiceVersion);
 	FString ServiceStartResult;
 	int32 ExitCode;
 	ExecuteAndReadOutput(SpatialExe, SpatialServiceStartArgs, FSpatialGDKServicesModule::GetSpatialOSDirectory(), ServiceStartResult, ExitCode);
