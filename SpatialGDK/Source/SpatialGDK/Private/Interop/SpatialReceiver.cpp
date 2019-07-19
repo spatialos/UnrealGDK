@@ -626,7 +626,6 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 #else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::Destroyed);
 #endif
-			CleanupDeletedEntity(EntityId);
 		}
 		return;
 	}
@@ -641,7 +640,6 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 #else
 			ActorChannel->ConditionalCleanUp(false, EChannelCloseReason::TearOff);
 #endif
-			CleanupDeletedEntity(EntityId);
 		}
 		return;
 	}
@@ -760,7 +758,7 @@ void USpatialReceiver::DestroyActor(AActor* Actor, Worker_EntityId EntityId)
 	}
 	NetDriver->StopIgnoringAuthoritativeDestruction();
 
-	CleanupDeletedEntity(EntityId);
+	check(PackageMap->GetObjectFromEntityId(EntityId) == nullptr);
 }
 
 void USpatialReceiver::CleanupDeletedEntity(Worker_EntityId EntityId)
