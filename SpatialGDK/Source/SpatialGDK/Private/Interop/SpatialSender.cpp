@@ -757,6 +757,8 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+
 	if (Channel->bCreatingNewEntity)
 	{
 		if (Function->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetMulticast))
@@ -769,6 +771,9 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 			check(NetDriver->IsServer());
 
 			OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Params.Payload);
+#if !UE_BUILD_SHIPPING
+			NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params.Payload.PayloadData.Num());
+#endif // !UE_BUILD_SHIPPING
 			return true;
 		}
 		else
