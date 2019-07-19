@@ -27,8 +27,8 @@ namespace
 
 	uint32 GeneratePayloadFunctionIndex()
 	{
-		static uint32 freeIndex = 0;
-		return freeIndex++;
+		static uint32 FreeIndex = 0;
+		return FreeIndex++;
 	}
 
 	FPendingRPCParamsPtr CreateMockParameters(UObject* TargetObject, ESchemaComponentType Type)
