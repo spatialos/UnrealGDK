@@ -86,3 +86,7 @@ The following table lists all the settings in the SpatialOS Editor Settings pane
     <td>The location for the `.json` file that stores your project’s generated <a href="{{urlRoot}}/content/glossary#schema">schema</a>. The GDK creates the directory when you generate schema.<br><br>Default: `C:/Projects/MyGame/spatial/schema/unreal/generated/`</td>
   </tr>
 </table>
+
+<br/>
+<br/>------------<br/>
+_2019-07-31 Page added with editorial review._
