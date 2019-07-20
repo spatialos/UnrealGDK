@@ -73,6 +73,13 @@ struct UnrealMetadata : Component
 			return NativeClass.Get();
 		}
 
+#if !UE_BUILD_SHIPPING
+		if (NativeClass.IsStale())
+		{
+			UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("UnrealMetadata native class %s unloaded whilst entity in view."), *ClassPath);
+		}
+#endif
+
 		if (UClass* Class = LoadObject<UClass>(nullptr, *ClassPath))
 		{
 			if (Class->IsChildOf<AActor>())
