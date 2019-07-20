@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - URL options are now properly sent through to the server when doing a ClientTravel.
 - Fixed an issue that stopped the correct error message from being shown when the SchemaDatabase is missing.
 - Fixed an issue with `StartEditor.bat` not being generated correctly when building the server worker for local deployments outside of editor.
+- Replicated startup actors with NetLoadOnClient=false will no longer fail to load occasionally at startup
 
 ## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
 - Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.

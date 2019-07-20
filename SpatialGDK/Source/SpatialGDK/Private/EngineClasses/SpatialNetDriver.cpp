@@ -1893,8 +1893,8 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		Worker_Op* AuthorityChangedOp = nullptr;
 		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_AUTHORITY_CHANGE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &AuthorityChangedOp);
 
-		// If we are going to get both ops, we expect them in the same Worker_OpList
-		check(AddComponentOp != nullptr || (AuthorityChangedOp == nullptr));
+		Worker_Op* ComponentUpdateOp = nullptr;
+		FindFirstOpOfTypeForComponent(InOpLists, WORKER_OP_TYPE_COMPONENT_UPDATE, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID, &ComponentUpdateOp);
 
 		if (AddComponentOp != nullptr)
 		{
@@ -1904,6 +1904,11 @@ bool USpatialNetDriver::FindAndDispatchStartupOps(const TArray<Worker_OpList*>& 
 		if (AuthorityChangedOp != nullptr)
 		{
 			FoundOps.Add(AuthorityChangedOp);
+		}
+
+		if (ComponentUpdateOp != nullptr)
+		{
+			FoundOps.Add(ComponentUpdateOp);
 		}
 	}
 
