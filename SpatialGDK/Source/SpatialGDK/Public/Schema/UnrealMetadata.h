@@ -68,10 +68,17 @@ struct UnrealMetadata : Component
 
 	FORCEINLINE UClass* GetNativeEntityClass()
 	{
-		if (NativeClass != nullptr)
+		if (NativeClass.IsValid())
 		{
-			return NativeClass;
+			return NativeClass.Get();
 		}
+
+#if !UE_BUILD_SHIPPING
+		if (NativeClass.IsStale())
+		{
+			UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("UnrealMetadata native class %s unloaded whilst entity in view."), *ClassPath);
+		}
+#endif
 
 		if (UClass* Class = LoadObject<UClass>(nullptr, *ClassPath))
 		{
@@ -90,7 +97,7 @@ struct UnrealMetadata : Component
 	FString ClassPath;
 	TSchemaOption<bool> bNetStartup;
 
-	UClass* NativeClass = nullptr;
+	TWeakObjectPtr<UClass> NativeClass;
 };
 
 FORCEINLINE SubobjectToOffsetMap CreateOffsetMapFromActor(AActor* Actor, const FClassInfo& Info)
