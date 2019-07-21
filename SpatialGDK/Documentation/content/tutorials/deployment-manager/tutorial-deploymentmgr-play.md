@@ -24,9 +24,9 @@ If you can see your deployments when you select **BROWSE**  but the **QUICK JOIN
 To do this:
 
 1. Open the Console.
-2. Select the deployment you need to tag from the deployment list.
-3. On the right-hand side of the screen, under **Details**, select **+ add tag.**
-4. Enter `status_lobby` as the tag name. 
+1. Select the deployment you need to tag from the deployment list.
+1. On the right-hand side of the screen, under **Details**, select **+ add tag.**
+1. Enter `status_lobby` as the tag name. 
 5. Repeat this for each running deployment. 
 
 When you have done this, re-launch your game client and you should be able to join any of the deployments, provided the number of players has not exceeded the maximum.
@@ -52,8 +52,8 @@ _Image: The Example Project start screen._
 To share your deployment: 
 
 1. Open the console and select your **session_0** deployment. 
-2. Select **Share** on the right-hand side of the screen to see the Share Application screen
-3. In the Share Application screen, accept the terms of service to activate the **Get Share URL** button<br/></br>
+1. Select **Share** on the right-hand side of the screen to see the Share Application screen
+1. In the Share Application screen, accept the terms of service to activate the **Get Share URL** button<br/></br>
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-share.png)<br/>
 _Image: The SpatialOS Console Share Application pop-up window, showing terms of service_<br/></br>
 1. After you have accepted the terms of service, you can send your Share Token URL to other people so they can try out your game. <br/><br/>
