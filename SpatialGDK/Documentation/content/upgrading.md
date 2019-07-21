@@ -10,7 +10,7 @@ To ensure you benefit from the most up-to-date functionality, always develop you
 
 We recommend that you update your version of the GDK and SpatialOS Unreal Engine fork every week.  To do this, follow the steps below.
 
-## Step 1: Ensure you're on the release branches.
+## Step 1: Ensure you're on the release branches
 
 If you followed our [Get started]({{urlRoot}}/content/get-started/introduction) guide, you have these repositories cloned on your computer.<br>
 
@@ -20,22 +20,24 @@ If you followed our [Get started]({{urlRoot}}/content/get-started/introduction) 
 You can find out which branch you have checked out by following the instructions below:<br>
 
 1. In a terminal of your choice, change directory to the root of the repository.<br>
-1. Run `git status`.
+2. Run `git status`.
 This should return `On *-SpatialOSUnrealGDK-release` in your `UnrealEngine` repository and `On release` in your `UnrealGDK` repository.<br>
 If it returns a different branch, run `git checkout <branch-name>` to check out the branch that you want.
 
-## Step 2: Update your Unreal Engine fork and GDK.
+> For more information about the different GDK branches and their maturity, see the [Versioning scheme page]({{urlRoot}}/content/pricing-and-support/versioning-scheme).
+
+## Step 2: Update your Unreal Engine fork and GDK
 
 Before you begin, read the release notes on the releases page of the [`UnrealGDK` GitHub](https://github.com/spatialos/UnrealGDK/releases) so you understand the changes that you're about to download.
 
 To update your Unreal Engine fork and GDK to the latest version, complete the following steps:
 
 1. In a terminal, change directory to the root of `UnrealEngine`.
-1. Run `git pull` to update your Unreal Engine.
-1. In a terminal, change directory to the root of `UnrealGDK`.
-1. Run `git pull` to update your GDK.
-1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and then double-click **`Setup.bat`**. You might be prompted to sign into your SpatialOS account if you have not signed in yet.
-1. In **File Explorer**, navigate to the `<GameRoot>` directory that contains your project's `.uproject` file.<br>
+2. Run `git pull` to update your Unreal Engine.
+3. In a terminal, change directory to the root of `UnrealGDK`.
+4. Run `git pull` to update your GDK.
+5. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and then double-click **`Setup.bat`**. You might be prompted to sign into your SpatialOS account if you have not signed in yet.
+6. In **File Explorer**, navigate to the `<GameRoot>` directory that contains your project's `.uproject` file.<br>
 Right-click on your `.uproject` file and select **Generate Visual Studio project files**.
 1. In **File Explorer**, navigate to `<GameRoot>\Content\Spatial`and delete `SchemaDatabase.uasset`. This is necessary because some GDK upgrades change how we handle schema, and this sometimes invalidates previously generated schema.
 
@@ -45,4 +47,4 @@ Be sure to join the community on our <a href="https://forums.improbable.io" data
 
 
 <br/>------<br/>
-_2019-04-15 Page added with editorial review_
+_2019-04-15 Page edited with limited editorial review_

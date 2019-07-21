@@ -75,7 +75,8 @@
     - Deployment workflows
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
-- <h3>Pricing and support</h3>
+- <h3>Support</h3>
+    - [Versioning scheme]({{urlRoot}}/content/pricing-and-support/versioning-scheme)
     - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)
     - [Support]({{urlRoot}}/content/pricing-and-support/support)
 - <h3>Get involved</h3>
