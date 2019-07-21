@@ -70,7 +70,7 @@ To use the Example project, you must build the GDK for Unreal module dependencie
    ![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
    _Image: The Visual Studio toolbar_ <br/>
    **Note:** Ensure that your Visual Studio Solution Configuration is set to **Development Editor**. <br/><br/><br/>
-   ![img]({{assetRoot}}assets/example-project/example-project-editor.png)<br/>
+   <%(Lightbox image="{{assetRoot}}assets/example-project/example-project-editor.png")%>
    _Image: The Example Project in the Unreal Editor_<br/><br/>
 
 **> Next:** [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 

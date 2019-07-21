@@ -39,7 +39,8 @@ With the Console open, on the Deployment Overview page, select **Projects** to s
 * **session_0**
 * **session_1**
 
-![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-consoledeployments.png)<br/>
+<%(Lightbox image="{{assetRoot}}assets/deployment-manager/deploymentmgr-consoledeployments.png")%><br/>
+
 _Image: The SpatialOS Console Projects page,  with running deployments highlighted._
 
 If you can see these three deployments, then you have successfully launched multiple deployments of the Example project using the Deployment Manager. By default, these deployment sessions run for 60 minutes before restarting automatically. 
