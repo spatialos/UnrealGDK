@@ -44,6 +44,8 @@ There are two ways to launch a cloud deployment:
 
 Click Deploy in the Spatial editor toolbar and fill out the snapshot, assembly, and deployment name.
 
+![Deploy]({{assetRoot}}assets/toolbar/deploy.png)<br/>
+
 #### Using the Spatial CLI 
 
 ```
@@ -58,4 +60,4 @@ Replacing:
 
 
 <br/>------<br/>
-_2019-04-15 Page added with editorial review_
+_2019-07-21 Page updated with limited editorial review_
