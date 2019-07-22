@@ -46,15 +46,23 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
    
 ### Step 2: Launch a local deployment
 
-   
+To launch a local deployment:
+
+1. In the Editor, on the [GDK Toolbar]({{urlRoot}}/content/toolbars), open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+   ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+   _Image: On the GDK toolbar in the Editor, select **Schema (Full Scan)**_
+   </br>
+1. Select [**Snapshot**]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots) to generate a snapshot.<br/>
+   ![Snapshot]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
+   _Image: On the GDK toolbar in the Editor select **Snapshot**_</br>
 1. Select **Start**. This opens a terminal window and starts a local SpatialOS deployment. Your game is ready to play when you see the output `SpatialOS ready. Access the inspector at http://localhost:21000/inspector` in your terminal window.<br/>
    ![Start]({{assetRoot}}assets/screen-grabs/toolbar/start-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Start**_</br>
 
     <%(#Expandable title="Debugging using breakpoints?")%>Due to a [known issue](https://github.com/spatialos/UnrealGDK/issues/940) with the GDK, you need to follow [these steps]({{urlRoot}}/content/troubleshooting#q-my-worker-instances-are-being-disconnected-from-the-spatialos-runtime-unexpectedly-while-debugging-locally) before debugging your game using C++ or Blueprint breakpoints.<%(/Expandable)%>
 
-4. On the Editor toolbar, open the **Play** drop-down menu.
-5. Under **Multiplayer Options**, set the number of players to **2** and ensure that checkboxes next to **Run Dedicated Server** and **Spatial Networking** are checked. Checking **Spatial Networking** makes deployments run using SpatialOS networking as opposed to native Unreal networking. If a checkbox is unchecked, select the checkbox to enable it.<br/>
+1. On the Editor toolbar, open the **Play** drop-down menu.
+1. Under **Multiplayer Options**, set the number of players to **2** and ensure that checkboxes next to **Run Dedicated Server** and **Spatial Networking** are checked. Checking **Spatial Networking** makes deployments run using SpatialOS networking as opposed to native Unreal networking. If a checkbox is unchecked, select the checkbox to enable it.<br/>
    ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>
    _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_</br>
 1. Under **Modes**, select **New Editor Window (PIE)** to run the game. This starts one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor.
