@@ -23,7 +23,7 @@ The following examples show you how to define validity checks to signal that an 
 Whenever you want to modify an Actor, you _must_ check that the server-worker instance has [authority]({{urlRoot}}/content/glossary#authority) over the Actor. The server-worker instance has authority over an Actor if the Actor's `Role` is set to `ROLE_Authority`.
 
 In the GDK, when an Actor is created on the server-worker instance:
-
+ 
 0. The server-worker instance has authority over the Actor for the duration of the Actor's `BeginPlay` call.
 0. After this call, the server-worker instance loses authority while the [SpatialOS Runtime]({{urlRoot}}/content/glossary#spatialos-runtime) creates an [entity]({{urlRoot}}/content/glossary#spatialos-entity) for this Actor.
 0. When SpatialOS has created the entity, it returns authority over the Actor to the server-worker instance. At this point, the Actor's `Role` changes back to `ROLE_Authority` and [`OnAuthorityGained` is triggered]({{urlRoot}}/content/authority#onauthoritygained) on the Actor. This is an event you can override. 
