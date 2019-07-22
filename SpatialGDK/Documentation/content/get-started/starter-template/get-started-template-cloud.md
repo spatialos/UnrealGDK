@@ -76,6 +76,12 @@ A valid upload command looks like this:
 spatial cloud upload myassembly
 ```
 
+<%(#Expandable title="Troubleshooting: No upload progress")%>
+This step can take a long time on slower connections < 5mbp/s as the full upload size is around ~800mb
+If you start your upload and see no progress or extremely slow progress, don't panic.  
+There is a known issue with the uploader where progress does not change during upload of large files, you'll notice a big jump as it completes uploads those files
+<%(/Expandable)%>
+
 #### Step 4: Launch your cloud deployment
 
 The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. 
