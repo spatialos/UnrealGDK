@@ -64,8 +64,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>mkdir "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\DeploymentLauncher\"
-xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir)." "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\DeploymentLauncher\" /q /y</PostBuildEvent>
+    <PostBuildEvent>mkdir -p "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\DeploymentLauncher\"
+cp -a  "$(SolutionDir)\$(ProjectName)\$(OutDir)." "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\DeploymentLauncher\"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.

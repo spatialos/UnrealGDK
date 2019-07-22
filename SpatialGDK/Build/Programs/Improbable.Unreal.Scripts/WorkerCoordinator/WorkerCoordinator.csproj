@@ -66,7 +66,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>mkdir "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\WorkerCoordinator\"
-xcopy "$(SolutionDir)\$(ProjectName)\$(OutDir)." "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\WorkerCoordinator\" /q /y</PostBuildEvent>
+cp -a "$(SolutionDir)\$(ProjectName)\$(OutDir)." "$(SolutionDir)..\..\..\Binaries\ThirdParty\Improbable\Programs\WorkerCoordinator\"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
