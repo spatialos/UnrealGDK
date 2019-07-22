@@ -10,16 +10,32 @@ To get access to the SpatialOS fork, you need to link your GitHub account to a v
 
 <%(Callout type="warn" message="This step is required to use the GDK: without joining the EpicGames organisation on Github, the [Unreal Engine Fork link](https://github.com/improbableio/UnrealEngine) will return a 404 and you will not be able to download it.")%>
 
-### Step 2: Get the Unreal Engine Fork source code
+### Step 2: Clone the Unreal Engine Fork repository
 
-Open a terminal and run either of these commands to clone the [Unreal Engine Fork](https://github.com/improbableio/UnrealEngine) repository.
+<%(#Expandable title="Using the command line")%>
 
-> **TIP:** Clone the Unreal Engine Fork into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealEngine`. 
+1. Open a command line window and navigate to a suitable directory to clone the repository to.
+1. Run either of these commands to clone the example project repository:
 
-|     |     |
-| --- | --- |
+|  |  |
+| ----- | ------------------------------------------------------------ |
 | HTTPS | `git clone https://github.com/improbableio/UnrealEngine.git` |
 | SSH |`git clone git@github.com:improbableio/UnrealEngine.git`|
+
+<%(/Expandable)%>
+
+<%(#Expandable title="Using Github Desktop")%>
+
+1. In GitHub Desktop, select **File** >  **Clone  Repository**.<br/>
+1. In the Clone a repository window, select **URL.**<br/>
+1. In the Repository URL field, enter this URL: `https://github.com/improbableio/UnrealEngine.git`<br/>
+1. In the **Local Path** field, enter a suitable directory path for this repository, or select **Choose…** to select a directory using File Explorer. <br/>
+1. Select **Clone**. <br/>
+![img]({{assetRoot}}assets/screen-grabs/github-desktop.png)<br/>
+_Image: The Github Desktop Clone a repository window_<br/>
+<%(/Expandable)%>
+
+> **TIP:** Clone the Unreal Engine Fork into your root directory to avoid file path length errors. For example: `C:\GitHub\UnrealEngine`. 
 
 ### Step 3: Add a new SSH key to your GitHub account
 
@@ -32,9 +48,9 @@ To do this, follow the GitHub tutorial on [Adding a new SSH key to your GitHub a
 To build the Unreal Engine Fork: 
 
 1. In File Explorer, navigate to the directory you cloned the Unreal Engine Fork repository into. 
-1. Double-click **Setup.bat**. This automatically opens a command line window and installs prerequisites for building Unreal Engine 4. The command line window closes when the process has finished.
-1. In the same directory, double-click **GenerateProjectFiles.bat**. This file automatically sets up the project files you require to build Unreal Engine 4.<br/>
-1. Double-click **InstallGDK.bat**
+2. Double-click **Setup.bat**. This automatically opens a command line window and installs prerequisites for building Unreal Engine 4. The command line window closes when the process has finished.
+3. In the same directory, double-click **GenerateProjectFiles.bat**. This file automatically sets up the project files you require to build Unreal Engine 4.<br/>
+4. Double-click **InstallGDK.bat**
 This  automatically opens a command line window and performs the following:
 	* Sets LINUX_MULTIARCH_ROOT as an environment variable
 	* Clones the UnrealGDK into your Engine's `Plugin` directory
