@@ -1,7 +1,7 @@
 <%(TOC)%>
 # The Example Project 
 
-## 2.  Launch a local deployment with multiple clients
+## 2.  Launch a local deployment
 
 When you want to try out your game, you need to run a deployment. 
 
@@ -19,7 +19,7 @@ Before you launch a deployment (local or cloud) you must generate [schema]({{url
    ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
    _Image: On the GDK toolbar in the Editor, select **Schema (Full Scan)**_
    </br>
-1. Select **Snapshot** to generate a snapshot.<br/>
+2. Select **Snapshot** to generate a snapshot.<br/>
    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
    _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
