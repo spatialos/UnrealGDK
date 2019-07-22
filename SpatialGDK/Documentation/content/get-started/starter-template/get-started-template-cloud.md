@@ -118,6 +118,7 @@ A valid launch command looks like this:
 spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
 ```
 
+When your deployment has launched, SpatialOS automatically opens the Console in your browser.
 <%(/Expandable)%>
 
 **> Next:** [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 

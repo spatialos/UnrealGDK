@@ -81,3 +81,5 @@ _Image: On the GDK toolbar in the Editor select **Stop**_
 
 <br/>------------<br/>
 _2019-07-22 Page updated with limited editorial review._<br/>
+
+[//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1241)
