@@ -13,8 +13,8 @@ These repositories all follow the same versioning scheme, as described below:
 `MAJOR.MINOR.PATCH(-preview)`
 
 * `MAJOR`: indicates the major version, currently 0 as the GDK is in Alpha. We do not provide any long term support and stability guarantees on any versions, and do not backport fixes. The major version will turn to 1 when we enter Beta. 
-* `MINOR`: indicates the minor version. Released about once a month and containing significant features. Not backward compatible (unlike the [SemVer](https://semver.org/spec/v2.0.0.html) versioning scheme, where minor versions are backward compatible). 
-* `PATCH`: indicates updates containing significant patch releases. Not backwards compatible (similarly, this is unlike [SemVer](https://semver.org/spec/v2.0.0.html))
+* `MINOR`: indicates the minor version. Released about once a month and containing significant features. Not backward compatible while the GDK is in Alpha.
+* `PATCH`: indicates updates containing significant patch releases. Not backwards compatible while the GDK is in Alpha.
 * `(-preview)`: if present, indicates versions which are preview-only. These versions are less stable than others and do not contain full documentation. They are opt-in and they live on the `preview` branch, as opposed to `release`.
 
 For example: 
