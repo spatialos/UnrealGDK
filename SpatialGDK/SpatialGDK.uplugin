@@ -25,25 +25,26 @@
       "Name": "SpatialGDKEditor",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64" ]
+      "WhitelistPlatforms": [ "Win64", "Mac" ]
     },
     {
       "Name": "SpatialGDKEditorToolbar",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64" ]
+      "WhitelistPlatforms": [ "Win64", "Mac" ]
     },
     {
       "Name": "SpatialGDKEditorCommandlet",
       "Type": "Editor",
       "LoadingPhase": "Default",
-      "WhitelistPlatforms": [ "Win64" ]
+      "WhitelistPlatforms": [ "Win64", "Mac" ]
     },
     {
       "Name": "SpatialGDKServices",
       "Type": "Editor",
+
       "LoadingPhase": "PreDefault",
-      "WhitelistPlatforms": [ "Win64" ]
+      "WhitelistPlatforms": [ "Win64", "Mac" ]
     }
   ],
   "Plugins": [
