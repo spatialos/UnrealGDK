@@ -319,13 +319,12 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.PrintNewLine();
 
 			Worker_ComponentId ComponentId = 0;
-			if (ExistingSchemaData != nullptr &&
-				ExistingSchemaData->DynamicSubobjectComponents.Num() >= static_cast<int>(i) &&
-				ExistingSchemaData->DynamicSubobjectComponents[i - 1].SchemaComponents[PropertyGroupToSchemaComponentType(Group)] != 0)
+			if (ExistingSchemaData != nullptr)
 			{
-				ComponentId = ExistingSchemaData->DynamicSubobjectComponents[i - 1].SchemaComponents[PropertyGroupToSchemaComponentType(Group)];
+				ComponentId = ExistingSchemaData->GetDynamicSubobjectComponentId(i - 1, PropertyGroupToSchemaComponentType(Group));
 			}
-			else
+
+			if (ComponentId == 0)
 			{
 				ComponentId = IdGenerator.Next();
 			}
@@ -345,13 +344,12 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 			Writer.PrintNewLine();
 
 			Worker_ComponentId ComponentId = 0;
-			if (ExistingSchemaData != nullptr &&
-				ExistingSchemaData->DynamicSubobjectComponents.Num() >= static_cast<int>(i) &&
-				ExistingSchemaData->DynamicSubobjectComponents[i - 1].SchemaComponents[SCHEMA_Handover] != 0)
+			if (ExistingSchemaData != nullptr)
 			{
-				ComponentId = ExistingSchemaData->DynamicSubobjectComponents[i - 1].SchemaComponents[SCHEMA_Handover];
+				ComponentId = ExistingSchemaData->GetDynamicSubobjectComponentId(i - 1, SCHEMA_Handover);
 			}
-			else
+
+			if (ComponentId == 0)
 			{
 				ComponentId = IdGenerator.Next();
 			}
