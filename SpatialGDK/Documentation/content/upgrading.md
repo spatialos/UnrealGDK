@@ -20,7 +20,7 @@ If you followed our [Get started]({{urlRoot}}/content/get-started/introduction) 
 You can find out which branch you have checked out by following the instructions below:<br>
 
 1. In a terminal of your choice, change directory to the root of the repository.<br>
-2. Run `git status`.
+1. Run `git status`.
 This should return `On *-SpatialOSUnrealGDK-release` in your `UnrealEngine` repository and `On release` in your `UnrealGDK` repository.<br>
 If it returns a different branch, run `git checkout <branch-name>` to check out the branch that you want.
 
@@ -33,11 +33,11 @@ Before you begin, read the release notes on the releases page of the [`UnrealGDK
 To update your Unreal Engine fork and GDK to the latest version, complete the following steps:
 
 1. In a terminal, change directory to the root of `UnrealEngine`.
-2. Run `git pull` to update your Unreal Engine.
-3. In a terminal, change directory to the root of `UnrealGDK`.
-4. Run `git pull` to update your GDK.
-5. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and then double-click **`Setup.bat`**. You might be prompted to sign into your SpatialOS account if you have not signed in yet.
-6. In **File Explorer**, navigate to the `<GameRoot>` directory that contains your project's `.uproject` file.<br>
+1. Run `git pull` to update your Unreal Engine.
+1. In a terminal, change directory to the root of `UnrealGDK`.
+1. Run `git pull` to update your GDK.
+1. Open **File Explorer**, navigate to the root directory of the Unreal GDK repository, and then double-click **`Setup.bat`**. You might be prompted to sign into your SpatialOS account if you have not signed in yet.
+1. In **File Explorer**, navigate to the `<GameRoot>` directory that contains your project's `.uproject` file.<br>
 Right-click on your `.uproject` file and select **Generate Visual Studio project files**.
 1. In **File Explorer**, navigate to `<GameRoot>\Content\Spatial`and delete `SchemaDatabase.uasset`. This is necessary because some GDK upgrades change how we handle schema, and this sometimes invalidates previously generated schema.
 
