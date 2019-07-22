@@ -28,7 +28,7 @@ When setting up the GDK for your project, you need to decide which branch of eac
 
 **The most stable version is always the `release` branch, which is set as the default branch for each repository.** We test this branch end-to-end with the SpatialOS SDKs, Tools, and Metagame Services, and it is fully documented. We update it a few times a year as part SpatialOS for Unreal milestones such as 2019.1.
 
-An alternative option is to use the `preview` branch. This branch contains the latest `*-preview` version, which we test using Improbable partner projects, but not as extensively as versions in `release`. Preview releases are for teams already developing on the GDK and working closely with Improbable. 
+An alternative option is to use the `preview` branch. This branch contains the latest `*-preview` version, which we test using selected customer projects, but not as extensively as versions in `release`. Preview releases are for teams already developing on the GDK and working closely with Improbable. 
 
 In summary:
 
