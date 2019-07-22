@@ -10,7 +10,7 @@ To ensure you benefit from the most up-to-date functionality, always develop you
 
 We recommend that you update your version of the GDK and SpatialOS Unreal Engine fork every week.  To do this, follow the steps below.
 
-## Step 1: Ensure you're on the release branches.
+## Step 1: Ensure you're on the release branches
 
 If you followed our [Get started]({{urlRoot}}/content/get-started/introduction) guide, you have these repositories cloned on your computer.<br>
 
@@ -20,11 +20,13 @@ If you followed our [Get started]({{urlRoot}}/content/get-started/introduction) 
 You can find out which branch you have checked out by following the instructions below:<br>
 
 1. In a terminal of your choice, change directory to the root of the repository.<br>
-1. Run `git status`.
-This should return `On *-SpatialOSUnrealGDK-release` in your `UnrealEngine` repository and `On release` in your `UnrealGDK` repository.<br>
+2. Run `git status`.
+This should return `On branch *-SpatialOSUnrealGDK-release` in your `UnrealEngine` repository and `On branch release` in your `UnrealGDK` repository.<br>
 If it returns a different branch, run `git checkout <branch-name>` to check out the branch that you want.
 
-## Step 2: Update your Unreal Engine fork and GDK.
+> For more information about the different GDK branches and their maturity, see the [Versioning scheme page]({{urlRoot}}/content/pricing-and-support/versioning-scheme).
+
+## Step 2: Update your Unreal Engine fork and GDK
 
 Before you begin, read the release notes on the releases page of the [`UnrealGDK` GitHub](https://github.com/spatialos/UnrealGDK/releases) so you understand the changes that you're about to download.
 
@@ -45,4 +47,4 @@ Be sure to join the community on our <a href="https://forums.improbable.io" data
 
 
 <br/>------<br/>
-_2019-04-15 Page added with editorial review_
+_2019-04-15 Page edited with limited editorial review_
