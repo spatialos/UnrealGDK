@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - If you are using Unreal Engine 4.22, the AutomationTool and UnrealBuildTool now require [.NET 4.6.2](https://dotnet.microsoft.com/download/dotnet-framework/net462).
 
 ### New Known Issues:
+- Workers will sometimes not gain authority when reconnecting to an existing deployment, resulting in a failure to spawn or simulate. When using the editor if you Play - Stop - Play in quick succession you can sometimes fail to launch correctly.
 
 ### Features:
 - Unreal Engine 4.22 is now supported. You can find the 4.22 verson of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.22-SpatialOSUnrealGDK-release).
