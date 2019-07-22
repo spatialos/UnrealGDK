@@ -11,20 +11,6 @@ Before starting this tutorial you _**must**_ follow:
 - [Get started 1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies)
 - [Get started 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 
-If you used the **InstallGDK.bat** script to build your Unreal Engine Fork then, you can skip  **1: Set up** and follow the steps below
-
-#### 1: Set up post InstallGDK.bat
-To build the GDK Example Project, you need to:
-
-1. In the directory `UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click **GDKShooter.sln** to open it with Visual Studio.
-1. In the Solution Explorer window, right-click on **GDKShooter** and select **Build**.
-1. When Visual Studio has finished building your project, right-click on **GDKShooter** and select **Set as StartUp Project**.
-1. In the same directory open Example project, by double-clicking on **GDKShooter.uproject**.
-1. Go to [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment). 
-
-**If you manually built your Engine Fork**, or if you want to download and set up the Example Project manually.  
-Follow [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)  
-
 </br>
 **> Next:** [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
 </br>
@@ -32,7 +18,6 @@ Follow [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleprojec
 ![img]({{assetRoot}}assets/example-project/example-project-headline.png)
 
 _Image: Gameplay screenshot of the Example project_<br/>
-
 
 <br/>------<br/>
 _2019-05-21 Page added with editorial review_
