@@ -37,6 +37,9 @@ public:
 	bool SPATIALGDKSERVICES_API IsServiceStarting() const;
 	bool SPATIALGDKSERVICES_API IsServiceStopping() const;
 
+	bool SPATIALGDKSERVICES_API IsRedeployRequired() const;
+	bool SPATIALGDKSERVICES_API SetRedeployRequired();
+
 	// TODO: Refactor these into Utils
 	FString GetProjectName();
 	void WorkerBuildConfigAsync();
@@ -72,4 +75,6 @@ private:
 
 	FString LocalRunningDeploymentID;
 	FString ProjectName;
+
+	bool bRedeployRequired = false;
 };

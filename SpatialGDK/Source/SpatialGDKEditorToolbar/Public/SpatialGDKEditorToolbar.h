@@ -123,5 +123,4 @@ private:
 	TSharedPtr<SSpatialGDKSimulatedPlayerDeployment> SimulatedPlayerDeploymentConfigPtr;
 	
 	FLocalDeploymentManager* LocalDeploymentManager;
-	bool bRedeployRequired = false;
 };

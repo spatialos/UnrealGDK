@@ -201,6 +201,8 @@ void FLocalDeploymentManager::RefreshServiceStatus()
 
 bool FLocalDeploymentManager::TryStartLocalDeployment(FString LaunchConfig, FString LaunchArgs)
 {
+	bRedeployRequired = false;
+
 	if (bStoppingDeployment)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Local deployment is in the process of stopping. New deployment will start when previous one has stopped."));
@@ -573,4 +575,14 @@ bool FLocalDeploymentManager::IsServiceStarting() const
 bool FLocalDeploymentManager::IsServiceStopping() const
 {
 	return bStoppingSpatialService;
+}
+
+bool FLocalDeploymentManager::IsRedeployRequired() const
+{
+	return bRedeployRequired;
+}
+
+bool FLocalDeploymentManager::SetRedeployRequired()
+{
+	bRedeployRequired = true;
 }

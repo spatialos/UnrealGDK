@@ -563,10 +563,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			FPlatformProcess::Sleep(0.1f);
 		}
 
-		// If schema has been regenerated then we need to restart spatial.
-		if (bRedeployRequired && LocalDeploymentManager->IsLocalDeploymentRunning())
+		// If schema or worker configurations have been changed then we must restart the deployment.
+		if (LocalDeploymentManager->IsRedeployRequired() && LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
-			// If schema or worker configurations have been changed then we must restart the deployment.
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Local deployment must restart."));
 			OnShowTaskStartNotification(TEXT("Local deployment restarting.")); 
 			LocalDeploymentManager->TryStopLocalDeployment();
@@ -578,7 +577,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		bRedeployRequired = false;
 		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags))
 		{
 			OnShowSuccessNotification(TEXT("Local deployment started!"));
@@ -829,7 +827,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
 					Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *Worker.WorkerTypeName.ToString());
 					if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
 					{
-						bRedeployRequired = true;
+						LocalDeploymentManager->SetRedeployRequired();
 						UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Wrote default worker json to %s"), *JsonPath)
 					}
 					else
@@ -856,7 +854,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
-	bRedeployRequired = true;
+	LocalDeploymentManager->SetRedeployRequired();
 
 	if (SpatialGDKEditorInstance->FullScanRequired())
 	{
