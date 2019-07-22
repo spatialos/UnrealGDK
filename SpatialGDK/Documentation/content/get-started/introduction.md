@@ -24,9 +24,11 @@ Learn more about the the GDK's functionality by implement shooting across the bo
 </br>
 * **The Porting guide**: <br/>
 Port your existing UE project to SpatialOS.
-
 <br/>
 
+<br/>
+### **> Next: [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)**
+<br/>
 
 ## Your feedback and ideas
 
@@ -41,10 +43,6 @@ Visit the **feedback** section in our [forums](https://forums.improbable.io/) an
 
 **GitHub issues**</br>
 Create an issue in [this repository](https://github.com/spatialos/UnrealGDK/issues).
-
-<br/>
-<br/>
-**> Next: [1 - Get the dependencies]({{urlRoot}}/content/get-started/dependencies.md)**
 
 <br/>
 
