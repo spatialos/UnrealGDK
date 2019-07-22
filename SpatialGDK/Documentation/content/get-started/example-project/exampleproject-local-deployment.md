@@ -48,13 +48,6 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
 
 To launch a local deployment:
 
-1. In the Editor, on the [GDK Toolbar]({{urlRoot}}/content/toolbars), open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
-   ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
-   _Image: On the GDK toolbar in the Editor, select **Schema (Full Scan)**_
-   </br>
-1. Select [**Snapshot**]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots) to generate a snapshot.<br/>
-   ![Snapshot]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
-   _Image: On the GDK toolbar in the Editor select **Snapshot**_</br>
 1. On the Editor toolbar, open the **Play** drop-down menu.
 1. Under **Multiplayer Options**, set the number of players to **2** and ensure that checkboxes next to **Run Dedicated Server** and **Spatial Networking** are checked. Checking **Spatial Networking** makes deployments run using SpatialOS networking as opposed to native Unreal networking. If a checkbox is unchecked, select the checkbox to enable it.<br/>
    ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>
@@ -62,7 +55,7 @@ To launch a local deployment:
 1. Under **Modes**, select **New Editor Window (PIE)** to run the game. This starts one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor.
    The server-worker instance is acting as an Unreal server and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
    You can switch between the two Editor windows to see and interact with each game client. 
-1. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to run the game.
+1. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to start a local deployment and run the game.
 1. When you’re done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>
    ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Stop**_
@@ -72,4 +65,4 @@ To launch a local deployment:
 
 <br/>
 <br/>------------<br/>
-_2019-07-02 Page updated with limited editorial review: added debug workaround_
+_2019-07-22 Page updated with limited editorial review: removed need to start deployment separately_
