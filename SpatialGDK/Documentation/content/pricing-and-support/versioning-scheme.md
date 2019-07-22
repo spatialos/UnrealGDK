@@ -83,7 +83,7 @@ This is the only version that the Example Project supports. With version 0.6.0, 
 
 To enable you to transition, the GDK has legacy support during one release cycle for the Unreal Engine version previously supported. For example, with version 0.6.0, the legacy support is for Unreal Engine 4.20, which is available through the ``4.20-SpatialGDK-release`` branch of the SpatialOS Engine Fork. The Example Project is no longer supported with this version.
 
-We will usually start working on supporting the most recent Unreal Engine minor version after a few patch releases that make that minor version more stable. For instance, we will start working on Unreal Engine 4.23 support for our next GDK release once 4.23.2 or 4.23.3 is available. To see when a new version will be supported, check out the [Development Roadmap](https://github.com/spatialos/unrealgdk/projects/1).
+We endeavour to support the latest stable and recommended version of Unreal Engine less than 3 months after it's released. To see when a new version will be supported, check out the [Development Roadmap](https://github.com/spatialos/unrealgdk/projects/1).
 
 <br/>------<br/>
 _2019-07-21 Page added with limited editorial review_
