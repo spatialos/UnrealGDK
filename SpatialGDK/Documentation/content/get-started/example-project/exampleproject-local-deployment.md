@@ -46,16 +46,16 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
    
 ### Step 2: Launch a local deployment and play
 
-To launch a local deployment:
+This section shows you how to  start one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor. The server-worker instance acts as an Unreal server and the two client-worker instances acts as two Unreal game clients (as would be used by two game players). 
 
 1. On the Editor toolbar, open the **Play** drop-down menu.
-1. Under **Multiplayer Options**, set the number of players to **2** and ensure that checkboxes next to **Run Dedicated Server** and **Spatial Networking** are checked. Checking **Spatial Networking** makes deployments run using SpatialOS networking as opposed to native Unreal networking. If a checkbox is unchecked, select the checkbox to enable it.<br/></br>
+2. Under **Multiplayer Options**, set the number of players to **2** and ensure that checkboxes next to **Run Dedicated Server** and **Spatial Networking** are checked. Checking **Spatial Networking** makes deployments run using SpatialOS networking as opposed to native Unreal networking. If a checkbox is unchecked, select the checkbox to enable it.<br/></br>
    ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>
    _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_</br></br>
-1. Under **Modes**, select **New Editor Window (PIE)** to run the game. This starts one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor.
+3. Under **Modes**, select **New Editor Window (PIE)** to run the game. This starts one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor.
    The server-worker instance is acting as an Unreal server and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
    You can switch between the two Editor windows to see and interact with each game client. 
-1. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to start a local deployment and play the game.
+4. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to start a local deployment and play the game.
 
 ![]({{assetRoot}}assets/example-project/first-client-launch.png)<br/>_Image: New editor window with the game playing._<br/>
 
@@ -69,7 +69,7 @@ When you’re done, select Unreal Engine's native **Stop** button to stop the cl
 
 ![]({{assetRoot}}assets/toolbar/stop-button-native.png)<br/>_Image: On the native Unreal Engine toolbar, select Stop_<br/>
 
-This stops the running clients but keeps your deployment running. As you iterate on your game, the GDK can (in most cases) automatically reload your client and server workers, so you can iterate on your game without having to restart your deployment. For more information, see the [Local deployment workflow reference page]({{urlRoot}}/content/local-deployment-workflow).
+This stops the running clients but keeps your deployment running. As you iterate on your game, the GDK can (in most cases) automatically reload your client and server workers, so you can iterate on your game without having to restart your deployment. For more information and a reference diagram, see the [Local deployment workflow page]({{urlRoot}}/content/local-deployment-workflow).
 
 To fully stop your SpatialOS deployment, select **Stop** in the GDK toolbar to stop your SpatialOS deployment.<br/></br>
    ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
