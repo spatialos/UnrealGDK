@@ -54,6 +54,9 @@ Build a client-worker assembly by running the following command:
 Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Win64 Development <YourProject>.uproject
 ```
 
+You can replace `Development` with the [Unreal build configuration](https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html) of your choice (i.e `Editor`, `Test`, `Shipping`). For all options provided by the `BuildWorker.bat`, see the [Helper scripts page]({{urlRoot}}/content/helper-scripts).
+
+
 <%(/Expandable)%>
 
 **Troubleshooting**
