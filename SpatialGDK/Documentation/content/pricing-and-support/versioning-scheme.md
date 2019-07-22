@@ -8,7 +8,7 @@ The SpatialOS GDK for Unreal consists of:
 *   [The SpatialOS Unreal Engine Fork](https://github.com/improbableio/UnrealEngine)
 *   [The Example Project](https://github.com/spatialos/UnrealGDKExampleProject)
 
-Each of these follows the same versioning scheme:
+These repositories all follow the same versioning scheme, as described below: 
 
 `MAJOR.MINOR.PATCH(-preview)`
 
