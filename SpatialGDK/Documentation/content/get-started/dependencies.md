@@ -30,7 +30,7 @@ To build the GDK for Unreal you need the following software installed on your ma
 
 - **Windows 10,** with Command Prompt or PowerShell.
 
-  - The GDK for Unreal is only supported on Windows 10. 
+  - **The GDK for Unreal is currently only supported on Windows 10.** 
 - <a href="https://gitforwindows.org" data-track-link="Clicked GIT for Windows|product=Docs|platform=Win|label=Win" target="_blank">**Git for Windows**</a>
 
   - You need Git for windows to clone the GDK and Unreal Engine GitHub repositories.
@@ -59,4 +59,4 @@ To build the GDK for Unreal you need the following software installed on your ma
 <br/>
 
 ------</br>
-_2019-05-23 Page updated with limited editorial review_
+_2019-07-22 Page updated with limited editorial review_
