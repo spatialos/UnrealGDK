@@ -21,7 +21,7 @@ You can find out which branch you have checked out by following the instructions
 
 1. In a terminal of your choice, change directory to the root of the repository.<br>
 2. Run `git status`.
-This should return `On *-SpatialOSUnrealGDK-release` in your `UnrealEngine` repository and `On release` in your `UnrealGDK` repository.<br>
+This should return `On branch *-SpatialOSUnrealGDK-release` in your `UnrealEngine` repository and `On branch release` in your `UnrealGDK` repository.<br>
 If it returns a different branch, run `git checkout <branch-name>` to check out the branch that you want.
 
 > For more information about the different GDK branches and their maturity, see the [Versioning scheme page]({{urlRoot}}/content/pricing-and-support/versioning-scheme).
