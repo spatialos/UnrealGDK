@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [`0.6.0`] - 2019-07-09
 
+### New Known Issues:
+- Workers will sometimes not gain authority when reconnecting to an existing deployment, resulting in a failure to spawn or simulate. When using the editor if you Play - Stop - Play in quick succession you can sometimes fail to launch correctly.
+
 ### Features:
 - Automatic local deployment starting. Local deployments are now started automatically for you when pressing the 'Play' button. Local deployment start time has been reduced to around 5.5s~. If your schema has changed during a deployment, the next time you press play the local deployment will be automatically restarted. There is no longer a `spatial` cmd window for a local deployment, the Unreal output window will still contain logs. Runtime logs can be found at `spatial\logs\localdeployment\%timestamp%\runtime.log`. A new option `Show spatial service button` in the SpatialOS Settings menu allows you to turn the 'spatial service' on and off via the SpatialGDK Toolbar for debugging purposes. Each time you start the editor in any project the 'spatial service' will be restarted, this is to ensure the service is always running in the correct SpatialOS project. You can disable this auto start feature via the new SpatialOS setting "Auto-start local deployment".
 - Added external schema code-generation tool for [non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types). If you create non-Unreal server-worker types using the [SpatialOS Worker SDK](https://docs.improbable.io/reference/13.8/shared/sdks-and-data-overview) outside of the GDK and your Unreal Engine, you manually create [schema]({{urlRoot}/content/glossary#schema). Use the new [helper-script]({{urlRoot}}/content/helper-scripts) to generate Unreal code from manually-created schema; it enables your Unreal game code to interoperate with non-Unreal server-worker types.
@@ -34,7 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - If you are using Unreal Engine 4.22, the AutomationTool and UnrealBuildTool now require [.NET 4.6.2](https://dotnet.microsoft.com/download/dotnet-framework/net462).
 
 ### New Known Issues:
-- Workers will sometimes not gain authority when reconnecting to an existing deployment, resulting in a failure to spawn or simulate. When using the editor if you Play - Stop - Play in quick succession you can sometimes fail to launch correctly.
 
 ### Features:
 - Unreal Engine 4.22 is now supported. You can find the 4.22 verson of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.22-SpatialOSUnrealGDK-release).
