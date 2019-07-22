@@ -42,7 +42,7 @@ There are two ways to launch a cloud deployment:
 
 #### Using the Editor toolbar 
 
-Click Deploy in the Spatial editor toolbar and fill out the snapshot, assembly, and deployment name.
+Click Deploy in the SpatialOS editor toolbar and enter the snapshot, assembly, and deployment name.
 
 ![Deploy]({{assetRoot}}assets/toolbar/deploy.png)<br/>
 
