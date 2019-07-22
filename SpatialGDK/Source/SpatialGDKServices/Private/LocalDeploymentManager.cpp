@@ -582,7 +582,24 @@ bool FLocalDeploymentManager::IsRedeployRequired() const
 	return bRedeployRequired;
 }
 
-bool FLocalDeploymentManager::SetRedeployRequired()
+void FLocalDeploymentManager::SetRedeployRequired()
 {
 	bRedeployRequired = true;
+}
+
+bool FLocalDeploymentManager::ShouldWaitForDeployment() const
+{
+	if (bAutoDeploy)
+	{
+		return !IsLocalDeploymentRunning() || IsDeploymentStopping() || IsDeploymentStarting();
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void FLocalDeploymentManager::SetAutoDeploy(bool bInAutoDeploy)
+{
+	bAutoDeploy = bInAutoDeploy;
 }

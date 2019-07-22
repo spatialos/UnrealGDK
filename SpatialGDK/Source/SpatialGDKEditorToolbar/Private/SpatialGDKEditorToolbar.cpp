@@ -72,6 +72,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+	LocalDeploymentManager->SetAutoDeploy(GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment);
 
 	// Bind the play button delegate to starting a local spatial deployment.
 	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment)
@@ -525,7 +526,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	// Don't try and start a local deployment if spatial networking is disabled.
 	if (!GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Attempted to start a local deployment but spatial networking is disabled."));
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but spatial networking is disabled."));
 		return;
 	}
 
@@ -694,6 +695,9 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		}
 		else if (PropertyName.ToString() == TEXT("bAutoStartLocalDeployment"))
 		{
+			// TODO: UNR-1776 Workaround for SpatialNetDriver requiring editor settings.
+			LocalDeploymentManager->SetAutoDeploy(Settings->bAutoStartLocalDeployment);
+
 			if (Settings->bAutoStartLocalDeployment)
 			{
 				// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
