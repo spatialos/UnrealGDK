@@ -44,25 +44,41 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
 
 <%(/Expandable)%>
    
-### Step 2: Launch a local deployment
+### Step 2: Launch a local deployment and play
 
 To launch a local deployment:
 
 1. On the Editor toolbar, open the **Play** drop-down menu.
-1. Under **Multiplayer Options**, set the number of players to **2** and ensure that checkboxes next to **Run Dedicated Server** and **Spatial Networking** are checked. Checking **Spatial Networking** makes deployments run using SpatialOS networking as opposed to native Unreal networking. If a checkbox is unchecked, select the checkbox to enable it.<br/>
+1. Under **Multiplayer Options**, set the number of players to **2** and ensure that checkboxes next to **Run Dedicated Server** and **Spatial Networking** are checked. Checking **Spatial Networking** makes deployments run using SpatialOS networking as opposed to native Unreal networking. If a checkbox is unchecked, select the checkbox to enable it.<br/></br>
    ![Multiplayer Options]({{assetRoot}}assets/set-up-template/template-multiplayer-options.png))<br/>
-   _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_</br>
+   _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** and **New Editor Window (PIE)** highlighted_</br></br>
 1. Under **Modes**, select **New Editor Window (PIE)** to run the game. This starts one SpatialOS server-worker instance and two SpatialOS client-worker instances locally, in your Unreal Editor.
    The server-worker instance is acting as an Unreal server and the two client-worker instances are acting as two Unreal game clients (as would be used by two game players).
    You can switch between the two Editor windows to see and interact with each game client. 
-1. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to start a local deployment and run the game.
-1. When you’re done, select **Stop** in the GDK toolbar to stop your local SpatialOS deployment.<br/>
+1. If the game does not run automatically after selecting **New Editor Window (PIE)**, on the Editor toolbar, select **Play** to start a local deployment and play the game.
+
+![]({{assetRoot}}assets/example-project/first-client-launch.png)<br/>_Image: New editor window with the game playing._<br/>
+
+### Step 3: Inspecting and stopping play
+
+When your game is running, select **Inspector** to open [the Inspector](https://docs.improbable.io/reference/latest/shared/operate/inspector#the-inspector) in your default web browser. The Inspector is a web-based tool that you use to explore the internal state of a SpatialOS world. It gives you a real-time view of what’s happening in a local or cloud deployment. 
+
+![]({{assetRoot}}assets/screen-grabs/toolbar/inspector-button.png)<br/>_Image: On GDK toolbar, select Inspector_<br/>
+
+When you’re done, select Unreal Engine's native **Stop** button to stop the client. 
+
+![]({{assetRoot}}assets/toolbar/stop-button-native.png)<br/>_Image: On the native Unreal Engine toolbar, select Stop_<br/>
+
+This stops the running clients but keeps your deployment running. As you iterate on your game, the GDK can (in most cases) automatically reload your client and server workers, so you can iterate on your game without having to restart your deployment. For more information, see the [Local deployment workflow reference page]({{urlRoot}}/content/local-deployment-workflow).
+
+To fully stop your SpatialOS deployment, select **Stop** in the GDK toolbar to stop your SpatialOS deployment.<br/></br>
    ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
    _Image: On the GDK toolbar in the Editor select **Stop**_
+
 </br>
 </br>
 **> Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment) 
 
 <br/>
 <br/>------------<br/>
-_2019-07-22 Page updated with limited editorial review: removed need to start deployment separately_
+_2019-07-22 Page updated with limited editorial review._
