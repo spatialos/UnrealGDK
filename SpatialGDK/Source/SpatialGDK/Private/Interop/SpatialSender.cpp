@@ -749,6 +749,8 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 	const FClassInfo& ClassInfo = ClassInfoManager->GetOrCreateClassInfoByObject(TargetObject);
 	UFunction* Function = ClassInfo.RPCs[Params.Payload.Index];
 
+	const FRPCInfo& RPCInfo = ClassInfoManager->GetRPCInfo(TargetObject, Function);
+
 	if (Channel->bCreatingNewEntity)
 	{
 		if (Function->HasAnyFunctionFlags(FUNC_NetMulticast))
@@ -763,10 +765,12 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 		// This is where we'll serialize this RPC and queue it to be added on entity creation
 		TSet<TWeakObjectPtr<const UObject>> UnresolvedObjects;
 		OutgoingOnCreateEntityRPCs.FindOrAdd(TargetObject).RPCs.Add(Params.Payload);
+#if !UE_BUILD_SHIPPING
+		NetDriver->SpatialMetrics->TrackSentRPC(Function, RPCInfo.Type, Params.Payload.PayloadData.Num());
+#endif // !UE_BUILD_SHIPPING
 		return true;
 	}
 
-	const FRPCInfo& RPCInfo= ClassInfoManager->GetRPCInfo(TargetObject, Function);
 	Worker_EntityId EntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	switch (RPCInfo.Type)
