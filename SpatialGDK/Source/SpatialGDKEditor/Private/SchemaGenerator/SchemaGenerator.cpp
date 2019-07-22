@@ -591,6 +591,7 @@ void GenerateSubobjectSchemaForActor(FComponentIdGenerator& IdGenerator, UClass*
 					if (SubobjectIt.Value.Name == SubobjectTypeInfo->Name)
 					{
 						ExistingSubobjectSchemaData = &SubobjectIt.Value;
+						break;
 					}
 				}
 			}
