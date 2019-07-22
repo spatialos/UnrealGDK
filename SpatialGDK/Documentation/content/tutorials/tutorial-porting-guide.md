@@ -26,8 +26,8 @@ We recommend following steps 1 to 3 of the [Get started]({{urlRoot}}/content/get
 Before porting your project you _**must**_ follow:
 
 1. [Get started 1 - Dependencies]({{urlRoot}}/content/get-started/dependencies)
-2. [Get started 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
-3. [Get started 3 - Set up a project: The Starter Template]({{urlRoot}}/content/get-started/gdk-template) </br>
+1. [Get started 2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
+1. [Get started 3 - Set up a project: The Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro) </br>
    (Note that you must follow the Starter Template instructions and not the Example Project instructions.)
    </br>
 

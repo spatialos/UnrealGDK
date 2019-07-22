@@ -2,7 +2,7 @@
 
 The following flowchart provides a reference of the cloud deployment workflow on the GDK.
  
-If you haven't already, please follow the [GDK Starter Template guide]({{urlRoot}}/content/get-started/gdk-template) which provides a detailed explanation of the different steps. 
+If you haven't already, please follow the [GDK Starter Template guide]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro) which provides a detailed explanation of the different steps. 
 
 <!-- This is a live embed of a google drawing -->
 
