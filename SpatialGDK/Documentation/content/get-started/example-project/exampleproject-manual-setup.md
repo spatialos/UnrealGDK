@@ -2,24 +2,7 @@
 
 # The Example Project 
 
-If you used the **InstallGDK.bat** script to build your Unreal Engine Fork then, you can skip  **1: Set up** and follow the steps below
-
-#### 1: Set up post InstallGDK.bat
-To build the GDK Example Project, you need to:
-
-1. In the directory `UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click **GDKShooter.sln** to open it with Visual Studio.
-1. In the Solution Explorer window, right-click on **GDKShooter** and select **Build**.
-1. When Visual Studio has finished building your project, right-click on **GDKShooter** and select **Set as StartUp Project**.
-1. In the same directory open Example project, by double-clicking on **GDKShooter.uproject**.
-1. Go to [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment). 
-
-**If you manually built your Engine Fork**, or if you want to download and set up the Example Project manually.  
-Follow [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)  
-
-
-If you used the **InstallGDK.bat** script to build your Unreal Engine Fork then you can jump to **[Step 4](#step-4-build-the-dependencies-and-launch-the-project)**  
-
-Follow the steps below if you manually built your Engine Fork, or if you want to download and set up the Example Project manually. 
+> **If you did not manually build your Engine Fork**, i.e used `InstallGDK.bat`, please follow [these setup instructions]({{urlRoot}}/content/get-started/example-project/exampleproject-setup) instead of the below.
 
 ## 1: Set up
 
@@ -40,7 +23,7 @@ If you have already signed up, make sure you are logged into [Improbable.io](htt
 <%(#Expandable title="Using the command line")%>
 
 1. Open a command line  window and navigate to a suitable directory to clone the repository to.
-1. Run either of these commands to clone the example project repository:
+2. Run either of these commands to clone the example project repository:
 
 |  |  |
 | ----- | ------------------------------------------------------------ |
@@ -98,4 +81,4 @@ To use the Example project, you must build the GDK for Unreal module dependencie
 
 
 <br/>------<br/>
-_2019-05-21 Page added with editorial review_
+_2019-07-22 Page added with limited editorial review_
