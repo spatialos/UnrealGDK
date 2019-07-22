@@ -12,7 +12,7 @@ You can find out how to use schema in the [schema reference documentation]({{url
 
 ## Snapshots
 
-A snapshot is a representation of the state of a [SpatialOS world]({{urlRoot}}/content/glossary#spatialos-world) at a given point in time. It stores each [persistent]({{urlRoot}}/content/glossary#persistence) [SpatialOS entity]({{urlRoot}}/content/glossary#spatialos-entity) and the values of their [SpatialOS components]({{urlRoot}}/content/glossary#spatialos-component)' [properties](https://docs.improbable.io/reference/latest/shared/glossary#property).
+A snapshot is a representation of the state of a [SpatialOS world]({{urlRoot}}/content/glossary#spatialos-world) at a given point in time. It stores each [persistent]({{urlRoot}}/content/glossary#persistence) [SpatialOS entity]({{urlRoot}}/content/glossary#entity) and the values of their [SpatialOS components]({{urlRoot}}/content/glossary#spatialos-component)' [properties](https://docs.improbable.io/reference/latest/shared/glossary#property).
 
 You can find out how to use snapshots in the [snapshot reference documentation]({{urlRoot}}/content/how-to-use-snapshots).
 

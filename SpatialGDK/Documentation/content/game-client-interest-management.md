@@ -1,7 +1,7 @@
 <%(TOC)%>
 # Game client interest management
 
-The GDK uses [interest]({{urlRoot}}/content/glossary/interest) to control the information that [game clients]({{urlRoot}}/content/glossary/client-workers) receive about the world around them.
+The GDK uses [interest]({{urlRoot}}/content/glossary#interest) to control the information that [game clients]({{urlRoot}}/content/glossary#client-workers) receive about the world around them.
 
 Game clients need information about Actors that they don’t own (see the Unreal documentation on [owning](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections) to help them to correctly manipulate the Actors that they _do_ own, and to render the SpatialOS world. Interest enables game clients to receive the relevant information.
 

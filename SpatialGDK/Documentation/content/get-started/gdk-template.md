@@ -70,9 +70,9 @@ Note: Ensure that your Visual Studio Solution Configuration is set to **Developm
 
 ### 4: Deploy your project 
 
-To test your game, you need to launch a [deployment]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#deployments). This means launching your game with its own instance of the [SpatialOS Runtime]({{urlRoot}}/content/glossary#spatialos-runtime), either locally using a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment), or in the cloud using a [cloud deployment](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment).
+To test your game, you need to launch a [deployment]({{urlRoot}}/content/spatialos-concepts/workers-and-zoning#deployments). This means launching your game with its own instance of the [SpatialOS Runtime]({{urlRoot}}/content/glossary#spatialos-runtime), either locally using a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment), or in the cloud using a [cloud deployment](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment).
 
-When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots), and then starts up the [worker instances]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing#worker-instances-and-worker-types) needed to run the game world.
+When you launch a deployment, SpatialOS sets up the world based on a [snapshot]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#snapshots), and then starts up the [worker instances]({{urlRoot}}/content/spatialos-concepts/workers-and-zoning#worker-instances-and-worker-types) needed to run the game world.
 
 ### 5: Deploy locally with multiple clients
 
