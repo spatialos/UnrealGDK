@@ -21,17 +21,18 @@ A `UPROPERTY` that you add to an Actor that a game client might own. It refers t
 ## NetCullDistanceSquared
 You can define a distance using `NetCullDistanceSquared` on an Actor class. Game clients whose players are within this distance of an Actor of this class receive updates about the Actor. By default, this distance is 150 meters for all Actor classes.
 
-You can change an Actor class’s `NetCullDistanceSquared` value in the Replication section:
+To change an Actor class’s `NetCullDistanceSquared` value, open the Actor class's Blueprint and go to the Class Defaults tab. Net Cull Distance Squared is in the Replication section:
 
-![NetCullDistanceSquared]({{assetRoot}}assets/screen-grabs/net-cull-distance-ui.png)
+![NetCullDistanceSquared in the Replication section]({{assetRoot}}assets/screen-grabs/game-client-interest-management/replication-section.png)
 
 > **Tip**: You need to convert your chosen number of meters into centimeters, square it, and then enter the resulting value. For example, to set a distance of 150 meters, you need to enter 225000000 (like in the screenshot above).
+
 ### Example 
 If you set the `NetCullDistanceSquared` to 200 meters for all Characters, game clients receive updates about Characters that are within 200 meters of their own player.
 
 And if you set the `NetCullDistanceSquared` to 400 meters for vehicles, game clients receive updates about vehicles within 400 meters of their player.
 
-![NetCullDistanceSquared]({{assetRoot}}assets/screen-grabs/net-cull-distance-diagram.png)
+![NetCullDistanceSquared diagram]({{assetRoot}}assets/screen-grabs/game-client-interest-management/net-cull-distance-diagram.png)
 
 _A game client receives updates about Characters and vehicles that are close enough to its player, according to the Characters’ and vehicles’ `NetCullDistanceSquared`._
 
@@ -69,13 +70,14 @@ The following table lists the possible constraints.
 
 For more information, see the [interest constraints header file](https://github.com/spatialos/UnrealGDK/blob/0.6.0-rc/SpatialGDK/Source/SpatialGDK/Public/Interop/SpatialInterestConstraints.h).
 
-You can find `ActorInterestComponent` in the SpatialGDK section when adding a new component:
+To attach this component to an Actor, open the Actor's Blueprint and, on the Components tab, select **Add Component**. Actor Interest is in the SpatialGDK section:
 
-![NetCullDistanceSquared]({{assetRoot}}assets/screen-grabs/add-component.png)
+![Add component]({{assetRoot}}assets/screen-grabs/game-client-interest-management/add-component.png)
 
 ### Example
 
-![NetCullDistanceSquared]({{assetRoot}}assets/screen-grabs/set-up-interest.png)
+![Set up interest]({{assetRoot}}assets/screen-grabs/game-client-interest-management/set-up-interest.png)<br>
+_Image: The Interest section of the details panel for `ActorInterestComponent`_
 
 In the screenshot above, `ActorInterestComponent` has two queries, so the game client receives updates about:
 
@@ -89,7 +91,7 @@ You might want a game client to always receive updates about some Actors, regard
 An `AlwaysInterested` `UPROPERTY` must:
 
 * be an object reference (either an AActor or UObject)
-* have a [`Replicated`](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/index.html) or [`Handover`]({{urlRoot}}/content/actor-handover) specifier [**TODO - remember to update “tags” to “specifiers” in the Actor handover doc**]
+* have a [`Replicated`](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Properties/index.html) or [`Handover`]({{urlRoot}}/content/actor-handover) specifier
 
 You set up an `AlwaysInterested` `UPROPERTY` on a game client’s PlayerController, or on any other Actor that the game client might own, and then you specify the Actor that you want the game client to always receive updates about.
 
