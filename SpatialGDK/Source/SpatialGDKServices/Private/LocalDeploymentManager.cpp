@@ -369,14 +369,14 @@ bool FLocalDeploymentManager::GetLocalDeploymentStatus()
 	}
 
 	TSharedPtr<FJsonObject> SpotJsonResult;
-	bool bPasingSuccess = FSpatialGDKServicesModule::ParseJson(SpotListResult, SpotJsonResult);
-	if (!bPasingSuccess)
+	bool bParsingSuccess = FSpatialGDKServicesModule::ParseJson(SpotListResult, SpotJsonResult);
+	if (!bParsingSuccess)
 	{
 		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spot list result failed. Result: %s"), *SpotListResult);
 	}
 
 	const TSharedPtr<FJsonObject>* SpotJsonContent = nullptr;
-	if (bPasingSuccess && SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
+	if (bParsingSuccess && SpotJsonResult->TryGetObjectField(TEXT("content"), SpotJsonContent))
 	{
 		const TArray<TSharedPtr<FJsonValue>>* JsonDeployments;
 		if (!SpotJsonContent->Get()->TryGetArrayField(TEXT("deployments"), JsonDeployments))
