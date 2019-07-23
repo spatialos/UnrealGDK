@@ -58,7 +58,7 @@ bool FSpatialGDKServicesModule::ParseJson(const FString& RawJsonString, TSharedP
 // For other processes which do not spawn cmd windows, use ExecProcess instead.
 void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, const FString& Arguments, const FString& DirectoryToRun, FString& OutResult, int32& ExitCode)
 {
-	UE_LOG(LogSpatialDeploymentManager, Verbose, TEXT("Executing '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
+	UE_LOG(LogSpatialGDKServices, Verbose, TEXT("Executing '%s' with arguments '%s' in directory '%s'"), *Executable, *Arguments, *DirectoryToRun);
 
 	void* ReadPipe = nullptr;
 	void* WritePipe = nullptr;
@@ -80,7 +80,7 @@ void FSpatialGDKServicesModule::ExecuteAndReadOutput(const FString& Executable, 
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s' "), *Executable, *Arguments, *DirectoryToRun);
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Execution failed. '%s' with arguments '%s' in directory '%s' "), *Executable, *Arguments, *DirectoryToRun);
 	}
 
 	FPlatformProcess::ClosePipe(0, ReadPipe);
@@ -105,12 +105,12 @@ FString FSpatialGDKServicesModule::ParseProjectName()
 		}
 		else
 		{
-			UE_LOG(LogSpatialDeploymentManager, Error, TEXT("'name' does not exist in spatialos.json. Can't read project name."));
+			UE_LOG(LogSpatialGDKServices, Error, TEXT("'name' does not exist in spatialos.json. Can't read project name."));
 		}
 	}
 	else
 	{
-		UE_LOG(LogSpatialDeploymentManager, Error, TEXT("Json parsing of spatialos.json failed. Can't get project name."));
+		UE_LOG(LogSpatialGDKServices, Error, TEXT("Json parsing of spatialos.json failed. Can't get project name."));
 	}
 
 	ProjectNameParsed.Empty();
