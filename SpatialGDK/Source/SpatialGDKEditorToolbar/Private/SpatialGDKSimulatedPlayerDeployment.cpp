@@ -567,7 +567,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 void SSpatialGDKSimulatedPlayerDeployment::OnCloudDocumentationClicked()
 {
 	FString WebError;
-	FPlatformProcess::LaunchURL(TEXT("https://docs.improbable.io/unreal/latest/content/get-started/gdk-template#step-2-build-your-workers"), TEXT(""), &WebError);
+	FPlatformProcess::LaunchURL(TEXT("https://docs.improbable.io/unreal/latest/content/cloud-deployment-workflow#build-server-worker-assembly"), TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));
