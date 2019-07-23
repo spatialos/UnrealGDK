@@ -29,7 +29,6 @@ USpatialGDKEditorSettings::USpatialGDKEditorSettings(const FObjectInitializer& O
 	, SimulatedPlayerDeploymentRegionCode(ERegionCode::US)
 {
 	SpatialOSLaunchConfig.FilePath = GetSpatialOSLaunchConfig();
-	SpatialOSSnapshotPath.Path = GetSpatialOSSnapshotFolderPath();
 	SpatialOSSnapshotFile = GetSpatialOSSnapshotFile();
 	ProjectName = GetProjectNameFromSpatial();
 }

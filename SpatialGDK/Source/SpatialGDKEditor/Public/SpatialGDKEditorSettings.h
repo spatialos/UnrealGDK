@@ -257,10 +257,6 @@ public:
 	bool bAutoStartLocalDeployment;
 
 private:
-	/** Path to your SpatialOS snapshot. */
-	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot path"))
-	FDirectoryPath SpatialOSSnapshotPath;
-
 	/** Name of your SpatialOS snapshot file. */
 	UPROPERTY(EditAnywhere, config, Category = "Snapshots", meta = (ConfigRestartRequired = false, DisplayName = "Snapshot file name"))
 	FString SpatialOSSnapshotFile;
@@ -342,9 +338,7 @@ public:
 
 	FORCEINLINE FString GetSpatialOSSnapshotFolderPath() const
 	{
-		return SpatialOSSnapshotPath.Path.IsEmpty()
-			? FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("snapshots")))
-			: SpatialOSSnapshotPath.Path;
+		return FPaths::ConvertRelativePathToFull(FPaths::Combine(FSpatialGDKServicesModule::GetSpatialOSDirectory(), TEXT("snapshots")));
 	}
 
 	FORCEINLINE FString GetGeneratedSchemaOutputFolder() const
