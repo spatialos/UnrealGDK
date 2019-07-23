@@ -37,7 +37,7 @@ When Player 1 shoots at Player 2, the server-worker instance that has authority 
 
 SpatialOS sends this to the server-worker instance that has authority over Player 2 (server-worker B). Server-worker B then executes the RPC.
 
-![Shooting across boundaries]({{assetRoot}}assets/screen-grabs/shooting-across-boundaries.png)
+<%(Lightbox image="{{assetRoot}}assets/screen-grabs/shooting-across-boundaries.png")%>
 _Cross-server RPC: Player 1’s action affects Player 2, even though they are in different areas of authority being updated by different server-worker instances._ 
 
 You set up a cross-server RPC in the same way as you would set up any other RPC within Unreal.
@@ -60,7 +60,8 @@ In Unreal’s single-server architecture, authority over an Actor stays with the
 > 
 > * Replicated Actor properties map to “properties” in an entity’s components in SpatialOS.
 
-![Moving across boundaries]({{assetRoot}}assets/screen-grabs/moving-across-boundaries.gif)
+<%(Lightbox image="{{assetRoot}}assets/screen-grabs/moving-across-boundaries.gif")%>
+
 
  _An AI following a player across the boundary between two server-worker instances' areas of authority. To demonstrate Actor handover, the AI changes its material every time authority is handed over._
 
