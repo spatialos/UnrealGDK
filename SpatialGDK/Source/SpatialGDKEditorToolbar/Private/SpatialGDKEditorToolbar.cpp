@@ -72,6 +72,7 @@ void FSpatialGDKEditorToolbarModule::StartupModule()
 
 	FSpatialGDKServicesModule& GDKServices = FModuleManager::GetModuleChecked<FSpatialGDKServicesModule>("SpatialGDKServices");
 	LocalDeploymentManager = GDKServices.GetLocalDeploymentManager();
+	LocalDeploymentManager->SetAutoDeploy(GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment);
 
 	// Bind the play button delegate to starting a local spatial deployment.
 	if (!UEditorEngine::TryStartSpatialDeployment.IsBound() && GetDefault<USpatialGDKEditorSettings>()->bAutoStartLocalDeployment)
@@ -525,7 +526,7 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 	// Don't try and start a local deployment if spatial networking is disabled.
 	if (!GetDefault<UGeneralProjectSettings>()->bSpatialNetworking)
 	{
-		UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Attempted to start a local deployment but spatial networking is disabled."));
+		UE_LOG(LogSpatialGDKEditorToolbar, Error, TEXT("Attempted to start a local deployment but spatial networking is disabled."));
 		return;
 	}
 
@@ -563,10 +564,9 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 			FPlatformProcess::Sleep(0.1f);
 		}
 
-		// If schema has been regenerated then we need to restart spatial.
-		if (bRedeployRequired && LocalDeploymentManager->IsLocalDeploymentRunning())
+		// If schema or worker configurations have been changed then we must restart the deployment.
+		if (LocalDeploymentManager->IsRedeployRequired() && LocalDeploymentManager->IsLocalDeploymentRunning())
 		{
-			// If schema or worker configurations have been changed then we must restart the deployment.
 			UE_LOG(LogSpatialGDKEditorToolbar, Display, TEXT("Local deployment must restart."));
 			OnShowTaskStartNotification(TEXT("Local deployment restarting.")); 
 			LocalDeploymentManager->TryStopLocalDeployment();
@@ -578,7 +578,6 @@ void FSpatialGDKEditorToolbarModule::VerifyAndStartDeployment()
 		}
 
 		OnShowTaskStartNotification(TEXT("Starting local deployment..."));
-		bRedeployRequired = false;
 		if (LocalDeploymentManager->TryStartLocalDeployment(LaunchConfig, LaunchFlags))
 		{
 			OnShowSuccessNotification(TEXT("Local deployment started!"));
@@ -696,6 +695,9 @@ void FSpatialGDKEditorToolbarModule::OnPropertyChanged(UObject* ObjectBeingModif
 		}
 		else if (PropertyName.ToString() == TEXT("bAutoStartLocalDeployment"))
 		{
+			// TODO: UNR-1776 Workaround for SpatialNetDriver requiring editor settings.
+			LocalDeploymentManager->SetAutoDeploy(Settings->bAutoStartLocalDeployment);
+
 			if (Settings->bAutoStartLocalDeployment)
 			{
 				// Bind the TryStartSpatialDeployment delegate if autostart is enabled.
@@ -829,7 +831,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
 					Contents.ReplaceInline(TEXT("{{WorkerTypeName}}"), *Worker.WorkerTypeName.ToString());
 					if (FFileHelper::SaveStringToFile(Contents, *JsonPath))
 					{
-						bRedeployRequired = true;
+						LocalDeploymentManager->SetRedeployRequired();
 						UE_LOG(LogSpatialGDKEditorToolbar, Verbose, TEXT("Wrote default worker json to %s"), *JsonPath)
 					}
 					else
@@ -856,7 +858,7 @@ bool FSpatialGDKEditorToolbarModule::GenerateDefaultWorkerJson()
 
 void FSpatialGDKEditorToolbarModule::GenerateSchema(bool bFullScan)
 {
-	bRedeployRequired = true;
+	LocalDeploymentManager->SetRedeployRequired();
 
 	if (SpatialGDKEditorInstance->FullScanRequired())
 	{

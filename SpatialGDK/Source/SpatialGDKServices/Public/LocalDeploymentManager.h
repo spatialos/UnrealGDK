@@ -37,6 +37,14 @@ public:
 	bool SPATIALGDKSERVICES_API IsServiceStarting() const;
 	bool SPATIALGDKSERVICES_API IsServiceStopping() const;
 
+	bool SPATIALGDKSERVICES_API IsRedeployRequired() const;
+	void SPATIALGDKSERVICES_API SetRedeployRequired();
+
+	// Helper function to inform a client or server whether it should wait for a local deployment to become active.
+	bool SPATIALGDKSERVICES_API ShouldWaitForDeployment() const;
+
+	void SPATIALGDKSERVICES_API SetAutoDeploy(bool bAutoDeploy);
+
 	// TODO: Refactor these into Utils
 	FString GetProjectName();
 	void WorkerBuildConfigAsync();
@@ -72,4 +80,7 @@ private:
 
 	FString LocalRunningDeploymentID;
 	FString ProjectName;
+
+	bool bRedeployRequired = false;
+	bool bAutoDeploy = false;
 };
