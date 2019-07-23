@@ -49,30 +49,37 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 ### Step 2: Build your workers
 
-**Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+<%(Callout type="warn" message="Note: you must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.")%>
 
 There are two ways to build your worker assemblies (known as “building workers”):  
 
-**Option 1** Build your workers automatically using the `BuildProject.bat` script
+#### **Option 1**: Build your workers using `BuildProject.bat`
+
 This script automatically builds both the server-workers and client-workers required to run your game in the cloud.  
+
 It then compresses your workers and saves them as .zip files to the `UnrealGDKExampleProject\spatial\build\assembly\worker` directory. Use this script if you want to build server-workers and client-workers at the same time.  
-      
-<%(#Expandable title="Build your workers using `BuildProject.bat`")%>
-To build your workers using the BuildProject.bat script:
+
 In File Explorer, navigate to the `UnrealGDKExampleProject` directory.
 Double click BuildProject.bat. This opens a command line window and automatically creates your client and server workers. 
-<%(/Expandable)%>
 
-**Option 2** Build your workers manually using the command line.  
+#### **Option 2**: Build your workers manually using the command line  
 Use the command line when you want to build your server-workers and client-workers separately, or, if you want to build different worker configurations, for example: Editor, Test, Shipping or Linux.  
     
-<%(#Expandable title="Build your workers  manually using the command line")%>
 In a terminal window, navigate to the UnrealGDKExampleProject directory.
-Build a server-worker assembly by running the following command: <br/>
-`Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject`
-Build a client-worker assembly by running the following command: <br/>
-`Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject`
-<%(/Expandable)%>
+
+* Build a server-worker assembly by running the following command: <br/>
+
+```
+Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
+```
+
+* Build a client-worker assembly by running the following command: <br/>
+ 
+```
+Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
+```
+
+* You can replace `Development` with the [Unreal build configuration](https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html) of your choice (i.e `Editor`, `Test`, `Shipping`). For all options provided by the `BuildWorker.bat`, see the [Helper scripts page]({{urlRoot}}/content/helper-scripts).
 
 **Troubleshooting**
 <%(#Expandable title="Reset Spatial networking")%>
@@ -92,7 +99,7 @@ If you receive the error `The system cannot find the path specified. Builds fail
 Before launching a cloud deployment, you must upload your sever-worker and client-worker assemblies to the cloud. To do this: 
 
 1. Open a terminal window and navigate to `\UnrealGDKExampleProject\spatial`.
-1. Run the following command: `spatial cloud upload <assembly_name>`.
+2. Run the following command: `spatial cloud upload <assembly_name>`.
 
 You must replace `<assembly_name>` with a name for your assembly (for example: `exampleprojectassembly`). 
 
