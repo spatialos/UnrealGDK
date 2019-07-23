@@ -8,13 +8,8 @@
 #include "Editor.h"
 #include "FileCache.h"
 #include "GeneralProjectSettings.h"
-#include "HAL/FileManager.h"
-#include "HAL/PlatformFilemanager.h"
 #include "Interop/Connection/EditorWorkerController.h"
-#include "Misc/FileHelper.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
-#include "Serialization/JsonWriter.h"
+#include "Json/Public/Dom/JsonObject.h"
 #include "SpatialGDKServicesModule.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialDeploymentManager);

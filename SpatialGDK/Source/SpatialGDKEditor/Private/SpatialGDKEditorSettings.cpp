@@ -2,14 +2,10 @@
 
 #include "SpatialGDKEditorSettings.h"
 
-#include "Dom/JsonObject.h"
 #include "Internationalization/Regex.h"
 #include "ISettingsModule.h"
-#include "Misc/FileHelper.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonSerializer.h"
 #include "Settings/LevelEditorPlaySettings.h"
 #include "Templates/SharedPointer.h"
 #include "SpatialConstants.h"
