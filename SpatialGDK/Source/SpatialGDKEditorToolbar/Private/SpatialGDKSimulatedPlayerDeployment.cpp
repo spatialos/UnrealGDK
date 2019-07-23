@@ -101,7 +101,8 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								]
 								+ SHorizontalBox::Slot()
 								.FillWidth(1.0f)
-								[											SNew(SEditableTextBox)
+								[
+									SNew(SEditableTextBox)
 									.Text(FText::FromString(ProjectName))
 									.ToolTipText(FText::FromString(FString(TEXT("The name of the SpatialOS project."))))
 									.IsEnabled(false)
