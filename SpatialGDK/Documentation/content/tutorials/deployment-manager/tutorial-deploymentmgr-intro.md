@@ -16,7 +16,7 @@ Multiple deployments of your game are useful for time-limited match-based games 
 **> Next:** [1: Clone the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
 
 
-![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-deployments.png)<br/>
+<%(Lightbox image="{{assetRoot}}assets/deployment-manager/deploymentmgr-deployments.png")%><br/>
 _Image: The Example Project deployment list screen_<br/>
 
 

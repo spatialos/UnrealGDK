@@ -13,11 +13,8 @@ To build the GDK Example Project, you need to:
 1. Build and open your project in the Unreal Editor. To do this: Either press F5 on your keyboard or, in the Visual Studio toolbar, select *Local Windows Debugger*.
    ![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
    _Image: The Visual Studio toolbar_ <br/>
-   **Note:** Ensure that your Visual Studio Solution Configuration is set to **Development Editor**. <br/><br/>
-
-The Example Project will then open in Unreal Engine:
-
-   ![img]({{assetRoot}}assets/example-project/example-project-editor.png)<br/>
+   **Note:** Ensure that your Visual Studio Solution Configuration is set to **Development Editor**. <br/><br/><br/>
+   <%(Lightbox image="{{assetRoot}}assets/example-project/example-project-editor.png")%>
    _Image: The Example Project in the Unreal Editor_<br/><br/>
 
 **> Next:** [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 
