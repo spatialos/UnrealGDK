@@ -472,13 +472,14 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 		}
 		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		{
-			if (bCanBeginPlay)
+			// We can reach this point with bCanBeginPlay==true if the server
+			// that was authoritative over the GSM restarts.
+			if (!bCanBeginPlay)
 			{
-				return;
+				BecomeAuthoritativeOverAllActors();
+				SetCanBeginPlay(true);
 			}
 
-			BecomeAuthoritativeOverAllActors();
-			SetCanBeginPlay(true);
 			break;
 		}
 		default:
