@@ -76,8 +76,8 @@ markStartOfBlock "Clean folders"
     rm -rf $BINARIES_DIR           2>/dev/null
 
     if [ ! -z "$SPATIAL_DIR" ]; then
-        rm -rf $SCHEMA_STD_COPY_DIR    2>/dev/null
-        rm -rf $SCHEMA_COPY_DIR    2>/dev/null
+        rm -rf $SCHEMA_STD_COPY_DIR 2>/dev/null
+        rm -rf $SCHEMA_COPY_DIR     2>/dev/null
     fi
     
 markEndOfBlock "Clean folders"
