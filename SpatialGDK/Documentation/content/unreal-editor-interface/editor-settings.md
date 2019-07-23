@@ -16,7 +16,7 @@ To access the **SpatialOS Editor Settings** panel in the Unreal Editor, use eith
 	1. Select **Play** > **SpatialOS Settings** to display the Project Settings editor. 
 	1. Scroll down to **SpatialOS GDK for Unreal** and select **Editor Settings** to display the SpatialOS Editor Settings panel.
 
-  <img src="{{assetRoot}}assets/screen-grabs/editor-settings.png"/> TODO NEEDS A NEW IMAGE
+  <img src="{{assetRoot}}assets/screen-grabs/editor-settings.png"/> TODO NEW IMAGE
     <br>_Image: the SpatialOS Editor Settings panel_
 
 ## Settings
@@ -31,7 +31,7 @@ The following table lists all the settings in the SpatialOS Editor Settings pane
   <tr>
     <td><strong>General</strong></td>
     <td><strong>Show Spatial service button</strong></td>
-    <td>TODO ADD WORDING HERE</td>
+    <td>TODO DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Play In Editor settings</strong></td>
@@ -43,7 +43,7 @@ The following table lists all the settings in the SpatialOS Editor Settings pane
     </ul></td>
   </tr>
   <tr>
-    <td rowspan="6"><strong>Local deployment (TODO CHECK THIS WITH VALENTYN!)</strong></td>
+    <td rowspan="6"><strong>Local deployment (TODO CHECK NAME IS OK)</strong></td>
     <td><strong>Auto-generate launch configuration file</strong></td>
     <td>Select the check box for the GDK to auto-generate a <a href="{{urlRoot}}/content/glossary#launch-configuration-file">launch configuration file</a> for your game every time you launch a <a href="{{urlRoot}}/content/glossary#deployment">local deployment</a>.<br><br>Default: selected
     <ul>
@@ -61,7 +61,7 @@ The following table lists all the settings in the SpatialOS Editor Settings pane
   </tr>
     <tr>
     <td><strong>Auto-start local deployment</strong></td>
-    <td>TODO ADD WORDING HERE</td>
+    <td>TODO DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Command line flags for local launch</strong></td>
@@ -83,39 +83,39 @@ The following table lists all the settings in the SpatialOS Editor Settings pane
   <tr>
   <td rowspan="6"><strong>Cloud deployment</strong></td>
     <td><strong>SpatialOS project</strong></td>
-    <td>The name of your project (see the <a href="{{urlRoot}}/content/glossary#console">Console</a> - this should look something like <code>beta_randomword_anotherword_randomnumber</code>). TODO CHECK WITH SOMEONE</td>
+    <td>The name of your project (see the <a href="{{urlRoot}}/content/glossary#console">Console</a> - this should look something like <code>beta_randomword_anotherword_randomnumber</code>). TODO CHECK DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Assembly name</strong></td>
-    <td>The name of an assembly you have uploaded. TODO CHECK WITH SOMEONE</td>
+    <td>The name of an assembly you have uploaded. TODO CHECK DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Deployment name</strong></td>
-    <td>Specify a name for your deployment. This labels the deployment in the Console. TODO CHECK IF YOU SPECIFY THIS HERE, or if you've already done this elsewhere</td>
+    <td>Specify a name for your deployment. This labels the deployment in the Console. TODO CHECK IF YOU CHOOSE THIS HERE OR EARLIER</td>
   </tr>
   <tr>
-    <td><strong>Launch configuration file name and path TODO CHECK WITH VALENTYN</strong></td>
+    <td><strong>Launch configuration file name and path TODO CHECK IF NAME IS OK</strong></td>
     <td>The path to the launch configuration file you want to use, including the file name.</td>
   </tr>
   <tr>
     <td><strong>Snapshot path</strong></td>
-    <td>The path to the snapshot file you want to use, including the file name TODO CHECK WITH SOMEONE</td>
+    <td>The path to the snapshot file you want to use, including the file name TODO CHECK DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Region</strong></td>
-    <td>The region where the deployment should be hosted TODO CHECK WITH SOMEONE</td>
+    <td>The region where the deployment should be hosted TODO CHECK DEFINITION</td>
   </tr>
-  <td rowspan="4"><strong>Simulated players TODO CHECK WITH VALENTYN</strong></td>
+  <td rowspan="4"><strong>Simulated players TODO CHECK DEFINITION</strong></td>
     <td><strong>Region</strong></td>
     <td>Description</td>
   </tr>
   <tr>
     <td><strong>Include simulated players</strong></td>
-    <td>Select the check box if you want to launch a simulated player deployment alongside your cloud deployment. TODO CHECK</td>
+    <td>Select the check box if you want to launch a simulated player deployment alongside your cloud deployment. TODO CHECK DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Deployment name TODO TYPO IN IMAGE</strong></td>
-    <td>Specify a name for the simulated player deployment. This labels the deployment in the Console. TODO CHECK</td>
+    <td>Specify a name for the simulated player deployment. This labels the deployment in the Console. TODO CHECK DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Number of simulated players</strong></td>

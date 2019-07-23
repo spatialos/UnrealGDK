@@ -14,7 +14,6 @@ Before you launch your game in a [cloud deployment]({{urlRoot}}/content/glossary
 	0. Scroll down to **SpatialOS GDK for Unreal** and select **Runtime Settings** to display the SpatialOS Runtime Settings panel.
 * From the file system: The SpatialOS Runtime settings are in the `DefaultSpatialGDKSettings.ini` file in the `<GameRoot>\Config\` directory, which you can edit with any text editor.
 
-
 TODO ADD IMAGE
 
 <br>
@@ -72,12 +71,12 @@ The following table lists all the settings in the SpatialOS Runtime Settings pan
   </tr>
     <tr>
     <td><strong>Enable handover</strong></td>
-    <td>Define TODO</td>
+    <td>TODO DEFINITION</td>
   </tr>
     <tr>
     <td><strong>Maximum net cull distance squared</strong></td>
-    <td>Define TODO</td>
-  </tr>
+    <td>TODO DEFINITION</td>
+  </tr
   <tr>
     <td rowspan="2"><strong>SpatialOS position updates</strong></td>
     <td><strong>Position update rate</strong></td>
@@ -94,7 +93,7 @@ The following table lists all the settings in the SpatialOS Runtime Settings pan
   </tr>
     <tr>
     <td><strong>Enable metrics display</strong></td>
-    <td>Define TODO</td>
+    <td>TODO DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Metric report interval</strong></td>
@@ -112,38 +111,38 @@ The following table lists all the settings in the SpatialOS Runtime Settings pan
   <tr>
     <td><strong>Schema generation</strong></td>
     <td><strong>Maximum dynamically attached subobjects per class</strong></td>
-    <td>Define TODO</td>
+    <td>TODO DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Local connection</strong></td>
     <td><strong>Default Receptionist host</strong></td>
-    <td>Define TODO</td>
+    <td>TODO DEFINITION</td>
   </tr>
   <tr>
     <td rowspan="3"><strong>Cloud connection</strong></td>
     <td><strong>Use development authentication flow</strong></td>
-    <td>Define TODO</td>
+    <td>TODO DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Development authentication token</strong></td>
-    <td>Define TODO</td>
+    <td>TODO DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Development deployment to connect</strong></td>
-    <td>Define TODO</td>
+    <td>TODO DEFINITION</td>
   </tr>
     <tr>
     <td rowspan="3"><strong>Offloading</strong></td>
     <td><strong>Default worker type</strong></td>
-    <td>Define TODO</td>
+    <td>TODO DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Enable offloading</strong></td>
-    <td>Define TODO</td>
+    <td>TODO DEFINITION</td>
   </tr>
   <tr>
     <td><strong>Actor groups</strong></td>
-    <td>Define TODO</td>
+    <td>TODO DEFINITION</td>
   </tr>
 </table>
 
