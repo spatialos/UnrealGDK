@@ -28,27 +28,13 @@ This repository contains a version of Unreal’s Third Person template that has 
 > **Note:**  A completed version of this tutorial is available in the `tutorial-complete` branch.
 
 <br/>
-### Step 3: Clone the GDK into the `Plugins` directory
 
-1. Navigate to `UnrealGDKThirdPersonShooter\Game` and create a `Plugins` directory.
-1. In a terminal window,  change directory to the  `Plugins` directory and clone the [Unreal GDK](https://github.com/spatialos/UnrealGDK) repository using one of the following commands:
+### Step 3: Build dependencies 
 
-|          |      |
-| -------- | ---- |
-| **HTTPS:** | `git clone https://github.com/spatialos/UnrealGDK.git`|
-| **SSH:** | `git clone git@github.com:spatialos/UnrealGDK.git`|
-
-The GDK's [default branch (GitHub documentation)](https://help.github.com/en/articles/setting-the-default-branch) is `release`. This means that, at any point during the development of your game, you can get the latest release of the GDK by running `git pull` inside the `UnrealGDK` directory. When you pull the latest changes, you must also run `git pull` inside the `UnrealEngine` directory, so that your GDK and your Unreal Engine fork remain in sync.
-
-> **Note:**  You need to ensure that the root folder of the Unreal GDK repository is called `UnrealGDK` so its path is: `UnrealGDKThirdPersonShooter\Game\Plugins\UnrealGDK\`.
-
-<br/>
-
-### Step 4: Build dependencies 
+> **Note:**  If you built the Unreal Engine Fork manually, you must clone and set up the GDK plugin by following the [manual GDK installation instructions]({{urlRoot}}/content/manual-engine-build#installing-the-spatialos-gdk-for-unreal) before you follow the rest of this guide.</br>
 
 In this step, you're going to build the Unreal GDK's dependencies.
 
-1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository (`ThirdPersonShooter\Plugins\UnrealGDK\...`), and double-click `Setup.bat`. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in. 
 1. In **File Explorer**, navigate to the ThirdPersonShooter directory, right-click `ThirdPersonShooter.uproject` and select Generate Visual Studio Project files.
 1. In the same directory, double-click `ThirdPersonShooter.sln` to open it with Visual Studio.
 1. In the Solution Explorer window, right-click on **ThirdPersonShooter** and select **Build**.
@@ -57,14 +43,14 @@ In this step, you're going to build the Unreal GDK's dependencies.
 ![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
 _Image: The Visual Studio toolbar_<br/><br/>
 1. In the Unreal Editor, on the GDK toolbar, open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
-  ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
-  _Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
+    ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
+    _Image: On the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
 1. Select **Snapshot** to generate a snapshot.<br/>
 ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/snapshot-button.png)<br/>
 _Image: On the GDK toolbar in the Unreal Editor, select **Snapshot**_<br/>
 
 <br/>
-### Step 5: Deploy the project locally
+### Step 4: Deploy the project locally
 
 In this section you’ll run a [local deployment](https://docs.improbable.io/reference/latest/shared/glossary#local-deployment) of the project. As the name suggests, local deployments run on your development machine (you will run a [cloud deployment](https://docs.improbable.io/reference/latest/shared/glossary#cloud-deployment) later in this tutorial).
 

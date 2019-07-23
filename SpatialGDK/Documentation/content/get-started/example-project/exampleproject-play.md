@@ -56,7 +56,7 @@ You've sucessfully set up and launched the Example Project using the Deployment 
 
 * If you have an existing Unreal multiplayer project, you can follow the detailed [porting guide]({{urlRoot}}/content/tutorials/tutorial-porting-guide) to get it onto the GDK.
 
-* If you want to start a project from scratch, follow the set up guide for the [Starter Template]({{urlRoot}}/content/get-started/gdk-template) to set up a blank project using the GDK. 
+* If you want to start a project from scratch, follow the set up guide for the [Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro) to set up a blank project using the GDK. 
 
 
 <br/>------<br/>
