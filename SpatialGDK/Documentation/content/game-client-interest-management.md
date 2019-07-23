@@ -65,7 +65,9 @@ The following table lists the possible constraints.
 | `URelativeBoxConstraint` | Includes all Actors within a bounding box centered on the Actor that has `ActorInterestComponent`. |
 | `UCheckoutRadiusConstraint` | Includes all Actors of a class or a derived class within a cylinder centered on the Actor that has `ActorInterestComponent`. |
 | `UActorClassConstraint` | Includes all Actors of a class. You can optionally include derived classes. |
-| `UComponentClassConstraint` | Includes all Actors with an Unreal Actor component of a specified class. You can optionally include derived classes. |s
+| `UComponentClassConstraint` | Includes all Actors with an Unreal Actor component of a specified class. You can optionally include derived classes. |
+
+For more information, see the [interest constraints header file](https://github.com/spatialos/UnrealGDK/blob/0.6.0-rc/SpatialGDK/Source/SpatialGDK/Public/Interop/SpatialInterestConstraints.h).
 
 You can find `ActorInterestComponent` in the SpatialGDK section when adding a new component:
 
