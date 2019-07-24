@@ -11,14 +11,14 @@ The `SpatialType` tag allows the GDK to interoperate between the network stacks 
 By default all classes are tagged with `SpatialType`. This ensures the GDK inspects all loaded classes and generates schema for them if they have any properties tagged with `Replicated` or `Handover`, or they have RPC functions. If you don't wish your class to be considered a `SpatialType` you can opt out using the `NotSpatialType` tag.
 
 ## Classes which need manual SpatialType tagging
-You need to manually tag as `SpatialType` any classes which are [Singleton Actors]({{urlRoot}}/content/singleton-actors) or only accessible to [server-workers]({{urlRoot}}/content/glossary#workers). These classes also need `SpatialType` descriptors. 
+You need to manually tag as `SpatialType` any classes which are [Singleton Actors]({{urlRoot}}/content/singleton-actors) or only accessible to [server-workers]({{urlRoot}}/content/glossary#worker). These classes also need `SpatialType` descriptors. 
 
 ### SpatialType descriptors
 You can add descriptors to the `SpatialType` tag to define additional information SpatialOS needs to know about your Unreal class.
 These are:
 
 * `Singleton`: this indicates this class should be treated as a Singleton.
-* `ServerOnly`: this indicates this class is only relevant to [server-workers]({{urlRoot}}/content/glossary#workers). You can use this descriptor in conjunction with the `Singleton` descriptor to indicate that this class is a Private Singleton.
+* `ServerOnly`: this indicates this class is only relevant to [server-workers]({{urlRoot}}/content/glossary#worker). You can use this descriptor in conjunction with the `Singleton` descriptor to indicate that this class is a Private Singleton.
 
 ## How to manually tag classes as SpatialType
 

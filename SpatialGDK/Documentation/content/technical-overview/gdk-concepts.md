@@ -16,7 +16,7 @@ Key concepts in Unreal Engine map to concepts in the GDK, as shown in the table 
 | Conditional property replication | Dynamic `component_delivery` filter | |
 | Server | Server-worker instance | You can have multiple server-worker instances running the cloud element of your game. |
 
-You can find out more about [entities]({{urlRoot}}/content/glossary#spatialos-entity), SpatialOS [components]({{urlRoot}}/content/glossary#spatialos-component) and their properties, commands, events and [EntityACLs]({{urlRoot}}/content/glossary#access-control-list-acl), as well as the [`component_delivery` filter]({{urlRoot}}/content/glossary#component-interest) and [server-workers]({{urlRoot}}/content/glossary#workers), in the [glossary]({{urlRoot}}/content/glossary).
+You can find out more about [entities]({{urlRoot}}/content/glossary#entity), SpatialOS [components]({{urlRoot}}/content/glossary#spatialos-component) and their properties, commands, and events, as well as [server-workers]({{urlRoot}}/content/glossary#worker), in the [glossary]({{urlRoot}}/content/glossary).
 
 ## GDK for Unreal concepts
 We’ve introduced some new concepts to facilitate the fact that SpatialOS enables you to spread computation between multiple servers - known as “server-worker instances” in SpatialOS.
