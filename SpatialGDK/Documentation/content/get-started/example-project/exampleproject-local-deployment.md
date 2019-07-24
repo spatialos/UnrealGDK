@@ -25,15 +25,15 @@ Before you launch a deployment (local or cloud) you must generate [schema]({{url
 
 <%(#Expandable title="What is Schema?")%>
 
-Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang by the GDK.</br>
+Schema is a set of definitions which represent your game’s objects in SpatialOS as entities. Schema is defined in .schema files and written in schemalang by the GDK.</br>
 Select **Schema** from the GDK toolbar and the GDK generates schema files and their contents for you, so you do not have to write or edit schema files manually.
 
 You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
 <%(/Expandable)%>
 
-<%(#Expandable title="What is a SpatialOS entity?")%>
-A SpatialOS entity (usually just called an “entity”) is the SpatialOS equivalent of  an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Components.)
+<%(#Expandable title="What is an entity?")%>
+An entity is the SpatialOS equivalent of an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)
 <%(/Expandable)%>
 
 <%(#Expandable title="What is  a snapshot?")%>
