@@ -12,7 +12,11 @@
                 - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment)
                 - [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
             - The Starter Template
-                - [Create a project]({{urlRoot}}/content/get-started/gdk-template)
+                - [Introduction]({{urlRoot}}/content/get-started/\starter-template/get-started-template-intro)
+                - [1: Set up]({{urlRoot}}/content/get-started/starter-template/get-started-template-setup)
+                - [2: Launch a local deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
+                - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-cloud)
+                - [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
     - Technical overview
         - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
         - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
@@ -57,13 +61,14 @@
     - Actors and entities
         - [Schema]({{urlRoot}}/content/how-to-use-schema)
         - [Spatial Type]({{urlRoot}}/content/spatial-type)
+        - [Actor readiness]({{urlRoot}}/content/actor-readiness)
         - [Dynamic Typebindings]({{urlRoot}}/content/dynamic-typebindings)
         - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
     - Authority and interest
         - [Authority]({{urlRoot}}/content/authority)
         - [Actor handover]({{urlRoot}}/content/actor-handover)
         - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
-    - Workers and load balancing
+    - Workers
         - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
     - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
     - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
@@ -77,7 +82,8 @@
     - Deployment workflows
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
-- <h3>Pricing and support</h3>
+- <h3>Support</h3>
+    - [Versioning scheme]({{urlRoot}}/content/pricing-and-support/versioning-scheme)
     - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)
     - [Support]({{urlRoot}}/content/pricing-and-support/support)
 - <h3>Get involved</h3>

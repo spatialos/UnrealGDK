@@ -5,7 +5,7 @@
 ### Step 1: Launch clients with the Launcher
 1.  Select **session_0** from the deployment list. This opens the deployment overview screen.
 1. Select **LAUNCH** on the left of the page.<br/></br>
-![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-consoleoverview.png)</br>
+<%(Lightbox image="{{assetRoot}}assets/deployment-manager/deploymentmgr-consoleoverview.png")%></br>
 _Image: The SpatialOS Console with the game client **LAUNCH** button highlighted._<br/></br>
 1. Select the **Launch** button that appears in the center of the page to open the [SpatialOS Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher). The Launcher automatically downloads a game client for this deployment and runs it on your local machine. </br></br>
 ![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-launch.png)
@@ -24,16 +24,16 @@ If you can see your deployments when you select **BROWSE**  but the **QUICK JOIN
 To do this:
 
 1. Open the Console.
-2. Select the deployment you need to tag from the deployment list.
-3. On the right-hand side of the screen, under **Details**, select **+ add tag.**
-4. Enter `status_lobby` as the tag name. 
+1. Select the deployment you need to tag from the deployment list.
+1. On the right-hand side of the screen, under **Details**, select **+ add tag.**
+1. Enter `status_lobby` as the tag name. 
 5. Repeat this for each running deployment. 
 
 When you have done this, re-launch your game client and you should be able to join any of the deployments, provided the number of players has not exceeded the maximum.
 
 <%(/Expandable)%>
 
-![img]({{assetRoot}}assets/deployment-manager/deploymentmgr-startscreen.png)</br>
+<%(Lightbox image="{{assetRoot}}assets/deployment-manager/deploymentmgr-startscreen.png")%></br>
 _Image: The Example Project start screen._
 
 ### Step 2: Try out the default game controls

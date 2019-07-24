@@ -33,7 +33,7 @@ All the hosting options are available as game templates. For information about w
 When you signed up for SpatialOS, your account was automatically given a SpatialOS cloud organization name and a SpatialOS cloud project name, both of which are the same generated name.
 
 1. Find this name by going to the Console at [https://console.improbable.io](https://console.improbable.io). The name should look something like `beta_randomword_anotherword_randomnumber`. In the example below, it’s `beta_yankee_hawaii_621`. <br/>
-   ![Toolbar]({{assetRoot}}assets/set-up-template/template-project-page.png)
+   <%(Lightbox image="{{assetRoot}}assets/set-up-template/template-project-page.png")%>
    _Image: The SpatialOS Console with a project name highlighted._</br>
 
 <%(#Expandable title="What is the Console?")%>
@@ -49,34 +49,46 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 ### Step 2: Build your workers
 
-**Note:** You must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.
+<%(Callout type="warn" message="Note: you must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.")%>
 
-**Note:** You might need to reset [Spatial networking]({{urlRoot}}/content/unreal-editor-interface/toolbars##switching-between-native-unreal-networking-and-spatialos-networking).</br>
+There are two ways to build your worker assemblies (known as “building workers”):  
+
+#### **Option 1**: Build your workers using `BuildProject.bat`
+
+This script automatically builds both the server-workers and client-workers required to run your game in the cloud.  
+
+It then compresses your workers and saves them as .zip files to the `UnrealGDKExampleProject\spatial\build\assembly\worker` directory. Use this script if you want to build server-workers and client-workers at the same time.  
+
+In File Explorer, navigate to the `UnrealGDKExampleProject` directory.
+Double click BuildProject.bat. This opens a command line window and automatically creates your client and server workers. 
+
+#### **Option 2**: Build your workers manually using the command line  
+Use the command line when you want to build your server-workers and client-workers separately, or, if you want to build different worker configurations, for example: Editor, Test, Shipping or Linux.  
+    
+In a terminal window, navigate to the UnrealGDKExampleProject directory.
+
+* Build a server-worker assembly by running the following command: <br/>
+
+```
+Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject
+```
+
+* Build a client-worker assembly by running the following command: <br/>
+ 
+```
+Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject
+```
+
+* You can replace `Development` with the [Unreal build configuration](https://docs.unrealengine.com/en-US/Programming/Development/BuildConfigurations/index.html) of your choice (i.e `Editor`, `Test`, `Shipping`). For all options provided by the `BuildWorker.bat`, see the [Helper scripts page]({{urlRoot}}/content/helper-scripts).
+
+**Troubleshooting**
+<%(#Expandable title="Reset Spatial networking")%>
+You might need to reset [Spatial networking]({{urlRoot}}/content/unreal-editor-interface/toolbars##switching-between-native-unreal-networking-and-spatialos-networking).</br>  
 By default, Spatial networking is enabled for Unreal GDK projects, including the Example Project. However, if you have changed the default networking option for this project, you need to reset it to Spatial networking before building workers.</br>
 To check which networking your project is using, look in its `DefaultGame.ini` configuration file (located in the `<ProjectRoot>\Game\Config` directory). If there is a `bSpatialNetworking` option in the file, set it to `True` to enable Spatial networking. 
 If there is no `SpatialNetworking` option, you do not have to do anything, as the project will default to using Spatial networking.
+<%(/Expandable)%>
 
-There are two ways to build your worker assemblies (known as “building workers”):
-
-* Build your workers automatically using the `BuildProject.bat` script. </br>
-  This script automatically builds both the server-workers and client-workers required to run your game in the cloud. It then compresses your workers and saves them as .zip files to the `UnrealGDKExampleProject\spatial\build\assembly\worker` directory. Use this script if you want to build server-workers and client-workers at the same time. <br/><br/>
-* Build your workers manually using the command line. </br>
-  Use the command line when you want to build your server-workers and client-workers separately, or, if you want to build different worker configurations, for example: Editor, Test, Shipping or Linux. 
-  <%(#Expandable title="Build your workers using `BuildProject.bat`")%>
-  To build your workers using the BuildProject.bat script: <br/>
-  In File Explorer, navigate to the `UnrealGDKExampleProject` directory.
-  Double click BuildProject.bat. This opens a command line window and automatically creates your client and server workers. 
-  <%(/Expandable)%>
-  
-  <%(#Expandable title="Build your workers  manually using the command line")%>
-  In a terminal window, navigate to the UnrealGDKExampleProject directory.
-  Build a server-worker assembly by running the following command: <br/>
-`Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooterServer Linux Development GDKShooter.uproject`
-  Build a client-worker assembly by running the following command: <br/>
-`Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64 Development GDKShooter.uproject`
-  <%(/Expandable)%>
-
-**Troubleshooting**
 <%(#Expandable title="BuildProject.bat can’t find the path specified")%>
 If you receive the error `The system cannot find the path specified. Builds failed.`, open `ProjectPaths.bat` in a text editor and ensure that `PROJECT_PATH` and `GAME_NAME` are correct. `PROJECT_PATH` needs to be the name of your Unreal project folder (usually Game). `GAME_NAME` needs to be the same name as your Unreal Project `.uproject` file.  
 <%(/Expandable)%>
@@ -87,7 +99,7 @@ If you receive the error `The system cannot find the path specified. Builds fail
 Before launching a cloud deployment, you must upload your sever-worker and client-worker assemblies to the cloud. To do this: 
 
 1. Open a terminal window and navigate to `\UnrealGDKExampleProject\spatial`.
-1. Run the following command: `spatial cloud upload <assembly_name>`.
+2. Run the following command: `spatial cloud upload <assembly_name>`.
 
 You must replace `<assembly_name>` with a name for your assembly (for example: `exampleprojectassembly`). 
 
@@ -97,13 +109,20 @@ A valid upload command looks like this:
 spatial cloud upload exampleprojectassembly
 ```
 
+**Troubleshooting**
+<%(#Expandable title="No upload progress")%>
+This step can take a long time on slower connections < 5mbp/s as the full upload size is around ~800mb
+If you start your upload and see no progress or extremely slow progress, don't panic.  
+There is a known issue with the uploader where progress does not change during upload of large files, you'll notice a big jump as it completes uploads those files
+<%(/Expandable)%>
+
 ### Step 4: Launch your cloud deployment
 
 The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. You can only do this through the SpatialOS command-line interface (also known as the “CLI”).
 
 <%(#Expandable title="What is the CLI?")%>
 
-The SpatilOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS.
+The SpatialOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS.
 
 Find out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
 <%(/Expandable)%>

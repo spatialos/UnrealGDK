@@ -73,7 +73,7 @@ To launch a local deployment:
    _Image: On the GDK toolbar in the Editor, select **Stop**_</br>
 </br>
 
-**To run a local deployment with managed workers, or a cloud deployment, take a look at the [Starter Template guide]({{urlRoot}}/content/get-started/gdk-template)**
+**To run a local deployment with managed workers, or a cloud deployment, take a look at the [Starter Template guide]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro)**
 
 You have now ported your Unreal game to GDK. 
 
