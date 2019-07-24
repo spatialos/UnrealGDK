@@ -79,32 +79,30 @@ A valid upload command looks like this:
 spatial cloud upload myassembly
 ```
 
+<%(#Expandable title="Troubleshooting: No upload progress")%>
+This step can take a long time on slower connections < 5mbp/s as the full upload size is around ~800mb
+If you start your upload and see no progress or extremely slow progress, don't panic.  
+There is a known issue with the uploader where progress does not change during upload of large files, you'll notice a big jump as it completes uploads those files
+<%(/Expandable)%>
+
 #### Step 4: Launch your cloud deployment
 
-The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. You can only do this through the SpatialOS command-line interface (also known as the “CLI”).
+The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. 
 
-<%(#Expandable title="What is the CLI?")%>
+1. Select the **Deploy** button<br/><br/>
+![]({{assetRoot}}assets/toolbar/deploy.png)<br/>_Image: The Deploy button in the GDK toolbar_<br/>
+1. Fill out all fields in the **Deploy window**
+   * Note: the **assembly name** must be the same name given to the assembly in the previous step
+   * Note: the Snapshot File and Launch Config File fields are automatically populated and don't need to be changed
 
-The SpatilOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS.
+![]({{assetRoot}}assets/toolbar/deploy-settings.png)
+<br/>_Image: The Deploy settings_<br/>
 
-Find out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
-<%(/Expandable)%>
+<%(#Expandable title="Alternative workflow: launching with the SpatialOS command-line interface")%>
 
-When launching a cloud deployment via the CLI, you must provide four parameters as part of the `spatial cloud launch` command:
+The SpatialOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS. Find out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
 
-- **The snapshot file** -  defines the starting state of the game world.
-- **The assembly name** - identifies which workers to use for your deployment.
-- **A launch configuration file** - defines the SpatialOS game world and load balancing configuration.
-- **A name for your deployment** -  labels the deployment in the Console.
-
-<%(#Expandable title="What is a launch configuration file?")%>
-
-Use this file to list the settings of a deployment. These include: how big the SpatialOS game world is, which worker types SpatialOS must use in the deployment, which worker types can create and delete Actors, and your game template. You installed the Launcher in step 1, when you set up your dependencies and installed SpatialOS.
-
-You can find out more about the launch configuration file in the [glossary]({{urlRoot}}/content/glossary#launch-configuration).
-<%(/Expandable)%>
-
-1. In a  command line window, navigate to `<ProjectRoot>\spatial\` and run the following command
+In a  command line window, navigate to `<ProjectRoot>\spatial\` and run the following command
 
 ```
 spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_worker_test.json <deployment_name>
@@ -123,8 +121,14 @@ A valid launch command looks like this:
 spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
 ```
 
+When your deployment has launched, SpatialOS automatically opens the Console in your browser.
+<%(/Expandable)%>
+
 **> Next:** [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
 
 <br/>
 
-<br/>------------<br/>2019-07-16 Page updated with editorial review.<br/>
+<br/>------------<br/>
+*2019-07-22 Page updated with limited editorial review.*<br/>
+
+[//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1241)

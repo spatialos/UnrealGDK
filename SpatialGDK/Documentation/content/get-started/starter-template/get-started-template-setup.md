@@ -29,26 +29,10 @@ After you have selected **Create Project**, the Unreal Engine generates the nece
 
 After Visual Studio has opened, save your solution and close Visual Studio.
 
-### Step 2: Clone the GDK
-
-Now you need to clone the SpatialOS GDK for Unreal into your project. To do this: 
-
-1. In **File Explorer**, navigate to the `<GameRoot>` directory and create a `Plugins` folder in this directory.
-2. In a command line window, navigate to `<GameRoot>\Plugins` and clone the [GDK for Unreal](https://github.com/spatialos/UnrealGDK) repository by running either:
-   - (HTTPS) `git clone https://github.com/spatialos/UnrealGDK.git`
-   - (SSH) `git clone git@github.com:spatialos/UnrealGDK.git`
-
-The GDK's [default branch (GitHub documentation)](https://help.github.com/en/articles/setting-the-default-branch) is `release`.
-
-This means that anytime during the development of your game, you can get the latest release of the GDK by running `git pull` inside the UnrealGDK directory.
-
-> *Note*: When you pull the latest changes, you must also run `git pull` inside the UnrealEngine directory to keep your GDK and your Unreal Engine fork in sync.
-
-### Step 3: Build the dependencies 
+### Step 2: Build the dependencies 
 
 To use the Starter Template, you must build the GDK for Unreal module dependencies and then add the GDK to your project. To do this: 
 
-1. Open **File Explorer**, navigate to the root directory of the GDK for Unreal repository (`<GameRoot>\Plugins\UnrealGDK\...`), and double-click **`Setup.bat`**. If you haven't already signed into your SpatialOS account, the SpatialOS developer website may prompt you to sign in. 
 1. In **File Explorer**, navigate to your `<GameRoot>` directory, right-click `<YourProject>`.uproject and select **Generate Visual Studio project files.**
 1. In the same directory, double-click **`<YourProject>`.sln** to open it with Visual Studio.
 1. In the Solution Explorer window, right-click on **`<YourProject>`** and select **Build**.
