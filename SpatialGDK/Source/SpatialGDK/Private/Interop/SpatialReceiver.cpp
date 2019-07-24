@@ -178,6 +178,18 @@ void USpatialReceiver::FlushRemoveComponentOps()
 	QueuedRemoveComponentOps.Empty();
 }
 
+void USpatialReceiver::RemoveComponentOpsForEntity(Worker_EntityId EntityId)
+{
+	for (auto& RemoveComponentOp : QueuedRemoveComponentOps)
+	{
+		if (RemoveComponentOp.entity_id == EntityId)
+		{
+			// Zero component op to prevent array resize
+			RemoveComponentOp = Worker_RemoveComponentOp{};
+		}
+	}
+}
+
 void USpatialReceiver::ProcessRemoveComponent(const Worker_RemoveComponentOp& Op)
 {
 	if (!StaticComponentView->HasComponent(Op.entity_id, Op.component_id))
@@ -649,6 +661,10 @@ void USpatialReceiver::RemoveActor(Worker_EntityId EntityId)
 	if (Actor->IsFullNameStableForNetworking())
 	{
 		QueryForStartupActor(Actor, EntityId);
+
+		// We can't call CleanupDeletedEntity here as we need the NetDriver to maintain the EntityId
+		// to Actor Channel mapping for the DestoryActor to function correctly
+		PackageMap->RemoveEntityActor(EntityId);
 		return;
 	}
 
