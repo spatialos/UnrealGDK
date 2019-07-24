@@ -154,8 +154,6 @@ void USpatialPackageMapClient::RemoveEntityActor(Worker_EntityId EntityId)
 	{
 		SpatialGuidCache->RemoveEntityNetGUID(EntityId);
 	}
-
-	check(!SpatialGuidCache->GetNetGUIDFromEntityId(EntityId).IsValid());
 }
 
 void USpatialPackageMapClient::RemoveSubobject(const FUnrealObjectRef& ObjectRef)
