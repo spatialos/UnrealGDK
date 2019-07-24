@@ -67,6 +67,7 @@
         - [Actor handover]({{urlRoot}}/content/actor-handover)
         - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
     - Workers
+        - [Simulated players]({{urlRoot}}/content/simulated-players)
         - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
     - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
     - [Map travel]({{urlRoot}}/content/map-travel)

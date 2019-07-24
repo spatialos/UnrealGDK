@@ -117,42 +117,33 @@ There is a known issue with the uploader where progress does not change during u
 
 ### Step 4: Launch your cloud deployment
 
-The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. 
+The next step is to launch a cloud deployment using the assembly that you just uploaded. You can do this in the Unreal Editor.
 
-1. Select the **Deploy** button<br/><br/>
-![]({{assetRoot}}assets/toolbar/deploy.png)<br/>_Image: The Deploy button in the GDK toolbar_<br/>
-1. Fill out all fields in the **Deploy window**
-   * Note: the **assembly name** must be the same name given to the assembly in the previous step
-   * Note: the Snapshot File and Launch Config File fields are automatically populated and don't need to be changed
+> **Tip:** You can also launch a cloud deployment via the CLI. This is useful if you want to launch cloud deployments as part of continuous integration. For more information, see the generic steps for [launching a cloud deployment]({{urlRoot}}/content/cloud-deployment-workflow#launch-cloud-deployment).
 
-![]({{assetRoot}}assets/toolbar/deploy-settings.png)
-<br/>_Image: The Deploy settings_<br/>
+To launch a cloud deployment:
 
-<%(#Expandable title="Alternative workflow: launching with the SpatialOS command-line interface")%>
+1. On the GDK toolbar, click **Deploy**. <br>![]({{assetRoot}}assets/toolbar/deploy.png)<br/>_Image: The Deploy button in the GDK toolbar_<br/><br/>
+    This opens the cloud deployment dialog.
+    ![The Cloud Deployment settings]({{assetRoot}}assets/toolbar/deploy-settings.png)
+    <br/>_Image: The Cloud Deployment settings_<br/>
+1. Leave the Project name field as it is. In the **Assembly Name** field, enter the name you gave your assembly in the previous step.
+1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console](https://console.improbable.io/).
+1. Leave the Snapshot file field as it is. In the **Launch Config File** field, enter the path to the launch configuration file for this project. By default, this is in `<ProjectRoot>\spatial\`.
+1. (Optional) If needed, change the **Region**.
+1. (Optional) Create an additional deployment with [simulated players]({{urlRoot}}/content/simulated-players) that connect to your main game deployment. Simulated players are game clients running in the cloud, mimicking real players of your game from a connection flow and server-worker load perspective. This means they’re useful for scale testing. 
 
-The SpatialOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS. Find out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
+    To create an additional deployment with simulated players, in the **Simulated Players** section:
+	1. Check the box next to **Add simulated players**.
+	1. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console](https://console.improbable.io/).
+	1. In the **Number of Simulated Players** field, choose the number of simulated players you want to start. 
+	1. (Optional) If needed, change the **Region**.
+1. Click **Launch Deployment**.
 
-In a  command line window, navigate to `<ProjectRoot>\spatial\` and run the following command
+Your deployment(s) won’t launch instantly. A console window is displayed where you can view progress.
 
-```
-spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_worker_test.json <deployment_name>
-```
+When your deployment(s) have launched, SpatialOS automatically opens the [Console]({{urlRoot}}/content/glossary#console) in your browser.
 
-Where:
-
-- `default.snapshot` is the snapshot file we have provided for this Example project.
-- `<assembly_name>` is the name you gave the assembly in the previous step. 
-- `one_worker_test.json` is the launch configuration file we provided with the GDK Template
-- `<deployment_name>` is a name of your choice - you create this name when you run this command. 
-
-A valid launch command looks like this: 
-
-```
-spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
-```
-
-When your deployment has launched, SpatialOS automatically opens the Console in your browser.
-<%(/Expandable)%>
 </br>
 </br>
 **> Next:** [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)

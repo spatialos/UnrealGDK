@@ -42,25 +42,25 @@ Replacing `<myassembly>` with the name you choose to give your assembly.
 
 ### Launch cloud deployment
 
-There are two ways to launch a cloud deployment:
+You can launch a cloud deployment from the Unreal Editor or via the CLI. Launching via the CLI is useful if you want to launch cloud deployments as part of continuous integration.
 
-#### Using the Editor toolbar 
+#### From the Unreal Editor 
 
-Click Deploy in the SpatialOS editor toolbar and enter the snapshot, assembly, and deployment name.
+TODO COPY IN ALL STEPS
 
-![Deploy]({{assetRoot}}assets/toolbar/deploy.png)<br/>
+#### Using the SpatialOS CLI
 
-#### Using the Spatial CLI 
+To launch a cloud deployment via the CLI, in a terminal window, navigate to `<ProjectRoot>\spatial\` and run:
 
 ```
 spatial cloud launch --snapshot=snapshots/default.snapshot <myassembly> <launch_config>.json <deployment_name>
 ```
 
-Replacing:
+Where:
 
-* `<myassembly>` - identifies the worker assemblies to use (as chosen in the `spatial cloud upload` command).
-* `<launch_config>.json` - declares the world and load balancing configuration.
-* `<deployment_name>` - labels the deployment for SpatialOS to reference in the [Console]({{urlRoot}}/content/glossary#console).
+* `<myassembly>` identifies the worker assemblies to use (as chosen in the `spatial cloud upload` command).
+* `<launch_config>.json` declares the world and load balancing configuration.
+* `<deployment_name>` labels the deployment for SpatialOS to reference in the [Console]({{urlRoot}}/content/glossary#console).
 
 
 <br/>------<br/>
