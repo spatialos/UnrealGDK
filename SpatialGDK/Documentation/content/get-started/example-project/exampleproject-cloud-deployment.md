@@ -127,9 +127,10 @@ To launch a cloud deployment:
     This opens the cloud deployment dialog box.
     <%(Lightbox title ="Cloud Deployment" image="{{assetRoot}}assets/screen-grabs/cloud-deploy.png")%>
     <br/>_Image: The Cloud Deployment settings_<br/>
-1. Leave the Project name field as it is. In the **Assembly Name** field, enter the name you gave your assembly in the previous step.
+1. Enter your project name (see [Set up your SpatialOS project name](#step-1-associate-your-game-with-a-cloud-project-name)). 
+1. In the **Assembly Name** field, enter the name you gave your assembly in the previous step.
 1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console](https://console.improbable.io/).
-1. Leave the Snapshot file field as it is. In the **Launch Config File** field, enter the path to the launch configuration file for this project. By default, this is in `<ProjectRoot>\spatial\`.
+1. Leave the Snapshot file field as it is. In the **Launch Config File** field, enter the path to the launch configuration file for this project (including the file name). By default, this is `<ProjectRoot>/spatial/one_worker_test.json`.
 1. (Optional) If needed, change the **Region**.
 1. (Optional) Create an additional deployment with [simulated players]({{urlRoot}}/content/simulated-players) that connect to your main game deployment. Simulated players are game clients running in the cloud, mimicking real players of your game from a connection flow and server-worker load perspective. This means they’re useful for scale testing. 
 
@@ -140,7 +141,7 @@ To launch a cloud deployment:
 	1. (Optional) If needed, change the **Region**.
 1. Click **Launch Deployment**.
 
-Your deployment(s) won’t launch instantly. A console window is displayed where you can view progress.
+Your deployment(s) won’t launch instantly. A console window is displayed where you can see their progress.
 
 When your deployment(s) have launched, you can open the [Console]({{urlRoot}}/content/glossary#console) to view them.
 
