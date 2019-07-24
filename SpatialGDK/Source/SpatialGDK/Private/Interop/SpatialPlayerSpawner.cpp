@@ -55,7 +55,7 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 			URLString += TEXT("?simulatedPlayer=1");
 		}
 		
-		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
+		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName);
 	}
 
 	// Send a successful response if the player has been accepted, either from this request or one in the past.

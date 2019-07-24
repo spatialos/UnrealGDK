@@ -571,6 +571,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		// Taken from PostNetInit
 		if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 		{
+			check(!EntityActor->HasAuthority());
+			UE_LOG(LogTemp, Warning, TEXT("Dispatching beginplay for %s received over wire"), *EntityActor->GetName());
 			EntityActor->DispatchBeginPlay();
 		}
 
@@ -808,21 +810,6 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 		return FindSingletonActor(ActorClass);
 	}
 
-	// If we're checking out a player controller, spawn it via "USpatialNetDriver::AcceptNewPlayer"
-	if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
-	{
-		checkf(!UnrealMetadataComp->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
-
-		FString URLString = FURL().ToString();
-		URLString += TEXT("?workerAttribute=") + UnrealMetadataComp->OwnerWorkerAttribute;
-
-		// TODO: Once we can checkout PlayerController and PlayerState atomically, we can grab the UniqueId and online subsystem type from PlayerState. UNR-933
-		UNetConnection* Connection = NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), true);
-		check(Connection);
-
-		return Connection->PlayerController;
-	}
-
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
 
 	FActorSpawnParameters SpawnInfo;
@@ -834,6 +821,28 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 
 	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnDataComp->Rotation, SpawnLocation), SpawnInfo);
 	check(NewActor);
+
+	if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
+	{
+		checkf(!UnrealMetadataComp->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+
+		FString URLString = FURL().ToString();
+		URLString += TEXT("?workerAttribute=") + UnrealMetadataComp->OwnerWorkerAttribute;
+
+		USpatialNetConnection* Connection = nullptr;
+		NetDriver->CreateSpatialNetConnection(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), &Connection);
+		APlayerController* NewPC = Cast<APlayerController>(NewActor);
+		Connection->PlayerController = NewPC;
+
+		NewPC->CleanupPlayerState();
+
+		// Possess the newly-spawned player.
+		// CMS_TODO: are the next 3 lines correct?
+		NewPC->NetPlayerIndex = 0;
+		NewPC->Role = ROLE_SimulatedProxy;
+		NewPC->SetAutonomousProxy(false);
+		NewPC->SetPlayer(Connection);
+	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.
 	const float Epsilon = 0.001f;
