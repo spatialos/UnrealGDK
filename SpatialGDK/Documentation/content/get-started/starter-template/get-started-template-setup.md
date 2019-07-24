@@ -6,8 +6,7 @@
 To use the Starter Template, you must complete the following steps:
 
 1. Create a new project using the Starter Template
-1. Clone the GDK into your project
-1. Build the GDK for Unreal module dependencies
+2. Build the GDK for Unreal module dependencies
 
 ### Step 1: Create a new project using the Starter Template
 
