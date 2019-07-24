@@ -7,8 +7,8 @@ You define a Singleton Actor by tagging an Actor with the `SpatialType=Singleton
 
 There are two Singleton Actor types:
 
-* **Public Singleton Actors** - Singleton Actors that are replicated to [server-worker and client-worker instances]({{urlRoot}}/content/glossary#workers). [`AGameState`](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) and [`ALevelScriptActor`](https://api.unrealengine.com/INT/API/Runtime/Engine/Engine/ALevelScriptActor/index.html) are Public Singleton Actors.
-* **Private Singleton Actors** - Singleton Actors that are replicated to [server-worker instances]({{urlRoot}}/content/glossary#workers), but not accessible to [client-worker instances]({{urlRoot}}/content/glossary#workers). [`AGameMode`](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) is a Private Singleton Actor.
+* **Public Singleton Actors** - Singleton Actors that are replicated to [server-worker and client-worker instances]({{urlRoot}}/content/glossary#worker). [`AGameState`](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) and [`ALevelScriptActor`](https://api.unrealengine.com/INT/API/Runtime/Engine/Engine/ALevelScriptActor/index.html) are Public Singleton Actors.
+* **Private Singleton Actors** - Singleton Actors that are replicated to [server-worker instances]({{urlRoot}}/content/glossary#worker), but not accessible to [client-worker instances]({{urlRoot}}/content/glossary#worker). [`AGameMode`](https://docs.unrealengine.com/en-US/Gameplay/Framework/GameMode) is a Private Singleton Actor.
 
 You can define any class as a Singleton Actor. However, the following Unreal Engine classes are automatically tagged in source code as Singleton Actors, so you don’t need to define them:
 

@@ -49,7 +49,7 @@
         - [Introduction]({{urlRoot}}/content/spatialos-concepts/introduction)
         - [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)
         - [World, entities, components]({{urlRoot}}/content/spatialos-concepts/world-entities-components)
-        - [Workers and load balancing]({{urlRoot}}/content/spatialos-concepts/workers-and-load-balancing)
+        - [Workers and zoning]({{urlRoot}}/content/spatialos-concepts/workers-and-zoning)
         - [Authority and interest]({{urlRoot}}/content/spatialos-concepts/authority-and-interest)
         - [Schema and snapshots]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots)
     - [Glossary]({{urlRoot}}/content/glossary)
@@ -66,12 +66,12 @@
         - [Singleton Actors]({{urlRoot}}/content/singleton-actors)
     - Authority and interest
         - [Authority]({{urlRoot}}/content/authority)
+        - [Game client interest management]({{urlRoot}}/content/game-client-interest-management)
         - [Actor handover]({{urlRoot}}/content/actor-handover)
         - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
     - Workers
         - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
     - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
-    - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Map travel]({{urlRoot}}/content/map-travel)
     - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)

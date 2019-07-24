@@ -9,14 +9,14 @@ Key concepts in Unreal Engine map to concepts in the GDK, as shown in the table 
 
 | Unreal Engine | GDK | More information |
 | --- | --- | --- |
-| Actor | Entity | An entity is made up of a set of SpatialOS components. Each component stores data about the entity. Note that SpatialOS components are **not** the same thing as Unreal Components. |
+| Replicated Actor | Entity | An entity is made up of a set of SpatialOS components. Each component stores data about the entity. Note that SpatialOS components are **not** the same thing as Unreal Actor Components. |
 | Replicated property | SpatialOS component’s property | A type of data stored in a SpatialOS component.|
 | RPC | SpatialOS component’s command or event | A type of data stored in a SpatialOS component. Note that a SpatialOS component’s command is **not** the same as an Unreal command. |
 | Owning connection | EntityACL component | |
 | Conditional property replication | Dynamic `component_delivery` filter | |
 | Server | Server-worker instance | You can have multiple server-worker instances running the cloud element of your game. |
 
-You can find out more about [entities]({{urlRoot}}/content/glossary#spatialos-entity), SpatialOS [components]({{urlRoot}}/content/glossary#spatialos-component) and their properties, commands, events and [EntityACLs]({{urlRoot}}/content/glossary#access-control-list-acl), as well as the [`component_delivery` filter]({{urlRoot}}/content/glossary#component-interest) and [server-workers]({{urlRoot}}/content/glossary#workers), in the [glossary]({{urlRoot}}/content/glossary).
+You can find out more about [entities]({{urlRoot}}/content/glossary#entity), SpatialOS [components]({{urlRoot}}/content/glossary#spatialos-component) and their properties, commands, and events, as well as [server-workers]({{urlRoot}}/content/glossary#worker), in the [glossary]({{urlRoot}}/content/glossary).
 
 ## GDK for Unreal concepts
 We’ve introduced some new concepts to facilitate the fact that SpatialOS enables you to spread computation between multiple servers - known as “server-worker instances” in SpatialOS.
@@ -56,7 +56,7 @@ If your game uses zoning, you need to make sure that entities can move seamlessl
 
 In Unreal’s single-server architecture, authority over an Actor stays with the single server; an Actor’s properties never leave the server’s memory. With multiple server-worker instances in SpatialOS, authority needs to pass from one server-worker instance to another as an Actor moves around the game world. Passing authority, known as “Actor handover”, allows the second server-worker instance to continue where the first one left off. You set this up by adding the `Handover` tag to the Actor’s properties. 
 
-> * Actors equate to “entities” in SpatialOS, so we refer to them as “entities” when we’re talking about what happens to them in the GDK, and “Actors” when we’re talking about what you need to do with them in Unreal. 
+> * Replicated Actors equate to “entities” in SpatialOS, so we refer to them as “entities” when we’re talking about what happens to them in the GDK, and “Actors” when we’re talking about what you need to do with them in Unreal. 
 > 
 > * Replicated Actor properties map to “properties” in an entity’s components in SpatialOS.
 
@@ -70,7 +70,7 @@ See the [Multiserver Shooter tutorial]({{urlRoot}}/content/tutorials/multiserver
 For more information, see the documentation on [Actor handover]({{urlRoot}}/content/actor-handover).
 
 ### Singleton Actors
-You can use a Singleton Actor to define a “single source of truth” for operations or data across a game world that uses zoning. You can only have one instance of each Singleton Actor per game world.
+You can use a Singleton Actor to define a “single source of truth” for operations or data across a game world that uses zoning. You can only have one instance of an entity that represents a Singleton Actor per game world.
 
 You create a Singleton Actor by tagging an Actor with the `SpatialType=Singleton` class attribute. For example, if you are implementing a scoreboard, you probably want only one scoreboard in your world, so you can tag the scoreboard Actor as a Singleton Actor.
 
