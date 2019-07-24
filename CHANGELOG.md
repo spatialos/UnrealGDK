@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased-`x.y.z`] - 2019-xx-xx
 
-## [`0.6.0`] - 2019-07-09
+## [`0.6.0`] - 2019-07-31
+
+### Breaking Changes:
+* You must [re-build](https://docs.improbable.io/unreal/alpha/content/get-started/example-project/exampleproject-setup#step-4-build-the-dependencies-and-launch-the-project) your [Example Project](https://github.com/spatialos/UnrealGDKExampleProject) if you're upgrading it to `0.6.0`.
 
 ### New Known Issues:
 - Workers will sometimes not gain authority when quickly reconnecting to an existing deployment, resulting in a failure to spawn or simulate. When using the editor if you Play - Stop - Play in quick succession you can sometimes fail to launch correctly.
