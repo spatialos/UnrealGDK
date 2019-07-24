@@ -67,7 +67,7 @@ _Image: The Inspector showing the state of your local deployment_<br/>
 
 When you’re done, select Unreal Engine's native **Stop** button to stop the client. 
 
-![]({{assetRoot}}assets/toolbar/stop-button-native.png)<br/>_Image: On the native Unreal Engine toolbar, select Stop_<br/>
+![]({{assetRoot}}assets/screen-grabs/toolbar/stop-button-native.png)<br/>_Image: On the native Unreal Engine toolbar, select Stop_<br/>
 
 This stops the running clients but keeps your deployment running. As you iterate on your game, the GDK can (in most cases) automatically reload your client and server workers, so you can iterate on your game without having to restart your deployment. For more information and a reference diagram, see the [Local deployment workflow page]({{urlRoot}}/content/local-deployment-workflow).
 

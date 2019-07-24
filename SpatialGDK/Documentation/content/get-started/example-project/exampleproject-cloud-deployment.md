@@ -123,9 +123,9 @@ The next step is to launch a cloud deployment using the assembly that you just u
 
 To launch a cloud deployment:
 
-1. On the GDK toolbar, click **Deploy**. <br>![]({{assetRoot}}assets/toolbar/deploy.png)<br/>_Image: The Deploy button in the GDK toolbar_<br/><br/>
-    This opens the cloud deployment dialog.
-    ![The Cloud Deployment settings]({{assetRoot}}assets/toolbar/deploy-settings.png)
+1. On the GDK toolbar, click **Deploy**. <br>![GDK toolbar "Deploy" button]({{assetRoot}}assets/screen-grabs/toolbar/gdk-toolbar-deploy.png)<br/>_Image: The Deploy button in the GDK toolbar_<br/><br/>
+    This opens the cloud deployment dialog box.
+    <%(Lightbox title ="Cloud Deployment" image="{{assetRoot}}assets/screen-grabs/cloud-deploy.png")%>
     <br/>_Image: The Cloud Deployment settings_<br/>
 1. Leave the Project name field as it is. In the **Assembly Name** field, enter the name you gave your assembly in the previous step.
 1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console](https://console.improbable.io/).
@@ -142,7 +142,7 @@ To launch a cloud deployment:
 
 Your deployment(s) won’t launch instantly. A console window is displayed where you can view progress.
 
-When your deployment(s) have launched, SpatialOS automatically opens the [Console]({{urlRoot}}/content/glossary#console) in your browser.
+When your deployment(s) have launched, you can open the [Console]({{urlRoot}}/content/glossary#console) to view them.
 
 </br>
 </br>
@@ -150,6 +150,7 @@ When your deployment(s) have launched, SpatialOS automatically opens the [Consol
 
 
 <br/>------<br/>
-_2019-06-27 Page edited with editorial review_
+_2019-07-31 Page updated with limited editorial review_
+<br>_2019-06-27 Page updated with editorial review_
 
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1241)

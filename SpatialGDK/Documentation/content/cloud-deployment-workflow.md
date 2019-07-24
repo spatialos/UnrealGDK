@@ -42,9 +42,9 @@ Replacing `<myassembly>` with the name you choose to give your assembly.
 
 ### Launch cloud deployment
 
-You can launch a cloud deployment from the Unreal Editor or via the CLI. Launching via the CLI is useful if you want to launch cloud deployments as part of continuous integration.
+You can launch a cloud deployment using the Unreal Editor or the SpatialOS CLI. Launching via the CLI is useful if you want to launch cloud deployments as part of continuous integration.
 
-#### From the Unreal Editor 
+#### Using the Unreal Editor 
 
 TODO COPY IN ALL STEPS
 
@@ -62,6 +62,7 @@ Where:
 * `<launch_config>.json` declares the world and load balancing configuration.
 * `<deployment_name>` labels the deployment for SpatialOS to reference in the [Console]({{urlRoot}}/content/glossary#console).
 
-
+<br>
 <br/>------<br/>
-_2019-07-21 Page updated with limited editorial review_
+_2019-07-31 Page updated with limited editorial review_
+<br>_2019-07-21 Page updated with limited editorial review_

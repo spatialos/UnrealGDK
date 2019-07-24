@@ -90,13 +90,13 @@ There is a known issue with the uploader where progress does not change during u
 The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. 
 
 1. Select the **Deploy** button<br/><br/>
-![]({{assetRoot}}assets/toolbar/deploy.png)<br/>_Image: The Deploy button in the GDK toolbar_<br/>
+![GDK toolbar "Deploy" button]({{assetRoot}}assets/screen-grabs/toolbar/gdk-toolbar-deploy.png)<br/>_Image: The Deploy button in the GDK toolbar_<br/>
 1. Fill out all fields in the **Deploy window**
    * Note: the **assembly name** must be the same name given to the assembly in the previous step
    * Note: the Snapshot File and Launch Config File fields are automatically populated and don't need to be changed
 
-![]({{assetRoot}}assets/toolbar/deploy-settings.png)
-<br/>_Image: The Deploy settings_<br/>
+    <%(Lightbox title ="Cloud Deployment" image="{{assetRoot}}assets/screen-grabs/cloud-deploy.png")%>
+    <br/>_Image: The Cloud Deployment dialog box_<br/>
 
 <%(#Expandable title="Alternative workflow: launching with the SpatialOS command-line interface")%>
 

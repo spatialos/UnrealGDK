@@ -3,7 +3,7 @@
 
 There are two toolbars you can use in the Unreal Editor: the main Unreal toolbar, and the SpatialOS GDK toolbar. Once enabled, the GDK toolbar sits alongside the main Unreal toolbar:
 
- ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars.png)
+<%(Lightbox title="Toolbars" image="{{assetRoot}}assets/screen-grabs/toolbar/unreal-and-gdk-toolbar.png")%>
 
 ## Definitions:
 `<ProjectRoot>` - The root folder of your Unreal project.  
@@ -50,13 +50,13 @@ The GDK toolbar provides several functions required for building and launching y
 
 To enable the GDK toolbar, navigate to **Edit** > **Plugins** inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS** section and enable the toolbar:
 
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/enable-toolbar.png)
+<%(Lightbox title="Enable toolbar" image="{{assetRoot}}assets/screen-grabs/toolbar/enable-toolbar.png")%>
 
 #### Buttons
 
 The GDK toolbar has five features mapped to individual buttons and is displayed in the main editor toolbar to the right of the `Launch` button:
 
- ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbar-buttons.png)
+ ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/gdk-toolbar.png)
 
 You can also access these from the **Window** menu:
 
@@ -67,14 +67,14 @@ You can also access these from the **Window** menu:
 | Snapshot | Generates a [SpatialOS snapshot]({{urlRoot}}/content/glossary#snapshot). |
 | Schema | Creates [schema]({{urlRoot}}/content/glossary#schema) for your Unreal project. |
 | Start | Runs [`spatial worker build build-config`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see [below](#settings)). |
-| Stop | Stops `spatial local launch`. |
 | Inspector | Opens the [Inspector]({{urlRoot}}/content/glossary#inspector) in a browser. |
+| Deploy | Opens the Cloud Deployment dialog box. |
 
 #### Settings
 
 The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK for Unreal** > **Settings**.
 
- ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbar-settings.png)
+<%(Lightbox title="Toolbar settings" image="{{assetRoot}}assets/screen-grabs/toolbar/toolbar-settings.png")%>
 
 ##### General
 
@@ -115,5 +115,6 @@ The toolbar settings are in **Edit** > **Project Settings** > **SpatialOS GDK fo
 <br/>
 
 <br/>------------<br/>
-_2019-06-27 Page updated with limited editorial review_
+_2019-07-31 Page updated with limited editorial review_
+<br/>_2019-06-27 Page updated with limited editorial review_
 <br/>	<br/>

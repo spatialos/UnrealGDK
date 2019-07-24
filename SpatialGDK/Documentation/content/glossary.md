@@ -307,7 +307,9 @@ SpatialOS uses schema to generate APIs specific to the SpatialOS components on e
 
 A simulated player is a client-worker instance that is controlled by simulated player logic as opposed to real player input. You can use simulated players to scale-test your game. They launch inside a standalone cloud deployment and connect to a target cloud deployment.
 
-<!-- TODO Add link to sim player page -->
+> **Find out more**
+> 
+> [Simulated players]({{urlRoot}}/content/simulated-players)
 
 ### Snapshot
 A snapshot is a representation of the state of a [SpatialOS world](#spatialos-world) at a given point in time. It stores each [persistent](#persistence) [SpatialOS entity](#entity) and the values of their [SpatialOS components](#spatialos-component)' [properties]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components).
@@ -463,6 +465,6 @@ Zoning is when you split out the computation of the SpatialOS world spatially, s
 
 <br/>
 <br/>------<br/>
-_2019-07-31 Page edited with limited editorial review_
+_2019-07-31 Page updated with limited editorial review_
 <br/>_2019-06-15 Added layers, non-Unreal layers, network operations (ops)_
 <br/>_2019-03-15 Page updated with editorial review_
