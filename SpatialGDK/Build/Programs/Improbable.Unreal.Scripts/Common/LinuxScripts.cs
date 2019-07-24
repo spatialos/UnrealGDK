@@ -46,7 +46,7 @@ NEW_USER=unrealworker
 WORKER_ID=$1
 shift 1
 
-touch ""/improbable/logs/${WORKER_ID}.log""
+touch ""/improbable/logs/${{WORKER_ID}}.log""
 
 # 2>/dev/null silences errors by redirecting stderr to the null device. This is done to prevent errors when a machine attempts to add the same user more than once.
 useradd $NEW_USER -m -d /improbable/logs/ >> ""/improbable/logs/${{WORKER_ID}}.log"" 2>&1
