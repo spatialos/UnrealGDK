@@ -69,7 +69,6 @@
     - Workers
         - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
     - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
-    - [Gameplay Ability System]({{urlRoot}}/content/ability-system)
     - [Map travel]({{urlRoot}}/content/map-travel)
     - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
     - [Helper scripts]({{urlRoot}}/content/helper-scripts)
