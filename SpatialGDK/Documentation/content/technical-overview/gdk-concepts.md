@@ -27,12 +27,12 @@ Offloading is the new architecture that the SpatialOS GDK for Unreal provides to
 <%(Lightbox image="{{assetRoot}}assets/offloading-diagram.png")%>
 _Offloading: Offloaded Unreal server-worker instance has authority only over Red Actors and the Main Unreal server-worker instance that runs major game systems has authority over all Actors except the Red Actors._
 
-For more information, see [Offloading overview]({{urlRoot}}/content/offloading-concept).
+For more information, see [Offloading overview]({{urlRoot}}/content/workers/offloading-concept).
 
 ### Actor groups
 To facilitate offloading, we've created the concept of Actor groups to help you configure what Actor types that a given server-worker type has authority over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
 
-Before you start to use offloading in your game, ensure that you’re familiar with the [best practices for using offloading]({{urlRoot}}/content/offloading-unreal-worker-types/offloading-concept#best-practices) and [offloading workflow]({{urlRoot}}/content/offloading-unreal-worker-types/setup-offloading).
+Before you start to use offloading in your game, ensure that you’re familiar with the [best practices for using offloading]({{urlRoot}}/content/workers/offloading-concept#best-practices) and [offloading workflow]({{urlRoot}}/content/workers/set-up-offloading).
 
 ### Zoning
 Because the GDK uses SpatialOS networking, you can have multiple server-worker instances simulating your game world. This allows you to extend the size of the world.
@@ -94,9 +94,12 @@ By default, the GDK uses a single Unreal server-worker type (the template for a 
 
 You can use these non-Unreal server-worker types to modularize your game’s functionality so you can re-use the functionality across different games. For example, you could use a non-Unreal server-worker type written in Python that interacts with a database or other third-party service, such as [Firebase](https://firebase.google.com/) or [PlayFab](https://playfab.com/).
 
-For more information, see the documentation on [non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types).
-
+For more information, see the documentation on [non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types).
 
 
 <br/>------------<br/>
+_2019-07-26 Page updated with limited editorial review: offloading, Actor group added_<br/>
+_2019-04-11 Page updated with limited editorial review_<br/>
 _2019-04-25 Page added with editorial review_
+[//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1142)
+------------

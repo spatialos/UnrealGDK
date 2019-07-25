@@ -28,7 +28,7 @@ If there are no worker configuration for any of the server-worker types listed i
 
 In order for offloading to work, it needs to be enabled using the toggle in the Spatial GDK settings. In the example project, the settings have been configured to have offloading enabled.
 
-![img]({{assetRoot}}assets/offloading-project/enbale-offloading.png)
+![img]({{assetRoot}}assets/offloading-project/enable-offloading.png)
 
 <br/>------------<br/>
 _2019-07-26 Page added as draft_

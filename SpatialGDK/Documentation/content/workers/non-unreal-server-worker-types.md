@@ -35,7 +35,7 @@ The external schema code generator is a tool in the GDK that generates C++ code 
 
 Below is a summary of the steps required to use the external schema code generator. There is a more complete example in the [examples section below](#using-the-code-generator-example).
 
-* Run the `ExternalSchemaCodegen.bat` file as described in the [helper scripts documentation]({{urlRoot}}/content/helper-scripts) to generate code from a directory containing external schema files.
+* Run the `ExternalSchemaCodegen.bat` file as described in the [helper scripts documentation]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts) to generate code from a directory containing external schema files.
 * [Regenerate](https://wiki.unrealengine.com/Generate_Visual_Studio_Project) the Visual Studio project files.
 * Instantiate the `ExternalSchemaInterface` class inside your game module. If you want to ensure that the SpatialOS worker connection registers your callbacks to receive the network operations that are sent as soon as your worker connects, you need to register the callbacks inside your game instance's `OnConnected` event callback.
 * To send SpatialOS component updates and commands, call the overloaded `SendComponentUpdate`, `SendCommandRequest`, or `SendCommandResponse` method for the relevant schema type.

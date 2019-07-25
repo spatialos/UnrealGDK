@@ -54,7 +54,7 @@ In addition to the CrashBot blueprint, the example project had to create an addi
 
 Mention weapon to allow it to be used for the bots.
 
-### Ensure that code get executed on teh correct server worker
+### Ensure that code get executed on the correct server worker
 
 With the introduction of offloading, it is no longer enough to check whether the netmode is a dedicated server to ensure that logic is run on the authoritative worker. An actor could now be authoritatively updated from any given server type and therefore it is important to be mindful of checking whether the current server worker has authority over the entity. Below are a few example snippets from the UEquipmentComponent where such checks were added to ensure correct flow:
 

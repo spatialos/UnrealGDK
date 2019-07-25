@@ -36,6 +36,10 @@
             - [2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
             - [3: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [4: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
+        - Offloading example project
+            - [Introduction]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-intro)
+            - [1. Set up]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
+            - [2. Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
         - Port your project to SpatialOS
             - [Introduction]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
             - [1. Set up your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-setup)
@@ -67,11 +71,16 @@
         - [Actor handover]({{urlRoot}}/content/actor-handover)
         - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
     - Workers
-        - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
-    - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots) 
+        - Offloading Unreal worker types
+            - [Overview]({{urlRoot}}/content/workers/offloading-concept)
+            - [Set up offloading]({{urlRoot}}/content/workers/set-up-offloading)
+        - [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
+    - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots)
     - [Map travel]({{urlRoot}}/content/map-travel)
     - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
-    - [Helper scripts]({{urlRoot}}/content/helper-scripts)
+    - APIs and helper scripts
+        - [Helper scripts]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts)
+        - [Actor group ownership helpers]({{urlRoot}}/content/apis-and-helper-scripts/actor-group-ownership-helpers)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Workflows</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)

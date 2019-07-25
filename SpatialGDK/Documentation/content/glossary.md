@@ -353,7 +353,7 @@ All of the data that you want the [SpatialOS Runtime](#spatialos-runtime) to sto
 > 
 > Setting up Actors for schema generation: [Spatial Type](https://docs.improbable.io/unreal/alpha/content/spatial-type)
 > <br><br>
-> If you plan to extend the functionality of the GDK using the [SpatialOS Worker SDK](#spatialos-sdks) - for example, if you want to create [non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types) - you’ll need to know about the [standard schema library](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library).
+> If you plan to extend the functionality of the GDK using the [SpatialOS Worker SDK](#spatialos-sdks) - for example, if you want to create [non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types) - you’ll need to know about the [standard schema library](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library).
 
 ### SpatialOS component property
 
@@ -387,7 +387,7 @@ You can use the Platform SDK to build tools, workflows and services that integra
 > **Find out more**
 > 
 > * [Worker SDK: SpatialOS SDKs and data: overview](https://docs.improbable.io/reference/latest/shared/sdks-and-data-overview)
-> * [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+> * [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 
 ### SpatialOS world
 
@@ -413,7 +413,7 @@ When you create a worker type using the [Worker SDK](#spatialos-sdks), each work
 
 > **Find out more**
 > 
-> [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+> [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 
 <!-- TODO How do you set up worker types in Unreal https://improbableio.atlassian.net/browse/DOC-1064 -->
 <!-- TODO Offloading info added here:  https://improbableio.atlassian.net/browse/DOC-1064 -->
@@ -430,7 +430,7 @@ For example, you could set up an additional server-worker type to implement play
 
 > **Find out more**
 > 
-> [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+> [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 
 <!-- TODO How do you set up worker types in Unreal https://improbableio.atlassian.net/browse/DOC-1064 -->
 <!-- TODO Offloading info added here:  https://improbableio.atlassian.net/browse/DOC-1064 -->
