@@ -3,6 +3,7 @@
 # Offloading example project tutorial
 
 ## 1. Setup
+
 ### Step 1: Configure Actor groups
 
 The map is set up to have two Actor groups apart from the default Actor group, namely the `AI` and `CrashBot` Actor groups. The `AI` Actor group is owned by the `AIWorker`, and therefore the authority of any Actors added to this group have their authority assigned to `AIWorkers`. Similarly, the Actors listed in the `CrashBot` Actor group have their authority assigned to `CrashBotWorker`.

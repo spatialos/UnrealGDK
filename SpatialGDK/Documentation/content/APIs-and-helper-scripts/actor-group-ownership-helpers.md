@@ -2,8 +2,7 @@
 
 # Actor group ownership helpers
 
-Unlike the authority callbacks which tell you when authority is gained or lost, 
-When writing gameplay code for offloaded features, you may need to query for whether an actor or a class is part of an actor group. The GDK provides functionality for doing so through the class USpatialStatics. These functions are also accessible through Blueprint.
+Unlike the authority callbacks which tell you when authority is gained or lost, when writing gameplay code for offloaded features, you may need to query for whether an actor or a class is part of an actor group. The GDK provides functionality for doing so through the class USpatialStatics. These functions are also accessible through Blueprint.
 The table below details the APIs available through the USpatialStatics class:
 
 ## `IsActorGroupOwnerForClass`

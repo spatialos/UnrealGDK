@@ -21,6 +21,19 @@ You can find out more about [entities]({{urlRoot}}/content/glossary#entity), Spa
 ## GDK for Unreal concepts
 We’ve introduced some new concepts to facilitate the fact that SpatialOS enables you to spread computation between multiple servers - known as “server-worker instances” in SpatialOS.
 
+### Offloading
+Offloading is the new architecture that the SpatialOS GDK for Unreal provides to allocate the authority of specific Actor groups from the main Unreal server worker instance to a different worker instance. By using offloading, you can save the resources of the main Unreal server-worker instance when you want to build richer game features.
+
+<%(Lightbox image="{{assetRoot}}assets/offloading-diagram.png")%>
+_Offloading: Offloaded Unreal server-worker instance has authority only over Red Actors and the Main Unreal server-worker instance that runs major game systems has authority over all Actors except the Red Actors._
+
+For more information, see [Offloading overview]({{urlRoot}}/content/offloading-concept).
+
+### Actor groups
+To facilitate offloading, we've created the concept of Actor groups to help you configure what Actor types that a given server-worker type has authority over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
+
+Before you start to use offloading in your game, ensure that you’re familiar with the [best practices for using offloading]({{urlRoot}}/content/offloading-unreal-worker-types/offloading-concept#best-practices) and [offloading workflow]({{urlRoot}}/content/offloading-unreal-worker-types/setup-offloading).
+
 ### Zoning
 Because the GDK uses SpatialOS networking, you can have multiple server-worker instances simulating your game world. This allows you to extend the size of the world.
 

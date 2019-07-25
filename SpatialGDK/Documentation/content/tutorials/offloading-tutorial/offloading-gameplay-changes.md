@@ -8,7 +8,7 @@
 
 A common scenario when building offloaded gameplay features is when interacting actors are offloaded to different workers. Traditionally, this would have been done by either having the actor performing an action on another actor invoking a function directly on the actor. This worked fine when there was only one server maintaining the entire state of the world that has authority over all actors in the simulation. In the case of offloading, this no longer the case if the two interacting actors have their authority assigned to different worker types.
 
-To solve this, any functions invoked by the interacting actor will need to be handled via a [Cross-server RPCs]([Cross-server RPCs]({{urlRoot}}/content/technical-overview/gdk-concepts#cross-server-rpcs).
+To solve this, any functions invoked by the interacting actor will need to be handled via a [Cross-server RPCs]({{urlRoot}}/content/technical-overview/gdk-concepts#cross-server-rpcs).
 
 In the case of the example project, the turrets are set up to run on a separate worker(AIWorker). If a player shoots the turret, a call to TakeDamage is invoked which is part of the native Actor API in unreal. The TakeDamage function is not an RPC function so it would not be executed on the turrets unless they internally get routed to the AIWorker using a cross-server RPC.
 

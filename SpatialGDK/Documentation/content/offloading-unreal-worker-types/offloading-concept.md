@@ -25,12 +25,12 @@ To get started with configuring Actor groups, see [Offloading example project]({
 Before you offload Actors, consider the following scenarios that you need to update the game code to work correctly in:
 
 - `IsServer(...)`
-    This function returns true for both the default server-worker and all offloaded servers. To ensure that logic in a code branch is invoked only on a worker that can be authoritative over an Actor, use the new APIs defined in [`USpatialStatics`](link here), which are based on actor group ownership.
+    This function returns true for both the default server-worker and all offloaded servers. To ensure that logic in a code branch is invoked only on a worker that can be authoritative over an Actor, use the new APIs defined in [Actor group ownership helpers]({{urlRoot}}/content/apis-and-helper-scripts/actor-group-ownership-helpers).
 
 - `<NM_Client` or `== NM_DedicatedServer` check
     Same as above
 
-- Server RPCs follow the similar logic to their usage in a single-server model.
+- Server RPCs follow similar logic to their usage in a single-server model.
   - **When sent from clients**: if a client net-owns an actor and invokes a server RPC, it sends that RPC to the server that has authority, which can be either the default server worker or offloaded server workers.
   - **When sent from an offloaded server**: Server RPCs invoked by an offloaded worker run only on that offloaded server worker. However, if you want Server RPCs to be run on another server worker you should use [Cross-server RPCs]({{urlRoot}}/content/technical-overview/gdk-concepts#cross-server-rpcs).
 
