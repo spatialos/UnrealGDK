@@ -77,6 +77,10 @@ void GenerateCompleteSchemaFromClass(FString SchemaPath, FComponentIdGenerator& 
 	}
 	else
 	{
+		if (Class->GetName().Contains(TEXT("MyComponent")))
+		{
+			__debugbreak();
+		}
 		GenerateSubobjectSchema(IdGenerator, Class, TypeInfo, SchemaPath + TEXT("Subobjects/"));
 	}
 }
@@ -216,6 +220,11 @@ bool ValidateIdentifierNames(TArray<TSharedPtr<FUnrealType>>& TypeInfos)
 		const FString& ClassName = Class->GetName();
 		const FString& ClassPath = Class->GetPathName();
 		FString SchemaName = UnrealNameToSchemaName(ClassName);
+
+		if (ClassName.Contains(TEXT("MyComponent")))
+		{
+			__debugbreak();
+		}
 
 		if (!CheckSchemaNameValidity(SchemaName, ClassPath, TEXT("Class")))
 		{
@@ -616,6 +625,24 @@ void ResetUsedNames()
 		}
 		AddPotentialNameCollision(Entry.Value.GeneratedSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
 	}
+
+ 	for (const TPair< FString, FSubobjectSchemaData>& Entry : SubobjectClassPathToSchema)
+ 	{
+		if (Entry.Value.GeneratedSchemaName.IsEmpty())
+		{
+			continue;
+		}
+		ClassPathToSchemaName.Add(Entry.Key, Entry.Value.GeneratedSchemaName);
+		SchemaNameToClassPath.Add(Entry.Value.GeneratedSchemaName, Entry.Key);
+		FSoftObjectPath ObjPath = FSoftObjectPath(Entry.Key);
+		FString DesiredSchemaName = UnrealNameToSchemaName(ObjPath.GetAssetName());
+
+		if (DesiredSchemaName != Entry.Value.GeneratedSchemaName)
+		{
+			AddPotentialNameCollision(DesiredSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
+		}
+		AddPotentialNameCollision(Entry.Value.GeneratedSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
+ 	}
 }
 
 void RunSchemaCompiler()

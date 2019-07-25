@@ -301,6 +301,9 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 	// Use previously generated component IDs when possible.
 	const FSubobjectSchemaData* const ExistingSchemaData = SubobjectClassPathToSchema.Find(Class->GetPathName());
+	checkf(ExistingSchemaData == nullptr || ExistingSchemaData->GeneratedSchemaName == ClassPathToSchemaName[Class->GetPathName()],
+		TEXT("Existing schema generated name does not match in memory version for schema %s : %s"),
+		*ExistingSchemaData->GeneratedSchemaName, *ClassPathToSchemaName[Class->GetPathName()]);
 
 	for (uint32 i = 1; i <= DynamicComponentsPerClass; i++)
 	{
@@ -368,7 +371,7 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 	}
 
 	Writer.WriteToFile(FString::Printf(TEXT("%s%s.schema"), *SchemaPath, *ClassPathToSchemaName[Class->GetPathName()]));
-
+	SubobjectSchemaData.GeneratedSchemaName = ClassPathToSchemaName[Class->GetPathName()];
 	SubobjectClassPathToSchema.Add(Class->GetPathName(), SubobjectSchemaData);
 }
 

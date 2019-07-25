@@ -45,6 +45,9 @@ struct FDynamicSubobjectSchemaData
 {
 	GENERATED_USTRUCT_BODY()
 
+	//UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	//FString GeneratedSchemaName;
+
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	uint32 SchemaComponents[SCHEMA_Count] = {};
 };
@@ -54,6 +57,9 @@ USTRUCT()
 struct FSubobjectSchemaData
 {
 	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	FString GeneratedSchemaName;
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TArray<FDynamicSubobjectSchemaData> DynamicSubobjectComponents;
