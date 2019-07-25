@@ -1,4 +1,5 @@
 <%(TOC)%>
+
 # Helper scripts
 
 These scripts are located under `Plugins\UnrealGDK\SpatialGDK\Build\Scripts\` directory of your game.
