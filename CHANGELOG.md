@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added temporary MaxNetCullDistanceSquared to SpatialGDKSettings to prevent excessive net cull distances impacting runtime performance. Set to 0 to disable.
 
 ### Bug fixes:
+- The `improbable` namespace has been renamed to `SpatialGDK`. This prevents namespace conflicts with the C++ SDK.
 - Disconnected players no longer remain on the server until they time out if the client was shut down manually.
 - Fixed support for relative paths as the engine association in your games .uproject file.
 - RPCs on `NotSpatial` types are no longer queued forever and are now dropped instead.
