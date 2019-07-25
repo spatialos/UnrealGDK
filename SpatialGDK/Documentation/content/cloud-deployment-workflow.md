@@ -6,7 +6,7 @@ If you haven't already, please follow the [GDK Starter Template guide]({{urlRoot
 
 <!-- This is a live embed of a google drawing -->
 
-<img src="https://docs.google.com/drawings/d/e/2PACX-1vQVcAihbYTNe7TjNsIvkfqIR34Vgw5RESKxboxbvgY5VcgxiI-SZT_M2kuGE8RYMU6sAYWqdkoCjMWt/pub?w=505&h=775">
+ <%(Lightbox image="https://docs.google.com/drawings/d/e/2PACX-1vQVcAihbYTNe7TjNsIvkfqIR34Vgw5RESKxboxbvgY5VcgxiI-SZT_M2kuGE8RYMU6sAYWqdkoCjMWt/pub?w=758&h=1162")%>
 
 You may find the following command-line snippets useful as reference:
 
