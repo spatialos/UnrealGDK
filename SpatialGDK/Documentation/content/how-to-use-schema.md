@@ -30,7 +30,7 @@ Within the Unreal Editor, you can generate schema using a full scan, or generate
 
     To generate schema for all classes in your project that have replicated properties or RPCs:<br/>
 
-    In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
+    In the Unreal Editor, on the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons), open the **Schema** drop-down menu and select **Schema (Full Scan)**.<br/> You must select **Schema (Full Scan)** the first time you generate schema for a project. 
     <br/> ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema (Full Scan)**_<br/>
     <br/>When you select **Schema (Full Scan)**, the GDK iterates through all classes in your project that have replicated properties or RPCs to generate the schema files, and then updates the `SchemaDatabase`. <br/>
@@ -41,7 +41,7 @@ Within the Unreal Editor, you can generate schema using a full scan, or generate
 
     To generate schema for classes that have replicated properties or RPCs and that are currently loaded by the Editor: <br/>
 
-    Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/toolbars#buttons). The GDK iterates through classes that have replicated properties or RPCs and that are currently loaded by the Editor, generates the schema files and updates the `SchemaDatabase`.<br/>
+    Select **Schema** in the [GDK toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars#buttons). The GDK iterates through classes that have replicated properties or RPCs and that are currently loaded by the Editor, generates the schema files and updates the `SchemaDatabase`.<br/>
     ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/schema-button.png)<br/>
     _Image: In the GDK toolbar in the Unreal Editor, select **Schema**_<br/>
 

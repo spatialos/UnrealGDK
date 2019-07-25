@@ -83,7 +83,7 @@ Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat GDKShooter Win64
 
 **Troubleshooting**
 <%(#Expandable title="Reset Spatial networking")%>
-You might need to reset [Spatial networking]({{urlRoot}}/content/toolbars##switching-between-native-unreal-networking-and-spatialos-networking).</br>  
+You might need to reset [Spatial networking]({{urlRoot}}/content/unreal-editor-interface/toolbars##switching-between-native-unreal-networking-and-spatialos-networking).</br>  
 By default, Spatial networking is enabled for Unreal GDK projects, including the Example Project. However, if you have changed the default networking option for this project, you need to reset it to Spatial networking before building workers.</br>
 To check which networking your project is using, look in its `DefaultGame.ini` configuration file (located in the `<ProjectRoot>\Game\Config` directory). If there is a `bSpatialNetworking` option in the file, set it to `True` to enable Spatial networking. 
 If there is no `SpatialNetworking` option, you do not have to do anything, as the project will default to using Spatial networking.

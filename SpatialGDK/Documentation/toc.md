@@ -17,10 +17,6 @@
                 - [2: Launch a local deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
                 - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-cloud)
                 - [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
-    - Technical overview
-        - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
-        - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
-        - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
     - Tutorials and guides
         - Multiple deployments for session-based games
             - [Introduction]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro)
@@ -47,8 +43,11 @@
             - [3. Launch a local deployment]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-deployment)
             - [Logs and modifications]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-logs)
     - [Unreal features support]({{urlRoot}}/unreal-features-support)
-    - [Known issues]({{urlRoot}}/known-issues)
 - <h3>Concepts and terminology</h3>
+    - Technical overview
+        - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
+        - [How the GDK fits into your game stack]({{urlRoot}}/content/technical-overview/how-the-gdk-fits-in)
+        - [GDK concepts]({{urlRoot}}/content/technical-overview/gdk-concepts)
     - SpatialOS concepts
         - [Introduction]({{urlRoot}}/content/spatialos-concepts/introduction)
         - [What is SpatialOS?]({{urlRoot}}/content/spatialos-concepts/what-is-spatialos)
@@ -57,8 +56,11 @@
         - [Authority and interest]({{urlRoot}}/content/spatialos-concepts/authority-and-interest)
         - [Schema and snapshots]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots)
     - [Glossary]({{urlRoot}}/content/glossary)
-    - [Toolbar]({{urlRoot}}/content/toolbars)
 - <h3>Reference</h3>
+    - Unreal Editor interface
+        - [SpatialOS Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings)
+        - [SpatialOS Runtime settings panel]({{urlRoot}}/content/unreal-editor-interface/runtime-settings)
+        - [Toolbars]({{urlRoot}}/content/unreal-editor-interface/toolbars)
     - Actors and entities
         - [Schema]({{urlRoot}}/content/how-to-use-schema)
         - [Spatial Type]({{urlRoot}}/content/spatial-type)
@@ -89,6 +91,7 @@
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
 - <h3>Support</h3>
+    - [Known issues]({{urlRoot}}/known-issues)
     - [Versioning scheme]({{urlRoot}}/content/pricing-and-support/versioning-scheme)
     - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)
     - [Support]({{urlRoot}}/content/pricing-and-support/support)
