@@ -57,7 +57,6 @@ public:
 	/**
 	 * Specifies the maximum number of Actors replicated per tick.
 	 * Default: `0` per tick  (no limit)
-	 * To avoid game client and server-worker instance slowdown, set the value to around `100`
 	 * (If you set the value to ` 0`, the SpatialOS Runtime replicates every Actor per tick; this forms a large SpatialOS  world, affecting the performance of both game clients and server-worker instances.)
 	 * You can use the `stat Spatial` flag when you run project builds to find the number of calls to `ReplicateActor`, and then use this number for reference.
 	 */
