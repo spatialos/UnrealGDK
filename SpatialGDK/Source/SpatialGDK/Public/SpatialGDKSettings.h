@@ -23,40 +23,59 @@ public:
 	
 	virtual void PostInitProperties() override;
 
-	/** The number of entity IDs to be reserved when the entity pool is first created */
+	/** 
+	 * The number of entity IDs to be reserved when the entity pool is first created. Ensure that the number of entity IDs
+	 * reserved is greater than the number of Actors that you expect the server-worker instances to spawn at game deployment 
+	*/
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (ConfigRestartRequired = false, DisplayName = "Initial Entity ID Reservation Count"))
 	uint32 EntityPoolInitialReservationCount;
 
-	/** The minimum number of entity IDs available in the pool before a new batch is reserved */
-	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (ConfigRestartRequired = false, DisplayName = "Pool Refresh Minimum Threshold"))
+	/** 
+	 * Specifies when the SpatialOS Runtime should reserve a new batch of entity IDs: the value is the number of un-used entity 
+	 * IDs left in the entity pool which triggers the SpatialOS Runtime to reserve new entity IDs
+	*/
+	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (ConfigRestartRequired = false, DisplayName = "Pool Refresh Threshold"))
 	uint32 EntityPoolRefreshThreshold;
 
-	/** The number of entity IDs reserved when the minimum threshold is reached */
+	/** 
+	* Specifies the number of new entity IDs the SpatialOS Runtime reserves when `Pool refresh threshold` triggers a new batch.
+	*/
 	UPROPERTY(EditAnywhere, config, Category = "Entity Pool", meta = (ConfigRestartRequired = false, DisplayName = "Refresh Count"))
 	uint32 EntityPoolRefreshCount;
 
-	/** Time between heartbeat events sent from clients to notify the servers they are still connected. */
+	/** Specifies the amount of time, in seconds, between heartbeat events sent from a game client to notify the server-worker instances that it's connected. */
 	UPROPERTY(EditAnywhere, config, Category = "Heartbeat", meta = (ConfigRestartRequired = false, DisplayName = "Heartbeat Interval (seconds)"))
 	float HeartbeatIntervalSeconds;
 
-	/** Time that should pass since the last heartbeat event received to decide a client has disconnected. */
+	/** 
+	* Specifies the maximum amount of time, in seconds, that the server-worker instances wait for a game client to send heartbeat events. 
+	* (If the timeout expires, the game client has disconnected.) 
+	*/
 	UPROPERTY(EditAnywhere, config, Category = "Heartbeat", meta = (ConfigRestartRequired = false, DisplayName = "Heartbeat Timeout (seconds)"))
 	float HeartbeatTimeoutSeconds;
 
 	/**
-	 * Limit the number of actors which are replicated per tick to the number specified.
-	 * This acts as a hard limit to the number of actors per frame but nothing else. It's recommended to set this value to around 100~ (experimentation recommended).
-	 * If set to 0, SpatialOS will replicate every actor per frame (unbounded) and so large worlds will experience slowdown server-side and client-side.
-	 * Use `stat SpatialNet` in editor builds to find the number of calls to 'ReplicateActor' and use this to inform the rate limit setting.
+	 * Specifies the maximum number of Actors replicated per tick.
+	 * Default: `0` per tick  (no limit)
+	 * (If you set the value to ` 0`, the SpatialOS Runtime replicates every Actor per tick; this forms a large SpatialOS  world, affecting the performance of both game clients and server-worker instances.)
+	 * You can use the `stat Spatial` flag when you run project builds to find the number of calls to `ReplicateActor`, and then use this number for reference.
 	 */
-	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Actor Replication Rate Limit"))
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Maximum Actors replicated per tick"))
 	uint32 ActorReplicationRateLimit;
 
-	/** Limits the number of entities which can be created in a game tick. Entity creation is handled seperately to actor replication to ensure creation requests are always handled when under load. **/
-	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Entity Creation Rate Limit"))
+	/** 
+	* Specifies the maximum number of entities created by the SpatialOS Runtime per tick. 
+	* (The SpatialOS Runtime handles entity creation separately from Actor replication to ensure it can handle entity creation requests under load.)
+	* Note: if you set the value to 0, there is no limit to the number of entities created per tick. However, too many entities created at the same time might overload the SpatialOS Runtime, which can negatively affect your game.
+	* Default: `0` per tick  (no limit)
+	*/
+	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "Maximum entities created per tick"))
 	uint32 EntityCreationRateLimit;
 
-	/** Rate at which updates are sent to SpatialOS and processed from SpatialOS.*/
+	/**
+	* Specifies the rate, in number of times per second, at which server-worker instance updates are sent to and received from the SpatialOS Runtime.
+	* Default:1000/s
+	*/
 	UPROPERTY(EditAnywhere, config, Category = "Replication", meta = (ConfigRestartRequired = false, DisplayName = "SpatialOS Network Update Rate"))
 	float OpsUpdateRate;
 
@@ -76,7 +95,7 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false))
 	float PositionUpdateFrequency;
 
-	/** Threshold an Actor needs to move before its SpatialOS Position is updated.*/
+	/** Threshold an Actor needs to move, in centimeters, before its SpatialOS Position is updated.*/
 	UPROPERTY(EditAnywhere, config, Category = "SpatialOS Position Updates", meta = (ConfigRestartRequired = false))
 	float PositionDistanceThreshold;
 
@@ -92,7 +111,11 @@ public:
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false), DisplayName = "Metrics Report Rate (seconds)")
 	float MetricsReportRate;
 
-	/** Change 'Load' value in inspector to represent worker Frame Time instead of a fraction of target FPS.*/
+	/** 
+	* By default the SpatialOS Runtime reports server-worker instance’s load in frames per second (FPS). 
+	* Select this to switch so it reports as seconds per frame. 
+	* This value is visible as 'Load' in the Inspector, next to each worker.
+	*/
 	UPROPERTY(EditAnywhere, config, Category = "Metrics", meta = (ConfigRestartRequired = false))
 	bool bUseFrameTimeAsLoad;
 
