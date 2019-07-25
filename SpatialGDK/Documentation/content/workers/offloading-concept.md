@@ -12,7 +12,7 @@ You can think of _offloading_ as splitting up computation-heavy systems to run o
 
 ## Actor groups
 
-We introduce Actor groups to help you set up offloading by configuring what Actor types that a given server-worker type has authority over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
+To facilitate offloading, we've created the concept of Actor groups to help you configure which Actor types a given server-worker type will have authority over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
 
 Before you start to use offloading in your game, ensure that you’re familiar with the [best practices for using offloading]({{urlRoot}}/content/workers/offloading-concept#best-practices) and [offloading workflow]({{urlRoot}}/content/workers/set-up-offloading).
 

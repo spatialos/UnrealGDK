@@ -19,6 +19,13 @@ Note that this SpatialOS documentation assumes you are developing a SpatialOS ga
 
 ## GDK for Unreal terms
 
+### Actor groups
+To facilitate offloading, we've created the concept of Actor groups to help you configure which Actor types a given server-worker type will have authority over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
+
+> **Find out more:**
+> 
+> [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups)
+
 ### Actor handover
 Actor handover (`handover`) is a GDK-specific `UPROPERTY` tag. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor property handover between server-workers]({{urlRoot}}/content/actor-handover.md).
 
@@ -74,11 +81,20 @@ You can define interest in three ways, which you can use alongside each other:
 > 
 > [Game client interest management]({{urlRoot}}/content/game-client-interest-management)
 
+### Offloading
+
+Offloading is the new architecture that the SpatialOS GDK for Unreal provides to allocate the authority of specific [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups) from the main Unreal server-worker instance to a different server-worker instance. By using offloading, you can save the resources of the main Unreal server-worker instance when you want to build richer game features.
+
+> **Find out more**
+> 
+> [Offloading overview]({{urlRoot}}/content/workers/offloading-concept)
+
 ### SchemaDatabase
 
 The SchemaDatabase is a `uasset` file (named `SchemaDatabase.uasset`) that contains information about UObjects and associated [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) in your project. Information is automatically added to the `SchemaDatabase` by the GDK whenever you generate schema. It is a generated file which you cannot manually edit. 
 
 ### Schema generation
+
 A SpatialOS GDK for Unreal toolbar command (within the Unreal Editor) which takes a set of Unreal classes and generates SpatialOS [schema](#schema) that enables automatic communication between Unreal and SpatialOS. 
 
 > **Find out more**
