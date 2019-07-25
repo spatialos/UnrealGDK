@@ -20,7 +20,10 @@ To access the **SpatialOS Editor Settings** panel in the Unreal Editor, use eith
     <br>_Image: the SpatialOS Editor Settings panel_
 
 ## Settings
-The following table lists all the settings in the SpatialOS Editor Settings panel:
+
+TODO To learn more about a setting, hover over it for a tooltip
+
+TODO for more complex settings, they are further detailed below
 
 <table>
   <tr>
