@@ -28,7 +28,7 @@ struct FConnectionConfig
         
 #if PLATFORM_IOS || PLATFORM_ANDROID
 		// On a mobile platform, you can only be a client worker, and therefore use the external IP.
-		WorkerType = SpatialConstants::ClientWorkerType;
+		WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 		UseExternalIp = true;
 #endif
 		FString LinkProtocolString;
