@@ -78,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reliable RPC checking no longer breaks compatibility between development and shipping builds.
 - Fixed an issue with schema name collisions.
 - Running Schema (Full Scan) now clears generated schema files first.
-- Singletons authority and state resumes correct when reconnecting servers to snapshot.
+- [Singleton actor's](https://docs.improbable.io/unreal/latest/content/singleton-actors#singleton-actors) authority and state now resumes correctly when reconnecting servers to snapshot.
 - Fixed a crash when retrying reliable RPCs with UObject arguments that got destroyed before the RPC was retried.
 - Fixed path naming issues in setup.sh
 - Fixed assert/crash in SpatialMetricsDisplay that occurred when reloading a snapshot.
