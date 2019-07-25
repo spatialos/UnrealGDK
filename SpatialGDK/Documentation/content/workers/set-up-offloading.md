@@ -13,7 +13,7 @@ Before you start, review the following offloading workflows. You can check each 
 3. Configure Actor groups: Create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
 
     **Notes**:
-    - By default, when an Actor type does not have a mapping to an Actor group, its authority is assigned to the default server worker type.
+    - By default, when an Actor type does not have a mapping to an Actor group, its authority is assigned to the main Unreal server-worker type.
     - You must configure actor groups on a class level rather than on an instance level.
 4. Generate a snapshot: Validate the snapshot is set up correctly.
 5. Test changes locally: Launch a local deployment.

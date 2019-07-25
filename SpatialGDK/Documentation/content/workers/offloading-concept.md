@@ -34,8 +34,14 @@ Before you offload Actors, consider the following scenarios that you need to upd
     Same as above
 
 - Server RPCs follow similar logic to their usage in a single-server model.
-  - **When sent from clients**: if a client net-owns an actor and invokes a server RPC, it sends that RPC to the server that has authority, which can be either the default server worker or offloaded server workers.
+  - **When sent from clients**: if a client net-owns an actor and invokes a server RPC, it sends that RPC to the server that has authority, which can be either the main Unreal server-worker or offloaded server-worker.
   - **When sent from an offloaded server**: Server RPCs invoked by an offloaded worker run only on that offloaded server worker. However, if you want Server RPCs to be run on another server worker you should use [Cross-server RPCs]({{urlRoot}}/content/technical-overview/gdk-concepts#cross-server-rpcs).
+
+- Calls to `SpawnActor` on a server that doesn't have authority over the spawned Actor
+
+    You might want to spawn an Actor from a server where a different server has authority over the spawned Actor. For example, an offloaded AI might drop items that the default server worker instance should have authority over. 
+
+    However, this might cause issues when the initialization logic in the calls such as `BeginPlay` and `PostInitializeComponent` is executed on the wrong server-worker instance. You can usually work around these issues using callbacks / RepNotify-s on the main Unreal server-worker instance to defer the execution of such logic until when the correct server-worker instance has authority over the offloaded Actor.
 
 <br/>------------<br/>
 _2019-07-26 Page added with limited editorial review_
