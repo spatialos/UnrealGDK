@@ -274,7 +274,7 @@ To facilitate this continuity in an entity's state between deployments, there is
 
 ### Placeholder entities
 
-Placeholder entities are useful if you have multiple server-worker instances, for visualizing your [worker instance’s](#worker-types-and-worker-instances) areas of [authority](#authority). The GDK can auto-populate your [local deployment](#deployment) with placeholder entities via the Editor Settings panel which you can access from the [Unreal toolbar]({{urlRoot}}/content/toolbars#unreal-toolbar). From the **Play** menu, select **SpatialOS settings** and scroll down to **SpatialOS GDK for Unreal**.
+Placeholder entities are useful if you have multiple server-worker instances, for visualizing your [worker instance’s](#worker-types-and-worker-instances) areas of [authority](#authority). The GDK can auto-populate your [local deployment](#deployment) with placeholder entities via the Editor Settings panel which you can access from the [Unreal toolbar]({{urlRoot}}/content/toolbars). From the **Play** menu, select **SpatialOS settings** and scroll down to **SpatialOS GDK for Unreal**.
 
 <!--
 TODO link to Editor Settings doc when it’s ready, and then remove the instructions from this glossary entry https://improbableio.atlassian.net/browse/UNR-1207
