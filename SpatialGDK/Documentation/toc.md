@@ -87,6 +87,10 @@
 - <h3>Workflows</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
+    - Debug workers from Visual Studio
+        - [Overview]({{urlRoot}}/content/workflows/debug-from-vs-overview)
+        - [Auto-start server-workers]({{urlRoot}}/content/workflows/autostart-server-workers)
+        - [Set up Visual Studio]({{urlRoot}}/content/workflows/set-up-vs)
     - Deployment workflows
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
