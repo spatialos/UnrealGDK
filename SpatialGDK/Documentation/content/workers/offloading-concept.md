@@ -39,7 +39,7 @@ Before you offload Actors, consider the following scenarios that you need to upd
 
 - Calls to `SpawnActor` on a server that doesn't have authority over the spawned Actor
 
-    You might want to spawn an Actor from a server where a different server has authority over the spawned Actor. For example, an offloaded AI might drop items that the default server worker instance should have authority over. 
+    You might want to spawn an Actor from a server where a different server has authority over the spawned Actor. For example, an offloaded AI might drop items that the main Unreal server-worker instance should have authority over.
 
     However, this might cause issues when the initialization logic in the calls such as `BeginPlay` and `PostInitializeComponent` is executed on the wrong server-worker instance. You can usually work around these issues using callbacks / RepNotify-s on the main Unreal server-worker instance to defer the execution of such logic until when the correct server-worker instance has authority over the offloaded Actor.
 
