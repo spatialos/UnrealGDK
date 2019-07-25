@@ -108,8 +108,9 @@ In addition to all of the updates from Improbable, this release includes x impro
 - GenerateSchemaAndSnapshots commandlet no longer runs a full schema generation for each map.
 - Launching SpatialOS would fail if there was a space in the full directory path.
 - Fixed an issue with schema name collisions.
-- Fixed an issue where schema generation was not respecting "Directories to never cook".
-- Fixed an issue causing the editor to crash during schema generation if the database is readonly.
+- Schema generation now respects "Directories to never cook".
+- The editor no longer crashes during schema generation when the database is readonly.
+- Replicating `UInterfaceProperty` no logner causes crashes.
 
 ## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
 
