@@ -18,7 +18,7 @@ Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Ser
 
 Replacing `<YourProject>` with the name of your Unreal project. 
 
-For more information on the available options when using `BuildWorker.bat`, please see the [Helper scripts reference]({{urlRoot}}/content/helper-scripts).
+For more information on the available options when using `BuildWorker.bat`, please see the [Helper scripts reference]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts).
 
 ### Build client-worker assembly
 
@@ -28,7 +28,7 @@ Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Wi
 
 Replacing `<YourProject>` with the name of your Unreal project.
 
-For more information on the available options when using `BuildWorker.bat`, please see the [Helper scripts reference]({{urlRoot}}/content/helper-scripts).
+For more information on the available options when using `BuildWorker.bat`, please see the [Helper scripts reference]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts).
 
 ### Upload assembly
 

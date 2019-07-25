@@ -19,6 +19,13 @@ Note that this SpatialOS documentation assumes you are developing a SpatialOS ga
 
 ## GDK for Unreal terms
 
+### Actor groups
+To facilitate offloading, we've created the concept of Actor groups to help you configure which Actor types a given server-worker type will have authority over. In the Unreal Editor, you can create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
+
+> **Find out more:**
+> 
+> [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups)
+
 ### Actor handover
 Actor handover (`handover`) is a GDK-specific `UPROPERTY` tag. It allows games built in Unreal (which uses single-server architecture) to take advantage of SpatialOS’ distributed, persistent server architecture. See [Actor property handover between server-workers]({{urlRoot}}/content/actor-handover.md).
 
@@ -74,11 +81,20 @@ You can define interest in three ways, which you can use alongside each other:
 > 
 > [Game client interest management]({{urlRoot}}/content/game-client-interest-management)
 
+### Offloading
+
+Offloading is the new architecture that the SpatialOS GDK for Unreal provides to allocate the authority of specific [Actor groups]({{urlRoot}}/content/workers/offloading-concept#actor-groups) from the main Unreal server-worker instance to a different server-worker instance. By using offloading, you can save the resources of the main Unreal server-worker instance when you want to build richer game features.
+
+> **Find out more**
+> 
+> [Offloading overview]({{urlRoot}}/content/workers/offloading-concept)
+
 ### SchemaDatabase
 
 The SchemaDatabase is a `uasset` file (named `SchemaDatabase.uasset`) that contains information about UObjects and associated [schema]({{urlRoot}}/content/spatialos-concepts/schema-and-snapshots#schema) in your project. Information is automatically added to the `SchemaDatabase` by the GDK whenever you generate schema. It is a generated file which you cannot manually edit. 
 
 ### Schema generation
+
 A SpatialOS GDK for Unreal toolbar command (within the Unreal Editor) which takes a set of Unreal classes and generates SpatialOS [schema](#schema) that enables automatic communication between Unreal and SpatialOS. 
 
 > **Find out more**
@@ -353,7 +369,7 @@ All of the data that you want the [SpatialOS Runtime](#spatialos-runtime) to sto
 > 
 > Setting up Actors for schema generation: [Spatial Type](https://docs.improbable.io/unreal/alpha/content/spatial-type)
 > <br><br>
-> If you plan to extend the functionality of the GDK using the [SpatialOS Worker SDK](#spatialos-sdks) - for example, if you want to create [non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types) - you’ll need to know about the [standard schema library](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library).
+> If you plan to extend the functionality of the GDK using the [SpatialOS Worker SDK](#spatialos-sdks) - for example, if you want to create [non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types) - you’ll need to know about the [standard schema library](https://docs.improbable.io/reference/latest/shared/schema/standard-schema-library).
 
 ### SpatialOS component property
 
@@ -387,7 +403,7 @@ You can use the Platform SDK to build tools, workflows and services that integra
 > **Find out more**
 > 
 > * [Worker SDK: SpatialOS SDKs and data: overview](https://docs.improbable.io/reference/latest/shared/sdks-and-data-overview)
-> * [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+> * [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 
 ### SpatialOS world
 
@@ -413,7 +429,7 @@ When you create a worker type using the [Worker SDK](#spatialos-sdks), each work
 
 > **Find out more**
 > 
-> [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+> [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 
 <!-- TODO How do you set up worker types in Unreal https://improbableio.atlassian.net/browse/DOC-1064 -->
 <!-- TODO Offloading info added here:  https://improbableio.atlassian.net/browse/DOC-1064 -->
@@ -430,7 +446,7 @@ For example, you could set up an additional server-worker type to implement play
 
 > **Find out more**
 > 
-> [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+> [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
 
 <!-- TODO How do you set up worker types in Unreal https://improbableio.atlassian.net/browse/DOC-1064 -->
 <!-- TODO Offloading info added here:  https://improbableio.atlassian.net/browse/DOC-1064 -->
