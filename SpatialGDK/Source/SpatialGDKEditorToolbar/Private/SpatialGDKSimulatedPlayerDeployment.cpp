@@ -66,7 +66,7 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 								.HAlign(HAlign_Center)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("NOTE: The assembly has to be built and uploaded manually. Follow the docs "))))
+									.Text(FText::FromString(FString(TEXT("NOTE: You can set default values in the SpatialOS settings under \"Cloud\" The assembly has to be built and uploaded manually. Follow the docs "))))
 								]
 								+ SHorizontalBox::Slot()
 								.AutoWidth()
