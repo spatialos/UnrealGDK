@@ -20,7 +20,7 @@ Note that the default SpatialOS editor settings for your project are saved in th
 
 <%(Callout type="tip" message="Each setting is documented with a tooltip which appears when you hover over it in the editor.")%>
 
-## Use cases
+## Example use cases
 
 In the following use cases, you use the SpatialOS Editor Settings panel to configure your project:
 
