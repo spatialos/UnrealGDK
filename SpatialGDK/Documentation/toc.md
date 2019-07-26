@@ -58,9 +58,9 @@
     - [Glossary]({{urlRoot}}/content/glossary)
 - <h3>Reference</h3>
     - Unreal Editor interface
+        - [Toolbars]({{urlRoot}}/content/unreal-editor-interface/toolbars)
         - [SpatialOS Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings)
         - [SpatialOS Runtime settings panel]({{urlRoot}}/content/unreal-editor-interface/runtime-settings)
-        - [Toolbars]({{urlRoot}}/content/unreal-editor-interface/toolbars)
     - Actors and entities
         - [Schema]({{urlRoot}}/content/how-to-use-schema)
         - [Spatial Type]({{urlRoot}}/content/spatial-type)
@@ -73,10 +73,10 @@
         - [Actor handover]({{urlRoot}}/content/actor-handover)
         - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
     - Workers
+        - [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
         - Offloading Unreal worker types
             - [Overview]({{urlRoot}}/content/workers/offloading-concept)
             - [Set up offloading]({{urlRoot}}/content/workers/set-up-offloading)
-        - [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
     - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots)
     - [Map travel]({{urlRoot}}/content/map-travel)
     - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
@@ -87,6 +87,7 @@
 - <h3>Workflows</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
+    - [Simulated players]({{urlRoot}}/content/simulated-players)
     - Debug workers from Visual Studio
         - [Overview]({{urlRoot}}/content/workflows/debug-from-vs-overview)
         - [Auto-start server-workers]({{urlRoot}}/content/workflows/autostart-server-workers)

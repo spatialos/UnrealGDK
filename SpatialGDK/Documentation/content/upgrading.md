@@ -47,4 +47,4 @@ Be sure to join the community on our <a href="https://forums.improbable.io" data
 
 
 <br/>------<br/>
-_2019-04-15 Page edited with limited editorial review_
+_2019-04-15 Page updated with limited editorial review_

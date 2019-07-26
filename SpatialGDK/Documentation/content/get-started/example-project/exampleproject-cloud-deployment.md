@@ -117,48 +117,62 @@ There is a known issue with the uploader where progress does not change during u
 
 ### Step 4: Launch your cloud deployment
 
-The next step is to launch a cloud deployment using the worker assemblies that you just uploaded. 
+The next step is to launch a cloud deployment using the assembly that you just uploaded. You can do this in the Unreal Editor.
 
-1. Select the **Deploy** button<br/><br/>
-![]({{assetRoot}}assets/toolbar/deploy.png)<br/>_Image: The Deploy button in the GDK toolbar_<br/>
-1. Fill out all fields in the **Deploy window**
-   * Note: the **assembly name** must be the same name given to the assembly in the previous step
-   * Note: the Snapshot File and Launch Config File fields are automatically populated and don't need to be changed
+> **Tip:** You can also launch a cloud deployment via the CLI. This is useful if you want to launch cloud deployments as part of continuous integration. For more information, see the generic steps for [launching a cloud deployment]({{urlRoot}}/content/cloud-deployment-workflow#launch-cloud-deployment).
 
-![]({{assetRoot}}assets/toolbar/deploy-settings.png)
-<br/>_Image: The Deploy settings_<br/>
+To launch a cloud deployment:
 
-<%(#Expandable title="Alternative workflow: launching with the SpatialOS command-line interface")%>
+1. On the GDK toolbar, click **Deploy**. <br>
+![GDK toolbar "Deploy" button]({{assetRoot}}assets/screen-grabs/toolbar/gdk-toolbar-deploy.png)<br/>
+    This opens the cloud deployment dialog box.<br/><br/>
+    <%(Lightbox title ="Cloud Deployment" image="{{assetRoot}}assets/screen-grabs/cloud-deploy.png")%>
+1. Enter your project name (see [Set up your SpatialOS project name](#step-1-associate-your-game-with-a-cloud-project-name)). 
+1. In the **Assembly Name** field, enter the name you gave your assembly in the [previous step](#step-3-upload-your-workers).
+1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+1. Leave the Snapshot File field as it is. In the **Launch Config File** field, enter the path to `one_worker_test.json` (including the file name).
+1. (Optional) If needed, change the **Region**.
 
-The SpatialOS command-line tool (CLI) provides a set of commands that you use to interact with a SpatialOS project. Among other functions, you use it to deploy your game. You installed the CLI in step 1, when you set up your dependencies and installed SpatialOS. Find out more in the [glossary]({{urlRoot}}/content/glossary#spatialos-command-line-tool-cli).
+#### Optional: Launch Simulated Players
 
-In a  command line window, navigate to `<ProjectRoot>\spatial\` and run the following command
+[Simulated players]({{urlRoot}}/content/simulated-players) are game clients running in the cloud, mimicking real players of your game from a connection flow and server-worker load perspective. This means they’re useful for scale testing. 
 
-```
-spatial cloud launch --snapshot=snapshots\default.snapshot <assembly_name> one_worker_test.json <deployment_name>
-```
+To create an additional deployment with simulated players, in the **Simulated Players** section:
 
-Where:
+1. Check the box next to **Add simulated players**.
+1. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+1. In the **Number of Simulated Players** field, choose the number of simulated players you want to start. 
+1. (Optional) If needed, change the **Region**.
 
-- `default.snapshot` is the snapshot file we have provided for this Example project.
-- `<assembly_name>` is the name you gave the assembly in the previous step. 
-- `one_worker_test.json` is the launch configuration file we provided with the GDK Template
-- `<deployment_name>` is a name of your choice - you create this name when you run this command. 
+<%(#Expandable title="Developing Simulated Players")%>
 
-A valid launch command looks like this: 
+A basic implementation of Simulated Players is included in this project, which you can try out by deploying them and find out by exploring the source (look for `SimulatedPlayerCharacter_BP`). For more information on developing Simulated Players for you project, see the [reference page]({{urlRoot}}/content/simulated-players).
 
-```
-spatial cloud launch --snapshot=snapshots/default.snapshot myassembly one_worker_test.json mydeployment
-```
-
-When your deployment has launched, SpatialOS automatically opens the Console in your browser.
 <%(/Expandable)%>
+
+Click **Launch Deployment**.
+
+<%(Callout type="tip" message="You can set default values for all the fields in the Deploy window, using the Cloud section of the [SpatialOS Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings) ")%>
+
+Your deployment(s) won’t launch instantly. A console window is displayed where you can see their progress.
+
+When your deployment(s) have launched, you can open the [Console](https://console.improbable.io/) to view them.
+
+<%(#Expandable title="Cloud workflow reference diagram")%>
+
+ <%(Lightbox image="https://docs.google.com/drawings/d/e/2PACX-1vQVcAihbYTNe7TjNsIvkfqIR34Vgw5RESKxboxbvgY5VcgxiI-SZT_M2kuGE8RYMU6sAYWqdkoCjMWt/pub?w=758&h=1162")%>
+
+For more details, see the [Cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow).
+
+<%(/Expandable)%>
+
 </br>
 </br>
 **> Next:** [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
 
 
 <br/>------<br/>
-_2019-06-27 Page edited with editorial review_
+_2019-07-31 Page updated with limited editorial review_
+<br>_2019-06-27 Page updated with editorial review_
 
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1241)

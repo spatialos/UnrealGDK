@@ -3,7 +3,7 @@
 
 There are two toolbars you can use in the Unreal Editor: the main Unreal toolbar, and the SpatialOS GDK toolbar. Once enabled, the GDK toolbar sits alongside the main Unreal toolbar:
 
- ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbars.png)
+<%(Lightbox title="Toolbars" image="{{assetRoot}}assets/screen-grabs/toolbar/unreal-and-gdk-toolbar.png")%>
 
 ## Definitions:
 `<ProjectRoot>` - The root folder of your Unreal project.  
@@ -44,19 +44,13 @@ If you want to connect multiple server-worker instances to SpatialOS, you need t
 
 The GDK toolbar provides several functions required for building and launching your client and server-workers from inside the Unreal Editor.
 
-### Add the GDK toolbar to your Unreal project
-
-> Note: If you based your project off the [Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro), the toolbar is already enabled.
-
-To enable the GDK toolbar, navigate to **Edit** > **Plugins** inside the Unreal Editor and scroll down to the bottom. Select the **SpatialOS** section and enable the toolbar:
-
-![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/enable-toolbar.png)
+> Note: follow the [Get Started guide]({{urlRoot}}/content/get-started/introduction) to install the GDK toolbar.
 
 #### Buttons
 
 The GDK toolbar has five features mapped to individual buttons and is displayed in the main editor toolbar to the right of the `Launch` button:
 
- ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/toolbar-buttons.png)
+ ![Toolbar]({{assetRoot}}assets/screen-grabs/toolbar/gdk-toolbar.png)
 
 You can also access these from the **Window** menu:
 
@@ -69,9 +63,15 @@ You can also access these from the **Window** menu:
 | Start | Runs [`spatial worker build build-config`](https://docs.improbable.io/reference/latest/shared/spatial-cli/spatial-worker-build-build-config) to build worker configs and runs `spatial local launch` with the launch configuration specified in the settings (see the [SpatialOS Editor Settings]({{urlRoot}}/content/unreal-editor-interface/editor-settings) documentation). |
 | Stop | Stops `spatial local launch`. |
 | Inspector | Opens the [Inspector]({{urlRoot}}/content/glossary#inspector) in a browser. |
+| Deploy | Opens the Cloud Deployment dialog box. |
+
+#### Settings
+
+Visit the [SpatialOS Editor Settings panel page]({{urlRoot}}/content/unreal-editor-interface/editor-settings) to learn more about the GDK toolbar's settings.
 
 <br/>
 
 <br/>------------<br/>
-_2019-06-27 Page updated with limited editorial review_
+_2019-07-31 Page updated with limited editorial review_
+<br/>_2019-06-27 Page updated with limited editorial review_
 <br/>	<br/>

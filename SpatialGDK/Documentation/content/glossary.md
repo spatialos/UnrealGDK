@@ -274,7 +274,7 @@ To facilitate this continuity in an entity's state between deployments, there is
 
 ### Placeholder entities
 
-Placeholder entities are useful if you have multiple server-worker instances, for visualizing your [worker instance’s](#worker-types-and-worker-instances) areas of [authority](#authority). The GDK can auto-populate your [local deployment](#deployment) with placeholder entities via the Editor Settings panel which you can access from the [Unreal toolbar]({{urlRoot}}/content/toolbars). From the **Play** menu, select **SpatialOS settings** and scroll down to **SpatialOS GDK for Unreal**.
+Placeholder entities are useful if you have multiple server-worker instances, for visualizing your [worker instance’s](#worker-types-and-worker-instances) areas of [authority](#authority). The GDK can auto-populate your [local deployment](#deployment) with placeholder entities via the Editor Settings panel which you can access from the [Unreal toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars). From the **Play** menu, select **SpatialOS settings** and scroll down to **SpatialOS GDK for Unreal**.
 
 <!--
 TODO link to Editor Settings doc when it’s ready, and then remove the instructions from this glossary entry https://improbableio.atlassian.net/browse/UNR-1207
@@ -329,7 +329,9 @@ SpatialOS uses schema to generate APIs specific to the SpatialOS components on e
 
 A simulated player is a client-worker instance that is controlled by simulated player logic as opposed to real player input. You can use simulated players to scale-test your game. They launch inside a standalone cloud deployment and connect to a target cloud deployment.
 
-<!-- TODO Add link to sim player page -->
+> **Find out more**
+> 
+> [Simulated players]({{urlRoot}}/content/simulated-players)
 
 ### Snapshot
 A snapshot is a representation of the state of a [SpatialOS world](#spatialos-world) at a given point in time. It stores each [persistent](#persistence) [entity](#entity) and the values of their [SpatialOS components](#spatialos-component)' [properties]({{urlRoot}}/content/spatialos-concepts/world-entities-components#entities-and-components).
@@ -490,6 +492,6 @@ Zoning is when you split out the computation of the SpatialOS world spatially, s
 
 <br/>
 <br/>------<br/>
-_2019-07-31 Page edited with limited editorial review_
+_2019-07-31 Page updated with limited editorial review_
 <br/>_2019-06-15 Added layers, non-Unreal layers, network operations (ops)_
 <br/>_2019-03-15 Page updated with editorial review_
