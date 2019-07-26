@@ -50,7 +50,7 @@ To build the GDK for Unreal you need the following software installed on your ma
     - **Desktop development with C++**<br>
     - **Game development with C++**, including the optional **Unreal Engine installer** component.
 - [**v13 clang 7.0.1 toolchain**](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html)
-    - You need the v13 clang 7.0.1 toolchain to compile your server-workers. 
+    - To build the server software for SpatialOS deployments correctly, you need to build the Unreal Engine Fork targeting Linux. This requires Linux cross-compilation of your SpatialOS project and the Unreal Engine Fork. To do this, you need to download and unzip the Linux cross-compilation toolchain.
 
 </br>
 </br>
