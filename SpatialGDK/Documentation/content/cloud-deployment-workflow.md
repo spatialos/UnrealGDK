@@ -6,7 +6,7 @@ If you haven't already, please follow the [GDK Starter Template guide]({{urlRoot
 
 <!-- This is a live embed of a google drawing -->
 
-<img src="https://docs.google.com/drawings/d/e/2PACX-1vQVcAihbYTNe7TjNsIvkfqIR34Vgw5RESKxboxbvgY5VcgxiI-SZT_M2kuGE8RYMU6sAYWqdkoCjMWt/pub?w=505&h=775">
+ <%(Lightbox image="https://docs.google.com/drawings/d/e/2PACX-1vQVcAihbYTNe7TjNsIvkfqIR34Vgw5RESKxboxbvgY5VcgxiI-SZT_M2kuGE8RYMU6sAYWqdkoCjMWt/pub?w=758&h=1162")%>
 
 You may find the following command-line snippets useful as reference:
 
@@ -18,7 +18,7 @@ Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject>Ser
 
 Replacing `<YourProject>` with the name of your Unreal project. 
 
-For more information on the available options when using `BuildWorker.bat`, please see the [Helper scripts reference]({{urlRoot}}/content/helper-scripts).
+For more information on the available options when using `BuildWorker.bat`, please see the [Helper scripts reference]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts).
 
 ### Build client-worker assembly
 
@@ -28,7 +28,7 @@ Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\BuildWorker.bat <YourProject> Wi
 
 Replacing `<YourProject>` with the name of your Unreal project.
 
-For more information on the available options when using `BuildWorker.bat`, please see the [Helper scripts reference]({{urlRoot}}/content/helper-scripts).
+For more information on the available options when using `BuildWorker.bat`, please see the [Helper scripts reference]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts).
 
 ### Upload assembly
 

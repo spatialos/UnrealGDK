@@ -20,19 +20,19 @@ _Image:The Unreal Engine **Play** drop-down menu, with **Run Dedicated Server** 
 ## Step 2. Launch a local deployment
 Before you launch a local deployment, you must:
 
-* generate schema (which creates SpatialOS entities)
+* generate schema (which creates entities)
 * generate a snapshot
 
 <%(#Expandable title="What is Schema?")%>
 
-Schema is a set of definitions which represent your game’s objects in SpatialOS as SpatialOS entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
+Schema is a set of definitions which represent your game’s objects in SpatialOS as entities. Schema is defined in .schema files and written in schemalang. When you use the GDK, the schema files and their contents are generated automatically so you do not have to write or edit schema files manually.
 
 You can find out more about schema in the [GDK schema documentation]({{urlRoot}}/content/how-to-use-schema)
 
 <%(/Expandable)%>
 
-<%(#Expandable title="What is a SpatialOS entity?")%>
-A SpatialOS entity (usually just called an “entity”) is the SpatialOS equivalent of an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Components.)
+<%(#Expandable title="What is an entity?")%>
+An entity is the SpatialOS equivalent of an Unreal Actor. It’s made up of a set of SpatialOS components. Each component stores data about the entity. (Note that SpatialOS components are not the same thing as Unreal Actor Components.)
 <%(/Expandable)%>
 
 <%(#Expandable title="What is  a snapshot?")%>
@@ -45,7 +45,7 @@ You can find out more about snapshots in the [GDK snapshot documentation]({{urlR
 
 To launch a local deployment:
 
-1. In the Editor, on the [GDK Toolbar]({{urlRoot}}/content/toolbars), open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
+1. In the Editor, on the [GDK Toolbar]({{urlRoot}}/content/unreal-editor-interface/toolbars), open the **Schema** drop-down menu and select **Schema (Full Scan)**. <br/>
    ![Schema]({{assetRoot}}assets/screen-grabs/toolbar/schema-button-full-scan.png)<br/>
    _Image: On the GDK toolbar in the Editor, select **Schema (Full Scan)**_
    </br>

@@ -3,7 +3,7 @@
 
 The GDK uses [interest]({{urlRoot}}/content/glossary#interest) to control the information that [game clients]({{urlRoot}}/content/glossary#client-workers) receive about the world around them.
 
-Game clients need information about Actors that they don’t own (see the Unreal documentation on [owning](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections) to help them to correctly manipulate the Actors that they _do_ own, and to render the SpatialOS world. Interest enables game clients to receive the relevant information.
+Game clients need information about Actors that they don’t own (see the Unreal documentation on [owning](https://docs.unrealengine.com/en-us/Gameplay/Networking/Actors/OwningConnections)) to help them to correctly manipulate the Actors that they _do_ own, and to render the SpatialOS world. Interest enables game clients to receive the relevant information.
 
 You can define your game client’s interest in three ways, which you can use alongside each other:
 
@@ -24,6 +24,7 @@ You can define a distance using `NetCullDistanceSquared` on an Actor class. Game
 To change an Actor class’s `NetCullDistanceSquared` value, open the Actor class's Blueprint and go to the Class Defaults tab. Net Cull Distance Squared is in the Replication section:
 
 ![NetCullDistanceSquared in the Replication section]({{assetRoot}}assets/screen-grabs/game-client-interest-management/replication-section.png)
+<br>_Image: Net Cull Distance Squared is in the Replication section of the Class Defaults tab_
 
 > **Tip**: You need to convert your chosen number of meters into centimeters, square it, and then enter the resulting value. For example, to set a distance of 150 meters, you need to enter 225000000 (like in the screenshot above).
 
@@ -33,8 +34,7 @@ If you set the `NetCullDistanceSquared` to 200 meters for all Characters, game c
 And if you set the `NetCullDistanceSquared` to 400 meters for vehicles, game clients receive updates about vehicles within 400 meters of their player.
 
 ![NetCullDistanceSquared diagram]({{assetRoot}}assets/screen-grabs/game-client-interest-management/net-cull-distance-diagram.png)
-
-_A game client receives updates about Characters and vehicles that are close enough to its player, according to the Characters’ and vehicles’ `NetCullDistanceSquared`._
+<br>_Image: A game client receives updates about Characters and vehicles that are close enough to its player, according to the Characters’ and vehicles’ `NetCullDistanceSquared`._
 
 ## ActorInterestComponent
 
@@ -73,11 +73,12 @@ For more information, see the [interest constraints header file](https://github.
 To attach this component to an Actor, open the Actor's Blueprint and, on the Components tab, select **Add Component**. Actor Interest is in the SpatialGDK section:
 
 ![Add component]({{assetRoot}}assets/screen-grabs/game-client-interest-management/add-component.png)
+<br>_Image: Attach Actor Interest to an Actor_
 
 ### Example
 
-![Set up interest]({{assetRoot}}assets/screen-grabs/game-client-interest-management/set-up-interest.png)<br>
-_Image: The Interest section of the details panel for `ActorInterestComponent`_
+![Set up interest]({{assetRoot}}assets/screen-grabs/game-client-interest-management/set-up-interest.png)
+<br>_Image: The Interest section of the details panel for `ActorInterestComponent`_
 
 In the screenshot above, `ActorInterestComponent` has two queries, so the game client receives updates about:
 

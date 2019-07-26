@@ -22,7 +22,6 @@ To connect to a deployment using `ClientTravel` and the receptionist flow, simpl
 FString TravelURL = TEXT("127.0.0.1:7777/DestinationMap");
 PlayerController->ClientTravel(TravelURL, TRAVEL_Absolute, false /*bSeamless*/);
 ```
-**Note:** The receptionist connection flow is intended to be used for development only. A released game should use the `Locator` flow.
 
 #### Using Locator
 The Locator is a SpatialOS service which allows you to connect to cloud deployments. 

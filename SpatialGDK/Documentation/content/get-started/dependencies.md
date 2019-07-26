@@ -39,7 +39,7 @@ To build the GDK for Unreal you need the following software installed on your ma
 - The [**DirectX End-User Runtimes (June 2010)**](https://www.microsoft.com/en-us/download/details.aspx?id=8109)
 
   - You need the DirectX End-User Runtime to run Unreal Engine 4 clients.
-- **Visual Studio** <a href="https://visualstudio.microsoft.com/vs/" data-track-link="Clicked VS 2019|product=Docs|platform=Win|label=Win">2019</a> or <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win">2017</a>.   
+- **Visual Studio** <a href="https://visualstudio.microsoft.com/vs/older-downloads/" data-track-link="Clicked VS 2017|product=Docs|platform=Win|label=Win">**2017**</a>.   
     **Note:** You must sign into your Microsoft account to download the Visual Studio 2017 installer.  
     You must also sign up to - Microsoft [Visual Studio Dev Essentials](https://visualstudio.microsoft.com/dev-essentials/) if you do not already have a Visual Studios download  
     
