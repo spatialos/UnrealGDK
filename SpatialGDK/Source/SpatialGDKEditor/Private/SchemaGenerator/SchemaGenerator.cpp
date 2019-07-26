@@ -301,9 +301,12 @@ void GenerateSubobjectSchema(FComponentIdGenerator& IdGenerator, UClass* Class, 
 
 	// Use previously generated component IDs when possible.
 	const FSubobjectSchemaData* const ExistingSchemaData = SubobjectClassPathToSchema.Find(Class->GetPathName());
-	checkf(ExistingSchemaData == nullptr || ExistingSchemaData->GeneratedSchemaName == ClassPathToSchemaName[Class->GetPathName()],
-		TEXT("Existing schema generated name does not match in memory version for schema %s : %s"),
-		*ExistingSchemaData->GeneratedSchemaName, *ClassPathToSchemaName[Class->GetPathName()]);
+	if ( ExistingSchemaData != nullptr && !ExistingSchemaData->GeneratedSchemaName.IsEmpty()
+		&& ExistingSchemaData->GeneratedSchemaName != ClassPathToSchemaName[Class->GetPathName()])
+	{
+		UE_LOG(LogSchemaGenerator, Error, TEXT("Saved generated schema name does not match in-memory version for class %s - schema %s : %s"),
+			*Class->GetPathName(), *ExistingSchemaData->GeneratedSchemaName, *ClassPathToSchemaName[Class->GetPathName()]);
+	}
 
 	for (uint32 i = 1; i <= DynamicComponentsPerClass; i++)
 	{
