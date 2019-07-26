@@ -67,19 +67,13 @@ markStartOfBlock "Setup variables"
     BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
     SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
     SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
-    SPATIAL_DIR="$(dirname "$0")/../../../spatial"
 markEndOfBlock "Setup variables"
 
 markStartOfBlock "Clean folders"
     rm -rf $CORE_SDK_DIR           2>/dev/null
     rm -rf $WORKER_SDK_DIR         2>/dev/null
     rm -rf $BINARIES_DIR           2>/dev/null
-
-    if [ ! -z "$SPATIAL_DIR" ]; then
-        rm -rf $SCHEMA_STD_COPY_DIR 2>/dev/null
-        rm -rf $SCHEMA_COPY_DIR     2>/dev/null
-    fi
-    
+    rm -rf $SCHEMA_STD_COPY_DIR    2>/dev/null
 markEndOfBlock "Clean folders"
 
 markStartOfBlock "Create folders"
@@ -88,12 +82,7 @@ markStartOfBlock "Create folders"
     mkdir -p $CORE_SDK_DIR/tools      >/dev/null 2>/dev/null
     mkdir -p $CORE_SDK_DIR/worker_sdk >/dev/null 2>/dev/null
     mkdir -p $BINARIES_DIR            >/dev/null 2>/dev/null
-    mkdir -p $BINARIES_DIR/Programs/worker_sdk >/dev/null 2>/dev/null
-    
-    if [ ! -z "$SPATIAL_DIR" ]; then
-        mkdir -p $SCHEMA_STD_COPY_DIR >/dev/null 2>/dev/null
-        mkdir -p $SCHEMA_COPY_DIR     >/dev/null 2>/dev/null
-    fi
+    mkdir -p $SCHEMA_STD_COPY_DIR     >/dev/null 2>/dev/null
 markEndOfBlock "Create folders"
 
 markStartOfBlock "Retrieve dependencies"
@@ -122,23 +111,21 @@ markStartOfBlock "Unpack dependencies"
     cp -R $BINARIES_DIR/Mac/include/ $WORKER_SDK_DIR
 markEndOfBlock "Unpack dependencies"
 
-if [ ! -z "$SPATIAL_DIR" ]; then
-    markStartOfBlock "Copy standard library schema"
-        echo "Copying standard library schemas to $SCHEMA_STD_COPY_DIR"
-        cp -R $BINARIES_DIR/Programs/schema/* $SCHEMA_STD_COPY_DIR
-    markEndOfBlock "Copy standard library schema"
+markStartOfBlock "Copy standard library schema"
+    echo "Copying standard library schemas to $SCHEMA_STD_COPY_DIR"
+    cp -R $BINARIES_DIR/Programs/schema/* $SCHEMA_STD_COPY_DIR
+markEndOfBlock "Copy standard library schema"
 
-    markStartOfBlock "Copy GDK schema"
-        rm -rf $SCHEMA_COPY_DIR   2>/dev/null
-        mkdir -p $SCHEMA_COPY_DIR >/dev/null 2>/dev/null
+markStartOfBlock "Copy GDK schema"
+    rm -rf $SCHEMA_COPY_DIR   2>/dev/null
+    mkdir -p $SCHEMA_COPY_DIR >/dev/null 2>/dev/null
 
-        echo "Copying schemas to $SCHEMA_COPY_DIR."
-        cp -R $(dirname %0)/SpatialGDK/Extras/schema/* $SCHEMA_COPY_DIR
-    markEndOfBlock "Copy GDK schema"
-fi
+    echo "Copying schemas to $SCHEMA_COPY_DIR."
+    cp -R $(dirname %0)/SpatialGDK/Extras/schema/* $SCHEMA_COPY_DIR
+markEndOfBlock "Copy GDK schema"
 
 markStartOfBlock "Build C# utilities"
-    msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
+    msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
 markEndOfBlock "Build C# utilities"
 
 markEndOfBlock "$0"
