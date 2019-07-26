@@ -56,6 +56,9 @@ struct FSubobjectSchemaData
 	GENERATED_USTRUCT_BODY()
 
 	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
+	FString GeneratedSchemaName;
+
+	UPROPERTY(Category = "SpatialGDK", VisibleAnywhere)
 	TArray<FDynamicSubobjectSchemaData> DynamicSubobjectComponents;
 
 	FORCEINLINE Worker_ComponentId GetDynamicSubobjectComponentId(int Idx, ESchemaComponentType ComponentType) const
