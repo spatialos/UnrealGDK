@@ -62,6 +62,10 @@ As the GDK automatically generates all the schema you need, you do not have to w
 
 When you generate schema, the GDK verifies that any classes referenced in the `SchemaDatabase` still exist. If you delete a class, the GDK removes it from the `SchemaDatabase` the next time you generate schema.
 
+## How to exclude directories from schema
+
+To exclude directories from schema generation, add them to `Directories to never cook`. This can be done within the Unreal Editor under **Project Settings > Project Packaging > Packaging > Directories to never cook**.
+
 ## Schema and source control
 
 If you are using the built-in [Unreal source control system](https://docs.unrealengine.com/en-US/Engine/UI/SourceControl) Unreal locks this file on checkout, meaning other users are unable to write to it. To prevent this, mark the `SchemaDatabase` as writable locally on each machine, and only check out the file when you are ready to commit any changes made to it.
@@ -75,4 +79,4 @@ This means that if you have a class that only exists on one user's machine (for 
 To prevent this, commit newly created or modified classes to source control alongside the `SchemaDatabase`.
 
 <br/>------------<br/>
-_2019-07-02 Page updated with editorial review_
+_2019-07-26 Page updated with editorial review_
