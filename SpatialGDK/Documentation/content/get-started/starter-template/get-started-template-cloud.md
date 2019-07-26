@@ -96,11 +96,11 @@ To launch a cloud deployment:
 1. On the GDK toolbar, click **Deploy**. <br/><br/>![GDK toolbar "Deploy" button]({{assetRoot}}assets/screen-grabs/toolbar/gdk-toolbar-deploy.png)<br/><br/>
     This opens the cloud deployment dialog box:
     <%(Lightbox title ="Cloud Deployment" image="{{assetRoot}}assets/screen-grabs/cloud-deploy.png")%> <br/>
-2. Enter your project name (see [Set up your SpatialOS project name](#step-1-set-up-your-spatialos-project-name)). 
-3. In the **Assembly Name** field, enter the name you gave your assembly in the [previous step](#step-3-upload-your-workers).
-4. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
-5. Leave the Snapshot File field as it is. In the **Launch Config File** field, enter the path to `one_worker_test.json` (including the file name).
-6. (Optional) If needed, change the **Region**.
+1. Enter your project name (see [Set up your SpatialOS project name](#step-1-set-up-your-spatialos-project-name)). 
+1. In the **Assembly Name** field, enter the name you gave your assembly in the [previous step](#step-3-upload-your-workers).
+1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+1. Leave the Snapshot File field as it is. In the **Launch Config File** field, enter the path to `one_worker_test.json` (including the file name).
+1. (Optional) If needed, change the **Region**.
 
 #### Optional: Launch Simulated Players
 
@@ -109,9 +109,9 @@ To launch a cloud deployment:
 To create an additional deployment with simulated players, in the **Simulated Players** section:
 
 1. Check the box next to **Add simulated players**.
-2. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
-3. In the **Number of Simulated Players** field, choose the number of simulated players you want to start. 
-4. (Optional) If needed, change the **Region**.
+1. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+1. In the **Number of Simulated Players** field, choose the number of simulated players you want to start. 
+1. (Optional) If needed, change the **Region**.
 
 <%(#Expandable title="Developing Simulated Players")%>
 
