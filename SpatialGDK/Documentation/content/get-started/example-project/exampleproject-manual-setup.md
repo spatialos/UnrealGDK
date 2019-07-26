@@ -4,7 +4,7 @@
 
 > **If you did not manually build your Engine Fork**, i.e used `InstallGDK.bat`, please follow [these setup instructions]({{urlRoot}}/content/get-started/example-project/exampleproject-setup) instead of the below.
 
-## 1: Set up
+## 1: Set up (manual instructions)
 
 To run the GDK and the Example Project, you need to:
 

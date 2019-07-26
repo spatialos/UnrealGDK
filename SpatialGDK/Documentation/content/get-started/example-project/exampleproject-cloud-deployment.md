@@ -123,27 +123,48 @@ The next step is to launch a cloud deployment using the assembly that you just u
 
 To launch a cloud deployment:
 
-1. On the GDK toolbar, click **Deploy**. <br>![GDK toolbar "Deploy" button]({{assetRoot}}assets/screen-grabs/toolbar/gdk-toolbar-deploy.png)<br/>_Image: The Deploy button in the GDK toolbar_<br/><br/>
-    This opens the cloud deployment dialog box.
+1. On the GDK toolbar, click **Deploy**. <br>
+![GDK toolbar "Deploy" button]({{assetRoot}}assets/screen-grabs/toolbar/gdk-toolbar-deploy.png)<br/>
+    This opens the cloud deployment dialog box.<br/><br/>
     <%(Lightbox title ="Cloud Deployment" image="{{assetRoot}}assets/screen-grabs/cloud-deploy.png")%>
-    <br/>_Image: The Cloud Deployment settings dialog box_<br/>
-1. Enter your project name (see [Set up your SpatialOS project name](#step-1-associate-your-game-with-a-cloud-project-name)). 
-1. In the **Assembly Name** field, enter the name you gave your assembly in the [previous step](#step-3-upload-your-workers).
-1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
-1. Leave the Snapshot File field as it is. In the **Launch Config File** field, enter the path to `one_worker_test.json` (including the file name).
-1. (Optional) If needed, change the **Region**.
-1. (Optional) Create an additional deployment with [simulated players]({{urlRoot}}/content/simulated-players) that connect to your main game deployment. Simulated players are game clients running in the cloud, mimicking real players of your game from a connection flow and server-worker load perspective. This means they’re useful for scale testing. 
+2. Enter your project name (see [Set up your SpatialOS project name](#step-1-associate-your-game-with-a-cloud-project-name)). 
+3. In the **Assembly Name** field, enter the name you gave your assembly in the [previous step](#step-3-upload-your-workers).
+4. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+5. Leave the Snapshot File field as it is. In the **Launch Config File** field, enter the path to `one_worker_test.json` (including the file name).
+6. (Optional) If needed, change the **Region**.
 
-    To create an additional deployment with simulated players, in the **Simulated Players** section:
-	1. Check the box next to **Add simulated players**.
-	1. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
-	1. In the **Number of Simulated Players** field, choose the number of simulated players you want to start. 
-	1. (Optional) If needed, change the **Region**.
-1. Click **Launch Deployment**.
+#### Optional: Launch Simulated Players
+
+[Simulated players]({{urlRoot}}/content/simulated-players) are game clients running in the cloud, mimicking real players of your game from a connection flow and server-worker load perspective. This means they’re useful for scale testing. 
+
+To create an additional deployment with simulated players, in the **Simulated Players** section:
+
+1. Check the box next to **Add simulated players**.
+2. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+3. In the **Number of Simulated Players** field, choose the number of simulated players you want to start. 
+4. (Optional) If needed, change the **Region**.
+
+<%(#Expandable title="Developing Simulated Players")%>
+
+A basic implementation of Simulated Players is included in this project, which you can try out by deploying them and find out by exploring the source (look for `SimulatedPlayerCharacter_BP`). For more information on developing Simulated Players for you project, see the [reference page]({{urlRoot}}/content/simulated-players).
+
+<%(/Expandable)%>
+
+Click **Launch Deployment**.
+
+<%(Callout type="tip" message="You can set default values for all the fields in the Deploy window, using the Cloud section of the [SpatialOS Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings) ")%>
 
 Your deployment(s) won’t launch instantly. A console window is displayed where you can see their progress.
 
 When your deployment(s) have launched, you can open the [Console](https://console.improbable.io/) to view them.
+
+<%(#Expandable title="Cloud workflow reference diagram")%>
+
+ <%(Lightbox image="https://docs.google.com/drawings/d/e/2PACX-1vQVcAihbYTNe7TjNsIvkfqIR34Vgw5RESKxboxbvgY5VcgxiI-SZT_M2kuGE8RYMU6sAYWqdkoCjMWt/pub?w=758&h=1162")%>
+
+For more details, see the [Cloud deployment workflow page]({{urlRoot}}/content/cloud-deployment-workflow).
+
+<%(/Expandable)%>
 
 </br>
 </br>
