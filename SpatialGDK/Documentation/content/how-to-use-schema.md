@@ -64,7 +64,9 @@ When you generate schema, the GDK verifies that any classes referenced in the `S
 
 ## How to exclude directories from schema
 
-To exclude directories from schema generation, add them to `Directories to never cook`. This can be done within the Unreal Editor under **Project Settings > Project Packaging > Packaging > Directories to never cook**.
+To exclude directories from schema generation, add them to `Directories to never cook`. This can be done within the Unreal Editor under **Project Settings > Project Packaging > Packaging > Directories to never cook**. 
+
+Note that you will not be able to use assets without generated schema in a Spatial deployment, so make sure to exclude only those directories that do not store assets that you are using in your game.
 
 ## Schema and source control
 
