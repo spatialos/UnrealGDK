@@ -43,6 +43,19 @@ Right-click on your `.uproject` file and select **Generate Visual Studio project
 
 You are now on the latest GDK and the latest SpatialOS Unreal Engine fork.
 
+## Optional: upgrading your clang version 
+
+If you're also upgrading your Unreal Engine version, you need to ensure you have the up to date version of Linux cross-compilation (clang), for SpatialOS to be able to build targeting Linux (for cloud deployments). 
+
+1. Check [which version of clang](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html) corresponds to your Engine version and download it
+2. Set environment variable for `LINUX_MULTIARCH_ROOT` to the new clang folder
+3. Run `Setup.bat` in the engine, not the GDK
+4. Run `GenerateProjectFiles.bat` in the Engine
+5. Build the Engine
+6. Go to project, right click on .uproject file and `Generate Project Files` again
+7. Build the project
+
+
 Be sure to join the community on our <a href="https://forums.improbable.io" data-track-link="Join Forums Clicked|product=Docs" target="_blank">forums</a> or on <a href="https://discord.gg/vAT7RSU" data-track-link="Join Discord Clicked|product=Docs|platform=Win|label=Win" target="_blank">Discord</a>. We announce GDK versions there.
 
 
