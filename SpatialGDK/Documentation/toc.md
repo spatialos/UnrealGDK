@@ -58,9 +58,9 @@
     - [Glossary]({{urlRoot}}/content/glossary)
 - <h3>Reference</h3>
     - Unreal Editor interface
+        - [Toolbars]({{urlRoot}}/content/unreal-editor-interface/toolbars)
         - [SpatialOS Editor Settings panel]({{urlRoot}}/content/unreal-editor-interface/editor-settings)
         - [SpatialOS Runtime settings panel]({{urlRoot}}/content/unreal-editor-interface/runtime-settings)
-        - [Toolbars]({{urlRoot}}/content/unreal-editor-interface/toolbars)
     - Actors and entities
         - [Schema]({{urlRoot}}/content/how-to-use-schema)
         - [Spatial Type]({{urlRoot}}/content/spatial-type)
@@ -73,7 +73,7 @@
         - [Actor handover]({{urlRoot}}/content/actor-handover)
         - [Cross-server RPCs]({{urlRoot}}/content/cross-server-rpcs)
     - Workers
-        - [Non-Unreal server-worker types]({{urlRoot}}/content/non-unreal-server-worker-types)
+        - [Non-Unreal server-worker types]({{urlRoot}}/content/workers/non-unreal-server-worker-types)
         - Offloading Unreal worker types
             - [Overview]({{urlRoot}}/content/workers/offloading-concept)
             - [Set up offloading]({{urlRoot}}/content/workers/set-up-offloading)
