@@ -418,6 +418,8 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 		return;
 	}
 
+	SpatialGDK::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
+
 	if (UnrealMetadata->NativeClass.IsStale())
 	{
 		UE_LOG(LogTemp, Error, TEXT("MCS: metadata error - FSpatialNetGUIDCache::RemoveEntityNetGUID - %s"), *UnrealMetadata->ClassPath);
@@ -425,8 +427,6 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	else
 	{
 		const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
-
-		SpatialGDK::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
 
 		for (auto& SubobjectInfoPair : Info.SubobjectInfo)
 		{
