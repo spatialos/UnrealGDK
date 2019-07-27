@@ -488,7 +488,8 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		UClass* Class = UnrealMetadataComp->GetNativeEntityClass();
 		if (Class == nullptr)
 		{
-			UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity id %lld couldn't be loaded. The actor will not be spawned."), EntityId);
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity id %lld couldn't be loaded. The actor (%s) will not be spawned."),
+				EntityId, *UnrealMetadataComp->ClassPath);
 			return;
 		}
 
