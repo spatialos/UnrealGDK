@@ -485,6 +485,12 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
+		if (UnrealMetadataComp->NativeClass.IsStale())
+		{
+			UE_LOG(LogTemp, Error, TEXT("MCS: metadata error - USpatialReceiver::ReceiveActor - %s"), *UnrealMetadataComp->ClassPath);
+			return;
+		}
+
 		// Make sure ClassInfo exists
 		ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadataComp->GetNativeEntityClass());
 
