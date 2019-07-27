@@ -90,7 +90,7 @@ struct UnrealMetadata : Component
 			Class = LoadObject<UClass>(nullptr, *ClassPath);
 		}
 
-		if (Class->IsChildOf<AActor>())
+		if (Class != nullptr && Class->IsChildOf<AActor>())
 		{
 			NativeClass = Class;
 			return Class;
