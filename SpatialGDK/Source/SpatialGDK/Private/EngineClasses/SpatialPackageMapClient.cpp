@@ -438,15 +438,17 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 	}
 
 	// Remove dynamically attached subobjects
-	USpatialActorChannel* Channel = SpatialNetDriver->GetActorChannelByEntityId(EntityId);
-	for (UObject* DynamicSubobject : Channel->CreateSubObjects)
+	if (USpatialActorChannel* Channel = SpatialNetDriver->GetActorChannelByEntityId(EntityId))
 	{
-		if (FNetworkGUID* SubobjectNetGUID = NetGUIDLookup.Find(DynamicSubobject))
+		for (UObject* DynamicSubobject : Channel->CreateSubObjects)
 		{
-			if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*SubobjectNetGUID))
+			if (FNetworkGUID* SubobjectNetGUID = NetGUIDLookup.Find(DynamicSubobject))
 			{
-				UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
-				NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
+				if (FUnrealObjectRef* SubobjectRef = NetGUIDToUnrealObjectRef.Find(*SubobjectNetGUID))
+				{
+					UnrealObjectRefToNetGUID.Remove(*SubobjectRef);
+					NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
+				}
 			}
 		}
 	}
