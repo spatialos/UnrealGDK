@@ -393,6 +393,6 @@ void UDeathmatchScoreComponent::RecordKill(const int32 Killer, const int32 Victi
 With all these changes made, let's run the project and test our changes in game. 
 
 </br>
-**> Next:** [4: Running the ]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-syncing)
+### **> Next:** [4: Testing your changes]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-testing)
 </br>
 

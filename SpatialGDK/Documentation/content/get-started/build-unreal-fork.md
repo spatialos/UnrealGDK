@@ -73,7 +73,7 @@ If you do not want to build the Engine Fork automatically, follow the instructio
 
 </br>
 
-**> Next:** 3 - Set up project
+### **> Next:** 3 - Set up project
 
 Choose either:
 

@@ -168,7 +168,7 @@ For more details, see the [Cloud deployment workflow page]({{urlRoot}}/content/c
 
 </br>
 </br>
-**> Next:** [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
+### **> Next:** [4: Play the game]({{urlRoot}}/content/get-started/example-project/exampleproject-play)
 
 
 <br/>------<br/>

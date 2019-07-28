@@ -54,7 +54,7 @@ To build the GDK for Unreal you need the following software installed on your ma
 
 </br>
 </br>
-**> Next:** [2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork.md)
+### **> Next:** [2 - Get and build the GDK’s Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork.md)
 
 <br/>
 

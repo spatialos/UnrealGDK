@@ -12,7 +12,7 @@ Before starting this tutorial you _**must**_ follow:
 - [Get started 2 - Get and build the SpatialOS Unreal Engine Fork]({{urlRoot}}/content/get-started/build-unreal-fork)
 
 </br>
-**> Next:** [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
+### **> Next:** [1: Set up]({{urlRoot}}/content/get-started/example-project/exampleproject-setup)
 </br>
 </br>
 ![img]({{assetRoot}}assets/example-project/example-project-headline.png)

@@ -1,5 +1,3 @@
-<%(TOC)%>
-
 # Tutorials and guides
 
 ## Database Sync Worker Tutorial
@@ -10,7 +8,7 @@ The Database Sync Worker is a SpatialOS server-worker designed to easily sync an
 
 This tutorial uses the GDK’s [Example Project](https://github.com/spatialos/UnrealGDKExampleProject), where the Database Sync Worker will synchronise players’ “All Time Kills” and “Deaths” counts in a local Postgres Database.
 
-![DB Sync Worker Example Project K/D Count GIF]({{assetRoot}}assets/dbsync/dbsync-kd-exampleproject.gif)
+<%(Lightbox title="DB Sync Worker Example Project K/D Count" image="{{assetRoot}}assets/dbsync/dbsync-kd-exampleproject.gif")%>
 
 ## Prerequisites
 
@@ -24,5 +22,10 @@ This tutorial assumes that you are familiar with the basic development workflows
 Additionally, to communicate with the Database Sync Worker, you will be sending SpatialOS commands and listening to events, so a basic understanding of [SpatialOS messaging](https://docs.improbable.io/reference/latest/shared/design/object-interaction) is required. (This is something the GDK typically abstracts from you from you when you build Unreal workers - in this case we will be integrating a C# worker using the [SpatialOS Worker SDK](https://docs.improbable.io/reference/latest/shared/glossary#worker-sdk) directly so these concepts are important to understand.)
 
 </br>
-**> Next:** [1: Set up]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-setup)
+### **> Next:** [1: Set up]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-setup)
 </br>
+
+<br/>------<br/>
+_2019-07-31 Page added with limited editorial review_
+[//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
+

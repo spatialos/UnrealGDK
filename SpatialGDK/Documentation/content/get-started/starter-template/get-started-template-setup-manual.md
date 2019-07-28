@@ -61,7 +61,7 @@ To use the Starter Template, you must build the GDK for Unreal module dependenci
 
 Note: Ensure that your Visual Studio Solution Configuration is set to **Development Editor**.
 
-**> Next:** [2: Launch a local deployment with multiple clients]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
+### **> Next:** [2: Launch a local deployment with multiple clients]({{urlRoot}}/content/get-started/starter-template/get-started-template-local)
 
 <br/>
 
