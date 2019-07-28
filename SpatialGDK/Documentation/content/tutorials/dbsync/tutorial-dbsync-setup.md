@@ -4,7 +4,7 @@
 
 ### 1. Set up Postgres
 
-To use this tutorial, you must also install [Postgresql](https://www.postgresql.org/) - the database that the Database Sync Worker integrates with. You can download it from [here](postgresql.org/download/windows). Once downloaded, set its password to `DO_NOT_USE_IN_PRODUCTION`.
+To use this tutorial, you must also install [Postgresql](https://www.postgresql.org/) - the database that the Database Sync Worker integrates with. You can download it from [here](https://postgresql.org/download/windows). Once downloaded, set its password to `DO_NOT_USE_IN_PRODUCTION`.
 
 ### 2. Set up the Example Project
 
