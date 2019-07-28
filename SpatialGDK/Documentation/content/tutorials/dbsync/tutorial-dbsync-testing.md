@@ -73,3 +73,9 @@ You will see that the scores change automatically in the game too.
 ### 6. Congratulations
 
 Congratulations! You have a working implementation of the Database Sync Worker, synchronising data from a GDK project to an external Postgres database. We hope this was a useful basis for an implementation in your project.
+
+<br/>
+<br/>------<br/>
+_2019-07-31 Page added with limited editorial review_
+[//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
+

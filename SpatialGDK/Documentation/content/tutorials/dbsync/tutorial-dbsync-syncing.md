@@ -396,3 +396,9 @@ With all these changes made, let's run the project and test our changes in game.
 ### **> Next:** [4: Testing your changes]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-testing)
 </br>
 
+
+<br/>------<br/>
+_2019-07-31 Page added with limited editorial review_
+[//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
+
+

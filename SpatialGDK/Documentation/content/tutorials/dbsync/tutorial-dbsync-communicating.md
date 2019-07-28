@@ -178,3 +178,6 @@ So far, you have brought the Database Sync Worker into your project, generated c
 ### **> Next:** [3: Syncing with the database]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-syncing)
 </br>
 
+<br/>------<br/>
+_2019-07-31 Page added with limited editorial review_
+[//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
