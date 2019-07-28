@@ -97,7 +97,7 @@ To fully stop your SpatialOS deployment, select **Stop** in the GDK toolbar.<br/
 ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
 </br>
 </br>
-**> Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment) 
+### **> Next:** [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-cloud-deployment) 
 
 <br/>
 <br/>------------<br/>

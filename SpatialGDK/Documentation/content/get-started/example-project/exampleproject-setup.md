@@ -17,7 +17,7 @@ To build the GDK Example Project, you need to:
    <%(Lightbox image="{{assetRoot}}assets/example-project/example-project-editor.png")%>
    _Image: The Example Project in the Unreal Editor_<br/><br/>
 
-**> Next:** [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 
+### **> Next:** [2: Launch a local deployment]({{urlRoot}}/content/get-started/example-project/exampleproject-local-deployment) 
 
 <br/>------<br/>
 _2019-07-22 Page updated with limited editorial review_

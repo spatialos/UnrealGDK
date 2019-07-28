@@ -18,6 +18,10 @@
                 - [3: Launch a cloud deployment]({{urlRoot}}/content/get-started/starter-template/get-started-template-cloud)
                 - [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
     - Tutorials and guides
+        - Offloading example project
+            - [Introduction]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-intro)
+            - [1. Set up]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
+            - [2. Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
         - Multiple deployments for session-based games
             - [Introduction]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-intro)
             - [1: Clone the Deployment Manager]({{urlRoot}}/content/tutorials/deployment-manager/tutorial-deploymentmgr-clone)
@@ -32,10 +36,12 @@
             - [2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
             - [3: Test changes locally]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-localtest)
             - [4: Test changes in the cloud]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-cloudtest)
-        - Offloading example project
-            - [Introduction]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-intro)
-            - [1. Set up]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
-            - [2. Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
+        - Database sync worker tutorial
+            - [Introduction]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-intro)
+            - [1. Set up]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-setup)
+            - [2. Communicating with the Database Sync Worker]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-communicating)
+            - [3. Syncing with the database]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-syncing)
+            - [4. Testing your changes]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-testing)
         - Port your project to SpatialOS
             - [Introduction]({{urlRoot}}/content/tutorials/tutorial-porting-guide)
             - [1. Set up your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-setup)

@@ -72,7 +72,7 @@ _Image: The Unreal Engine **Play** drop-down menu, with **Multiplayer Options** 
 Notice that when players shoot each other, their health does not go down. It's not much fun with no skin in the game is it? Let’s fix the health system.
 </br>
 </br>
-**> Next:** 
+### **> Next:** 
 [2: Replicate health changes]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-healthchanges)
 <br/>
 <br/>

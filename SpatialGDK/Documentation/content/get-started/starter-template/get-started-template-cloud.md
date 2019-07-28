@@ -135,7 +135,7 @@ For more details, see the [Cloud deployment workflow page]({{urlRoot}}/content/c
 
 <%(/Expandable)%>
 
-**> Next:** [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
+### **> Next:** [4: Play the game]({{urlRoot}}/content/get-started/starter-template/get-started-template-play) 
 
 <br/>
 

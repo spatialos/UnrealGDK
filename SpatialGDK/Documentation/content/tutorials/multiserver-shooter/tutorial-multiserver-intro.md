@@ -11,7 +11,7 @@ In this tutorial you’ll implement cross-server remote procedure calls (RPCs) i
 The exercise demonstrates that the workflows and iteration speed you’re used to as an Unreal developer are almost entirely unaltered by the GDK: it’s just like regular Unreal!
 </br>
 </br>
-**> Next:** 
+### **> Next:** 
 [1: Setup]({{urlRoot}}/content/tutorials/multiserver-shooter/tutorial-multiserver-setup)
 <br/>
 <br/>
