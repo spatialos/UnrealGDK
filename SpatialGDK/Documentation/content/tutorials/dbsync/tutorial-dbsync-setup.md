@@ -36,7 +36,7 @@ Once that is completed, run `publish-windows-workers.ps1` (or `.sh`) which will 
 
 To be run as a [managed worker](https://docs.improbable.io/reference/latest/shared/design/design-workers#managed-workers) by SpatialOS, the executable needs to be packaged in a specific way (described in the config file). To do so, go to `spatial/workers/database_sync_worker/Workers/DatabaseSyncWorker/bin/x64/Release/netcoreapp2.2/win-x64/publish` and zip the whole content of that folder (but not the folder itself) into a zip file called `DatabaseSyncWorker@Windows.zip` and move it to `spatial/build/assembly/worker` (create the folder if it doesn’t exist).
 
-Within the Example Project, copy the `spatial/provided/spatialos.DatabaseSyncWorker.worker.json` file to `spatial/workers/database_sync_worker`. This step is required because the Database Sync Worker uses a different [SpatialOS project layout](https://docs.improbable.io/reference/layout/shared/project-layout/files-and-directories) than GDK project. In the future they both use the Flexible Project Layout. 
+Within the Example Project, copy the `spatial/provided/spatialos.DatabaseSyncWorker.worker.json` file to `spatial/workers/database_sync_worker`. This step is required because the Database Sync Worker uses a different [SpatialOS project layout](https://docs.improbable.io/reference/14.0/shared/project-layout/files-and-directories#layout-of-a-spatialos-project) than GDK project. In the future they both use the Flexible Project Layout. 
 
 ### 4. Bringing the Database Sync Worker schema into the Example Project
 
