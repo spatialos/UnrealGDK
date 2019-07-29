@@ -236,7 +236,7 @@ void UDeathmatchScoreComponent::RequestCreateItemFromPath(const FString &Path)
 
 For simplicity, you assume the path is going to be correct and if something happens, you will simply log an error.
 
-As with the `GetItem` request, you need to listen to the answer, being sure to remove it from the list of pending create requests, or retrying if there were errors. (In this tutorial, for simplicity, we always retry, but you should consider should consider a retry limit and appropriate error handling for your project).
+As with the `GetItem` request, you need to listen to the answer, being sure to remove it from the list of pending create requests, or retrying if there were errors. (In this tutorial, for simplicity, we always retry, but you should consider a retry limit and appropriate error handling for your project).
 
 ```
 ...
