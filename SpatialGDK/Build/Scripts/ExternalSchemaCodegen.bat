@@ -45,7 +45,7 @@ if not exist "%SCHEMA_STD_COPY_DIR%" (
 call :MarkStartOfBlock "Collecting external schema files"
 set EXTERNAL_SCHEMA_FILES=
 setlocal enabledelayedexpansion
-FOR /F %%i in ('dir /s/b %GAME_FOLDER%\%1\*.schema') do ( set "EXTERNAL_SCHEMA_FILES=!EXTERNAL_SCHEMA_FILES! %%i" )
+FOR /F %%i in ('dir /s/b "%GAME_FOLDER%\%1\*.schema"') do ( set "EXTERNAL_SCHEMA_FILES=!EXTERNAL_SCHEMA_FILES! %%i" )
 setlocal disabledelayedexpansion
 call :MarkEndOfBlock "Collecting external schema files"
 
