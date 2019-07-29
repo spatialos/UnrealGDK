@@ -10,6 +10,7 @@ In `DeathmatchScoreComponent.h`, declare all the functions that you are calling 
 ...
 #include "ExternalSchemaCodegen/improbable/database_sync/DatabaseSyncService.h"
 #include "GDKShooterSpatialGameInstance.h"
+#include "DeathmatchScoreComponent.generated.h"
 ...
 	UPROPERTY(BlueprintAssignable)
 		FScoreChangeEvent ScoreEvent;
