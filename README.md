@@ -25,7 +25,7 @@ The GDK is in [alpha](https://docs.improbable.io/reference/latest/shared/release
 We recommend using the GDK in projects in the early production or prototype stage. This ensures that your project's requirements are in line with the GDK's timeline.
 
 ## Versioning and support
-Please visit [this page](https://docs.improbable.io/unreal/alpha/content/pricing-and-support/versioning-scheme) for a description of the GDK's versioning scheme, and which branches to use when developing.
+Please visit [this page](https://docs.improbable.io/unreal/latest/content/pricing-and-support/versioning-scheme) for a description of the GDK's versioning scheme, and which branches to use when developing.
 
 ## Contributions
 We welcome [Github issues](https://github.com/spatialos/UnrealGDK/issues) from all users, and accept public contributions subject to the signing of our Contributors License Agreement - please see our [contributions](CONTRIBUTING.md) policy for more details. 
