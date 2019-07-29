@@ -81,7 +81,7 @@ Offloading enables you to scale your CPU heavy tasks by offloading them to other
 Offloading does introduce a set of constraints to be mindful of, however, when set up correctly it will offer you significant scaling opportunities.
 
 <br/>------------<br/>
-_2019-07-26 Page added as draft_
+_2019-07-26 Page added with limited editorial review_
 <br/>
 <br/>
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1142)

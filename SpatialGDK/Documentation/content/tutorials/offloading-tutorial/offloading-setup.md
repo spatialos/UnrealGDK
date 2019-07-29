@@ -30,8 +30,12 @@ In order for offloading to work, it needs to be enabled using the toggle in the 
 
 ![img]({{assetRoot}}assets/offloading-project/enable-offloading.png)
 
+</br>
+### **> Next:** [2: Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
+</br>
+
 <br/>------------<br/>
-_2019-07-26 Page added as draft_
+_2019-07-26 Page added with limited editorial review_
 <br/>
 <br/>
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1142)
