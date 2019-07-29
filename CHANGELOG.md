@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed issue where an Actor's Spatial position was not updated if it had an owner that was not replicated.
 - BeginPlay is only called once with authority per deployment for startup actors
 - Fixed null pointer dereference crash when trying to initiate a Spatial connection without an existing one.
+- Fixed an issue that could cause multiple Channels to be created for an Actor.
 
 ## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
 - Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
