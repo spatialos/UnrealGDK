@@ -91,7 +91,7 @@ For more details, see the [Local deployment workflow page]({{urlRoot}}/content/l
 
 <%(/Expandable)%>
 
-### Step 4: Stop your deployment
+### Step 5: Stop your deployment
 
 To fully stop your SpatialOS deployment, select **Stop** in the GDK toolbar.<br/></br>
 ![Stop]({{assetRoot}}assets/screen-grabs/toolbar/stop-button.png)<br/>
