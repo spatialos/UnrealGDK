@@ -769,6 +769,13 @@ int32 USpatialNetDriver::ServerReplicateActors_PrepConnections(const float Delta
 
 int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, const TArray<FNetworkObjectInfo*> ConsiderList, const bool bCPUSaturated, FActorPriority*& OutPriorityList, FActorPriority**& OutPriorityActors)
 {
+	// Since this function signature is copied from NetworkDriver.cpp, I don't want to change the signature. But we expect
+	// that the input connection will be the SpatialOS server connection to the runtime (the first client connection),
+	// so let's make sure that assumption continues to hold.
+	check(InConnection != nullptr);
+	check(GetSpatialOSNetConnection() != nullptr);
+	check(InConnection == GetSpatialOSNetConnection());
+
 	// Get list of visible/relevant actors.
 
 	NetTag++;
@@ -865,6 +872,13 @@ int32 USpatialNetDriver::ServerReplicateActors_PrioritizeActors(UNetConnection* 
 
 void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* InConnection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated)
 {
+	// Since this function signature is copied from NetworkDriver.cpp, I don't want to change the signature. But we expect
+	// that the input connection will be the SpatialOS server connection to the runtime (the first client connection),
+	// so let's make sure that assumption continues to hold.
+	check(InConnection != nullptr);
+	check(GetSpatialOSNetConnection() != nullptr);
+	check(InConnection == GetSpatialOSNetConnection());
+
 	// SpatialGDK - Here Unreal would check if the InConnection was saturated (!IsNetReady) and early out. Removed this as we do not currently use channel saturation.
 
 	int32 ActorUpdatesThisConnection = 0;
@@ -1096,11 +1110,14 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	SCOPE_CYCLE_COUNTER(STAT_SpatialServerReplicateActors);
 
 #if WITH_SERVER_CODE
-	if (ClientConnections.Num() == 0)
+	// Only process the stand-in client connection, which is the connection to the runtime itself.
+	// It will be responsible for replicating all actors, regardless of whether they're owned by a client.
+	USpatialNetConnection* SpatialConnection = GetSpatialOSNetConnection();
+	if (SpatialConnection == nullptr)
 	{
 		return 0;
 	}
-
+	check(SpatialConnection && SpatialConnection->bReliableSpatialConnection);
 	check(World);
 
 	int32 Updated = 0;
@@ -1142,10 +1159,6 @@ int32 USpatialNetDriver::ServerReplicateActors(float DeltaSeconds)
 	SET_DWORD_STAT(STAT_SpatialConsiderList, ConsiderList.Num());
 
 	FMemMark Mark(FMemStack::Get());
-
-	// Only process the fake spatial connection. It will be responsible for replicating all actors, regardless of whether they're owned by a client.
-	USpatialNetConnection* SpatialConnection = Cast<USpatialNetConnection>(ClientConnections[0]);
-	check(SpatialConnection && SpatialConnection->bReliableSpatialConnection);
 
 	// Make a list of viewers this connection should consider
 	TArray<FNetViewer>& ConnectionViewers = WorldSettings->ReplicationViewers;
@@ -1327,7 +1340,7 @@ void USpatialNetDriver::TickFlush(float DeltaTime)
 	double ServerReplicateActorsTimeMs = 0.0f;
 #endif // USE_SERVER_PERF_COUNTERS
 
-	if (IsServer() && ClientConnections.Num() > 0 && EntityPool->IsReady())
+	if (IsServer() && GetSpatialOSNetConnection() != nullptr && EntityPool->IsReady())
 	{
 		// Update all clients.
 #if WITH_SERVER_CODE
