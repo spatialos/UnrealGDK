@@ -16,9 +16,6 @@ struct AlwaysRelevant : Component
 	static const Worker_ComponentId ComponentId = SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID;
 
 	AlwaysRelevant() = default;
-	AlwaysRelevant(const Worker_ComponentData& Data)
-	{
-	}
 
 	FORCEINLINE Worker_ComponentData CreateData()
 	{
