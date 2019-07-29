@@ -51,6 +51,17 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 <%(Callout type="warn" message="Note: you must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.")%>
 
+<%(#Expandable title="If you do not intend to use the Simulated player functionality when starting the deployment you must follow these steps first")%>
+
+1. Navigate to `UnrealGDKExampleProject\spatial\spatial\workers`
+2. Delete the `improbable` folder and the `spatialos.SimulatedPlayerCoordinator.worker.json` file inside it
+3. Navigate to `UnrealGDKExampleProject\spatial\build\assembly`
+4. If there is a folder named `SimulatedPlayerCoordinator`, delete it and the files contained inside it
+5. Re-run `spatial build build-config` from the `UnrealGDKExampleProject\spatial` directory 
+6. Ensure the folder `SimulatedPlayerCoordinator` is not regenerated in the directory `UnrealGDKExampleProject\spatial\build\assembly`
+
+<%(/Expandable)%>
+
 There are two ways to build your worker assemblies (known as “building workers”):  
 
 #### **Option 1**: Build your workers using `BuildProject.bat`
