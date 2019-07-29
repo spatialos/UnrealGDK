@@ -977,7 +977,7 @@ void USpatialNetDriver::ServerReplicateActors_ProcessPrioritizedActors(UNetConne
 						continue;
 					}
 
-					Channel = CreateSpatialActorChannel(Actor, Cast<USpatialNetConnection>(InConnection));
+					Channel = GetOrCreateSpatialActorChannel(Actor);
 					if ((Channel == nullptr) && (Actor->NetUpdateFrequency < 1.0f))
 					{
 						UE_LOG(LogNetTraffic, Log, TEXT("Unable to replicate %s"), *Actor->GetName());
@@ -1673,7 +1673,7 @@ USpatialActorChannel* USpatialNetDriver::GetOrCreateSpatialActorChannel(UObject*
 			TargetActor = Cast<AActor>(TargetObject->GetOuter());
 		}
 		check(TargetActor);
-		Channel = CreateSpatialActorChannel(TargetActor, GetSpatialOSNetConnection());
+		Channel = CreateSpatialActorChannel(TargetActor);
 	}
 	return Channel;
 }
@@ -1683,15 +1683,18 @@ USpatialActorChannel* USpatialNetDriver::GetActorChannelByEntityId(Worker_Entity
 	return EntityToActorChannel.FindRef(EntityId);
 }
 
-USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection)
+USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor)
 {
-	if (InConnection == nullptr)
-	{
-		return nullptr;
-	}
+	// This should only be called from GetOrCreateSpatialActorChannel, otherwise we could end up clobbering an existing channel.
+
+	check(Actor != nullptr);
+	check(PackageMap != nullptr);
+	check(GetActorChannelByEntityId(PackageMap->GetEntityIdFromObject(Actor)) == nullptr);
+
+	USpatialNetConnection* NetConnection = GetSpatialOSNetConnection();
+	check(NetConnection != nullptr);
 
 	USpatialActorChannel* Channel = nullptr;
-
 	if (Actor->GetClass()->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		Channel = GlobalStateManager->AddSingleton(Actor);
@@ -1699,11 +1702,15 @@ USpatialActorChannel* USpatialNetDriver::CreateSpatialActorChannel(AActor* Actor
 	else
 	{
 #if ENGINE_MINOR_VERSION <= 20
-		Channel = static_cast<USpatialActorChannel*>(InConnection->CreateChannel(CHTYPE_Actor, 1));
+		Channel = static_cast<USpatialActorChannel*>(NetConnection->CreateChannel(CHTYPE_Actor, 1));
 #else
-		Channel = static_cast<USpatialActorChannel*>(InConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
+		Channel = static_cast<USpatialActorChannel*>(NetConnection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
 #endif
-		if (Channel != nullptr)
+		if (Channel == nullptr)
+		{
+			UE_LOG(LogSpatialOSNetDriver, Warning, TEXT("Failed to create a channel for actor %s."), *GetNameSafe(Actor));
+		}
+		else
 		{
 			Channel->SetChannelActor(Actor);
 		}
