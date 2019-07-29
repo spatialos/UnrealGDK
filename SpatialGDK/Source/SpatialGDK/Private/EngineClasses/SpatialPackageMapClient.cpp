@@ -418,21 +418,28 @@ void FSpatialNetGUIDCache::RemoveEntityNetGUID(Worker_EntityId EntityId)
 		return;
 	}
 
-	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
-
 	SpatialGDK::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
 
-	for (auto& SubobjectInfoPair : Info.SubobjectInfo)
+	if (UnrealMetadata->NativeClass.IsStale())
 	{
-		FUnrealObjectRef SubobjectRef(EntityId, SubobjectInfoPair.Key);
-		if (FNetworkGUID* SubobjectNetGUID = UnrealObjectRefToNetGUID.Find(SubobjectRef))
-		{
-			NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
-			UnrealObjectRefToNetGUID.Remove(SubobjectRef);
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Attempting to remove stale object from package map - %s"), *UnrealMetadata->ClassPath);
+	}
+	else
+	{
+		const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
 
-			if (StablyNamedRefOption.IsSet())
+		for (auto& SubobjectInfoPair : Info.SubobjectInfo)
+		{
+			FUnrealObjectRef SubobjectRef(EntityId, SubobjectInfoPair.Key);
+			if (FNetworkGUID* SubobjectNetGUID = UnrealObjectRefToNetGUID.Find(SubobjectRef))
 			{
-				UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+				NetGUIDToUnrealObjectRef.Remove(*SubobjectNetGUID);
+				UnrealObjectRefToNetGUID.Remove(SubobjectRef);
+
+				if (StablyNamedRefOption.IsSet())
+				{
+					UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPair.Value->SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+				}
 			}
 		}
 	}
@@ -490,16 +497,23 @@ void FSpatialNetGUIDCache::RemoveSubobjectNetGUID(const FUnrealObjectRef& Subobj
 		return;
 	}
 
-	const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
-
-	// Part of the CDO
-	if (const TSharedRef<const FClassInfo>* SubobjectInfoPtr = Info.SubobjectInfo.Find(SubobjectRef.Offset))
+	if (UnrealMetadata->NativeClass.IsStale())
 	{
-		SpatialGDK::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
+		UE_LOG(LogSpatialPackageMap, Warning, TEXT("Attempting to remove stale subobject from package map - %s"), *UnrealMetadata->ClassPath);
+	}
+	else
+	{
+		const FClassInfo& Info = SpatialNetDriver->ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadata->GetNativeEntityClass());
 
-		if (StablyNamedRefOption.IsSet())
+		// Part of the CDO
+		if (const TSharedRef<const FClassInfo>* SubobjectInfoPtr = Info.SubobjectInfo.Find(SubobjectRef.Offset))
 		{
-			UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPtr->Get().SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+			SpatialGDK::TSchemaOption<FUnrealObjectRef>& StablyNamedRefOption = UnrealMetadata->StablyNamedRef;
+
+			if (StablyNamedRefOption.IsSet())
+			{
+				UnrealObjectRefToNetGUID.Remove(FUnrealObjectRef(0, 0, SubobjectInfoPtr->Get().SubobjectName.ToString(), StablyNamedRefOption.GetValue()));
+			}
 		}
 	}
 	FNetworkGUID SubobjectNetGUID = UnrealObjectRefToNetGUID[SubobjectRef];

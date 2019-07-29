@@ -485,8 +485,16 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 	}
 	else
 	{
+		UClass* Class = UnrealMetadataComp->GetNativeEntityClass();
+		if (Class == nullptr)
+		{
+			UE_LOG(LogSpatialReceiver, Warning, TEXT("The received actor with entity id %lld couldn't be loaded. The actor (%s) will not be spawned."),
+				EntityId, *UnrealMetadataComp->ClassPath);
+			return;
+		}
+
 		// Make sure ClassInfo exists
-		ClassInfoManager->GetOrCreateClassInfoByClass(UnrealMetadataComp->GetNativeEntityClass());
+		ClassInfoManager->GetOrCreateClassInfoByClass(Class);
 
 		// If the received actor is torn off, don't bother spawning it.
 		// (This is only needed due to the delay between tearoff and deleting the entity. See https://improbableio.atlassian.net/browse/UNR-841)
