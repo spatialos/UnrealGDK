@@ -6,7 +6,7 @@ This tutorial takes you through how to integrate the [Database Sync Worker Examp
 
 The Database Sync Worker is a SpatialOS server-worker designed to easily sync and persist cross-session game data (such as player inventories) between SpatialOS and an external database.
 
-This tutorial uses the GDK’s [Example Project](https://github.com/spatialos/UnrealGDKExampleProject), where the Database Sync Worker will synchronise players’ “All Time Kills” and “Deaths” counts in a local Postgres Database.
+This tutorial uses the GDK’s [Example Project](https://github.com/spatialos/UnrealGDKExampleProject), where the Database Sync Worker will synchronise players’ “All Time Kills” and “All Time Deaths” counts in a local Postgres Database.
 
 <%(Lightbox title="DB Sync Worker Example Project K/D Count" image="{{assetRoot}}assets/dbsync/dbsync-kd-exampleproject.gif")%>
 
