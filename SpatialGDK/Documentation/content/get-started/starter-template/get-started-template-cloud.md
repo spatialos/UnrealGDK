@@ -99,8 +99,8 @@ To launch a cloud deployment:
 1. Enter your project name (see [Set up your SpatialOS project name](#step-1-set-up-your-spatialos-project-name)). 
 1. In the **Assembly Name** field, enter the name you gave your assembly in the [previous step](#step-3-upload-your-workers).
 1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
-1. Add the absolute path to the Launch Config File `~yourprojectname/spatial/one_worker_test.json`  
-1. Add the absolute path to the Snapshot File `~yourprojectname/spatial/snapshots/default.snapshot`
+1. Add the absolute path to the **Launch Config File** `~yourprojectname/spatial/one_worker_test.json`  
+1. Add the absolute path to the **Snapshot File** `~yourprojectname/spatial/snapshots/default.snapshot`
 1. (Optional) If needed, change the **Region**.
 
 #### Optional: Launch Simulated Players

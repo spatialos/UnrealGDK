@@ -130,10 +130,10 @@ To launch a cloud deployment:
 1. Enter your project name (see [Set up your SpatialOS project name](#step-1-associate-your-game-with-a-cloud-project-name)). 
 1. In the **Assembly Name** field, enter the name you gave your assembly in the [previous step](#step-3-upload-your-workers).
 1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
-1. Add the absolute path to the Launch Config File
-    * If you used the InstallGDK.bat script this is `~<directoryname>/UnrealEngine/Samples/UnrealGDKExampleProject/spatial/one_worker_test.json`  
-    * If you manually cloned the example project `~<directoryname>/UnrealGDKExampleProject/spatial/one_worker_test.json`  
-1. Add the absolute path to the Snapshot File `UnrealEngine/Samples/UnrealGDKExampleProject/spatial/snapshots/default.snapshot`  
+1. Add the absolute path to the **Launch Config File**
+    * If you used the InstallGDK.bat script this is `/UnrealEngine/Samples/UnrealGDKExampleProject/spatial/one_worker_test.json`  
+    * If you manually cloned the example project `/UnrealGDKExampleProject/spatial/one_worker_test.json`  
+1. Add the absolute path to the **Snapshot File** `/UnrealEngine/Samples/UnrealGDKExampleProject/spatial/snapshots/default.snapshot`  
 1. (Optional) If needed, change the **Region**.
 
 #### Optional: Launch Simulated Players
