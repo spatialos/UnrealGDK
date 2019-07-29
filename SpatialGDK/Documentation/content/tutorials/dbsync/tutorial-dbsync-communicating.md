@@ -18,6 +18,8 @@ This means modifying `GDKShooterSpatialGameInstance.h` as such:
 
 ```
 #include "GDKShooter/ExternalSchemaCodegen/ExternalSchemaInterface.h"
+#include "GDKShooterSpatialGameInstance.generated.h"
+
 …
 GENERATED_BODY()
 	

@@ -32,6 +32,10 @@ INSERT INTO items (name, count, path) VALUES ('UnrealWorker', 1, 'profiles.Unrea
 
 ### 3. Launch configuration
 
+Next, build the project from Visual Studio and be sure everything compiles correctly.
+
+<%(Callout type="tip" message="If you have any issues, you can compare your code to a final working version of the tutorial in the `feature/dbsync_worker_tutorial_finish` branch of the Example Project.")%>
+
 The default Example Project launch configiguration only starts UnrealWorkers. The launch configuration now also needs to start the Database Sync Worker you added. We provide a launch config that does this, but you can learn more about how to change those config files [here](https://docs.improbable.io/reference/latest/shared/project-layout/launch-config#launch-configuration-file). 
 
 For now, copy `default.launch.json` from `spatial/provided` into `spatial`.
@@ -40,16 +44,11 @@ By default, SpatialOS GDK settings are set to generate a default launch config w
 
 <%(Lightbox image="{{assetRoot}}assets/dbsync/editor-settings-generate-launch-config.png")%>
 
-Then, build the project from Visual Studio and be sure everything compiles correctly.
-
-<%(Callout type="tip" message="If you have any issues, you can compare your code to a final working version of the tutorial in the `feature/dbsync_worker_tutorial_finish` branch of the Example Project.")%>
-
-
 ### 4. Running the game
 
 At this point, all is ready, so in the Unreal Editor:
 1. Generate Schema (this is required to create the descriptor files for the schema we imported from outside the Unreal project and would not have been generated when you generated Schema in step 1)
-1. Open the Play drop-down menu. Under Multiplayer Options, set the number of players to 2 or 3 and hit play
+2. Open the Play drop-down menu. Under Multiplayer Options, set the number of players to 2 or 3 and hit play
 
 As you kill players, you will the “All Time” columns change.
 
