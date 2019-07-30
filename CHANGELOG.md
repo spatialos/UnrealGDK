@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features:
 - The GDK now uses SpatialOS `13.8.1`.
-- Dynamic components are now supported. You can now dynamically attach and remove replicated subobjects to Actors. You can read more about this feature [here](https://docs.unrealengine.com/en-US/Gameplay/Networking/Actors/Components/index.html)
+- Dynamic components are now supported. You can now dynamically attach and remove replicated subobjects to Actors.
 - Local deployment startup time has been significantly reduced.
 - Local deployments now start automatically when you select `Play`. This means you no longer need to select `Start` in the GDK toolbar before you select `Play` in the Unreal toolbar.
 - If your schema has changed during a local deployment, the next time you select `Play` the deployment will automatically restart.
