@@ -13,7 +13,6 @@ call :MarkStartOfBlock "Setup variables"
   pushd %cd%\%1
     set GAME_FOLDER=%cd%
   popd
-  echo %GAME_FOLDER%
   pushd %~dp0\..\..\..
     set GDK_FOLDER=%cd%
     pushd %GAME_FOLDER%
@@ -23,8 +22,8 @@ call :MarkStartOfBlock "Setup variables"
       set SPATIAL_SCHEMA_FOLDER=%GAME_FOLDER%\spatial\schema
       set BUNDLE_CACHE_DIR=%GDK_FOLDER%\SpatialGDK\Intermediate\ExternalSchemaCodegen
       set SCHEMA_BUNDLE_FILE_NAME=external_schema_bundle.json
-        popd
     popd
+  popd
 call :MarkEndOfBlock "Setup variables"
 
 call :MarkStartOfBlock "Clean folders"
@@ -65,9 +64,9 @@ if not exist "%CODEGEN_EXE_PATH%" (
 call :MarkStartOfBlock "Running code generator"
 %CODEGEN_EXE_PATH% --input-bundle "%BUNDLE_CACHE_DIR%\%SCHEMA_BUNDLE_FILE_NAME%" --output-dir "%GAME_FOLDER%\%3"
 if ERRORLEVEL 1 (
-        echo Error: Code generation failed
-        pause
-        exit /b 1
+    echo Error: Code generation failed
+    pause
+    exit /b 1
 )
 echo Code successfully generated at "%GAME_FOLDER%\%2"
 call :MarkEndOfBlock "Running code generator"
