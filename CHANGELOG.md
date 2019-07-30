@@ -38,8 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BeginPlay is now only called with authority on startup actors once per deployment.
 - Fixed null pointer dereference crash when trying to initiate a Spatial connection without an existing one.
 - URL options are now properly sent through to the server when doing a ClientTravel.
-- Fixed an issue that stopped the correct error message from being shown when the SchemaDatabase is missing.
-- Fixed an issue with `StartEditor.bat` not being generated correctly when building the server worker for local deployments outside of editor.
+- The correct error message is now printed when the SchemaDatabase is missing.
+- `StartEditor.bat` is now generated correctly when you build a server worker outside of editor.
 - Fixed an issue with logging errored blueprints after garbage collection which caused an invalid pointer crash.
 - Removed the ability to configure snapshot save folder. Snapshots should always be saved to `<ProjectRoot>/spatial/snapshots`. This prevents an issue with absolute paths being checked in which can break snapshot generation.
 
