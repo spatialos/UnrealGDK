@@ -79,6 +79,7 @@ public:
 	void SendComponentInterestForSubobject(const FClassInfo& Info, Worker_EntityId EntityId, bool bNetOwned);
 	void SendPositionUpdate(Worker_EntityId EntityId, const FVector& Location);
 	bool SendRPC(const FPendingRPCParams& Params);
+	bool SendRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload);
 	void SendCommandResponse(Worker_RequestId request_id, Worker_CommandResponse& Response);
 	void SendEmptyCommandResponse(Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_RequestId RequestId);
 	void SendAddComponent(USpatialActorChannel* Channel, UObject* Subobject, const FClassInfo& Info);
@@ -133,7 +134,7 @@ private:
 	Worker_CommandRequest CreateRPCCommandRequest(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId CommandIndex, Worker_EntityId& OutEntityId, const UObject*& OutUnresolvedObject);
 	Worker_CommandRequest CreateRetryRPCCommandRequest(const FReliableRPCForRetry& RPC, uint32 TargetObjectOffset);
 	Worker_ComponentUpdate CreateRPCEventUpdate(UObject* TargetObject, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId EventIndex, const UObject*& OutUnresolvedObject);
-	bool AddPendingUnreliableRPC(UObject* TargetObject, const FPendingRPCParams& Parameters, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject);
+	bool AddPendingUnreliableRPC(UObject* TargetObject, UFunction* Function, const RPCPayload& Payload, Worker_ComponentId ComponentId, Schema_FieldId RPCIndex, const UObject*& OutUnresolvedObject);
 
 	TArray<Worker_InterestOverride> CreateComponentInterestForActor(USpatialActorChannel* Channel, bool bIsNetOwned);
 

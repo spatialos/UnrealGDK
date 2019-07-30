@@ -20,6 +20,8 @@ struct FPendingRPCParams
 	int ReliableRPCIndex;
 	FUnrealObjectRef ObjectRef;
 	SpatialGDK::RPCPayload Payload;
+
+	FDateTime Timestamp;
 };
 
 class FRPCContainer
