@@ -52,7 +52,7 @@ At this point, all is ready, so in the Unreal Editor:
 
 As you kill players, you will the “All Time” columns change.
 
-Now, stop play, stop the deployment, and restart Unreal Engine. Run the game as previously - you should see that even with 0 kills / deaths in current game, the *All Time* Kills and Deaths are populated, because you are getting the information from the database.
+Now, stop play, stop the deployment, and restart Unreal Engine. Run the game as previously - you should see that even with 0 kills / deaths in current game, the *All Time* Kills and *All Time Deaths* are populated, because you are getting the information from the database.
 
 <%(Lightbox image="{{assetRoot}}assets/dbsync/kd-populated.png")%>
 
