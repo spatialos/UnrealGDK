@@ -30,7 +30,7 @@ However, if you stop and start again, the "All Time" columns are reset to 0 beca
 
 ![K/D counts getting reset]({{assetRoot}}assets/dbsync/kd-counts-0-0.png)
 
-The tracking of those stats is done in `DeathScoreComponent.cpp`: you can have a look at the code there and will see the places where you will need to store and read the data from the database using the Database Sync Worker.
+The tracking of those stats is done in `DeathmatchScoreComponent.cpp`: you can have a look at the code there and will see the places where you will need to store and read the data from the database using the Database Sync Worker.
 
 ### 3. Clone and build the Database Sync Worker
 

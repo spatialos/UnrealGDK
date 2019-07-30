@@ -76,8 +76,10 @@ You can create this structure in the way that fits your game the best, having in
 
 ```
 ...
-#include "SpatialNetDriver.h"
 #include "ExternalSchemaCodegen/improbable/database_sync/CommandErrors.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "SpatialNetDriver.h"
+
 // Path format to store the score is in the format "profiles.UnrealWorker.players.<playerId>.score.(AllTimeKills or AllTimeDeaths)"
 namespace DBPaths
 {
