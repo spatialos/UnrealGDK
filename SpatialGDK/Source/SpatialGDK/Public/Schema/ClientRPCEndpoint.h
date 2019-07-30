@@ -21,7 +21,7 @@ struct ClientRPCEndpoint : Component
 	ClientRPCEndpoint(const Worker_ComponentData& Data)
 	{
 		Schema_Object* EndpointObject  = Schema_GetComponentDataFields(Data.schema_type);
-		bReady = Schema_GetBool(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
+		bReady = GetBoolFromSchema(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
 	}
 
 	void ApplyComponentUpdate(const Worker_ComponentUpdate& Update)
@@ -29,7 +29,7 @@ struct ClientRPCEndpoint : Component
 		Schema_Object* EndpointObject = Schema_GetComponentUpdateFields(Update.schema_type);
 		if (Schema_GetBoolCount(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID) > 0)
 		{
-			bReady = Schema_GetBool(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
+			bReady = GetBoolFromSchema(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
 		}
 	}
 
