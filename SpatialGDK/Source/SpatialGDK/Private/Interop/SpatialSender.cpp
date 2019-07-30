@@ -13,6 +13,7 @@
 #include "Interop/Connection/SpatialWorkerConnection.h"
 #include "Interop/SpatialDispatcher.h"
 #include "Interop/SpatialReceiver.h"
+#include "Schema/AlwaysRelevant.h"
 #include "Schema/ClientRPCEndpoint.h"
 #include "Schema/Heartbeat.h"
 #include "Schema/Interest.h"
@@ -136,6 +137,8 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 		ComponentWriteAcl.Add(SpatialConstants::HEARTBEAT_COMPONENT_ID, OwningClientOnlyRequirementSet);
 	}
 
+	ComponentWriteAcl.Add(SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID, AuthoritativeWorkerRequirementSet);
+
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
 		Worker_ComponentId ComponentId = Info.SchemaComponents[Type];
@@ -213,6 +216,11 @@ Worker_RequestId USpatialSender::CreateEntity(USpatialActorChannel* Channel)
 	if (Class->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		ComponentDatas.Add(Singleton().CreateSingletonData());
+	}
+
+	if (Actor->bAlwaysRelevant)
+	{
+		ComponentDatas.Add(AlwaysRelevant().CreateData());
 	}
 
 	// If the Actor was loaded rather than dynamically spawned, associate it with its owning sublevel.

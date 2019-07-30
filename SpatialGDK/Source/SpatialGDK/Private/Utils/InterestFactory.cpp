@@ -244,7 +244,7 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const
 {
 	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraints();
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint();
-	QueryConstraint SingletonConstraint = CreateSingletonConstraint();
+	QueryConstraint AlwaysRelevantConstraint = CreateAlwaysRelevantConstraint();
 
 	QueryConstraint SystemDefinedConstraints;
 
@@ -258,9 +258,9 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const
 		SystemDefinedConstraints.OrConstraint.Add(AlwaysInterestedConstraint);
 	}
 
-	if (SingletonConstraint.IsValid())
+	if (AlwaysRelevantConstraint.IsValid())
 	{
-		SystemDefinedConstraints.OrConstraint.Add(SingletonConstraint);
+		SystemDefinedConstraints.OrConstraint.Add(AlwaysRelevantConstraint);
 	}
 
 	return SystemDefinedConstraints;
@@ -355,22 +355,24 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint() const
 }
 
 
-QueryConstraint InterestFactory::CreateSingletonConstraint() const
+QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
 {
-	QueryConstraint SingletonConstraint;
+	QueryConstraint AlwaysRelevantConstraint;
 
-	Worker_ComponentId SingletonComponentIds[] = {
+	Worker_ComponentId ComponentIds[] = {
 		SpatialConstants::SINGLETON_COMPONENT_ID,
-		SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID };
+		SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID,
+		SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID
+	};
 
-	for (Worker_ComponentId ComponentId : SingletonComponentIds)
+	for (Worker_ComponentId ComponentId : ComponentIds)
 	{
 		QueryConstraint Constraint;
 		Constraint.ComponentConstraint = ComponentId;
-		SingletonConstraint.OrConstraint.Add(Constraint);
+		AlwaysRelevantConstraint.OrConstraint.Add(Constraint);
 	}
 
-	return SingletonConstraint;
+	return AlwaysRelevantConstraint;
 }
 
 void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const
