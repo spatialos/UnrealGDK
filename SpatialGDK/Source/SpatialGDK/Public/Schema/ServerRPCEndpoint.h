@@ -20,7 +20,7 @@ struct ServerRPCEndpoint : Component
 
 	ServerRPCEndpoint(const Worker_ComponentData& Data)
 	{
-		Schema_Object* EndpointObject  = Schema_GetComponentDataFields(Data.schema_type);
+		Schema_Object* EndpointObject = Schema_GetComponentDataFields(Data.schema_type);
 		bReady = GetBoolFromSchema(EndpointObject, SpatialConstants::UNREAL_RPC_ENDPOINT_READY_ID);
 	}
 
