@@ -8,7 +8,10 @@ In Unreal’s native single-server architecture, the server runs many of the maj
 
 You can think of _offloading_ as splitting up computation-heavy systems to run on separate server-worker instances. As a result, some CPU-intensive game systems that cannot easily use multithreading with the Unreal’s native architecture are no longer limited by the processing power of a single server. In addition, not all input from game clients needs to be processed by the same server-worker instance.
 
-> **Note**: Offloading increases CPU resources at the cost of bandwidth. If you want more interaction between the offloaded server-worker instance and the main server-worker instance, the cost of bandwidth and the CPU consumption on communication between them increase. Therefore, when you design your game feature using offloading, consider having Actors on each server that don't need to frequently communicate across server boundaries.
+<%(Lightbox image="{{assetRoot}}assets/offloading-diagram.png")%>
+_Offloading: Offloaded Unreal server-worker instance has authority only over **Red Actors** and the **Main Unreal server-worker instance** that runs major game systems has authority over all Actors except the Red Actors._
+
+> **Note**: Offloading increases CPU resources at the cost of bandwidth. If you want more interaction between the offloaded server-worker instance and the main server-worker instance, the cost of bandwidth and the CPU consumption on communication between them increase. Therefore, when you design your game feature using offloading, carefully consider what information is sent between servers.
 
 ## Actor groups
 
