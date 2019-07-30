@@ -572,7 +572,6 @@ void USpatialReceiver::ReceiveActor(Worker_EntityId EntityId)
 		if (NetDriver->GetWorld()->HasBegunPlay() && !EntityActor->HasActorBegunPlay())
 		{
 			check(!EntityActor->HasAuthority());
-			UE_LOG(LogTemp, Warning, TEXT("Dispatching beginplay for %s received over wire"), *EntityActor->GetName());
 			EntityActor->DispatchBeginPlay();
 		}
 
@@ -804,13 +803,17 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 		return nullptr;
 	}
 
+	const bool bIsServer = NetDriver->IsServer();
+
 	// Initial Singleton Actor replication is handled with GlobalStateManager::LinkExistingSingletonActors
-	if (NetDriver->IsServer() && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
+	if (bIsServer && ActorClass->HasAnySpatialClassFlags(SPATIALCLASS_Singleton))
 	{
 		return FindSingletonActor(ActorClass);
 	}
 
 	UE_LOG(LogSpatialReceiver, Verbose, TEXT("Spawning a %s whilst checking out an entity."), *ActorClass->GetFullName());
+
+	const bool bCreatingPlayerController = ActorClass->IsChildOf(APlayerController::StaticClass());
 
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -822,26 +825,9 @@ AActor* USpatialReceiver::CreateActor(UnrealMetadata* UnrealMetadataComp, SpawnD
 	AActor* NewActor = NetDriver->GetWorld()->SpawnActorAbsolute(ActorClass, FTransform(SpawnDataComp->Rotation, SpawnLocation), SpawnInfo);
 	check(NewActor);
 
-	if (NetDriver->IsServer() && ActorClass->IsChildOf(APlayerController::StaticClass()))
+	if (bIsServer && bCreatingPlayerController)
 	{
-		checkf(!UnrealMetadataComp->OwnerWorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
-
-		FString URLString = FURL().ToString();
-		URLString += TEXT("?workerAttribute=") + UnrealMetadataComp->OwnerWorkerAttribute;
-
-		USpatialNetConnection* Connection = nullptr;
-		NetDriver->CreateSpatialNetConnection(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), &Connection);
-		APlayerController* NewPC = Cast<APlayerController>(NewActor);
-		Connection->PlayerController = NewPC;
-
-		NewPC->CleanupPlayerState();
-
-		// Possess the newly-spawned player.
-		// CMS_TODO: are the next 3 lines correct?
-		NewPC->NetPlayerIndex = 0;
-		NewPC->Role = ROLE_SimulatedProxy;
-		NewPC->SetAutonomousProxy(false);
-		NewPC->SetPlayer(Connection);
+		NetDriver->PostSpawnPlayerController(Cast<APlayerController>(NewActor), UnrealMetadataComp->OwnerWorkerAttribute);
 	}
 
 	// Imitate the behavior in UPackageMapClient::SerializeNewActor.

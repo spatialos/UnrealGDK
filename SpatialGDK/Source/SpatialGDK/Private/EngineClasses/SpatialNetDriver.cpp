@@ -1475,6 +1475,30 @@ void USpatialNetDriver::AcceptNewPlayer(const FURL& InUrl, const FUniqueNetIdRep
 	}
 }
 
+// This function is called for server workers who received the PC over the wire
+void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerController, const FString& WorkerAttribute)
+{
+	check(PlayerController != nullptr);
+	checkf(!WorkerAttribute.IsEmpty(), TEXT("A player controller entity must have an owner worker attribute."));
+
+	PlayerController->SetFlags(GetFlags() & RF_Transient);
+
+	FString URLString = FURL().ToString();
+	URLString += TEXT("?workerAttribute=") + WorkerAttribute;
+
+	// We create a connection here so that any code that searches for owning connection, etc on the server
+	// resolves ownership correctly
+	USpatialNetConnection* OwnershipConnection = nullptr;
+	CreateSpatialNetConnection(FURL(nullptr, *URLString, TRAVEL_Absolute), FUniqueNetIdRepl(), FName(), &OwnershipConnection);
+	OwnershipConnection->PlayerController = PlayerController;
+
+	PlayerController->CleanupPlayerState();
+	PlayerController->NetPlayerIndex = 0;
+	PlayerController->Role = ROLE_SimulatedProxy;
+	PlayerController->SetReplicates(true);
+	PlayerController->SetPlayer(OwnershipConnection);
+}
+
 bool USpatialNetDriver::Exec(UWorld* InWorld, const TCHAR* Cmd, FOutputDevice& Ar)
 {
 #if !UE_BUILD_SHIPPING
