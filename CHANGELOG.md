@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Introduced a new module, `SpatialGDKServices`, on which `SpatialGDK` and `SpatilGDKEditorToolbar` now depend. This resolves a previously cyclic dependency.
 - RPCs recieved on entity creation are now queued in case they cannot yet be executed. Previously they were simply dropped.
 - RPCs are now guaranteed to arrive in the same order for a given actor and all of its subobjects. This matches native Unreal behavior.
+- RPCs called before entity creation are now included in RPC metrics.
 
 ## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
 - Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
