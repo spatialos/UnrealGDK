@@ -109,9 +109,9 @@ component OtherTestComponent {
 
 #### Using the code generator example
 
-Using the above schema file placed in the project relative directory `spatial\schema\my_external_schema\`, the command below will output code to a new `Game\Source\<your_project_name>\ExternalSchemaCodegen` folder:
+Using the above schema file placed in the project relative directory `spatial\schema\my_external_schema\`, the command below will output code to a new `Game\Source\<your_project_name>\ExternalSchemaCodegen` folder where `<project_root>` is the path to the root of your Unreal project which contains the `spatial` folder:
 
-`Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\ExternalSchemaCodegen.bat spatial\schema\my_external_schema Game\Source\<your_project_name>\ExternalSchemaCodegen`
+`Game\Plugins\UnrealGDK\SpatialGDK\Build\Scripts\ExternalSchemaCodegen.bat spatial\schema\my_external_schema Game\Source\<your_project_name>\ExternalSchemaCodegen` `<project_root>`
 
 This will generate code in the `Game\Source\<your_project_name>\ExternalSchemaCode` folder. To see these changes in Visual Studio, the Visual Studio project files need to be regenerated.
 
