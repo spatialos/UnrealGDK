@@ -29,12 +29,12 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 
 <%(#Expandable title="If you do not intend to use the Simulated player functionality when starting the deployment you must follow these steps first")%>
 
-1. Navigate to `myprojectname\spatial\spatial\workers`
+1. Navigate to `<YourProject>\spatial\spatial\workers`
 2. Delete the `improbable` folder and the `spatialos.SimulatedPlayerCoordinator.worker.json` file inside it
-3. Navigate to `myprojectname\spatial\build\assembly`
+3. Navigate to `<YourProject>\spatial\build\assembly`
 4. If there is a folder named `SimulatedPlayerCoordinator`, delete it and the files contained inside it
-5. Re-run `spatial build build-config` from the `myprojectname\spatial` directory 
-6. Ensure the folder `SimulatedPlayerCoordinator` is not regenerated in the directory `myprojectname\spatial\build\assembly`
+5. Re-run `spatial build build-config` from the `<YourProject>\spatial` directory 
+6. Ensure the folder `SimulatedPlayerCoordinator` is not regenerated in the directory `<YourProject>\spatial\build\assembly`
 
 <%(/Expandable)%>
 
