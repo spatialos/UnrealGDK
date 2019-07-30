@@ -1507,7 +1507,9 @@ void USpatialNetDriver::PostSpawnPlayerController(APlayerController* PlayerContr
 
 	PlayerController->CleanupPlayerState();
 	PlayerController->NetPlayerIndex = 0;
-	PlayerController->Role = ROLE_SimulatedProxy;
+	// We need to lie about our authority briefly here so that SetReplicates will succeed.  Really our authority is ROLE_SimulatedProxy.
+	// This will be set correctly in the SpatialReceiver::ReceiveActor call
+	PlayerController->Role = ROLE_Authority;
 	PlayerController->SetReplicates(true);
 	PlayerController->SetPlayer(OwnershipConnection);
 }
