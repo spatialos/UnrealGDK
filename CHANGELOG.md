@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local deployment startup time has been significantly reduced.
 - Local deployments now start automatically when you select `Play`. This means you no longer need to select `Start` in the GDK toolbar before you select `Play` in the Unreal toolbar.
 - If your schema has changed during a local deployment, the next time you select `Play` the deployment will automatically restart.
-- Local deployments no longer run in a seperate Command Prompt, they now run in the Unreal Editor's Output Log.
+- Local deployments no longer run in a seperate Command Prompt. Logs from these deployments are now found in the Unreal Editor's Output Log.
 - SpatialOS Runtime logs can now be found at `<GameRoot>\spatial\logs\localdeployment\<timestamp>\runtime.log`.
 - An option to `Show spatial service button` has been added to the SpatialOS Settings menu. This button can be useful when debugging.
 - Every time you open a GDK project in the Unreal Editor, 'spatial service' will be restarted. This ensures the service is always running in the correct SpatialOS project. You can disable this auto start feature via the new SpatialOS setting `Auto-start local deployment`.
