@@ -43,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `StartEditor.bat` is now generated correctly when you build a server worker outside of editor.
 - Fixed an issue with logging errored blueprints after garbage collection which caused an invalid pointer crash.
 - Removed the ability to configure snapshot save folder. Snapshots should always be saved to `<ProjectRoot>/spatial/snapshots`. This prevents an issue with absolute paths being checked in which can break snapshot generation.
+- Introduced a new module, `SpatialGDKServices`, on which `SpatialGDK` and `SpatilGDKEditorToolbar` now depend. This resolves a previously cyclic dependency.
 
 ## [`0.5.0-preview`](https://github.com/spatialos/UnrealGDK/releases/tag/0.5.0-preview) - 2019-06-25
 - Prevented `Spatial GDK Content` from appearing under Content Browser in the editor, as the GDK plugin does not contain any game content.
