@@ -46,7 +46,7 @@ To communicate with that worker, you need to get the UnrealWorker to send comman
 
 1. Copy the `database_sync.schema` file from `spatial/workers/database_sync_worker/Improbable/DatabaseSync/Improbable.DatabaseSync.Schema/schema/improbable/database_sync` into `spatial/schema/dbsync` (you will need to create this folder).
 1. Copy the `postgres.schema` file from `spatial/workers/database_sync_worker/Improbable/Postgres/Improbable.Postgres.Schema/schema/improbable/postgres` into `spatial/schema/dbsync`
-1. Because `database_sync.schema` references `postgres.schema`, you need to modify `database_sync.schema`’s `postgres.schema` import statement to look for the correct folder, as such:  `import "dbsync/postgres.schema"`
+1. Because `database_sync.schema` references `postgres.schema`, you need to modify `database_sync.schema`’s `postgres.schema` import statement to look for the correct folder, as such:  `import "dbsync/postgres.schema";`
 1. In a console, run the `ExternalSchemaCodegen.bat` tool from `Game/Plugins/UnrealGDK/SpatialGDK/Build/Scripts` to generate the code. As parameters, it needs the source of the schema and a place to create the code. You will be creating the code in `Games/Source/GDKShooter/ExternalSchemaCodegen`:
 `{ExternalSchemaCodegen.bat spatial/schema/dbsync Game/Source/GDKShooter/ExternalSchemaCodegen}`. For more information on this tool, including the parameters it accepts, see [this reference page]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts).
 1. Right click on `Game/GDKShooter.uproject` and `Generate Visual Studio Files` for your newly created code to be included in the project.
