@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added simulated player tools, which will allow you to create logic to simulate the behavior of real players. Simulated players can be used to scale test your game to hundreds of players. Simulated players can be launched locally as part of your development flow for quick iteration, as well as part of a separate "simulated player deployment" to connect a configurable amount of simulated players to your running game deployment.
 - Factored out writing of Linux worker start scripts into a library, and added a standalone `WriteLinuxScript.exe` to _just_ write the launch script (for use in custom build pipelines).
 - Added temporary MaxNetCullDistanceSquared to SpatialGDKSettings to prevent excessive net cull distances impacting runtime performance. Set to 0 to disable.
+- Added `OnWorkerFlagsUpdated`, a delegate that you call using `BindToOnWorkerFlagsUpdated` and `UnbindToOnWorkerFlagsUpdated`. You can use it to register when worker flag updates are received, which allows you to tweak values at deployment runtime.
 
 ### Bug fixes:
 - The `improbable` namespace has been renamed to `SpatialGDK`. This prevents namespace conflicts with the C++ SDK.
