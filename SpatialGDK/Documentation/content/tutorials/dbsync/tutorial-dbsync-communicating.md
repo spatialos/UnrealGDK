@@ -4,15 +4,15 @@
 
 ## 2. Communicating with the Database Sync Worker
 
-To store and retrieve data from the Database, you will need to communicate with the Database Sync Worker through [SpatialOS commands and events](https://docs.improbable.io/reference/latest/shared/design/object-interaction).
+To store and retrieve data from the database, you will need to communicate with the Database Sync Worker through [SpatialOS commands and events](https://docs.improbable.io/reference/latest/shared/design/object-interaction).
 
-Specifically, you will need to deal with a SpatialOS entity that contains the `DatabaseSyncService` component which receives the commands to communicate with the service.
+Specifically, you will need to deal with a SpatialOS entity that contains the `DatabaseSyncService` component.
 
-To send SpatialOS Commands you will need to know the EntityID of the target Entity, so you will need to get and store that ID. The best place to do so is when your UnrealWorker checks out the Entity and receives its Components. You will be getting callbacks when that happens and can store the ID at that point.
+To send SpatialOS Commands you will need to know the EntityID of the target Entity, so you will need to get and store it. The best place to do so is when your UnrealWorker checks out the Entity and receives its Components. You will receive callbacks when that happens and can store the ID at that point.
 
-To do so, in `GDKShooterSpatialGameInstance`, when your game connects to SpatialOS, create a `ExternalSchemaInterface` to deal with SpatialOS messages outside of the GDK that handles all Unreal related ones.
+To do so, in `GDKShooterSpatialGameInstance`, when your game connects to SpatialOS, create a `ExternalSchemaInterface` to deal with SpatialOS messages that come from outside of the GDK.
 
-Create a reference to the `ExternalSchemaInterface` and expose it, since you will be using it from other places. Also, declare the `Init` function that you will use later to register to listen to SpatialOS commands and events. 
+Create a reference to the `ExternalSchemaInterface` and expose it, since you will be using it from other places. Also, declare the `Init` function that you will use later to register to listen to SpatialOS commands and events.
 
 This means modifying `GDKShooterSpatialGameInstance.h` as such:
 
@@ -22,7 +22,7 @@ This means modifying `GDKShooterSpatialGameInstance.h` as such:
 
 …
 GENERATED_BODY()
-	
+
 public:
 
 	void Init();
@@ -63,9 +63,9 @@ void UGDKShooterSpatialGameInstance::Init()
 
 ### 1. OnAddComponent
 
-You want to listen to when the UnrealWorker receives the `DatabaseSyncService` component so you can store the EntityID and be able to send commands later.
+You want to listen for when the UnrealWorker receives the `DatabaseSyncService` component, so you can store the EntityID and be able to send commands later.
 
-Again, you will be using this elsewhere so be sure to expose it by adding this in `GDKShooterSpatialGameInstance.h` as such:
+Again, you will be using this elsewhere, so be sure to expose it by adding this in `GDKShooterSpatialGameInstance.h`:
 
 ```
 ...
@@ -100,9 +100,9 @@ Then, on `GDKShooterSpatialGameInstance.cpp`, add a callback for the `OnAddCompo
 
 ### 2. Database permissions
 
-Due to the hierarchical structure of the data stored in the Database through the Database Sync Worker, you need to register your UnrealWorker as the “owner” of `profiles.UnrealWorker` so you can store the information further down that path (for example, `profiles.UnrealWorker.players.<player_id>.score.TotalKills`).
+Due to the hierarchical structure of the data stored in the database through the Database Sync Worker, you need to register your UnrealWorker as the “owner” of `profiles.UnrealWorker` so you can store the information further down that path (for example, `profiles.UnrealWorker.players.<player_id>.score.TotalKills`).
 
-To do so, you need to send the Command `AssociatePathWithClient` to the Database Sync Worker. 
+To do so, you need to send the Command `AssociatePathWithClient` to the Database Sync Worker.
 
 You will need the `WorkerId` of the Worker that is going to be accessing that data, which you can get from the Connection in `GDKShooterSpatialGameInstance.cpp` as such:
 
@@ -117,9 +117,9 @@ You will need the `WorkerId` of the Worker that is going to be accessing that da
 			}
 			FString workerId = NetDriver->Connection->GetWorkerId();
 
-			::improbable::database_sync::DatabaseSyncService::Commands::AssociatePathWithClient::Request* Request = new ::improbable::database_sync::DatabaseSyncService::Commands::AssociatePathWithClient::Request("profiles.UnrealWorker", workerId);
+			::improbable::database_sync::DatabaseSyncService::Commands::AssociatePathWithClient::Request Request(TEXT("profiles.UnrealWorker"), workerId);
 
-			ExternalSchema->SendCommandRequest(HierarchyServiceId, *Request);
+			ExternalSchema->SendCommandRequest(HierarchyServiceId, Request);
 		});
 ```
 
@@ -146,7 +146,7 @@ ExternalSchema->SendCommandRequest(HierarchyServiceId, *Request);
 			UDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));
 			Deathmatch->CreateItemResponse(Op);
 		});
-		
+
 		ExternalSchema->OnCommandResponse([this] (const ::improbable::database_sync::DatabaseSyncService::Commands::Increment::ResponseOp& Op)
 		{
 			UDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));
@@ -170,7 +170,7 @@ A key feature of the Database Sync Worker is that it allows you to externally mo
 			UDeathmatchScoreComponent* Deathmatch = Cast<UDeathmatchScoreComponent>(GetWorld()->GetGameState()->GetComponentByClass(UDeathmatchScoreComponent::StaticClass()));
 			Deathmatch->ItemUpdateEvent(Op);
 		});
-		
+
 	});
 ```
 

@@ -14,13 +14,13 @@ In `DeathmatchScoreComponent.h`, declare all the functions that you are calling 
 ...
 	UPROPERTY(BlueprintAssignable)
 		FScoreChangeEvent ScoreEvent;
-	
+
 	void ItemUpdateEvent(const ::improbable::database_sync::DatabaseSyncService::ComponentUpdateOp& Op);
 
 	void GetItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::ResponseOp& Op);
 	void CreateItemResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Create::ResponseOp& Op);
 	void IncrementResponse(const ::improbable::database_sync::DatabaseSyncService::Commands::Increment::ResponseOp& Op);
-...    
+...
 ```
 
 And the internal ones that will encapsulate the code to do the requests:
@@ -43,9 +43,9 @@ In this example, you will be sending 3 types of requests to the Database Sync Wo
 ...
     void RequestIncrement(const FString &Path, int64 Count);
 
-    TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::Request*> GetItemRequests;
-    TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Create::Request*> CreateItemRequests;
-    TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request*> IncrementRequests;
+    TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::Request> GetItemRequests;
+    TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Create::Request> CreateItemRequests;
+    TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request> IncrementRequests;
 ...
 ```
 
@@ -55,7 +55,7 @@ Finally, because the Database Sync Worker stores the data in a hierarchical way,
 
 ```
 ...
-	TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request*> IncrementRequests;
+	TMap<Worker_RequestId, ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request> IncrementRequests;
 
 	void UpdateScoreFromPath(const FString &Path, int64 NewCount);
 	void RequestCreateItemFromPath(const FString &Path);
@@ -68,11 +68,11 @@ Finally, because the Database Sync Worker stores the data in a hierarchical way,
 
 With everything declared, it is time to start getting values from the database.
 
-First, you need to send a `GetItem` command to the `DatabaseSyncService` specifying the path of the info you want to retrieve. 
+First, you need to send a `GetItem` command to the `DatabaseSyncService` specifying the path of the info you want to retrieve.
 
 To do so, implement the `RequestGetItem` function in `DeathmatchScoreComponent.cpp`. Also, declare some constants with the strings used in the database structure. For this example, we have defined a hierarchy as such: `profiles.UnrealWorker.players.<playerId>.score.(AllTimeKills or AllTimeDeaths)`.
 
-You can create this structure in the way that fits your game the best, having inventories for players and NPCs. For more information about this, check out the Database Sync Worker's reference documentation [on Github](https://github.com/spatialos/database_sync_worker).
+You can create this structure in the way that fits your game the best, having inventories for players and NPCs. For more information about this, check out the Database Sync Worker's reference documentation [on Github](https://github.com/spatialos/database-sync-worker).
 
 ```
 ...
@@ -93,9 +93,9 @@ void UDeathmatchScoreComponent::RequestGetItem(const FString &Path)
 {
 	FString workerId = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->GetWorkerId();
 
-	::improbable::database_sync::DatabaseSyncService::Commands::GetItem::Request* Request = new ::improbable::database_sync::DatabaseSyncService::Commands::GetItem::Request(Path, workerId);
-	
-	Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), *Request);
+	::improbable::database_sync::DatabaseSyncService::Commands::GetItem::Request Request(Path, workerId);
+
+	Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), Request);
 
 	GetItemRequests.Add(requestId, Request);
 
@@ -106,7 +106,7 @@ This creates a new request of the specific command you will be sending and then 
 
 If a command response returns correctly, you can remove the request from the map of pending requests and update your local information with the one received.
 
-Otherwise, you will have to see what the error was and deal with it appropriately. In this case, the Database may not contain the item you requested and return a “Invalid Request” error, in which case you may want to add it (in the example, this is what needs to be done for when a new player joins and we want to store his new count of “All Time Kills” and “Deaths”).
+Otherwise, you will have to see what the error was and deal with it appropriately. In this case, the database may not contain the item you requested and return a “Invalid Request” error, in which case you may want to add it (in the example, this is what needs to be done for when a new player joins and we want to store his new count of “All Time Kills” and “Deaths”).
 
 If the command times out, you may want to send it again (in this example, for simplicity, you will retry for timeouts and simply log errors otherwise).
 
@@ -116,7 +116,7 @@ void UDeathmatchScoreComponent::GetItemResponse(const ::improbable::database_syn
 {
 	if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_SUCCESS)
 	{
-		UpdateScoreFromPath(GetItemRequests[Op.RequestId]->Data.GetPath(), Op.Data.Data.GetItem().GetCount());		
+		UpdateScoreFromPath(GetItemRequests[Op.RequestId].Data.GetPath(), Op.Data.Data.GetItem().GetCount());
 
 		GetItemRequests.Remove(Op.RequestId);
 	}
@@ -125,14 +125,14 @@ void UDeathmatchScoreComponent::GetItemResponse(const ::improbable::database_syn
 		FString message = Op.Message;
 		if (FCString::Atoi(*message) == (int32)::improbable::database_sync::CommandErrors::INVALID_REQUEST)
 		{
-			RequestCreateItemFromPath(GetItemRequests[Op.RequestId]->Data.GetPath());
+			RequestCreateItemFromPath(GetItemRequests[Op.RequestId].Data.GetPath());
 		}
-		
+
 		GetItemRequests.Remove(Op.RequestId);
 	}
 	else if(Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_TIMEOUT)
 	{
-		Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), *GetItemRequests[Op.RequestId]);
+		Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), GetItemRequests[Op.RequestId]);
 
 		GetItemRequests.Add(requestId, GetItemRequests[Op.RequestId]);
 
@@ -156,11 +156,11 @@ void UDeathmatchScoreComponent::RequestCreateItem(const FString &Name, int64 Cou
 {
 	FString workerId = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->GetWorkerId();
 
-	::improbable::database_sync::DatabaseSyncItem* Item = new ::improbable::database_sync::DatabaseSyncItem(Name, Count, Path);
+	::improbable::database_sync::DatabaseSyncItem Item (Name, Count, Path);
 
-	::improbable::database_sync::DatabaseSyncService::Commands::Create::Request* Request = new ::improbable::database_sync::DatabaseSyncService::Commands::Create::Request(*Item, workerId);
+	::improbable::database_sync::DatabaseSyncService::Commands::Create::Request Request(Item, workerId);
 
-	Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), *Request);
+	Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), Request);
 
 	CreateItemRequests.Add(requestId, Request);
 }
@@ -209,7 +209,7 @@ void UDeathmatchScoreComponent::UpdateScoreFromPath(const FString &Path, int64 N
 			}
 		}
 	}
-	
+
 	UE_LOG(LogTemp, Log, TEXT("Received update with unexpected path : %s"), *Path);
 }
 
@@ -248,7 +248,7 @@ void UDeathmatchScoreComponent::CreateItemResponse(const ::improbable::database_
 	}
 	else if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_TIMEOUT)
 	{
-		Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), *CreateItemRequests[Op.RequestId]);
+		Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), CreateItemRequests[Op.RequestId]);
 
 		CreateItemRequests.Add(requestId, CreateItemRequests[Op.RequestId]);
 
@@ -262,11 +262,11 @@ void UDeathmatchScoreComponent::CreateItemResponse(const ::improbable::database_
 ...
 ```
 
-In this example, there is never a need to delete information, but there is a command for it. take a look at the full Database Sync Worker API [here](https://github.com/spatialos/database_sync_worker/blob/master/README.md#interacting-with-the-database) to see what it offers.
+In this example, there is never a need to delete information, but there is a command for it. Take a look at the full Database Sync Worker API [here](https://github.com/spatialos/database-sync-worker/blob/master/README.md#interacting-with-the-database) to see what it offers.
 
 ### 3. Modifying information in the database
 
-Once you have created the information for the players, you will need to update it accordingly. In this example,that is when a player kills another or dies. Because both of those operations always increase a value, you will only be using the `Increment` command. 
+Once you have created the information for the players, you will need to update it accordingly. In this example, that is when a player kills another or dies. Because both of those operations always increase a value, you will only be using the `Increment` command.
 
 ```
 ...
@@ -274,10 +274,10 @@ void UDeathmatchScoreComponent::RequestIncrement(const FString &Path, int64 Coun
 {
 
 	FString workerId = Cast<USpatialNetDriver>(GetWorld()->GetNetDriver())->Connection->GetWorkerId();
-		
-	::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request* Request = new ::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request(Path, Count, workerId);
 
-	Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), *Request);
+	::improbable::database_sync::DatabaseSyncService::Commands::Increment::Request Request(Path, Count, workerId);
+
+	Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), Request);
 
 	IncrementRequests.Add(requestId, Request);
 }
@@ -296,7 +296,7 @@ void UDeathmatchScoreComponent::IncrementResponse(const ::improbable::database_s
 	}
 	else if (Op.StatusCode == Worker_StatusCode::WORKER_STATUS_CODE_TIMEOUT)
 	{
-		Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), *IncrementRequests[Op.RequestId]);
+		Worker_RequestId requestId = GameInstance->GetExternalSchemaInterface()->SendCommandRequest(GameInstance->GetHierarchyServiceId(), IncrementRequests[Op.RequestId]);
 
 		IncrementRequests.Add(requestId, IncrementRequests[Op.RequestId]);
 
@@ -391,7 +391,7 @@ void UDeathmatchScoreComponent::RecordKill(const int32 Killer, const int32 Victi
 
 ```
 
-With all these changes made, let's run the project and test our changes in game. 
+With all these changes made, let's run the project and test our changes in game.
 
 </br>
 ### **> Next:** [4: Testing your changes]({{urlRoot}}/content/tutorials/dbsync/tutorial-dbsync-testing)
