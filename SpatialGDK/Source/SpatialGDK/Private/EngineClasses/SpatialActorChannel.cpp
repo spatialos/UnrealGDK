@@ -1035,6 +1035,21 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 		return;
 	}
 
+	UpdateEntityACLToNewOwner();
+
+	for (AActor* Child : Actor->Children)
+	{
+		Worker_EntityId ChildEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
+
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(ChildEntityId))
+		{
+			Channel->ServerProcessOwnershipChange();
+		}
+	}
+}
+
+void USpatialActorChannel::UpdateEntityACLToNewOwner()
+{
 	FString NewOwnerWorkerAttribute = SpatialGDK::GetOwnerWorkerAttribute(Actor);
 
 	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
