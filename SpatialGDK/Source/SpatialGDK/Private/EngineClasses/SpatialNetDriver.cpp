@@ -657,6 +657,7 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 {
 	if (!IsServer())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("USpatialNetDriver::OnOwnerUpdated failed for Actor %s - not a server"), *Actor->GetName());
 		return;
 	}
 
@@ -664,18 +665,21 @@ void USpatialNetDriver::OnOwnerUpdated(AActor* Actor)
 	// we don't need to update the interest at this point
 	if (PackageMap == nullptr)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("USpatialNetDriver::OnOwnerUpdated failed for Actor %s - not a package map"), *Actor->GetName());
 		return;
 	}
 
 	Worker_EntityId EntityId = PackageMap->GetEntityIdFromObject(Actor);
 	if (EntityId == SpatialConstants::INVALID_ENTITY_ID)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("USpatialNetDriver::OnOwnerUpdated failed for Actor %s - not a entity id"), *Actor->GetName());
 		return;
 	}
 
 	USpatialActorChannel* Channel = GetActorChannelByEntityId(EntityId);
 	if (Channel == nullptr)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("USpatialNetDriver::OnOwnerUpdated failed for Actor %s - not a channel"), *Actor->GetName());
 		return;
 	}
 

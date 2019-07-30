@@ -1032,6 +1032,7 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 {
 	if (!IsAuthoritativeServer())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("USpatialNetDriver::OnOwnerUpdated failed for Actor %s - not auth server"), *Actor->GetName());
 		return;
 	}
 
@@ -1054,12 +1055,18 @@ void USpatialActorChannel::UpdateEntityACLToNewOwner()
 
 	if (SavedOwnerWorkerAttribute != NewOwnerWorkerAttribute)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("USpatialNetDriver::OnOwnerUpdated Actor %s - attempting to set"), *Actor->GetName());
 		bool bSuccess = Sender->UpdateEntityACLs(EntityId, NewOwnerWorkerAttribute);
 
 		if (bSuccess)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("USpatialNetDriver::OnOwnerUpdated Actor %s - succeeded in setting"), *Actor->GetName());
 			SavedOwnerWorkerAttribute = NewOwnerWorkerAttribute;
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("USpatialNetDriver::OnOwnerUpdated Actor %s - failed attributes are the same for "), *Actor->GetName());
 	}
 }
 
