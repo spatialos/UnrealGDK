@@ -17,9 +17,11 @@
 #include "EngineClasses/SpatialNetConnection.h"
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
-#include "Interop/SpatialSender.h"
-#include "Interop/SpatialReceiver.h"
 #include "Interop/GlobalStateManager.h"
+#include "Interop/SpatialReceiver.h"
+#include "Interop/SpatialSender.h"
+#include "Schema/ClientRPCEndpoint.h"
+#include "Schema/ServerRPCEndpoint.h"
 #include "SpatialConstants.h"
 #include "SpatialGDKSettings.h"
 #include "Utils/RepLayoutUtils.h"
@@ -77,7 +79,6 @@ USpatialActorChannel::USpatialActorChannel(const FObjectInitializer& ObjectIniti
 	, bCreatingNewEntity(false)
 	, EntityId(SpatialConstants::INVALID_ENTITY_ID)
 	, bInterestDirty(false)
-	, bIsListening(false)
 	, bNetOwned(false)
 	, NetDriver(nullptr)
 	, LastPositionSinceUpdate(FVector::ZeroVector)
@@ -547,6 +548,26 @@ void USpatialActorChannel::DynamicallyAttachSubobject(UObject* Object)
 		PendingDynamicSubobjects.Add(TWeakObjectPtr<UObject>(Object));
 		Sender->GainAuthorityThenAddComponent(this, Object, Info);
 	}
+}
+
+bool USpatialActorChannel::IsListening() const
+{
+	if (NetDriver->IsServer())
+	{
+		if (SpatialGDK::ClientRPCEndpoint* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ClientRPCEndpoint>(EntityId))
+		{
+			return Endpoint->bReady;
+		}
+	}
+	else
+	{
+		if (SpatialGDK::ServerRPCEndpoint* Endpoint = NetDriver->StaticComponentView->GetComponentData<SpatialGDK::ServerRPCEndpoint>(EntityId))
+		{
+			return Endpoint->bReady;
+		}
+	}
+
+	return false;
 }
 
 const FClassInfo* USpatialActorChannel::TryResolveNewDynamicSubobjectAndGetClassInfo(UObject* Object)
