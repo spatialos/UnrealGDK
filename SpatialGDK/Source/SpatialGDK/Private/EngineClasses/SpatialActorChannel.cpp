@@ -1018,9 +1018,9 @@ void USpatialActorChannel::ServerProcessOwnershipChange()
 
 	for (AActor* Child : Actor->Children)
 	{
-		Worker_EntityId EntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
+		Worker_EntityId ChildEntityId = NetDriver->PackageMap->GetEntityIdFromObject(Child);
 
-		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(EntityId))
+		if (USpatialActorChannel* Channel = NetDriver->GetActorChannelByEntityId(ChildEntityId))
 		{
 			Channel->ServerProcessOwnershipChange();
 		}
