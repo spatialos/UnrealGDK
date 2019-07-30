@@ -26,6 +26,9 @@ This document outlines the process for releasing a version of the GDK for Unreal
 1. Enter the release version and planned date of release in a `##` block. Move the `Unreleased` section above this.
     - Look at the previous release versions in the changelog to see how this should be done.
 1. Commit your changes to `CHANGELOG.md`.
+1. Open `SpatialGDK/SpatialGDK.uplugin`.
+1. Increment the `VersionName` and `Version`.
+1. Commit your changes to `SpatialGDK/SpatialGDK.uplugin`.
 1. `git push --set-upstream origin x.y.z-rc` to push the branch.
 1. Announce the branch and the commit hash it uses in the `#unreal-gdk-release` channel.
 
