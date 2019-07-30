@@ -1,9 +1,10 @@
 @echo off 
 
-IF NOT "%~2"=="" IF "%~3"=="" GOTO START
+IF NOT "%~3"=="" IF "%~4"=="" GOTO START
 ECHO This script requires two parameters (both defined relative to project root):
 ECHO - path to external schema directory
 ECHO - target output folder for generated code
+ECHO - path to your project root containing the 'spatial' folder
 exit /b 1
 
 :START
@@ -11,7 +12,7 @@ exit /b 1
 call :MarkStartOfBlock "Setup variables"
   pushd %~dp0\..\..\..
     set GDK_FOLDER=%cd%
-    pushd ..\..\..
+    pushd "%3"
       set GAME_FOLDER=%cd%
       set SCHEMA_COMPILER_PATH=%GDK_FOLDER%\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\schema_compiler.exe
       set CODEGEN_EXE_PATH=%GDK_FOLDER%\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\CodeGenerator.exe
