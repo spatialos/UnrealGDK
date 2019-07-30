@@ -20,7 +20,7 @@ To use the snapshot, copy `default.snapshot` from `spatial/provided` into `spati
 
 The Database Sync Worker is set by default to use certain hierarchical database structure. We provide a tool to do automatically set up the database accordingly.
 
-Run `spatial/workers/database_sync_worker/scripts/reset-database.ps1` (or`.sh`) and it will set up the database correctly.
+Run `spatial/workers/database-sync-worker/scripts/reset-database.ps1` (or`.sh`) and it will set up the database correctly.
 
 For the Database Sync Worker to allow the UnrealWorker access to the database, there needs to be already an entry in the database with the profile for the UnrealWorker before you can use this so you will need to create it.
 
