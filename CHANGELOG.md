@@ -55,12 +55,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unreal Engine 4.22 is now supported. You can find the 4.22 verson of our engine fork [here](https://github.com/improbableio/UnrealEngine/tree/4.22-SpatialOSUnrealGDK-release).
 - Setup.bat can now take a project path as an argument. This allows the UnrealGDK to be installed as an Engine Plugin, pass the project path as the first variable if you are running Setup.bat from UnrealEngine/Engine/Plugins.
 - Removed the need for setting the `UNREAL_HOME` environment variable. The build and setup scripts will now use your project's engine association to find the Unreal Engine directory. If an association is not set they will search parent directories looking for the 'Engine' folder.
-- Added the `SpatialMetricsDisplay` class, which allows you to view UnrealWorker stats as an overlay on the client.
-- Added runtime option to disable property handover when running in non-zoned deployments - bEnableHandover.
-- Added runtime option to auto spawn the ASpatialMetricsDisplay for remote debugging of server metrics - bEnableMetricsDisplay.
-- Added runtime option to batch spatial position updates to runtime.
+- Added the `SpatialMetricsDisplay` class, which you can use to view UnrealWorker stats as an overlay on the client.
+- Added the runtime option `bEnableHandover`, which you can use to toggle property handover when running in non-zoned deployments.
+- Added the runtime option `bEnableMetricsDisplay`, which you can use to auto spawn `ASpatialMetricsDisplay`, which is used to remote debug server metrics.
+- Added the runtime option `bBatchSpatialPositionUpdates`, which you can use to batch spatial position updates to the runtime.
 - Started using the [schema_compiler tool](https://docs.improbable.io/reference/13.8/shared/schema/introduction#using-the-schema-compiler-directly) to generate [schema descriptors](https://docs.improbable.io/reference/13.8/shared/flexible-project-layout/build-process/schema-descriptor-build-process#schema-descriptor-introduction) rather than relying on 'spatial local launch' to do this.
-- Added runtime option to pack unreliable RPCs from the same frame in a single component update to save bandwidth - bPackUnreliableRPCs.
+- Added the runtime option `bPackUnreliableRPCs`, which you can use to pack unreliable RPCs from the same frame in a single component update to save bandwidth.
 - Changed Interest so that NetCullDistanceSquared is used to define the distance from a player that the actor type is *interesting to* the player. This replaces CheckoutRadius which defined the distance that an actor is *interested in* other types. Requires engine update to remove the CheckoutRadius property which is no longer used.
 - Added ActorInterestComponent that can be used to define interest queries that are more complex than a radius around the player position.
 - Enabled new Development Authentication Flow
