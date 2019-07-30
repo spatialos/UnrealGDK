@@ -79,11 +79,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed an issue with schema name collisions.
 - Running Schema (Full Scan) now clears generated schema files first.
 - [Singleton actor's](https://docs.improbable.io/unreal/latest/content/singleton-actors#singleton-actors) authority and state now resumes correctly when reconnecting servers to snapshot.
-- Fixed a crash when retrying reliable RPCs with UObject arguments that got destroyed before the RPC was retried.
+- Retrying reliable RPCs with `UObject` arguments that were destroyed before the RPC was retried no longer causes a crash.
 - Fixed path naming issues in setup.sh
-- Fixed assert/crash in SpatialMetricsDisplay that occurred when reloading a snapshot.
+- Fixed an assert/crash in `SpatialMetricsDisplay` that occurred when reloading a snapshot.
 - Added Singleton and SingletonManager to QBI constraints to fix issue preventing Test configuration builds from functioning correctly.
-- Fixed a crash when failing to NetSerialize a struct in spatial. Now print a warning instead which matches native Unreal behavior.
+- Failing to `NetSerialize` a struct in spatial no longer causes a crash, it now prints a warning. This matches native Unreal behavior.
 - Query response delegates now execute even if response status shows failure. This allows handlers to implement custom retry logic such as clients querying for the GSM.
 - Fixed a crash where processing unreliable RPCs made assumption that the worker had authority over all entities in the SpatialOS op
 - Ordering and reliability for single server RPCs on the same Actor are now guaranteed.
