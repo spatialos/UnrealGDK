@@ -1509,7 +1509,16 @@ bool USpatialReceiver::ApplyRPC(const FPendingRPCParams& Params)
 		return false;
 	}
 
-	return ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params.Payload, FString{});
+	if (ApplyRPC(TargetObjectWeakPtr.Get(), Function, Params.Payload, FString{}))
+	{
+		return true;
+	}
+	else
+	{
+		FTimespan TimeDiff = FDateTime::Now() - Params.Timestamp;
+		UE_LOG(LogSpatialReceiver, Warning, TEXT("Queueing received RPC %s::%s for %s"), *TargetObjectWeakPtr->GetName(), *Function->GetName(), *TimeDiff.ToString());
+		return false;
+	}
 }
 
 void USpatialReceiver::OnReserveEntityIdsResponse(const Worker_ReserveEntityIdsResponseOp& Op)
