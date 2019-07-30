@@ -75,7 +75,6 @@ private:
 	bool bStoppingSpatialService;
 
 	FString LocalRunningDeploymentID;
-	FString ProjectName;
 
 	bool bRedeployRequired = false;
 	bool bAutoDeploy = false;
