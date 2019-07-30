@@ -63,6 +63,15 @@ To do this:
 
 **Note**: The helper scripts `LaunchClient.bat` and `LaunchServer.bat` will not work if you do not follow this step correctly. 
 
+<%(Callout type="warn" message="If you do not intend to use the Simulated player functionality when starting the deployment you must follow these steps first")%>
+
+1. Navigate to `<ProjectRoot>\spatial\spatial\workers`  
+1. Delete the `improbable` folder and the `spatialos.SimulatedPlayerCoordinator.worker.json` file inside it  
+1. Navigate to `<ProjectRoot>\spatial\build\assembly`  
+1. If there is a folder named `SimulatedPlayerCoordinator`, delete it and the files contained inside it  
+1. Re-run `spatial build build-config` from the `<ProjectRoot>\spatial` directory  
+1. Ensure the folder `SimulatedPlayerCoordinator` is not regenerated in the directory `<ProjectRoot>\spatial\build\assembly`  
+
 ### **> Next:** [2. Modify and build your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-build)
 
 <br/>
