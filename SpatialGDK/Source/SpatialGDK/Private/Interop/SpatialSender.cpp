@@ -831,11 +831,15 @@ bool USpatialSender::SendRPC(const FPendingRPCParams& Params)
 			return false;
 		}
 
-		if (RPCInfo.Type != SCHEMA_NetMulticastRPC && !Channel->IsListening())
+		// If we are packing, we only have to check if the PlayerController's channel is listening
+		// which we do in AddPendingRPC below, so:
+		// If we are a Server/Client RPC
+		// AND we are not packing 
+		// AND we are not listening
+		if (RPCInfo.Type != SCHEMA_NetMulticastRPC && !bCanPackRPC && !Channel->IsListening())
 		{
-			// If the Entity endpoint is not yet ready to receive RPCs -
+			// Entity endpoint is not yet ready to receive RPCs -
 			// treat the corresponding object as unresolved and queue RPC
-			// However, it doesn't matter in case of Multicast
 			return false;
 		}
 
