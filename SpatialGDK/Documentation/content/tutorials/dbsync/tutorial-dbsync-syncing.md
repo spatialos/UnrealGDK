@@ -142,7 +142,7 @@ void UDeathmatchScoreComponent::GetItemResponse(const ::improbable::database_syn
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("GetItem Request failed with Error %s : %s"), Op.StatusCode, Op.Message);
+		UE_LOG(LogTemp, Error, TEXT("GetItem Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
 	}
 }
 ...
