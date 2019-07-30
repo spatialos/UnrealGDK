@@ -119,6 +119,8 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 	case SpatialConstants::RPCS_ON_ENTITY_CREATION_ID:
 	case SpatialConstants::DEBUG_METRICS_COMPONENT_ID:
 	case SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID:
+	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
+	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
 		// Ignore static spatial components as they are managed by the SpatialStaticComponentView.
 		return;
 	case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
@@ -130,10 +132,6 @@ void USpatialReceiver::OnAddComponent(const Worker_AddComponentOp& Op)
 		return;
 	case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
 		GlobalStateManager->ApplyStartupActorManagerData(Op.data);
-		return;
-	case SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID:
-	case SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID:
-		Schema_Object* FieldsObject = Schema_GetComponentDataFields(Op.data.schema_type);
 		return;
 	}
 
@@ -1057,12 +1055,6 @@ void USpatialReceiver::ApplyComponentData(UObject* TargetObject, USpatialActorCh
 
 void USpatialReceiver::OnComponentUpdate(const Worker_ComponentUpdateOp& Op)
 {
-	if (Op.update.component_id == SpatialConstants::SERVER_RPC_ENDPOINT_COMPONENT_ID ||
-		Op.update.component_id == SpatialConstants::CLIENT_RPC_ENDPOINT_COMPONENT_ID)
-	{
-		Schema_Object* FieldsObject = Schema_GetComponentUpdateFields(Op.update.schema_type);
-	}
-
 	if (StaticComponentView->GetAuthority(Op.entity_id, Op.update.component_id) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
 		UE_LOG(LogSpatialReceiver, Verbose, TEXT("Entity: %d Component: %d - Skipping update because this was short circuited"), Op.entity_id, Op.update.component_id);
