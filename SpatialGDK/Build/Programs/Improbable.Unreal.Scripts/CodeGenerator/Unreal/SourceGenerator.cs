@@ -297,7 +297,7 @@ for (const {Types.GetTypeDisplayName(_event.Type)}& Element : _{Text.SnakeCaseTo
 
             builder.AppendLine(Text.Indent(1, $@"
 uint32_t FieldCount = Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate);
-auto FieldsToClear = new Schema_FieldId[FieldCount];
+Schema_FieldId* FieldsToClear = new Schema_FieldId[FieldCount];
 Schema_GetComponentUpdateClearedFieldList({componentUpdateObjectName}, FieldsToClear);
 std::set<Schema_FieldId> FieldsToClearSet(FieldsToClear, FieldsToClear + FieldCount * sizeof(Schema_FieldId));
 
