@@ -20,7 +20,7 @@ Before you start, review the following offloading workflows. You can check each 
 6. Test changes in the cloud: Package the worker type and create a cloud deployment.
 
 ## 1. Create a worker configuration file
-a
+
 > **Note**: You can skip this step if you launch a local deployment through PIE within the editor because the Unreal GDK adds the worker configuration file for your new offloaded worker type. However, when you launch a cloud deployment, but no configuration file for the new offloaded worker type is available, you must create a worker configuration file for it.
 
 1. Open File Explorer and navigate to `<ProjectRoot>/spatial/workers/unreal`.
