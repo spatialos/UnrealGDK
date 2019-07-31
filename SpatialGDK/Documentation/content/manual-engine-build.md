@@ -2,7 +2,7 @@
 
 # Manually build the SpatialOS Unreal Engine Fork
 
-Follow these instsructions to manually build the SpatialOS Unreal Engine fork after cloning the [Unreal Engine Fork](https://github.com/improbableio/UnrealEngine) repository.
+Follow these instructions to manually build the SpatialOS Unreal Engine fork after cloning the [Unreal Engine Fork](https://github.com/improbableio/UnrealEngine) repository.
 
 ## Step 1: Unreal Linux cross-platform support</br>
 
