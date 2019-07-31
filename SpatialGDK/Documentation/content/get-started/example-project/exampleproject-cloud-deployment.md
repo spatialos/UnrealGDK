@@ -47,6 +47,8 @@ You can find out more about the Console in the [Glossary]({{urlRoot}}/content/gl
 1. In File Explorer, navigate to the `UnrealGDKExampleProject\spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 1. In the file, replace the `name` field with the project name shown in the Console. This associates your SpatialOS cloud project with your Unreal game, telling SpatialOS which cloud project you are uploading your prepared workers to..
 
+> **Note:** Ensure you don't change the `name` field of any dependencies, only the `name` field at the top of the file which is currently set to `demo`
+
 ### Step 2: Build your workers
 
 <%(Callout type="warn" message="Note: you must close the Unreal Editor before building your workers. If the Editor is open when you try to build your workers the command will fail.")%>

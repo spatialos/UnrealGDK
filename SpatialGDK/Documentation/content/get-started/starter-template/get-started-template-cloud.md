@@ -15,6 +15,8 @@ When you signed up for SpatialOS, your account was automatically associated with
 2. In File Explorer, navigate to the `<YourProject>/spatial` directory and open the `spatialos.json` file in a text editor of your choice.
 3. Replace the `name` field with the project name shown in the Console. This tells SpatialOS which SpatialOS project you intend to upload to.
 
+> **Note:** Ensure you don't change the `name` field of any dependencies, only the `name` field at the top of the file which is currently set to `demo`
+
 <%(#Expandable title="What is the Console?")%>
 
 The Console is a web-based tool for managing cloud deployments. It gives you access to information about your games’ SpatialOS project names, the SpatialOS assemblies you have uploaded, the internal state of any games you have running (via the Inspector), as well as logs and metrics. 
