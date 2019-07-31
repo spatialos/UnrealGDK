@@ -32,7 +32,7 @@ The turret blueprint (`BP_Turret_Base`) inherits from the `ACrossServerPawn` cla
 
 ### GDKCharacter
 
-The CrashBot and the Player does not use the ACrossServerPawn. Instead, they implement the GDKCharacter base class which uses the same take damage override pattern to enable the cross server interaction.
+The CrashBot and the Player does not use the `ACrossServerPawn`. Instead, they implement the `GDKCharacter` base class which uses the same take damage override pattern to enable the cross server interaction.
 
 ### Turrets
 
@@ -51,8 +51,6 @@ The solution to this is to create a new subclass of the weapon that can be assig
 In the example project, the `Player` characters and the `CrashBots` have the same base class, we had to create a child blueprint called `BP_CrashBot` to ensure that the offloading configuration setup correctly.
 
 In addition to the `CrashBot` blueprint, the Example Project had to create an additional version of the CrashBot named `BP_CrashBot_PlacedInWorld`. This was to work around the issue of creating the controllers first when the authority was gained.
-
-Mention weapon to allow it to be used for the bots.
 
 ### Ensure that your code get executed on the correct server worker
 
