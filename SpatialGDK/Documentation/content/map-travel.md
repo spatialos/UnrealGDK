@@ -57,7 +57,7 @@ By default, outside of PIE, clients do not connect to a SpatialOS deployment unl
 
 To connect a client to a deployment from an offline state, you must use [`ClientTravel`](#aplayercontroller-clienttravel).
 
-The `LaunchClient.bat` helper script (which we have provided with the UnrealGDKExampleProject) already includes the local host IP `127.0.0.1` which means client launched this way will attempt to connect automatically using the [receptionist](#using-receptionist) flow.
+The `LaunchClient.bat` helper script (which we have provided with the UnrealGDKExampleProject) already includes the local host IP `127.0.0.1` which means client launched this way will attempt to connect automatically using the [receptionist](#using-receptionist-local-deployments) flow.
 
 #### With the SpatialOS Launcher
 When launching a client from the SpatialOS Console using the [Launcher](https://docs.improbable.io/reference/latest/shared/operate/launcher#the-launcher), the client will connect to the running SpatialOS cloud deployment by default. It has the `Locator` parameters required to connect to said deployment included as command-line arguments. When these `Locator` arguments are present, client will attempt to connect automatically. Please note the launcher login tokens are only valid for 15 minutes.
