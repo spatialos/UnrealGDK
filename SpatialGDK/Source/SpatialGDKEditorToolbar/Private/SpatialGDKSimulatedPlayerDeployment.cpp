@@ -20,6 +20,7 @@
 #include "Widgets/Layout/SExpandableArea.h"
 #include "Widgets/Layout/SSeparator.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
+#include "Widgets/Layout/SWrapBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -60,16 +61,23 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 							.Padding(2.0f)
 							.VAlign(VAlign_Center)
 							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot()
-								.AutoWidth()
-								.HAlign(HAlign_Center)
+								SNew(SWrapBox)
+								.UseAllottedWidth(true)
+								+ SWrapBox::Slot()
+								.VAlign(VAlign_Bottom)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("NOTE: You can set default values in the SpatialOS settings under \"Cloud\" The assembly has to be built and uploaded manually. Follow the docs "))))
+									.AutoWrapText(true)
+									.Text(FText::FromString(FString(TEXT("NOTE: You can set default values in the SpatialOS settings under \"Cloud\"."))))
 								]
-								+ SHorizontalBox::Slot()
-								.AutoWidth()
+								+ SWrapBox::Slot()
+								.VAlign(VAlign_Bottom)
+								[
+									SNew(STextBlock)
+									.AutoWrapText(true)
+								.Text(FText::FromString(FString(TEXT("The assembly has to be built and uploaded manually. Follow the docs "))))
+								]
+								+ SWrapBox::Slot()
 								[
 									SNew(SHyperlink)
 									.Text(FText::FromString(FString(TEXT("here."))))
