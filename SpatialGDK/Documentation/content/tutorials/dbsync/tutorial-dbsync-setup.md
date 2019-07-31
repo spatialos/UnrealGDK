@@ -8,7 +8,7 @@ To use this tutorial, you must install [Postgresql 11.x](https://www.postgresql.
 
 You can download it from [here](https://postgresql.org/download/windows). Once downloaded, set its password to `DO_NOT_USE_IN_PRODUCTION`.
 
-<%(Callout type="tip" message="If you install a Postgresql version lower than 11, you may see an error similar to `ERROR:  record "old" is not assigned yet` when trying to modify the database. If this happens, uninstall Postgresql and re-install a 11.x version.")%>
+<%(Callout type="tip" message="If you install a Postgresql version lower than 11, you may see an error similar to `ERROR:  record old is not assigned yet` when trying to modify the database. If this happens, uninstall Postgresql and re-install a 11.x version.")%>
 
 ### 2. Set up the Example Project
 
@@ -44,7 +44,7 @@ Then, run the following:
 To be run as a [managed worker](https://docs.improbable.io/reference/latest/shared/design/design-workers#managed-workers) by SpatialOS, the executable needs to be packaged in a specific way (described in the config file). To do so, go to `spatial/workers/database-sync-worker/Workers/DatabaseSyncWorker/bin/x64/Release/netcoreapp2.2/win-x64/publish` and zip the entire contents of that folder (but not the folder itself) into a zip file called `DatabaseSyncWorker@Windows.zip` and move it to `spatial/build/assembly/worker` (create the folder if it doesn’t exist).
 
 Within the Example Project, copy the `spatial/provided/spatialos.DatabaseSyncWorker.worker.json` file to `spatial/workers/database-sync-worker`.
-This step is required because the Database Sync Worker uses a different [SpatialOS project layout](https://docs.improbable.io/reference/14.0/shared/project-layout/files-and-directories#layout-of-a-spatialos-project) than GDK project. In the future, both will use the Flexible Project Layout.
+This step is required because the Database Sync Worker uses a different [SpatialOS project layout](https://docs.improbable.io/reference/latest/shared/project-layout/files-and-directories#layout-of-a-spatialos-project) than GDK project. In the future, both will use the Flexible Project Layout.
 
 ### 4. Bringing the Database Sync Worker schema into the Example Project
 
@@ -57,7 +57,7 @@ To communicate with that worker, you need the UnrealWorker to send commands and 
 1. Because `database_sync.schema` references `postgres.schema`, you need to modify `database_sync.schema`’s `postgres.schema` import statement to look for the correct folder:  `import "dbsync/postgres.schema";`
 1. Open a console in the root of the game project.
    1. In the console, run the code generator tool: `../../Engine/Plugins/UnrealGDK/SpatialGDK/Build/Scripts/ExternalSchemaCodegen.bat "%cd%" "spatial/schema/dbsync" "Game/Source/GDKShooter/ExternalSchemaCodegen"`
-   2. For more information on this tool, including the parameters it accepts, see [this reference page]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts).
+   1. For more information on this tool, including the parameters it accepts, see [this reference page]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts).
 1. Right click on `Game/GDKShooter.uproject` and `Generate Visual Studio Files` for your newly created code to be included in the project.
 
 You've now set up up the Database Sync worker - let's start using it!
@@ -69,4 +69,3 @@ You've now set up up the Database Sync worker - let's start using it!
 <br/>------<br/>
 _2019-07-31 Page added with limited editorial review_
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1248)
-
