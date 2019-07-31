@@ -235,7 +235,8 @@ struct Response
 Response({string.Join($", ", types.Find(t => t.QualifiedName == command.ResponseType).Fields.Select(f => $"{Types.GetConstAccessorTypeModification(f, bundle, type)} {Text.SnakeCaseToPascalCase(f.Name)}"))})
 : Data({string.Join($", ", types.Find(t => t.QualifiedName == command.ResponseType).Fields.Select(f => $"{Text.SnakeCaseToPascalCase(f.Name)}"))}) {{}}
 Response(Type Data) : Data{{ Data }} {{}}
-Type Data;")}
+{(types.Find(t => t.QualifiedName == command.ResponseType).Fields.Count() > 0 ? $@"Response() : Data() {{}}
+Type Data;" : "Type Data;")}")}
 }};
 using RequestOp = ::improbable::CommandRequestOp<Request>;
 using ResponseOp = ::improbable::CommandResponseOp<Response>;")} 

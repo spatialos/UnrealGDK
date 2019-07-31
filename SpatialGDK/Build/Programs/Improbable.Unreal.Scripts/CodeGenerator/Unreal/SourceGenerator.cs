@@ -295,9 +295,11 @@ for (const {Types.GetTypeDisplayName(_event.Type)}& Element : _{Text.SnakeCaseTo
                 builder.AppendLine(Text.Indent(1, $"Schema_Object* {eventsObjectName} = Schema_GetComponentUpdateEvents({componentUpdateObjectName});"));
             }
 
-            builder.AppendLine(Text.Indent(1, $@"auto FieldsToClear = new Schema_FieldId[Schema_GetComponentUpdateClearedFieldCount({componentUpdateObjectName})];
+            builder.AppendLine(Text.Indent(1, $@"
+uint32_t FieldCount = Schema_GetComponentUpdateClearedFieldCount(ComponentUpdate);
+Schema_FieldId* FieldsToClear = new Schema_FieldId[FieldCount];
 Schema_GetComponentUpdateClearedFieldList({componentUpdateObjectName}, FieldsToClear);
-std::set<Schema_FieldId> FieldsToClearSet(FieldsToClear, FieldsToClear + sizeof(FieldsToClear) / sizeof(Schema_FieldId));
+std::set<Schema_FieldId> FieldsToClearSet(FieldsToClear, FieldsToClear + FieldCount * sizeof(Schema_FieldId));
 
 {name}::Update {deserializingTargetObjectName};
 "));

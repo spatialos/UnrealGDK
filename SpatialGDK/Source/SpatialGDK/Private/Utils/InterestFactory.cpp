@@ -30,6 +30,7 @@ void GatherClientInterestDistances()
 
 	const AActor* DefaultActor = Cast<AActor>(AActor::StaticClass()->GetDefaultObject());
 	const float DefaultDistanceSquared = DefaultActor->NetCullDistanceSquared;
+	const float MaxDistanceSquared = GetDefault<USpatialGDKSettings>()->MaxNetCullDistanceSquared;
 
 	// Gather ClientInterestDistance settings, and add any larger than the default radius to a list for processing.
 	TMap<UClass*, float> DiscoveredInterestDistancesSquared;
@@ -52,7 +53,17 @@ void GatherClientInterestDistances()
 		const AActor* IteratedDefaultActor = Cast<AActor>(It->GetDefaultObject());
 		if (IteratedDefaultActor->NetCullDistanceSquared > DefaultDistanceSquared)
 		{
-			DiscoveredInterestDistancesSquared.Add(*It, IteratedDefaultActor->NetCullDistanceSquared);
+			float ActorNetCullDistanceSquared = IteratedDefaultActor->NetCullDistanceSquared;
+
+			if (MaxDistanceSquared != 0.f && IteratedDefaultActor->NetCullDistanceSquared > MaxDistanceSquared)
+			{
+				UE_LOG(LogInterestFactory, Warning, TEXT("NetCullDistanceSquared for %s too large, clamping from %f to %f"),
+					*It->GetName(), ActorNetCullDistanceSquared, MaxDistanceSquared);
+
+				ActorNetCullDistanceSquared = MaxDistanceSquared;
+			}
+
+			DiscoveredInterestDistancesSquared.Add(*It, ActorNetCullDistanceSquared);
 		}
 	}
 
@@ -233,7 +244,7 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const
 {
 	QueryConstraint CheckoutRadiusConstraint = CreateCheckoutRadiusConstraints();
 	QueryConstraint AlwaysInterestedConstraint = CreateAlwaysInterestedConstraint();
-	QueryConstraint SingletonConstraint = CreateSingletonConstraint();
+	QueryConstraint AlwaysRelevantConstraint = CreateAlwaysRelevantConstraint();
 
 	QueryConstraint SystemDefinedConstraints;
 
@@ -247,9 +258,9 @@ QueryConstraint InterestFactory::CreateSystemDefinedConstraints() const
 		SystemDefinedConstraints.OrConstraint.Add(AlwaysInterestedConstraint);
 	}
 
-	if (SingletonConstraint.IsValid())
+	if (AlwaysRelevantConstraint.IsValid())
 	{
-		SystemDefinedConstraints.OrConstraint.Add(SingletonConstraint);
+		SystemDefinedConstraints.OrConstraint.Add(AlwaysRelevantConstraint);
 	}
 
 	return SystemDefinedConstraints;
@@ -266,7 +277,7 @@ QueryConstraint InterestFactory::CreateCheckoutRadiusConstraints() const
 	{
 		const UActorInterestComponent* ActorInterest = ActorInterestComponents[0];
 		check(ActorInterest);
-		if (!ActorInterest->bUseNetCullDistanceForCheckoutRadius)
+		if (!ActorInterest->bUseNetCullDistanceSquaredForCheckoutRadius)
 		{
 			return QueryConstraint{};
 		}
@@ -344,22 +355,24 @@ QueryConstraint InterestFactory::CreateAlwaysInterestedConstraint() const
 }
 
 
-QueryConstraint InterestFactory::CreateSingletonConstraint() const
+QueryConstraint InterestFactory::CreateAlwaysRelevantConstraint() const
 {
-	QueryConstraint SingletonConstraint;
+	QueryConstraint AlwaysRelevantConstraint;
 
-	Worker_ComponentId SingletonComponentIds[] = {
+	Worker_ComponentId ComponentIds[] = {
 		SpatialConstants::SINGLETON_COMPONENT_ID,
-		SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID };
+		SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID,
+		SpatialConstants::ALWAYS_RELEVANT_COMPONENT_ID
+	};
 
-	for (Worker_ComponentId ComponentId : SingletonComponentIds)
+	for (Worker_ComponentId ComponentId : ComponentIds)
 	{
 		QueryConstraint Constraint;
 		Constraint.ComponentConstraint = ComponentId;
-		SingletonConstraint.OrConstraint.Add(Constraint);
+		AlwaysRelevantConstraint.OrConstraint.Add(Constraint);
 	}
 
-	return SingletonConstraint;
+	return AlwaysRelevantConstraint;
 }
 
 void InterestFactory::AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const

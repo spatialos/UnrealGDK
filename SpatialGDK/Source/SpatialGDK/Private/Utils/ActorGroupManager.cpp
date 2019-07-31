@@ -72,3 +72,16 @@ FName UActorGroupManager::GetWorkerTypeForActorGroup(const FName& ActorGroup) co
 
 	return DefaultWorkerType;
 }
+
+bool UActorGroupManager::IsSameWorkerType(const AActor* ActorA, const AActor* ActorB)
+{
+	if (ActorA == nullptr || ActorB == nullptr)
+	{
+		return false;
+	}
+
+	const FName& WorkerTypeA = GetWorkerTypeForClass(ActorA->GetClass());
+	const FName& WorkerTypeB = GetWorkerTypeForClass(ActorB->GetClass());
+
+	return (WorkerTypeA == WorkerTypeB);
+}

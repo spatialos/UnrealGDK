@@ -125,6 +125,10 @@ void USpatialActorChannel::DeleteEntityIfAuthoritative()
 		if (Actor->GetTearOff())
 		{
 			NetDriver->DelayedSendDeleteEntityRequest(EntityId, 1.0f);
+			// Since the entity deletion is delayed, this creates a situation,
+			// when the Actor is torn off, but still replicates. 
+			// Disabling replication makes RPC calls impossible for this Actor.
+			Actor->SetReplicates(false);
 		}
 		else
 		{
@@ -160,6 +164,9 @@ bool USpatialActorChannel::CleanUp(const bool bForDestroy, EChannelCloseReason C
 		}
 	}
 #endif
+
+	// Must cleanup actor and subobjects before UActorChannel::Cleanup as it will clear CreateSubObjects
+	Receiver->CleanupDeletedEntity(EntityId);
 
 #if ENGINE_MINOR_VERSION <= 20
 	return UActorChannel::CleanUp(bForDestroy);
@@ -579,7 +586,7 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	bool bCreatedReplicator = false;
 
 #if ENGINE_MINOR_VERSION <= 20
-	bCreatedReplicator = ReplicationMap.Contains(Object);
+	bCreatedReplicator = !ReplicationMap.Contains(Object);
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object).Get();
 #else
 	FObjectReplicator& Replicator = FindOrCreateReplicator(Object, &bCreatedReplicator).Get();
@@ -638,6 +645,13 @@ bool USpatialActorChannel::ReplicateSubobject(UObject* Object, const FReplicatio
 	if (RepChanged.Num() > 0)
 	{
 		FRepChangeState RepChangeState = { RepChanged, GetObjectRepLayout(Object) };
+
+		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
+		if (!ObjectRef.IsValid())
+		{
+			UE_LOG(LogSpatialActorChannel, Verbose, TEXT("Attempted to replicate an invalid ObjectRef. This may be a dynamic component that couldn't attach: %s"), *Object->GetName());
+			return false;
+		}
 		
 		const FClassInfo& Info = NetDriver->ClassInfoManager->GetOrCreateClassInfoByObject(Object);
 		Sender->SendComponentUpdates(Object, Info, this, &RepChangeState, nullptr);
