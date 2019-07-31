@@ -48,4 +48,4 @@ Project, you can learn more about the GDK’s functionality with:
 ### **> Next:** [Get Started]({{urlRoot}}/content/get-started/dependencies.md)
 
 </br>------</br>
-_2019-05-21 Page updated with editorial review_
+_2019-07-31 Page updated with limited editorial review_
