@@ -46,6 +46,10 @@ In the Example Project, the configuration files are automatically created for th
 <br>
 _Enable offloading_
 
+</br>
+### **> Next:** [2: Make gameplay changes]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-gameplay-changes)
+</br>
+
 <br/>------------<br/>
 _2019-07-30 Page added as limited editorial review_
 <br/>

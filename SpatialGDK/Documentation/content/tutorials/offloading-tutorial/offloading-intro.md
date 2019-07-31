@@ -11,6 +11,12 @@ The scenario in the `CrashBot_Gym` contains a set of turrets that attempt to att
 In this tutorial, you will go through the steps to enable offloading.
 
 
+<%(Video file="{{assetRoot}}assets/offloading-project/exampleproject-ai-offloading.mp4")%>
+
+</br>
+### **> Next:** [1: Set up]({{urlRoot}}/content/tutorials/offloading-tutorial/offloading-setup)
+</br>
+
 <br/>------------<br/>
 _2019-07-30 Page added as limited editorial review_
 <br/>
