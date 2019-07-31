@@ -20,8 +20,8 @@
 { \
 	const class USpatialWorkerConnection* LocalConnection = [this] \
 	{ \
-		if (const class USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(this->NetDriver)) \
-			return NetDriver->Connection; \
+		if (const class USpatialNetDriver* InnerNetDriver = Cast<USpatialNetDriver>(this->NetDriver)) \
+			return InnerNetDriver->Connection; \
 		return (USpatialWorkerConnection*)nullptr; \
 	}(); \
 	UE_LOG(CategoryName, Verbosity, TEXT("[%s] [%s] ") Format, \
@@ -31,27 +31,38 @@
 }
 
 /**
+ * Standard UE_LOG that includes a prefix containing the worker ID using a provided USpatialWorkerConnection pointer.
+ */
+#define UE_LOG_SPATIAL_CONNECTION(WorkerConnection, CategoryName, Verbosity, Format, ...) \
+{ \
+	const class USpatialWorkerConnection* SafeConnection = (WorkerConnection); \
+	UE_LOG(CategoryName, Verbosity, TEXT("[%s] ") Format, \
+		SafeConnection ? *SafeConnection->GetWorkerLabel() : TEXT("No Connection"), \
+		##__VA_ARGS__); \
+}
+
+/**
  * Standard UE_LOG that includes a prefix containing the worker ID, authority, and entity information, provided 'this' is an AActor or derived type.
  */
 #define UE_LOG_SPATIAL_THIS_ACTOR(CategoryName, Verbosity, Format, ...) UE_LOG_SPATIAL_ACTOR(this, CategoryName, Verbosity, Format, ##__VA_ARGS__) 
 
 /**
- * Standard UE_LOG that includes a prefix containing the worker ID, authority, and entity information, provided 'Actor' is an AActor or derived type.
+ * Standard UE_LOG that includes a prefix containing the worker ID, authority, and entity information, provided 'Actor' is a pointer to an AActor or derived type.
  */
 #define UE_LOG_SPATIAL_ACTOR(Actor, CategoryName, Verbosity, Format, ...) \
 { \
 	const AActor* SafeActor = (Actor); \
-	const USpatialNetDriver* NetDriver = [SafeActor] \
+	const USpatialNetDriver* LocalNetDriver = [SafeActor] \
 	{ \
 		if (SafeActor) \
 			if (const UWorld* World = SafeActor->GetWorld()) \
-				if (const USpatialNetDriver* NetDriver = Cast<USpatialNetDriver>(World->NetDriver)) \
-					return NetDriver; \
+				if (const USpatialNetDriver* InnerNetDriver = Cast<USpatialNetDriver>(World->NetDriver)) \
+					return InnerNetDriver; \
 		return (const USpatialNetDriver*)nullptr; \
 	}(); \
-	const int32 EntityId = NetDriver && NetDriver->PackageMap ? NetDriver->PackageMap->GetEntityIdFromObject(Actor) : SpatialConstants::INVALID_ENTITY_ID; \
+	const int32 EntityId = LocalNetDriver && LocalNetDriver->PackageMap ? LocalNetDriver->PackageMap->GetEntityIdFromObject(Actor) : SpatialConstants::INVALID_ENTITY_ID; \
 	UE_LOG(CategoryName, Verbosity, TEXT("[%s] [L:%s R:%s] [%s ID:%d] ") Format, \
-		NetDriver && NetDriver->Connection ? *NetDriver->Connection->GetWorkerLabel() : TEXT("No Connection"), \
+		LocalNetDriver && LocalNetDriver->Connection ? *LocalNetDriver->Connection->GetWorkerLabel() : TEXT("No Connection"), \
 		_SPATIALLOG_NETROLESTRING(SafeActor->GetLocalRole()), \
 		_SPATIALLOG_NETROLESTRING(SafeActor->GetRemoteRole()), \
 		*GetNameSafe(SafeActor), \
