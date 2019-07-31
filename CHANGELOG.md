@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added temporary MaxNetCullDistanceSquared to SpatialGDKSettings to prevent excessive net cull distances impacting runtime performance. Set to 0 to disable.
 - Added `OnWorkerFlagsUpdated`, a delegate that can be directly bound to in C++. To bind via blueprints you can use the blueprint callable functions `BindToOnWorkerFlagsUpdated` and `UnbindToOnWorkerFlagsUpdated`. You can use `OnWorkerFlagsUpdated` to register when worker flag updates are received, which allows you to tweak values at deployment runtime.
 - RPC frequency and payload size can now be tracked using console commands: `SpatialStartRPCMetrics` to start recording RPCs and `SpatialStopRPCMetrics` to stop recording and log the collected information. Using these commands will also start/stop RPC tracking on the server.
+- Spatial now respects `bAlwaysRelevant` and clients will always checkout Actors that have `bAlwaysRelevant` set to true.
 
 ### Bug fixes:
 - The `improbable` namespace has been renamed to `SpatialGDK`. This prevents namespace conflicts with the C++ SDK.
