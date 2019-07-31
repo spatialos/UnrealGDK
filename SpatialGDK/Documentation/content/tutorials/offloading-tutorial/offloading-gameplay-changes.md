@@ -40,7 +40,8 @@ Due to how offloading works in the GDK, level placed actors are spawned on an Un
 
 In the case of the turret, its controller is not a replicated actor and therefore, its creation needs to be deferred until authority is gained over its SpatialOS entity on the AIWorker. This was done by hooking up the controller creation to the OnAuthorityGained delegate on the turret (See image below). In addition to this, the Auto Possess Player and Auto Possess AI settings the blueprint details panel had to be set to be disabled to prevent them from being created at launch.
 
-![img]({{assetRoot}}assets/offloading-project/turrets.png)
+<%(Lightbox image="{{assetRoot}}assets/offloading-project/turrets.png")%>
+<br>
 
 ### CrashBot
 
@@ -78,10 +79,11 @@ void UEquippedComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 By using offloading, you can scale your CPU heavy tasks by splitting them to run on instances of different server-workers. You don’t need to worry about the challenges involved with migrating entities across worker boundaries. 
 
+
 Meanwhile, offloading introduces a set of constraints that you need to take care of.  When you set up your feature using offloading properly, you can have significant scaling opportunities.
 
 <br/>------------<br/>
-_2019-07-26 Page added as draft_
+_2019-07-30 Page added as limited editorial review_
 <br/>
 <br/>
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1142)

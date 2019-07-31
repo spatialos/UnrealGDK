@@ -49,7 +49,6 @@ If you're also upgrading your Unreal Engine version, you need to ensure you have
 
 1. Check [which version of clang](https://docs.unrealengine.com/en-US/Platforms/Linux/GettingStarted/index.html) corresponds to your Engine version and download it
 1. Ensure the `LINUX_MULTIARCH_ROOT` environment variable is set to the new clang folder
-1. Run `Setup.bat` in the engine, not the GDK
 1. Run `GenerateProjectFiles.bat` in the engine
 1. Build the Engine
 1. In your project, right click on .uproject file and `Generate Project Files` again
@@ -60,4 +59,4 @@ Be sure to join the community on our <a href="https://forums.improbable.io" data
 
 
 <br/>------<br/>
-_2019-04-15 Page updated with limited editorial review_
+_2019-07-31 Page updated with limited editorial review_
