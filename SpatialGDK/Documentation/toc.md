@@ -48,7 +48,6 @@
             - [2. Modify and build your project]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-build)
             - [3. Launch a local deployment]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-deployment)
             - [Logs and modifications]({{urlRoot}}/content/tutorials/porting-guide/tutorial-portingguide-logs)
-    - [Unreal features support]({{urlRoot}}/unreal-features-support)
 - <h3>Concepts and terminology</h3>
     - Technical overview
         - [Principles of the GDK for Unreal]({{urlRoot}}/content/technical-overview/gdk-principles)
@@ -83,25 +82,26 @@
         - Offloading Unreal worker types
             - [Overview]({{urlRoot}}/content/workers/offloading-concept)
             - [Set up offloading]({{urlRoot}}/content/workers/set-up-offloading)
-    - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots)
-    - [Map travel]({{urlRoot}}/content/map-travel)
-    - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
     - APIs and helper scripts
         - [Helper scripts]({{urlRoot}}/content/apis-and-helper-scripts/helper-scripts)
         - [Actor group ownership helpers]({{urlRoot}}/content/apis-and-helper-scripts/actor-group-ownership-helpers)
+    - Debug workers from Visual Studio
+        - [Overview]({{urlRoot}}/content/workflows/debug-from-vs-overview)
+        - [Auto-start server-workers]({{urlRoot}}/content/workflows/autostart-server-workers)
+        - [Set up Visual Studio]({{urlRoot}}/content/workflows/set-up-vs) 
+    - [Snapshots]({{urlRoot}}/content/how-to-use-snapshots)
+    - [Map travel]({{urlRoot}}/content/map-travel)
+    - [Command line arguments]({{urlRoot}}/content/command-line-arguments)
+    - [Simulated players]({{urlRoot}}/content/simulated-players)
     - [Directory structure]({{urlRoot}}/content/directory-structure)
 - <h3>Workflows</h3>
     - [Troubleshooting]({{urlRoot}}/content/troubleshooting)
     - [Keeping your GDK up to date]({{urlRoot}}/content/upgrading)
-    - [Simulated players]({{urlRoot}}/content/simulated-players)
-    - Debug workers from Visual Studio
-        - [Overview]({{urlRoot}}/content/workflows/debug-from-vs-overview)
-        - [Auto-start server-workers]({{urlRoot}}/content/workflows/autostart-server-workers)
-        - [Set up Visual Studio]({{urlRoot}}/content/workflows/set-up-vs)
     - Deployment workflows
         - [Local deployment workflow]({{urlRoot}}/content/local-deployment-workflow)
         - [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow)
 - <h3>Support</h3>
+    - [Unreal features support]({{urlRoot}}/unreal-features-support)
     - [Known issues]({{urlRoot}}/known-issues)
     - [Versioning scheme]({{urlRoot}}/content/pricing-and-support/versioning-scheme)
     - [Pricing]({{urlRoot}}/content/pricing-and-support/pricing)

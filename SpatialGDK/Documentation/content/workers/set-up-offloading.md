@@ -13,6 +13,7 @@ Before you start, review the following offloading workflows. You can check each 
 2. Specify the launch configuration: 
     - For local deployments: Specify the load balancing strategy for the new offloaded worker and number of worker instances to be launched.
     - For cloud deployments: Edit the auto-generated configuration file so that the Runtime requests the start of managed workers.
+
 3. Configure Actor groups: Create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
     **Notes**:
     - By default, when an Actor type does not have a mapping to an Actor group, its authority is assigned to the main Unreal server-worker type.
@@ -23,7 +24,7 @@ Before you start, review the following offloading workflows. You can check each 
 
 ## 1. Create a worker configuration file
 
-> **Note**: You can skip this step if you launch a local deployment through PIE within the editor because the Unreal GDK adds the worker configuration file for your new offloaded worker type. However, when you launch a cloud deployment, but no configuration file for the new offloaded worker type is available, you must create a worker configuration file for it.
+<%(Callout type="info" message="You can skip this step if you launch a local deployment through PIE within the editor because the Unreal GDK adds the worker configuration file for your new offloaded worker type. However, when you launch a cloud deployment, but no configuration file for the new offloaded worker type is available, you must create a worker configuration file for it.")%>
 
 1. Open File Explorer and navigate to `<ProjectRoot>/spatial/workers/unreal`.
 2. Make a copy of the `spatialos.UnrealWorker.worker.json` file and rename it to `spatialos.<YourWorkerName>.worker.json`, where `YourWorkerName` is the name of the new offloaded worker type.
@@ -52,7 +53,8 @@ Complete the following steps to configure the launch configuration for each work
 ### For cloud deployments
 
 To specify the launch configuration for the cloud deployment, in addition to the steps that you complete for the local deployment, you must also take the following steps:
-1. Create a copy of the auto-generated launch configuration from `...\Intermediate\Improbable\DefaultLaunchConfig,json` to the directory where you keep your launch configuration files (usually `spatial`). For more information, see [Auto-generated launch configuration file]({{urlRoot}}/content/toolbars#auto-generated-launch-config-for-pie-server-worker-types).
+
+1. Create a copy of the auto-generated launch configuration from `...\Intermediate\Improbable\DefaultLaunchConfig,json` to the directory where you keep your launch configuration files (usually `spatial`). For more information, see [Auto-generated launch configuration file]({{urlRoot}}/content/unreal-editor-interface/toolbars#auto-generated-launch-config-for-pie-server-worker-types).
 2. Open the new launch configuration file, and remove the `manual_worker_connection_only` option from all workers so that the Runtime requests the start of managed workers.
 
 ## 3. Configure Actor groups
@@ -108,7 +110,7 @@ You create a cloud deployment with offloaded workers in the same way as you did 
 For more information, see the [Cloud deployment workflow]({{urlRoot}}/content/cloud-deployment-workflow).
 
 <br/>------------<br/>
-_2019-07-26 Page added with limited editorial review_
+_2019-07-30 Page added with limited editorial review_
 <br/>
 <br/>
 [//]: # (TODO: https://improbableio.atlassian.net/browse/DOC-1142)

@@ -89,6 +89,13 @@ You create a Singleton Actor by tagging an Actor with the `SpatialType=Singleton
 
 For more information, see the documentation on [Singleton Actors]({{urlRoot}}/content/singleton-actors).
 
+### Actor Throttling
+We have introduced a concept of 'Actor Throttling' in order to optimize server performance when using the Unreal GDK, it can be accessed via the [Runtime Settings]({{urlRoot}}/content/unreal-editor-interface/runtime-settings). With the Unreal GDK it is possible to have multiple servers simulating on the same game world, this means that no one server could have a full view of the entire world at once. Additionally, servers in the Unreal GDK replicate actors only to a single connection to SpatialOS rather than to each individual client as in native Unreal. To accommodate this, in order to keep the state of the SpatialOS simulation accurate, all actors which are in a particular server's view are marked as relevant for replication on each frame. This can however cause performance issues if there are say, 3000 actors on a single server. 
+
+The concept of Actor Throttling allows you to set a simple limit on the number of actors which can be replicated to SpatialOS in each frame and can help boost server performance. The number set in the throttle will dictate how many actors can be replicated, with the highest priority actors (using Unreal's actor priority system) being replicated first.
+
+We recommend using Actor Throttling with a combination of Unreal's Net Update Frequency, as this will limit the number of actors which are added to the 'ConsiderList' for replication in order to optimize your servers performance. Experiment with the limit by setting it high and then lowering over time until you see client latency issues in a realistic game scenario. 
+
 ## Non-Unreal computation
 By default, the GDK uses a single Unreal server-worker type (the template for a server-worker instance) to handle all server-side computation. However, you can set up additional server-worker types that do not use Unreal or the GDK. 
 
@@ -98,6 +105,7 @@ For more information, see the documentation on [non-Unreal server-worker types](
 
 
 <br/>------------<br/>
+_2019-07-31 Page updated with limited editorial review: Actor Throttling added_<br/>
 _2019-07-26 Page updated with limited editorial review: offloading, Actor group added_<br/>
 _2019-04-11 Page updated with limited editorial review_<br/>
 _2019-04-25 Page added with editorial review_

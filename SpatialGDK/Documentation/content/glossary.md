@@ -492,6 +492,6 @@ Zoning is when you split out the computation of the SpatialOS world spatially, s
 
 <br/>
 <br/>------<br/>
-_2019-07-31 Page updated with limited editorial review_
+_2019-07-30 Added Actor groups, offloading_
 <br/>_2019-06-15 Added layers, non-Unreal layers, network operations (ops)_
 <br/>_2019-03-15 Page updated with editorial review_

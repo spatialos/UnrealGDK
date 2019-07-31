@@ -8,7 +8,7 @@ At this point your project is ready to run, you just need to do a couple of conf
 
 ### 1. Setting up the snapshot
 
-You have written code to send commands to a specific entity that contains the `DatabaseSyncService` component, but you have never created that entity.
+You have written code to send commands to a specific entity that contains the `DatabaseSyncService` SpatialOS component, but you have never created that entity.
 
 Because the components of that entity have nothing to do with Unreal (they do not map to `ActorComponents`), you cannot just create an Actor to represent that entity. The entity needs to be created directly in the Snapshot (or if you have any other non Unreal Worker, it could create the entity itself).
 
@@ -36,7 +36,7 @@ Next, build the project from Visual Studio and be sure everything compiles corre
 
 <%(Callout type="tip" message="If you have any issues, you can compare your code to a final working version of the tutorial in the `feature/dbsync_worker_tutorial_finish` branch of the Example Project.")%>
 
-The default Example Project launch configiguration only starts UnrealWorkers. The launch configuration now also needs to start the Database Sync Worker you added. We provide a launch config that does this, but you can learn more about how to change those config files [here](https://docs.improbable.io/reference/latest/shared/project-layout/launch-config#launch-configuration-file).
+The default Example Project launch configuration only starts UnrealWorkers. The launch configuration now also needs to start the Database Sync Worker you added. We provide a launch config that does this, but you can learn more about how to change those config files [here](https://docs.improbable.io/reference/latest/shared/project-layout/launch-config#launch-configuration-file).
 
 For now, copy `default.launch.json` from `spatial/provided` into `spatial`.
 
@@ -47,7 +47,9 @@ By default, SpatialOS GDK settings are set to generate a default launch config w
 ### 4. Running the game
 
 At this point, all is ready, so in the Unreal Editor:
+
 1. Generate Schema (this is required to create the descriptor files for the schema we imported from outside the Unreal project and would not have been generated when you generated Schema in step 1)
+
 2. Open the Play drop-down menu. Under Multiplayer Options, set the number of players to 2 or 3 and hit play
 
 As you kill players, you will the “All Time” columns change.
