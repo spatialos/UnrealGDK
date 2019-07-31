@@ -53,7 +53,7 @@ In the example project, the `Player` characters and the `CrashBots` have the sam
 
 In addition to the `CrashBot` blueprint, the Example Project had to create an additional version of the CrashBot named `BP_CrashBot_PlacedInWorld`. This was to work around the issue of creating the controllers first when the authority was gained.
 
-### Ensure that your code get executed on the correct server worker
+### Ensure that your code gets executed on the correct server worker
 
 With the introduction of offloading, it is no longer enough to check whether the netmode is a dedicated server to ensure that logic is run on the authoritative worker. An actor could now be authoritatively updated from any given server type and therefore it is important to be mindful of checking whether the current server worker has authority over the entity. Below are a few example snippets from the UEquipmentComponent where such checks were added to ensure correct flow:
 

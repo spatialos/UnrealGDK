@@ -9,7 +9,7 @@ Before you start, review the following offloading workflows. You can check each 
 1. Create a [worker configuration file]({{urlRoot}}/content/glossary#worker-configuration-file): You create a worker configuration file for the new offloaded worker type.
     **Notes**:
     - If you launch a local deployment through PIE within the editor, the Unreal GDK adds the worker configuration file for your new offloaded worker type, so you can skip this step.
-    - If you launch a local deployment through PIE within the editor, the Unreal GDK adds the worker configuration file for your new offloaded worker type, so you can skip this step.
+    - If you launch a cloud deployment, but no configuration file for the new offloaded worker type is available, you must create a worker configuration file for it.
 2. Specify the launch configuration: 
     - For local deployments: Specify the load balancing strategy for the new offloaded worker and number of worker instances to be launched.
     - For cloud deployments: Edit the auto-generated configuration file so that the Runtime requests the start of managed workers.
