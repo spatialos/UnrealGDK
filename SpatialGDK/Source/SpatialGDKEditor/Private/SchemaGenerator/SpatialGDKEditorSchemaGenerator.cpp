@@ -592,6 +592,25 @@ SPATIALGDKEDITOR_API bool GeneratedSchemaFolderExists()
 	return PlatformFile.DirectoryExists(*SchemaOutputPath);
 }
 
+void ResolveClassPathToSchemaName(const FString& ClassPath, const FString& SchemaName)
+{
+	if (SchemaName.IsEmpty())
+	{
+		return;
+	}
+
+	ClassPathToSchemaName.Add(ClassPath, SchemaName);
+	SchemaNameToClassPath.Add(SchemaName, ClassPath);
+	FSoftObjectPath ObjPath = FSoftObjectPath(ClassPath);
+	FString DesiredSchemaName = UnrealNameToSchemaName(ObjPath.GetAssetName());
+
+	if (DesiredSchemaName != SchemaName)
+	{
+		AddPotentialNameCollision(DesiredSchemaName, ClassPath, SchemaName);
+	}
+	AddPotentialNameCollision(SchemaName, ClassPath, SchemaName);
+}
+
 void ResetUsedNames()
 {
 	ClassPathToSchemaName.Empty();
@@ -600,22 +619,13 @@ void ResetUsedNames()
 
 	for (const TPair<FString, FActorSchemaData>& Entry : ActorClassPathToSchema)
 	{
-		if (Entry.Value.GeneratedSchemaName.IsEmpty())
-		{
-			// Ignore Subobject entries with empty names.
-			continue;
-		}
-		ClassPathToSchemaName.Add(Entry.Key, Entry.Value.GeneratedSchemaName);
-		SchemaNameToClassPath.Add(Entry.Value.GeneratedSchemaName, Entry.Key);
-		FSoftObjectPath ObjPath = FSoftObjectPath(Entry.Key);
-		FString DesiredSchemaName = UnrealNameToSchemaName(ObjPath.GetAssetName());
-
-		if (DesiredSchemaName != Entry.Value.GeneratedSchemaName)
-		{
-			AddPotentialNameCollision(DesiredSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
-		}
-		AddPotentialNameCollision(Entry.Value.GeneratedSchemaName, Entry.Key, Entry.Value.GeneratedSchemaName);
+		ResolveClassPathToSchemaName(Entry.Key, Entry.Value.GeneratedSchemaName);
 	}
+
+ 	for (const TPair< FString, FSubobjectSchemaData>& Entry : SubobjectClassPathToSchema)
+ 	{
+		ResolveClassPathToSchemaName(Entry.Key, Entry.Value.GeneratedSchemaName);
+ 	}
 }
 
 void RunSchemaCompiler()

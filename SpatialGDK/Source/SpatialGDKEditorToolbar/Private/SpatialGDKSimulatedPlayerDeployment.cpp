@@ -20,6 +20,7 @@
 #include "Widgets/Layout/SExpandableArea.h"
 #include "Widgets/Layout/SSeparator.h"
 #include "Widgets/Layout/SUniformGridPanel.h"
+#include "Widgets/Layout/SWrapBox.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -60,16 +61,23 @@ void SSpatialGDKSimulatedPlayerDeployment::Construct(const FArguments& InArgs)
 							.Padding(2.0f)
 							.VAlign(VAlign_Center)
 							[
-								SNew(SHorizontalBox)
-								+ SHorizontalBox::Slot()
-								.AutoWidth()
-								.HAlign(HAlign_Center)
+								SNew(SWrapBox)
+								.UseAllottedWidth(true)
+								+ SWrapBox::Slot()
+								.VAlign(VAlign_Bottom)
 								[
 									SNew(STextBlock)
-									.Text(FText::FromString(FString(TEXT("NOTE: The assembly has to be built and uploaded manually. Follow the docs "))))
+									.AutoWrapText(true)
+									.Text(FText::FromString(FString(TEXT("NOTE: You can set default values in the SpatialOS settings under \"Cloud\"."))))
 								]
-								+ SHorizontalBox::Slot()
-								.AutoWidth()
+								+ SWrapBox::Slot()
+								.VAlign(VAlign_Bottom)
+								[
+									SNew(STextBlock)
+									.AutoWrapText(true)
+								.Text(FText::FromString(FString(TEXT("The assembly has to be built and uploaded manually. Follow the docs "))))
+								]
+								+ SWrapBox::Slot()
 								[
 									SNew(SHyperlink)
 									.Text(FText::FromString(FString(TEXT("here."))))
@@ -432,7 +440,7 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetPrimaryDeployment
 		{
 			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
 			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnPrimaryDeploymentRegionCodePicked, CurrentEnumValue));
-			MenuBuilder.AddMenuEntry(pEnum->GetEnumTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
 		}
 	}
 
@@ -450,7 +458,7 @@ TSharedRef<SWidget> SSpatialGDKSimulatedPlayerDeployment::OnGetSimulatedPlayerDe
 		{
 			int64 CurrentEnumValue = pEnum->GetValueByIndex(i);
 			FUIAction ItemAction(FExecuteAction::CreateSP(this, &SSpatialGDKSimulatedPlayerDeployment::OnSimulatedPlayerDeploymentRegionCodePicked, CurrentEnumValue));
-			MenuBuilder.AddMenuEntry(pEnum->GetEnumTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
+			MenuBuilder.AddMenuEntry(pEnum->GetDisplayNameTextByValue(CurrentEnumValue), TAttribute<FText>(), FSlateIcon(), ItemAction);
 		}
 	}
 	
@@ -567,7 +575,7 @@ FReply SSpatialGDKSimulatedPlayerDeployment::OnStopClicked()
 void SSpatialGDKSimulatedPlayerDeployment::OnCloudDocumentationClicked()
 {
 	FString WebError;
-	FPlatformProcess::LaunchURL(TEXT("https://docs.improbable.io/unreal/alpha/content/get-started/gdk-template#step-3-upload-your-workers"), TEXT(""), &WebError);
+	FPlatformProcess::LaunchURL(TEXT("https://docs.improbable.io/unreal/latest/content/cloud-deployment-workflow#build-server-worker-assembly"), TEXT(""), &WebError);
 	if (!WebError.IsEmpty())
 	{
 		FNotificationInfo Info(FText::FromString(WebError));

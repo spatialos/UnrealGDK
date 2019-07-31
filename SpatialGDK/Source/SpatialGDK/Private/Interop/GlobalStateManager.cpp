@@ -55,8 +55,7 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
 #endif // WITH_EDITOR
   
 	bAcceptingPlayers = false;
-	bAuthBeginPlayCalled = false;
-	bIsReadyToCallBeginPlay = false;
+	bCanBeginPlay = false;
 }
 
 void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
@@ -81,8 +80,8 @@ void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentDat
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-	const bool bAuthBeginPlayCalledData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID);
-	ApplyAuthBeginPlayCalledUpdate(bAuthBeginPlayCalledData);
+	const bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+	ApplyCanBeginPlayUpdate(bCanBeginPlayData);
 }
 
 void UGlobalStateManager::ApplySingletonManagerUpdate(const Worker_ComponentUpdate& Update)
@@ -203,18 +202,16 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 {
 	Schema_Object* ComponentObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID) == 1)
+	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID) == 1)
 	{
-		const bool bAuthBeginPlayCalledUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID);
-		ApplyAuthBeginPlayCalledUpdate(bAuthBeginPlayCalledUpdate);
+		const bool bCanBeginPlayUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+		ApplyCanBeginPlayUpdate(bCanBeginPlayUpdate);
 	}
 }
 
-void UGlobalStateManager::ApplyAuthBeginPlayCalledUpdate(const bool bAuthBeginPlayCalledUpdate)
+void UGlobalStateManager::ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate)
 {
-	bAuthBeginPlayCalled = bAuthBeginPlayCalledUpdate;
-
-	bIsReadyToCallBeginPlay = true;
+	bCanBeginPlay = bCanBeginPlayUpdate;
 }
 
 void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
@@ -435,7 +432,7 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::SetAuthBeginPlayCalled(const bool bInAuthBeginPlayCalled)
+void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
 {
 	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
 
@@ -444,9 +441,9 @@ void UGlobalStateManager::SetAuthBeginPlayCalled(const bool bInAuthBeginPlayCall
 	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_AUTH_BEGIN_PLAY_CALLED_ID, static_cast<uint8_t>(bInAuthBeginPlayCalled));
+	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
 
-	bAuthBeginPlayCalled = bInAuthBeginPlayCalled;
+	bCanBeginPlay = bInCanBeginPlay;
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
@@ -463,14 +460,32 @@ void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthO
 	switch (AuthOp.component_id)
 	{
 		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+		{
 			GlobalStateManagerEntityId = AuthOp.entity_id;
 			SetAcceptingPlayers(true);
 			break;
+		}
 		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
+		{
 			ExecuteInitialSingletonActorReplication();
 			break;
-		default:
+		}
+		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		{
+			// We can reach this point with bCanBeginPlay==true if the server
+			// that was authoritative over the GSM restarts.
+			if (!bCanBeginPlay)
+			{
+				BecomeAuthoritativeOverAllActors();
+				SetCanBeginPlay(true);
+			}
+
 			break;
+		}
+		default:
+		{
+			break;
+		}
 	}
 }
 
@@ -499,7 +514,7 @@ void UGlobalStateManager::BeginDestroy()
 		if (GetDefault<ULevelEditorPlaySettings>()->GetDeleteDynamicEntities())
 		{
 			// Reset the BeginPlay flag so Startup Actors are properly managed.
-			SetAuthBeginPlayCalled(false);
+			SetCanBeginPlay(false);
 
 			// Reset the Singleton map so Singletons are recreated.
 			Worker_ComponentUpdate Update = {};
@@ -537,13 +552,6 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 void UGlobalStateManager::TriggerBeginPlay()
 {
 	check(IsReadyToCallBeginPlay());
-
-	if (!bAuthBeginPlayCalled &&
-		NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
-	{
-		BecomeAuthoritativeOverAllActors();
-		SetAuthBeginPlayCalled(true);
-	}
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
