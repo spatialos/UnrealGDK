@@ -2,16 +2,18 @@
 
 # Set up your game feature for offloading
 
-To set up your game feature for offloading, in addition to configuring your Unreal game server, you also need to start an Unreal process for your offloaded worker types, both locally in PIE and in the cloud. In particular, you specify the number of offloaded workers to start and their attributes in the Unreal Editor, and configure Actor groups to set the authority configuration for the Actors.
+To set up your game feature for offloading, in addition to configuring your Unreal game server, you also need to start an Unreal process for your offloaded worker types, both locally in PIE and in the cloud. In particular, you specify the number of offloaded servers to start and their attributes in the Unreal Editor, and configure Actor groups to set the authority configuration for the Actors.
 
 Before you start, review the following offloading workflows. You can check each step for detailed information:
 
 1. Create a [worker configuration file]({{urlRoot}}/content/glossary#worker-configuration-file): You create a worker configuration file for the new offloaded worker type.
-
-    **Note**: If you launch a local deployment through PIE within the editor, the Unreal GDK adds the worker configuration file for your new offloaded worker type, so you can skip this step.
-2. (For local deployment) Specify the launch configuration: Specify the load balancing strategy for the new offloaded worker and number of worker instances to be launched.
+    **Notes**:
+    - If you launch a local deployment through PIE within the editor, the Unreal GDK adds the worker configuration file for your new offloaded worker type, so you can skip this step.
+    - If you launch a local deployment through PIE within the editor, the Unreal GDK adds the worker configuration file for your new offloaded worker type, so you can skip this step.
+2. Specify the launch configuration: 
+    - For local deployments: Specify the load balancing strategy for the new offloaded worker and number of worker instances to be launched.
+    - For cloud deployments: Edit the auto-generated configuration file so that the Runtime requests the start of managed workers.
 3. Configure Actor groups: Create Actor groups, assign Actor classes to a group, and then assign each group to a server-worker type.
-
     **Notes**:
     - By default, when an Actor type does not have a mapping to an Actor group, its authority is assigned to the main Unreal server-worker type.
     - You must configure actor groups on a class level rather than on an instance level.
