@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes:
 * You must [re-build](https://docs.improbable.io/unreal/alpha/content/get-started/example-project/exampleproject-setup#step-4-build-the-dependencies-and-launch-the-project) your [Example Project](https://github.com/spatialos/UnrealGDKExampleProject) if you're upgrading it to `0.6.0`.
-* This is the last GDK version to support `4.20-SpatialOSUnrealGDK-release`. You will need to upgrade your project to use `4.22-SpatialOSUnrealGDK-release` if you want to continue to recieve GDK releases and support.
+* This is the last GDK version to support Unreal Engine 4.20. You will need to upgrade your project to use Unreal Engine 4.22 (`4.22-SpatialOSUnrealGDK-release`) in order to continue recieving GDK releases and support.
 
 ### New Known Issues:
 - Workers will sometimes not gain authority when quickly reconnecting to an existing deployment, resulting in a failure to spawn or simulate. When using the editor if you Play - Stop - Play in quick succession you can sometimes fail to launch correctly.
