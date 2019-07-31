@@ -76,8 +76,10 @@ You can create this structure in the way that fits your game the best, having in
 
 ```
 ...
-#include "SpatialNetDriver.h"
 #include "ExternalSchemaCodegen/improbable/database_sync/CommandErrors.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
+#include "SpatialNetDriver.h"
+
 // Path format to store the score is in the format "profiles.UnrealWorker.players.<playerId>.score.(AllTimeKills or AllTimeDeaths)"
 namespace DBPaths
 {
@@ -140,7 +142,7 @@ void UDeathmatchScoreComponent::GetItemResponse(const ::improbable::database_syn
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("GetItem Request failed with Error %s : %s"), Op.StatusCode, Op.Message);
+		UE_LOG(LogTemp, Error, TEXT("GetItem Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
 	}
 }
 ...
@@ -256,7 +258,7 @@ void UDeathmatchScoreComponent::CreateItemResponse(const ::improbable::database_
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("CreateItem Request failed with Error %s : %s"), Op.StatusCode, Op.Message);
+		UE_LOG(LogTemp, Error, TEXT("CreateItem Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
 	}
 }
 ...
@@ -304,7 +306,7 @@ void UDeathmatchScoreComponent::IncrementResponse(const ::improbable::database_s
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Increment Request failed with Error %s : %s"), Op.StatusCode, Op.Message);
+		UE_LOG(LogTemp, Error, TEXT("Increment Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
 	}
 }
 ...

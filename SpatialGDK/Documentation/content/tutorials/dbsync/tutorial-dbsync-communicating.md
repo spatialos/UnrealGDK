@@ -44,7 +44,10 @@ Then, in `GDKShooterSpatialGameInstance.cpp`, add a callback for the `OnConnecte
 #include "GDKShooterSpatialGameInstance.h"
 #include "Editor.h"
 #include "EngineClasses/SpatialNetDriver.h"
+#include "ExternalSchemaCodegen/improbable/database_sync/DatabaseSyncService.h"
+#include "GameFramework/GameStateBase.h"
 #include "Game/Components/DeathmatchScoreComponent.h"
+#include "Interop/Connection/SpatialWorkerConnection.h"
 
 void UGDKShooterSpatialGameInstance::Init()
 {
