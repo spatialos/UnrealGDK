@@ -20,12 +20,12 @@ Before you start, review the following offloading workflows. You can check each 
 6. Test changes in the cloud: Package the worker type and create a cloud deployment.
 
 ## 1. Create a worker configuration file
-
+a
 > **Note**: You can skip this step if you launch a local deployment through PIE within the editor because the Unreal GDK adds the worker configuration file for your new offloaded worker type. However, when you launch a cloud deployment, but no configuration file for the new offloaded worker type is available, you must create a worker configuration file for it.
 
-1. Open File Explorer and navigate to `<ProjectRoot>GameOne/spatial/workers/unreal`.
+1. Open File Explorer and navigate to `<ProjectRoot>/spatial/workers/unreal`.
 2. Make a copy of the `spatialos.UnrealWorker.worker.json` file and rename it to `spatialos.<YourWorkerName>.worker.json`, where `YourWorkerName` is the name of the new offloaded worker type.
-3. Open the `spatialos.YourWorkerName.worker.json` file and replace all references to `UnrealWorker` with the name of the new offloaded worker type.
+3. Open the `spatialos.YourWorkerName.worker.json` file and replace all references in the `build` and `bridge` sections to `UnrealWorker` with the name of the new offloaded worker type.
 
 ## 2. Specify the launch configuration
 
