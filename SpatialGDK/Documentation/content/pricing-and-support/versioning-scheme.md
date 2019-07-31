@@ -80,7 +80,7 @@ when Unreal Engine 4.22 is the version supported.
 
 **The GDK and the Example Project only support one version of Unreal Engine at a time**. This version is the Unreal Engine Fork repository’s default branch, and is indicated in the [Get started]({{urlRoot}}/content/get-started/introduction) documentation.
 
-To facilitate a smooth upgrade for your project, when we introduce support for a new Unreal Engine version, we also support the previously Engine version in parallel, for one GDK release. For example, GDK version `0.6.0` introduces `Unreal Engine 4.22` support, but is also the last GDK version to support `4.20-SpatialGDK-release`.
+To facilitate a smooth upgrade for your project, when we introduce support for a new Unreal Engine version, we also support the previously Engine version in parallel, for one GDK release. For example, GDK version `0.6.0` introduces `Unreal Engine 4.22` support, but is also the last GDK version to support `4.20-SpatialOSUnrealGDK-release`.
 
 We endeavour to support the latest stable and recommended version of Unreal Engine less than 3 months after it's released. To see when a new version will be supported, check out the [Development Roadmap](https://github.com/spatialos/unrealgdk/projects/1).
 

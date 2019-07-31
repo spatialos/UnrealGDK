@@ -130,23 +130,24 @@ To launch a cloud deployment:
 1. Enter your project name (see [Set up your SpatialOS project name](#step-1-associate-your-game-with-a-cloud-project-name)). 
 1. In the **Assembly Name** field, enter the name you gave your assembly in the [previous step](#step-3-upload-your-workers).
 1. In the **Deployment Name** field, enter a name for your deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
-1. Leave the Snapshot File field as it is. In the **Launch Config File** field, enter the path to `one_worker_test.json` (including the file name).
+1. Add the absolute path to the **Launch Config File** `/UnrealGDKExampleProject/spatial/one_worker_test.json`  
+1. Add the absolute path to the **Snapshot File** `/UnrealGDKExampleProject/spatial/snapshots/default.snapshot`  
 1. (Optional) If needed, change the **Region**.
 
 #### Optional: Launch Simulated Players
 
-[Simulated players]({{urlRoot}}/content/simulated-players) are game clients running in the cloud, mimicking real players of your game from a connection flow and server-worker load perspective. This means they’re useful for scale testing. 
+[Simulated players]({{urlRoot}}/content/simulated-players) are game clients mimicking real players of your game from the perspective of connection flow and server-worker load. This means they’re useful for scale testing. 
 
 To create an additional deployment with simulated players, in the **Simulated Players** section:
 
 1. Check the box next to **Add simulated players**.
-1. In the **Deployment Name** field, enter enter a name for your simulated player  deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
+1. In the **Deployment Name** field, enter a name for your simulated player deployment. This labels the deployment in the [Console]({{urlRoot}}/content/glossary#console).
 1. In the **Number of Simulated Players** field, choose the number of simulated players you want to start. 
 1. (Optional) If needed, change the **Region**.
 
 <%(#Expandable title="Developing Simulated Players")%>
 
-A basic implementation of Simulated Players is included in this project, which you can try out by deploying them and find out by exploring the source (look for `SimulatedPlayerCharacter_BP`). For more information on developing Simulated Players for you project, see the [reference page]({{urlRoot}}/content/simulated-players).
+A basic implementation of Simulated Players is included in this project. You can find out more about it by exploring the source (look for `SimulatedPlayerCharacter_BP`) and try it out by deploying them. For more information on developing Simulated Players for you project, see the [reference page]({{urlRoot}}/content/simulated-players).
 
 <%(/Expandable)%>
 
