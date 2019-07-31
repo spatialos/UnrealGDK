@@ -9,6 +9,7 @@
 To build the GDK Example Project, you need to:
 
 1. In the directory `UnrealEngine\samples\UnrealGDKExampleProject\Game`, double-click **GDKShooter.sln** to open it with Visual Studio.
+1. In the Solution Explorer window, right-click on **GDKShooter** and select **Build**.
 1. When Visual Studio has finished building your project, right-click on **GDKShooter** and select **Set as StartUp Project**.
 1. Build and open your project in the Unreal Editor. To do this: Either press F5 on your keyboard or, in the Visual Studio toolbar, select *Local Windows Debugger*.
    ![Visual Studio toolbar]({{assetRoot}}assets/set-up-template/template-vs-toolbar.png)<br/>
