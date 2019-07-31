@@ -10,19 +10,17 @@ exit /b 1
 :START
 
 call :MarkStartOfBlock "Setup variables"
-  pushd %cd%\%1
+  pushd %1
     set GAME_FOLDER=%cd%
   popd
   pushd %~dp0\..\..\..
     set GDK_FOLDER=%cd%
-    pushd %GAME_FOLDER%
-      set SCHEMA_COMPILER_PATH=%GDK_FOLDER%\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\schema_compiler.exe
-      set CODEGEN_EXE_PATH=%GDK_FOLDER%\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\CodeGenerator.exe
-      set SCHEMA_STD_COPY_DIR=%GAME_FOLDER%\spatial\build\dependencies\schema\standard_library
-      set SPATIAL_SCHEMA_FOLDER=%GAME_FOLDER%\spatial\schema
-      set BUNDLE_CACHE_DIR=%GDK_FOLDER%\SpatialGDK\Intermediate\ExternalSchemaCodegen
-      set SCHEMA_BUNDLE_FILE_NAME=external_schema_bundle.json
-    popd
+    set SCHEMA_COMPILER_PATH=%GDK_FOLDER%\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\schema_compiler.exe
+    set CODEGEN_EXE_PATH=%GDK_FOLDER%\SpatialGDK\Binaries\ThirdParty\Improbable\Programs\CodeGenerator.exe
+    set SCHEMA_STD_COPY_DIR=%GAME_FOLDER%\spatial\build\dependencies\schema\standard_library
+    set SPATIAL_SCHEMA_FOLDER=%GAME_FOLDER%\spatial\schema
+    set BUNDLE_CACHE_DIR=%GDK_FOLDER%\SpatialGDK\Intermediate\ExternalSchemaCodegen
+    set SCHEMA_BUNDLE_FILE_NAME=external_schema_bundle.json
   popd
 call :MarkEndOfBlock "Setup variables"
 
