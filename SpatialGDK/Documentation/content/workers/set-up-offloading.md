@@ -30,7 +30,7 @@ a
 
 ## 2. Specify the launch configuration
 
-> **Note**: This step is required only for local deployment.
+### For local deployments
 
 After you create a new worker configuration file, you must configure the default launch configuration with the correct load balancing settings and specify what server worker types to be in the local deployment. By default, only one `UnrealWorker` is in the launch configuration file.
 
@@ -46,6 +46,12 @@ Complete the following steps to configure the launch configuration for each work
 
     ![img]({{assetRoot}}assets/specify-launch-configuration.png)
 6. After you define the load balancing strategy, in the **Instances to launch in editor** field, specify the number of instances of each worker type to be launched, as is shown in the screenshot above in blue rectangle.
+
+### For cloud deployments
+
+To specify the launch configuration for the cloud deployment, in addition to the steps that you complete for the local deployment, you must also take the following steps:
+1. Create a copy of the auto-generated launch configuration from `...\Intermediate\Improbable\DefaultLaunchConfig,json` to the directory where you keep your launch configuration files (usually `spatial`). For more information, see [Auto-generated launch configuration file]({{urlRoot}}/content/toolbars#auto-generated-launch-config-for-pie-server-worker-types).
+2. Open the new launch configuration file, and remove the `manual_worker_connection_only` option from all workers so that the Runtime requests the start of managed workers.
 
 ## 3. Configure Actor groups
 
