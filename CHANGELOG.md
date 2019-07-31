@@ -115,7 +115,7 @@ In addition to all of the updates from Improbable, this release includes x impro
 - Fixed an issue with schema name collisions.
 - Schema generation now respects "Directories to never cook".
 - The editor no longer crashes during schema generation when the database is readonly.
-- Replicating `UInterfaceProperty` no logner causes crashes.
+- Replicating `UInterfaceProperty` no longer causes crashes.
 
 ## [`0.4.1`](https://github.com/spatialos/UnrealGDK/releases/tag/0.4.1) - 2019-05-01
 
