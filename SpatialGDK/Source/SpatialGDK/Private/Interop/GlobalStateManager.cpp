@@ -23,6 +23,7 @@
 #include "Schema/UnrealMetadata.h"
 #include "SpatialConstants.h"
 #include "UObject/UObjectGlobals.h"
+#include "Utils/EntityPool.h"
 
 DEFINE_LOG_CATEGORY(LogGlobalStateManager);
 
@@ -55,7 +56,6 @@ void UGlobalStateManager::Init(USpatialNetDriver* InNetDriver, FTimerManager* In
   
 	bAcceptingPlayers = false;
 	bCanBeginPlay = false;
-	bTriggeredBeginPlay = false;
 }
 
 void UGlobalStateManager::ApplySingletonManagerData(const Worker_ComponentData& Data)
@@ -80,7 +80,7 @@ void UGlobalStateManager::ApplyStartupActorManagerData(const Worker_ComponentDat
 {
 	Schema_Object* ComponentObject = Schema_GetComponentDataFields(Data.schema_type);
 
-	bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+	const bool bCanBeginPlayData = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 	ApplyCanBeginPlayUpdate(bCanBeginPlayData);
 }
 
@@ -160,7 +160,7 @@ void UGlobalStateManager::ReceiveShutdownMultiProcessRequest()
 	}
 }
 
-void UGlobalStateManager::OnShutdownComponentUpdate(Worker_ComponentUpdate& Update)
+void UGlobalStateManager::OnShutdownComponentUpdate(const Worker_ComponentUpdate& Update)
 {
 	Schema_Object* EventsObject = Schema_GetComponentUpdateEvents(Update.schema_type);
 	if (Schema_GetObjectCount(EventsObject, SpatialConstants::SHUTDOWN_ADDITIONAL_SERVERS_EVENT_ID) > 0)
@@ -204,20 +204,14 @@ void UGlobalStateManager::ApplyStartupActorManagerUpdate(const Worker_ComponentU
 
 	if (Schema_GetBoolCount(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID) == 1)
 	{
-		bool bCanBeginPlayUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
+		const bool bCanBeginPlayUpdate = GetBoolFromSchema(ComponentObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID);
 		ApplyCanBeginPlayUpdate(bCanBeginPlayUpdate);
 	}
 }
 
-void UGlobalStateManager::ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate)
+void UGlobalStateManager::ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate)
 {
 	bCanBeginPlay = bCanBeginPlayUpdate;
-
-	// For now, this will only be called on non-authoritative workers.
-	if (bCanBeginPlay)
-	{
-		TriggerBeginPlay();
-	}
 }
 
 void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActorClass)
@@ -262,7 +256,12 @@ void UGlobalStateManager::LinkExistingSingletonActor(const UClass* SingletonActo
 
 	// We're now ready to start replicating this actor, create a channel
 	USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+
+#if ENGINE_MINOR_VERSION <= 20
 	Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
+#else
+	Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
+#endif
 
 	if (StaticComponentView->GetAuthority(SingletonEntityId, SpatialConstants::POSITION_COMPONENT_ID) == WORKER_AUTHORITY_AUTHORITATIVE)
 	{
@@ -327,7 +326,11 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	{
 		// We have control over the GSM, so can safely setup a new channel and let it allocate an entity id
 		USpatialNetConnection* Connection = Cast<USpatialNetConnection>(NetDriver->ClientConnections[0]);
+#if ENGINE_MINOR_VERSION <= 20
 		Channel = Cast<USpatialActorChannel>(Connection->CreateChannel(CHTYPE_Actor, 1));
+#else
+		Channel = Cast<USpatialActorChannel>(Connection->CreateChannelByName(NAME_Actor, EChannelCreateFlags::OpenedLocally));
+#endif
 
 		// If entity id already exists for this singleton, set the actor to it
 		// Otherwise SetChannelActor will issue a new entity id request
@@ -352,6 +355,17 @@ USpatialActorChannel* UGlobalStateManager::AddSingleton(AActor* SingletonActor)
 	}
 
 	return Channel;
+}
+
+void UGlobalStateManager::RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel)
+{
+	TPair<AActor*, USpatialActorChannel*>& ActorChannelPair = NetDriver->SingletonActorChannels.FindOrAdd(SingletonActor->GetClass());
+
+	check(ActorChannelPair.Key == nullptr || ActorChannelPair.Key == SingletonActor);
+	check(ActorChannelPair.Value == nullptr || ActorChannelPair.Value == SingletonChannel);
+
+	ActorChannelPair.Key = SingletonActor;
+	ActorChannelPair.Value = SingletonChannel;
 }
 
 void UGlobalStateManager::ExecuteInitialSingletonActorReplication()
@@ -398,11 +412,7 @@ bool UGlobalStateManager::IsSingletonEntity(Worker_EntityId EntityId) const
 
 void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 {
-	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID))
-	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to set AcceptingPlayers on the GSM but this worker does not have authority."));
-		return;
-	}
+	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID));
 
 	// Send the component update that we can now accept players.
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Setting accepting players to '%s'"), bInAcceptingPlayers ? TEXT("true") : TEXT("false"));
@@ -422,44 +432,74 @@ void UGlobalStateManager::SetAcceptingPlayers(bool bInAcceptingPlayers)
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::SetCanBeginPlay(bool bInCanBeginPlay)
+void UGlobalStateManager::SetCanBeginPlay(const bool bInCanBeginPlay)
 {
-	if (!NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID))
-	{
-		UE_LOG(LogGlobalStateManager, Warning, TEXT("Tried to set CanBeginPlay on the GSM but this worker does not have authority."));
-		return;
-	}
+	check(NetDriver->StaticComponentView->HasAuthority(GlobalStateManagerEntityId, SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID));
 
 	Worker_ComponentUpdate Update = {};
 	Update.component_id = SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID;
 	Update.schema_type = Schema_CreateComponentUpdate(SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID);
 	Schema_Object* UpdateObject = Schema_GetComponentUpdateFields(Update.schema_type);
 
-	// Set CanBeginPlay on GSM
 	Schema_AddBool(UpdateObject, SpatialConstants::STARTUP_ACTOR_MANAGER_CAN_BEGIN_PLAY_ID, static_cast<uint8_t>(bInCanBeginPlay));
 
 	bCanBeginPlay = bInCanBeginPlay;
 	NetDriver->Connection->SendComponentUpdate(GlobalStateManagerEntityId, &Update);
 }
 
-void UGlobalStateManager::AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID)
+void UGlobalStateManager::AuthorityChanged(const Worker_AuthorityChangeOp& AuthOp)
 {
-	UE_LOG(LogGlobalStateManager, Log, TEXT("Authority over the GSM has changed. This worker %s authority."),  bWorkerAuthority ? TEXT("now has") : TEXT ("does not have"));
+	UE_LOG(LogGlobalStateManager, Verbose, TEXT("Authority over the GSM component %d has changed. This worker %s authority."), AuthOp.component_id,
+		AuthOp.authority == WORKER_AUTHORITY_AUTHORITATIVE ? TEXT("now has") : TEXT ("does not have"));
 
-	if (bWorkerAuthority)
+	if (AuthOp.authority != WORKER_AUTHORITY_AUTHORITATIVE)
 	{
-		// Make sure we update our known entity id for the GSM when we receive authority.
-		GlobalStateManagerEntityId = CurrentEntityID;
+		return;
+	}
 
-		if (!bCanBeginPlay)
+	switch (AuthOp.component_id)
+	{
+		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
 		{
-			SetCanBeginPlay(true);
-			BecomeAuthoritativeOverAllActors();
-			TriggerBeginPlay();
+			GlobalStateManagerEntityId = AuthOp.entity_id;
+			SetAcceptingPlayers(true);
+			break;
 		}
+		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
+		{
+			ExecuteInitialSingletonActorReplication();
+			break;
+		}
+		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		{
+			// We can reach this point with bCanBeginPlay==true if the server
+			// that was authoritative over the GSM restarts.
+			if (!bCanBeginPlay)
+			{
+				BecomeAuthoritativeOverAllActors();
+				SetCanBeginPlay(true);
+			}
 
-		// Start accepting players only AFTER we've triggered BeginPlay
-		SetAcceptingPlayers(true);
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+}
+
+bool UGlobalStateManager::HandlesComponent(const Worker_ComponentId ComponentId) const
+{
+	switch (ComponentId)
+	{
+		case SpatialConstants::SINGLETON_MANAGER_COMPONENT_ID:
+		case SpatialConstants::DEPLOYMENT_MAP_COMPONENT_ID:
+		case SpatialConstants::STARTUP_ACTOR_MANAGER_COMPONENT_ID:
+		case SpatialConstants::GSM_SHUTDOWN_COMPONENT_ID:
+			return true;
+		default:
+			return false;
 	}
 }
 
@@ -511,16 +551,10 @@ void UGlobalStateManager::BecomeAuthoritativeOverAllActors()
 
 void UGlobalStateManager::TriggerBeginPlay()
 {
-	if (bTriggeredBeginPlay)
-	{
-		UE_LOG(LogGlobalStateManager, Error, TEXT("Tried to trigger BeginPlay twice! This should never happen"));
-		return;
-	}
+	check(IsReadyToCallBeginPlay());
 
 	NetDriver->World->GetWorldSettings()->SetGSMReadyForPlay();
 	NetDriver->World->GetWorldSettings()->NotifyBeginPlay();
-
-	bTriggeredBeginPlay = true;
 }
 
 // Queries for the GlobalStateManager in the deployment.
@@ -542,7 +576,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&GSMQuery);
 
 	EntityQueryDelegate GSMQueryDelegate;
-	GSMQueryDelegate.BindLambda([this, bRetryUntilAcceptingPlayers](Worker_EntityQueryResponseOp& Op)
+	GSMQueryDelegate.BindLambda([this, bRetryUntilAcceptingPlayers](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -578,7 +612,7 @@ void UGlobalStateManager::QueryGSM(bool bRetryUntilAcceptingPlayers)
 	Receiver->AddEntityQueryDelegate(RequestID, GSMQueryDelegate);
 }
 
-void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQueryResponseOp& Op)
+void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
 	for (uint32_t i = 0; i < Op.results[0].component_count; i++)
 	{
@@ -590,7 +624,7 @@ void UGlobalStateManager::ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQ
 	}
 }
 
-bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(Worker_EntityQueryResponseOp& Op)
+bool UGlobalStateManager::GetAcceptingPlayersFromQueryResponse(const Worker_EntityQueryResponseOp& Op)
 {
 	checkf(Op.result_count == 1, TEXT("There should never be more than one GSM"));
 
@@ -630,9 +664,12 @@ void UGlobalStateManager::RetryQueryGSM(bool bRetryUntilAcceptingPlayers)
 
 	UE_LOG(LogGlobalStateManager, Log, TEXT("Retrying query for GSM in %f seconds"), RetryTimerDelay);
 	FTimerHandle RetryTimer;
-	TimerManager->SetTimer(RetryTimer, [this, bRetryUntilAcceptingPlayers]()
+	TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<UGlobalStateManager>(this), bRetryUntilAcceptingPlayers]()
 	{
-		QueryGSM(bRetryUntilAcceptingPlayers);
+		if (UGlobalStateManager* GSM = WeakThis.Get())
+		{
+			GSM->QueryGSM(bRetryUntilAcceptingPlayers);
+		}
 	}, RetryTimerDelay, false);
 }
 

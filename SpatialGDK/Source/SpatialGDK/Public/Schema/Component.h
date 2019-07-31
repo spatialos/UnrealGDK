@@ -3,6 +3,7 @@
 #pragma once
 
 #include <WorkerSDK/improbable/c_worker.h>
+#include "CoreMinimal.h"
 
 namespace SpatialGDK
 {
@@ -25,7 +26,7 @@ class ComponentStorage : public ComponentStorageBase
 {
 public:
 	explicit ComponentStorage(const T& data) : data{data} {}
-	explicit ComponentStorage(T&& data) : data{std::move(data)} {}
+	explicit ComponentStorage(T&& data) : data{MoveTemp(data)} {}
 	~ComponentStorage() override {}
 
 	TUniquePtr<ComponentStorageBase> Copy() const override

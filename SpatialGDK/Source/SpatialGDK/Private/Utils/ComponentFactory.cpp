@@ -58,9 +58,10 @@ bool ComponentFactory::FillSchemaObject(Schema_Object* ComponentObject, UObject*
 					{
 						FSpatialNetBitWriter ValueDataWriter(PackageMap, UnresolvedObjects);
 
-						FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct);
-
-						AddBytesToSchema(ComponentObject, HandleIterator.Handle, ValueDataWriter);
+						if (FSpatialNetDeltaSerializeInfo::DeltaSerializeWrite(NetDriver, ValueDataWriter, Object, Parent.ArrayIndex, Parent.Property, NetDeltaStruct) || bIsInitialData)
+						{
+							AddBytesToSchema(ComponentObject, HandleIterator.Handle, ValueDataWriter);
+						}
 
 						bProcessedFastArrayProperty = true;
 					}
@@ -152,7 +153,13 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			{
 				bHasUnmapped = true;
 			}
-			checkf(bSuccess, TEXT("NetSerialize on %s failed."), *Struct->GetStructCPPName());
+
+			// Check the success of the serialization and print a warning if it failed. This is how native handles failed serialization.
+			if (!bSuccess)
+			{
+				UE_LOG(LogSpatialNetSerialize, Warning, TEXT("AddProperty: NetSerialize %s failed."), *Struct->GetFullName());
+				return;
+			}
 		}
 		else
 		{
@@ -303,9 +310,9 @@ void ComponentFactory::AddProperty(Schema_Object* Object, Schema_FieldId FieldId
 			AddProperty(Object, FieldId, EnumProperty->GetUnderlyingProperty(), Data, UnresolvedObjects, ClearedIds);
 		}
 	}
-	else if (Property->IsA<UDelegateProperty>() || Property->IsA<UMulticastDelegateProperty>())
+	else if (Property->IsA<UDelegateProperty>() || Property->IsA<UMulticastDelegateProperty>() || Property->IsA<UInterfaceProperty>())
 	{
-		// Delegates can be set to replicate, but won't serialize across the network.
+		// These properties can be set to replicate, but won't serialize across the network.
 	}
 	else
 	{

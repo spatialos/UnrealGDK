@@ -16,6 +16,8 @@ public class SpatialGDKEditorToolbar : ModuleRules
             {
                 "Core",
                 "CoreUObject",
+                "DesktopPlatform",
+                "DesktopWidgets",
                 "Engine",
                 "EngineSettings",
                 "InputCore",
@@ -27,6 +29,7 @@ public class SpatialGDKEditorToolbar : ModuleRules
                 "MessageLog",
                 "SpatialGDK",
                 "SpatialGDKEditor",
+                "SpatialGDKServices",
                 "UnrealEd"
             }
         );

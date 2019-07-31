@@ -19,4 +19,5 @@ private:
 	void UnregisterSettings();
 	bool HandleEditorSettingsSaved();
 	bool HandleRuntimeSettingsSaved();
+	bool HandleCloudLauncherSettingsSaved();
 };

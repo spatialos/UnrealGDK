@@ -3,6 +3,7 @@
 #include "SpatialGDKEditor.h"
 
 #include "Async/Async.h"
+#include "SpatialGDKEditorCloudLauncher.h"
 #include "SpatialGDKEditorSchemaGenerator.h"
 #include "SpatialGDKEditorSnapshotGenerator.h"
 
@@ -10,8 +11,10 @@
 #include "FileHelpers.h"
 
 #include "AssetRegistryModule.h"
+#include "AssetDataTagMap.h"
 #include "GeneralProjectSettings.h"
 #include "Misc/ScopedSlowTask.h"
+#include "SpatialGDKEditorSettings.h"
 #include "UObject/StrongObjectPtr.h"
 #include "Settings/ProjectPackagingSettings.h"
 
@@ -83,15 +86,15 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		UEditorEngine::ResolveDirtyBlueprints(bPromptForCompilation, ErroredBlueprints);
 	}
 
-	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
-	bool bResult = SpatialGDKGenerateSchema();
-
 	if (bFullScan)
 	{
-		Progress.EnterProgressFrame(10.f);
-		LoadedAssets.Empty();
-		CollectGarbage(RF_NoFlags, true);
+		// UNR-1610 - This copy is a workaround to enable schema_compiler usage until FPL is ready. Without this prepare_for_run checks crash local launch and cloud upload.
+		CopyWellKnownSchemaFiles();
+		DeleteGeneratedSchemaFiles();
 	}
+
+	Progress.EnterProgressFrame(bFullScan ? 10.f : 100.f);
+	bool bResult = SpatialGDKGenerateSchema();
 	
 	// We delay printing this error until after the schema spam to make it have a higher chance of being noticed.
 	if (ErroredBlueprints.Num() > 0)
@@ -103,97 +106,27 @@ bool FSpatialGDKEditor::GenerateSchema(bool bFullScan)
 		}
 	}
 
+	if (bFullScan)
+	{
+		Progress.EnterProgressFrame(10.f);
+		LoadedAssets.Empty();
+		CollectGarbage(RF_NoFlags, true);
+	}
+
 	GetMutableDefault<UGeneralProjectSettings>()->bSpatialNetworking = bCachedSpatialNetworking;
 	bSchemaGeneratorRunning = false;
 
+	if (bResult)
+	{
+		UE_LOG(LogSpatialGDKEditor, Display, TEXT("Schema Generation succeeded!"));
+	}
+	else
+	{
+		UE_LOG(LogSpatialGDKEditor, Error, TEXT("Schema Generation failed. View earlier log messages for errors."));
+	}
+
 	return bResult;
 }
-
-//bool FSpatialGDKEditor::SaveAllAssets()
-//{
-	// Set up the save package dialog
-	//FPackagesDialogModule& PackagesDialogModule = FModuleManager::LoadModuleChecked<FPackagesDialogModule>(TEXT("PackagesDialog"));
-	//PackagesDialogModule.CreatePackagesDialog(NSLOCTEXT("PackagesDialogModule", "PackagesDialogTitle", "Save Content"), NSLOCTEXT("PackagesDialogModule", "PackagesDialogMessage", "Select content to save."));
-	//PackagesDialogModule.AddButton(DRT_Save, NSLOCTEXT("PackagesDialogModule", "SaveSelectedButton", "Save Selected"), NSLOCTEXT("PackagesDialogModule", "SaveSelectedButtonTip", "Attempt to save the selected content"));
-	//PackagesDialogModule.AddButton(DRT_DontSave, NSLOCTEXT("PackagesDialogModule", "DontSaveSelectedButton", "Don't Save"), NSLOCTEXT("PackagesDialogModule", "DontSaveSelectedButtonTip", "Do not save any content"));
-	//PackagesDialogModule.AddButton(DRT_Cancel, NSLOCTEXT("PackagesDialogModule", "CancelButton", "Cancel"), NSLOCTEXT("PackagesDialogModule", "CancelButtonTip", "Do not save any content and cancel the current operation"));
-
-	//TArray<UPackage*> AddPackageItemsChecked;
-	//TArray<UPackage*> AddPackageItemsUnchecked;
-	//for (TArray<UPackage*>::TConstIterator PkgIter(InPackages); PkgIter; ++PkgIter)
-	//{
-	//	UPackage* CurPackage = *PkgIter;
-	//	check(CurPackage);
-
-	//	// If the caller set bCheckDirty to true, only consider dirty packages
-	//	if (!bCheckDirty || (bCheckDirty && CurPackage->IsDirty()))
-	//	{
-	//		// Never save the transient package
-	//		if (CurPackage != GetTransientPackage())
-	//		{
-	//			// Never save compiled in packages
-	//			if (CurPackage->HasAnyPackageFlags(PKG_CompiledIn) == false)
-	//			{
-	//				if (UncheckedPackages.Contains(MakeWeakObjectPtr(CurPackage)))
-	//				{
-	//					AddPackageItemsUnchecked.Add(CurPackage);
-	//				}
-	//				else
-	//				{
-	//					AddPackageItemsChecked.Add(CurPackage);
-	//				}
-	//			}
-	//			else
-	//			{
-	//				UE_LOG(LogFileHelpers, Warning, TEXT("PromptForCheckoutAndSave attempted to open the save dialog with a compiled in package: %s"), *CurPackage->GetName());
-	//			}
-	//		}
-	//		else
-	//		{
-	//			UE_LOG(LogFileHelpers, Warning, TEXT("PromptForCheckoutAndSave attempted to open the save dialog with the transient package"));
-	//		}
-	//	}
-	//}
-
-	//if (AddPackageItemsUnchecked.Num() > 0 || AddPackageItemsChecked.Num() > 0)
-	//{
-	//	for (auto Iter = AddPackageItemsChecked.CreateIterator(); Iter; ++Iter)
-	//	{
-	//		PackagesDialogModule.AddPackageItem(*Iter, (*Iter)->GetName(), ECheckBoxState::Checked);
-	//	}
-	//	for (auto Iter = AddPackageItemsUnchecked.CreateIterator(); Iter; ++Iter)
-	//	{
-	//		PackagesDialogModule.AddPackageItem(*Iter, (*Iter)->GetName(), ECheckBoxState::Unchecked);
-	//	}
-
-	//	// If valid packages were added to the dialog, display it to the user
-	//	const EDialogReturnType UserResponse = PackagesDialogModule.ShowPackagesDialog(PackagesNotSavedDuringSaveAll);
-
-	//	// If the user has responded yes, they want to save the packages they have checked
-	//	if (UserResponse == DRT_Save)
-	//	{
-	//		PackagesDialogModule.GetResults(FilteredPackages, ECheckBoxState::Checked);
-
-	//		TArray<UPackage*> UncheckedPackagesRaw;
-	//		PackagesDialogModule.GetResults(UncheckedPackagesRaw, ECheckBoxState::Unchecked);
-	//		UncheckedPackages.Empty();
-	//		for (UPackage* Package : UncheckedPackagesRaw)
-	//		{
-	//			UncheckedPackages.Add(MakeWeakObjectPtr(Package));
-	//		}
-	//	}
-	//	// If the user has responded they don't wish to save, set the response type accordingly
-	//	else if (UserResponse == DRT_DontSave)
-	//	{
-	//		ReturnResponse = PR_Declined;
-	//	}
-	//	// If the user has cancelled from the dialog, set the response type accordingly
-	//	else
-	//	{
-	//		ReturnResponse = PR_Cancelled;
-	//	}
-	//}
-//}
 
 bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& OutAssets)
 {
@@ -242,8 +175,21 @@ bool FSpatialGDKEditor::LoadPotentialAssets(TArray<TStrongObjectPtr<UObject>>& O
 			return false;
 		}
 		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Loading %s"), *Data.AssetName.ToString())));
-		if (auto GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass"))
+
+		const FString* GeneratedClassPathPtr = nullptr;
+
+#if ENGINE_MINOR_VERSION <= 20
+		GeneratedClassPathPtr = Data.TagsAndValues.Find("GeneratedClass");
+#else
+		FAssetDataTagMapSharedView::FFindTagResult GeneratedClassFindTagResult = Data.TagsAndValues.FindTag("GeneratedClass");
+		if (GeneratedClassFindTagResult.IsSet())
 		{
+			GeneratedClassPathPtr = &GeneratedClassFindTagResult.GetValue();
+		}
+#endif
+
+		if (GeneratedClassPathPtr != nullptr)
+		{ 
 			const FString ClassObjectPath = FPackageName::ExportTextPathToObjectPath(*GeneratedClassPathPtr);
 			const FString ClassName = FPackageName::ObjectPathToObjectName(ClassObjectPath);
 			FSoftObjectPath SoftPath = FSoftObjectPath(ClassObjectPath);
@@ -266,6 +212,43 @@ void FSpatialGDKEditor::GenerateSnapshot(UWorld* World, FString SnapshotFilename
 	{
 		FailureCallback.ExecuteIfBound();
 	}
+}
+
+void FSpatialGDKEditor::LaunchCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
+{
+	LaunchCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudLaunch,
+		[this, SuccessCallback, FailureCallback]
+		{
+			if (!LaunchCloudResult.IsReady() || LaunchCloudResult.Get() != true)
+			{
+				FailureCallback.ExecuteIfBound();
+			}
+			else
+			{
+				SuccessCallback.ExecuteIfBound();
+			}
+		});
+}
+
+void FSpatialGDKEditor::StopCloudDeployment(FSimpleDelegate SuccessCallback, FSimpleDelegate FailureCallback)
+{
+	StopCloudResult = Async<bool>(EAsyncExecution::Thread, SpatialGDKCloudStop,
+		[this, SuccessCallback, FailureCallback]
+		{
+			if (!StopCloudResult.IsReady() || StopCloudResult.Get() != true)
+			{
+				FailureCallback.ExecuteIfBound();
+			}
+			else
+			{
+				SuccessCallback.ExecuteIfBound();
+			}
+		});
+}
+
+bool FSpatialGDKEditor::FullScanRequired()
+{
+	return !GeneratedSchemaFolderExists();
 }
 
 void FSpatialGDKEditor::RemoveEditorAssetLoadedCallback()

@@ -16,40 +16,39 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInterestFactory, Log, All);
 namespace SpatialGDK
 {
 
+void GatherClientInterestDistances();
+
 class SPATIALGDK_API InterestFactory
 {
 public:
 	InterestFactory(AActor* InActor, const FClassInfo& InInfo, USpatialNetDriver* InNetDriver);
 
-	Worker_ComponentData CreateInterestData();
-	Worker_ComponentUpdate CreateInterestUpdate();
+	Worker_ComponentData CreateInterestData() const;
+	Worker_ComponentUpdate CreateInterestUpdate() const;
 
 private:
-	Interest CreateInterest();
+	Interest CreateInterest() const;
 
 	// Only uses Defined Constraint
-	Interest CreateActorInterest();
+	Interest CreateActorInterest() const;
 	// Defined Constraint AND Level Constraint
-	Interest CreatePlayerOwnedActorInterest();
+	Interest CreatePlayerOwnedActorInterest() const;
 
-private:
-	// System Constraint OR User Constraint
-	QueryConstraint CreateDefinedConstraints();
+	void AddUserDefinedQueries(const QueryConstraint& LevelConstraints, TArray<SpatialGDK::Query>& OutQueries) const;
 
 	// Checkout Constraint OR AlwaysInterested Constraint
-	QueryConstraint CreateSystemDefinedConstraints();
-
-	// TODO: Will be created utilizing user defined structs
-	QueryConstraint CreateUserDefinedConstraints();
+	QueryConstraint CreateSystemDefinedConstraints() const;
 
 	// System Defined Constraints
-	QueryConstraint CreateCheckoutRadiusConstraint();
-	QueryConstraint CreateAlwaysInterestedConstraint();
+	QueryConstraint CreateCheckoutRadiusConstraints() const;
+	QueryConstraint CreateAlwaysInterestedConstraint() const;
+	QueryConstraint CreateAlwaysRelevantConstraint() const;
 
 	// Only checkout entities that are in loaded sublevels
-	QueryConstraint CreateLevelConstraints();
+	QueryConstraint CreateLevelConstraints() const;
 
-	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint);
+	void AddObjectToConstraint(UObjectPropertyBase* Property, uint8* Data, QueryConstraint& OutConstraint) const;
+	void AddTypeHierarchyToConstraint(const UClass& BaseType, QueryConstraint& OutConstraint) const;
 
 	AActor* Actor;
 	const FClassInfo& Info;

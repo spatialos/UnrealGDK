@@ -7,37 +7,48 @@
 #include "Engine/Engine.h"
 #include "GameFramework/Actor.h"
 #include "Misc/MessageDialog.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "UObject/Class.h"
 #include "UObject/UObjectIterator.h"
+
 #if WITH_EDITOR
 #include "Kismet/KismetSystemLibrary.h"
 #endif
 
 #include "EngineClasses/SpatialNetDriver.h"
 #include "EngineClasses/SpatialPackageMapClient.h"
+#include "Utils/ActorGroupManager.h"
 #include "Utils/RepLayoutUtils.h"
 
 DEFINE_LOG_CATEGORY(LogSpatialClassInfoManager);
 
-void USpatialClassInfoManager::Init(USpatialNetDriver* InNetDriver)
+bool USpatialClassInfoManager::TryInit(USpatialNetDriver* InNetDriver, UActorGroupManager* InActorGroupManager)
 {
 	NetDriver = InNetDriver;
+	ActorGroupManager = InActorGroupManager;
 
 	FSoftObjectPath SchemaDatabasePath = FSoftObjectPath(TEXT("/Game/Spatial/SchemaDatabase.SchemaDatabase"));
 	SchemaDatabase = Cast<USchemaDatabase>(SchemaDatabasePath.TryLoad());
 
 	if (SchemaDatabase == nullptr)
 	{
-		FMessageDialog::Debugf(FText::FromString(TEXT("SchemaDatabase not found! No classes will be supported for SpatialOS replication.")));
-		return;
+		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("SchemaDatabase not found! Please generate schema or turn off SpatialOS networking."));
+		QuitGame();
+		return false;
 	}
+
+	return true;
 }
 
 FORCEINLINE UClass* ResolveClass(FString& ClassPath)
 {
 	FSoftClassPath SoftClassPath(ClassPath);
 	UClass* Class = SoftClassPath.ResolveClass();
-	checkf(Class, TEXT("Failed to load class at path %s"), *ClassPath);
+	if (Class == nullptr)
+	{
+		UE_LOG(LogSpatialClassInfoManager, Warning, TEXT("Failed to find class at path %s! Attempting to load it."), *ClassPath);
+		Class = SoftClassPath.TryLoadClass<UObject>();
+	}
 	return Class;
 }
 
@@ -85,19 +96,13 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 	TSharedRef<FClassInfo> Info = ClassInfoMap.Add(Class, MakeShared<FClassInfo>());
 	Info->Class = Class;
-  
+
 	// Note: we have to add Class to ClassInfoMap before quitting, as it is expected to be in there by GetOrCreateClassInfoByClass. Therefore the quitting logic cannot be moved higher up.
 	if (!IsSupportedClass(ClassPath))
 	{
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Could not find class %s in schema database. Double-check whether replication is enabled for this class, the class is explicitly referenced from the starting scene and schema has been generated."), *ClassPath);
 		UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Disconnecting due to no generated schema for %s."), *ClassPath);
-#if WITH_EDITOR
-		// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
-		// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
-		UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit);
-#else
-		FGenericPlatformMisc::RequestExit(false);
-#endif
+		QuitGame();
 		return;
 	}
 
@@ -107,7 +112,7 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 	{
 		ESchemaComponentType RPCType = GetRPCType(RemoteFunction);
 		checkf(RPCType != SCHEMA_Invalid, TEXT("Could not determine RPCType for RemoteFunction: %s"), *GetPathNameSafe(RemoteFunction));
-		
+
 		FRPCInfo RPCInfo;
 		RPCInfo.Type = RPCType;
 
@@ -118,11 +123,13 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		Info->RPCInfoMap.Add(RemoteFunction, RPCInfo);
 	}
 
+	const bool bEnableHandover = GetDefault<USpatialGDKSettings>()->bEnableHandover;
+
 	for (TFieldIterator<UProperty> PropertyIt(Class); PropertyIt; ++PropertyIt)
 	{
 		UProperty* Property = *PropertyIt;
 
-		if (Property->PropertyFlags & CPF_Handover)
+		if (bEnableHandover && (Property->PropertyFlags & CPF_Handover))
 		{
 			for (int32 ArrayIdx = 0; ArrayIdx < PropertyIt->ArrayDim; ++ArrayIdx)
 			{
@@ -149,10 +156,28 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	}
 
+	if (Class->IsChildOf<AActor>())
+	{
+		FinishConstructingActorClassInfo(ClassPath, Info);
+	}
+	else
+	{
+		FinishConstructingSubobjectClassInfo(ClassPath, Info);
+	}
+}
+
+void USpatialClassInfoManager::FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
+{
 	ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 	{
-		Worker_ComponentId ComponentId = SchemaDatabase->ClassPathToSchema[ClassPath].SchemaComponents[Type];
-		if (ComponentId != 0)
+		Worker_ComponentId ComponentId = SchemaDatabase->ActorClassPathToSchema[ClassPath].SchemaComponents[Type];
+
+		if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
+		{
+			return;
+		}
+
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
 		{
 			Info->SchemaComponents[Type] = ComponentId;
 			ComponentToClassInfoMap.Add(ComponentId, Info);
@@ -161,12 +186,17 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 		}
 	});
 
-	for (auto& SubobjectClassDataPair : SchemaDatabase->ClassPathToSchema[ClassPath].SubobjectData)
+	for (auto& SubobjectClassDataPair : SchemaDatabase->ActorClassPathToSchema[ClassPath].SubobjectData)
 	{
 		int32 Offset = SubobjectClassDataPair.Key;
-		FSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
+		FActorSpecificSubobjectSchemaData SubobjectSchemaData = SubobjectClassDataPair.Value;
 
 		UClass* SubobjectClass = ResolveClass(SubobjectSchemaData.ClassPath);
+		if (SubobjectClass == nullptr)
+		{
+			UE_LOG(LogSpatialClassInfoManager, Error, TEXT("Failed to resolve the class for subobject %s (class path: %s) on actor class %s! This subobject will not be able to replicate in Spatial!"), *SubobjectSchemaData.Name.ToString(), *SubobjectSchemaData.ClassPath, *ClassPath);
+			continue;
+		}
 
 		const FClassInfo& SubobjectInfo = GetOrCreateClassInfoByClass(SubobjectClass);
 
@@ -176,6 +206,11 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
 		{
+			if (!GetDefault<USpatialGDKSettings>()->bEnableHandover && Type == SCHEMA_Handover)
+			{
+				return;
+			}
+
 			Worker_ComponentId ComponentId = SubobjectSchemaData.SchemaComponents[Type];
 			if (ComponentId != 0)
 			{
@@ -188,34 +223,71 @@ void USpatialClassInfoManager::CreateClassInfoForClass(UClass* Class)
 
 		Info->SubobjectInfo.Add(Offset, ActorSubobjectInfo);
 	}
+
+	if (UClass* ActorClass = Info->Class.Get())
+	{
+		if (ActorClass->IsChildOf<AActor>())
+		{
+			Info->ActorGroup = ActorGroupManager->GetActorGroupForClass(TSubclassOf<AActor>(ActorClass));
+			Info->WorkerType = ActorGroupManager->GetWorkerTypeForClass(TSubclassOf<AActor>(ActorClass));
+
+			UE_LOG(LogSpatialClassInfoManager, VeryVerbose, TEXT("[%s] is in ActorGroup [%s], on WorkerType [%s]"),
+				*ActorClass->GetPathName(), *Info->ActorGroup.ToString(), *Info->WorkerType.ToString())
+		}
+	}
+}
+
+void USpatialClassInfoManager::FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info)
+{
+	for (const auto& DynamicSubobjectData : SchemaDatabase->SubobjectClassPathToSchema[ClassPath].DynamicSubobjectComponents)
+	{
+		// Make a copy of the already made FClassInfo for this dynamic subobject
+		TSharedRef<FClassInfo> SpecificDynamicSubobjectInfo = MakeShared<FClassInfo>(Info.Get());
+
+		int32 Offset = DynamicSubobjectData.SchemaComponents[SCHEMA_Data];
+		check(Offset != SpatialConstants::INVALID_COMPONENT_ID);
+
+		ForAllSchemaComponentTypes([&](ESchemaComponentType Type)
+		{
+			Worker_ComponentId ComponentId = DynamicSubobjectData.SchemaComponents[Type];
+
+			if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+			{
+				SpecificDynamicSubobjectInfo->SchemaComponents[Type] = ComponentId;
+				ComponentToClassInfoMap.Add(ComponentId, SpecificDynamicSubobjectInfo);
+				ComponentToOffsetMap.Add(ComponentId, Offset);
+				ComponentToCategoryMap.Add(ComponentId, ESchemaComponentType(Type));
+			}
+		});
+
+		Info->DynamicSubobjectInfo.Add(SpecificDynamicSubobjectInfo);
+	}
+}
+
+void USpatialClassInfoManager::TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId)
+{
+	if (FString* ClassPath = SchemaDatabase->ComponentIdToClassPath.Find(ComponentId))
+	{
+		if (UClass* Class = LoadObject<UClass>(nullptr, **ClassPath))
+		{
+			CreateClassInfoForClass(Class);
+		}
+	}
 }
 
 bool USpatialClassInfoManager::IsSupportedClass(const FString& PathName) const
 {
-	return SchemaDatabase->ClassPathToSchema.Contains(PathName);
+	return SchemaDatabase->ActorClassPathToSchema.Contains(PathName) || SchemaDatabase->SubobjectClassPathToSchema.Contains(PathName);
 }
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClass(UClass* Class)
 {
-	if (ClassInfoMap.Find(Class) == nullptr)
+	if (!ClassInfoMap.Contains(Class))
 	{
 		CreateClassInfoForClass(Class);
 	}
 	
 	return ClassInfoMap[Class].Get();
-}
-
-const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset)
-{
-	const FClassInfo& Info = GetOrCreateClassInfoByClass(Class);
-
-	if (Offset == 0)
-	{
-		return Info;
-	}
-
-	TSharedRef<FClassInfo> SubobjectInfo = Info.SubobjectInfo.FindChecked(Offset);
-	return SubobjectInfo.Get();
 }
 
 const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject* Object)
@@ -226,18 +298,23 @@ const FClassInfo& USpatialClassInfoManager::GetOrCreateClassInfoByObject(UObject
 	}
 	else
 	{
-		check(Cast<AActor>(Object->GetOuter()));
+		check(Object->GetTypedOuter<AActor>() != nullptr);
 
 		FUnrealObjectRef ObjectRef = NetDriver->PackageMap->GetUnrealObjectRefFromObject(Object);
 
-		check(ObjectRef.IsValid())
+		check(ObjectRef.IsValid());
 
-		return GetOrCreateClassInfoByClassAndOffset(Object->GetOuter()->GetClass(), ObjectRef.Offset);
+		return ComponentToClassInfoMap[ObjectRef.Offset].Get();
 	}
 }
 
-const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_ComponentId ComponentId) const
+const FClassInfo& USpatialClassInfoManager::GetClassInfoByComponentId(Worker_ComponentId ComponentId)
 {
+	if (!ComponentToClassInfoMap.Contains(ComponentId))
+	{
+		TryCreateClassInfoForComponentId(ComponentId);
+	}
+
 	TSharedRef<FClassInfo> Info = ComponentToClassInfoMap.FindChecked(ComponentId);
 	return Info.Get();
 }
@@ -262,8 +339,58 @@ UClass* USpatialClassInfoManager::GetClassByComponentId(Worker_ComponentId Compo
 	return nullptr;
 }
 
+uint32 USpatialClassInfoManager::GetComponentIdForClass(const UClass& Class) const
+{
+	const FString ClassPath = Class.GetPathName();
+	if (const FActorSchemaData* ActorSchemaData = SchemaDatabase->ActorClassPathToSchema.Find(Class.GetPathName()))
+	{
+		return ActorSchemaData->SchemaComponents[SCHEMA_Data];
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}
+
+TArray<Worker_ComponentId> USpatialClassInfoManager::GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes /* = true */) const
+{
+	TArray<Worker_ComponentId> OutComponentIds;
+
+	check(SchemaDatabase);
+	if (bIncludeDerivedTypes)
+	{
+		for (TObjectIterator<UClass> It; It; ++It)
+		{
+			const UClass* Class = *It;
+			check(Class);
+			if (Class->IsChildOf(&BaseClass))
+			{
+				const Worker_ComponentId ComponentId = GetComponentIdForClass(*Class);
+				if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+				{
+					OutComponentIds.Add(ComponentId);
+				}
+			}
+		}
+	}
+	else
+	{
+		const uint32 ComponentId = GetComponentIdForClass(BaseClass);
+		if (ComponentId != SpatialConstants::INVALID_COMPONENT_ID)
+		{
+			OutComponentIds.Add(ComponentId);
+		}
+
+	}
+
+	return OutComponentIds;
+}
+
+
 bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset)
 {
+	if (!ComponentToOffsetMap.Contains(ComponentId))
+	{
+		TryCreateClassInfoForComponentId(ComponentId);
+	}
+
 	if (uint32* Offset = ComponentToOffsetMap.Find(ComponentId))
 	{
 		OutOffset = *Offset;
@@ -275,6 +402,11 @@ bool USpatialClassInfoManager::GetOffsetByComponentId(Worker_ComponentId Compone
 
 ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_ComponentId ComponentId)
 {
+	if (!ComponentToCategoryMap.Contains(ComponentId))
+	{
+		TryCreateClassInfoForComponentId(ComponentId);
+	}
+
 	if (ESchemaComponentType* Category = ComponentToCategoryMap.Find(ComponentId))
 	{
 		return *Category;
@@ -283,7 +415,58 @@ ESchemaComponentType USpatialClassInfoManager::GetCategoryByComponentId(Worker_C
 	return ESchemaComponentType::SCHEMA_Invalid;
 }
 
+const FRPCInfo& USpatialClassInfoManager::GetRPCInfo(UObject* Object, UFunction* Function)
+{
+	check(Object != nullptr && Function != nullptr);
+
+	const FClassInfo& Info = GetOrCreateClassInfoByObject(Object);
+	const FRPCInfo* RPCInfoPtr = Info.RPCInfoMap.Find(Function);
+
+	// We potentially have a parent function and need to find the child function.
+	// This exists as it's possible in blueprints to explicitly call the parent function.
+	if (RPCInfoPtr == nullptr)
+	{
+		for (auto It = Info.RPCInfoMap.CreateConstIterator(); It; ++It)
+		{
+			if (It.Key()->GetName() == Function->GetName())
+			{
+				// Matching child function found. Use this for the remote function call.
+				RPCInfoPtr = &It.Value();
+				break;
+			}
+		}
+	}
+	check(RPCInfoPtr != nullptr);
+	return *RPCInfoPtr;
+}
+
+uint32 USpatialClassInfoManager::GetComponentIdFromLevelPath(const FString& LevelPath)
+{
+	FString CleanLevelPath = UWorld::RemovePIEPrefix(LevelPath);
+	if (const uint32* ComponentId = SchemaDatabase->LevelPathToComponentId.Find(CleanLevelPath))
+	{
+		return *ComponentId;
+	}
+	return SpatialConstants::INVALID_COMPONENT_ID;
+}
+
 bool USpatialClassInfoManager::IsSublevelComponent(Worker_ComponentId ComponentId)
 {
 	return SchemaDatabase->LevelComponentIds.Contains(ComponentId);
+}
+
+void USpatialClassInfoManager::QuitGame()
+{
+#if WITH_EDITOR
+	// There is no C++ method to quit the current game, so using the Blueprint's QuitGame() that is calling ConsoleCommand("quit")
+	// Note: don't use RequestExit() in Editor since it would terminate the Engine loop
+#if ENGINE_MINOR_VERSION <= 20
+	UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit);
+#else
+	UKismetSystemLibrary::QuitGame(NetDriver->GetWorld(), nullptr, EQuitPreference::Quit, false);
+#endif
+
+#else
+	FGenericPlatformMisc::RequestExit(false);
+#endif
 }

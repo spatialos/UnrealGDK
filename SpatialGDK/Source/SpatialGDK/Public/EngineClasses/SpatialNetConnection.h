@@ -21,6 +21,7 @@ class SPATIALGDK_API USpatialNetConnection : public UIpConnection
 public:
 	USpatialNetConnection(const FObjectInitializer& ObjectInitializer);
 
+	// Begin NetConnection Interface
 	virtual void BeginDestroy() override;
 
 	virtual void InitBase(UNetDriver* InDriver, class FSocket* InSocket, const FURL& InURL, EConnectionState InState, int32 InMaxPacket = 0, int32 InPacketOverhead = 0) override;
@@ -30,17 +31,19 @@ public:
 	virtual void LowLevelSend(void* Data, int32 CountBits, FOutPacketTraits& Traits) override;
 #endif
 	virtual bool ClientHasInitializedLevelFor(const AActor* TestActor) const override;
-	virtual void Tick() override;
 	virtual int32 IsNetReady(bool Saturate) override;
 
 	/** Called by PlayerController to tell connection about client level visibility change */
 	virtual void UpdateLevelVisibility(const FName& PackageName, bool bIsVisible) override;
+
+	virtual bool IsReplayConnection() const override { return false; }
 
 	// These functions don't make a lot of sense in a SpatialOS implementation.
 	virtual FString LowLevelGetRemoteAddress(bool bAppendPort = false) override { return TEXT(""); }
 	virtual FString LowLevelDescribe() override { return TEXT(""); }
 	virtual FString RemoteAddressToString() override { return TEXT(""); }
 	///////
+	// End NetConnection Interface
 
 	void InitHeartbeat(class FTimerManager* InTimerManager, Worker_EntityId InPlayerControllerEntity);
 	void SetHeartbeatTimeoutTimer();
@@ -50,6 +53,8 @@ public:
 
 	void OnHeartbeat();
 	void UpdateActorInterest(AActor* Actor);
+
+	void ClientNotifyClientHasQuit();
 
 	UPROPERTY()
 	bool bReliableSpatialConnection;

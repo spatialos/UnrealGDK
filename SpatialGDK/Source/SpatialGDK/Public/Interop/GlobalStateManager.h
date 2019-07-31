@@ -44,20 +44,29 @@ public:
 
 	void QueryGSM(bool bRetryUntilAcceptingPlayers);
 	void RetryQueryGSM(bool bRetryUntilAcceptingPlayers);
-	bool GetAcceptingPlayersFromQueryResponse(Worker_EntityQueryResponseOp& Op);
-	void ApplyDeploymentMapDataFromQueryResponse(Worker_EntityQueryResponseOp& Op);
+	bool GetAcceptingPlayersFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
+	void ApplyDeploymentMapDataFromQueryResponse(const Worker_EntityQueryResponseOp& Op);
 	void SetDeploymentMapURL(const FString& MapURL);
 
 	void SetAcceptingPlayers(bool bAcceptingPlayers);
-	void SetCanBeginPlay(bool bInCanBeginPlay);
+	void SetCanBeginPlay(const bool bInCanBeginPlay);
 
-	void AuthorityChanged(bool bWorkerAuthority, Worker_EntityId CurrentEntityID);
+	void AuthorityChanged(const Worker_AuthorityChangeOp& AuthChangeOp);
+	bool HandlesComponent(const Worker_ComponentId ComponentId) const;
 
 	void BeginDestroy() override;
 
 	bool HasAuthority();
 
+	void TriggerBeginPlay();
+
+	FORCEINLINE bool IsReadyToCallBeginPlay() const
+	{
+		return bCanBeginPlay;
+	}
+
 	USpatialActorChannel* AddSingleton(AActor* SingletonActor);
+	void RegisterSingletonChannel(AActor* SingletonActor, USpatialActorChannel* SingletonChannel);
 
 	Worker_EntityId GlobalStateManagerEntityId;
 
@@ -75,16 +84,15 @@ public:
 	void OnPrePIEEnded(bool bValue);
 	void ReceiveShutdownMultiProcessRequest();
 
-	void OnShutdownComponentUpdate(Worker_ComponentUpdate& Update);
+	void OnShutdownComponentUpdate(const Worker_ComponentUpdate& Update);
 	void ReceiveShutdownAdditionalServersEvent();
 #endif // WITH_EDITOR
 private:
 	void LinkExistingSingletonActor(const UClass* SingletonClass);
 	void ApplyAcceptingPlayersUpdate(bool bAcceptingPlayersUpdate);
-	void ApplyCanBeginPlayUpdate(bool bCanBeginPlayUpdate);
+	void ApplyCanBeginPlayUpdate(const bool bCanBeginPlayUpdate);
 
 	void BecomeAuthoritativeOverAllActors();
-	void TriggerBeginPlay();
 
 #if WITH_EDITOR
 	void SendShutdownMultiProcessRequest();
@@ -105,6 +113,4 @@ private:
 	USpatialReceiver* Receiver;
 
 	FTimerManager* TimerManager;
-
-	bool bTriggeredBeginPlay;
 };

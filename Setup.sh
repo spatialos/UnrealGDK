@@ -4,7 +4,6 @@
 # This file is experimental and is not maintained directly by Improbable. Please use at your own risk.
 
 set -e -u -o pipefail
-if [ -n "${TEAMCITY_CAPTURE_ENV:-}" ]; then set -x; else set +x; fi
 
 if [ "$(uname -s)" != "Darwin" ]; then
     echo "This script should only be used on OS X. If you are using Windows, please run Setup.bat."
@@ -12,19 +11,11 @@ if [ "$(uname -s)" != "Darwin" ]; then
 fi
 
 function markStartOfBlock {
-    if [ -n "${TEAMCITY_CAPTURE_ENV:-}" ]; then
-        echo -e "/x23/x23teamcity[blockOpened name='$1']"
-    else
-        echo "Starting: $1"
-    fi
+    echo "Starting: $1"
 }
 
 function markEndOfBlock {
-    if [ -n "${TEAMCITY_CAPTURE_ENV:-}" ]; then
-        echo -e "/x23/x23teamcity[blockClosed name='$1']"
-    else
-        echo "Finished: $1"
-    fi
+    echo "Finished: $1"
 }
 
 pushd "$(dirname "$0")"
@@ -32,7 +23,7 @@ pushd "$(dirname "$0")"
 markStartOfBlock "$0"
 
 markStartOfBlock "Setup the git hooks"
-    if [ -z "${TEAMCITY_CAPTURE_ENV:-}" -a -e .git/hooks ]; then
+    if [ -e .git/hooks ]; then
         # Remove the old post-checkout hook.
         if [ -e .git/hooks/post-checkout ]; then rm -f .git/hooks/post-checkout; fi
 
@@ -72,7 +63,7 @@ markStartOfBlock "Setup variables"
     PINNED_CORE_SDK_VERSION=$(cat ./SpatialGDK/Extras/core-sdk.version)
     BUILD_DIR="$(dirname "$0")/SpatialGDK/Build"
     CORE_SDK_DIR="$BUILD_DIR/core_sdk"
-    WORKER_SDK_DIR="$(dirname "$0")/SpatialGDK/Source/SpatialGDK/Public/WorkerSdk"
+    WORKER_SDK_DIR="$(dirname "$0")/SpatialGDK/Source/SpatialGDK/Public/WorkerSDK"
     BINARIES_DIR="$(dirname "$0")/SpatialGDK/Binaries/ThirdParty/Improbable"
     SCHEMA_COPY_DIR="$(dirname "$0")/../../../spatial/schema/unreal/gdk"
     SCHEMA_STD_COPY_DIR="$(dirname "$0")/../../../spatial/build/dependencies/schema/standard_library"
@@ -102,6 +93,8 @@ markStartOfBlock "Retrieve dependencies"
     spatial package retrieve worker_sdk      c-dynamic-x86_64-gcc_libstdcpp-linux       $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc_libstdcpp-linux.zip
     spatial package retrieve worker_sdk      c-dynamic-x86_64-clang_libcpp-macos        $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang_libcpp-macos.zip
     spatial package retrieve worker_sdk      c-static-fullylinked-arm-clang_libcpp-ios  $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang_libcpp-ios.zip
+    spatial package retrieve worker_sdk      core-dynamic-x86_64-linux                  $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/core-dynamic-x86_64-linux.zip
+    spatial package retrieve worker_sdk      csharp                                     $PINNED_CORE_SDK_VERSION       $CORE_SDK_DIR/worker_sdk/csharp.zip
 markEndOfBlock "Retrieve dependencies"
 
 markStartOfBlock "Unpack dependencies"
@@ -110,6 +103,8 @@ markStartOfBlock "Unpack dependencies"
     unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-gcc_libstdcpp-linux.zip        -d $BINARIES_DIR/Linux/
     unzip -oq $CORE_SDK_DIR/worker_sdk/c-dynamic-x86_64-clang_libcpp-macos.zip         -d $BINARIES_DIR/Mac/
     unzip -oq $CORE_SDK_DIR/worker_sdk/c-static-fullylinked-arm-clang_libcpp-ios.zip   -d $BINARIES_DIR/IOS/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/core-dynamic-x86_64-linux.zip                   -d $BINARIES_DIR/Programs/worker_sdk/core/
+    unzip -oq $CORE_SDK_DIR/worker_sdk/csharp.zip                                      -d $BINARIES_DIR/Programs/worker_sdk/csharp/
     unzip -oq $CORE_SDK_DIR/tools/schema_compiler-x86_64-win32.zip                     -d $BINARIES_DIR/Programs/
     unzip -oq $CORE_SDK_DIR/schema/standard_library.zip                                -d $BINARIES_DIR/Programs/schema/
 
@@ -118,7 +113,7 @@ markEndOfBlock "Unpack dependencies"
 
 markStartOfBlock "Copy standard library schema"
     echo "Copying standard library schemas to $SCHEMA_STD_COPY_DIR"
-    cp -R $BINARIES_DIR/Programs/schema $SCHEMA_STD_COPY_DIR
+    cp -R $BINARIES_DIR/Programs/schema/* $SCHEMA_STD_COPY_DIR
 markEndOfBlock "Copy standard library schema"
 
 markStartOfBlock "Copy GDK schema"
@@ -126,11 +121,11 @@ markStartOfBlock "Copy GDK schema"
     mkdir -p $SCHEMA_COPY_DIR >/dev/null 2>/dev/null
 
     echo "Copying schemas to $SCHEMA_COPY_DIR."
-    cp -R $(dirname %0)/SpatialGDK/Extras/schema $SCHEMA_COPY_DIR
+    cp -R $(dirname %0)/SpatialGDK/Extras/schema/* $SCHEMA_COPY_DIR
 markEndOfBlock "Copy GDK schema"
 
 markStartOfBlock "Build C# utilities"
-    msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln /property:Configuration=Release
+    msbuild /nologo /verbosity:minimal ./SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/Mac/Improbable.Unreal.Scripts.sln /property:Configuration=Release /restore
 markEndOfBlock "Build C# utilities"
 
 markEndOfBlock "$0"

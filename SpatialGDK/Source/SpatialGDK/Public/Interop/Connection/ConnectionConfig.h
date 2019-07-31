@@ -7,6 +7,7 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 #include "SpatialConstants.h"
+#include "SpatialGDKSettings.h"
 
 #include <WorkerSDK/improbable/c_worker.h>
 
@@ -27,7 +28,7 @@ struct FConnectionConfig
         
 #if PLATFORM_IOS || PLATFORM_ANDROID
 		// On a mobile platform, you can only be a client worker, and therefore use the external IP.
-		WorkerType = SpatialConstants::ClientWorkerType;
+		WorkerType = SpatialConstants::DefaultClientWorkerType.ToString();
 		UseExternalIp = true;
 #endif
 		FString LinkProtocolString;
@@ -76,7 +77,11 @@ struct FReceptionistConfig : public FConnectionConfig
 			if (!IpV4RegexMatcher.FindNext())
 			{
 				// If an IP is not specified then use default.
-				ReceptionistHost = SpatialConstants::LOCAL_HOST;
+				ReceptionistHost = GetDefault<USpatialGDKSettings>()->DefaultReceptionistHost;
+				if (ReceptionistHost.Compare(SpatialConstants::LOCAL_HOST) != 0)
+				{
+					UseExternalIp = true;
+				}
 			}
 		}
 
@@ -90,7 +95,7 @@ struct FReceptionistConfig : public FConnectionConfig
 struct FLocatorConfig : public FConnectionConfig
 {
 	FLocatorConfig()
-		: LocatorHost(TEXT("locator.improbable.io")) {
+		: LocatorHost(SpatialConstants::LOCATOR_HOST) {
 		const TCHAR* CommandLine = FCommandLine::Get();
 		FParse::Value(CommandLine, TEXT("locatorHost"), LocatorHost);
 		FParse::Value(CommandLine, TEXT("playerIdentityToken"), PlayerIdentityToken);

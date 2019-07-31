@@ -56,19 +56,29 @@ struct FClassInfo
 
 	TWeakObjectPtr<UClass> Class;
 
+	// Exists for all classes
 	TArray<UFunction*> RPCs;
 	TMap<UFunction*, FRPCInfo> RPCInfoMap;
-
 	TArray<FHandoverPropertyInfo> HandoverProperties;
 	TArray<FInterestPropertyInfo> InterestProperties;
 
+	// For Actors and default Subobjects belonging to Actors
 	Worker_ComponentId SchemaComponents[ESchemaComponentType::SCHEMA_Count] = {};
 
+	// Only for Actors
+	TMap<uint32, TSharedRef<const FClassInfo>> SubobjectInfo;
+
+	// Only for default Subobjects belonging to Actors
 	FName SubobjectName;
 
-	TMap<uint32, TSharedRef<FClassInfo>> SubobjectInfo;
+	// Only for Subobject classes
+	TArray<TSharedRef<const FClassInfo>> DynamicSubobjectInfo;
+
+	FName ActorGroup;
+	FName WorkerType;
 };
 
+class UActorGroupManager;
 class USpatialNetDriver;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSpatialClassInfoManager, Log, All)
@@ -79,21 +89,27 @@ class SPATIALGDK_API USpatialClassInfoManager : public UObject
 	GENERATED_BODY()
 
 public:
-	void Init(USpatialNetDriver* NetDriver);
+
+	bool TryInit(USpatialNetDriver* NetDriver, UActorGroupManager* ActorGroupManager);
 
 	// Returns true if the class path corresponds to an Actor or Subobject class path in SchemaDatabase
 	// In PIE, PathName must be NetworkRemapped (bReading = false)
 	bool IsSupportedClass(const FString& PathName) const;
 
 	const FClassInfo& GetOrCreateClassInfoByClass(UClass* Class);
-	const FClassInfo& GetOrCreateClassInfoByClassAndOffset(UClass* Class, uint32 Offset);
 	const FClassInfo& GetOrCreateClassInfoByObject(UObject* Object);
-	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId) const;
+	const FClassInfo& GetClassInfoByComponentId(Worker_ComponentId ComponentId);
 
 	UClass* GetClassByComponentId(Worker_ComponentId ComponentId);
 	bool GetOffsetByComponentId(Worker_ComponentId ComponentId, uint32& OutOffset);
 	ESchemaComponentType GetCategoryByComponentId(Worker_ComponentId ComponentId);
 
+	Worker_ComponentId GetComponentIdForClass(const UClass& Class) const;
+	TArray<Worker_ComponentId> GetComponentIdsForClassHierarchy(const UClass& BaseClass, const bool bIncludeDerivedTypes = true) const;
+	
+	const FRPCInfo& GetRPCInfo(UObject* Object, UFunction* Function);
+
+	uint32 GetComponentIdFromLevelPath(const FString& LevelPath);
 	bool IsSublevelComponent(Worker_ComponentId ComponentId);
 
 	UPROPERTY()
@@ -101,10 +117,19 @@ public:
 
 private:
 	void CreateClassInfoForClass(UClass* Class);
+	void TryCreateClassInfoForComponentId(Worker_ComponentId ComponentId);
+
+	void FinishConstructingActorClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
+	void FinishConstructingSubobjectClassInfo(const FString& ClassPath, TSharedRef<FClassInfo>& Info);
+
+	void QuitGame();
 
 private:
 	UPROPERTY()
 	USpatialNetDriver* NetDriver;
+
+	UPROPERTY()
+	UActorGroupManager* ActorGroupManager;
 
 	TMap<TWeakObjectPtr<UClass>, TSharedRef<FClassInfo>> ClassInfoMap;
 	TMap<Worker_ComponentId, TSharedRef<FClassInfo>> ComponentToClassInfoMap;

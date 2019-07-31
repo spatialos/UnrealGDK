@@ -26,12 +26,14 @@ class USpatialWorkerConnection;
 class USpatialDispatcher;
 class USpatialSender;
 class USpatialReceiver;
+class UActorGroupManager;
 class USpatialClassInfoManager;
 class UGlobalStateManager;
 class USpatialPlayerSpawner;
 class USpatialStaticComponentView;
 class USnapshotManager;
 class USpatialMetrics;
+class ASpatialMetricsDisplay;
 
 class UEntityPool;
 
@@ -46,7 +48,11 @@ class SPATIALGDK_API USpatialNetDriver : public UIpNetDriver
 	GENERATED_BODY()
 
 public:
+
+	USpatialNetDriver(const FObjectInitializer& ObjectInitializer);
+
 	// Begin UObject Interface
+	virtual void BeginDestroy() override;
 	virtual void PostInitProperties() override;
 	// End UObject Interface
 
@@ -62,6 +68,7 @@ public:
 	virtual void TickFlush(float DeltaTime) override;
 	virtual bool IsLevelInitializedForActor(const AActor* InActor, const UNetConnection* InConnection) const override;
 	virtual void NotifyActorDestroyed(AActor* Actor, bool IsSeamlessTravel = false) override;
+	virtual void Shutdown() override;
 	// End UNetDriver interface.
 
 	virtual void OnOwnerUpdated(AActor* Actor);
@@ -89,7 +96,9 @@ public:
 	void RemoveActorChannel(Worker_EntityId EntityId);
 	TMap<Worker_EntityId_Key, USpatialActorChannel*>& GetEntityToActorChannelMap();
 
+	USpatialActorChannel* GetOrCreateSpatialActorChannel(UObject* TargetObject);
 	USpatialActorChannel* GetActorChannelByEntityId(Worker_EntityId EntityId) const;
+	USpatialActorChannel* CreateSpatialActorChannel(AActor* Actor, USpatialNetConnection* InConnection);
 
 	DECLARE_DELEGATE(PostWorldWipeDelegate);
 
@@ -103,6 +112,8 @@ public:
 	USpatialSender* Sender;
 	UPROPERTY()
 	USpatialReceiver* Receiver;
+	UPROPERTY()
+	UActorGroupManager* ActorGroupManager;
 	UPROPERTY()
 	USpatialClassInfoManager* ClassInfoManager;
 	UPROPERTY()
@@ -119,6 +130,10 @@ public:
 	UEntityPool* EntityPool;
 	UPROPERTY()
 	USpatialMetrics* SpatialMetrics;
+	UPROPERTY()
+	ASpatialMetricsDisplay* SpatialMetricsDisplay;
+
+	Worker_EntityId WorkerEntityId = SpatialConstants::INVALID_ENTITY_ID;
 
 	TMap<UClass*, TPair<AActor*, USpatialActorChannel*>> SingletonActorChannels;
 
@@ -127,6 +142,9 @@ public:
 	void StopIgnoringAuthoritativeDestruction() { bAuthoritativeDestruction = true; }
 
 #if !UE_BUILD_SHIPPING
+	int32 GetConsiderListSize() const { return ConsiderListSize; }
+#endif
+
 	uint32 GetNextReliableRPCId(AActor* Actor, ESchemaComponentType RPCType, UObject* TargetObject);
 	void OnReceivedReliableRPC(AActor* Actor, ESchemaComponentType RPCType, FString WorkerId, uint32 RPCId, UObject* TargetObject, UFunction* Function);
 	void OnRPCAuthorityGained(AActor* Actor, ESchemaComponentType RPCType);
@@ -144,14 +162,19 @@ public:
 	using FRPCTypeToReliableRPCIdMap = TMap<ESchemaComponentType, FReliableRPCId>;
 	// Per actor, maps from RPC type to the reliable RPC index used to detect if reliable RPCs go out of order.
 	TMap<TWeakObjectPtr<AActor>, FRPCTypeToReliableRPCIdMap> ReliableRPCIdMap;
-#endif // !UE_BUILD_SHIPPING
 
 	void DelayedSendDeleteEntityRequest(Worker_EntityId EntityId, float Delay);
+
+#if WITH_EDITOR
+	// We store the PlayInEditorID associated with this NetDriver to handle replace a worker initialization when in the editor.
+	int32 PlayInEditorID;
+#endif
 
 private:
 	TUniquePtr<FSpatialOutputDevice> SpatialOutputDevice;
 
 	TMap<Worker_EntityId_Key, USpatialActorChannel*> EntityToActorChannel;
+	TArray<Worker_OpList*> QueuedStartupOpLists;
 
 	FTimerManager TimerManager;
 
@@ -159,10 +182,11 @@ private:
 	bool bConnectAsClient;
 	bool bPersistSpatialConnection;
 	bool bWaitingForAcceptingPlayersToSpawn;
+	bool bIsReadyToStart;
+
 	FString SnapshotToLoad;
 
 	void InitiateConnectionToSpatialOS(const FURL& URL);
-
 
 	void InitializeSpatialOutputDevice();
 	void CreateAndInitializeCoreClasses();
@@ -172,6 +196,9 @@ private:
 	void QueryGSMToLoadMap();
 
 	void HandleOngoingServerTravel();
+
+	void HandleStartupOpQueueing(const TArray<Worker_OpList*>& InOpLists);
+	bool FindAndDispatchStartupOps(const TArray<Worker_OpList*>& InOpLists);
 
 	UFUNCTION()
 	void OnMapLoaded(UWorld* LoadedWorld);
@@ -189,6 +216,8 @@ private:
 	void ServerReplicateActors_ProcessPrioritizedActors(UNetConnection* Connection, const TArray<FNetViewer>& ConnectionViewers, FActorPriority** PriorityActors, const int32 FinalSortedCount, int32& OutUpdated);
 #endif
 
+	void ProcessRPC(AActor* Actor, UObject* SubObject, UFunction* Function, void* Parameters);
+
 	friend USpatialNetConnection;
 	friend USpatialWorkerConnection;
 
@@ -196,4 +225,17 @@ private:
 	// The SpatialSender uses these indexes to retry any failed reliable RPCs
 	// in the correct order, if needed.
 	int NextRPCIndex;
+
+	float TimeWhenPositionLastUpdated;
+
+	// Counter for giving each connected client a unique IP address to satisfy Unreal's requirement of
+	// each client having a unique IP address in the UNetDriver::MappedClientConnections map.
+	// The GDK does not use this address for any networked purpose, only bookkeeping.
+	uint32 UniqueClientIpAddressCounter = 0;
+
+	FDelegateHandle SpatialDeploymentStartHandle;
+
+#if !UE_BUILD_SHIPPING
+	int32 ConsiderListSize = 0;
+#endif
 };

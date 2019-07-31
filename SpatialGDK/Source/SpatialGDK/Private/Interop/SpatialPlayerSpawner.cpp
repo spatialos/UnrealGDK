@@ -4,6 +4,7 @@
 
 #include "Engine/Engine.h"
 #include "Engine/LocalPlayer.h"
+#include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 #include "EngineClasses/SpatialNetDriver.h"
@@ -46,9 +47,14 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnRequest(Schema_Object* Payload, co
 		UniqueIdReader << UniqueId;
 
 		FName OnlinePlatformName = FName(*GetStringFromSchema(Payload, 3));
+		bool bSimulatedPlayer = Schema_GetBool(Payload, 4);
 
 		URLString.Append(TEXT("?workerAttribute=")).Append(Attributes);
-
+		if (bSimulatedPlayer)
+		{
+			URLString += TEXT("?simulatedPlayer=1");
+		}
+		
 		NetDriver->AcceptNewPlayer(FURL(nullptr, *URLString, TRAVEL_Absolute), UniqueId, OnlinePlatformName, false);
 	}
 
@@ -76,7 +82,7 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 	RequestID = NetDriver->Connection->SendEntityQueryRequest(&SpatialSpawnerQuery);
 
 	EntityQueryDelegate SpatialSpawnerQueryDelegate;
-	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID](Worker_EntityQueryResponseOp& Op)
+	SpatialSpawnerQueryDelegate.BindLambda([this, RequestID](const Worker_EntityQueryResponseOp& Op)
 	{
 		if (Op.status_code != WORKER_STATUS_CODE_SUCCESS)
 		{
@@ -107,6 +113,9 @@ void USpatialPlayerSpawner::SendPlayerSpawnRequest()
 			UniqueIdWriter << UniqueId;
 			AddBytesToSchema(RequestObject, 2, UniqueIdWriter);
 			AddStringToSchema(RequestObject, 3, OnlinePlatformName.ToString());
+			UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(NetDriver);
+			bool bSimulatedPlayer = GameInstance ? GameInstance->IsSimulatedPlayer() : false;
+			Schema_AddBool(RequestObject, 4, bSimulatedPlayer);
 
 			NetDriver->Connection->SendCommandRequest(Op.results[0].entity_id, &CommandRequest, 1);
 		}
@@ -130,15 +139,18 @@ void USpatialPlayerSpawner::ReceivePlayerSpawnResponse(const Worker_CommandRespo
 			UTF8_TO_TCHAR(Op.message));
 
 		FTimerHandle RetryTimer;
-		TimerManager->SetTimer(RetryTimer, [this]()
+		TimerManager->SetTimer(RetryTimer, [WeakThis = TWeakObjectPtr<USpatialPlayerSpawner>(this)]()
 		{
-			SendPlayerSpawnRequest();
+			if (USpatialPlayerSpawner* Spawner = WeakThis.Get())
+			{
+				Spawner->SendPlayerSpawnRequest();
+			}
 		}, SpatialConstants::GetCommandRetryWaitTimeSeconds(NumberOfAttempts), false);
 	}
 	else
 	{
 		UE_LOG(LogSpatialPlayerSpawner, Error, TEXT("Player spawn request failed too many times. (%u attempts)"),
-			SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS)
+			SpatialConstants::MAX_NUMBER_COMMAND_ATTEMPTS);
 	}
 }
 
@@ -162,6 +174,12 @@ void USpatialPlayerSpawner::ObtainPlayerParams(FURL& LoginURL, FUniqueNetIdRepl&
 		if (GameUrlOptions.Len() > 0)
 		{
 			LoginURL.AddOption(*FString::Printf(TEXT("%s"), *GameUrlOptions));
+		}
+		// Pull in options from the current world URL (to preserve options added to a travel URL)
+		const TArray<FString>& LastURLOptions = WorldContext->LastURL.Op;
+		for (const FString& Op : LastURLOptions)
+		{
+			LoginURL.AddOption(*Op);
 		}
 
 		// Send the player unique Id at login
