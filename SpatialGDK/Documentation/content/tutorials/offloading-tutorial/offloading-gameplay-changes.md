@@ -10,9 +10,9 @@ A common scenario when building offloaded gameplay features is when interacting 
 
 To solve this, any functions invoked by the interacting actor will need to be handled via a [Cross-server RPCs]({{urlRoot}}/content/technical-overview/gdk-concepts#cross-server-rpcs).
 
-In the case of the example project, the turrets are set up to run on a separate worker(AIWorker). If a player shoots the turret, a call to TakeDamage is invoked which is part of the native Actor API in unreal. The TakeDamage function is not an RPC function so it would not be executed on the turrets unless they internally get routed to the AIWorker using a cross-server RPC.
+In the case of the example project, the turrets are set up to run on a separate worker (`AIWorker`). If a player shoots the turret, a call to `TakeDamage` is invoked which is part of the native Actor API in unreal. The `TakeDamage` function is not an RPC function, so it will not be executed on the turrets unless they internally get routed to the `AIWorker` using a cross-server RPC.
 
-In the example project, this is implmented via a class called ACrossServerPawn which implements the actor interface and overrides the implementation for TakeDamage to invoke a new cross server rpc called TakeDamageCrossServer as shown in the snippet below:
+In the Example Project, this is implmented via a class called `ACrossServerPawn` which implements the actor interface and overrides the implementation for `TakeDamage` to invoke a new cross server rpc called `TakeDamageCrossServer`, as shown in the snippet below:
 
 ```
 float ACrossServerPawn::TakeDamage(float Damage, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -28,7 +28,7 @@ void ACrossServerPawn::TakeDamageCrossServer_Implementation(float Damage, const 
 }
 ```
 
-The turret blueprint (BP_Turret_Base) inherits from the ACrossServerPawn class.
+The turret blueprint (`BP_Turret_Base`) inherits from the `ACrossServerPawn` class.
 
 ### GDKCharacter
 
@@ -48,13 +48,13 @@ Another thing that needs to be taken into consideration when implementing gamepl
 
 The solution to this is to create a new subclass of the weapon that can be assigned to the actor group that the offloaded AI belongs to.
 
-In the example project,  the Player characters and the CrashBots have the same base class, we had to create a child blueprint called BP_CrashBot to ensure that the offloading configuration setup correctly.
+In the example project, the `Player` characters and the `CrashBots` have the same base class, we had to create a child blueprint called `BP_CrashBot` to ensure that the offloading configuration setup correctly.
 
-In addition to the CrashBot blueprint, the example project had to create an additional version of the CrashBot named  BP_CrashBot_PlacedInWorld. This was to work around the issue of creating controllers first when the authority was gained.
+In addition to the `CrashBot` blueprint, the Example Project had to create an additional version of the CrashBot named `BP_CrashBot_PlacedInWorld`. This was to work around the issue of creating the controllers first when the authority was gained.
 
 Mention weapon to allow it to be used for the bots.
 
-### Ensure that code get executed on the correct server worker
+### Ensure that your code get executed on the correct server worker
 
 With the introduction of offloading, it is no longer enough to check whether the netmode is a dedicated server to ensure that logic is run on the authoritative worker. An actor could now be authoritatively updated from any given server type and therefore it is important to be mindful of checking whether the current server worker has authority over the entity. Below are a few example snippets from the UEquipmentComponent where such checks were added to ensure correct flow:
 
@@ -76,9 +76,9 @@ void UEquippedComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 ### Conclusion
 
-Offloading enables you to scale your CPU heavy tasks by offloading them to other worker types without having to worry about the challenges involved with migrating entities across worker boundaries.
+By using offloading, you can scale your CPU heavy tasks by splitting them to run on instances of different server-workers. You don’t need to worry about the challenges involved with migrating entities across worker boundaries. 
 
-Offloading does introduce a set of constraints to be mindful of, however, when set up correctly it will offer you significant scaling opportunities.
+Meanwhile, offloading introduces a set of constraints that you need to take care of.  When you set up your feature using offloading properly, you can have significant scaling opportunities.
 
 <br/>------------<br/>
 _2019-07-26 Page added as draft_
