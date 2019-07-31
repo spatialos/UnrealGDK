@@ -105,6 +105,7 @@ For more information, see the documentation on [non-Unreal server-worker types](
 
 
 <br/>------------<br/>
+_2019-07-31 Page updated with limited editorial review: Actor Throttling added_<br/>
 _2019-07-26 Page updated with limited editorial review: offloading, Actor group added_<br/>
 _2019-04-11 Page updated with limited editorial review_<br/>
 _2019-04-25 Page added with editorial review_
