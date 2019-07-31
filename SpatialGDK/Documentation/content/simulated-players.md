@@ -21,7 +21,7 @@ To set up simulated players, you need to:
 0. [Define the logic](#3-define-the-logic-for-your-simulated-players) for your simulated players.
 
 ### 1. Specify a class for simulated players
-Inside your Game Mode constructor, specify a character class to be created for simulated players. This can be any character class, but we recommend that the simulated player character class extends your game’s player character class, so that simulated player characters inherit all the properties of your default player character class.
+Inside your Game Mode constructor, specify a character class to be used for simulated players. This can be any character class, but we recommend that the simulated player character class extends your game’s player character class, so that simulated player characters inherit all the properties of your default player character class. In the following examples we will assume that you have created a character class named `SimulatedPlayerCharacter_BP` for simulated players.
 
 You can specify the simulated player character class either in your C++ GameMode class or in the Class Defaults tab of your GameMode’s Blueprint class.
 
@@ -46,7 +46,7 @@ ATP_SpatialGDKGameMode::ATP_SpatialGDKGameMode()
 ```
 
 ### 2. Set `IsSimulated` to `true` for that class
-In the Unreal Editor, within your simulated player character Class Defaults, set the property `IsSimulated` to `true` for the simulated player character class.
+In the Unreal Editor, within your simulated player character class's Class Defaults, set the property `IsSimulated` to `true`.
 
 ### 3. Define the logic for your simulated players
 The simulated player character class is automatically spawned for simulated players instead of the default player character class. You can define custom logic for simulated players in this class. For example, you can spawn an AIController with your simulated player logic in the `BeginPlay` method, and have the controller possess the simulated player character.
@@ -59,7 +59,7 @@ As an example, you could create a new project using the [Starter Template] ({{ur
 ## Altering client-side logic
 You might want to alter some client-side simulated player logic that is not directly related to the simulated player’s character. For example, you might want to bypass a login menu, cinematics, or a tutorial. 
 
-To do this, you can use a Blueprint function library that exposes the `IsSimulatedPlayer` function and returns whether the game client is a simulated player. This is a pure function that you can execute in both C++ and Blueprints.
+To do this, you can use a Blueprint function library that exposes the `IsSimulatedPlayer` function and returns a boolean indicating whether the game client is a simulated player. This can be executed in both C++ and Blueprints.
 
 ### C++ example
 
@@ -81,8 +81,6 @@ void AExampleActor::BeginPlay()
 
 ### Blueprint example
 
-From a Blueprint class you can call **Is Simulated Player**:
-
 ![Calling Is Simulated Player in Blueprints]({{assetRoot}}assets/screen-grabs/simulated-players/is-simulated-player.png)
 <br>_Image: You can call **Is Simulated Player** from a Blueprint class_
 
@@ -95,7 +93,7 @@ To launch a simulated player deployment, you need to provide a [worker configura
 
 The [Example Project]({{urlRoot}}/content/get-started/example-project/exampleproject-intro) and [Starter Template]({{urlRoot}}/content/get-started/starter-template/get-started-template-intro) already include this worker configuration file in the right location, but for new projects you need to add it yourself to the `spatial/workers/<worker>` directory. 
 
-We recommend that you copy the example configuration file provided at `UnrealGDK/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/spatialos.SimulatedPlayerCoordinator.worker.json`, and adapt it to your project where necessary. This file contains the arguments that are passed to the simulated player game clients.
+We recommend that you copy [our example configuration file](https://github.com/spatialos/UnrealGDK/blob/release/SpatialGDK/Build/Programs/Improbable.Unreal.Scripts/WorkerCoordinator/SpatialConfig/spatialos.SimulatedPlayerCoordinator.worker.json), and adapt it to your project where necessary. This file contains the arguments that are passed to the simulated player game clients.
 ### Local deployments
 
 You can launch simulated players as [Play In Editor](https://docs.unrealengine.com/en-US/GettingStarted/HowTo/PIE/index.html#playineditor) clients by configuring the “Number of Simulated Players” option (**Edit > Editor Preferences > Level Editor > Play > Multiplayer Options**):
