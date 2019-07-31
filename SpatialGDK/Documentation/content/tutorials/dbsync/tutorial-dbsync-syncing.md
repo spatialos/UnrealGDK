@@ -258,7 +258,7 @@ void UDeathmatchScoreComponent::CreateItemResponse(const ::improbable::database_
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("CreateItem Request failed with Error %s : %s"), Op.StatusCode, Op.Message);
+		UE_LOG(LogTemp, Error, TEXT("CreateItem Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
 	}
 }
 ...
@@ -306,7 +306,7 @@ void UDeathmatchScoreComponent::IncrementResponse(const ::improbable::database_s
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Increment Request failed with Error %s : %s"), Op.StatusCode, Op.Message);
+		UE_LOG(LogTemp, Error, TEXT("Increment Request failed with Error %d : %s"), Op.StatusCode, Op.Message);
 	}
 }
 ...
